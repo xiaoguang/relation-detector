@@ -10,6 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.relationdetector.api.ColumnRef;
+import com.relationdetector.api.DefaultEvidenceScores;
 import com.relationdetector.api.Endpoint;
 import com.relationdetector.api.Evidence;
 import com.relationdetector.api.RelationshipCandidate;
@@ -122,6 +123,56 @@ public final class SimpleSqlRelationParser {
             "(?is)([`\"\\w]+)\\.([`\"\\w]+)\\s+in\\s*\\(\\s*select\\s+([`\"\\w]+)\\.([`\"\\w]+)\\s+from\\s+([`\"\\w.]+)\\s+([`\"\\w]+)");
 
     /*
+     * Recognizes tuple equality comparisons where both sides are aligned lists
+     * of simple column references.
+     *
+     * Complete SQL example:
+     *   SELECT *
+     *   FROM orders o
+     *   JOIN users u
+     *     ON (o.tenant_id, o.user_id) = (u.tenant_id, u.id)
+     *
+     * The parser only accepts pure alias.column items. Expressions such as
+     * COALESCE(o.user_id, 0) deliberately do not match the ColumnToken parser.
+     */
+    private static final Pattern TUPLE_EQUALITY = Pattern.compile(
+            "(?is)\\(([^()]+)\\)\\s*=\\s*\\(([^()]+)\\)");
+
+    /*
+     * Recognizes tuple IN subqueries with simple aligned outer and inner column
+     * lists.
+     *
+     * Complete SQL example:
+     *   SELECT *
+     *   FROM orders o
+     *   WHERE (o.tenant_id, o.user_id) IN (
+     *     SELECT u.tenant_id, u.id
+     *     FROM users u
+     *   )
+     */
+    private static final Pattern TUPLE_IN_SUBQUERY = Pattern.compile(
+            "(?is)\\(([^()]+)\\)\\s+in\\s*\\(\\s*select\\s+(.+?)\\s+from\\s+([`\"\\w.]+)\\s+([`\"\\w]+)");
+
+    /*
+     * Finds the beginning of EXISTS subqueries. The body itself is read with a
+     * small balanced-parenthesis scanner instead of one large regex so nested
+     * predicates do not stop at the first inner ")".
+     *
+     * Complete SQL example:
+     *   SELECT o.id
+     *   FROM orders o
+     *   WHERE EXISTS (
+     *     SELECT 1
+     *     FROM users u
+     *     WHERE u.id = o.user_id
+     *   )
+     *
+     * In native/plain SQL logs, equality predicates inside this span produce
+     * SQL_LOG_EXISTS evidence rather than ordinary SQL_LOG_JOIN evidence.
+     */
+    private static final Pattern EXISTS_START = Pattern.compile("(?is)\\bexists\\s*\\(");
+
+    /*
      * Recognizes JOIN ... USING(column[, column...]) clauses.
      *
      * Complete SQL examples:
@@ -207,6 +258,34 @@ public final class SimpleSqlRelationParser {
     private static final Pattern TEMP_TABLE_NAME = Pattern.compile(
             "(?is)\\bcreate\\s+(?:temporary|temp)\\s+table\\s+(?:if\\s+not\\s+exists\\s+)?([`\"\\w.]+)");
 
+    /*
+     * Captures the table owned by a trigger so NEW.column and OLD.column can be
+     * resolved back to that physical table.
+     *
+     * Complete SQL examples:
+     *   CREATE TRIGGER orders_ai AFTER INSERT ON orders FOR EACH ROW ...
+     *   CREATE TRIGGER audit_orders AFTER UPDATE ON public.orders EXECUTE FUNCTION ...
+     */
+    private static final Pattern TRIGGER_ON_TABLE = Pattern.compile(
+            "(?is)\\bcreate\\s+(?:or\\s+replace\\s+)?trigger\\s+[`\"\\w.]+\\s+.+?\\bon\\s+([`\"\\w.]+)");
+
+    /*
+     * Mutation statements can carry relationship predicates even though the
+     * mutated table is not introduced by an ordinary SELECT FROM clause.
+     *
+     * Complete SQL examples:
+     *   UPDATE orders o SET status = 'PAID' FROM users u WHERE o.user_id = u.id
+     *   DELETE FROM orders o USING users u WHERE o.user_id = u.id
+     */
+    private static final Pattern UPDATE_TABLE = Pattern.compile(
+            "(?is)\\bupdate\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?");
+
+    private static final Pattern DELETE_FROM_TABLE = Pattern.compile(
+            "(?is)\\bdelete\\s+from\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?");
+
+    private static final Pattern DELETE_USING_TABLE = Pattern.compile(
+            "(?is)\\busing\\s+(?!\\()([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?");
+
     /**
      * Main entry point called by each database adaptor.
      *
@@ -232,9 +311,14 @@ public final class SimpleSqlRelationParser {
         ignoredRowsets.addAll(LocalTempTableNames.extract(sql));
         SqlLineageResolver lineage = SqlLineageResolver.analyze(sql, ignoredRowsets);
         Map<String, TableId> aliases = AliasExtractor.extract(sql, ignoredRowsets);
+        aliases = TriggerPseudoRows.addIfTrigger(record.sourceType(), sql, aliases);
+        List<SqlSpan> existsSpans = existsSpansFor(record.sourceType(), sql);
         List<RelationshipCandidate> candidates = new ArrayList<>();
+        candidates.addAll(parseTupleInSubquery(record, sql, aliases, lineage));
         candidates.addAll(parseInSubquery(record, sql, aliases, lineage));
-        candidates.addAll(parseEqualityJoins(record, sql, aliases, lineage));
+        candidates.addAll(parseExistsSubquery(record, sql, aliases, lineage, existsSpans));
+        candidates.addAll(parseTupleEqualityJoins(record, sql, aliases, lineage));
+        candidates.addAll(parseEqualityJoins(record, sql, aliases, lineage, existsSpans));
         candidates.addAll(parseUsingAndNaturalJoins(record, sql, aliases, ignoredRowsets));
         if (candidates.isEmpty()) {
             candidates.addAll(parseCoOccurrence(record, aliases));
@@ -262,11 +346,15 @@ public final class SimpleSqlRelationParser {
             SqlStatementRecord record,
             String sql,
             Map<String, TableId> aliases,
-            SqlLineageResolver lineage
+            SqlLineageResolver lineage,
+            List<SqlSpan> existsSpans
     ) {
         List<RelationshipCandidate> candidates = new ArrayList<>();
         Matcher matcher = EQUALITY.matcher(sql);
         while (matcher.find()) {
+            if (insideAnySpan(matcher.start(), existsSpans)) {
+                continue;
+            }
             String leftAlias = clean(matcher.group(1));
             String leftColumnName = clean(matcher.group(2));
             String rightAlias = clean(matcher.group(3));
@@ -297,6 +385,195 @@ public final class SimpleSqlRelationParser {
                     joinKind + " equality: " + matcher.group(),
                     java.util.Map.of("joinKind", joinKind, "lineageResolved", lineageResolved)));
             candidates.add(candidate);
+        }
+        return candidates;
+    }
+
+    /**
+     * Parses aligned tuple equality comparisons.
+     *
+     * <p>Called from parse() before scalar equality parsing. Tuple equality has a
+     * useful extra signal: if one aligned pair makes direction clear, the whole
+     * tuple normally follows that direction. For example:
+     *
+     * <pre>{@code
+     * SELECT *
+     * FROM orders o
+     * JOIN users u
+     *   ON (o.tenant_id, o.user_id) = (u.tenant_id, u.id)
+     * }</pre>
+     *
+     * The {@code o.user_id -> u.id} pair establishes the tuple direction, so the
+     * parser can emit both aligned column relations:
+     *
+     * <pre>{@code
+     * orders.tenant_id -> users.tenant_id
+     * orders.user_id   -> users.id
+     * }</pre>
+     *
+     * If direction is conflicting or cannot be established by any pair, the
+     * method skips the tuple instead of inventing a column-level FK-like relation.
+     */
+    private List<RelationshipCandidate> parseTupleEqualityJoins(
+            SqlStatementRecord record,
+            String sql,
+            Map<String, TableId> aliases,
+            SqlLineageResolver lineage
+    ) {
+        List<RelationshipCandidate> candidates = new ArrayList<>();
+        Matcher matcher = TUPLE_EQUALITY.matcher(sql);
+        while (matcher.find()) {
+            List<ColumnToken> leftTokens = ColumnToken.parseList(matcher.group(1));
+            List<ColumnToken> rightTokens = ColumnToken.parseList(matcher.group(2));
+            if (leftTokens.isEmpty() || leftTokens.size() != rightTokens.size()) {
+                continue;
+            }
+            TupleDirection direction = tupleDirection(leftTokens, rightTokens, aliases, lineage);
+            if (direction == TupleDirection.AMBIGUOUS) {
+                continue;
+            }
+            String joinKind = joinKindNear(sql, matcher.start());
+            for (int i = 0; i < leftTokens.size(); i++) {
+                ColumnRef left = resolveColumn(leftTokens.get(i).alias(), leftTokens.get(i).column(), aliases, lineage);
+                ColumnRef right = resolveColumn(rightTokens.get(i).alias(), rightTokens.get(i).column(), aliases, lineage);
+                if (left == null || right == null || left.table().normalizedName().equals(right.table().normalizedName())) {
+                    continue;
+                }
+                ColumnToken sourceToken = direction == TupleDirection.LEFT_TO_RIGHT ? leftTokens.get(i) : rightTokens.get(i);
+                ColumnToken targetToken = direction == TupleDirection.LEFT_TO_RIGHT ? rightTokens.get(i) : leftTokens.get(i);
+                ColumnRef sourceColumn = direction == TupleDirection.LEFT_TO_RIGHT ? left : right;
+                ColumnRef targetColumn = direction == TupleDirection.LEFT_TO_RIGHT ? right : left;
+                RelationshipCandidate candidate = new RelationshipCandidate(
+                        Endpoint.column(sourceColumn), Endpoint.column(targetColumn),
+                        RelationType.FK_LIKE, RelationSubType.INFERRED_JOIN_FK);
+                boolean lineageResolved = lineage.hasLineage(sourceToken.alias(), sourceToken.column())
+                        || lineage.hasLineage(targetToken.alias(), targetToken.column());
+                candidate.evidence().add(new Evidence(joinEvidenceType(record.sourceType()),
+                        java.math.BigDecimal.valueOf(scoreForJoinSource(record.sourceType())),
+                        sourceType(record.sourceType()),
+                        record.sourceName(),
+                        joinKind + " tuple equality: " + matcher.group(),
+                        java.util.Map.of("joinKind", joinKind, "lineageResolved", lineageResolved, "tuplePosition", i + 1)));
+                candidates.add(candidate);
+            }
+        }
+        return candidates;
+    }
+
+    /**
+     * Parses equality predicates inside EXISTS subqueries for SQL log inputs.
+     *
+     * <p>Called from parse() before ordinary equality parsing. The ordinary
+     * equality parser receives the same EXISTS spans and skips them, so a
+     * predicate such as {@code u.id = o.user_id} produces exactly one evidence
+     * item:
+     *
+     * <pre>{@code
+     * SELECT o.id
+     * FROM orders o
+     * WHERE EXISTS (
+     *   SELECT 1
+     *   FROM users u
+     *   WHERE u.id = o.user_id
+     * )
+     * }</pre>
+     *
+     * The result is {@code orders.user_id -> users.id} with
+     * {@code SQL_LOG_EXISTS = 0.58}. This method is currently enabled only for
+     * native/plain SQL log statements; view/procedure/trigger bodies keep their
+     * object-specific evidence types to preserve source semantics.
+     */
+    private List<RelationshipCandidate> parseExistsSubquery(
+            SqlStatementRecord record,
+            String sql,
+            Map<String, TableId> aliases,
+            SqlLineageResolver lineage,
+            List<SqlSpan> existsSpans
+    ) {
+        List<RelationshipCandidate> candidates = new ArrayList<>();
+        for (SqlSpan span : existsSpans) {
+            Matcher matcher = EQUALITY.matcher(sql.substring(span.start(), span.end()));
+            while (matcher.find()) {
+                int absoluteStart = span.start() + matcher.start();
+                String leftAlias = clean(matcher.group(1));
+                String leftColumnName = clean(matcher.group(2));
+                String rightAlias = clean(matcher.group(3));
+                String rightColumnName = clean(matcher.group(4));
+                ColumnRef left = resolveColumn(leftAlias, leftColumnName, aliases, lineage);
+                ColumnRef right = resolveColumn(rightAlias, rightColumnName, aliases, lineage);
+                if (left == null || right == null || left.table().normalizedName().equals(right.table().normalizedName())) {
+                    continue;
+                }
+                boolean leftLooksSource = looksLikeForeignKey(left.columnName(), right.table().tableName(), right.columnName());
+                boolean rightLooksSource = looksLikeForeignKey(right.columnName(), left.table().tableName(), left.columnName());
+                if (!leftLooksSource && !rightLooksSource) {
+                    candidates.add(coOccurrence(record, Endpoint.table(left.table()), Endpoint.table(right.table()),
+                            "ambiguous EXISTS equality: " + matcher.group()));
+                    continue;
+                }
+                Endpoint source = leftLooksSource && !rightLooksSource ? Endpoint.column(left) : Endpoint.column(right);
+                Endpoint target = leftLooksSource && !rightLooksSource ? Endpoint.column(right) : Endpoint.column(left);
+                RelationshipCandidate candidate = new RelationshipCandidate(
+                        source, target, RelationType.FK_LIKE, RelationSubType.SUBQUERY_INFERRED_FK);
+                boolean lineageResolved = lineage.hasLineage(leftAlias, leftColumnName) || lineage.hasLineage(rightAlias, rightColumnName);
+                candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_EXISTS,
+                        java.math.BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_EXISTS),
+                        sourceType(record.sourceType()),
+                        record.sourceName(),
+                        "EXISTS equality: " + matcher.group(),
+                        java.util.Map.of("joinKind", joinKindNear(sql, absoluteStart), "lineageResolved", lineageResolved)));
+                candidates.add(candidate);
+            }
+        }
+        return candidates;
+    }
+
+    /**
+     * Parses tuple IN subqueries with aligned pure column lists.
+     *
+     * <p>The outer tuple is the source side and the SELECT tuple is the target
+     * side, matching the scalar {@code outer.col IN (SELECT inner.col ...)}
+     * semantics. Expressions, tuple-size mismatches, and complex projections are
+     * skipped.
+     */
+    private List<RelationshipCandidate> parseTupleInSubquery(
+            SqlStatementRecord record,
+            String sql,
+            Map<String, TableId> aliases,
+            SqlLineageResolver lineage
+    ) {
+        List<RelationshipCandidate> candidates = new ArrayList<>();
+        Matcher matcher = TUPLE_IN_SUBQUERY.matcher(sql);
+        while (matcher.find()) {
+            List<ColumnToken> sourceTokens = ColumnToken.parseList(matcher.group(1));
+            List<ColumnToken> targetTokens = ColumnToken.parseList(matcher.group(2));
+            if (sourceTokens.isEmpty() || sourceTokens.size() != targetTokens.size()) {
+                continue;
+            }
+            for (int i = 0; i < sourceTokens.size(); i++) {
+                ColumnRef source = resolveColumn(sourceTokens.get(i).alias(), sourceTokens.get(i).column(), aliases, lineage);
+                ColumnRef target = resolveColumn(targetTokens.get(i).alias(), targetTokens.get(i).column(), aliases, lineage);
+                if (target == null) {
+                    TableId innerTable = aliases.get(clean(matcher.group(4)));
+                    if (innerTable == null) {
+                        innerTable = TableId.of(schemaName(matcher.group(3)), cleanTable(matcher.group(3)));
+                    }
+                    target = ColumnRef.of(innerTable, targetTokens.get(i).column());
+                }
+                if (source == null || target == null || source.table().normalizedName().equals(target.table().normalizedName())) {
+                    continue;
+                }
+                RelationshipCandidate candidate = new RelationshipCandidate(
+                        Endpoint.column(source), Endpoint.column(target),
+                        RelationType.FK_LIKE, RelationSubType.SUBQUERY_INFERRED_FK);
+                candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_SUBQUERY_IN,
+                        java.math.BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_SUBQUERY_IN),
+                        sourceType(record.sourceType()),
+                        record.sourceName(),
+                        "tuple IN subquery relation: " + matcher.group(),
+                        java.util.Map.of("tuplePosition", i + 1)));
+                candidates.add(candidate);
+            }
         }
         return candidates;
     }
@@ -339,7 +616,7 @@ public final class SimpleSqlRelationParser {
             RelationshipCandidate candidate = new RelationshipCandidate(
                     Endpoint.column(source), Endpoint.column(target),
                     RelationType.FK_LIKE, RelationSubType.SUBQUERY_INFERRED_FK);
-            candidate.evidence().add(Evidence.of(EvidenceType.SQL_LOG_SUBQUERY_IN, 0.58d,
+            candidate.evidence().add(Evidence.of(EvidenceType.SQL_LOG_SUBQUERY_IN, DefaultEvidenceScores.SQL_LOG_SUBQUERY_IN,
                     sourceType(record.sourceType()), record.sourceName(), "IN subquery relation"));
             candidates.add(candidate);
         }
@@ -449,7 +726,7 @@ public final class SimpleSqlRelationParser {
     ) {
         RelationshipCandidate candidate = new RelationshipCandidate(
                 source, target, RelationType.CO_OCCURRENCE, RelationSubType.TABLE_CO_OCCURRENCE);
-        candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_TABLE_CO_OCCURRENCE, java.math.BigDecimal.valueOf(0.25d),
+        candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_TABLE_CO_OCCURRENCE, java.math.BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_TABLE_CO_OCCURRENCE),
                 sourceType(record.sourceType()), record.sourceName(), detail, attributes));
         return candidate;
     }
@@ -472,10 +749,10 @@ public final class SimpleSqlRelationParser {
 
     private double scoreForJoinSource(StatementSourceType sourceType) {
         return switch (sourceType) {
-            case VIEW -> 0.72d;
-            case PROCEDURE, FUNCTION -> 0.70d;
-            case TRIGGER -> 0.65d;
-            default -> 0.55d;
+            case VIEW -> DefaultEvidenceScores.VIEW_JOIN;
+            case PROCEDURE, FUNCTION -> DefaultEvidenceScores.PROCEDURE_JOIN;
+            case TRIGGER -> DefaultEvidenceScores.TRIGGER_REFERENCE;
+            default -> DefaultEvidenceScores.SQL_LOG_JOIN;
         };
     }
 
@@ -486,6 +763,126 @@ public final class SimpleSqlRelationParser {
             case NATIVE_LOG -> EvidenceSourceType.NATIVE_LOG;
             case PLAIN_SQL -> EvidenceSourceType.PLAIN_SQL;
         };
+    }
+
+    /**
+     * Returns EXISTS bodies that should be treated as SQL-log subquery evidence.
+     *
+     * <p>Called once from parse(). We deliberately limit this to NATIVE_LOG and
+     * PLAIN_SQL because database objects already carry stronger source-specific
+     * evidence such as VIEW_JOIN, PROCEDURE_JOIN, or TRIGGER_REFERENCE. The spans
+     * contain only the text inside the parentheses, not the word EXISTS itself.
+     */
+    private List<SqlSpan> existsSpansFor(StatementSourceType sourceType, String sql) {
+        if (sourceType != StatementSourceType.NATIVE_LOG && sourceType != StatementSourceType.PLAIN_SQL) {
+            return List.of();
+        }
+        List<SqlSpan> spans = new ArrayList<>();
+        Matcher matcher = EXISTS_START.matcher(sql);
+        while (matcher.find()) {
+            int openParen = sql.indexOf('(', matcher.start());
+            int closeParen = matchingParen(sql, openParen);
+            if (openParen >= 0 && closeParen > openParen) {
+                spans.add(new SqlSpan(openParen + 1, closeParen));
+            }
+        }
+        return spans;
+    }
+
+    private boolean insideAnySpan(int position, List<SqlSpan> spans) {
+        for (SqlSpan span : spans) {
+            if (position >= span.start() && position < span.end()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private int matchingParen(String sql, int openParen) {
+        if (openParen < 0 || openParen >= sql.length() || sql.charAt(openParen) != '(') {
+            return -1;
+        }
+        int depth = 0;
+        char quote = 0;
+        for (int i = openParen; i < sql.length(); i++) {
+            char c = sql.charAt(i);
+            if (quote != 0) {
+                if (c == quote) {
+                    quote = 0;
+                }
+                continue;
+            }
+            if (c == '\'' || c == '"' || c == '`') {
+                quote = c;
+                continue;
+            }
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+                if (depth == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private record SqlSpan(int start, int end) {
+    }
+
+    private TupleDirection tupleDirection(
+            List<ColumnToken> leftTokens,
+            List<ColumnToken> rightTokens,
+            Map<String, TableId> aliases,
+            SqlLineageResolver lineage
+    ) {
+        TupleDirection direction = TupleDirection.AMBIGUOUS;
+        for (int i = 0; i < leftTokens.size(); i++) {
+            ColumnRef left = resolveColumn(leftTokens.get(i).alias(), leftTokens.get(i).column(), aliases, lineage);
+            ColumnRef right = resolveColumn(rightTokens.get(i).alias(), rightTokens.get(i).column(), aliases, lineage);
+            if (left == null || right == null || left.table().normalizedName().equals(right.table().normalizedName())) {
+                continue;
+            }
+            boolean leftLooksSource = looksLikeForeignKey(left.columnName(), right.table().tableName(), right.columnName());
+            boolean rightLooksSource = looksLikeForeignKey(right.columnName(), left.table().tableName(), left.columnName());
+            TupleDirection pairDirection = TupleDirection.AMBIGUOUS;
+            if (leftLooksSource && !rightLooksSource) {
+                pairDirection = TupleDirection.LEFT_TO_RIGHT;
+            } else if (rightLooksSource && !leftLooksSource) {
+                pairDirection = TupleDirection.RIGHT_TO_LEFT;
+            }
+            if (pairDirection == TupleDirection.AMBIGUOUS) {
+                continue;
+            }
+            if (direction != TupleDirection.AMBIGUOUS && direction != pairDirection) {
+                return TupleDirection.AMBIGUOUS;
+            }
+            direction = pairDirection;
+        }
+        return direction;
+    }
+
+    private enum TupleDirection {
+        LEFT_TO_RIGHT,
+        RIGHT_TO_LEFT,
+        AMBIGUOUS
+    }
+
+    private record ColumnToken(String alias, String column) {
+        private static final Pattern COLUMN = Pattern.compile("\\s*([`\"\\w]+)\\.([`\"\\w]+)\\s*");
+
+        static List<ColumnToken> parseList(String text) {
+            List<ColumnToken> tokens = new ArrayList<>();
+            for (String part : text.split(",")) {
+                Matcher matcher = COLUMN.matcher(part);
+                if (!matcher.matches()) {
+                    return List.of();
+                }
+                tokens.add(new ColumnToken(clean(matcher.group(1)), clean(matcher.group(2))));
+            }
+            return tokens;
+        }
     }
 
     private boolean looksLikeForeignKey(String sourceColumn, String targetTable, String targetColumn) {
@@ -622,44 +1019,6 @@ public final class SimpleSqlRelationParser {
         return parts.size() > 1 ? parts.get(parts.size() - 2) : null;
     }
 
-    /**
-     * Detects rowsets commonly created from stored-procedure parameters or
-     * application filter lists.
-     *
-     * <p>Called by AliasExtractor before a table enters the physical alias map.
-     * These rowsets are often used like:
-     *
-     * <pre>{@code
-     * SELECT *
-     * FROM orders o,
-     *      users u,
-     *      tmp_input_user_ids input_users
-     * WHERE o.user_id = u.id
-     *   AND input_users.user_id = u.id
-     * }</pre>
-     *
-     * The second equality filters the query to a caller-provided set of IDs; it
-     * should not become evidence that tmp_input_user_ids is part of the domain
-     * relationship graph. This heuristic is intentionally name-based and
-     * conservative; database-specific adaptors can later replace it with real
-     * temporary-table metadata.
-     */
-    private static boolean isLikelyInputFilterTable(String tableName, String alias) {
-        String table = clean(tableName).toLowerCase(Locale.ROOT);
-        String tableAlias = clean(alias).toLowerCase(Locale.ROOT);
-        return startsLikeInputFilter(table) || startsLikeInputFilter(tableAlias);
-    }
-
-    private static boolean startsLikeInputFilter(String value) {
-        return value.startsWith("tmp_")
-                || value.startsWith("temp_")
-                || value.startsWith("input_")
-                || value.startsWith("param_")
-                || value.startsWith("filter_")
-                || value.startsWith("tmpinput_")
-                || value.startsWith("tempinput_");
-    }
-
     /*
      * Splits a possibly qualified table identifier without treating dots inside
      * quoted identifier parts as qualifiers.
@@ -759,14 +1118,56 @@ public final class SimpleSqlRelationParser {
                 }
                 TableId table = TableId.of(schema, tableName);
                 String alias = clean(matcher.group(2));
-                if (isLikelyInputFilterTable(tableName, alias)) {
-                    continue;
-                }
                 refs.add(new TableRef(matcher.start(), table, !alias.isBlank() && !isKeyword(alias) ? alias : ""));
             }
+            extractMutationTables(sql, cteNames, refs);
             extractCommaSeparatedFrom(sql, cteNames, refs);
             refs.sort(java.util.Comparator.comparingInt(TableRef::position));
             return refs;
+        }
+
+        /**
+         * Adds aliases introduced by UPDATE/DELETE syntaxes.
+         *
+         * <p>Called by extractOrdered() before comma-FROM handling. Mutation SQL
+         * often carries the same relationship predicates as SELECT, but the
+         * mutated table may be introduced by UPDATE or DELETE FROM rather than an
+         * ordinary SELECT FROM:
+         *
+         * <pre>{@code
+         * UPDATE orders o
+         * SET status = 'PAID'
+         * FROM users u
+         * WHERE o.user_id = u.id;
+         *
+         * DELETE FROM orders o
+         * USING users u
+         * WHERE o.user_id = u.id;
+         * }</pre>
+         *
+         * The loop is conservative: it only registers simple physical table
+         * identifiers and lets the existing equality parser decide whether any
+         * predicate is strong enough to become FK-like evidence.
+         */
+        private static void extractMutationTables(String sql, Set<String> cteNames, List<TableRef> refs) {
+            addTableRefs(sql, cteNames, refs, UPDATE_TABLE);
+            addTableRefs(sql, cteNames, refs, DELETE_FROM_TABLE);
+            addTableRefs(sql, cteNames, refs, DELETE_USING_TABLE);
+        }
+
+        private static void addTableRefs(String sql, Set<String> cteNames, List<TableRef> refs, Pattern pattern) {
+            Matcher matcher = pattern.matcher(sql);
+            while (matcher.find()) {
+                String rawTable = matcher.group(1);
+                String schema = schemaName(rawTable);
+                String tableName = cleanTable(rawTable);
+                if (tableName.isBlank() || isCteName(tableName, cteNames)) {
+                    continue;
+                }
+                String alias = clean(matcher.group(2));
+                refs.add(new TableRef(matcher.start(), TableId.of(schema, tableName),
+                        !alias.isBlank() && !isKeyword(alias) ? alias : ""));
+            }
         }
 
         /**
@@ -782,7 +1183,7 @@ public final class SimpleSqlRelationParser {
                 return;
             }
             String block = matcher.group(1);
-            if (!block.contains(",") || block.toLowerCase(Locale.ROOT).contains(" join ")) {
+            if (!block.contains(",") || Pattern.compile("(?i)\\bjoin\\b").matcher(block).find()) {
                 return;
             }
             for (String part : block.split(",")) {
@@ -798,9 +1199,6 @@ public final class SimpleSqlRelationParser {
                 }
                 TableId table = TableId.of(schema, tableName);
                 String alias = tokens.length > 1 && !isKeyword(tokens[1]) ? clean(tokens[1]) : "";
-                if (isLikelyInputFilterTable(tableName, alias)) {
-                    continue;
-                }
                 refs.add(new TableRef(matcher.start(), table, alias));
             }
         }
@@ -816,6 +1214,58 @@ public final class SimpleSqlRelationParser {
         }
 
         record TableRef(int position, TableId table, String alias) {
+        }
+    }
+
+    /**
+     * Adds trigger pseudo-row aliases to the alias map for trigger bodies.
+     *
+     * <p>Trigger SQL can refer to the row being inserted/updated/deleted through
+     * pseudo aliases instead of ordinary FROM aliases:
+     *
+     * <pre>{@code
+     * CREATE TRIGGER orders_audit_after_insert
+     * AFTER INSERT ON orders
+     * FOR EACH ROW
+     * BEGIN
+     *   INSERT INTO order_audit(order_id, user_email)
+     *   SELECT NEW.id, u.email
+     *   FROM users u
+     *   WHERE u.id = NEW.user_id;
+     * END;
+     * }</pre>
+     *
+     * Without this mapping, {@code NEW.user_id} is not resolvable because there
+     * is no {@code FROM orders NEW}. The helper maps NEW/new and OLD/old to the
+     * trigger table captured from {@code CREATE TRIGGER ... ON orders}.
+     */
+    static final class TriggerPseudoRows {
+        private TriggerPseudoRows() {
+        }
+
+        static Map<String, TableId> addIfTrigger(StatementSourceType sourceType, String sql, Map<String, TableId> aliases) {
+            if (sourceType != StatementSourceType.TRIGGER) {
+                return aliases;
+            }
+            TableId triggerTable = triggerTable(sql);
+            if (triggerTable == null) {
+                return aliases;
+            }
+            java.util.LinkedHashMap<String, TableId> expanded = new java.util.LinkedHashMap<>(aliases);
+            expanded.put("NEW", triggerTable);
+            expanded.put("new", triggerTable);
+            expanded.put("OLD", triggerTable);
+            expanded.put("old", triggerTable);
+            return expanded;
+        }
+
+        private static TableId triggerTable(String sql) {
+            Matcher matcher = TRIGGER_ON_TABLE.matcher(sql);
+            if (!matcher.find()) {
+                return null;
+            }
+            String rawTable = matcher.group(1);
+            return TableId.of(schemaName(rawTable), cleanTable(rawTable));
         }
     }
 

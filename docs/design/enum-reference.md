@@ -151,7 +151,8 @@ public enum EvidenceType {
   COLUMN_TYPE_COMPATIBLE,
   VALUE_CONTAINMENT_HIGH,
   VALUE_OVERLAP_HIGH,
-  NEGATIVE_VALUE_MISMATCH
+  NEGATIVE_VALUE_MISMATCH,
+  REPEATED_OBSERVATION
 }
 ```
 
@@ -191,6 +192,7 @@ Evidence:
 | `SQL_LOG_SUBQUERY_IN` | SQL 日志中的 `IN` 子查询关系。 | 0.58 | 外层列出现在 `IN (SELECT ...)`。 |
 | `SQL_LOG_EXISTS` | SQL 日志中的 `EXISTS` 子查询关系。 | 0.58 | `EXISTS` 内部存在关联条件。 |
 | `SQL_LOG_TABLE_CO_OCCURRENCE` | SQL 日志中的表共现。 | 0.25 | 多表同 SQL 出现，但无可靠列关系。 |
+| `REPEATED_OBSERVATION` | 同一关系在同一证据类型/来源下重复出现后的派生加分。 | 0.00-0.10 | `RelationshipMerger` 发现同组 evidence 的 `count > 1`。 |
 
 例子：
 
@@ -211,6 +213,7 @@ RelationSubType: SUBQUERY_INFERRED_FK
 
 - 同样是 JOIN，来自 view 的 evidence 通常比来自日志的 evidence 更强，因为 view 更稳定。
 - 解析失败不要制造 evidence，应记录 `PARSE_WARNING`。
+- `REPEATED_OBSERVATION` 不由 SQL parser、DDL parser 或 adaptor 直接产生，只能由 core 归并阶段产生。它必须带 `attributes.count`、`attributes.maxScore`、`attributes.formula`、`attributes.baseEvidenceType`，用于解释递减增益和绝对上限。
 
 ### 5.3 命名和数据画像证据
 
@@ -226,6 +229,7 @@ RelationSubType: SUBQUERY_INFERRED_FK
 - `NAMING_MATCH` 不能单独生成强关系。
 - `VALUE_CONTAINMENT_HIGH` 是强辅助证据，但仍受采样限制，detail 必须写明样本规模。
 - `NEGATIVE_VALUE_MISMATCH` 是负向证据，会降低最终分数，而不是删除关系。
+- EvidenceType 的默认分值、定分理由、合并公式和完整 SQL 算例，以 [Phase 2：核心模型和评分详细设计](phase-02-core-model-scoring.md) 的“置信度计算”章节为准。维护枚举时必须同步检查该章节，避免 enum 文档和评分模型出现两套解释。
 
 ## 6. EvidenceSourceType
 
@@ -406,6 +410,8 @@ public enum WarningType {
 
 - warning 是“扫描还能继续”的问题。
 - 不可恢复错误应使用错误码退出，不要只给 warning。
+- 解析/提取失败应把原始失败 SQL/DDL 放入 `WarningMessage.attributes.rawStatement`；异常类型放入 `exceptionClass`，来源类型放入 `statementSourceType`。
+- parser 正常返回空关系不自动等价为 `PARSE_WARNING`，因为很多 SQL 不包含可用关系证据。
 - warning detail 不应包含 password 或采样到的真实业务值。
 
 ## 12. WarningSeverity
@@ -567,4 +573,3 @@ public enum ScanSourceKind {
 - 负向 evidence 不应变成 `RelationSubType`。
 - warning severity 不直接决定进程退出码。
 - 预留数据库类型没有 adaptor 时必须明确报错。
-

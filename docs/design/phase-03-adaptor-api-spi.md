@@ -11,6 +11,7 @@
 - adaptor 可以参与全链路扩展，但默认流程由 core 编排。
 - core 统一做候选关系归并、最终评分和输出。
 - adaptor 可以提供 evidence 权重修正，但不能绕过输出 evidence 的要求。
+- core 可以提供轻量 fallback parser，但明显属于某个数据库方言的 DDL、日志、对象定义差异应进入对应 adaptor。这样 MySQL、PostgreSQL、SQL Server、Oracle 后续可以独立演进，而不把所有语法分支堆进 core。
 
 ## DatabaseAdaptor 接口
 
@@ -63,6 +64,13 @@ public interface MetadataCollector {
 ```java
 public interface ObjectDefinitionCollector {
   List<DatabaseObjectDefinition> collect(Connection connection, ScanScope scope);
+
+  default List<DatabaseObjectDefinition> collect(
+      Connection connection,
+      ScanScope scope,
+      Consumer<WarningMessage> warnings) {
+    return collect(connection, scope);
+  }
 }
 ```
 
@@ -75,11 +83,24 @@ public interface ObjectDefinitionCollector {
 
 如果数据库账号权限不足，返回 warning，不终止扫描。
 
+实现建议：
+
+- 新 adaptor 应优先覆盖带 `warnings` 的重载。
+- 如果 routine/view/trigger 中某一类对象读取失败，应记录对应 warning code，而不是吞掉异常。
+- 已经读到的对象定义仍应返回，保持部分成功。
+
 ### SqlLogExtractor
 
 ```java
 public interface SqlLogExtractor {
   Stream<SqlStatementRecord> extract(Path file, LogFormatHint hint);
+
+  default Stream<SqlStatementRecord> extract(
+      Path file,
+      LogFormatHint hint,
+      Consumer<WarningMessage> warnings) {
+    return extract(file, hint);
+  }
 }
 ```
 
@@ -87,6 +108,29 @@ public interface SqlLogExtractor {
 
 - 数据库原生日志。
 - 清洗后的纯 SQL 文本。
+
+实现建议：
+
+- 文件级读取失败记录 `LOG_EXTRACT_FAILED`。
+- 如果 hint 是 `PLAIN_SQL`，可以委托 core 的纯 SQL extractor；该 extractor 会在读取失败时记录 `SQL_FILE_EXTRACT_FAILED`。
+- 对于原生日志，最好保留每条 SQL 的 `sourceName`、`startLine`、`endLine`，以便后续 SQL parser 抛异常时能把原始语句写入 warning。
+
+### AdaptorContext 诊断通道
+
+```java
+public record AdaptorContext(
+    ScanScope scope,
+    Map<String, Object> options,
+    Consumer<WarningMessage> warningSink) {
+  public void warn(WarningMessage warning) { ... }
+}
+```
+
+用途：
+
+- DDL parser、SQL parser、adaptor 私有预处理器可以在局部失败时调用 `context.warn(...)`。
+- warning 最终进入 `ScanResult.warnings`，并由 JSON/table writer 输出。
+- `rawStatement` 应放在 `warning.attributes.rawStatement`，不要只拼在 message 字符串里。
 
 ## 解析器接口
 
@@ -99,6 +143,14 @@ public interface DdlParser {
 ```
 
 DDL parser 可以直接产生 evidence，也可以产生 metadata-like 结构，再交给 core 转换。
+
+方言拆分规则：
+
+- `relation-core` 的 `SimpleDdlParser` 只作为保守 fallback，处理通用 FK、inline references、PK、unique 和普通 index。
+- `adaptor-mysql` 暴露 `MySqlDdlParser`。MySQL 专属写法，例如反引号标识符、`KEY`/`INDEX` 选项、prefix index、invisible index、storage engine/table options、`SHOW CREATE TABLE` 格式，应在这里处理。
+- `adaptor-postgres` 暴露 `PostgresDdlParser`。PostgreSQL 专属写法，例如 `ALTER TABLE ONLY`、`NOT VALID`、`CREATE INDEX CONCURRENTLY/IF NOT EXISTS`、`INCLUDE`、partial/expression index、opclass、partition/inheritance，应在这里处理。
+- adaptor parser 的输出仍必须是统一的 `RelationshipCandidate` 和 `Evidence`，不能绕过 core 的合并与置信度计算。
+- 方言 parser 应有自己的单元测试，并包含“core fallback 不识别该方言私有写法，但 adaptor parser 识别”的隔离用例。这样可以证明某个数据库的语法增强不会悄悄改变其他数据库的解析行为。
 
 ### SqlRelationParser
 
@@ -115,6 +167,11 @@ public interface SqlRelationParser {
 - `EXISTS` 关系。
 - 表共现关系。
 - 解析失败 warning。
+
+当前实现边界：
+
+- `ScanEngine` 会包装每次 `SqlRelationParser.parse(...)` 调用；如果 parser 抛异常，会生成 `SQL_PARSE_FAILED`，并把原始 SQL 放入 `attributes.rawStatement`。
+- parser 正常返回空列表不自动等价为失败，因为很多 SQL 本来就不包含表关系证据。
 
 ## 数据画像接口
 

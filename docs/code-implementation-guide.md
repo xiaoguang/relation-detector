@@ -71,6 +71,7 @@ relation-detector/
 - `ScanEngine.java`
 - `RelationshipMerger.java`
 - `ConfidenceCalculator.java`
+- `DiagnosticWarnings.java`
 - `SimpleSqlRelationParser.java`
 - `SqlLineageResolver.java`
 - `SimpleDdlParser.java`
@@ -97,8 +98,11 @@ relation-detector/
 - `RelationshipMerger` 负责 `relationSubType` 主导证据优先级。
 - `SimpleSqlRelationParser` 是轻量实现，后续可替换为 JSqlParser 版本，但输出仍应是 `RelationshipCandidate`。
 - `SqlLineageResolver` 为 `SimpleSqlRelationParser` 提供保守列血缘映射，支持 CTE、派生表和多层嵌套查询中的简单列投影回溯。
-- `SimpleDdlParser` 把显式 FK/inline references 作为强关系证据，把 PK/unique/source index 作为已有 FK 的辅助 evidence；partial、expression、functional、prefix index 默认不作为全局唯一或全列索引证据。
+- `SimpleDdlParser` 把显式 FK/inline references 作为强关系证据，把 PK/unique/source index 作为已有 FK 的辅助 evidence；它现在定位为 core fallback。MySQL/PostgreSQL 明显不同的 DDL 写法应进入 `MySqlDdlParser` / `PostgresDdlParser`，再委托或补充 fallback 结果。
+- `MySqlDdlParser` 是 MySQL adaptor 的 DDL 入口。它先做 MySQL 私有归一化，例如 `CREATE UNIQUE INDEX ... USING BTREE ON ... INVISIBLE`，再委托 fallback；后续继续承接反引号、`KEY`/`INDEX` 选项、prefix/invisible index、storage engine/table options、`SHOW CREATE TABLE` 等 MySQL 差异。
+- `PostgresDdlParser` 是 PostgreSQL adaptor 的 DDL 入口。它先做 PostgreSQL 私有归一化，例如 `CREATE INDEX ... ON ONLY ...`，再委托 fallback；后续继续承接 `ALTER TABLE ONLY`、`NOT VALID`、`INCLUDE`、partial/expression index、opclass、partition/inheritance 等 PostgreSQL 差异。
 - `JsonResultWriter` 当前手写 JSON，后续可替换为 Jackson，但字段结构应保持兼容。
+- `DiagnosticWarnings` 集中构造解析/提取失败 warning。`ScanEngine`、DDL parser、log extractor 不应各自拼装不同格式；失败时应保留 `exceptionClass`，并在能拿到输入文本时把原始 SQL/DDL 放入 `attributes.rawStatement`。
 
 ### 2.3 relation-cli
 
@@ -211,8 +215,37 @@ data profile         -> VALUE_OVERLAP_HIGH / VALUE_CONTAINMENT_HIGH
 - relationType。
 - relationSubType。
 - confidence。
-- evidence list。
+- rawEvidence list：归并前的完整证据审计轨迹，每一次日志、对象、DDL 或画像命中都保留。
+- evidence list：归并后的摘要证据，用于 confidence 计算；重复证据会带 `count`、`sampleDetails`，并通过 `REPEATED_OBSERVATION` 表示最多 0.10 的递减增益。
 - warning list。
+
+扫描级 warning 会进入顶层 `warnings`：
+
+```json
+{
+  "type": "PARSE_WARNING",
+  "severity": "WARN",
+  "code": "SQL_PARSE_FAILED",
+  "message": "synthetic sql failure",
+  "source": "procedures.sql",
+  "line": 1,
+  "attributes": {
+    "statementSourceType": "PROCEDURE",
+    "endLine": 3,
+    "exceptionClass": "IllegalArgumentException",
+    "rawStatement": "CREATE PROCEDURE rebuild_orders() BEGIN SELECT ... END"
+  }
+}
+```
+
+诊断规则：
+
+- DDL parser 抛异常或 DDL 文件读取失败：`DDL_PARSE_FAILED`。
+- SQL parser 处理 procedure/function/view/trigger/log/plain SQL 时抛异常：`SQL_PARSE_FAILED`。
+- 普通 SQL/object 文件读取或切分失败：`SQL_FILE_EXTRACT_FAILED`。
+- 数据库原生日志读取或抽取失败：`LOG_EXTRACT_FAILED`。
+- MySQL/PostgreSQL 对象定义读取失败：对应 `MYSQL_*_COLLECT_FAILED` 或 `POSTGRES_*_COLLECT_FAILED`。
+- parser 返回空关系不是失败；例如没有 JOIN/IN/EXISTS 的过滤 SQL 可以没有 warning。
 
 ## 4. 运维示例：从构建到输出
 
@@ -407,6 +440,7 @@ sources:
 - JOIN `orders.user_id = users.id` 输出列级 `FK_LIKE`。
 - `FROM users, audit_logs` 无连接条件时输出 `CO_OCCURRENCE`。
 - `IN (SELECT ...)` 输出 `SUBQUERY_INFERRED_FK`。
+- 重复 SQL 日志 JOIN 输出两份证据：`rawEvidence` 保留每次观测，`evidence` 聚合为一条基础 evidence 加一条 `REPEATED_OBSERVATION`。
 - YAML 中环境变量缺失时报错。
 - unknown adaptor 报 `ADAPTOR_ERROR`。
 
@@ -474,6 +508,7 @@ PostgreSQL：
 回归测试策略：
 
 - JSON snapshot 测试字段兼容性。
+- JSON evidence 输出测试：`rawEvidence` 是未压缩数组，`evidence` 是摘要数组，`attributes.count` 为数字，`attributes.sampleDetails` 为数组。
 - enum 序列化值稳定性测试。
 - warning code 稳定性测试。
 - 置信度数值允许小范围精度变化，但 subtype 和 evidence 不应无故改变。

@@ -127,14 +127,53 @@ output:
   "relationType": "FK_LIKE",
   "relationSubType": "PROFILE_SUPPORTED_FK",
   "confidence": 0.91,
+  "rawEvidence": [
+    {
+      "type": "SQL_LOG_JOIN",
+      "sourceType": "NATIVE_LOG",
+      "score": 0.55,
+      "source": "mysql-slow-log",
+      "detail": "line 10: o.user_id = u.id",
+      "attributes": {}
+    },
+    {
+      "type": "SQL_LOG_JOIN",
+      "sourceType": "NATIVE_LOG",
+      "score": 0.55,
+      "source": "mysql-slow-log",
+      "detail": "line 38: o.user_id = u.id",
+      "attributes": {}
+    }
+  ],
   "evidence": [
     {
       "type": "SQL_LOG_JOIN",
+      "sourceType": "NATIVE_LOG",
       "score": 0.55,
       "source": "mysql-slow-log",
-      "detail": "JOIN orders.user_id = users.id appeared 143 times",
+      "detail": "line 10: o.user_id = u.id",
       "attributes": {
-        "count": 143
+        "count": 2,
+        "firstDetail": "line 10: o.user_id = u.id",
+        "lastDetail": "line 38: o.user_id = u.id",
+        "sampleDetails": [
+          "line 10: o.user_id = u.id",
+          "line 38: o.user_id = u.id"
+        ],
+        "sampleTruncated": false
+      }
+    },
+    {
+      "type": "REPEATED_OBSERVATION",
+      "sourceType": "NATIVE_LOG",
+      "score": 0.05,
+      "source": "mysql-slow-log",
+      "detail": "Repeated SQL_LOG_JOIN observed 2 times",
+      "attributes": {
+        "count": 2,
+        "maxScore": "0.10",
+        "formula": "maxScore * (1 - 1 / count)",
+        "baseEvidenceType": "SQL_LOG_JOIN"
       }
     }
   ],
@@ -146,7 +185,9 @@ output:
 
 - `confidence` 保留两位或四位小数，内部计算用高精度。
 - 表级关系的 `column` 为 `null`。
-- `evidence` 默认输出，除非用户关闭。
+- `rawEvidence` 默认输出，除非用户关闭 evidence；它保留归并前每一次观测，适合审计、排错和回放。
+- `evidence` 默认输出，除非用户关闭 evidence；它保留归并后的摘要证据，并参与最终 confidence 计算。
+- 重复观测不会把同一个基础分无限叠加；摘要 evidence 记录 `count` 和样本 detail，并额外使用 `REPEATED_OBSERVATION` 表示最多 0.10 的递减增益。
 - 输出字段保持稳定，后续新增字段应向后兼容。
 
 ## Table 输出
@@ -188,6 +229,50 @@ warning 字段：
 - source。
 - line。
 - severity。
+- attributes：结构化诊断属性，默认 `{}`。
+
+解析/提取失败时，`attributes` 应尽量包含：
+
+- `rawStatement`：原始无法解析或抛错的 SQL/DDL 文本。对于 DDL 文件，通常是整个 DDL 文件内容；对于 SQL 日志、函数、过程、视图、触发器，通常是当前被投喂给 SQL parser 的那条语句。
+- `statementSourceType`：语句来源，例如 `PROCEDURE`、`FUNCTION`、`VIEW`、`TRIGGER`、`NATIVE_LOG`、`PLAIN_SQL`。
+- `endLine`：语句结束行。`line` 字段保留开始行。
+- `exceptionClass`：异常类短名，例如 `IllegalArgumentException`、`NoSuchFileException`。
+- `statementAttributes`：可选，来自 `SqlStatementRecord.attributes` 的对象上下文，例如 `{ "objectType": "PROCEDURE", "schema": "shop", "name": "rebuild_orders" }`。
+
+示例：
+
+```json
+{
+  "type": "PARSE_WARNING",
+  "severity": "WARN",
+  "code": "SQL_PARSE_FAILED",
+  "message": "unsupported tuple predicate",
+  "source": "routines.sql",
+  "line": 12,
+  "attributes": {
+    "statementSourceType": "PROCEDURE",
+    "endLine": 26,
+    "exceptionClass": "IllegalArgumentException",
+    "rawStatement": "CREATE PROCEDURE rebuild_orders() BEGIN SELECT ... END"
+  }
+}
+```
+
+当前稳定 warning code：
+
+- `DDL_PARSE_FAILED`：DDL parser 抛异常或 DDL 文件读取失败。
+- `SQL_PARSE_FAILED`：单条 SQL、过程、函数、视图、触发器或日志语句进入关系 parser 后抛异常。
+- `SQL_FILE_EXTRACT_FAILED`：普通 SQL/object 文件读取或切分失败。
+- `LOG_EXTRACT_FAILED`：数据库原生日志读取或抽取失败。
+- `OBJECT_DEFINITION_COLLECT_FAILED`：数据库对象定义整体收集失败。
+- `MYSQL_ROUTINE_COLLECT_FAILED`、`MYSQL_VIEW_COLLECT_FAILED`、`MYSQL_TRIGGER_COLLECT_FAILED`：MySQL 对象定义部分收集失败。
+- `POSTGRES_FUNCTION_COLLECT_FAILED`、`POSTGRES_VIEW_COLLECT_FAILED`：PostgreSQL 对象定义部分收集失败。
+
+边界：
+
+- “没有识别出关系”不一定是解析失败。例如一条纯过滤 SQL 没有 JOIN/IN/EXISTS 关系时，可以没有 warning。
+- warning 不产生 evidence，也不参与 confidence 计算；它只告诉运维人员哪些输入没有被完整消费。
+- `rawStatement` 可能很长，适合用于审计和排错；后续如果输出体积成为问题，可以新增截断策略，但默认必须优先保留可诊断性。
 
 严重程度：
 

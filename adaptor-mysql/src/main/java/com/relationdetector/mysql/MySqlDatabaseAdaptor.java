@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import com.relationdetector.api.AdaptorContext;
@@ -24,6 +25,7 @@ import com.relationdetector.api.Collectors.SqlLogExtractor;
 import com.relationdetector.api.Collectors.SqlRelationParser;
 import com.relationdetector.api.DatabaseAdaptor;
 import com.relationdetector.api.DatabaseObjectDefinition;
+import com.relationdetector.api.DefaultEvidenceScores;
 import com.relationdetector.api.Endpoint;
 import com.relationdetector.api.Evidence;
 import com.relationdetector.api.IdentifierRules;
@@ -44,8 +46,8 @@ import com.relationdetector.api.Enums.RelationSubType;
 import com.relationdetector.api.Enums.RelationType;
 import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
+import com.relationdetector.core.DiagnosticWarnings;
 import com.relationdetector.core.PlainSqlLogExtractor;
-import com.relationdetector.core.SimpleDdlParser;
 import com.relationdetector.core.SimpleSqlRelationParser;
 
 /** MySQL 5.7/8.0 adaptor implementing the Phase 4 design. */
@@ -101,7 +103,7 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
 
     @Override
     public DdlParser ddlParser() {
-        return (file, context) -> new SimpleDdlParser().parse(file);
+        return new MySqlDdlParser();
     }
 
     @Override
@@ -262,7 +264,7 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
                          * can reserve absolute certainty for verified/locked sources
                          * if the product later needs that distinction.
                          */
-                        candidate.evidence().add(Evidence.of(EvidenceType.METADATA_FOREIGN_KEY, 0.98d,
+                        candidate.evidence().add(Evidence.of(EvidenceType.METADATA_FOREIGN_KEY, DefaultEvidenceScores.METADATA_FOREIGN_KEY,
                                 EvidenceSourceType.METADATA, "information_schema.KEY_COLUMN_USAGE",
                                 rs.getString("CONSTRAINT_NAME")));
                         snapshot.relationships().add(candidate);
@@ -278,14 +280,29 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
     static final class MySqlObjectCollector implements ObjectDefinitionCollector {
         @Override
         public List<DatabaseObjectDefinition> collect(Connection connection, ScanScope scope) {
+            return collect(connection, scope, warning -> {
+            });
+        }
+
+        @Override
+        public List<DatabaseObjectDefinition> collect(
+                Connection connection,
+                ScanScope scope,
+                Consumer<WarningMessage> warnings
+        ) {
             List<DatabaseObjectDefinition> definitions = new ArrayList<>();
-            collectRoutines(connection, scope, definitions);
-            collectViews(connection, scope, definitions);
-            collectTriggers(connection, scope, definitions);
+            collectRoutines(connection, scope, definitions, warnings);
+            collectViews(connection, scope, definitions, warnings);
+            collectTriggers(connection, scope, definitions, warnings);
             return definitions;
         }
 
-        private void collectRoutines(Connection connection, ScanScope scope, List<DatabaseObjectDefinition> definitions) {
+        private void collectRoutines(
+                Connection connection,
+                ScanScope scope,
+                List<DatabaseObjectDefinition> definitions,
+                Consumer<WarningMessage> warnings
+        ) {
             String sql = """
                     SELECT ROUTINE_SCHEMA, ROUTINE_NAME, ROUTINE_TYPE, ROUTINE_DEFINITION
                     FROM information_schema.ROUTINES
@@ -302,12 +319,20 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
                                 rs.getString("ROUTINE_NAME"), rs.getString("ROUTINE_DEFINITION"), "information_schema.ROUTINES"));
                     }
                 }
-            } catch (Exception ignored) {
-                // Missing routine privileges are common in production; metadata scan can continue.
+            } catch (Exception ex) {
+                // Missing routine privileges are common in production; keep scanning
+                // but expose the loss of procedure/function SQL to operators.
+                warnings.accept(DiagnosticWarnings.objectCollectFailed(
+                        "MYSQL_ROUTINE_COLLECT_FAILED", "information_schema.ROUTINES", ex));
             }
         }
 
-        private void collectViews(Connection connection, ScanScope scope, List<DatabaseObjectDefinition> definitions) {
+        private void collectViews(
+                Connection connection,
+                ScanScope scope,
+                List<DatabaseObjectDefinition> definitions,
+                Consumer<WarningMessage> warnings
+        ) {
             String sql = "SELECT TABLE_SCHEMA, TABLE_NAME, VIEW_DEFINITION FROM information_schema.VIEWS WHERE TABLE_SCHEMA = ?";
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, scope.schema());
@@ -317,11 +342,18 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
                                 rs.getString("TABLE_NAME"), rs.getString("VIEW_DEFINITION"), "information_schema.VIEWS"));
                     }
                 }
-            } catch (Exception ignored) {
+            } catch (Exception ex) {
+                warnings.accept(DiagnosticWarnings.objectCollectFailed(
+                        "MYSQL_VIEW_COLLECT_FAILED", "information_schema.VIEWS", ex));
             }
         }
 
-        private void collectTriggers(Connection connection, ScanScope scope, List<DatabaseObjectDefinition> definitions) {
+        private void collectTriggers(
+                Connection connection,
+                ScanScope scope,
+                List<DatabaseObjectDefinition> definitions,
+                Consumer<WarningMessage> warnings
+        ) {
             String sql = "SELECT TRIGGER_SCHEMA, TRIGGER_NAME, ACTION_STATEMENT FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = ?";
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, scope.schema());
@@ -331,7 +363,9 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
                                 rs.getString("TRIGGER_NAME"), rs.getString("ACTION_STATEMENT"), "information_schema.TRIGGERS"));
                     }
                 }
-            } catch (Exception ignored) {
+            } catch (Exception ex) {
+                warnings.accept(DiagnosticWarnings.objectCollectFailed(
+                        "MYSQL_TRIGGER_COLLECT_FAILED", "information_schema.TRIGGERS", ex));
             }
         }
     }
@@ -339,8 +373,18 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
     static final class MySqlLogExtractor implements SqlLogExtractor {
         @Override
         public Stream<SqlStatementRecord> extract(Path file, LogFormatHint hint) {
+            return extract(file, hint, warning -> {
+            });
+        }
+
+        @Override
+        public Stream<SqlStatementRecord> extract(
+                Path file,
+                LogFormatHint hint,
+                Consumer<WarningMessage> warnings
+        ) {
             if (hint == LogFormatHint.PLAIN_SQL) {
-                return new PlainSqlLogExtractor().extract(file, StatementSourceType.PLAIN_SQL);
+                return new PlainSqlLogExtractor().extract(file, StatementSourceType.PLAIN_SQL, warnings);
             }
             try {
                 List<SqlStatementRecord> records = new ArrayList<>();
@@ -372,6 +416,7 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
                 }
                 return records.stream();
             } catch (Exception ex) {
+                warnings.accept(DiagnosticWarnings.logExtractFailed(file, ex));
                 return Stream.empty();
             }
         }

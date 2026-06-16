@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.relationdetector.api.ColumnRef;
+import com.relationdetector.api.DefaultEvidenceScores;
 import com.relationdetector.api.Endpoint;
 import com.relationdetector.api.Evidence;
 import com.relationdetector.api.RelationshipCandidate;
@@ -42,6 +43,32 @@ import com.relationdetector.api.Enums.RelationType;
  */
 public final class SimpleDdlParser {
     /*
+     * DDL object identifier fragment used by the regexes below.
+     *
+     * Complete SQL examples this fragment must match:
+     *   CREATE TABLE public.orders (...);
+     *   CREATE TABLE "sales"."orders" (...);
+     *   CREATE TABLE `shop`.`orders` (...);
+     *
+     * The parser normalizes only the last two parts into schema/table. It does
+     * not try to interpret database/catalog names beyond keeping the final
+     * schema-qualified relation stable for comparison.
+     */
+    private static final String IDENTIFIER =
+            "(?:`[^`]+`|\"[^\"]+\"|[\\w$]+)(?:\\s*\\.\\s*(?:`[^`]+`|\"[^\"]+\"|[\\w$]+))*";
+
+    /*
+     * Index names are not converted into model objects, but they still need to
+     * be skipped correctly so the parser can reach the ON <table> clause.
+     *
+     * Complete SQL examples:
+     *   CREATE INDEX idx_orders_user_id ON orders(user_id);
+     *   CREATE INDEX "idx orders user" ON orders(user_id);
+     *   CREATE INDEX `idx-orders-user` ON orders(user_id);
+     */
+    private static final String INDEX_NAME = "(?:`[^`]+`|\"[^\"]+\"|[\\w$.-]+)";
+
+    /*
      * CREATE TABLE may contain quoted schema-qualified identifiers:
      *   CREATE TABLE orders (
      *     id BIGINT PRIMARY KEY
@@ -60,7 +87,8 @@ public final class SimpleDdlParser {
      *   )
      */
     private static final Pattern CREATE_TABLE = Pattern.compile(
-            "(?is)\\bcreate\\s+(?:temporary\\s+|unlogged\\s+)?table\\s+(?:if\\s+not\\s+exists\\s+)?([`\"\\w.]+)\\s*\\(");
+            "(?is)\\bcreate\\s+(?:temporary\\s+|unlogged\\s+)?table\\s+(?:if\\s+not\\s+exists\\s+)?("
+                    + IDENTIFIER + ")\\s*\\(");
 
     /*
      * ALTER TABLE ... ADD ... FOREIGN KEY ... REFERENCES ...
@@ -72,9 +100,14 @@ public final class SimpleDdlParser {
      *   ALTER TABLE orders
      *     ADD CONSTRAINT fk_orders_users
      *     FOREIGN KEY (user_id) REFERENCES users(id)
+     *
+     *   ALTER TABLE ONLY public.orders
+     *     ADD CONSTRAINT fk_orders_users
+     *     FOREIGN KEY (user_id) REFERENCES public.users(id) NOT VALID
      */
     private static final Pattern ALTER_TABLE = Pattern.compile(
-            "(?is)\\balter\\s+table\\s+(?:if\\s+exists\\s+)?([`\"\\w.]+)\\s+(.+)");
+            "(?is)\\balter\\s+table\\s+(?:if\\s+exists\\s+)?(?:only\\s+)?("
+                    + IDENTIFIER + ")\\s+(.+)");
 
     /*
      * Table-level FK. The optional CONSTRAINT name is deliberately allowed
@@ -88,7 +121,8 @@ public final class SimpleDdlParser {
      *   )
      */
     private static final Pattern TABLE_FK = Pattern.compile(
-            "(?is)(?:constraint\\s+[`\"\\w\\s]+\\s+)?foreign\\s+key\\s*\\(([^)]+)\\)\\s+references\\s+([`\"\\w.]+)\\s*\\(([^)]+)\\)");
+            "(?is)(?:constraint\\s+(?:`[^`]+`|\"[^\"]+\"|[\\w$.-]+)\\s+)?foreign\\s+key\\s*\\(([^)]+)\\)\\s+references\\s+("
+                    + IDENTIFIER + ")\\s*\\(([^)]+)\\)");
 
     /*
      * Inline REFERENCES inside a column definition:
@@ -97,7 +131,7 @@ public final class SimpleDdlParser {
      *   )
      */
     private static final Pattern INLINE_REFERENCES = Pattern.compile(
-            "(?is)\\breferences\\s+([`\"\\w.]+)\\s*\\(([^)]+)\\)");
+            "(?is)\\breferences\\s+(" + IDENTIFIER + ")\\s*\\(([^)]+)\\)");
 
     /*
      * PostgreSQL/MySQL CREATE INDEX forms. The WHERE tail is retained in group
@@ -107,9 +141,13 @@ public final class SimpleDdlParser {
      *   CREATE INDEX idx_orders_user_id ON orders(user_id)
      *   CREATE UNIQUE INDEX users_email_uq ON users(email)
      *   CREATE UNIQUE INDEX users_email_active_uq ON users(email) WHERE deleted_at IS NULL
+     *   CREATE UNIQUE INDEX IF NOT EXISTS users_email_uq ON public.users USING btree (email)
+     *   CREATE UNIQUE INDEX users_email_cover_uq ON users(email) INCLUDE (id)
      */
     private static final Pattern CREATE_INDEX = Pattern.compile(
-            "(?is)\\bcreate\\s+(unique\\s+)?index\\s+(?:concurrently\\s+)?[`\"\\w]+\\s+on\\s+([`\"\\w.]+)(?:\\s+using\\s+\\w+)?\\s*\\((.+?)\\)\\s*(where\\b.*)?$");
+            "(?is)\\bcreate\\s+(unique\\s+)?index\\s+(?:concurrently\\s+)?(?:if\\s+not\\s+exists\\s+)?"
+                    + INDEX_NAME + "\\s+on\\s+(" + IDENTIFIER
+                    + ")(?:\\s+using\\s+\\w+)?\\s*\\((.*?)\\)\\s*(?:include\\s*\\([^)]*\\)\\s*)?(where\\b.*)?$");
 
     /**
      * File-based entry point used by DatabaseAdaptor.ddlParser().
@@ -345,7 +383,7 @@ public final class SimpleDdlParser {
                     Endpoint.column(source), Endpoint.column(target),
                     RelationType.FK_LIKE, RelationSubType.DDL_DECLARED_FK);
             candidate.evidence().add(new Evidence(EvidenceType.DDL_FOREIGN_KEY,
-                    java.math.BigDecimal.valueOf(0.90d),
+                    java.math.BigDecimal.valueOf(DefaultEvidenceScores.DDL_FOREIGN_KEY),
                     EvidenceSourceType.DDL_FILE,
                     state.source(),
                     "DDL foreign key",
@@ -442,6 +480,7 @@ public final class SimpleDdlParser {
      * <pre>{@code
      * CREATE UNIQUE INDEX users_email_expr_uq ON users((lower(email)))
      * CREATE INDEX idx_orders_email_prefix ON orders(user_email(10))
+     * CREATE INDEX `idx-orders-email-prefix` ON orders(`user_email`(10))
      * }</pre>
      */
     private IndexPart parseIndexPart(String rawPart) {
@@ -461,30 +500,51 @@ public final class SimpleDdlParser {
             return new IndexPart("", false);
         }
 
-        String column = firstIdentifier(part);
+        int identifierEnd = firstIdentifierEnd(part);
+        String column = identifierEnd > 0 ? clean(part.substring(0, identifierEnd)) : "";
         if (column.isBlank()) {
             return new IndexPart("", false);
         }
-        String afterColumn = part.substring(part.indexOf(column) + column.length()).stripLeading().toLowerCase(Locale.ROOT);
+        String afterColumn = part.substring(identifierEnd).stripLeading().toLowerCase(Locale.ROOT);
         boolean prefixIndex = afterColumn.startsWith("(");
         return new IndexPart(column, !prefixIndex);
     }
 
     private String firstIdentifier(String text) {
+        int end = firstIdentifierEnd(text);
+        return end == 0 ? "" : clean(text.stripLeading().substring(0, end));
+    }
+
+    /**
+     * Returns the raw character length of the first identifier in stripped text.
+     *
+     * <p>Called by firstIdentifier() and parseIndexPart(). parseIndexPart()
+     * needs the raw end position, not only the cleaned column name, because a
+     * quoted prefix index keeps the prefix length after the quote:
+     *
+     * <pre>{@code
+     * KEY `idx-orders-email-prefix` (`user_email`(10))
+     * }</pre>
+     *
+     * The raw identifier is {@code `user_email`}; the following {@code (10)}
+     * marks a MySQL prefix index and must not become SOURCE_INDEX evidence for
+     * the full column.
+     */
+    private int firstIdentifierEnd(String text) {
         String trimmed = text.stripLeading();
         if (trimmed.isBlank()) {
-            return "";
+            return 0;
         }
         char first = trimmed.charAt(0);
         if (first == '`' || first == '"') {
             int end = trimmed.indexOf(first, 1);
-            return end > 0 ? clean(trimmed.substring(0, end + 1)) : "";
+            return end > 0 ? end + 1 : 0;
         }
         int end = 0;
         while (end < trimmed.length() && isIdentifierPart(trimmed.charAt(end))) {
             end++;
         }
-        return end == 0 ? "" : clean(trimmed.substring(0, end));
+        return end;
     }
 
     /**
@@ -711,11 +771,11 @@ public final class SimpleDdlParser {
                 ColumnKey sourceKey = ColumnKey.of(candidate.source().table(), candidate.source().column().columnName());
                 ColumnKey targetKey = ColumnKey.of(candidate.target().table(), candidate.target().column().columnName());
                 if (sourceIndexes.contains(sourceKey)) {
-                    candidate.evidence().add(Evidence.of(EvidenceType.SOURCE_INDEX, 0.08d,
+                    candidate.evidence().add(Evidence.of(EvidenceType.SOURCE_INDEX, DefaultEvidenceScores.SOURCE_INDEX,
                             EvidenceSourceType.DDL_FILE, source, "DDL source-side index"));
                 }
                 if (targetUnique.contains(targetKey)) {
-                    candidate.evidence().add(Evidence.of(EvidenceType.TARGET_UNIQUE, 0.12d,
+                    candidate.evidence().add(Evidence.of(EvidenceType.TARGET_UNIQUE, DefaultEvidenceScores.TARGET_UNIQUE,
                             EvidenceSourceType.DDL_FILE, source, "DDL target-side primary/unique key"));
                 }
             }

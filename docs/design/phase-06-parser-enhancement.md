@@ -301,14 +301,103 @@ evidence: SQL_LOG_EXISTS
 - 从 EXISTS 内部 WHERE 等值条件识别列关系。
 - 方向仍按 metadata、命名、唯一性判断。
 
+## 多列 tuple comparison
+
+支持纯列引用组成的 tuple equality：
+
+```sql
+SELECT *
+FROM orders o
+JOIN users u
+  ON (o.tenant_id, o.user_id) = (u.tenant_id, u.id);
+```
+
+输出：
+
+```text
+orders.tenant_id -> users.tenant_id
+orders.user_id   -> users.id
+evidence: SQL_LOG_JOIN
+```
+
+规则：
+
+- tuple 两侧列数量必须一致。
+- 每一项必须是简单 `alias.column`，表达式、函数、`alias.*` 不处理。
+- 如果某一个列对能明确方向，例如 `o.user_id -> u.id`，则整个 tuple 按该方向对齐输出。
+- 如果方向冲突或无法从任何列对判断方向，不输出列级 FK-like。
+
+支持纯列引用组成的 tuple `IN`：
+
+```sql
+SELECT *
+FROM orders o
+WHERE (o.tenant_id, o.user_id) IN (
+  SELECT u.tenant_id, u.id
+  FROM users u
+);
+```
+
+输出：
+
+```text
+orders.tenant_id -> users.tenant_id
+orders.user_id   -> users.id
+evidence: SQL_LOG_SUBQUERY_IN
+```
+
+规则：
+
+- 外层 tuple 为 source。
+- 子查询 SELECT tuple 为 target。
+- tuple 列数量不一致或出现表达式时跳过。
+
+## UPDATE FROM 和 DELETE USING
+
+支持 PostgreSQL 风格写法：
+
+```sql
+UPDATE orders o
+SET status = 'PAID'
+FROM users u
+WHERE o.user_id = u.id;
+```
+
+```sql
+DELETE FROM orders o
+USING users u
+WHERE o.user_id = u.id;
+```
+
+输出：
+
+```text
+orders.user_id -> users.id
+evidence: SQL_LOG_JOIN
+```
+
+规则：
+
+- `UPDATE <table> [alias]`、`DELETE FROM <table> [alias]`、`USING <table> [alias]` 都进入 alias map；有 alias 和无 alias 的写法都支持。
+- 关系识别仍由现有 equality parser 判断，不因为语句是写操作而自动生成关系。
+- 当前只覆盖简单物理表名；复杂 CTE write、`RETURNING` lineage、`MERGE` 仍属于边界。
+
 ## DDL 解析
+
+`SimpleDdlParser` 是 core fallback parser，不是所有数据库方言的最终归宿。它负责识别跨数据库较稳定的 DDL 形态，并保持保守输出。已经确认属于 MySQL 或 PostgreSQL 的复杂差异，应优先放到 `MySqlDdlParser` 或 `PostgresDdlParser` 中，再统一输出 `RelationshipCandidate` / `Evidence`。
 
 支持：
 
 - `CREATE TABLE` 内联 PK/FK/unique。
 - `ALTER TABLE ... ADD CONSTRAINT`。
+- PostgreSQL `ALTER TABLE ONLY ... ADD CONSTRAINT ... FOREIGN KEY ... REFERENCES ... NOT VALID`。
 - `CREATE INDEX`。
 - `CREATE UNIQUE INDEX`。
+- PostgreSQL `CREATE UNIQUE INDEX IF NOT EXISTS ... ON ... USING btree (...)`。
+- PostgreSQL `CREATE UNIQUE INDEX ... ON ONLY ...` 由 `PostgresDdlParser` 归一化后进入 fallback。
+- PostgreSQL covering unique index：`CREATE UNIQUE INDEX ... ON users(email) INCLUDE (id)`，只把 key column `email` 作为唯一证据，`INCLUDE` 列不参与关系推断。
+- MySQL 反引号表名、索引名、约束名、`USING BTREE`、表选项和 `ON DELETE` / `ON UPDATE` referential actions。
+- MySQL `CREATE UNIQUE INDEX ... USING BTREE ON ... VISIBLE/INVISIBLE` 由 `MySqlDdlParser` 归一化后进入 fallback。
 
 DDL evidence：
 
@@ -344,8 +433,10 @@ compositeSize: 2
 辅助置信度证据：
 
 - source 侧普通全列索引：`INDEX idx_orders_user_id (user_id)` 生成 `SOURCE_INDEX`。
+- source 侧 MySQL 普通全列索引：`` KEY `idx-orders-user` (`user_id`) USING BTREE `` 生成 `SOURCE_INDEX`。
 - target 侧 `PRIMARY KEY` 生成 `TARGET_UNIQUE`。
 - target 侧 full unique constraint/index 生成 `TARGET_UNIQUE`。
+- target 侧 PostgreSQL non-partial covering unique index：`CREATE UNIQUE INDEX ... ON accounts(account_no) INCLUDE (id)` 生成 `TARGET_UNIQUE(account_no)`。
 
 这些辅助 evidence 只会附加到已经存在的 FK candidate 上，不会单独生成关系。
 
@@ -353,7 +444,7 @@ compositeSize: 2
 
 - PostgreSQL partial index：`CREATE UNIQUE INDEX ... WHERE deleted_at IS NULL`。
 - expression/functional index：`CREATE UNIQUE INDEX ... ON users ((lower(email)))`。
-- MySQL prefix index：`KEY idx_email (email(10))`。
+- MySQL prefix index：`KEY idx_email (email(10))` 或 `` KEY `idx-email` (`email`(10)) ``。
 
 原因：
 
@@ -404,19 +495,29 @@ evidence: SQL_LOG_TABLE_CO_OCCURRENCE
 单条 SQL/DDL 解析失败：
 
 - 记录 warning。
-- 保留来源文件、行号、摘要。
+- 保留来源文件、开始行号、结束行号。
+- 在可取得输入文本时，保留原始失败 SQL/DDL 到 `warning.attributes.rawStatement`。
+- 记录异常类型到 `warning.attributes.exceptionClass`，记录语句来源到 `warning.attributes.statementSourceType`。
 - 不中断整体扫描。
 
 不可恢复错误：
 
-- 输入文件无法读取。
 - parser 初始化失败。
 
 这些由 CLI 按错误码处理。
 
+当前实现中，输入文件无法读取不直接中断整体扫描；DDL 文件读取失败记录 `DDL_PARSE_FAILED`，普通 SQL/object 文件读取失败记录 `SQL_FILE_EXTRACT_FAILED`，native log 文件读取失败记录 `LOG_EXTRACT_FAILED`。
+
+边界：
+
+- parser 正常返回空候选关系，不自动记录 warning。原因是很多 SQL 只做过滤、聚合或写入，不一定表达表关系。
+- 如果未来引入完整 SQL AST parser，可以新增“语法明确不支持”的 warning，但仍不应把所有空结果当成失败。
+
 ## 验收标准
 
 - JOIN、WHERE 隐式 JOIN、IN、EXISTS 均可提取列级关系。
+- 简单 tuple equality 和 tuple `IN` 可按列顺序提取列级关系。
+- PostgreSQL 风格 `UPDATE ... FROM`、`DELETE ... USING` 中的 alias 可被识别。
 - schema 限定名和别名能正确映射。
 - 复杂无法判定方向的关系不会错误输出列级 FK-like。
 - DDL 外键和索引可转换为 evidence。
@@ -429,6 +530,10 @@ evidence: SQL_LOG_TABLE_CO_OCCURRENCE
 - where equijoin 测试。
 - `IN` 子查询测试。
 - `EXISTS` 子查询测试。
+- tuple equality 测试。
+- tuple `IN` 子查询测试。
+- `UPDATE ... FROM` alias 测试。
+- `DELETE ... USING` alias 测试。
 - schema.table 测试。
 - quoted/backtick identifier 测试。
 - subquery alias 测试。

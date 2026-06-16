@@ -44,6 +44,9 @@
 
 ```text
 relation-core/src/test/java/com/relationdetector/core/SimpleSqlRelationParserComplexSqlTest.java
+relation-core/src/test/java/com/relationdetector/core/ScanEngineDiagnosticsTest.java
+adaptor-mysql/src/test/java/com/relationdetector/mysql/MySqlDdlParserTest.java
+adaptor-postgres/src/test/java/com/relationdetector/postgres/PostgresDdlParserTest.java
 ```
 
 测试类型：
@@ -52,6 +55,8 @@ relation-core/src/test/java/com/relationdetector/core/SimpleSqlRelationParserCom
 - 直接调用 `SimpleSqlRelationParser`。
 - 使用长 SQL 字符串模拟过程、触发器、视图、函数对象体。
 - 使用短 SQL 矩阵覆盖 JOIN 关键字、逗号 JOIN、别名和引用标识符组合。
+- 使用扫描级诊断测试覆盖 DDL/SQL/log parser 抛异常时的 warning 输出和原始 SQL/DDL 保留。
+- 使用 MySQL/PostgreSQL adaptor DDL 测试覆盖方言 parser 失败时通过 `AdaptorContext` 上报 `DDL_PARSE_FAILED`。
 
 ## 3. 覆盖场景
 
@@ -436,14 +441,14 @@ WHERE o.user_id = u.id
 
 - FK 命名规则从只支持 `user_id` / `users_id` 扩展为也支持多角色后缀，例如 `created_user_id`、`updated_user_id`。
 - parser 会识别对象体内的本地临时表声明，例如 `CREATE TEMPORARY TABLE selected_user_ids(...)` 和 `CREATE TEMP TABLE selected_status_codes AS ...`，并把这些表名加入 ignored rowsets。
-- AliasExtractor 仍保留输入过滤表命名兜底：`tmp_`、`temp_`、`input_`、`param_`、`filter_` 等前缀的表或别名不会进入物理 alias map。
+- AliasExtractor 不再使用 `tmp_`、`temp_`、`input_`、`param_`、`filter_` 等命名前缀做全局跳过。真实业务表即使使用这些前缀，也会正常进入物理 alias map。
 
 边界：
 
 - 对于存储过程/函数内部显式创建的临时表，优先依赖 SQL 文本中的 `CREATE TEMP/TEMPORARY TABLE`，不需要 adaptor 额外查询数据库 metadata。
 - ignored rowsets 是单次 `SqlStatementRecord` parse 内的局部集合；同名表在另一个函数、存储过程或普通 SQL 中不会被自动忽略。
 - 已增加作用域测试：先解析一个函数，函数内 `selected_user_ids` 被忽略；随后解析普通 SQL，普通 SQL 中同名 `selected_user_ids` 可以被识别为 `selected_user_ids.user_id -> users.id`。
-- 命名兜底仍是 heuristic；如果真实业务表也使用 `tmp_`、`input_`、`filter_` 等前缀，可能被跳过。
+- 未在同一 SQL body 中通过 `CREATE TEMP/TEMPORARY TABLE` 显式创建的表，不会仅凭名字被当成临时表跳过。
 
 ## 4. 测试执行结果
 
@@ -456,7 +461,9 @@ mvn test
 结果：
 
 ```text
-Tests run: 23, Failures: 0, Errors: 0, Skipped: 0
+relation-core: Tests run: 54, Failures: 0, Errors: 0, Skipped: 0
+adaptor-mysql: Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+adaptor-postgres: Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
@@ -470,15 +477,41 @@ BUILD SUCCESS
 修复：
 
 - `IN_SUBQUERY` regex 匹配出来的关系固定标记为 `SQL_LOG_SUBQUERY_IN`。
-- `EXISTS` 内部的等值关系继续由 equality parser 识别。
+- SQL 日志/纯 SQL 中的 `EXISTS` 内部等值关系由 `parseExistsSubquery` 识别，并标记为 `SQL_LOG_EXISTS`。
+- view/procedure/function/trigger 对象定义中的 `EXISTS` 内部等值关系继续保留对象来源证据，例如 `VIEW_JOIN`、`PROCEDURE_JOIN`、`TRIGGER_REFERENCE`。
 
-本轮 DDL 测试发现并修复了五类问题：
+本轮置信度算例测试又发现并修复了三类问题：
+
+- DDL parser 中 `SOURCE_INDEX` 和 `TARGET_UNIQUE` 仍使用旧分值，已改为统一引用 `DefaultEvidenceScores` 中的 `0.10` 和 `0.18`。
+- SQL 日志中的 `EXISTS` 子查询没有生成 `SQL_LOG_EXISTS` evidence，已增加专用解析，并避免同一谓词再被普通 equality parser 重复解析成 `SQL_LOG_JOIN`。
+- trigger body 中的 `NEW.column` / `OLD.column` 无法解析回触发表，已在 trigger 解析上下文中把 `NEW` / `OLD` 映射到 `CREATE TRIGGER ... ON <table>` 的表。
+
+本轮 SQL 写法矩阵测试又发现并修复了三类问题：
+
+- `tmp_`、`input_`、`filter_` 等命名兜底会误跳过真实业务表，例如 `filter_rules`。已移除全局命名前缀跳过，仅保留同一 SQL body 内显式 `CREATE TEMP/TEMPORARY TABLE` 的局部忽略。
+- 多列 tuple comparison 不会生成列级关系。已支持纯 `alias.column` 的 tuple equality 和 tuple `IN`，并按列顺序生成候选关系。
+- `UPDATE ... FROM` 和 `DELETE ... USING` 的目标表 alias 没有进入 alias map。已支持 `UPDATE <table> [alias]`、`DELETE FROM <table> [alias]` 和 `USING <table> [alias]` 的基础提取，并补充了无 alias 的回归用例。
+
+本轮 RelationshipMerger 测试发现并修复了一个评分问题：
+
+- 同一关系在日志中重复出现时，原先会把多个相同 `SQL_LOG_JOIN = 0.55` 都套入 confidence 公式，导致普通日志关系被频率刷高。
+- 现在同一关系内按 `EvidenceType + EvidenceSourceType + source + score` 聚合 evidence，保留基础分一次，并在 `attributes.count` 中记录出现次数。
+- 输出同时保留两份证据：`rawEvidence` 是未压缩审计轨迹，`evidence` 是用于评分和展示的摘要证据。
+- 当 `count > 1` 时，聚合 evidence 记录 `firstDetail`、`lastDetail`、最多 5 条 `sampleDetails` 和 `sampleTruncated`，便于排查首次、末次和中间代表性出现位置。
+- 重复出现额外生成 `REPEATED_OBSERVATION`，使用 `0.10 * (1 - 1 / count)` 的递减增益；它最多接近 0.10，不能无限推高置信度。
+
+本轮 DDL 测试覆盖并修复/固化了以下能力：
 
 - inline references 不生成关系。
 - ALTER TABLE 外键不生成关系。
 - composite FK 只生成第一列关系。
 - quoted schema-qualified table 名称清理不正确。
 - PK/unique/source index 没有作为已有 FK candidate 的辅助 evidence。
+- PostgreSQL `ALTER TABLE ONLY ... ADD CONSTRAINT ... FOREIGN KEY ... REFERENCES ... NOT VALID` 不能把 `ONLY` 当成表名。
+- PostgreSQL `CREATE UNIQUE INDEX IF NOT EXISTS ... ON ... USING btree (...)` 应作为 target unique 辅助 evidence。
+- PostgreSQL non-partial covering unique index `INCLUDE (...)` 只把 key column 当成唯一证据；partial covering unique index 仍跳过。
+- MySQL 反引号表名、带连字符索引/约束名、`USING BTREE`、表选项、`ON DELETE` / `ON UPDATE` 动作不应干扰 FK 和索引证据。
+- MySQL quoted prefix index，例如 `` KEY `idx-email` (`email`(10)) ``，仍不作为完整列 `SOURCE_INDEX`。
 
 ## 6. 当前 parser 能力结论
 
@@ -506,12 +539,22 @@ BUILD SUCCESS
 - 复杂 comma join 中多个业务 FK predicate 和非业务过滤 predicate 混合。
 - 多角色 FK 命名，例如 `created_user_id`、`updated_user_id`。
 - 对象体内 `CREATE TEMP/TEMPORARY TABLE` 创建的本地临时表跳过。
-- 常见输入过滤表/临时过滤表前缀的启发式兜底跳过。
+- 不再因 `tmp_`、`input_`、`filter_` 等命名前缀全局跳过表。
+- 纯列引用 tuple equality，例如 `(o.tenant_id, o.user_id) = (u.tenant_id, u.id)`。
+- 纯列引用 tuple `IN`，例如 `(o.tenant_id, o.user_id) IN (SELECT u.tenant_id, u.id FROM users u)`。
+- PostgreSQL 风格 `UPDATE ... FROM` 和 `DELETE ... USING` 中的基础 alias；有 alias 和无 alias 都有测试覆盖。
+- 同一关系重复 evidence 的 `rawEvidence` 保留、`attributes.count` 聚合、`sampleDetails` 样本和 `REPEATED_OBSERVATION` 递减增益。
 - DDL inline references、table-level FK、ALTER TABLE FK。
 - DDL composite FK 按列顺序生成候选关系。
 - DDL quoted schema-qualified identifier。
 - DDL PK/unique/source index 辅助 evidence。
 - DDL partial/expression/functional/prefix index 负向保护。
+- DDL PostgreSQL `ALTER TABLE ONLY`、`CREATE UNIQUE INDEX IF NOT EXISTS`、covering unique index。
+- DDL MySQL 反引号索引/约束、索引选项、referential actions 和 quoted prefix index。
+- MySQL adaptor 私有归一化：`CREATE UNIQUE INDEX ... USING BTREE ON ... INVISIBLE` 可在 MySQL parser 中生成 `TARGET_UNIQUE`，但 core fallback 不识别该私有写法。
+- PostgreSQL adaptor 私有归一化：`CREATE UNIQUE INDEX ... ON ONLY ...` 可在 PostgreSQL parser 中生成 `TARGET_UNIQUE`，但 core fallback 不识别该私有写法。
+- 解析/提取失败诊断：DDL parser、SQL parser、object 文件、native log 失败会生成 warning，并在可取得输入文本时保留 `attributes.rawStatement`。
+- JSON warning 输出包含 `attributes`，可携带 `rawStatement`、`statementSourceType`、`endLine`、`exceptionClass` 等诊断字段。
 
 ## 7. 当前边界
 
@@ -521,15 +564,16 @@ BUILD SUCCESS
 - `UNION` / `INTERSECT` / `EXCEPT` 分支输出列和来源表之间的 lineage。
 - 递归 CTE 中递归分支的稳定 lineage。
 - `LATERAL` / `CROSS APPLY` / `OUTER APPLY` 的列来源回溯。
-- `MERGE`、`UPDATE ... FROM`、`DELETE ... USING` 的写入侧关系。
+- `MERGE` 的写入侧关系。
+- 复杂 `UPDATE` / `DELETE`，例如 CTE write、`RETURNING` lineage、多目标 MySQL delete。
 - 数据修改 CTE 的 `RETURNING` 列 lineage。
 - JSON_TABLE、unnest、set-returning function 等函数型行集的列来源。
 - 动态 SQL，例如 MySQL `PREPARE` 或 PL/pgSQL `EXECUTE format(...)`。
 - 复杂表达式投影，例如 `COALESCE(o.user_id, x.user_id) IN (...)`。
-- 多列 tuple comparison，例如 `(a.x, a.y) IN (SELECT b.x, b.y ...)`。
+- 复杂多列 tuple comparison，例如 tuple 项包含函数、表达式、derived table 投影、`ANY/ALL`、`UNION` 或列数不一致。
 - 非等值关联，例如 range join、JSON path join。
 - 窗口函数、聚合、`GROUP BY` 本身不表达表关系，只有其内部引用的 JOIN/子查询可能表达关系。
-- 输入过滤表识别优先依赖同一对象体内的 `CREATE TEMP/TEMPORARY TABLE`；命名兜底仍是 heuristic，如果真实业务表也使用 `tmp_`、`input_`、`filter_` 等前缀，可能被跳过。
+- 输入过滤表识别依赖同一对象体内的 `CREATE TEMP/TEMPORARY TABLE`；不再使用命名前缀兜底。
 - DDL parser 仍不是完整数据库方言 parser；复杂分区表、继承表、排除约束、跨方言特殊索引参数、动态生成 DDL 等仍建议交给数据库 adaptor 的元数据 collector 或未来 parser-backed 实现。
 
 后续如果要覆盖这些场景，应按设计文档替换为 JSqlParser 或数据库专用 parser，而不是继续堆叠 regex。

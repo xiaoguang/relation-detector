@@ -102,7 +102,7 @@
 
 - 最高封顶为 0.99。
 - 显式 FK 和推断关系仍通过 subtype/evidence 区分。
-- 后续实现时可增加按 evidence group 限幅，但 v1 设计不强制。
+- 重复观测按 evidence group 聚合，基础分只保留一次；额外 `REPEATED_OBSERVATION` 使用递减增益并以 0.10 为绝对上限，防止日志频率把普通 JOIN 刷成显式 FK。
 
 ### 5. 关系方向
 

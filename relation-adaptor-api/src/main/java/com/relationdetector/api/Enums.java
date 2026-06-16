@@ -62,7 +62,8 @@ public final class Enums {
         COLUMN_TYPE_COMPATIBLE,
         VALUE_CONTAINMENT_HIGH,
         VALUE_OVERLAP_HIGH,
-        NEGATIVE_VALUE_MISMATCH
+        NEGATIVE_VALUE_MISMATCH,
+        REPEATED_OBSERVATION
     }
 
     /** Where an evidence item came from; not the same as what the evidence says. */

@@ -3,6 +3,7 @@ package com.relationdetector.api;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import com.relationdetector.api.Enums.LogFormatHint;
@@ -66,6 +67,22 @@ public final class Collectors {
 
     public interface ObjectDefinitionCollector {
         List<DatabaseObjectDefinition> collect(Connection connection, ScanScope scope);
+
+        /**
+         * Warning-aware object definition collection entry point.
+         *
+         * <p>Existing adaptors only need to implement {@link #collect(Connection,
+         * ScanScope)}. Adaptors that catch partial failures internally should
+         * override this method and report those failures through {@code warnings}
+         * instead of silently ignoring them.
+         */
+        default List<DatabaseObjectDefinition> collect(
+                Connection connection,
+                ScanScope scope,
+                Consumer<WarningMessage> warnings
+        ) {
+            return collect(connection, scope);
+        }
     }
 
     public interface DdlParser {
@@ -74,6 +91,21 @@ public final class Collectors {
 
     public interface SqlLogExtractor {
         Stream<SqlStatementRecord> extract(Path file, LogFormatHint hint);
+
+        /**
+         * Warning-aware log extraction entry point.
+         *
+         * <p>Extractors often recover from malformed lines and file-level IO
+         * problems. This overload lets them expose those non-fatal failures in
+         * the final output while preserving the original stream-based API.
+         */
+        default Stream<SqlStatementRecord> extract(
+                Path file,
+                LogFormatHint hint,
+                Consumer<WarningMessage> warnings
+        ) {
+            return extract(file, hint);
+        }
     }
 
     public interface SqlRelationParser {

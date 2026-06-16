@@ -104,6 +104,105 @@ class SimpleSqlRelationParserJoinSyntaxMatrixTest {
         assertColumnRelation(relations, "payments", "order_id", "orders", "id");
     }
 
+    @Test
+    void doesNotIgnoreBusinessTablesJustBecauseTheirNamesLookLikeInputFilters() {
+        String sql = """
+                SELECT *
+                FROM filter_rules fr
+                JOIN users u ON fr.user_id = u.id
+                """;
+
+        List<RelationshipCandidate> relations = parse(sql);
+
+        assertColumnRelation(relations, "filter_rules", "user_id", "users", "id");
+    }
+
+    @Test
+    void parsesTupleEqualityComparisonByAlignedColumns() {
+        String sql = """
+                SELECT *
+                FROM orders o
+                JOIN users u
+                  ON (o.tenant_id, o.user_id) = (u.tenant_id, u.id)
+                """;
+
+        List<RelationshipCandidate> relations = parse(sql);
+
+        assertColumnRelation(relations, "orders", "tenant_id", "users", "tenant_id");
+        assertColumnRelation(relations, "orders", "user_id", "users", "id");
+    }
+
+    @Test
+    void parsesTupleInSubqueryComparisonByAlignedColumns() {
+        String sql = """
+                SELECT *
+                FROM orders o
+                WHERE (o.tenant_id, o.user_id) IN (
+                  SELECT u.tenant_id, u.id
+                  FROM users u
+                )
+                """;
+
+        List<RelationshipCandidate> relations = parse(sql);
+
+        assertColumnRelation(relations, "orders", "tenant_id", "users", "tenant_id", EvidenceType.SQL_LOG_SUBQUERY_IN);
+        assertColumnRelation(relations, "orders", "user_id", "users", "id", EvidenceType.SQL_LOG_SUBQUERY_IN);
+    }
+
+    @Test
+    void parsesPostgresUpdateFromAliases() {
+        String sql = """
+                UPDATE orders o
+                SET status = 'PAID'
+                FROM users u
+                WHERE o.user_id = u.id
+                """;
+
+        List<RelationshipCandidate> relations = parse(sql);
+
+        assertColumnRelation(relations, "orders", "user_id", "users", "id");
+    }
+
+    @Test
+    void parsesPostgresDeleteUsingAliases() {
+        String sql = """
+                DELETE FROM orders o
+                USING users u
+                WHERE o.user_id = u.id
+                """;
+
+        List<RelationshipCandidate> relations = parse(sql);
+
+        assertColumnRelation(relations, "orders", "user_id", "users", "id");
+    }
+
+    @Test
+    void parsesPostgresUpdateFromWithoutAliases() {
+        String sql = """
+                UPDATE orders
+                SET status = 'PAID'
+                FROM users
+                WHERE orders.user_id = users.id
+                """;
+
+        List<RelationshipCandidate> relations = parse(sql);
+
+        assertColumnRelation(relations, "orders", "user_id", "users", "id");
+    }
+
+    @Test
+    void parsesPostgresDeleteUsingWithoutAliases() {
+        String sql = """
+                DELETE FROM orders
+                USING users
+                WHERE orders.user_id = users.id
+                """;
+
+        List<RelationshipCandidate> relations = parse(sql);
+
+        assertColumnRelation(relations, "orders", "user_id", "users", "id");
+    }
+
     private List<RelationshipCandidate> parse(String sql) {
         return parser.parse(new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL,
                 "join-syntax-matrix.sql", 1, 1, java.util.Map.of()));
@@ -116,6 +215,17 @@ class SimpleSqlRelationParserJoinSyntaxMatrixTest {
             String targetTable,
             String targetColumn
     ) {
+        assertColumnRelation(relations, sourceTable, sourceColumn, targetTable, targetColumn, EvidenceType.SQL_LOG_JOIN);
+    }
+
+    private void assertColumnRelation(
+            List<RelationshipCandidate> relations,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn,
+            EvidenceType evidenceType
+    ) {
         boolean found = relations.stream().anyMatch(r ->
                 r.source().isColumnLevel()
                         && r.target().isColumnLevel()
@@ -123,7 +233,7 @@ class SimpleSqlRelationParserJoinSyntaxMatrixTest {
                         && r.source().column().columnName().equals(sourceColumn)
                         && r.target().table().tableName().equals(targetTable)
                         && r.target().column().columnName().equals(targetColumn)
-                        && r.evidence().stream().anyMatch(e -> e.type() == EvidenceType.SQL_LOG_JOIN));
+                        && r.evidence().stream().anyMatch(e -> e.type() == evidenceType));
         assertTrue(found, () -> "Missing relation "
                 + sourceTable + "." + sourceColumn + " -> "
                 + targetTable + "." + targetColumn

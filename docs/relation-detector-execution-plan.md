@@ -522,6 +522,17 @@ PREPARE stmt FROM @sql;
 - `VALUE_OVERLAP_HIGH`: 0.20
 - `NEGATIVE_VALUE_MISMATCH`: -0.30
 
+详细解释见 [Phase 2：核心模型和评分详细设计](design/phase-02-core-model-scoring.md) 的“置信度计算”章节。该章节逐项说明了每个 EvidenceType 为什么取该分值，并给出 metadata、DDL、日志 JOIN、存储过程、`IN` 子查询、表共现和负向数据画像的完整 SQL 算例。
+
+分数设计的核心原则：
+
+- 数据库当前 metadata 最强，因为它来自 live catalog。
+- DDL 文件次之，因为它可能不是当前库真实状态。
+- view/procedure/trigger 这类数据库对象定义强于普通日志，因为它们更稳定，但仍可能服务报表、审计、同步或批处理。
+- SQL 日志证明真实执行过，但单条 SQL 可能是临时分析或 ETL，所以保持中等置信度。
+- 命名、索引、唯一性、类型兼容是辅助证据，不应单独输出高置信 FK。
+- 数据画像能增强或降低置信度，但受抽样、软删除、租户过滤、历史脏数据影响，默认低于显式结构证据。
+
 ### 7.2 合并公式
 
 正向证据使用：

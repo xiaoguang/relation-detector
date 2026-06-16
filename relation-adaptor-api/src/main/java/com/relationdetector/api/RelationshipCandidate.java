@@ -20,6 +20,7 @@ public final class RelationshipCandidate {
     private RelationSubType relationSubType;
     private BigDecimal confidence = BigDecimal.ZERO;
     private final List<Evidence> evidence = new ArrayList<>();
+    private final List<Evidence> rawEvidence = new ArrayList<>();
     private final List<WarningMessage> warnings = new ArrayList<>();
 
     public RelationshipCandidate(Endpoint source, Endpoint target, RelationType relationType, RelationSubType relationSubType) {
@@ -66,6 +67,10 @@ public final class RelationshipCandidate {
 
     public List<Evidence> evidence() {
         return evidence;
+    }
+
+    public List<Evidence> rawEvidence() {
+        return rawEvidence;
     }
 
     public List<WarningMessage> warnings() {

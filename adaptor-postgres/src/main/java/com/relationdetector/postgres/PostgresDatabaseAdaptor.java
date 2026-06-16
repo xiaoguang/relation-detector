@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import com.relationdetector.api.AdaptorContext;
@@ -24,6 +25,7 @@ import com.relationdetector.api.Collectors.SqlLogExtractor;
 import com.relationdetector.api.Collectors.SqlRelationParser;
 import com.relationdetector.api.DatabaseAdaptor;
 import com.relationdetector.api.DatabaseObjectDefinition;
+import com.relationdetector.api.DefaultEvidenceScores;
 import com.relationdetector.api.Endpoint;
 import com.relationdetector.api.Evidence;
 import com.relationdetector.api.IdentifierRules;
@@ -44,8 +46,8 @@ import com.relationdetector.api.Enums.RelationSubType;
 import com.relationdetector.api.Enums.RelationType;
 import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
+import com.relationdetector.core.DiagnosticWarnings;
 import com.relationdetector.core.PlainSqlLogExtractor;
-import com.relationdetector.core.SimpleDdlParser;
 import com.relationdetector.core.SimpleSqlRelationParser;
 
 /** PostgreSQL 12+ adaptor implementing the Phase 5 design. */
@@ -102,7 +104,7 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
 
     @Override
     public DdlParser ddlParser() {
-        return (file, context) -> new SimpleDdlParser().parse(file);
+        return new PostgresDdlParser();
     }
 
     @Override
@@ -278,7 +280,7 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
                          * policy can distinguish "declared in catalog" from
                          * "declared and independently verified by data/profile".
                          */
-                        candidate.evidence().add(Evidence.of(EvidenceType.METADATA_FOREIGN_KEY, 0.98d,
+                        candidate.evidence().add(Evidence.of(EvidenceType.METADATA_FOREIGN_KEY, DefaultEvidenceScores.METADATA_FOREIGN_KEY,
                                 EvidenceSourceType.METADATA, "pg_catalog.pg_constraint",
                                 rs.getString("constraint_name")));
                         snapshot.relationships().add(candidate);
@@ -294,13 +296,28 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
     static final class PostgresObjectCollector implements ObjectDefinitionCollector {
         @Override
         public List<DatabaseObjectDefinition> collect(Connection connection, ScanScope scope) {
+            return collect(connection, scope, warning -> {
+            });
+        }
+
+        @Override
+        public List<DatabaseObjectDefinition> collect(
+                Connection connection,
+                ScanScope scope,
+                Consumer<WarningMessage> warnings
+        ) {
             List<DatabaseObjectDefinition> definitions = new ArrayList<>();
-            collectFunctions(connection, scope, definitions);
-            collectViews(connection, scope, definitions);
+            collectFunctions(connection, scope, definitions, warnings);
+            collectViews(connection, scope, definitions, warnings);
             return definitions;
         }
 
-        private void collectFunctions(Connection connection, ScanScope scope, List<DatabaseObjectDefinition> definitions) {
+        private void collectFunctions(
+                Connection connection,
+                ScanScope scope,
+                List<DatabaseObjectDefinition> definitions,
+                Consumer<WarningMessage> warnings
+        ) {
             String sql = """
                     SELECT n.nspname, p.proname, p.prokind, pg_get_functiondef(p.oid) AS definition
                     FROM pg_proc p
@@ -318,11 +335,18 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
                                 rs.getString("proname"), rs.getString("definition"), "pg_proc"));
                     }
                 }
-            } catch (Exception ignored) {
+            } catch (Exception ex) {
+                warnings.accept(DiagnosticWarnings.objectCollectFailed(
+                        "POSTGRES_FUNCTION_COLLECT_FAILED", "pg_proc", ex));
             }
         }
 
-        private void collectViews(Connection connection, ScanScope scope, List<DatabaseObjectDefinition> definitions) {
+        private void collectViews(
+                Connection connection,
+                ScanScope scope,
+                List<DatabaseObjectDefinition> definitions,
+                Consumer<WarningMessage> warnings
+        ) {
             String sql = """
                     SELECT schemaname, viewname, definition
                     FROM pg_views
@@ -336,7 +360,9 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
                                 rs.getString("viewname"), rs.getString("definition"), "pg_views"));
                     }
                 }
-            } catch (Exception ignored) {
+            } catch (Exception ex) {
+                warnings.accept(DiagnosticWarnings.objectCollectFailed(
+                        "POSTGRES_VIEW_COLLECT_FAILED", "pg_views", ex));
             }
         }
     }
@@ -344,8 +370,18 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
     static final class PostgresLogExtractor implements SqlLogExtractor {
         @Override
         public Stream<SqlStatementRecord> extract(Path file, LogFormatHint hint) {
+            return extract(file, hint, warning -> {
+            });
+        }
+
+        @Override
+        public Stream<SqlStatementRecord> extract(
+                Path file,
+                LogFormatHint hint,
+                Consumer<WarningMessage> warnings
+        ) {
             if (hint == LogFormatHint.PLAIN_SQL) {
-                return new PlainSqlLogExtractor().extract(file, StatementSourceType.PLAIN_SQL);
+                return new PlainSqlLogExtractor().extract(file, StatementSourceType.PLAIN_SQL, warnings);
             }
             try {
                 List<SqlStatementRecord> records = new ArrayList<>();
@@ -367,6 +403,7 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
                 }
                 return records.stream();
             } catch (Exception ex) {
+                warnings.accept(DiagnosticWarnings.logExtractFailed(file, ex));
                 return Stream.empty();
             }
         }

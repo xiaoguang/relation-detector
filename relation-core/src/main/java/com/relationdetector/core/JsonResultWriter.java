@@ -8,7 +8,14 @@ import com.relationdetector.api.Evidence;
 import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.WarningMessage;
 
-/** Small JSON writer to keep the first code drop dependency-free. */
+/**
+ * Small JSON writer to keep the first code drop dependency-free.
+ *
+ * <p>Output contract note: when evidence is requested, each relationship writes
+ * two evidence arrays. rawEvidence is the full uncompressed audit trail from
+ * scanners/parsers. evidence is the grouped evidence used by the confidence
+ * calculator after RelationshipMerger applies repeated-observation summarizing.
+ */
 public final class JsonResultWriter {
     public String write(ScanResult result, boolean includeEvidence, boolean includeWarnings) {
         StringBuilder out = new StringBuilder(4096);
@@ -52,6 +59,13 @@ public final class JsonResultWriter {
         out.append("      \"relationType\": \"").append(relation.relationType()).append("\",\n");
         out.append("      \"relationSubType\": \"").append(relation.relationSubType()).append("\",\n");
         out.append("      \"confidence\": ").append(relation.confidence().setScale(4, RoundingMode.HALF_UP)).append(",\n");
+        out.append("      \"rawEvidence\": ");
+        if (includeEvidence) {
+            writeEvidence(out, relation.rawEvidence().isEmpty() ? relation.evidence() : relation.rawEvidence());
+        } else {
+            out.append("[]");
+        }
+        out.append(",\n");
         out.append("      \"evidence\": ");
         if (includeEvidence) {
             writeEvidence(out, relation.evidence());
@@ -90,7 +104,10 @@ public final class JsonResultWriter {
             out.append("{ \"type\": \"").append(warning.type()).append("\", \"severity\": \"")
                     .append(warning.severity()).append("\", \"code\": \"").append(escape(warning.code()))
                     .append("\", \"message\": \"").append(escape(warning.message())).append("\", \"source\": \"")
-                    .append(escape(warning.source())).append("\", \"line\": ").append(warning.line()).append(" }");
+                    .append(escape(warning.source())).append("\", \"line\": ").append(warning.line())
+                    .append(", \"attributes\": ");
+            writeAttributes(out, warning.attributes());
+            out.append(" }");
             if (i + 1 < warnings.size()) {
                 out.append(", ");
             }
@@ -103,12 +120,59 @@ public final class JsonResultWriter {
         Iterator<Map.Entry<String, Object>> iterator = attributes.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, Object> entry = iterator.next();
-            out.append("\"").append(escape(entry.getKey())).append("\": \"").append(escape(String.valueOf(entry.getValue()))).append("\"");
+            out.append("\"").append(escape(entry.getKey())).append("\": ");
+            writeAttributeValue(out, entry.getValue());
             if (iterator.hasNext()) {
                 out.append(", ");
             }
         }
         out.append("}");
+    }
+
+    /**
+     * Writes metadata attributes without flattening all values into strings.
+     *
+     * <p>RelationshipMerger stores operator-facing attributes such as:
+     *
+     * <pre>{@code
+     * count: 3
+     * sampleTruncated: false
+     * sampleDetails: ["line 10: o.user_id = u.id", "line 38: o.user_id = u.id"]
+     * }</pre>
+     *
+     * Keeping these as JSON numbers, booleans, and arrays makes downstream
+     * dashboards and tests consume them directly instead of reparsing strings.
+     */
+    private void writeAttributeValue(StringBuilder out, Object value) {
+        if (value == null) {
+            out.append("null");
+        } else if (value instanceof Number || value instanceof Boolean) {
+            out.append(value);
+        } else if (value instanceof Map<?, ?> mapValue) {
+            out.append("{");
+            Iterator<? extends Map.Entry<?, ?>> iterator = mapValue.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<?, ?> entry = iterator.next();
+                out.append("\"").append(escape(String.valueOf(entry.getKey()))).append("\": ");
+                writeAttributeValue(out, entry.getValue());
+                if (iterator.hasNext()) {
+                    out.append(", ");
+                }
+            }
+            out.append("}");
+        } else if (value instanceof Iterable<?> values) {
+            out.append("[");
+            Iterator<?> iterator = values.iterator();
+            while (iterator.hasNext()) {
+                writeAttributeValue(out, iterator.next());
+                if (iterator.hasNext()) {
+                    out.append(", ");
+                }
+            }
+            out.append("]");
+        } else {
+            out.append("\"").append(escape(String.valueOf(value))).append("\"");
+        }
     }
 
     private void writeStringArray(StringBuilder out, java.util.List<String> values) {
