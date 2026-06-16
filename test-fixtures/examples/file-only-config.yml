@@ -1,0 +1,37 @@
+database:
+  type: mysql
+  schema: shop
+
+filters:
+  includeTables:
+    - orders
+    - users
+    - audit_logs
+
+sources:
+  metadata:
+    enabled: false
+  ddl:
+    enabled: true
+    files:
+      - test-fixtures/examples/schema.sql
+  objects:
+    enabled: false
+    fromDatabase: false
+  logs:
+    enabled: true
+    format: PLAIN_SQL
+    files:
+      - test-fixtures/examples/app-sql.sql
+  dataProfile:
+    enabled: false
+    sampleRows: 10000
+    timeoutSeconds: 30
+    maxCandidatePairs: 1000
+
+output:
+  format: json
+  minConfidence: 0.20
+  includeEvidence: true
+  includeWarnings: true
+

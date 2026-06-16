@@ -1,0 +1,693 @@
+package com.relationdetector.core;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.relationdetector.api.ColumnRef;
+import com.relationdetector.api.TableId;
+
+/**
+ * Conservative SQL column lineage helper for the regex-based parser.
+ *
+ * <p>Design mapping: Phase 6 parser enhancement / SqlLineageResolver. This is
+ * not a full SQL AST engine. Its job is deliberately narrower: when a CTE or
+ * derived table projects a plain base column, remember that mapping so later
+ * predicates can be rewritten from derived aliases back to real table columns.
+ *
+ * <p>Supported safe examples:
+ *
+ * <pre>{@code
+ * WITH x AS (
+ *   SELECT o.id AS order_id, c.region_id
+ *   FROM orders o
+ *   JOIN customers c ON o.customer_id = c.id
+ * )
+ * SELECT *
+ * FROM x
+ * JOIN regions r ON x.region_id = r.id
+ *
+ * -- resolver records:
+ * --   x.order_id  -> orders.id
+ * --   x.region_id -> customers.region_id
+ * }</pre>
+ *
+ * <pre>{@code
+ * SELECT *
+ * FROM (
+ *   SELECT o.id AS order_id, o.customer_id
+ *   FROM orders o
+ * ) AS dt
+ * JOIN customers c ON dt.customer_id = c.id
+ *
+ * -- resolver records:
+ * --   dt.order_id    -> orders.id
+ * --   dt.customer_id -> orders.customer_id
+ * }</pre>
+ *
+ * <p>Unsafe examples are intentionally skipped:
+ *
+ * <pre>{@code
+ * WITH x AS (
+ *   SELECT COALESCE(a.user_id, b.user_id) AS user_id
+ *   FROM account_events a
+ *   JOIN backup_account_events b ON b.account_event_id = a.id
+ * )
+ * SELECT * FROM x JOIN users u ON x.user_id = u.id
+ *
+ * SELECT SUM(p.amount) AS total_amount FROM payments p
+ * SELECT ROW_NUMBER() OVER (ORDER BY o.id) AS rn FROM orders o
+ * }</pre>
+ *
+ * In those cases the output column is expression-derived. We may still parse
+ * explicit joins inside the subquery, but we do not create precise column-level
+ * FK-like evidence from the expression output.
+ */
+final class SqlLineageResolver {
+    /*
+     * Projection item with explicit AS alias.
+     *
+     * Complete SQL examples:
+     *   SELECT o.id AS order_id FROM orders o
+     *   SELECT "c"."region_id" AS region_id FROM "customers" "c"
+     *
+     * Captures:
+     *   group(1): expression before AS
+     *   group(2): output column name
+     */
+    private static final Pattern AS_ALIAS = Pattern.compile("(?is)^(.+?)\\s+as\\s+([`\"\\w]+)$");
+
+    /*
+     * A plain column reference is the only expression shape that this resolver
+     * treats as precise lineage.
+     *
+     * Accepted complete SQL examples:
+     *   SELECT o.customer_id FROM orders o
+     *   SELECT `o`.`customer_id` FROM `orders` `o`
+     *   SELECT "o"."customer_id" FROM "orders" "o"
+     *
+     * Rejected complete SQL examples:
+     *   SELECT COALESCE(o.customer_id, fallback.customer_id) AS customer_id FROM orders o
+     *   SELECT o.customer_id + 1 AS customer_id FROM orders o
+     *   SELECT lower(o.email) AS email FROM orders o
+     */
+    private static final Pattern PLAIN_COLUMN = Pattern.compile("^[`\"\\w]+\\.[`\"\\w]+$");
+
+    /*
+     * Finds references to already-known derived rowsets so aliases can inherit
+     * the rowset's output lineage.
+     *
+     * Complete SQL example:
+     *   WITH recent_orders AS (
+     *     SELECT o.id AS order_id FROM orders o
+     *   )
+     *   SELECT * FROM recent_orders ro
+     *
+     * If recent_orders.order_id -> orders.id is known, this copies:
+     *   ro.order_id -> orders.id
+     */
+    private static final Pattern FROM_OR_JOIN_NAME = Pattern.compile(
+            "(?i)\\b(?:from|join)\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?([`\"\\w]+))?");
+
+    private final Set<String> cteNames;
+    private final Map<ColumnKey, ColumnRef> columns = new LinkedHashMap<>();
+    private final Map<String, Map<String, ColumnRef>> rowsets = new LinkedHashMap<>();
+
+    private SqlLineageResolver(String sql, Set<String> cteNames) {
+        this.cteNames = new LinkedHashSet<>();
+        for (String cteName : cteNames) {
+            this.cteNames.add(normalize(cteName));
+        }
+    }
+
+    /**
+     * Entry point called by SimpleSqlRelationParser before relation extraction.
+     *
+     * <p>Call chain:
+     * SimpleSqlRelationParser.parse() -> analyze() -> analyzeCtes(),
+     * analyzeDerivedTables(), applyRowsetReferenceAliases().
+     *
+     * <p>The order is important. CTEs and derived tables first define rowsets;
+     * later FROM/JOIN references create aliases to those rowsets. After this
+     * method returns, SimpleSqlRelationParser can call resolve(alias, column)
+     * whenever it sees an equality predicate.
+     */
+    static SqlLineageResolver analyze(String sql, Set<String> cteNames) {
+        SqlLineageResolver resolver = new SqlLineageResolver(sql, cteNames);
+        resolver.analyzeCtes(sql);
+        resolver.analyzeDerivedTables(sql);
+        resolver.applyRowsetReferenceAliases(sql);
+        return resolver;
+    }
+
+    /**
+     * Resolves a derived alias column to the physical base column, if known.
+     *
+     * <p>Called from SimpleSqlRelationParser.resolveColumn(). Empty Optional is
+     * a normal outcome and means the caller should fall back to physical table
+     * aliases or skip the relation.
+     */
+    Optional<ColumnRef> resolve(String alias, String column) {
+        return Optional.ofNullable(columns.get(new ColumnKey(normalize(alias), normalize(column))));
+    }
+
+    boolean hasLineage(String alias, String column) {
+        return columns.containsKey(new ColumnKey(normalize(alias), normalize(column)));
+    }
+
+    /**
+     * Reads WITH/CTE declarations and records their output column lineage.
+     *
+     * <p>Called by analyze() for the full SQL and recursively by
+     * analyzeSelectOutput() for nested SELECT bodies. The loop advances through
+     * comma-separated CTE declarations:
+     *
+     * <pre>{@code
+     * WITH a AS (SELECT o.id FROM orders o),
+     *      b AS (SELECT a.id FROM a)
+     * SELECT * FROM b
+     * }</pre>
+     *
+     * Each iteration extracts one CTE name, optional explicit output column
+     * list, and parenthesized body, then delegates body parsing to
+     * analyzeSelectOutput().
+     */
+    private void analyzeCtes(String text) {
+        int with = indexOfWord(text, "with", 0);
+        if (with < 0) {
+            return;
+        }
+        int position = skipWhitespace(text, with + "with".length());
+        if (startsWithWord(text, position, "recursive")) {
+            position = skipWhitespace(text, position + "recursive".length());
+        }
+
+        while (position < text.length()) {
+            position = skipWhitespaceAndCommas(text, position);
+            Identifier cteName = readIdentifier(text, position);
+            if (cteName.value().isBlank()) {
+                return;
+            }
+            position = skipWhitespace(text, cteName.end());
+
+            List<String> explicitColumns = List.of();
+            if (position < text.length() && text.charAt(position) == '(') {
+                int endColumns = findMatchingParen(text, position);
+                if (endColumns < 0) {
+                    return;
+                }
+                explicitColumns = splitIdentifierList(text.substring(position + 1, endColumns));
+                position = skipWhitespace(text, endColumns + 1);
+            }
+
+            if (!startsWithWord(text, position, "as")) {
+                return;
+            }
+            position = skipWhitespace(text, position + "as".length());
+            if (startsWithWord(text, position, "not")) {
+                position = skipWhitespace(text, position + "not".length());
+            }
+            if (startsWithWord(text, position, "materialized")) {
+                position = skipWhitespace(text, position + "materialized".length());
+            }
+            if (position >= text.length() || text.charAt(position) != '(') {
+                return;
+            }
+            int bodyEnd = findMatchingParen(text, position);
+            if (bodyEnd < 0) {
+                return;
+            }
+            String body = text.substring(position + 1, bodyEnd);
+            Map<String, ColumnRef> output = analyzeSelectOutput(body, explicitColumns);
+            addRowset(cteName.value(), output);
+            position = bodyEnd + 1;
+            position = skipWhitespace(text, position);
+            if (position >= text.length() || text.charAt(position) != ',') {
+                return;
+            }
+            position++;
+        }
+    }
+
+    /**
+     * Finds parenthesized SELECT/ WITH bodies used as derived tables.
+     *
+     * <p>Called by analyze() and analyzeSelectOutput(). The loop walks every
+     * parenthesized block in source order. Only blocks whose trimmed body starts
+     * with SELECT or WITH are treated as derived rowsets; ordinary function
+     * calls and predicate parentheses are ignored.
+     *
+     * <pre>{@code
+     * SELECT *
+     * FROM (
+     *   SELECT o.id AS order_id FROM orders o
+     * ) AS projected_orders
+     * }</pre>
+     */
+    private void analyzeDerivedTables(String text) {
+        int position = 0;
+        while (position < text.length()) {
+            int open = text.indexOf('(', position);
+            if (open < 0) {
+                return;
+            }
+            int close = findMatchingParen(text, open);
+            if (close < 0) {
+                return;
+            }
+            String body = text.substring(open + 1, close).trim();
+            if (startsWithQuery(body)) {
+                AliasAfterParen alias = readAliasAfterParen(text, close + 1);
+                if (!alias.alias().isBlank()) {
+                    Map<String, ColumnRef> output = analyzeSelectOutput(body, alias.columnNames());
+                    addRowset(alias.alias(), output);
+                }
+            }
+            position = close + 1;
+        }
+    }
+
+    /**
+     * Builds output-column lineage for one SELECT-like query body.
+     *
+     * <p>Called by analyzeCtes() and analyzeDerivedTables(). It first analyzes
+     * nested rowsets inside the body, then identifies the top-level SELECT list
+     * before the top-level FROM. Each projection is inspected independently.
+     *
+     * <p>Loop meaning: projection i may be renamed by an explicit CTE/derived
+     * column list. For example:
+     *
+     * <pre>{@code
+     * WITH x(order_id) AS (
+     *   SELECT o.id FROM orders o
+     * )
+     * SELECT * FROM x
+     * }</pre>
+     *
+     * Here projection {@code o.id} becomes output column {@code order_id}.
+     */
+    private Map<String, ColumnRef> analyzeSelectOutput(String query, List<String> explicitOutputColumns) {
+        analyzeCtes(query);
+        analyzeDerivedTables(query);
+        applyRowsetReferenceAliases(query);
+
+        int select = findTopLevelKeyword(query, "select", 0);
+        if (select < 0) {
+            return Map.of();
+        }
+        int from = findTopLevelKeyword(query, "from", select + "select".length());
+        if (from < 0 || from <= select) {
+            return Map.of();
+        }
+
+        Set<String> ignoredRowsets = new LinkedHashSet<>(cteNames);
+        ignoredRowsets.addAll(rowsets.keySet());
+        Map<String, TableId> aliases = SimpleSqlRelationParser.AliasExtractor.extract(query, ignoredRowsets);
+        List<String> projections = splitTopLevel(query.substring(select + "select".length(), from), ',');
+        Map<String, ColumnRef> output = new LinkedHashMap<>();
+        for (int i = 0; i < projections.size(); i++) {
+            Projection projection = parseProjection(projections.get(i));
+            String outputColumn = i < explicitOutputColumns.size()
+                    ? explicitOutputColumns.get(i)
+                    : projection.outputColumn();
+            if (outputColumn.isBlank()) {
+                continue;
+            }
+            directColumnSource(projection.expression(), aliases)
+                    .ifPresent(source -> output.put(normalize(outputColumn), source));
+        }
+        return output;
+    }
+
+    /**
+     * Converts a projection expression to a base column only when it is safe.
+     *
+     * <p>Called by analyzeSelectOutput(). The function first checks whether the
+     * expression is exactly {@code alias.column}. If that alias is itself a CTE
+     * or derived rowset, resolve() recursively collapses it to the original base
+     * column. Expressions return Optional.empty().
+     */
+    private Optional<ColumnRef> directColumnSource(String expression, Map<String, TableId> aliases) {
+        String cleaned = expression.trim();
+        if (!PLAIN_COLUMN.matcher(cleaned).matches()) {
+            return Optional.empty();
+        }
+        String[] parts = cleaned.split("\\.", 2);
+        String alias = clean(parts[0]);
+        String column = clean(parts[1]);
+        Optional<ColumnRef> rowsetColumn = resolve(alias, column);
+        if (rowsetColumn.isPresent()) {
+            return rowsetColumn;
+        }
+        TableId table = aliases.get(alias);
+        if (table == null) {
+            return Optional.empty();
+        }
+        return Optional.of(ColumnRef.of(table, column));
+    }
+
+    /**
+     * Normalizes one SELECT-list item into expression + output column name.
+     *
+     * <p>Called by analyzeSelectOutput(). Supported projection shapes are:
+     *
+     * <pre>{@code
+     * SELECT o.id AS order_id FROM orders o
+     * SELECT o.id order_id FROM orders o
+     * SELECT o.id FROM orders o
+     * }</pre>
+     *
+     * Complex expressions return an empty output column unless an explicit
+     * caller-provided column list supplies the output name; even then
+     * directColumnSource() will reject the expression for precise lineage.
+     */
+    private Projection parseProjection(String rawProjection) {
+        String projection = rawProjection.trim();
+        Matcher asMatcher = AS_ALIAS.matcher(projection);
+        if (asMatcher.matches()) {
+            return new Projection(asMatcher.group(1).trim(), clean(asMatcher.group(2)));
+        }
+
+        List<String> tokens = splitWhitespaceAtTopLevel(projection);
+        if (tokens.size() == 2 && PLAIN_COLUMN.matcher(tokens.get(0)).matches() && !isKeyword(tokens.get(1))) {
+            return new Projection(tokens.get(0), clean(tokens.get(1)));
+        }
+        if (PLAIN_COLUMN.matcher(projection).matches()) {
+            String[] pieces = projection.split("\\.", 2);
+            return new Projection(projection, clean(pieces[1]));
+        }
+        return new Projection(projection, "");
+    }
+
+    /**
+     * Registers a CTE/derived table name and all of its output columns.
+     *
+     * <p>Called after analyzing a CTE body, a derived table body, or an alias to
+     * an already-known rowset. It writes both rowsets[rowsetName] and the flat
+     * columns map used by resolve().
+     */
+    private void addRowset(String rowsetName, Map<String, ColumnRef> output) {
+        if (output.isEmpty()) {
+            return;
+        }
+        String normalizedRowset = normalize(rowsetName);
+        rowsets.put(normalizedRowset, output);
+        for (Map.Entry<String, ColumnRef> entry : output.entrySet()) {
+            columns.put(new ColumnKey(normalizedRowset, entry.getKey()), entry.getValue());
+        }
+    }
+
+    /**
+     * Copies lineage from a rowset name to aliases used in FROM/JOIN clauses.
+     *
+     * <p>Called after rowsets are discovered. Example:
+     *
+     * <pre>{@code
+     * WITH recent_orders AS (
+     *   SELECT o.id AS order_id FROM orders o
+     * )
+     * SELECT * FROM recent_orders ro
+     * }</pre>
+     *
+     * If {@code recent_orders.order_id -> orders.id} is known, this method adds
+     * {@code ro.order_id -> orders.id}. The loop scans every FROM/JOIN reference
+     * and copies only when the referenced table name is a known rowset.
+     */
+    private void applyRowsetReferenceAliases(String text) {
+        if (rowsets.isEmpty()) {
+            return;
+        }
+        Matcher matcher = FROM_OR_JOIN_NAME.matcher(text);
+        while (matcher.find()) {
+            String rowsetName = normalize(cleanTable(matcher.group(1)));
+            Map<String, ColumnRef> output = rowsets.get(rowsetName);
+            if (output == null) {
+                continue;
+            }
+            String alias = clean(matcher.group(2));
+            if (alias.isBlank() || isKeyword(alias)) {
+                continue;
+            }
+            addRowset(alias, output);
+        }
+    }
+
+    /**
+     * Reads the alias that follows a derived-table closing parenthesis.
+     *
+     * <p>Called by analyzeDerivedTables(). It supports both ordinary aliases and
+     * explicit output column lists:
+     *
+     * <pre>{@code
+     * FROM (SELECT o.id FROM orders o) AS x(order_id)
+     * FROM (SELECT o.id FROM orders o) x
+     * }</pre>
+     */
+    private AliasAfterParen readAliasAfterParen(String text, int start) {
+        int position = skipWhitespace(text, start);
+        if (startsWithWord(text, position, "as")) {
+            position = skipWhitespace(text, position + "as".length());
+        }
+        Identifier alias = readIdentifier(text, position);
+        if (alias.value().isBlank() || isKeyword(alias.value())) {
+            return new AliasAfterParen("", List.of());
+        }
+        position = skipWhitespace(text, alias.end());
+        List<String> columnNames = List.of();
+        if (position < text.length() && text.charAt(position) == '(') {
+            int end = findMatchingParen(text, position);
+            if (end >= 0) {
+                columnNames = splitIdentifierList(text.substring(position + 1, end));
+            }
+        }
+        return new AliasAfterParen(alias.value(), columnNames);
+    }
+
+    private static boolean startsWithQuery(String text) {
+        String trimmed = text.stripLeading().toLowerCase(Locale.ROOT);
+        return trimmed.startsWith("select ") || trimmed.startsWith("with ");
+    }
+
+    private static List<String> splitIdentifierList(String text) {
+        List<String> values = new ArrayList<>();
+        for (String item : splitTopLevel(text, ',')) {
+            String value = clean(item);
+            if (!value.isBlank()) {
+                values.add(value);
+            }
+        }
+        return values;
+    }
+
+    private static List<String> splitWhitespaceAtTopLevel(String text) {
+        List<String> parts = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        int depth = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')' && depth > 0) {
+                depth--;
+            }
+            if (Character.isWhitespace(c) && depth == 0) {
+                if (!current.isEmpty()) {
+                    parts.add(current.toString());
+                    current.setLength(0);
+                }
+            } else {
+                current.append(c);
+            }
+        }
+        if (!current.isEmpty()) {
+            parts.add(current.toString());
+        }
+        return parts;
+    }
+
+    /**
+     * Splits text by a delimiter only at parenthesis depth zero.
+     *
+     * <p>Called for SELECT lists and explicit column lists. The depth counter is
+     * why {@code SELECT COALESCE(a.id, b.id) AS id, o.user_id ...} stays as two
+     * projections rather than splitting inside COALESCE().
+     */
+    private static List<String> splitTopLevel(String text, char delimiter) {
+        List<String> parts = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        int depth = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')' && depth > 0) {
+                depth--;
+            }
+            if (c == delimiter && depth == 0) {
+                parts.add(current.toString().trim());
+                current.setLength(0);
+            } else {
+                current.append(c);
+            }
+        }
+        if (!current.isEmpty()) {
+            parts.add(current.toString().trim());
+        }
+        return parts;
+    }
+
+    /**
+     * Finds a keyword outside parentheses.
+     *
+     * <p>Called by analyzeSelectOutput() to find the SELECT and FROM that belong
+     * to the current query body, not a nested subquery inside the SELECT list.
+     */
+    private static int findTopLevelKeyword(String text, String keyword, int start) {
+        int depth = 0;
+        for (int i = Math.max(0, start); i <= text.length() - keyword.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '(') {
+                depth++;
+                continue;
+            }
+            if (c == ')' && depth > 0) {
+                depth--;
+                continue;
+            }
+            if (depth == 0 && startsWithWord(text, i, keyword)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int findMatchingParen(String text, int openPosition) {
+        int depth = 0;
+        for (int i = openPosition; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+                if (depth == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private static int indexOfWord(String text, String word, int start) {
+        for (int i = Math.max(0, start); i <= text.length() - word.length(); i++) {
+            if (startsWithWord(text, i, word)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean startsWithWord(String text, int position, String word) {
+        if (position < 0 || position + word.length() > text.length()) {
+            return false;
+        }
+        if (!text.regionMatches(true, position, word, 0, word.length())) {
+            return false;
+        }
+        boolean beforeOk = position == 0 || !isIdentifierPart(text.charAt(position - 1));
+        int after = position + word.length();
+        boolean afterOk = after >= text.length() || !isIdentifierPart(text.charAt(after));
+        return beforeOk && afterOk;
+    }
+
+    private static Identifier readIdentifier(String text, int start) {
+        int position = skipWhitespace(text, start);
+        if (position >= text.length()) {
+            return new Identifier("", position);
+        }
+        char first = text.charAt(position);
+        if (first == '`' || first == '"') {
+            int end = text.indexOf(first, position + 1);
+            if (end < 0) {
+                return new Identifier("", position);
+            }
+            return new Identifier(text.substring(position + 1, end), end + 1);
+        }
+        int end = position;
+        while (end < text.length() && isIdentifierPart(text.charAt(end))) {
+            end++;
+        }
+        if (end == position) {
+            return new Identifier("", position);
+        }
+        return new Identifier(text.substring(position, end), end);
+    }
+
+    private static int skipWhitespaceAndCommas(String text, int start) {
+        int position = start;
+        while (position < text.length()
+                && (Character.isWhitespace(text.charAt(position)) || text.charAt(position) == ',')) {
+            position++;
+        }
+        return position;
+    }
+
+    private static int skipWhitespace(String text, int start) {
+        int position = start;
+        while (position < text.length() && Character.isWhitespace(text.charAt(position))) {
+            position++;
+        }
+        return position;
+    }
+
+    private static boolean isIdentifierPart(char c) {
+        return Character.isLetterOrDigit(c) || c == '_' || c == '$';
+    }
+
+    private static boolean isKeyword(String value) {
+        String lower = normalize(value);
+        return lower.equals("on") || lower.equals("where") || lower.equals("join") || lower.equals("left")
+                || lower.equals("right") || lower.equals("inner") || lower.equals("outer") || lower.equals("full")
+                || lower.equals("cross") || lower.equals("using") || lower.equals("natural") || lower.equals("group")
+                || lower.equals("order") || lower.equals("having") || lower.equals("limit") || lower.equals("union");
+    }
+
+    private static String clean(String identifier) {
+        if (identifier == null) {
+            return "";
+        }
+        String value = identifier.trim();
+        if ((value.startsWith("`") && value.endsWith("`")) || (value.startsWith("\"") && value.endsWith("\""))) {
+            value = value.substring(1, value.length() - 1);
+        }
+        return value;
+    }
+
+    private static String cleanTable(String table) {
+        String value = clean(table);
+        int dot = value.lastIndexOf('.');
+        return dot >= 0 ? value.substring(dot + 1) : value;
+    }
+
+    private static String normalize(String value) {
+        return clean(value).toLowerCase(Locale.ROOT);
+    }
+
+    private record ColumnKey(String alias, String column) {
+    }
+
+    private record Identifier(String value, int end) {
+    }
+
+    private record Projection(String expression, String outputColumn) {
+    }
+
+    private record AliasAfterParen(String alias, List<String> columnNames) {
+    }
+}

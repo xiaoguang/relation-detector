@@ -1,0 +1,39 @@
+package com.relationdetector.core;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.relationdetector.api.Enums.DatabaseType;
+import com.relationdetector.api.Enums.LogFormatHint;
+import com.relationdetector.api.Enums.OutputFormat;
+
+/** Runtime configuration after YAML and CLI overrides are resolved. */
+public final class ScanConfig {
+    public DatabaseType databaseType;
+    public String adaptorId;
+    public String jdbcUrl;
+    public String username;
+    public String password;
+    public String catalog;
+    public String schema;
+    public List<String> includeTables = new ArrayList<>();
+    public List<String> excludeTables = new ArrayList<>();
+    public boolean metadataEnabled = true;
+    public boolean ddlEnabled;
+    public List<Path> ddlFiles = new ArrayList<>();
+    public boolean objectsEnabled;
+    public boolean objectsFromDatabase;
+    public List<Path> objectFiles = new ArrayList<>();
+    public boolean logsEnabled;
+    public List<Path> logFiles = new ArrayList<>();
+    public LogFormatHint logFormatHint = LogFormatHint.AUTO;
+    public boolean dataProfileEnabled;
+    public int sampleRows = 10_000;
+    public int timeoutSeconds = 30;
+    public int maxCandidatePairs = 1_000;
+    public OutputFormat outputFormat = OutputFormat.JSON;
+    public double minConfidence = 0.30d;
+    public boolean includeEvidence = true;
+    public boolean includeWarnings = true;
+}

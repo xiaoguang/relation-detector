@@ -1,0 +1,139 @@
+package com.relationdetector.core;
+
+import java.math.RoundingMode;
+import java.util.Iterator;
+import java.util.Map;
+
+import com.relationdetector.api.Evidence;
+import com.relationdetector.api.RelationshipCandidate;
+import com.relationdetector.api.WarningMessage;
+
+/** Small JSON writer to keep the first code drop dependency-free. */
+public final class JsonResultWriter {
+    public String write(ScanResult result, boolean includeEvidence, boolean includeWarnings) {
+        StringBuilder out = new StringBuilder(4096);
+        out.append("{\n");
+        out.append("  \"database\": { \"type\": \"").append(escape(result.databaseType())).append("\", \"schema\": \"")
+                .append(escape(result.schema())).append("\" },\n");
+        out.append("  \"generatedAt\": \"").append(result.generatedAt()).append("\",\n");
+        out.append("  \"summary\": { \"relationshipCount\": ").append(result.relationships().size())
+                .append(", \"warningCount\": ").append(result.warnings().size()).append(", \"sources\": ");
+        writeStringArray(out, result.sources());
+        out.append(" },\n");
+        out.append("  \"relationships\": [\n");
+        for (int i = 0; i < result.relationships().size(); i++) {
+            writeRelationship(out, result.relationships().get(i), includeEvidence);
+            if (i + 1 < result.relationships().size()) {
+                out.append(",");
+            }
+            out.append("\n");
+        }
+        out.append("  ],\n");
+        out.append("  \"warnings\": ");
+        if (includeWarnings) {
+            writeWarnings(out, result.warnings());
+        } else {
+            out.append("[]");
+        }
+        out.append("\n}\n");
+        return out.toString();
+    }
+
+    private void writeRelationship(StringBuilder out, RelationshipCandidate relation, boolean includeEvidence) {
+        out.append("    {\n");
+        out.append("      \"source\": { \"table\": \"").append(escape(relation.source().table().displayName()))
+                .append("\", \"column\": ");
+        writeNullable(out, relation.source().isColumnLevel() ? relation.source().column().columnName() : null);
+        out.append(" },\n");
+        out.append("      \"target\": { \"table\": \"").append(escape(relation.target().table().displayName()))
+                .append("\", \"column\": ");
+        writeNullable(out, relation.target().isColumnLevel() ? relation.target().column().columnName() : null);
+        out.append(" },\n");
+        out.append("      \"relationType\": \"").append(relation.relationType()).append("\",\n");
+        out.append("      \"relationSubType\": \"").append(relation.relationSubType()).append("\",\n");
+        out.append("      \"confidence\": ").append(relation.confidence().setScale(4, RoundingMode.HALF_UP)).append(",\n");
+        out.append("      \"evidence\": ");
+        if (includeEvidence) {
+            writeEvidence(out, relation.evidence());
+        } else {
+            out.append("[]");
+        }
+        out.append(",\n      \"warnings\": ");
+        writeWarnings(out, relation.warnings());
+        out.append("\n    }");
+    }
+
+    private void writeEvidence(StringBuilder out, java.util.List<Evidence> evidence) {
+        out.append("[");
+        for (int i = 0; i < evidence.size(); i++) {
+            Evidence item = evidence.get(i);
+            out.append("\n        { \"type\": \"").append(item.type()).append("\", \"sourceType\": \"")
+                    .append(item.sourceType()).append("\", \"score\": ").append(item.score())
+                    .append(", \"source\": \"").append(escape(item.source())).append("\", \"detail\": \"")
+                    .append(escape(item.detail())).append("\", \"attributes\": ");
+            writeAttributes(out, item.attributes());
+            out.append(" }");
+            if (i + 1 < evidence.size()) {
+                out.append(",");
+            }
+        }
+        if (!evidence.isEmpty()) {
+            out.append("\n      ");
+        }
+        out.append("]");
+    }
+
+    private void writeWarnings(StringBuilder out, java.util.List<WarningMessage> warnings) {
+        out.append("[");
+        for (int i = 0; i < warnings.size(); i++) {
+            WarningMessage warning = warnings.get(i);
+            out.append("{ \"type\": \"").append(warning.type()).append("\", \"severity\": \"")
+                    .append(warning.severity()).append("\", \"code\": \"").append(escape(warning.code()))
+                    .append("\", \"message\": \"").append(escape(warning.message())).append("\", \"source\": \"")
+                    .append(escape(warning.source())).append("\", \"line\": ").append(warning.line()).append(" }");
+            if (i + 1 < warnings.size()) {
+                out.append(", ");
+            }
+        }
+        out.append("]");
+    }
+
+    private void writeAttributes(StringBuilder out, Map<String, Object> attributes) {
+        out.append("{");
+        Iterator<Map.Entry<String, Object>> iterator = attributes.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Object> entry = iterator.next();
+            out.append("\"").append(escape(entry.getKey())).append("\": \"").append(escape(String.valueOf(entry.getValue()))).append("\"");
+            if (iterator.hasNext()) {
+                out.append(", ");
+            }
+        }
+        out.append("}");
+    }
+
+    private void writeStringArray(StringBuilder out, java.util.List<String> values) {
+        out.append("[");
+        for (int i = 0; i < values.size(); i++) {
+            out.append("\"").append(escape(values.get(i))).append("\"");
+            if (i + 1 < values.size()) {
+                out.append(", ");
+            }
+        }
+        out.append("]");
+    }
+
+    private void writeNullable(StringBuilder out, String value) {
+        if (value == null) {
+            out.append("null");
+        } else {
+            out.append("\"").append(escape(value)).append("\"");
+        }
+    }
+
+    private String escape(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+    }
+}
