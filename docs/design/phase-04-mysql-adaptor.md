@@ -125,6 +125,7 @@ MySQL adaptor 负责：
 - function。
 - view。
 - trigger。
+- event / scheduler job。
 
 ### 过程和函数
 
@@ -160,6 +161,16 @@ MySQL adaptor 负责：
 - `ACTION_STATEMENT`
 
 触发器引用可能表达业务写入关系，例如订单写审计表，evidence 默认使用 `TRIGGER_REFERENCE`。
+
+### Event / Scheduler Job
+
+从 `information_schema.EVENTS` 读取：
+
+- `EVENT_SCHEMA`
+- `EVENT_NAME`
+- `EVENT_DEFINITION`
+
+event body 可能包含 `INSERT ... SELECT`、`UPDATE`、`DELETE`、JOIN 或嵌套查询。系统把它映射为 `DatabaseObjectType.EVENT` / `StatementSourceType.EVENT`，证据默认按持久化过程逻辑处理，即 JOIN 使用 `PROCEDURE_JOIN`。
 
 ## 日志提取
 
@@ -228,7 +239,7 @@ MySQL adaptor 可以修正：
 ## 验收标准
 
 - 可通过 JDBC 读取 MySQL 表、列、PK、FK、unique、index。
-- 可读取 procedure/function/view/trigger 定义。
+- 可读取 procedure/function/view/trigger/event 定义。
 - 可从 MySQL general/slow log 提取 SQL。
 - 可生成 `METADATA_FOREIGN_KEY`、`SOURCE_INDEX`、`TARGET_UNIQUE`、对象定义和日志相关 evidence。
 - 权限不足时产生 warning，不导致整个扫描失败。
@@ -240,8 +251,8 @@ MySQL adaptor 可以修正：
 - unique/index 采集测试。
 - view definition 采集测试。
 - trigger action statement 采集测试。
+- event definition 采集测试。
 - general log 提取测试。
 - slow log 提取测试。
 - 权限不足 warning 测试。
 - include/exclude 过滤测试。
-

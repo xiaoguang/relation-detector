@@ -83,7 +83,13 @@ public final class Enums {
         PROCEDURE,
         FUNCTION,
         VIEW,
+        MATERIALIZED_VIEW,
         TRIGGER,
+        EVENT,
+        RULE,
+        PACKAGE,
+        PACKAGE_BODY,
+        MIGRATION,
         NATIVE_LOG,
         PLAIN_SQL
     }
@@ -93,7 +99,22 @@ public final class Enums {
         PROCEDURE,
         FUNCTION,
         VIEW,
-        TRIGGER
+        MATERIALIZED_VIEW,
+        TRIGGER,
+        EVENT,
+        RULE,
+        PACKAGE,
+        PACKAGE_BODY
+    }
+
+    /** Structured parser event categories emitted before relationship scoring. */
+    public enum StructuredParseEventType {
+        TABLE_REFERENCE,
+        COLUMN_EQUALITY,
+        DDL_FOREIGN_KEY,
+        DDL_INDEX,
+        DYNAMIC_SQL,
+        PARSER_COMPARISON
     }
 
     /** Hint used by adaptors when extracting SQL from raw log files. */

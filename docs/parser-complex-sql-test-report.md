@@ -44,6 +44,9 @@
 
 ```text
 relation-core/src/test/java/com/relationdetector/core/SimpleSqlRelationParserComplexSqlTest.java
+relation-core/src/test/java/com/relationdetector/core/DialectSqlRelationParserComplexMatrixTest.java
+relation-core/src/test/java/com/relationdetector/core/DialectParserEvidenceConfidenceTest.java
+relation-core/src/test/java/com/relationdetector/core/AntlrShadowGoldenComparisonTest.java
 relation-core/src/test/java/com/relationdetector/core/ScanEngineDiagnosticsTest.java
 adaptor-mysql/src/test/java/com/relationdetector/mysql/MySqlDdlParserTest.java
 adaptor-postgres/src/test/java/com/relationdetector/postgres/PostgresDdlParserTest.java
@@ -55,6 +58,9 @@ adaptor-postgres/src/test/java/com/relationdetector/postgres/PostgresDdlParserTe
 - 直接调用 `SimpleSqlRelationParser`。
 - 使用长 SQL 字符串模拟过程、触发器、视图、函数对象体。
 - 使用短 SQL 矩阵覆盖 JOIN 关键字、逗号 JOIN、别名和引用标识符组合。
+- 使用方言化复杂 SQL 矩阵覆盖 MySQL/PostgreSQL 合法但差异明显的写法。
+- 使用 evidence/confidence 专项测试断言证据类型、来源类型、joinKind 和最终评分。
+- 使用 ANTLR shadow golden comparison 确保 shadow path 不丢 primary parser 当前识别的关系。
 - 使用扫描级诊断测试覆盖 DDL/SQL/log parser 抛异常时的 warning 输出和原始 SQL/DDL 保留。
 - 使用 MySQL/PostgreSQL adaptor DDL 测试覆盖方言 parser 失败时通过 `AdaptorContext` 上报 `DDL_PARSE_FAILED`。
 
@@ -450,6 +456,82 @@ WHERE o.user_id = u.id
 - 已增加作用域测试：先解析一个函数，函数内 `selected_user_ids` 被忽略；随后解析普通 SQL，普通 SQL 中同名 `selected_user_ids` 可以被识别为 `selected_user_ids.user_id -> users.id`。
 - 未在同一 SQL body 中通过 `CREATE TEMP/TEMPORARY TABLE` 显式创建的表，不会仅凭名字被当成临时表跳过。
 
+### 3.16 方言化复杂 SQL 矩阵
+
+测试文件：
+
+```text
+relation-core/src/test/java/com/relationdetector/core/DialectSqlRelationParserComplexMatrixTest.java
+```
+
+覆盖 MySQL：
+
+- 反引号 identifier。
+- 多层 CTE：`recent_orders -> regional_orders -> final SELECT`。
+- multi-table `UPDATE ... JOIN ... SET ...`。
+- multi-table `DELETE ... FROM ... LEFT JOIN ... WHERE ... IS NULL`。
+- derived table 显式输出列名：`AS projected(order_id, buyer_id)`。
+- recursive CTE 语法形态。
+
+覆盖 PostgreSQL：
+
+- 双引号 quoted identifier。
+- 多层 CTE 和 quoted CTE 名称。
+- `WITH RECURSIVE` 员工层级查询。
+- `JOIN LATERAL (SELECT outer_alias.column ...) x ON true`。
+- `unnest(...) WITH ORDINALITY AS input_ids(...)`。
+- `MERGE INTO target USING source ON ...`。
+
+未来 fixture：
+
+- SQL Server `[schema].[table]`、`CROSS APPLY`、`OUTER APPLY` 作为 disabled test 保留，不要求当前通过。
+
+新增测试发现并修复的问题：
+
+- 递归 CTE 中 `employees.manager_id -> employees.id` 是合法 self-FK-like，但旧逻辑把所有同表谓词都过滤掉。现在只过滤同表同列，允许同表不同列，并增加受限启发：同表内 `*_id -> id` 可作为 self-FK-like。
+- `JOIN LATERAL (SELECT o.user_id AS user_id) x` 中，derived body 没有自己的 `FROM`，但可以引用外层 alias。`SqlLineageResolver` 现在会把 derived table 之前已经出现的外层 alias 作为只读上下文，安全回溯 `x.user_id -> orders.user_id`。
+- `MERGE INTO target_orders t USING source_orders s ON ...` 的 target alias 原来没有进入 alias map；同时 `WHEN MATCHED THEN UPDATE SET ...` 会被误读为 `UPDATE SET` 表。现在新增 `MERGE INTO` target 提取，并禁止 `UPDATE SET` 被当成 mutation target。
+- `JOIN LATERAL` 和 `JOIN unnest(...)` 会被 regex 误读为物理表 `LATERAL` / `unnest`。现在 alias extractor 会跳过 rowset 修饰词和函数型 rowset，避免输出伪表关系。
+
+### 3.17 Evidence 和 confidence 复杂断言
+
+测试文件：
+
+```text
+relation-core/src/test/java/com/relationdetector/core/DialectParserEvidenceConfidenceTest.java
+```
+
+覆盖：
+
+- `NATIVE_LOG` 中的 `LEFT JOIN` 输出 `SQL_LOG_JOIN`，source type 为 `NATIVE_LOG`，`attributes.joinKind=LEFT_JOIN`。
+- view/procedure 对象分别输出 `VIEW_JOIN` / `PROCEDURE_JOIN`，source type 为 `DATABASE_OBJECT`。
+- `IN (SELECT ...)` 和 `EXISTS (...)` 分别输出 `SQL_LOG_SUBQUERY_IN` / `SQL_LOG_EXISTS`。
+- 给同一 SQL join 补充 `TARGET_UNIQUE`、`NAMING_MATCH`、`VALUE_CONTAINMENT_HIGH` 后，最终 confidence 保持当前公式结果 `0.7934`。
+- 同一关系重复出现时，`rawEvidence` 保留每一次原始证据，摘要 evidence 记录 `count`，并生成有上限的 `REPEATED_OBSERVATION`。
+
+### 3.18 ANTLR shadow golden comparison
+
+测试文件：
+
+```text
+relation-core/src/test/java/com/relationdetector/core/AntlrShadowGoldenComparisonTest.java
+```
+
+覆盖：
+
+- MySQL CTE + JOIN。
+- MySQL `DELETE ... LEFT JOIN`。
+- PostgreSQL nested CTE。
+- PostgreSQL `MERGE`。
+
+断言：
+
+- `ShadowSqlRelationParser` 最终输出与 primary `SimpleSqlRelationParser` baseline 一致。
+- ANTLR path 至少产生 `TABLE_REFERENCE` 和 `COLUMN_EQUALITY`。
+- diagnostics 中包含 `PARSER_COMPARISON`。
+
+这个测试不是为了证明 ANTLR visitor 已经完全替代 primary parser，而是为了保护迁移过程：未来每迁移一种规则，ANTLR 可以多识别关系，但不能少于 golden baseline。
+
 ## 4. 测试执行结果
 
 执行命令：
@@ -461,9 +543,9 @@ mvn test
 结果：
 
 ```text
-relation-core: Tests run: 54, Failures: 0, Errors: 0, Skipped: 0
-adaptor-mysql: Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
-adaptor-postgres: Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+relation-core: Tests run: 80, Failures: 0, Errors: 0, Skipped: 1
+adaptor-mysql: Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+adaptor-postgres: Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
@@ -513,6 +595,13 @@ BUILD SUCCESS
 - MySQL 反引号表名、带连字符索引/约束名、`USING BTREE`、表选项、`ON DELETE` / `ON UPDATE` 动作不应干扰 FK 和索引证据。
 - MySQL quoted prefix index，例如 `` KEY `idx-email` (`email`(10)) ``，仍不作为完整列 `SOURCE_INDEX`。
 
+本轮方言复杂 SQL 矩阵又发现并修复了四类问题：
+
+- 递归 CTE / self-reference 中的同表不同列关系被旧过滤条件漏掉；现在支持 `employees.manager_id -> employees.id` 这类受限 self-FK-like。
+- LATERAL derived table 无本地 FROM 时无法追踪外层 alias；现在支持简单外层列投影，例如 `SELECT o.user_id AS user_id`。
+- MERGE target alias 未进入 alias map；现在 `MERGE INTO target t USING source s ON t.source_id = s.id` 会输出普通 `SQL_LOG_JOIN` evidence。
+- rowset 修饰词/函数被误当物理表；现在跳过 `LATERAL`、`unnest(...)`、`json_table(...)` 这类非持久表名。
+
 ## 6. 当前 parser 能力结论
 
 当前 `SimpleSqlRelationParser` 可以识别：
@@ -530,7 +619,9 @@ BUILD SUCCESS
 - 多层 CTE 简单输出列 lineage 传播。
 - FROM/JOIN derived table 简单输出列 lineage 回溯。
 - 多层嵌套 derived table 简单输出列 lineage 传播。
+- LATERAL/correlated derived table 中无本地 FROM 的简单外层列投影 lineage，例如 `JOIN LATERAL (SELECT o.user_id AS user_id) x`。
 - 表达式投影的负向保护，避免把 `COALESCE`、聚合、窗口函数等输出列误判为精确 FK-like。
+- 递归 CTE 中可安全回溯的 self-FK-like，例如 `employees.manager_id -> employees.id`。
 - 显式 JOIN 中无别名、混合别名的表引用。
 - 逗号 FROM 列表中无别名、混合别名的表引用。
 - quoted qualified identifier，例如 `"public"."orders"` 和 `` `shop`.`orders` ``。
@@ -543,6 +634,8 @@ BUILD SUCCESS
 - 纯列引用 tuple equality，例如 `(o.tenant_id, o.user_id) = (u.tenant_id, u.id)`。
 - 纯列引用 tuple `IN`，例如 `(o.tenant_id, o.user_id) IN (SELECT u.tenant_id, u.id FROM users u)`。
 - PostgreSQL 风格 `UPDATE ... FROM` 和 `DELETE ... USING` 中的基础 alias；有 alias 和无 alias 都有测试覆盖。
+- PostgreSQL 风格 `MERGE INTO ... USING ... ON ...` 中的基础 alias 和 ON predicate。
+- 函数型 rowset 负向保护，例如 `unnest(...) WITH ORDINALITY` 不作为物理表输出关系。
 - 同一关系重复 evidence 的 `rawEvidence` 保留、`attributes.count` 聚合、`sampleDetails` 样本和 `REPEATED_OBSERVATION` 递减增益。
 - DDL inline references、table-level FK、ALTER TABLE FK。
 - DDL composite FK 按列顺序生成候选关系。
@@ -553,22 +646,26 @@ BUILD SUCCESS
 - DDL MySQL 反引号索引/约束、索引选项、referential actions 和 quoted prefix index。
 - MySQL adaptor 私有归一化：`CREATE UNIQUE INDEX ... USING BTREE ON ... INVISIBLE` 可在 MySQL parser 中生成 `TARGET_UNIQUE`，但 core fallback 不识别该私有写法。
 - PostgreSQL adaptor 私有归一化：`CREATE UNIQUE INDEX ... ON ONLY ...` 可在 PostgreSQL parser 中生成 `TARGET_UNIQUE`，但 core fallback 不识别该私有写法。
+- ANTLR 结构化 parser 已进入 shadow mode：`AntlrStructuredSqlParser` 产生 `TABLE_REFERENCE`、`COLUMN_EQUALITY`、`PARSER_COMPARISON` 等事件，MySQL/PostgreSQL adaptor 负责选择自己的 ANTLR SQL/DDL parser。
+- 新 SQL 来源类型已纳入证据映射：materialized view/rule 使用 `VIEW_JOIN`，event/package 使用 `PROCEDURE_JOIN`，migration 使用普通 SQL 来源。
+- 动态 SQL 识别：`PREPARE`、`EXECUTE`、`EXECUTE IMMEDIATE` 会生成 `DYNAMIC_SQL_UNRESOLVED` warning，并保留 `attributes.rawStatement`。
 - 解析/提取失败诊断：DDL parser、SQL parser、object 文件、native log 失败会生成 warning，并在可取得输入文本时保留 `attributes.rawStatement`。
 - JSON warning 输出包含 `attributes`，可携带 `rawStatement`、`statementSourceType`、`endLine`、`exceptionClass` 等诊断字段。
 
 ## 7. 当前边界
 
-当前 regex parser 仍不是完整 SQL parser，以下场景不保证准确：
+当前 primary parser 仍是 `SimpleSqlRelationParser`。ANTLR parser 已在 MySQL/PostgreSQL 中以 shadow mode 接入，但其关系输出尚未取代 primary parser。以下场景仍不保证准确：
 
 - `SELECT *` 或 `alias.*` 的完整列展开。
 - `UNION` / `INTERSECT` / `EXCEPT` 分支输出列和来源表之间的 lineage。
 - 递归 CTE 中递归分支的稳定 lineage。
-- `LATERAL` / `CROSS APPLY` / `OUTER APPLY` 的列来源回溯。
-- `MERGE` 的写入侧关系。
+- 复杂 `LATERAL` / correlated subquery lineage，例如 LATERAL body 内有自己的多表 JOIN、聚合、窗口函数或表达式投影。
+- `CROSS APPLY` / `OUTER APPLY` 的列来源回溯。
+- `MERGE` 的复杂写入侧 lineage，例如 `WHEN MATCHED UPDATE SET t.col = s.col` 或 `RETURNING` 输出列来源。
 - 复杂 `UPDATE` / `DELETE`，例如 CTE write、`RETURNING` lineage、多目标 MySQL delete。
 - 数据修改 CTE 的 `RETURNING` 列 lineage。
 - JSON_TABLE、unnest、set-returning function 等函数型行集的列来源。
-- 动态 SQL，例如 MySQL `PREPARE` 或 PL/pgSQL `EXECUTE format(...)`。
+- 动态 SQL，例如 MySQL `PREPARE` 或 PL/pgSQL `EXECUTE format(...)`。当前会报告 `DYNAMIC_SQL_UNRESOLVED`，但不会猜测拼接后的关系。
 - 复杂表达式投影，例如 `COALESCE(o.user_id, x.user_id) IN (...)`。
 - 复杂多列 tuple comparison，例如 tuple 项包含函数、表达式、derived table 投影、`ANY/ALL`、`UNION` 或列数不一致。
 - 非等值关联，例如 range join、JSON path join。
@@ -576,4 +673,4 @@ BUILD SUCCESS
 - 输入过滤表识别依赖同一对象体内的 `CREATE TEMP/TEMPORARY TABLE`；不再使用命名前缀兜底。
 - DDL parser 仍不是完整数据库方言 parser；复杂分区表、继承表、排除约束、跨方言特殊索引参数、动态生成 DDL 等仍建议交给数据库 adaptor 的元数据 collector 或未来 parser-backed 实现。
 
-后续如果要覆盖这些场景，应按设计文档替换为 JSqlParser 或数据库专用 parser，而不是继续堆叠 regex。
+后续如果要覆盖这些场景，应按设计文档逐步把具体规则从 primary parser 迁移到 ANTLR visitor，或为 MySQL/PostgreSQL 接入更完整的官方/社区 grammar；不要继续堆叠 regex。

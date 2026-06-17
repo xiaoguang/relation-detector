@@ -274,7 +274,13 @@ public enum StatementSourceType {
   PROCEDURE,
   FUNCTION,
   VIEW,
+  MATERIALIZED_VIEW,
   TRIGGER,
+  EVENT,
+  RULE,
+  PACKAGE,
+  PACKAGE_BODY,
+  MIGRATION,
   NATIVE_LOG,
   PLAIN_SQL
 }
@@ -286,14 +292,22 @@ public enum StatementSourceType {
 | `PROCEDURE` | 存储过程 body。 | `PROCEDURE_JOIN` |
 | `FUNCTION` | 函数 body。 | `PROCEDURE_JOIN` |
 | `VIEW` | 视图定义 SQL。 | `VIEW_JOIN` |
+| `MATERIALIZED_VIEW` | 物化视图定义 SQL。 | `VIEW_JOIN` |
 | `TRIGGER` | 触发器 body 或 trigger function。 | `TRIGGER_REFERENCE` |
+| `EVENT` | MySQL scheduler event body。 | `PROCEDURE_JOIN` |
+| `RULE` | PostgreSQL rewrite rule definition。 | `VIEW_JOIN` |
+| `PACKAGE` | Oracle package specification，后续 adaptor 预留。 | `PROCEDURE_JOIN` |
+| `PACKAGE_BODY` | Oracle package body，后续 adaptor 预留。 | `PROCEDURE_JOIN` |
+| `MIGRATION` | migration 脚本中的 SQL。 | `SQL_LOG_JOIN` |
 | `NATIVE_LOG` | 数据库原生日志提取出的 SQL。 | `SQL_LOG_JOIN`、`SQL_LOG_EXISTS` |
 | `PLAIN_SQL` | 清洗后的纯 SQL 文本。 | `SQL_LOG_JOIN`、`SQL_LOG_TABLE_CO_OCCURRENCE` |
 
 维护说明：
 
 - `FUNCTION` 和 `PROCEDURE` 可共用 `PROCEDURE_JOIN` evidence，因为二者都属于持久化数据库逻辑。
-- `VIEW` 的 JOIN 不应降级成普通 SQL 日志 JOIN。
+- `VIEW`、`MATERIALIZED_VIEW`、`RULE` 的 JOIN 不应降级成普通 SQL 日志 JOIN。
+- `EVENT`、`PACKAGE`、`PACKAGE_BODY` 属于持久化数据库逻辑，默认按 procedure/function 处理。
+- `MIGRATION` 不是数据库持久对象，证据来源按 `PLAIN_SQL` 处理。
 - `TRIGGER` 解析失败时常见，失败应记录 warning，不应中断扫描。
 
 ## 8. DatabaseObjectType
@@ -305,7 +319,12 @@ public enum DatabaseObjectType {
   PROCEDURE,
   FUNCTION,
   VIEW,
-  TRIGGER
+  MATERIALIZED_VIEW,
+  TRIGGER,
+  EVENT,
+  RULE,
+  PACKAGE,
+  PACKAGE_BODY
 }
 ```
 
@@ -313,13 +332,42 @@ public enum DatabaseObjectType {
 | --- | --- | --- | --- |
 | `PROCEDURE` | procedure | procedure | 持久化过程逻辑。 |
 | `FUNCTION` | function | function | PostgreSQL 中很多 trigger 逻辑也在 function 中。 |
-| `VIEW` | view | view/materialized view 可后续扩展 | 视图 SQL 通常是稳定 JOIN 证据。 |
+| `VIEW` | view | view | 视图 SQL 通常是稳定 JOIN 证据。 |
+| `MATERIALIZED_VIEW` | 不适用 | materialized view | PostgreSQL `pg_matviews` 定义。 |
 | `TRIGGER` | trigger | trigger + trigger function | 触发器中的引用可表达写入关系。 |
+| `EVENT` | scheduler event | 不适用 | MySQL event body 可包含关系 SQL。 |
+| `RULE` | 不适用 | rewrite rule | PostgreSQL rule 可包含查询重写 SQL。 |
+| `PACKAGE` | 不适用 | 不适用 | Oracle package spec 预留。 |
+| `PACKAGE_BODY` | 不适用 | 不适用 | Oracle package body 预留。 |
 
 维护说明：
 
 - PostgreSQL trigger 需要关联 `TRIGGER` 与对应 `FUNCTION`，不要只看 trigger 元数据。
-- 如果后续支持 materialized view，可新增 `MATERIALIZED_VIEW`，不要复用 `VIEW` 表达不同刷新语义。
+- 不要复用 `VIEW` 表达 materialized view；物化语义不同，虽然当前 JOIN evidence 同样映射为 `VIEW_JOIN`。
+
+## 8.1 StructuredParseEventType
+
+表示 ANTLR 结构化解析阶段产生的中间事件，不等价于最终 relationship。
+
+```java
+public enum StructuredParseEventType {
+  TABLE_REFERENCE,
+  COLUMN_EQUALITY,
+  DDL_FOREIGN_KEY,
+  DDL_INDEX,
+  DYNAMIC_SQL,
+  PARSER_COMPARISON
+}
+```
+
+| 值 | 含义 |
+| --- | --- |
+| `TABLE_REFERENCE` | 识别出表引用和 alias。 |
+| `COLUMN_EQUALITY` | 识别出 `alias.column = alias.column` 谓词。 |
+| `DDL_FOREIGN_KEY` | 为后续 ANTLR DDL FK visitor 预留。 |
+| `DDL_INDEX` | 为后续 ANTLR DDL index visitor 预留。 |
+| `DYNAMIC_SQL` | 为可静态还原的动态 SQL 事件预留。当前不可还原时输出 warning。 |
+| `PARSER_COMPARISON` | shadow mode 中 primary parser 和 ANTLR parser 的结果对比。 |
 
 ## 9. LogFormatHint
 

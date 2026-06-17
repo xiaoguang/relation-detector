@@ -266,7 +266,8 @@ final class SqlLineageResolver {
             if (startsWithQuery(body)) {
                 AliasAfterParen alias = readAliasAfterParen(text, close + 1);
                 if (!alias.alias().isBlank()) {
-                    Map<String, ColumnRef> output = analyzeSelectOutput(body, alias.columnNames());
+                    Map<String, TableId> outerAliases = outerAliasesBefore(text, open);
+                    Map<String, ColumnRef> output = analyzeSelectOutput(body, alias.columnNames(), outerAliases);
                     addRowset(alias.alias(), output);
                 }
             }
@@ -294,6 +295,37 @@ final class SqlLineageResolver {
      * Here projection {@code o.id} becomes output column {@code order_id}.
      */
     private Map<String, ColumnRef> analyzeSelectOutput(String query, List<String> explicitOutputColumns) {
+        return analyzeSelectOutput(query, explicitOutputColumns, Map.of());
+    }
+
+    /**
+     * Builds output-column lineage for one SELECT-like query body with optional
+     * outer-scope aliases.
+     *
+     * <p>The three-argument overload is used for LATERAL/correlated derived
+     * tables whose SELECT list can legally reference tables from the surrounding
+     * FROM clause without declaring its own FROM:
+     *
+     * <pre>{@code
+     * SELECT *
+     * FROM orders o
+     * JOIN LATERAL (
+     *   SELECT o.user_id AS user_id
+     * ) x ON true
+     * JOIN users u ON x.user_id = u.id
+     *
+     * -- resolver records:
+     * --   x.user_id -> orders.user_id
+     * }</pre>
+     *
+     * For ordinary CTEs and non-correlated derived tables the caller passes an
+     * empty map, so local aliases continue to be the only source of lineage.
+     */
+    private Map<String, ColumnRef> analyzeSelectOutput(
+            String query,
+            List<String> explicitOutputColumns,
+            Map<String, TableId> outerAliases
+    ) {
         analyzeCtes(query);
         analyzeDerivedTables(query);
         applyRowsetReferenceAliases(query);
@@ -303,14 +335,16 @@ final class SqlLineageResolver {
             return Map.of();
         }
         int from = findTopLevelKeyword(query, "from", select + "select".length());
-        if (from < 0 || from <= select) {
+        if (from >= 0 && from <= select) {
             return Map.of();
         }
 
         Set<String> ignoredRowsets = new LinkedHashSet<>(cteNames);
         ignoredRowsets.addAll(rowsets.keySet());
-        Map<String, TableId> aliases = SimpleSqlRelationParser.AliasExtractor.extract(query, ignoredRowsets);
-        List<String> projections = splitTopLevel(query.substring(select + "select".length(), from), ',');
+        Map<String, TableId> aliases = new LinkedHashMap<>(outerAliases);
+        aliases.putAll(SimpleSqlRelationParser.AliasExtractor.extract(query, ignoredRowsets));
+        int projectionEnd = from < 0 ? query.length() : from;
+        List<String> projections = splitTopLevel(query.substring(select + "select".length(), projectionEnd), ',');
         Map<String, ColumnRef> output = new LinkedHashMap<>();
         for (int i = 0; i < projections.size(); i++) {
             Projection projection = parseProjection(projections.get(i));
@@ -324,6 +358,19 @@ final class SqlLineageResolver {
                     .ifPresent(source -> output.put(normalize(outputColumn), source));
         }
         return output;
+    }
+
+    /**
+     * Reads physical table aliases that appear before a derived SELECT.
+     *
+     * <p>Called only by analyzeDerivedTables() for correlated/LATERAL rowsets.
+     * Passing only the prefix before the derived table avoids leaking aliases
+     * introduced later in the statement into the derived body.
+     */
+    private Map<String, TableId> outerAliasesBefore(String text, int openParen) {
+        Set<String> ignoredRowsets = new LinkedHashSet<>(cteNames);
+        ignoredRowsets.addAll(rowsets.keySet());
+        return SimpleSqlRelationParser.AliasExtractor.extract(text.substring(0, openParen), ignoredRowsets);
     }
 
     /**

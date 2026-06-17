@@ -23,6 +23,8 @@ import com.relationdetector.api.Collectors.MetadataCollector;
 import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.api.Collectors.SqlLogExtractor;
 import com.relationdetector.api.Collectors.SqlRelationParser;
+import com.relationdetector.api.Collectors.StructuredDdlParser;
+import com.relationdetector.api.Collectors.StructuredSqlParser;
 import com.relationdetector.api.DatabaseAdaptor;
 import com.relationdetector.api.DatabaseObjectDefinition;
 import com.relationdetector.api.DefaultEvidenceScores;
@@ -48,6 +50,8 @@ import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
 import com.relationdetector.core.DiagnosticWarnings;
 import com.relationdetector.core.PlainSqlLogExtractor;
+import com.relationdetector.core.RelationExtractionVisitor;
+import com.relationdetector.core.ShadowSqlRelationParser;
 import com.relationdetector.core.SimpleSqlRelationParser;
 
 /** PostgreSQL 12+ adaptor implementing the Phase 5 design. */
@@ -114,8 +118,20 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
 
     @Override
     public SqlRelationParser sqlRelationParser() {
-        SimpleSqlRelationParser parser = new SimpleSqlRelationParser();
-        return (statement, context) -> parser.parse(statement);
+        return new ShadowSqlRelationParser(
+                new SimpleSqlRelationParser(),
+                new PostgresAntlrSqlParser(),
+                new RelationExtractionVisitor());
+    }
+
+    @Override
+    public Optional<StructuredSqlParser> structuredSqlParser() {
+        return Optional.of(new PostgresAntlrSqlParser());
+    }
+
+    @Override
+    public Optional<StructuredDdlParser> structuredDdlParser() {
+        return Optional.of(new PostgresAntlrDdlParser());
     }
 
     @Override
@@ -309,6 +325,8 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
             List<DatabaseObjectDefinition> definitions = new ArrayList<>();
             collectFunctions(connection, scope, definitions, warnings);
             collectViews(connection, scope, definitions, warnings);
+            collectMaterializedViews(connection, scope, definitions, warnings);
+            collectRules(connection, scope, definitions, warnings);
             return definitions;
         }
 
@@ -363,6 +381,75 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
             } catch (Exception ex) {
                 warnings.accept(DiagnosticWarnings.objectCollectFailed(
                         "POSTGRES_VIEW_COLLECT_FAILED", "pg_views", ex));
+            }
+        }
+
+        private void collectMaterializedViews(
+                Connection connection,
+                ScanScope scope,
+                List<DatabaseObjectDefinition> definitions,
+                Consumer<WarningMessage> warnings
+        ) {
+            /*
+             * PostgreSQL materialized views persist a SELECT definition in pg_matviews.
+             * They behave like views for relationship discovery: the definition can
+             * contain joins, CTEs, and subqueries, but the object stores data. Keeping
+             * the type distinct lets output diagnostics say "materialized view" while
+             * scoring joins like VIEW_JOIN.
+             */
+            String sql = """
+                    SELECT schemaname, matviewname, definition
+                    FROM pg_matviews
+                    WHERE schemaname = ?
+                    """;
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, scope.schema() == null ? "public" : scope.schema());
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.MATERIALIZED_VIEW,
+                                rs.getString("schemaname"), rs.getString("matviewname"),
+                                rs.getString("definition"), "pg_matviews"));
+                    }
+                }
+            } catch (Exception ex) {
+                warnings.accept(DiagnosticWarnings.objectCollectFailed(
+                        "POSTGRES_MATERIALIZED_VIEW_COLLECT_FAILED", "pg_matviews", ex));
+            }
+        }
+
+        private void collectRules(
+                Connection connection,
+                ScanScope scope,
+                List<DatabaseObjectDefinition> definitions,
+                Consumer<WarningMessage> warnings
+        ) {
+            /*
+             * PostgreSQL rules rewrite table operations and can contain SELECT/INSERT/
+             * UPDATE/DELETE bodies:
+             *
+             *   CREATE RULE orders_insert_audit AS
+             *   ON INSERT TO orders DO ALSO INSERT INTO audit ... SELECT ...
+             *
+             * The rule name is qualified with the table name to avoid collisions
+             * inside one schema while keeping the original definition text intact.
+             */
+            String sql = """
+                    SELECT schemaname, tablename, rulename, definition
+                    FROM pg_rules
+                    WHERE schemaname = ?
+                    """;
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, scope.schema() == null ? "public" : scope.schema());
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.RULE,
+                                rs.getString("schemaname"), rs.getString("tablename") + "." + rs.getString("rulename"),
+                                rs.getString("definition"), "pg_rules"));
+                    }
+                }
+            } catch (Exception ex) {
+                warnings.accept(DiagnosticWarnings.objectCollectFailed(
+                        "POSTGRES_RULE_COLLECT_FAILED", "pg_rules", ex));
             }
         }
     }

@@ -276,15 +276,19 @@ public final class SimpleSqlRelationParser {
      * Complete SQL examples:
      *   UPDATE orders o SET status = 'PAID' FROM users u WHERE o.user_id = u.id
      *   DELETE FROM orders o USING users u WHERE o.user_id = u.id
+     *   MERGE INTO target_orders t USING source_orders s ON t.source_order_id = s.id
      */
     private static final Pattern UPDATE_TABLE = Pattern.compile(
-            "(?is)\\bupdate\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?");
+            "(?is)\\bupdate\\s+(?!set\\b)([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?");
 
     private static final Pattern DELETE_FROM_TABLE = Pattern.compile(
             "(?is)\\bdelete\\s+from\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?");
 
     private static final Pattern DELETE_USING_TABLE = Pattern.compile(
             "(?is)\\busing\\s+(?!\\()([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?");
+
+    private static final Pattern MERGE_INTO_TABLE = Pattern.compile(
+            "(?is)\\bmerge\\s+into\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?");
 
     /**
      * Main entry point called by each database adaptor.
@@ -361,11 +365,11 @@ public final class SimpleSqlRelationParser {
             String rightColumnName = clean(matcher.group(4));
             ColumnRef left = resolveColumn(leftAlias, leftColumnName, aliases, lineage);
             ColumnRef right = resolveColumn(rightAlias, rightColumnName, aliases, lineage);
-            if (left == null || right == null || left.table().normalizedName().equals(right.table().normalizedName())) {
+            if (unusableColumnPair(left, right)) {
                 continue;
             }
-            boolean leftLooksSource = looksLikeForeignKey(left.columnName(), right.table().tableName(), right.columnName());
-            boolean rightLooksSource = looksLikeForeignKey(right.columnName(), left.table().tableName(), left.columnName());
+            boolean leftLooksSource = looksLikeForeignKey(left, right);
+            boolean rightLooksSource = looksLikeForeignKey(right, left);
             Endpoint source = leftLooksSource && !rightLooksSource ? Endpoint.column(left) : Endpoint.column(right);
             Endpoint target = leftLooksSource && !rightLooksSource ? Endpoint.column(right) : Endpoint.column(left);
             if (!leftLooksSource && !rightLooksSource) {
@@ -436,7 +440,7 @@ public final class SimpleSqlRelationParser {
             for (int i = 0; i < leftTokens.size(); i++) {
                 ColumnRef left = resolveColumn(leftTokens.get(i).alias(), leftTokens.get(i).column(), aliases, lineage);
                 ColumnRef right = resolveColumn(rightTokens.get(i).alias(), rightTokens.get(i).column(), aliases, lineage);
-                if (left == null || right == null || left.table().normalizedName().equals(right.table().normalizedName())) {
+                if (unusableColumnPair(left, right)) {
                     continue;
                 }
                 ColumnToken sourceToken = direction == TupleDirection.LEFT_TO_RIGHT ? leftTokens.get(i) : rightTokens.get(i);
@@ -501,11 +505,11 @@ public final class SimpleSqlRelationParser {
                 String rightColumnName = clean(matcher.group(4));
                 ColumnRef left = resolveColumn(leftAlias, leftColumnName, aliases, lineage);
                 ColumnRef right = resolveColumn(rightAlias, rightColumnName, aliases, lineage);
-                if (left == null || right == null || left.table().normalizedName().equals(right.table().normalizedName())) {
+                if (unusableColumnPair(left, right)) {
                     continue;
                 }
-                boolean leftLooksSource = looksLikeForeignKey(left.columnName(), right.table().tableName(), right.columnName());
-                boolean rightLooksSource = looksLikeForeignKey(right.columnName(), left.table().tableName(), left.columnName());
+                boolean leftLooksSource = looksLikeForeignKey(left, right);
+                boolean rightLooksSource = looksLikeForeignKey(right, left);
                 if (!leftLooksSource && !rightLooksSource) {
                     candidates.add(coOccurrence(record, Endpoint.table(left.table()), Endpoint.table(right.table()),
                             "ambiguous EXISTS equality: " + matcher.group()));
@@ -560,7 +564,7 @@ public final class SimpleSqlRelationParser {
                     }
                     target = ColumnRef.of(innerTable, targetTokens.get(i).column());
                 }
-                if (source == null || target == null || source.table().normalizedName().equals(target.table().normalizedName())) {
+                if (unusableColumnPair(source, target)) {
                     continue;
                 }
                 RelationshipCandidate candidate = new RelationshipCandidate(
@@ -740,8 +744,8 @@ public final class SimpleSqlRelationParser {
      */
     private EvidenceType joinEvidenceType(StatementSourceType sourceType) {
         return switch (sourceType) {
-            case VIEW -> EvidenceType.VIEW_JOIN;
-            case PROCEDURE, FUNCTION -> EvidenceType.PROCEDURE_JOIN;
+            case VIEW, MATERIALIZED_VIEW, RULE -> EvidenceType.VIEW_JOIN;
+            case PROCEDURE, FUNCTION, EVENT, PACKAGE, PACKAGE_BODY -> EvidenceType.PROCEDURE_JOIN;
             case TRIGGER -> EvidenceType.TRIGGER_REFERENCE;
             default -> EvidenceType.SQL_LOG_JOIN;
         };
@@ -749,8 +753,8 @@ public final class SimpleSqlRelationParser {
 
     private double scoreForJoinSource(StatementSourceType sourceType) {
         return switch (sourceType) {
-            case VIEW -> DefaultEvidenceScores.VIEW_JOIN;
-            case PROCEDURE, FUNCTION -> DefaultEvidenceScores.PROCEDURE_JOIN;
+            case VIEW, MATERIALIZED_VIEW, RULE -> DefaultEvidenceScores.VIEW_JOIN;
+            case PROCEDURE, FUNCTION, EVENT, PACKAGE, PACKAGE_BODY -> DefaultEvidenceScores.PROCEDURE_JOIN;
             case TRIGGER -> DefaultEvidenceScores.TRIGGER_REFERENCE;
             default -> DefaultEvidenceScores.SQL_LOG_JOIN;
         };
@@ -759,7 +763,9 @@ public final class SimpleSqlRelationParser {
     private EvidenceSourceType sourceType(StatementSourceType statementSourceType) {
         return switch (statementSourceType) {
             case DDL_FILE -> EvidenceSourceType.DDL_FILE;
-            case PROCEDURE, FUNCTION, VIEW, TRIGGER -> EvidenceSourceType.DATABASE_OBJECT;
+            case PROCEDURE, FUNCTION, VIEW, MATERIALIZED_VIEW, TRIGGER, EVENT, RULE, PACKAGE, PACKAGE_BODY ->
+                    EvidenceSourceType.DATABASE_OBJECT;
+            case MIGRATION -> EvidenceSourceType.PLAIN_SQL;
             case NATIVE_LOG -> EvidenceSourceType.NATIVE_LOG;
             case PLAIN_SQL -> EvidenceSourceType.PLAIN_SQL;
         };
@@ -831,6 +837,34 @@ public final class SimpleSqlRelationParser {
     private record SqlSpan(int start, int end) {
     }
 
+    /**
+     * Rejects predicates that cannot produce a useful column relation.
+     *
+     * <p>Called by every equality-style parser before direction inference.
+     * Earlier versions skipped all same-table predicates, which accidentally
+     * lost legitimate recursive/self-reference evidence:
+     *
+     * <pre>{@code
+     * WITH RECURSIVE employee_paths AS (...)
+     * SELECT *
+     * FROM employee_paths ep
+     * JOIN employees e ON ep.manager_id = e.id
+     *
+     * -- after lineage: employees.manager_id -> employees.id
+     * }</pre>
+     *
+     * The useful guard is therefore narrower: skip missing columns and exact
+     * same table+same column comparisons, but allow different columns on the
+     * same table so self-FK-like relationships can be represented.
+     */
+    private boolean unusableColumnPair(ColumnRef left, ColumnRef right) {
+        if (left == null || right == null) {
+            return true;
+        }
+        return left.table().normalizedName().equals(right.table().normalizedName())
+                && left.normalizedName().equals(right.normalizedName());
+    }
+
     private TupleDirection tupleDirection(
             List<ColumnToken> leftTokens,
             List<ColumnToken> rightTokens,
@@ -841,11 +875,11 @@ public final class SimpleSqlRelationParser {
         for (int i = 0; i < leftTokens.size(); i++) {
             ColumnRef left = resolveColumn(leftTokens.get(i).alias(), leftTokens.get(i).column(), aliases, lineage);
             ColumnRef right = resolveColumn(rightTokens.get(i).alias(), rightTokens.get(i).column(), aliases, lineage);
-            if (left == null || right == null || left.table().normalizedName().equals(right.table().normalizedName())) {
+            if (unusableColumnPair(left, right)) {
                 continue;
             }
-            boolean leftLooksSource = looksLikeForeignKey(left.columnName(), right.table().tableName(), right.columnName());
-            boolean rightLooksSource = looksLikeForeignKey(right.columnName(), left.table().tableName(), left.columnName());
+            boolean leftLooksSource = looksLikeForeignKey(left, right);
+            boolean rightLooksSource = looksLikeForeignKey(right, left);
             TupleDirection pairDirection = TupleDirection.AMBIGUOUS;
             if (leftLooksSource && !rightLooksSource) {
                 pairDirection = TupleDirection.LEFT_TO_RIGHT;
@@ -883,6 +917,40 @@ public final class SimpleSqlRelationParser {
             }
             return tokens;
         }
+    }
+
+    /**
+     * Applies conservative naming heuristics to decide FK-like direction.
+     *
+     * <p>Called from scalar and tuple equality parsing after aliases/lineage
+     * have already resolved both sides to physical columns.
+     *
+     * <p>Cross-table examples still require the source column to mention the
+     * target table name:
+     *
+     * <pre>{@code
+     * orders.user_id         -> users.id
+     * orders.created_user_id -> users.id
+     * }</pre>
+     *
+     * <p>Self-references need a narrower special case because the FK column
+     * often names a role rather than the table:
+     *
+     * <pre>{@code
+     * employees.manager_id -> employees.id
+     * categories.parent_id -> categories.id
+     * }</pre>
+     *
+     * The self-reference branch only accepts {@code *_id -> id}; it does not
+     * treat arbitrary same-table equality as FK-like.
+     */
+    private boolean looksLikeForeignKey(ColumnRef sourceColumn, ColumnRef targetColumn) {
+        if (sourceColumn.table().normalizedName().equals(targetColumn.table().normalizedName())
+                && "id".equalsIgnoreCase(clean(targetColumn.columnName()))) {
+            String source = clean(sourceColumn.columnName()).toLowerCase(Locale.ROOT);
+            return source.endsWith("_id") && !source.equals("id");
+        }
+        return looksLikeForeignKey(sourceColumn.columnName(), targetColumn.table().tableName(), targetColumn.columnName());
     }
 
     private boolean looksLikeForeignKey(String sourceColumn, String targetTable, String targetColumn) {
@@ -1113,7 +1181,11 @@ public final class SimpleSqlRelationParser {
                 String rawTable = matcher.group(1);
                 String schema = schemaName(rawTable);
                 String tableName = cleanTable(rawTable);
-                if (tableName.equalsIgnoreCase("select") || tableName.isBlank() || isCteName(tableName, cteNames)) {
+                if (tableName.equalsIgnoreCase("select")
+                        || isIgnoredRowsetKeyword(tableName)
+                        || isFunctionRowset(sql, matcher.end(1))
+                        || tableName.isBlank()
+                        || isCteName(tableName, cteNames)) {
                     continue;
                 }
                 TableId table = TableId.of(schema, tableName);
@@ -1153,6 +1225,7 @@ public final class SimpleSqlRelationParser {
             addTableRefs(sql, cteNames, refs, UPDATE_TABLE);
             addTableRefs(sql, cteNames, refs, DELETE_FROM_TABLE);
             addTableRefs(sql, cteNames, refs, DELETE_USING_TABLE);
+            addTableRefs(sql, cteNames, refs, MERGE_INTO_TABLE);
         }
 
         private static void addTableRefs(String sql, Set<String> cteNames, List<TableRef> refs, Pattern pattern) {
@@ -1161,7 +1234,10 @@ public final class SimpleSqlRelationParser {
                 String rawTable = matcher.group(1);
                 String schema = schemaName(rawTable);
                 String tableName = cleanTable(rawTable);
-                if (tableName.isBlank() || isCteName(tableName, cteNames)) {
+                if (tableName.isBlank()
+                        || isIgnoredRowsetKeyword(tableName)
+                        || isFunctionRowset(sql, matcher.end(1))
+                        || isCteName(tableName, cteNames)) {
                     continue;
                 }
                 String alias = clean(matcher.group(2));
@@ -1205,6 +1281,40 @@ public final class SimpleSqlRelationParser {
 
         private static boolean isCteName(String tableName, Set<String> cteNames) {
             return cteNames.contains(clean(tableName).toLowerCase(Locale.ROOT));
+        }
+
+        /**
+         * Filters rowset introducer keywords and table-valued functions that the
+         * regex scanner can mistake for physical tables.
+         *
+         * <p>Complete SQL examples:
+         *
+         * <pre>{@code
+         * SELECT *
+         * FROM orders o
+         * JOIN LATERAL (SELECT o.user_id AS user_id) x ON true
+         *
+         * SELECT *
+         * FROM users u
+         * JOIN unnest(ARRAY[1, 2, 3]) AS input_ids(user_id) ON input_ids.user_id = u.id
+         * }</pre>
+         *
+         * {@code LATERAL} is a modifier and {@code unnest(...)} is a rowset
+         * function, not a durable table. SqlLineageResolver may still recover
+         * safe lineage from the derived body; this alias extractor must avoid
+         * recording those names as physical table identities.
+         */
+        private static boolean isIgnoredRowsetKeyword(String tableName) {
+            String lower = tableName.toLowerCase(Locale.ROOT);
+            return lower.equals("lateral") || lower.equals("unnest") || lower.equals("json_table");
+        }
+
+        private static boolean isFunctionRowset(String sql, int afterIdentifier) {
+            int position = afterIdentifier;
+            while (position < sql.length() && Character.isWhitespace(sql.charAt(position))) {
+                position++;
+            }
+            return position < sql.length() && sql.charAt(position) == '(';
         }
 
         private static boolean isKeyword(String value) {

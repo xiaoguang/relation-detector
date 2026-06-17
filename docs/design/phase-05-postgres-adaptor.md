@@ -114,6 +114,8 @@ PostgreSQL adaptor 负责：
 - function。
 - procedure。
 - view。
+- materialized view。
+- rule。
 - trigger function。
 
 ### 函数和过程
@@ -137,6 +139,27 @@ PostgreSQL adaptor 负责：
 - schema。
 - view name。
 - definition。
+
+### 物化视图
+
+从 `pg_matviews` 读取：
+
+- schema。
+- materialized view name。
+- definition。
+
+物化视图的定义 SQL 与普通 view 一样可能包含稳定 JOIN、CTE 和子查询，因此解析后 JOIN evidence 使用 `VIEW_JOIN`。对象类型仍保持 `MATERIALIZED_VIEW`，避免运维误以为它只是普通 view。
+
+### Rule
+
+从 `pg_rules` 读取：
+
+- schema。
+- table name。
+- rule name。
+- definition。
+
+rule 会重写表操作，定义中可能包含 `DO ALSO` / `DO INSTEAD` 的 SQL。系统把它映射为 `DatabaseObjectType.RULE` / `StatementSourceType.RULE`，JOIN evidence 默认按 view 类定义处理。
 
 ### 触发器
 
@@ -202,7 +225,7 @@ PostgreSQL adaptor 可以修正：
 ## 验收标准
 
 - 可通过 JDBC 读取 PostgreSQL 表、列、PK、FK、unique、index。
-- 可读取 function/procedure/view/trigger function 定义。
+- 可读取 function/procedure/view/materialized view/rule/trigger function 定义。
 - 可从 PostgreSQL statement log 提取 SQL。
 - 能正确处理 schema 和双引号标识符。
 - 权限不足时产生 warning，不导致整个扫描失败。
@@ -214,8 +237,9 @@ PostgreSQL adaptor 可以修正：
 - unique/index 采集测试。
 - quoted identifier 测试。
 - view definition 采集测试。
+- materialized view definition 采集测试。
+- rule definition 采集测试。
 - trigger function 关联测试。
 - statement log 提取测试。
 - 权限不足 warning 测试。
 - include/exclude 过滤测试。
-

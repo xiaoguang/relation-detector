@@ -112,6 +112,14 @@ public final class Collectors {
         List<RelationshipCandidate> parse(SqlStatementRecord statement, AdaptorContext context);
     }
 
+    public interface StructuredSqlParser {
+        StructuredParseResult parseSql(SqlStatementRecord statement, AdaptorContext context);
+    }
+
+    public interface StructuredDdlParser {
+        StructuredParseResult parseDdl(String ddl, String sourceName, AdaptorContext context);
+    }
+
     public interface DataProfiler {
         List<Evidence> profile(Connection connection, ProfileRequest request);
     }

@@ -10,6 +10,8 @@ import com.relationdetector.api.Collectors.MetadataCollector;
 import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.api.Collectors.SqlLogExtractor;
 import com.relationdetector.api.Collectors.SqlRelationParser;
+import com.relationdetector.api.Collectors.StructuredDdlParser;
+import com.relationdetector.api.Collectors.StructuredSqlParser;
 import com.relationdetector.api.Enums.AdaptorCapability;
 import com.relationdetector.api.Enums.DatabaseType;
 
@@ -39,6 +41,14 @@ public interface DatabaseAdaptor {
     SqlLogExtractor sqlLogExtractor();
 
     SqlRelationParser sqlRelationParser();
+
+    default Optional<StructuredSqlParser> structuredSqlParser() {
+        return Optional.empty();
+    }
+
+    default Optional<StructuredDdlParser> structuredDdlParser() {
+        return Optional.empty();
+    }
 
     Optional<DataProfiler> dataProfiler();
 

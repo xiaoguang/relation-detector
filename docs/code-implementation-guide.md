@@ -73,6 +73,10 @@ relation-detector/
 - `ConfidenceCalculator.java`
 - `DiagnosticWarnings.java`
 - `SimpleSqlRelationParser.java`
+- `AntlrStructuredSqlParser.java`
+- `AntlrStructuredDdlParser.java`
+- `RelationExtractionVisitor.java`
+- `ShadowSqlRelationParser.java`
 - `SqlLineageResolver.java`
 - `SimpleDdlParser.java`
 - `JsonResultWriter.java`
@@ -96,8 +100,11 @@ relation-detector/
 
 - `ConfidenceCalculator` 是置信度公式的唯一默认实现。
 - `RelationshipMerger` 负责 `relationSubType` 主导证据优先级。
-- `SimpleSqlRelationParser` 是轻量实现，后续可替换为 JSqlParser 版本，但输出仍应是 `RelationshipCandidate`。
-- `SqlLineageResolver` 为 `SimpleSqlRelationParser` 提供保守列血缘映射，支持 CTE、派生表和多层嵌套查询中的简单列投影回溯。
+- `SimpleSqlRelationParser` 仍是 primary 关系输出实现。MySQL/PostgreSQL adaptor 现在通过 `ShadowSqlRelationParser` 同时运行 ANTLR 结构化 parser；shadow 阶段不改变最终关系输出。
+- `AntlrStructuredSqlParser` 使用 ANTLR 4 生成的宽松 grammar 产出 `TABLE_REFERENCE`、`COLUMN_EQUALITY`、`PARSER_COMPARISON` 等结构化事件，并对 `PREPARE`、`EXECUTE`、`EXECUTE IMMEDIATE` 类动态 SQL 输出 `DYNAMIC_SQL_UNRESOLVED` warning。
+- `RelationExtractionVisitor` 当前委托 primary parser 以保证不回退；后续迁移规则时，应一次迁移一种语法，并用 golden comparison 测试证明不会丢关系。
+- `AntlrStructuredDdlParser` 当前用于 DDL shadow diagnostics，关系输出仍走 `SimpleDdlParser` 和方言 DDL parser。
+- `SqlLineageResolver` 为 `SimpleSqlRelationParser` 提供保守列血缘映射，支持 CTE、派生表、多层嵌套查询，以及简单 LATERAL/correlated derived table 中的外层列投影回溯。
 - `SimpleDdlParser` 把显式 FK/inline references 作为强关系证据，把 PK/unique/source index 作为已有 FK 的辅助 evidence；它现在定位为 core fallback。MySQL/PostgreSQL 明显不同的 DDL 写法应进入 `MySqlDdlParser` / `PostgresDdlParser`，再委托或补充 fallback 结果。
 - `MySqlDdlParser` 是 MySQL adaptor 的 DDL 入口。它先做 MySQL 私有归一化，例如 `CREATE UNIQUE INDEX ... USING BTREE ON ... INVISIBLE`，再委托 fallback；后续继续承接反引号、`KEY`/`INDEX` 选项、prefix/invisible index、storage engine/table options、`SHOW CREATE TABLE` 等 MySQL 差异。
 - `PostgresDdlParser` 是 PostgreSQL adaptor 的 DDL 入口。它先做 PostgreSQL 私有归一化，例如 `CREATE INDEX ... ON ONLY ...`，再委托 fallback；后续继续承接 `ALTER TABLE ONLY`、`NOT VALID`、`INCLUDE`、partial/expression index、opclass、partition/inheritance 等 PostgreSQL 差异。
@@ -440,6 +447,23 @@ sources:
 - JOIN `orders.user_id = users.id` 输出列级 `FK_LIKE`。
 - `FROM users, audit_logs` 无连接条件时输出 `CO_OCCURRENCE`。
 - `IN (SELECT ...)` 输出 `SUBQUERY_INFERRED_FK`。
+- 方言复杂 SQL 矩阵：
+  - MySQL backtick、multi-table `UPDATE`、multi-table `DELETE ... LEFT JOIN`、derived table column alias、recursive CTE。
+  - PostgreSQL quoted identifier、多层 CTE、`WITH RECURSIVE`、`LATERAL`、`unnest(...) WITH ORDINALITY`、`MERGE`。
+  - SQL Server `[schema].[table]`、`CROSS APPLY`、`OUTER APPLY` 先作为 disabled/future fixture。
+- 复杂 SQL 的负向断言：
+  - 不输出 CTE/derived table/function rowset 伪表。
+  - 不把 `u.id IS NULL`、`a.closed_at IS NULL`、`status = 'PAID'` 等过滤条件当关系。
+  - 不把 `LATERAL`、`unnest`、临时输入 rowset 当物理业务表。
+- evidence/confidence 断言：
+  - `EvidenceType` 正确，例如 `SQL_LOG_JOIN`、`VIEW_JOIN`、`PROCEDURE_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS`。
+  - `EvidenceSourceType` 正确，例如 `NATIVE_LOG`、`PLAIN_SQL`、`DATABASE_OBJECT`。
+  - `attributes.joinKind` 正确，例如 `LEFT_JOIN`、`RIGHT_JOIN`、`FULL_JOIN`。
+  - 加入 `TARGET_UNIQUE`、`NAMING_MATCH`、`VALUE_CONTAINMENT_HIGH` 后 confidence 与公式一致。
+- ANTLR shadow golden comparison：
+  - 同一 SQL 同时跑 primary parser 和 shadow parser。
+  - 最终关系输出必须与 primary baseline 一致。
+  - shadow path 至少产生 `TABLE_REFERENCE` 和 `COLUMN_EQUALITY` 结构化事件。
 - 重复 SQL 日志 JOIN 输出两份证据：`rawEvidence` 保留每次观测，`evidence` 聚合为一条基础 evidence 加一条 `REPEATED_OBSERVATION`。
 - YAML 中环境变量缺失时报错。
 - unknown adaptor 报 `ADAPTOR_ERROR`。
@@ -531,7 +555,7 @@ PostgreSQL：
 - 引入 picocli 替换手写 CLI 参数解析。
 - 引入 Jackson YAML/JSON 替换轻量解析和手写 JSON。
 - 引入 JSqlParser 或数据库方言 parser 替换 `SimpleSqlRelationParser`。
-- 补充 JUnit 5、AssertJ、Testcontainers 自动化测试。
+- 继续扩展 JUnit 5 用例，并引入 AssertJ、Testcontainers 做更强断言和真实数据库集成测试。
 - 增加 Maven assembly/shade 打包，生成单个可执行发行包。
 - 扩展 MySQL/PostgreSQL unique/index 元数据采集。
 - 按 adaptor API 增加 SQL Server 和 Oracle 模块。

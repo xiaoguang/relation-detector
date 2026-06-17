@@ -48,9 +48,14 @@ public final class ScanEngine {
                 for (DatabaseObjectDefinition definition : collectDatabaseObjects(adaptor, connection, scope, result)) {
                     StatementSourceType sourceType = switch (definition.type()) {
                         case VIEW -> StatementSourceType.VIEW;
+                        case MATERIALIZED_VIEW -> StatementSourceType.MATERIALIZED_VIEW;
                         case TRIGGER -> StatementSourceType.TRIGGER;
+                        case EVENT -> StatementSourceType.EVENT;
+                        case RULE -> StatementSourceType.RULE;
                         case FUNCTION -> StatementSourceType.FUNCTION;
                         case PROCEDURE -> StatementSourceType.PROCEDURE;
+                        case PACKAGE -> StatementSourceType.PACKAGE;
+                        case PACKAGE_BODY -> StatementSourceType.PACKAGE_BODY;
                     };
                     candidates.addAll(safeParseStatement(adaptor,
                             new SqlStatementRecord(definition.sql(), sourceType, definition.source(), 0, 0,

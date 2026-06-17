@@ -23,6 +23,8 @@ import com.relationdetector.api.Collectors.MetadataCollector;
 import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.api.Collectors.SqlLogExtractor;
 import com.relationdetector.api.Collectors.SqlRelationParser;
+import com.relationdetector.api.Collectors.StructuredDdlParser;
+import com.relationdetector.api.Collectors.StructuredSqlParser;
 import com.relationdetector.api.DatabaseAdaptor;
 import com.relationdetector.api.DatabaseObjectDefinition;
 import com.relationdetector.api.DefaultEvidenceScores;
@@ -48,6 +50,8 @@ import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
 import com.relationdetector.core.DiagnosticWarnings;
 import com.relationdetector.core.PlainSqlLogExtractor;
+import com.relationdetector.core.RelationExtractionVisitor;
+import com.relationdetector.core.ShadowSqlRelationParser;
 import com.relationdetector.core.SimpleSqlRelationParser;
 
 /** MySQL 5.7/8.0 adaptor implementing the Phase 4 design. */
@@ -113,8 +117,20 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
 
     @Override
     public SqlRelationParser sqlRelationParser() {
-        SimpleSqlRelationParser parser = new SimpleSqlRelationParser();
-        return (statement, context) -> parser.parse(statement);
+        return new ShadowSqlRelationParser(
+                new SimpleSqlRelationParser(),
+                new MySqlAntlrSqlParser(),
+                new RelationExtractionVisitor());
+    }
+
+    @Override
+    public Optional<StructuredSqlParser> structuredSqlParser() {
+        return Optional.of(new MySqlAntlrSqlParser());
+    }
+
+    @Override
+    public Optional<StructuredDdlParser> structuredDdlParser() {
+        return Optional.of(new MySqlAntlrDdlParser());
     }
 
     @Override
@@ -294,6 +310,7 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
             collectRoutines(connection, scope, definitions, warnings);
             collectViews(connection, scope, definitions, warnings);
             collectTriggers(connection, scope, definitions, warnings);
+            collectEvents(connection, scope, definitions, warnings);
             return definitions;
         }
 
@@ -366,6 +383,38 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
             } catch (Exception ex) {
                 warnings.accept(DiagnosticWarnings.objectCollectFailed(
                         "MYSQL_TRIGGER_COLLECT_FAILED", "information_schema.TRIGGERS", ex));
+            }
+        }
+
+        private void collectEvents(
+                Connection connection,
+                ScanScope scope,
+                List<DatabaseObjectDefinition> definitions,
+                Consumer<WarningMessage> warnings
+        ) {
+            /*
+             * MySQL scheduled events are persisted database objects whose body can
+             * contain relationship-bearing SQL:
+             *
+             *   CREATE EVENT refresh_order_rollups
+             *   DO INSERT INTO rollups SELECT ... FROM orders o JOIN users u ...
+             *
+             * information_schema.EVENTS exposes the body in EVENT_DEFINITION. We
+             * classify it as EVENT so ScanEngine maps it to StatementSourceType.EVENT,
+             * which then scores joins like procedure/function evidence.
+             */
+            String sql = "SELECT EVENT_SCHEMA, EVENT_NAME, EVENT_DEFINITION FROM information_schema.EVENTS WHERE EVENT_SCHEMA = ?";
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, scope.schema());
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        definitions.add(new DatabaseObjectDefinition(DatabaseObjectType.EVENT, rs.getString("EVENT_SCHEMA"),
+                                rs.getString("EVENT_NAME"), rs.getString("EVENT_DEFINITION"), "information_schema.EVENTS"));
+                    }
+                }
+            } catch (Exception ex) {
+                warnings.accept(DiagnosticWarnings.objectCollectFailed(
+                        "MYSQL_EVENT_COLLECT_FAILED", "information_schema.EVENTS", ex));
             }
         }
     }

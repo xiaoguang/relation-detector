@@ -151,6 +151,39 @@ projected_orders.customer_id -> orders.customer_id
 orders.customer_id -> customers.id
 ```
 
+### 2.5 LATERAL / correlated 派生表
+
+PostgreSQL `LATERAL` 子查询，以及一部分相关派生表，可以引用它左侧已经出现的表别名：
+
+```sql
+SELECT o.id, u.email
+FROM orders o
+JOIN LATERAL (
+  SELECT o.user_id AS user_id
+) x ON true
+JOIN users u ON x.user_id = u.id;
+```
+
+`x` 不是物理表，不能输出：
+
+```text
+x.user_id -> users.id
+```
+
+但 `x.user_id` 是外层 `orders o` 的简单列投影，因此 lineage 可以安全记录：
+
+```text
+x.user_id -> orders.user_id
+```
+
+最终关系：
+
+```text
+orders.user_id -> users.id
+```
+
+实现上，`SqlLineageResolver` 在分析 derived table 时，只把该 derived table 之前已经出现的物理 alias 作为外层只读上下文；不会把 derived table 之后的 alias 泄漏进子查询。这样可以处理 `JOIN LATERAL (...) x`，同时避免错误使用后文表名。
+
 ## 3. 安全解析原则
 
 `SqlLineageResolver` 只把“纯列投影”视为精确列来源。
@@ -218,6 +251,27 @@ SELECT a.user_id + 1 AS user_id
 - 表达式结果不一定还能代表外键值。
 
 此时 parser 仍可解析子查询内部显式 JOIN，但不会把表达式输出列继续推成列级 `FK_LIKE`。
+
+### 3.4 LATERAL 的安全边界
+
+这些 LATERAL/correlated 形态可以安全回溯：
+
+```sql
+SELECT o.user_id AS user_id
+SELECT o.id order_id
+SELECT o.customer_id
+```
+
+这些形态不生成精确 lineage：
+
+```sql
+SELECT COALESCE(o.user_id, fallback.user_id) AS user_id
+SELECT max(o.user_id) AS user_id
+SELECT row_number() OVER (ORDER BY o.id) AS rn
+SELECT *
+```
+
+原因与普通派生表一致：输出列不是单一确定源列，或者需要完整列展开/表达式语义分析。
 
 ## 4. 与关系类型和置信度的关系
 

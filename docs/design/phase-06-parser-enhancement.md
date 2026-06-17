@@ -27,9 +27,23 @@ public record SqlStatementRecord(
 - `PROCEDURE`
 - `FUNCTION`
 - `VIEW`
+- `MATERIALIZED_VIEW`
 - `TRIGGER`
+- `EVENT`
+- `RULE`
+- `PACKAGE`
+- `PACKAGE_BODY`
+- `MIGRATION`
 - `NATIVE_LOG`
 - `PLAIN_SQL`
+
+新增来源说明：
+
+- `MATERIALIZED_VIEW`：PostgreSQL `pg_matviews` 等物化视图定义。解析策略与 view 类似，证据使用 `VIEW_JOIN`，但对象类型保持独立，方便运维理解刷新/持久化语义。
+- `EVENT`：MySQL scheduler event。事件体可能包含 `INSERT ... SELECT`、`UPDATE`、`DELETE` 和 JOIN，证据按 procedure/function 处理。
+- `RULE`：PostgreSQL rewrite rule。规则定义可能包含重写 SQL，证据按 view 类 SQL 处理。
+- `PACKAGE` / `PACKAGE_BODY`：为 Oracle 后续 adaptor 预留。包体内的 procedure/function SQL 按持久化过程逻辑处理。
+- `MIGRATION`：Flyway、Liquibase 或手写 migration SQL。它不是数据库持久对象，证据来源按 `PLAIN_SQL` 处理。
 
 ## 解析输出
 
@@ -51,6 +65,64 @@ public record RelationshipEvidence(
 - `suggestedSubType` 只是建议，最终 subtype 由 core 归并后确定。
 - `directionConfidence` 标识方向是否可靠。
 - 方向不可靠时，core 应退化为表级 `CO_OCCURRENCE`。
+
+## ANTLR 迁移层
+
+当前实现新增了 ANTLR 驱动的结构化解析前端，但不把它一次性切成唯一关系输出来源。
+
+核心类型：
+
+```java
+public interface StructuredSqlParser {
+  StructuredParseResult parseSql(SqlStatementRecord statement, AdaptorContext context);
+}
+
+public interface StructuredDdlParser {
+  StructuredParseResult parseDdl(String ddl, String sourceName, AdaptorContext context);
+}
+
+public record StructuredParseResult(
+    String backend,
+    String dialect,
+    String sourceName,
+    List<StructuredSqlEvent> events,
+    List<WarningMessage> warnings,
+    Map<String, Object> attributes
+) {}
+
+public record StructuredSqlEvent(
+    StructuredParseEventType type,
+    String sourceName,
+    long line,
+    Map<String, Object> attributes
+) {}
+```
+
+事件类型：
+
+- `TABLE_REFERENCE`：ANTLR token stream 中识别出的 `FROM`、`JOIN`、`UPDATE`、`INTO` 后的表引用和 alias。
+- `COLUMN_EQUALITY`：识别出的 `alias.column = alias.column` 谓词。
+- `DDL_FOREIGN_KEY` / `DDL_INDEX`：为后续 DDL visitor 预留。
+- `DYNAMIC_SQL`：为后续可静态还原的动态 SQL 预留；当前不可还原时输出 warning。
+- `PARSER_COMPARISON`：shadow mode 中 primary parser 与 ANTLR parser 的候选数量对比。
+
+当前落地边界：
+
+- `relation-core` 使用 ANTLR 4 Maven plugin 生成一个宽松 grammar：`RelationSql.g4`。
+- 该 grammar 不是完整 MySQL/PostgreSQL 官方 grammar；它先提供真实 ANTLR lexer/parser/token stream，确保长 SQL、过程体、DDL 片段、日志残片不会因为一个方言细节整体失败。
+- `AntlrStructuredSqlParser` 抽取结构化事件和动态 SQL warning。
+- `RelationExtractionVisitor` 当前仍委托 `SimpleSqlRelationParser`，目的是在 shadow 阶段保证关系输出不回退。
+- `ShadowSqlRelationParser` 默认返回 primary parser 结果，同时生成 ANTLR comparison diagnostics。MySQL/PostgreSQL adaptor 已切到该 shadow wrapper。
+
+动态 SQL 策略：
+
+```sql
+SET @s = 'SELECT * FROM orders o JOIN users u ON o.user_id = u.id';
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+```
+
+当前不会猜测拼接结果中的关系；parser 输出 `DYNAMIC_SQL_UNRESOLVED` warning，并在 `attributes.rawStatement` 保留完整 SQL。后续如果能证明字符串是静态、无变量拼接，可作为独立任务做二次 parse。
 
 ## 表名和别名解析
 
@@ -166,6 +238,33 @@ projected_orders.customer_id -> orders.customer_id
 orders.customer_id -> customers.id
 ```
 
+### LATERAL / correlated 派生表示例
+
+PostgreSQL `LATERAL` 和部分相关派生表可以在子查询 SELECT list 中引用外层已经出现的 alias：
+
+```sql
+SELECT o.id, u.email
+FROM orders o
+JOIN LATERAL (
+  SELECT o.user_id AS user_id
+) x ON true
+JOIN users u ON x.user_id = u.id;
+```
+
+lineage：
+
+```text
+x.user_id -> orders.user_id
+```
+
+最终关系：
+
+```text
+orders.user_id -> users.id
+```
+
+当前只支持这种“无本地 FROM、投影是外层 `alias.column`”的简单安全形态。LATERAL body 内部如果包含聚合、窗口函数、表达式投影、多表 JOIN 或 `SELECT *`，仍按普通复杂派生表边界处理，不生成不确定列级 lineage。
+
 ### 表达式投影不做强推断
 
 ```sql
@@ -225,8 +324,9 @@ Evidence: SQL_LOG_JOIN / VIEW_JOIN / PROCEDURE_JOIN
 
 1. 如果一侧列是 PK/unique，另一侧不是，非唯一侧为 source。
 2. 如果一侧列名形如 `user_id`，另一侧表名是 `users` 且列名是 `id`，`user_id` 为 source。
-3. 如果 metadata 显示已有 FK，使用 FK 方向。
-4. 如果仍无法判断方向，退化为表级共现并记录 warning。
+3. 如果是同一张表的不同列，且一侧是 `id`、另一侧是 `*_id`，允许作为受限 self-FK-like，例如 `employees.manager_id -> employees.id`。
+4. 如果 metadata 显示已有 FK，使用 FK 方向。
+5. 如果仍无法判断方向，退化为表级共现并记录 warning。
 
 复杂 JOIN：
 
@@ -238,6 +338,7 @@ ON o.created_by = u.id OR o.updated_by = u.id
 
 - 如果能拆成两个明确等值条件，生成两条候选。
 - 如果不能安全拆分，生成表级共现。
+- 同表同列比较不输出关系；同表不同列只有方向可判断时才输出 self-FK-like。
 
 ## WHERE 隐式 JOIN
 
@@ -352,7 +453,7 @@ evidence: SQL_LOG_SUBQUERY_IN
 - 子查询 SELECT tuple 为 target。
 - tuple 列数量不一致或出现表达式时跳过。
 
-## UPDATE FROM 和 DELETE USING
+## UPDATE FROM、DELETE USING 和 MERGE
 
 支持 PostgreSQL 风格写法：
 
@@ -369,6 +470,16 @@ USING users u
 WHERE o.user_id = u.id;
 ```
 
+支持 PostgreSQL/SQL 标准风格 `MERGE` 的基础 ON 关系：
+
+```sql
+MERGE INTO target_orders t
+USING source_orders s
+ON t.source_order_id = s.id
+WHEN MATCHED THEN
+  UPDATE SET synced_at = CURRENT_TIMESTAMP;
+```
+
 输出：
 
 ```text
@@ -376,11 +487,20 @@ orders.user_id -> users.id
 evidence: SQL_LOG_JOIN
 ```
 
+`MERGE` 示例输出：
+
+```text
+target_orders.source_order_id -> source_orders.id
+evidence: SQL_LOG_JOIN
+```
+
 规则：
 
 - `UPDATE <table> [alias]`、`DELETE FROM <table> [alias]`、`USING <table> [alias]` 都进入 alias map；有 alias 和无 alias 的写法都支持。
+- `MERGE INTO <target> [alias]` 和 `USING <source> [alias]` 会进入 alias map，`ON` 中的等值 predicate 仍按普通 JOIN 规则判断方向。
+- `WHEN MATCHED THEN UPDATE SET ...` 中的 `UPDATE SET` 不是独立 `UPDATE <table>`，不能把 `SET` 误当成表名。
 - 关系识别仍由现有 equality parser 判断，不因为语句是写操作而自动生成关系。
-- 当前只覆盖简单物理表名；复杂 CTE write、`RETURNING` lineage、`MERGE` 仍属于边界。
+- 当前只覆盖简单物理表名和 `MERGE ON` predicate；复杂 CTE write、`RETURNING` lineage、`MERGE UPDATE/INSERT` 写入列 lineage 仍属于边界。
 
 ## DDL 解析
 
@@ -517,7 +637,9 @@ evidence: SQL_LOG_TABLE_CO_OCCURRENCE
 
 - JOIN、WHERE 隐式 JOIN、IN、EXISTS 均可提取列级关系。
 - 简单 tuple equality 和 tuple `IN` 可按列顺序提取列级关系。
-- PostgreSQL 风格 `UPDATE ... FROM`、`DELETE ... USING` 中的 alias 可被识别。
+- PostgreSQL 风格 `UPDATE ... FROM`、`DELETE ... USING` 和基础 `MERGE INTO ... USING ... ON ...` 中的 alias 可被识别。
+- 可安全回溯的 self-reference 能输出 self-FK-like，例如 `employees.manager_id -> employees.id`。
+- 简单 LATERAL/correlated derived table 投影可回溯到外层物理表列，不输出 `LATERAL` 或 derived alias 伪表关系。
 - schema 限定名和别名能正确映射。
 - 复杂无法判定方向的关系不会错误输出列级 FK-like。
 - DDL 外键和索引可转换为 evidence。
@@ -534,6 +656,12 @@ evidence: SQL_LOG_TABLE_CO_OCCURRENCE
 - tuple `IN` 子查询测试。
 - `UPDATE ... FROM` alias 测试。
 - `DELETE ... USING` alias 测试。
+- `MERGE INTO ... USING ... ON ...` alias 测试。
+- recursive CTE self-FK-like 测试。
+- LATERAL/correlated derived table 简单列投影 lineage 测试。
+- 函数型 rowset 负向测试，例如 `unnest(...) WITH ORDINALITY` 不输出物理表关系。
+- evidence/confidence 断言测试，包括 source type、joinKind、辅助 evidence 后的最终 confidence。
+- ANTLR shadow golden comparison 测试，确保 shadow path 不少于 primary baseline。
 - schema.table 测试。
 - quoted/backtick identifier 测试。
 - subquery alias 测试。

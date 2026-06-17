@@ -173,6 +173,33 @@ public interface SqlRelationParser {
 - `ScanEngine` 会包装每次 `SqlRelationParser.parse(...)` 调用；如果 parser 抛异常，会生成 `SQL_PARSE_FAILED`，并把原始 SQL 放入 `attributes.rawStatement`。
 - parser 正常返回空列表不自动等价为失败，因为很多 SQL 本来就不包含表关系证据。
 
+### StructuredSqlParser / StructuredDdlParser
+
+ANTLR 迁移增加两个可选 SPI。默认方法返回 `Optional.empty()`，因此旧 adaptor 不需要立刻修改。
+
+```java
+default Optional<StructuredSqlParser> structuredSqlParser() {
+  return Optional.empty();
+}
+
+default Optional<StructuredDdlParser> structuredDdlParser() {
+  return Optional.empty();
+}
+```
+
+职责：
+
+- 提供方言感知的结构化解析前端。
+- 输出 `StructuredParseResult`，包含 parser backend、dialect、结构化事件、warning 和诊断 attributes。
+- 不直接决定最终 confidence。
+
+当前策略：
+
+- MySQL adaptor 暴露 `MySqlAntlrSqlParser` / `MySqlAntlrDdlParser`。
+- PostgreSQL adaptor 暴露 `PostgresAntlrSqlParser` / `PostgresAntlrDdlParser`。
+- SQL 关系输出仍由 `ShadowSqlRelationParser` 返回 primary parser 结果，ANTLR 结果只做 shadow diagnostics。
+- DDL 关系输出仍由 `MySqlDdlParser` / `PostgresDdlParser` 和 core fallback 负责；ANTLR DDL parser 当前只进入结构化诊断通道。
+
 ## 数据画像接口
 
 ```java
