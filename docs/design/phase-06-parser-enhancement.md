@@ -231,6 +231,45 @@ DDL 切 primary 的门槛是 DDL 自己的 golden comparison 持续归零；SQL 
 - `ShadowSqlRelationParser` 默认返回 primary parser 结果，同时生成 ANTLR comparison diagnostics。diagnostics 会记录 `relationVisitor`，用于确认 shadow path 走的是数据库自己的 visitor，并记录 Simple baseline 缺失项，作为是否允许切 primary 的硬门槛。
 - `DdlRelationParserRunner` 默认返回现有 DDL parser 结果，同时生成 DDL comparison diagnostics。diagnostics 会记录 `missingSimpleDdlRelations`，作为是否允许 DDL 切 primary 的硬门槛。
 
+### 为什么 RelationExtractionVisitor 里仍然有正则
+
+当前 SQL ANTLR 链路已经可以作为 MySQL/PostgreSQL 的灰度 primary，但它还不是“完整官方 grammar parse tree + 全语义 visitor”的最终形态。现阶段的职责边界是：
+
+```text
+ANTLR lexer/parser
+  -> tolerant parser / token stream
+  -> StructuredSqlEventVisitor 抽取 TABLE_REFERENCE、COLUMN_EQUALITY 等粗粒度事件
+  -> RelationExtractionVisitor 用事件 + 少量语义兜底生成 RelationshipCandidate
+```
+
+因此，`RelationExtractionVisitor` 中仍保留少量 regex/scanner，原因如下：
+
+- 当前 `RelationSql.g4`、`MySqlRelationSql.g4`、`PostgresRelationSql.g4` 仍是容错迁移 grammar，不是完整 MySQL/PostgreSQL 官方语法树。日志截断、routine/procedure 混合语法、动态 SQL、方言局部语法都要求 parser 能尽量产出诊断，而不是遇到一个不完整节点就丢弃整条语句。
+- ANTLR 给出的只是语法结构，不直接给出业务关系语义。`o.user_id = u.id` 是否应变成 `orders.user_id -> users.id`、方向如何判断、是否要降级为表级共现，仍依赖命名、metadata、lineage、source type 和 evidence scoring。
+- 一些关系抽取能力暂时还需要语义兜底，例如 tuple `IN`、raw equality、`JOIN USING` 表级共现、CTE/local temp rowset 忽略、系统 schema 和截断 token 过滤、derived/LATERAL alias 防伪表。这些逻辑必须在 `RelationExtractionVisitor` 中独立于 `SimpleSqlRelationParser` 存在，以保证 `antlr-primary` 不是借 Simple parser 间接通过。
+
+允许保留的正则范围：
+
+- 只用于关系语义兜底、diagnostics、防误报过滤或 tolerant grammar 尚未建模的边界语法。
+- 必须有 correctness fixture 或单元测试覆盖，尤其要断言 `missingSimpleRelations=[]`、无非预期 fallback warning，并覆盖负向伪表断言。
+- 不能把 DDL constraint/index 逻辑写入 SQL visitor；DDL-only regex/scanner 必须进入 DDL visitor/runner 链路。
+- 不能重新调用 `SimpleSqlRelationParser.parse(...)` 作为 ANTLR 关系结果来源。
+
+长期演进方向：
+
+```text
+MySqlAntlrSqlParser
+  -> MySQL grammar parse tree
+  -> MySqlSqlRelationVisitor
+     直接访问 withClause / tableReference / joinSpec / predicate / subquery 等节点
+
+PostgresAntlrSqlParser
+  -> PostgreSQL grammar parse tree
+  -> PostgresSqlRelationVisitor
+```
+
+当某一类 regex 能被完整 parse-tree visitor 替代时，实施顺序必须是：先把现有 correctness fixture 迁成新 visitor 的 golden 验收，再移除对应 regex，最后同步更新本设计文档和代码实现说明。不能只改代码而保留过时的“regex 过渡层”说明，也不能只改文档而让代码仍走旧兜底。
+
 动态 SQL 策略：
 
 ```sql

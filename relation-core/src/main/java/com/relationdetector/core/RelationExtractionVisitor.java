@@ -50,11 +50,11 @@ public class RelationExtractionVisitor {
     private static final Pattern TEMP_TABLE_NAME = Pattern.compile(
             "(?is)\\bcreate\\s+(?:temporary|temp)\\s+table\\s+(?:if\\s+not\\s+exists\\s+)?([`\"\\w.]+)");
     private static final Pattern JOIN_USING = Pattern.compile(
-            "(?is)\\bjoin\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?([`\"\\w]+))?\\s+using\\s*\\(([^)]*)\\)");
+            "(?is)\\b(?:join|straight_join)\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?([`\"\\w]+))?\\s+using\\s*\\(([^)]*)\\)");
     private static final Pattern ROWSET_TEXT_REFERENCE = Pattern.compile(
-            "(?is)\\b(?:from|join)\\s+([`\"\\w.]+)");
+            "(?is)\\b(?:from|join|straight_join)\\s+(?:\\{\\s*oj\\s+)?\\(*\\s*([`\"\\w.]+)");
     private static final Pattern ROWSET_TEXT_REFERENCE_WITH_ALIAS = Pattern.compile(
-            "(?is)\\b(?:from|join)\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?([`\"\\w]+))?");
+            "(?is)\\b(?:from|join|straight_join)\\s+(?:\\{\\s*oj\\s+)?\\(*\\s*([`\"\\w.]+)(?:\\s+(?:as\\s+)?([`\"\\w]+))?");
     private static final Pattern RAW_EQUALITY = Pattern.compile(
             "([`\"\\w]+)\\.([`\"\\w]+)\\s*=\\s*([`\"\\w]+)\\.([`\"\\w]+)");
     private static final Pattern IN_SUBQUERY = Pattern.compile(
@@ -242,13 +242,13 @@ public class RelationExtractionVisitor {
      * can stay at zero while ANTLR matures.
      *
      * <p>The baseline is only used when no stronger relationship has already
-     * been extracted from the statement, except for MySQL where the legacy
-     * multi-table {@code UPDATE t1, t2 JOIN t3 ...} baseline is already part of
-     * the accepted fixture contract. Once equality or {@code JOIN USING}
-     * evidence exists in PostgreSQL, adding every remaining table pair becomes
-     * noisy in {@code antlr-primary}; for example a three-table query with two
-     * explicit joins should not invent extra table-level links between unrelated
-     * tables.
+     * been extracted from the statement, except for MySQL legacy multi-table
+     * {@code UPDATE t1, t2 JOIN t3 ...}. That UPDATE shape already has an
+     * accepted fixture contract for preserving the indirect {@code t1 -> t3}
+     * co-occurrence. For ordinary explicit JOIN, CTE, derived-table, and comma
+     * rowset SELECT queries, adding every remaining table pair is too noisy in
+     * {@code antlr-primary}; for example a three-table query with two explicit
+     * joins should not invent extra table-level links between unrelated tables.
      *
      * <p>CTEs, local temp tables, derived aliases, and function rowsets are
      * filtered before this method sees them by {@link #physicalTablesFromEvents};
@@ -264,7 +264,7 @@ public class RelationExtractionVisitor {
             Set<String> systemSchemas,
             List<RelationshipCandidate> candidates
     ) {
-        if (!candidates.isEmpty() && !"MYSQL".equalsIgnoreCase(dialect)) {
+        if (!candidates.isEmpty() && !keepsMySqlTableBreadthBaseline(sql, dialect)) {
             return;
         }
         List<TableId> physicalTables = physicalTablesFromEvents(sql, events, ignoredRowsets, systemSchemas);
@@ -288,6 +288,15 @@ public class RelationExtractionVisitor {
                 existing.add(key);
             }
         }
+    }
+
+    private boolean keepsMySqlTableBreadthBaseline(String sql, String dialect) {
+        return isMySqlMultiTableUpdate(sql, dialect);
+    }
+
+    private boolean isMySqlMultiTableUpdate(String sql, String dialect) {
+        return "MYSQL".equalsIgnoreCase(dialect)
+                && sql.stripLeading().toLowerCase(Locale.ROOT).startsWith("update ");
     }
 
     /**
@@ -419,7 +428,7 @@ public class RelationExtractionVisitor {
             Set<String> ignoredRowsets,
             Set<String> systemSchemas
     ) {
-        if (tableName.isBlank() || containsIgnoreCase(ignoredRowsets, tableName)) {
+        if (tableName.isBlank() || isKeyword(tableName) || containsIgnoreCase(ignoredRowsets, tableName)) {
             return false;
         }
         if (tableName.equalsIgnoreCase("lateral")
@@ -673,7 +682,11 @@ public class RelationExtractionVisitor {
         return lower.equals("on") || lower.equals("where") || lower.equals("join") || lower.equals("left")
                 || lower.equals("right") || lower.equals("inner") || lower.equals("outer") || lower.equals("full")
                 || lower.equals("cross") || lower.equals("using") || lower.equals("group") || lower.equals("order")
-                || lower.equals("having") || lower.equals("limit") || lower.equals("union");
+                || lower.equals("having") || lower.equals("limit") || lower.equals("union")
+                || lower.equals("select") || lower.equals("from") || lower.equals("update") || lower.equals("into")
+                || lower.equals("delete") || lower.equals("set") || lower.equals("values")
+                || lower.equals("straight_join") || lower.equals("force") || lower.equals("use")
+                || lower.equals("ignore") || lower.equals("index") || lower.equals("key") || lower.equals("partition");
     }
 
     private String text(StructuredSqlEvent event, String key) {

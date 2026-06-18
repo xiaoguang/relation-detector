@@ -1,0 +1,14 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:order_status->status_labels:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:order_items.product_id->products.id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": [
+    "status_code",
+    "idx_orders_user",
+    "PRIMARY"
+  ]
+}

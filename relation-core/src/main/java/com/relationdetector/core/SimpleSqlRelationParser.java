@@ -52,10 +52,10 @@ public final class SimpleSqlRelationParser {
      * parser.
      */
     private static final String ALIAS_KEYWORD_GUARD =
-            "(?!(?:on|where|join|left|right|inner|outer|full|cross|using|natural|group|order|having|limit|union)\\b)";
+            "(?!(?:on|where|join|straight_join|left|right|inner|outer|full|cross|using|natural|group|order|having|limit|union|force|use|ignore|index|key|partition)\\b)";
 
     private static final Pattern FROM_OR_JOIN = Pattern.compile(
-            "(?i)\\b(?:from|join)\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?");
+            "(?i)\\b(?:from|join|straight_join)\\s+(?:\\{\\s*oj\\s+)?\\(*\\s*([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?");
 
     /*
      * Extracts the raw FROM list before WHERE for old-style comma joins.
@@ -187,7 +187,7 @@ public final class SimpleSqlRelationParser {
      *   instead of inventing a column-level FK_LIKE relation.
      */
     private static final Pattern JOIN_USING = Pattern.compile(
-            "(?is)\\b(?:left\\s+(?:outer\\s+)?|right\\s+(?:outer\\s+)?|full\\s+(?:outer\\s+)?|inner\\s+|cross\\s+)?join\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?\\s+using\\s*\\(([^)]+)\\)");
+            "(?is)\\b(?:left\\s+(?:outer\\s+)?|right\\s+(?:outer\\s+)?|full\\s+(?:outer\\s+)?|inner\\s+|cross\\s+)?(?:join|straight_join)\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?\\s+using\\s*\\(([^)]+)\\)");
 
     /*
      * Recognizes NATURAL JOIN clauses.
@@ -1275,7 +1275,10 @@ public final class SimpleSqlRelationParser {
                         continue;
                     }
                     TableId table = TableId.of(schema, tableName);
-                    String alias = tokens.length > 1 && !isKeyword(tokens[1]) ? clean(tokens[1]) : "";
+                    int aliasIndex = tokens.length > 1 && tokens[1].equalsIgnoreCase("as") ? 2 : 1;
+                    String alias = aliasIndex < tokens.length && !isKeyword(tokens[aliasIndex])
+                            ? clean(tokens[aliasIndex])
+                            : "";
                     refs.add(new TableRef(fromBlock.position(), table, alias));
                 }
             }
@@ -1503,7 +1506,9 @@ public final class SimpleSqlRelationParser {
         private static boolean isKeyword(String value) {
             String lower = value.toLowerCase(Locale.ROOT);
             return lower.equals("on") || lower.equals("where") || lower.equals("join") || lower.equals("left")
-                    || lower.equals("right") || lower.equals("inner") || lower.equals("outer");
+                    || lower.equals("right") || lower.equals("inner") || lower.equals("outer")
+                    || lower.equals("straight_join") || lower.equals("force") || lower.equals("use")
+                    || lower.equals("ignore") || lower.equals("index") || lower.equals("key") || lower.equals("partition");
         }
 
         record TableRef(int position, TableId table, String alias) {

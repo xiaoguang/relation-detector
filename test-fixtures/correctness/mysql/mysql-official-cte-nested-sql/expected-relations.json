@@ -1,0 +1,16 @@
+{
+  "fingerprints": [
+    "FK_LIKE:customers.account_id->accounts.id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.region_id->regions.id:SQL_LOG_JOIN",
+    "FK_LIKE:purchase_orders.id->purchase_order_approvals.purchase_order_id:SQL_LOG_SUBQUERY_IN"
+  ],
+  "forbiddenTables": [
+    "recent_orders",
+    "regional_orders",
+    "customer_orders",
+    "supplier_orders",
+    "approved_supplier_orders",
+    "audit"
+  ]
+}

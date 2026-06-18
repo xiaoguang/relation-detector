@@ -73,6 +73,7 @@ public class StructuredSqlEventVisitor {
             String lower = lower(tokens.get(i));
             if (lower.equals("from")
                     || lower.equals("join")
+                    || lower.equals("straight_join")
                     || lower.equals("update")
                     || lower.equals("into")
                     || (lower.equals("using") && isDmlRowsetUsing(tokens, i))) {
@@ -110,7 +111,11 @@ public class StructuredSqlEventVisitor {
             int tableIndex
     ) {
         IdentifierRead table = readQualifiedIdentifier(tokens, tableIndex);
+        table = table == null ? readQualifiedIdentifier(tokens, skipRowsetWrappers(tokens, tableIndex)) : table;
         if (table == null) {
+            return;
+        }
+        if (isKeyword(table.qualifiedName.toLowerCase(Locale.ROOT))) {
             return;
         }
         if (isRowsetModifier(table.qualifiedName)) {
@@ -267,9 +272,35 @@ public class StructuredSqlEventVisitor {
     private boolean isKeyword(String lower) {
         return switch (lower) {
             case "on", "where", "join", "left", "right", "inner", "outer", "full", "cross", "using", "natural",
-                    "group", "order", "having", "limit", "union", "set", "values", "select", "from" -> true;
+                    "straight_join", "group", "order", "having", "limit", "union", "set", "values", "select", "from",
+                    "force", "use", "ignore", "index", "key", "partition" -> true;
             default -> false;
         };
+    }
+
+    /**
+     * Skips lexical wrappers that can appear between a rowset keyword and the
+     * physical table name in MySQL edge syntax.
+     *
+     * <p>Complete SQL examples:
+     *
+     * <pre>{@code
+     * FROM { OJ orders AS o LEFT OUTER JOIN users AS u ON o.user_id = u.id }
+     * JOIN (order_items AS oi JOIN products AS p ON oi.product_id = p.id)
+     * }</pre>
+     */
+    private int skipRowsetWrappers(List<Token> tokens, int index) {
+        int cursor = index;
+        if (cursor < tokens.size() && tokens.get(cursor).getText().equals("{")) {
+            cursor++;
+            if (cursor < tokens.size() && lower(tokens.get(cursor)).equals("oj")) {
+                cursor++;
+            }
+        }
+        while (cursor < tokens.size() && tokens.get(cursor).getText().equals("(")) {
+            cursor++;
+        }
+        return cursor;
     }
 
     private boolean isRowsetModifier(String qualifiedName) {
