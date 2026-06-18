@@ -1,0 +1,9 @@
+id: mysql-basic-correctness-case-01-sql
+databaseType: MYSQL
+parserTarget: SQL
+sourceType: NATIVE_LOG
+schema: case_01
+parserModes: simple,antlr-shadow,antlr-primary
+input: ../../../mysql/basic-correctness/case-01/sql/performance-schema-statements.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

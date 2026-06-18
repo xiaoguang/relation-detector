@@ -241,6 +241,7 @@ RelationSubType: SUBQUERY_INFERRED_FK
 public enum EvidenceSourceType {
   METADATA,
   DDL_FILE,
+  DATABASE_DDL,
   DATABASE_OBJECT,
   NATIVE_LOG,
   PLAIN_SQL,
@@ -253,6 +254,7 @@ public enum EvidenceSourceType {
 | --- | --- | --- |
 | `METADATA` | JDBC 从系统表或 catalog 读取到的信息。 | `information_schema.KEY_COLUMN_USAGE` |
 | `DDL_FILE` | 本地 DDL 文件。 | `schema.sql` |
+| `DATABASE_DDL` | 从数据库内读取到的真实 DDL 定义。 | MySQL `SHOW CREATE TABLE` |
 | `DATABASE_OBJECT` | 过程、函数、视图、触发器定义。 | `view user_orders` |
 | `NATIVE_LOG` | 数据库原生日志。 | MySQL slow log、PostgreSQL statement log |
 | `PLAIN_SQL` | 清洗后的纯 SQL 文本文件。 | `app-sql.sql` |
@@ -262,6 +264,7 @@ public enum EvidenceSourceType {
 维护说明：
 
 - JSON 中 evidence 的 `source` 可以包含更具体的字符串，例如 `mysql-slow-log`；但内部推荐同时保留 `EvidenceSourceType`，便于统计和过滤。
+- `DATABASE_DDL` 与 `DDL_FILE` 都可能产生 `DDL_FOREIGN_KEY`、`SOURCE_INDEX`、`TARGET_UNIQUE`；区别只在来源：前者来自 live catalog 反查出的表定义，后者来自用户提供的文件。
 - 不要把文件路径作为 enum 值。
 
 ## 7. StatementSourceType
@@ -364,8 +367,8 @@ public enum StructuredParseEventType {
 | --- | --- |
 | `TABLE_REFERENCE` | 识别出表引用和 alias。 |
 | `COLUMN_EQUALITY` | 识别出 `alias.column = alias.column` 谓词。 |
-| `DDL_FOREIGN_KEY` | 为后续 ANTLR DDL FK visitor 预留。 |
-| `DDL_INDEX` | 为后续 ANTLR DDL index visitor 预留。 |
+| `DDL_FOREIGN_KEY` | ANTLR DDL event visitor 识别出的外键关系事件，包括 table-level FK、inline `REFERENCES`、`ALTER TABLE ADD CONSTRAINT`。 |
+| `DDL_INDEX` | ANTLR DDL event visitor 识别出的索引/唯一性事件，例如 source index、primary key、unique constraint、unique index。 |
 | `DYNAMIC_SQL` | 为可静态还原的动态 SQL 事件预留。当前不可还原时输出 warning。 |
 | `PARSER_COMPARISON` | shadow mode 中 primary parser 和 ANTLR parser 的结果对比。 |
 

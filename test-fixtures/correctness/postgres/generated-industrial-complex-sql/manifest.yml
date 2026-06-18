@@ -1,0 +1,9 @@
+id: postgres-generated-industrial-complex-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+sourceType: PLAIN_SQL
+schema: public
+parserModes: simple,antlr-shadow,antlr-primary
+input: ../../../examples/industrial-complex-sql-001-050.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

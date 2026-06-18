@@ -100,16 +100,30 @@ relation-detector/
 
 - `ConfidenceCalculator` 是置信度公式的唯一默认实现。
 - `RelationshipMerger` 负责 `relationSubType` 主导证据优先级。
-- `SimpleSqlRelationParser` 仍是 primary 关系输出实现。MySQL/PostgreSQL adaptor 现在通过 `ShadowSqlRelationParser` 同时运行 ANTLR 结构化 parser；shadow 阶段不改变最终关系输出。
-- `AntlrStructuredSqlParser` 使用 ANTLR 4 生成的宽松 grammar 产出 `TABLE_REFERENCE`、`COLUMN_EQUALITY`、`PARSER_COMPARISON` 等结构化事件，并对 `PREPARE`、`EXECUTE`、`EXECUTE IMMEDIATE` 类动态 SQL 输出 `DYNAMIC_SQL_UNRESOLVED` warning。
-- `RelationExtractionVisitor` 当前委托 primary parser 以保证不回退；后续迁移规则时，应一次迁移一种语法，并用 golden comparison 测试证明不会丢关系。
-- `AntlrStructuredDdlParser` 当前用于 DDL shadow diagnostics，关系输出仍走 `SimpleDdlParser` 和方言 DDL parser。
-- `SqlLineageResolver` 为 `SimpleSqlRelationParser` 提供保守列血缘映射，支持 CTE、派生表、多层嵌套查询，以及简单 LATERAL/correlated derived table 中的外层列投影回溯。
+- SQL parser 由 `SqlRelationParserRunner` 按配置调度：
+  - `simple`：只运行 `SimpleSqlRelationParser`。
+  - `antlr-shadow`：返回 Simple 结果，同时运行 ANTLR 结构化解析和独立关系抽取，生成 comparison diagnostics。
+  - `antlr-primary`：MySQL/PostgreSQL 的默认灰度模式；返回 ANTLR 抽取结果；如果 ANTLR 缺失 Simple baseline 且 `fallbackOnFailure=true`，记录 `ANTLR_PRIMARY_FALLBACK` warning 并返回 Simple 结果。SQL Server/Oracle 仍是 future adaptor，不在本轮 primary 切换范围内。
+- DDL parser 由 `DdlRelationParserRunner` 独立调度，不混入 SQL primary 切换验收：
+  - `simple-ddl`：只运行现有 adaptor DDL parser，例如 `MySqlDdlParser`、`PostgresDdlParser` 或 core `SimpleDdlParser`。
+  - `antlr-ddl-shadow`：返回现有 DDL parser 结果，同时运行 ANTLR DDL 结构化事件抽取和 `DdlRelationExtractionVisitor`，生成 `missingSimpleDdlRelations` / `extraAntlrDdlRelations` diagnostics。
+  - `antlr-ddl-primary`：默认灰度模式；返回 ANTLR DDL 抽取结果；如果缺失 Simple DDL baseline 且 `parser.ddl.fallbackOnFailure=true`，记录 `ANTLR_DDL_PRIMARY_FALLBACK` warning 并返回现有 DDL parser 结果。
+- `AntlrStructuredSqlParser` 是 ANTLR parser 的通用骨架，负责动态 SQL warning、统一 diagnostics attributes 和 `StructuredParseResult`。
+- `RelationSql.g4` 是 core fallback tolerant grammar；MySQL/PostgreSQL 已拆出 `MySqlRelationSql.g4` / `PostgresRelationSql.g4`，由 `MySqlAntlrSqlParser` / `PostgresAntlrSqlParser` 分别调用自己的 generated lexer/parser。
+- ANTLR 只负责把文本变成结构化 token/parse 事件，不负责直接判定业务关系。DDL-only 能力必须进入 DDL entry rule、`DdlStructuredEventVisitor`、`DdlRelationExtractionVisitor` 或 `DdlRelationParserRunner`；SQL-only 能力必须进入 SQL entry rule、`StructuredSqlEventVisitor`、`RelationExtractionVisitor` 或 `SqlRelationParserRunner`。不要把二者回流成一个全局万能 visitor。
+- SQL primary 与 DDL primary 的验收边界必须保持独立：`missingSimpleRelations` 归零只能证明 SQL ANTLR 不少于 SQL Simple baseline；`missingSimpleDdlRelations` 归零只能证明 DDL ANTLR 不少于 DDL Simple baseline。禁止用其中一条链路的通过结果证明另一条链路可以切 primary。
+- 新增方言差异时，优先进入对应数据库自己的 ANTLR parser/visitor 子类或 DDL parser 子类，例如 `MySqlStructuredSqlEventVisitor`、`PostgresStructuredSqlEventVisitor`、`MySqlDdlParser`、`PostgresDdlParser`。只有跨数据库稳定且语义相同的逻辑，才放入 core fallback。
+- `StructuredSqlEventVisitor` 从 ANTLR token stream 产出 `TABLE_REFERENCE`、`COLUMN_EQUALITY`、`PARSER_COMPARISON` 等结构化事件；MySQL/PostgreSQL 已拆出 `MySqlStructuredSqlEventVisitor` / `PostgresStructuredSqlEventVisitor`，用于隔离 quoted identifier 规则。
+- `StructuredSqlEventVisitor` 区分 DML `USING table` 与 `JOIN USING (columns)`：前者可以产生 rowset，后者只保留为表级 co-occurrence 证据，不能把列名当作 `TABLE_REFERENCE`。
+- `RelationExtractionVisitor` 已不再委托 `SimpleSqlRelationParser`。它从 `TABLE_REFERENCE` / `COLUMN_EQUALITY` 事件独立构造基础 FK-like/CO_OCCURRENCE 候选，并复用 `SqlLineageResolver` 做保守 CTE/派生表列回溯。它还会忽略当前方言的系统 schema 和日志截断 token，避免系统 catalog 或残缺 SQL 进入业务关系。MySQL/PostgreSQL 仍保留 `MySqlRelationExtractionVisitor` / `PostgresRelationExtractionVisitor` 作为方言扩展点。
+- `SqlLogNoiseFilter` 在 `SqlRelationParserRunner` 之前过滤 native log 噪声。默认按数据库类型过滤系统 catalog 查询，并允许 YAML 通过 `sources.logs.filterSystemQueries`、`sources.logs.systemSchemas`、`sources.logs.metadataQueryMarkers` 覆盖。
+- `AntlrStructuredDdlParser` 现在输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 事件；`DdlRelationExtractionVisitor` 独立把这些事件转换成 DDL FK-like 关系，并用 source index / target unique evidence 增强关系。
+- `SqlLineageResolver` 为 Simple 和 ANTLR relation extractor 提供保守列血缘映射，支持 CTE、派生表、多层嵌套查询，以及简单 LATERAL/correlated derived table 中的外层列投影回溯。
 - `SimpleDdlParser` 把显式 FK/inline references 作为强关系证据，把 PK/unique/source index 作为已有 FK 的辅助 evidence；它现在定位为 core fallback。MySQL/PostgreSQL 明显不同的 DDL 写法应进入 `MySqlDdlParser` / `PostgresDdlParser`，再委托或补充 fallback 结果。
 - `MySqlDdlParser` 是 MySQL adaptor 的 DDL 入口。它先做 MySQL 私有归一化，例如 `CREATE UNIQUE INDEX ... USING BTREE ON ... INVISIBLE`，再委托 fallback；后续继续承接反引号、`KEY`/`INDEX` 选项、prefix/invisible index、storage engine/table options、`SHOW CREATE TABLE` 等 MySQL 差异。
 - `PostgresDdlParser` 是 PostgreSQL adaptor 的 DDL 入口。它先做 PostgreSQL 私有归一化，例如 `CREATE INDEX ... ON ONLY ...`，再委托 fallback；后续继续承接 `ALTER TABLE ONLY`、`NOT VALID`、`INCLUDE`、partial/expression index、opclass、partition/inheritance 等 PostgreSQL 差异。
 - `JsonResultWriter` 当前手写 JSON，后续可替换为 Jackson，但字段结构应保持兼容。
-- `DiagnosticWarnings` 集中构造解析/提取失败 warning。`ScanEngine`、DDL parser、log extractor 不应各自拼装不同格式；失败时应保留 `exceptionClass`，并在能拿到输入文本时把原始 SQL/DDL 放入 `attributes.rawStatement`。
+- `DiagnosticWarnings` 集中构造解析/提取失败 warning。`ScanEngine`、DDL parser、log extractor 不应各自拼装不同格式；失败时应保留 `exceptionClass`，并在能拿到输入文本时把原始 SQL/DDL 放入 `attributes.rawStatement`。SQL ANTLR primary fallback 使用 `attributes.missingSimpleRelations`；DDL ANTLR primary fallback 使用 `attributes.missingSimpleDdlRelations`。
 
 ### 2.3 relation-cli
 
@@ -162,7 +176,7 @@ relation-detector/
 
 - 当前元数据采集先实现显式 FK，unique/index 采集可以按 Phase 4 继续补。
 - 当前数据画像只做轻量匹配 evidence，后续应补包含率、重合率、负向证据等完整指标。
-- MySQL JDBC driver 没有内置到项目中，连接真实 MySQL 时需要运行环境提供驱动。
+- MySQL adaptor 已声明 `mysql-connector-j` runtime 依赖；使用 Maven 构建出的运行 classpath 连接真实 MySQL 时会自动包含 Connector/J。
 
 ### 2.5 adaptor-postgres
 
@@ -240,6 +254,12 @@ data profile         -> VALUE_OVERLAP_HIGH / VALUE_CONTAINMENT_HIGH
     "statementSourceType": "PROCEDURE",
     "endLine": 3,
     "exceptionClass": "IllegalArgumentException",
+    "objectSchema": "shop",
+    "objectName": "rebuild_orders",
+    "objectType": "PROCEDURE",
+    "routineSchema": "shop",
+    "routineName": "rebuild_orders",
+    "routineType": "PROCEDURE",
     "rawStatement": "CREATE PROCEDURE rebuild_orders() BEGIN SELECT ... END"
   }
 }
@@ -252,6 +272,7 @@ data profile         -> VALUE_OVERLAP_HIGH / VALUE_CONTAINMENT_HIGH
 - 普通 SQL/object 文件读取或切分失败：`SQL_FILE_EXTRACT_FAILED`。
 - 数据库原生日志读取或抽取失败：`LOG_EXTRACT_FAILED`。
 - MySQL/PostgreSQL 对象定义读取失败：对应 `MYSQL_*_COLLECT_FAILED` 或 `POSTGRES_*_COLLECT_FAILED`。
+- database object 进入 SQL parser 后产生的 warning 会把 `objectSchema/objectName/objectType` 放在 attributes 顶层；procedure/function 还会额外带 `routineSchema/routineName/routineType`，方便直接定位 routine。
 - parser 返回空关系不是失败；例如没有 JOIN/IN/EXISTS 的过滤 SQL 可以没有 warning。
 
 ## 4. 运维示例：从构建到输出
@@ -385,7 +406,8 @@ sources:
   metadata:
     enabled: true
   ddl:
-    enabled: false
+    enabled: true
+    fromDatabase: true
   objects:
     enabled: true
     fromDatabase: true
@@ -417,7 +439,8 @@ sources:
 
 注意：
 
-- 当前项目没有内置 JDBC driver。真实数据库运行时，需要把对应 JDBC driver 放到 classpath。
+- MySQL adaptor 已内置 Connector/J runtime 依赖。PostgreSQL 真实数据库运行时仍需要把 PostgreSQL JDBC driver 放到 classpath，或在 `adaptor-postgres` 中补 runtime dependency。
+- MySQL `sources.ddl.fromDatabase: true` 会对 scope 内表执行 `SHOW CREATE TABLE`，解析出的外键/索引 evidence 使用 `DATABASE_DDL`，不同于用户提供的 DDL 文件 `DDL_FILE`。
 - 生产环境建议默认关闭 `dataProfile`。
 - 如果 `${DB_PASSWORD}` 环境变量不存在，CLI 会失败并提示缺少环境变量。
 
@@ -464,6 +487,12 @@ sources:
   - 同一 SQL 同时跑 primary parser 和 shadow parser。
   - 最终关系输出必须与 primary baseline 一致。
   - shadow path 至少产生 `TABLE_REFERENCE` 和 `COLUMN_EQUALITY` 结构化事件。
+  - MySQL/PostgreSQL parser selection 测试必须断言 `attributes.grammar`、`attributes.lexer`、`attributes.parser` 和 `attributes.eventVisitor`，证明不是继续走通用 grammar。
+  - shadow comparison diagnostics 必须断言 `relationVisitor`，证明 adaptor 使用自己的方言 visitor。
+  - comparison diagnostics 必须记录 `missingSimpleRelations` / `extraAntlrRelations`；`antlr-primary` 缺失 Simple baseline 时必须 fallback 并输出 warning。
+- ANTLR 独立抽取测试：
+  - `RelationExtractionVisitorIndependenceTest` 用“raw SQL 无关系但 events 有关系”和“events 为空但 visitor 自己的 raw equality fallback 可提取关系”两种输入，证明 visitor 没有回退调用 `SimpleSqlRelationParser`，同时允许 ANTLR extractor 的自有兜底能力继续工作。
+  - `SqlRelationParserRunnerTest` 覆盖 `simple` 不运行 ANTLR，以及 `antlr-primary` 缺失 baseline 时写 `ANTLR_PRIMARY_FALLBACK` warning。
 - 重复 SQL 日志 JOIN 输出两份证据：`rawEvidence` 保留每次观测，`evidence` 聚合为一条基础 evidence 加一条 `REPEATED_OBSERVATION`。
 - YAML 中环境变量缺失时报错。
 - unknown adaptor 报 `ADAPTOR_ERROR`。
@@ -487,7 +516,8 @@ sources:
 MySQL：
 
 - 使用 Testcontainers MySQL 8。
-- 建表：显式 FK、unique index、普通 index。
+- 建表：显式 FK、unique index、普通 index、generated column、prefix index。
+- 验证 metadata snapshot 包含 table/column/index/constraint facts，并且 `SHOW CREATE TABLE` 产生 `DATABASE_DDL` evidence。
 - 创建 view、procedure、trigger。
 - 投喂 general log/slow log fixture。
 - 验证输出包含显式 FK、JOIN 推断、共现关系。

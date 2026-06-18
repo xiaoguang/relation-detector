@@ -11,13 +11,19 @@ import com.relationdetector.api.StructuredParseResult;
 /**
  * ANTLR-backed structural DDL parser placeholder for dialect adaptors.
  *
- * <p>The class currently validates DDL through the same tolerant ANTLR grammar
- * used for SQL text and returns diagnostic metadata. Relationship extraction
- * for DDL still comes from MySQL/Postgres DDL parsers and {@link SimpleDdlParser}
- * until a dedicated DDL visitor is promoted from shadow diagnostics.
+ * <p>The DDL path intentionally does not feed an entire schema dump through the
+ * SQL statement parser. Real {@code SHOW CREATE TABLE} fixtures can contain
+ * thousands of lines, table options, comments, generated columns, and index
+ * clauses that are not query expressions. The DDL visitor is the semantic
+ * boundary for this path: it extracts schema-definition events directly and the
+ * {@link DdlRelationExtractionVisitor} turns those events into relationship
+ * candidates. SQL text still uses {@link AntlrStructuredSqlParser}; DDL text has
+ * this separate entry so the two primary-switch pipelines can be verified and
+ * optimized independently.
  */
 public class AntlrStructuredDdlParser implements StructuredDdlParser {
     private final SqlDialect dialect;
+    private final DdlStructuredEventVisitor eventVisitor = new DdlStructuredEventVisitor();
 
     public AntlrStructuredDdlParser(SqlDialect dialect) {
         this.dialect = dialect;
@@ -25,17 +31,10 @@ public class AntlrStructuredDdlParser implements StructuredDdlParser {
 
     @Override
     public StructuredParseResult parseDdl(String ddl, String sourceName, AdaptorContext context) {
-        var statement = new com.relationdetector.api.SqlStatementRecord(
-                ddl,
-                com.relationdetector.api.Enums.StatementSourceType.DDL_FILE,
-                sourceName,
-                1,
-                1,
-                Map.of());
-        StructuredParseResult sqlResult = new AntlrStructuredSqlParser(dialect).parseSql(statement, context);
-        Map<String, Object> attributes = new LinkedHashMap<>(sqlResult.attributes());
+        Map<String, Object> attributes = new LinkedHashMap<>();
         attributes.put("ddlMode", true);
-        return new StructuredParseResult(sqlResult.backend(), sqlResult.dialect(), sourceName,
-                sqlResult.events(), sqlResult.warnings(), attributes);
+        attributes.put("ddlEventVisitor", eventVisitor.getClass().getSimpleName());
+        return new StructuredParseResult("ANTLR", dialect.name(), sourceName,
+                eventVisitor.extractEvents(ddl, sourceName), List.of(), attributes);
     }
 }

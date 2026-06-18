@@ -1,0 +1,17 @@
+{
+  "fixtureSha256": "f1cae456e53802b3611debebb910ca67068ca03f388e8c6cabbb6727337b3742",
+  "missingSimpleRelations": [],
+  "extraAntlrRelations": [],
+  "missingSimpleDdlRelations": [],
+  "extraAntlrDdlRelations": [],
+  "warningCodes": {
+  },
+  "modeWarningCodes": {
+    "antlr-shadow": {
+      "DYNAMIC_SQL_UNRESOLVED": 1
+    },
+    "antlr-primary": {
+      "DYNAMIC_SQL_UNRESOLVED": 1
+    }
+  }
+}

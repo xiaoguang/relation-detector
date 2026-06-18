@@ -85,6 +85,18 @@ public final class MySqlDdlParser implements DdlParser {
         }
     }
 
+    @Override
+    public List<RelationshipCandidate> parseDdlText(String ddl, String sourceName, AdaptorContext context) {
+        try {
+            return fallback.parseText(normalizeMysqlDdl(ddl), sourceName);
+        } catch (Exception ex) {
+            if (context != null) {
+                context.warn(DiagnosticWarnings.ddlTextParseFailed(sourceName, ddl, ex));
+            }
+            return List.of();
+        }
+    }
+
     private String normalizeMysqlDdl(String ddl) {
         String normalized = INDEX_TYPE_BEFORE_ON.matcher(ddl)
                 .replaceAll("$1 on ");

@@ -1,0 +1,8 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:orders->accounts:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
+    "FK_LIKE:users.account_id->accounts.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": []
+}

@@ -1,0 +1,28 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:accounts->account_metadata:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:branch_a->branch_b:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:categories->sub_labels:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:departments->employees:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:documents->revisions:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:main_catalog->products:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:products->audit_logs:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:products->categories:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:products->departments:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:side_a->side_b:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:system_releases->beta_builds:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:table_alpha->table_beta:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:vocabulary_prefix->vocabulary_suffix:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": [
+    "org_path",
+    "sub",
+    "ranked",
+    "combo",
+    "flattened",
+    "attachment",
+    "the",
+    "1"
+  ]
+}

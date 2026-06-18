@@ -1,0 +1,9 @@
+id: mysql-sql-cte-lateral
+databaseType: MYSQL
+parserTarget: SQL
+sourceType: PLAIN_SQL
+schema: shop
+parserModes: antlr-primary
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

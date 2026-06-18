@@ -6,8 +6,10 @@ import java.nio.file.Path;
 import com.relationdetector.api.DatabaseAdaptor;
 import com.relationdetector.api.Enums.ErrorCode;
 import com.relationdetector.api.Enums.OutputFormat;
+import com.relationdetector.core.DdlParserMode;
 import com.relationdetector.core.JsonResultWriter;
 import com.relationdetector.core.ScanEngine;
+import com.relationdetector.core.SqlParserMode;
 import com.relationdetector.core.TableResultWriter;
 
 /** CLI entry point. Kept dependency-free for the first implementation drop. */
@@ -48,6 +50,12 @@ public final class Main {
                 if (cli.minConfidence != null) {
                     config.minConfidence = cli.minConfidence;
                 }
+                if (cli.sqlParserMode != null) {
+                    config.sqlParserMode = cli.sqlParserMode;
+                }
+                if (cli.ddlParserMode != null) {
+                    config.ddlParserMode = cli.ddlParserMode;
+                }
 
                 AdaptorRegistry registry = AdaptorRegistry.load(cli.pluginDir);
                 DatabaseAdaptor adaptor = registry.resolve(config.databaseType, config.adaptorId);
@@ -86,6 +94,8 @@ public final class Main {
                       --output <file>       Write output to file. Defaults to stdout.
                       --plugin-dir <dir>    Directory containing external adaptor jars.
                       --min-confidence <n>  Override output.minConfidence.
+                      --sql-parser-mode <m>  simple, antlr-shadow, or antlr-primary. Overrides parser.sql.mode.
+                      --ddl-parser-mode <m>  simple-ddl, antlr-ddl-shadow, or antlr-ddl-primary. Overrides parser.ddl.mode.
                       --help                Show this help.
                     """;
         }
@@ -98,6 +108,8 @@ public final class Main {
         Path output;
         Path pluginDir;
         Double minConfidence;
+        SqlParserMode sqlParserMode;
+        DdlParserMode ddlParserMode;
 
         static CliArguments parse(String[] args) {
             CliArguments parsed = new CliArguments();
@@ -114,6 +126,8 @@ public final class Main {
                     case "--output" -> parsed.output = Path.of(requireValue(args, index++, arg));
                     case "--plugin-dir" -> parsed.pluginDir = Path.of(requireValue(args, index++, arg));
                     case "--min-confidence" -> parsed.minConfidence = Double.parseDouble(requireValue(args, index++, arg));
+                    case "--sql-parser-mode" -> parsed.sqlParserMode = SqlParserMode.fromConfig(requireValue(args, index++, arg));
+                    case "--ddl-parser-mode" -> parsed.ddlParserMode = DdlParserMode.fromConfig(requireValue(args, index++, arg));
                     default -> throw new IllegalArgumentException("Unknown argument: " + arg);
                 }
             }

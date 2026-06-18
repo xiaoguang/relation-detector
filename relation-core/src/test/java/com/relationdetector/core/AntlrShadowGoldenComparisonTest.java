@@ -46,6 +46,8 @@ class AntlrShadowGoldenComparisonTest {
         StructuredParseResult structured = new AntlrStructuredSqlParser(fixture.dialect()).parseSql(statement, null);
 
         assertEquals(fingerprints(primaryRelations), fingerprints(result.relationships()));
+        assertTrue(result.missingSimpleRelations().isEmpty(),
+                () -> "ANTLR shadow extractor must not miss Simple baseline relations: " + result.missingSimpleRelations());
         assertTrue(result.diagnostics().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.PARSER_COMPARISON));
         assertHasEvent(structured.events(), StructuredParseEventType.TABLE_REFERENCE);

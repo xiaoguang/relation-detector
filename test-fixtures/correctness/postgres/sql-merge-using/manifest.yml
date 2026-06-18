@@ -1,0 +1,9 @@
+id: postgres-sql-merge-using
+databaseType: POSTGRESQL
+parserTarget: SQL
+sourceType: PLAIN_SQL
+schema: public
+parserModes: simple,antlr-shadow,antlr-primary
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

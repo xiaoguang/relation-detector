@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.relationdetector.api.Collectors.DataProfiler;
+import com.relationdetector.api.Collectors.DatabaseDdlCollector;
 import com.relationdetector.api.Collectors.DdlParser;
 import com.relationdetector.api.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.api.Collectors.MetadataCollector;
@@ -37,6 +38,10 @@ public interface DatabaseAdaptor {
     ObjectDefinitionCollector objectDefinitionCollector();
 
     DdlParser ddlParser();
+
+    default Optional<DatabaseDdlCollector> databaseDdlCollector() {
+        return Optional.empty();
+    }
 
     SqlLogExtractor sqlLogExtractor();
 

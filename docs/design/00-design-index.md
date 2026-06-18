@@ -6,6 +6,7 @@
 
 - [代码实现说明与运维测试指南](../code-implementation-guide.md)
 - [SimpleSqlRelationParser 复杂 SQL 测试报告](../parser-complex-sql-test-report.md)
+- [测试资产地图与 Parser 验收矩阵](../test-assets-map.md)
 - [Phase 1：工程骨架](phase-01-project-skeleton.md)
 - [Phase 2：核心模型和评分](phase-02-core-model-scoring.md)
 - [Phase 3：Adaptor API 和 SPI](phase-03-adaptor-api-spi.md)

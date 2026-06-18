@@ -1,0 +1,10 @@
+id: postgres-basic-correctness-case-01-statements-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+sourceType: NATIVE_LOG
+evidenceSourceType: DDL_FILE
+schema: case_01
+parserModes: simple,antlr-shadow,antlr-primary
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

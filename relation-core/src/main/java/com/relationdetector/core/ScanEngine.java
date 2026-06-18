@@ -8,13 +8,19 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import com.relationdetector.api.AdaptorContext;
+import com.relationdetector.api.ColumnRef;
 import com.relationdetector.api.DatabaseAdaptor;
+import com.relationdetector.api.DatabaseDdlDefinition;
 import com.relationdetector.api.DatabaseObjectDefinition;
+import com.relationdetector.api.Endpoint;
+import com.relationdetector.api.MetadataSnapshot;
 import com.relationdetector.api.ProfileRequest;
 import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.ScanScope;
 import com.relationdetector.api.SqlStatementRecord;
+import com.relationdetector.api.TableId;
 import com.relationdetector.api.WarningMessage;
+import com.relationdetector.api.Enums.EvidenceSourceType;
 import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
 
@@ -28,19 +34,30 @@ import com.relationdetector.api.Enums.WarningType;
 public final class ScanEngine {
     private final RelationshipMerger merger = new RelationshipMerger();
     private final PlainSqlLogExtractor plainExtractor = new PlainSqlLogExtractor();
+    private final SqlRelationParserRunner sqlParserRunner = new SqlRelationParserRunner();
+    private final DdlRelationParserRunner ddlParserRunner = new DdlRelationParserRunner();
+    private final MetadataEvidenceEnhancer metadataEvidenceEnhancer = new MetadataEvidenceEnhancer();
 
     public ScanResult scan(ScanConfig config, DatabaseAdaptor adaptor) {
         ScanScope scope = new ScanScope(config.catalog, config.schema, config.includeTables, config.excludeTables);
         ScanResult result = new ScanResult(config.databaseType.name(), config.schema);
         AdaptorContext context = new AdaptorContext(scope, java.util.Map.of(), result.warnings()::add);
         List<RelationshipCandidate> candidates = new ArrayList<>();
+        MetadataSnapshot metadataSnapshot = null;
 
         try (Connection connection = openConnection(config)) {
             if (config.metadataEnabled && connection != null) {
                 result.sources().add("metadata");
-                var snapshot = adaptor.metadataCollector().collect(connection, scope);
-                candidates.addAll(snapshot.relationships());
-                result.warnings().addAll(snapshot.warnings());
+                metadataSnapshot = adaptor.metadataCollector().collect(connection, scope);
+                candidates.addAll(metadataSnapshot.relationships());
+                result.warnings().addAll(metadataSnapshot.warnings());
+            }
+
+            if (config.ddlEnabled && config.ddlFromDatabase && connection != null) {
+                result.sources().add("database-ddl");
+                for (DatabaseDdlDefinition definition : collectDatabaseDdl(adaptor, connection, scope, result)) {
+                    candidates.addAll(safeParseDatabaseDdl(adaptor, config, definition, context, result));
+                }
             }
 
             if (config.objectsEnabled && config.objectsFromDatabase && connection != null) {
@@ -57,11 +74,9 @@ public final class ScanEngine {
                         case PACKAGE -> StatementSourceType.PACKAGE;
                         case PACKAGE_BODY -> StatementSourceType.PACKAGE_BODY;
                     };
-                    candidates.addAll(safeParseStatement(adaptor,
-                            new SqlStatementRecord(definition.sql(), sourceType, definition.source(), 0, 0,
-                                    java.util.Map.of("objectType", definition.type().name(),
-                                            "schema", definition.schema(),
-                                            "name", definition.name())),
+                    candidates.addAll(safeParseStatement(adaptor, config,
+                            new SqlStatementRecord(definition.sql(), sourceType, objectSourceName(definition), 0, 0,
+                                    objectAttributes(definition)),
                             context, result));
                 }
             }
@@ -86,7 +101,7 @@ public final class ScanEngine {
         if (config.ddlEnabled) {
             result.sources().add("ddl");
             for (Path file : config.ddlFiles) {
-                candidates.addAll(safeParseDdl(adaptor, file, context, result));
+                candidates.addAll(safeParseDdl(adaptor, config, file, context, result));
             }
         }
 
@@ -94,7 +109,7 @@ public final class ScanEngine {
             result.sources().add("object-files");
             for (Path file : config.objectFiles) {
                 plainExtractor.extract(file, StatementSourceType.PROCEDURE, result.warnings()::add)
-                        .forEach(statement -> candidates.addAll(safeParseStatement(adaptor, statement, context, result)));
+                        .forEach(statement -> candidates.addAll(safeParseStatement(adaptor, config, statement, context, result)));
             }
         }
 
@@ -102,10 +117,13 @@ public final class ScanEngine {
             result.sources().add("logs");
             for (Path file : config.logFiles) {
                 safeExtractLog(adaptor, file, config, result)
-                        .forEach(statement -> candidates.addAll(safeParseStatement(adaptor, statement, context, result)));
+                        .forEach(statement -> candidates.addAll(safeParseStatement(adaptor, config, statement, context, result)));
             }
         }
 
+        if (metadataSnapshot != null) {
+            metadataEvidenceEnhancer.enhance(candidates, metadataSnapshot);
+        }
         result.relationships().addAll(merger.merge(candidates, config.minConfidence));
         return result;
     }
@@ -127,14 +145,32 @@ public final class ScanEngine {
      */
     private List<RelationshipCandidate> safeParseDdl(
             DatabaseAdaptor adaptor,
+            ScanConfig config,
             Path file,
             AdaptorContext context,
             ScanResult result
     ) {
         try {
-            return adaptor.ddlParser().parseDdl(file, context);
+            return ddlParserRunner.parse(adaptor, config, file, context);
         } catch (Exception ex) {
             result.warnings().add(DiagnosticWarnings.ddlParseFailed(file, ex));
+            return List.of();
+        }
+    }
+
+    private List<RelationshipCandidate> safeParseDatabaseDdl(
+            DatabaseAdaptor adaptor,
+            ScanConfig config,
+            DatabaseDdlDefinition definition,
+            AdaptorContext context,
+            ScanResult result
+    ) {
+        try {
+            List<RelationshipCandidate> parsed = ddlParserRunner.parseText(adaptor, config,
+                    definition.ddl(), definition.source(), EvidenceSourceType.DATABASE_DDL, context);
+            return qualifyDatabaseDdlCandidates(parsed, definition.schema());
+        } catch (Exception ex) {
+            result.warnings().add(DiagnosticWarnings.ddlTextParseFailed(definition.source(), definition.ddl(), ex));
             return List.of();
         }
     }
@@ -148,12 +184,13 @@ public final class ScanEngine {
      */
     private List<RelationshipCandidate> safeParseStatement(
             DatabaseAdaptor adaptor,
+            ScanConfig config,
             SqlStatementRecord statement,
             AdaptorContext context,
             ScanResult result
     ) {
         try {
-            return adaptor.sqlRelationParser().parse(statement, context);
+            return sqlParserRunner.parse(adaptor, config, statement, context);
         } catch (Exception ex) {
             result.warnings().add(DiagnosticWarnings.sqlParseFailed(statement, ex));
             return List.of();
@@ -198,5 +235,82 @@ public final class ScanEngine {
                     "OBJECT_DEFINITION_COLLECT_FAILED", "database-objects", ex));
             return List.of();
         }
+    }
+
+    private List<DatabaseDdlDefinition> collectDatabaseDdl(
+            DatabaseAdaptor adaptor,
+            Connection connection,
+            ScanScope scope,
+            ScanResult result
+    ) {
+        try {
+            return adaptor.databaseDdlCollector()
+                    .map(collector -> collector.collect(connection, scope, result.warnings()::add))
+                    .orElse(List.of());
+        } catch (Exception ex) {
+            result.warnings().add(DiagnosticWarnings.objectCollectFailed(
+                    "DATABASE_DDL_COLLECT_FAILED", "database-ddl", ex));
+            return List.of();
+        }
+    }
+
+    private java.util.Map<String, Object> objectAttributes(DatabaseObjectDefinition definition) {
+        java.util.Map<String, Object> attributes = new java.util.LinkedHashMap<>();
+        attributes.put("objectSchema", definition.schema());
+        attributes.put("objectName", definition.name());
+        attributes.put("objectType", definition.type().name());
+        attributes.put("objectDefinitionSource", definition.source());
+        if (definition.type() == com.relationdetector.api.Enums.DatabaseObjectType.PROCEDURE
+                || definition.type() == com.relationdetector.api.Enums.DatabaseObjectType.FUNCTION) {
+            attributes.put("routineSchema", definition.schema());
+            attributes.put("routineName", definition.name());
+            attributes.put("routineType", definition.type().name());
+        }
+        return attributes;
+    }
+
+    private String objectSourceName(DatabaseObjectDefinition definition) {
+        if (definition.schema() == null || definition.schema().isBlank()) {
+            return definition.name();
+        }
+        return definition.schema() + "." + definition.name();
+    }
+
+    private List<RelationshipCandidate> qualifyDatabaseDdlCandidates(
+            List<RelationshipCandidate> candidates,
+            String schema
+    ) {
+        if (schema == null || schema.isBlank()) {
+            return candidates;
+        }
+        return candidates.stream()
+                .map(candidate -> qualifyDatabaseDdlCandidate(candidate, schema))
+                .toList();
+    }
+
+    private RelationshipCandidate qualifyDatabaseDdlCandidate(RelationshipCandidate candidate, String schema) {
+        RelationshipCandidate qualified = new RelationshipCandidate(
+                qualifyEndpoint(candidate.source(), schema),
+                qualifyEndpoint(candidate.target(), schema),
+                candidate.relationType(),
+                candidate.relationSubType());
+        qualified.confidence(candidate.confidence());
+        qualified.evidence().addAll(candidate.evidence());
+        qualified.rawEvidence().addAll(candidate.rawEvidence());
+        qualified.warnings().addAll(candidate.warnings());
+        return qualified;
+    }
+
+    private Endpoint qualifyEndpoint(Endpoint endpoint, String schema) {
+        if (endpoint.table().schema() != null && !endpoint.table().schema().isBlank()) {
+            return endpoint;
+        }
+        TableId table = TableId.of(schema, endpoint.table().tableName());
+        if (!endpoint.isColumnLevel()) {
+            return Endpoint.table(table);
+        }
+        ColumnRef column = endpoint.column();
+        return Endpoint.column(new ColumnRef(table, column.columnName(), column.normalizedName(),
+                column.dataType(), column.nullable()));
     }
 }

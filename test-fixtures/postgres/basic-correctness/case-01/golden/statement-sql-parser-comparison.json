@@ -1,0 +1,12 @@
+{
+  "caseId": "postgres-basic-correctness-case-01",
+  "fixture": "test-fixtures/postgres/basic-correctness/case-01/sql/pg-stat-statements.sql",
+  "fixtureSha256": "1239b4a8034c904341c2229c1f53b412222653a285c1cc28f2a7e29addfe9cc3",
+  "sqlSamples": 0,
+  "simpleRelations": 0,
+  "antlrRelations": 0,
+  "missingSimpleRelations": [],
+  "extraAntlrRelations": [],
+  "warningCodes": {
+  }
+}

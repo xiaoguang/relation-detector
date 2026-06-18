@@ -9,7 +9,9 @@ import java.util.List;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.LogFormatHint;
 import com.relationdetector.api.Enums.OutputFormat;
+import com.relationdetector.core.DdlParserMode;
 import com.relationdetector.core.ScanConfig;
+import com.relationdetector.core.SqlParserMode;
 
 /**
  * Small YAML reader for the documented example configuration.
@@ -37,7 +39,7 @@ public final class SimpleYamlConfigLoader {
             int indent = countIndent(line);
             String trimmed = line.trim();
             if (trimmed.startsWith("- ")) {
-                addListValue(config, activeList, resolveEnv(trimmed.substring(2).trim()));
+                addListValue(config, activeList, resolveEnv(unquote(trimmed.substring(2).trim())));
                 continue;
             }
             if (!trimmed.contains(":")) {
@@ -84,10 +86,12 @@ public final class SimpleYamlConfigLoader {
             case "database.catalog" -> config.catalog = value;
             case "sources.metadata.enabled" -> config.metadataEnabled = Boolean.parseBoolean(value);
             case "sources.ddl.enabled" -> config.ddlEnabled = Boolean.parseBoolean(value);
+            case "sources.ddl.fromDatabase" -> config.ddlFromDatabase = Boolean.parseBoolean(value);
             case "sources.objects.enabled" -> config.objectsEnabled = Boolean.parseBoolean(value);
             case "sources.objects.fromDatabase" -> config.objectsFromDatabase = Boolean.parseBoolean(value);
             case "sources.logs.enabled" -> config.logsEnabled = Boolean.parseBoolean(value);
             case "sources.logs.format" -> config.logFormatHint = LogFormatHint.valueOf(value.toUpperCase());
+            case "sources.logs.filterSystemQueries" -> config.logsFilterSystemQueries = Boolean.parseBoolean(value);
             case "sources.dataProfile.enabled" -> config.dataProfileEnabled = Boolean.parseBoolean(value);
             case "sources.dataProfile.sampleRows" -> config.sampleRows = Integer.parseInt(value);
             case "sources.dataProfile.timeoutSeconds" -> config.timeoutSeconds = Integer.parseInt(value);
@@ -96,6 +100,10 @@ public final class SimpleYamlConfigLoader {
             case "output.minConfidence" -> config.minConfidence = Double.parseDouble(value);
             case "output.includeEvidence" -> config.includeEvidence = Boolean.parseBoolean(value);
             case "output.includeWarnings" -> config.includeWarnings = Boolean.parseBoolean(value);
+            case "parser.sql.mode" -> config.sqlParserMode = SqlParserMode.fromConfig(value);
+            case "parser.sql.fallbackOnFailure" -> config.sqlParserFallbackOnFailure = Boolean.parseBoolean(value);
+            case "parser.ddl.mode" -> config.ddlParserMode = DdlParserMode.fromConfig(value);
+            case "parser.ddl.fallbackOnFailure" -> config.ddlParserFallbackOnFailure = Boolean.parseBoolean(value);
             default -> {
                 // Unknown keys are ignored to allow forward-compatible configs.
             }
@@ -109,6 +117,8 @@ public final class SimpleYamlConfigLoader {
             case "sources.ddl.files" -> config.ddlFiles.add(Path.of(value));
             case "sources.objects.files" -> config.objectFiles.add(Path.of(value));
             case "sources.logs.files" -> config.logFiles.add(Path.of(value));
+            case "sources.logs.systemSchemas" -> config.logSystemSchemas.add(value);
+            case "sources.logs.metadataQueryMarkers" -> config.logMetadataQueryMarkers.add(value);
             default -> {
                 // Ignore list values under unknown sections.
             }

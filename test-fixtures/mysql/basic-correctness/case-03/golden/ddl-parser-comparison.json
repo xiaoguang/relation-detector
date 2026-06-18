@@ -1,0 +1,13 @@
+{
+  "caseId": "basic-correctness-case-03",
+  "fixture": "test-fixtures/mysql/basic-correctness/case-03/ddl/show-create-tables.sql",
+  "fixtureSha256": "590b38ccd72929bdeed678a3a3dd27a9d5e592101d6b61f9b24b9bc184ddc7f3",
+  "ddlDefinitions": 75,
+  "simpleRelations": 2,
+  "antlrRelations": 2,
+  "antlrPrimaryRelations": 2,
+  "missingSimpleDdlRelations": [],
+  "extraAntlrDdlRelations": [],
+  "warningCodes": {},
+  "primaryWarningCodes": {}
+}

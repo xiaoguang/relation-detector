@@ -1,0 +1,104 @@
+package com.relationdetector.core;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import com.relationdetector.api.DefaultEvidenceScores;
+import com.relationdetector.api.Evidence;
+import com.relationdetector.api.MetadataColumnFact;
+import com.relationdetector.api.MetadataIndexFact;
+import com.relationdetector.api.MetadataSnapshot;
+import com.relationdetector.api.RelationshipCandidate;
+import com.relationdetector.api.Enums.EvidenceSourceType;
+import com.relationdetector.api.Enums.EvidenceType;
+import com.relationdetector.api.Enums.RelationType;
+
+/**
+ * Adds catalog metadata evidence to already-discovered column relationships.
+ *
+ * <p>This class is intentionally an enhancer, not a relationship generator.
+ * Indexes, unique keys, and compatible types make an existing SQL/DDL/profile
+ * candidate more credible, but they are not enough to invent a FK-like edge by
+ * themselves.
+ */
+public final class MetadataEvidenceEnhancer {
+    public void enhance(List<RelationshipCandidate> candidates, MetadataSnapshot metadata) {
+        if (candidates.isEmpty()) {
+            return;
+        }
+        for (RelationshipCandidate candidate : candidates) {
+            if (candidate.relationType() != RelationType.FK_LIKE
+                    || !candidate.source().isColumnLevel()
+                    || !candidate.target().isColumnLevel()) {
+                continue;
+            }
+            String sourceTable = candidate.source().table().tableName();
+            String sourceColumn = candidate.source().column().columnName();
+            String targetTable = candidate.target().table().tableName();
+            String targetColumn = candidate.target().column().columnName();
+            if (hasIndex(metadata.indexFacts(), sourceTable, sourceColumn, false)) {
+                addIfAbsent(candidate, EvidenceType.SOURCE_INDEX, DefaultEvidenceScores.SOURCE_INDEX,
+                        "metadata source column is indexed", Map.of("table", sourceTable, "column", sourceColumn));
+            }
+            if (hasIndex(metadata.indexFacts(), targetTable, targetColumn, true)) {
+                addIfAbsent(candidate, EvidenceType.TARGET_UNIQUE, DefaultEvidenceScores.TARGET_UNIQUE,
+                        "metadata target column is primary or unique", Map.of("table", targetTable, "column", targetColumn));
+            }
+            if (compatible(column(metadata, sourceTable, sourceColumn), column(metadata, targetTable, targetColumn))) {
+                addIfAbsent(candidate, EvidenceType.COLUMN_TYPE_COMPATIBLE, DefaultEvidenceScores.COLUMN_TYPE_COMPATIBLE,
+                        "metadata column types are compatible", Map.of("sourceColumn", sourceColumn, "targetColumn", targetColumn));
+            }
+        }
+    }
+
+    private boolean hasIndex(List<MetadataIndexFact> indexes, String table, String column, boolean requireUnique) {
+        return indexes.stream().anyMatch(index ->
+                equalsIgnoreCase(index.tableName(), table)
+                        && (!requireUnique || index.unique() || index.primary())
+                        && index.columns().stream().anyMatch(indexColumn -> equalsIgnoreCase(indexColumn, column)));
+    }
+
+    private MetadataColumnFact column(MetadataSnapshot metadata, String table, String column) {
+        return metadata.columnFacts().stream()
+                .filter(fact -> equalsIgnoreCase(fact.tableName(), table) && equalsIgnoreCase(fact.columnName(), column))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean compatible(MetadataColumnFact source, MetadataColumnFact target) {
+        if (source == null || target == null) {
+            return false;
+        }
+        return normalize(source.dataType()).equals(normalize(target.dataType()))
+                || normalize(source.columnType()).equals(normalize(target.columnType()));
+    }
+
+    private void addIfAbsent(
+            RelationshipCandidate candidate,
+            EvidenceType type,
+            double score,
+            String detail,
+            Map<String, Object> attributes
+    ) {
+        boolean alreadyPresent = candidate.evidence().stream().anyMatch(evidence -> evidence.type() == type);
+        if (alreadyPresent) {
+            return;
+        }
+        candidate.evidence().add(Evidence.of(type, score, EvidenceSourceType.METADATA,
+                "metadata catalog facts", detailWithAttributes(detail, attributes)));
+    }
+
+    private String detailWithAttributes(String detail, Map<String, Object> attributes) {
+        return detail + " " + new LinkedHashMap<>(attributes);
+    }
+
+    private boolean equalsIgnoreCase(String left, String right) {
+        return normalize(left).equals(normalize(right));
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.toLowerCase(Locale.ROOT);
+    }
+}

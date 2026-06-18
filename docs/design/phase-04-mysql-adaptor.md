@@ -35,9 +35,15 @@ MySQL 特点：
 
 - `information_schema.TABLES`
 - `information_schema.COLUMNS`
+- `information_schema.REFERENTIAL_CONSTRAINTS`
 - `information_schema.TABLE_CONSTRAINTS`
 - `information_schema.KEY_COLUMN_USAGE`
 - `information_schema.STATISTICS`
+
+采集结果分两层：
+
+- `MetadataSnapshot.relationships()` 继续输出显式 FK 关系，保持既有 JSON relationship 兼容。
+- `MetadataSnapshot.tableFacts/columnFacts/indexFacts/constraintFacts` 保存完整 catalog facts，用于后续增强已有候选关系，例如 `TARGET_UNIQUE`、`SOURCE_INDEX`、`COLUMN_TYPE_COMPATIBLE`。这些 facts 不会单独创造 FK-like，避免“同名列 + 索引”导致误报。
 
 ### 表和列
 
@@ -100,6 +106,21 @@ score: 0.98
 - 源列有索引时提供 `SOURCE_INDEX` evidence。
 - 唯一索引提供 `TARGET_UNIQUE` evidence。
 - 复合索引按列序保留，后续可支持复合关系。
+
+### 数据库内 DDL：SHOW CREATE TABLE
+
+当 `sources.ddl.enabled: true` 且 `sources.ddl.fromDatabase: true` 时，MySQL adaptor 会对 scope 内表执行：
+
+```sql
+SHOW CREATE TABLE `shop`.`orders`;
+```
+
+规则：
+
+- 先从 `information_schema.TABLES` 读取 base table 列表，并遵守 `includeTables/excludeTables`。
+- 每张表单独执行 `SHOW CREATE TABLE`；某一张表失败时记录 `MYSQL_SHOW_CREATE_TABLE_FAILED` warning，并继续读取其它表。
+- 返回的 `DatabaseDdlDefinition.source` 固定为 `SHOW CREATE TABLE`。
+- core 的 `DdlRelationParserRunner` 负责解析该 DDL，输出 evidence source type 为 `DATABASE_DDL`，区别于本地 DDL 文件的 `DDL_FILE`。
 
 ## DDL 解析补丁
 

@@ -192,13 +192,32 @@ default Optional<StructuredDdlParser> structuredDdlParser() {
 - 提供方言感知的结构化解析前端。
 - 输出 `StructuredParseResult`，包含 parser backend、dialect、结构化事件、warning 和诊断 attributes。
 - 不直接决定最终 confidence。
+- SQL 与 DDL 是两个独立 SPI，不应合并为一个 `structuredParser()`。二者可以共享底层方言 lexer/parser 规则，但 Java 端必须保留不同入口，便于独立 visitor、fallback、diagnostics 和 primary 切换。
 
 当前策略：
 
 - MySQL adaptor 暴露 `MySqlAntlrSqlParser` / `MySqlAntlrDdlParser`。
 - PostgreSQL adaptor 暴露 `PostgresAntlrSqlParser` / `PostgresAntlrDdlParser`。
-- SQL 关系输出仍由 `ShadowSqlRelationParser` 返回 primary parser 结果，ANTLR 结果只做 shadow diagnostics。
-- DDL 关系输出仍由 `MySqlDdlParser` / `PostgresDdlParser` 和 core fallback 负责；ANTLR DDL parser 当前只进入结构化诊断通道。
+- SQL 关系输出由 `SqlRelationParserRunner` 按 `parser.sql.mode` 调度。MySQL/PostgreSQL 默认灰度为 `antlr-primary + fallbackOnFailure=true`，返回 ANTLR 结果；缺失 Simple baseline 时按配置 fallback 并输出 warning。`antlr-shadow` 仍保留为 baseline 对比和回归定位模式。SQL Server/Oracle 仅保留 SPI/future adaptor，不随 MySQL/PostgreSQL 一起切 primary。
+- DDL 关系输出由 `DdlRelationParserRunner` 按 `parser.ddl.mode` 独立调度。默认灰度为 `antlr-ddl-primary + fallbackOnFailure=true`，返回 `DdlRelationExtractionVisitor` 结果；缺失 Simple DDL baseline 时按配置 fallback 并输出 warning。`antlr-ddl-shadow` 仍保留用于对比诊断。
+- 第三方 adaptor 可以只实现 `structuredSqlParser()` 或只实现 `structuredDdlParser()`。未实现的一侧继续使用现有 simple/fallback 链路；不能因为某个数据库的 SQL ANTLR 能力成熟，就假定它的 DDL ANTLR 能力也已经成熟。
+- 如果某个方言后续引入完整 ANTLR grammar，推荐在同一方言 grammar 下拆出 SQL entry rule 与 DDL entry rule，再分别返回 `StructuredSqlParser` 和 `StructuredDdlParser` 实例；不推荐把 DDL constraint、SQL join 和日志噪声过滤写进一个通用 visitor。
+
+### DatabaseDdlCollector
+
+```java
+default Optional<DatabaseDdlCollector> databaseDdlCollector() {
+  return Optional.empty();
+}
+```
+
+职责：
+
+- 从 live database 读取表定义 DDL 文本，但不直接生成关系。
+- MySQL v1 使用 `SHOW CREATE TABLE schema.table`，返回 `DatabaseDdlDefinition(schema, table, ddl, "SHOW CREATE TABLE")`。
+- `ScanEngine` 把返回的 DDL text 喂给 `DdlRelationParserRunner.parseText(...)`，因此仍遵守 `simple-ddl`、`antlr-ddl-shadow`、`antlr-ddl-primary` 三种模式。
+- 解析出的 evidence 使用 `EvidenceSourceType.DATABASE_DDL`，与用户提供的 `DDL_FILE` 区分。
+- collector 必须遵守 `includeTables/excludeTables`，并且单表读取失败时记录 warning 后继续读取其它表。
 
 ## 数据画像接口
 

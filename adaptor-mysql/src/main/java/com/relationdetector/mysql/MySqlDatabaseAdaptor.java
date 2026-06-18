@@ -8,7 +8,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -17,6 +21,7 @@ import java.util.stream.Stream;
 import com.relationdetector.api.AdaptorContext;
 import com.relationdetector.api.ColumnRef;
 import com.relationdetector.api.Collectors.DataProfiler;
+import com.relationdetector.api.Collectors.DatabaseDdlCollector;
 import com.relationdetector.api.Collectors.DdlParser;
 import com.relationdetector.api.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.api.Collectors.MetadataCollector;
@@ -26,12 +31,17 @@ import com.relationdetector.api.Collectors.SqlRelationParser;
 import com.relationdetector.api.Collectors.StructuredDdlParser;
 import com.relationdetector.api.Collectors.StructuredSqlParser;
 import com.relationdetector.api.DatabaseAdaptor;
+import com.relationdetector.api.DatabaseDdlDefinition;
 import com.relationdetector.api.DatabaseObjectDefinition;
 import com.relationdetector.api.DefaultEvidenceScores;
 import com.relationdetector.api.Endpoint;
 import com.relationdetector.api.Evidence;
 import com.relationdetector.api.IdentifierRules;
+import com.relationdetector.api.MetadataColumnFact;
+import com.relationdetector.api.MetadataConstraintFact;
+import com.relationdetector.api.MetadataIndexFact;
 import com.relationdetector.api.MetadataSnapshot;
+import com.relationdetector.api.MetadataTableFact;
 import com.relationdetector.api.ProfileRequest;
 import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.ScanScope;
@@ -50,7 +60,6 @@ import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
 import com.relationdetector.core.DiagnosticWarnings;
 import com.relationdetector.core.PlainSqlLogExtractor;
-import com.relationdetector.core.RelationExtractionVisitor;
 import com.relationdetector.core.ShadowSqlRelationParser;
 import com.relationdetector.core.SimpleSqlRelationParser;
 
@@ -111,6 +120,11 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
     }
 
     @Override
+    public Optional<DatabaseDdlCollector> databaseDdlCollector() {
+        return Optional.of(new MySqlDatabaseDdlCollector());
+    }
+
+    @Override
     public SqlLogExtractor sqlLogExtractor() {
         return new MySqlLogExtractor();
     }
@@ -120,7 +134,7 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
         return new ShadowSqlRelationParser(
                 new SimpleSqlRelationParser(),
                 new MySqlAntlrSqlParser(),
-                new RelationExtractionVisitor());
+                new MySqlRelationExtractionVisitor());
     }
 
     @Override
@@ -200,8 +214,84 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
              * a chance to contribute evidence.
              */
             MetadataSnapshot snapshot = new MetadataSnapshot();
+            collectTables(connection, scope, snapshot);
+            collectColumns(connection, scope, snapshot);
             collectForeignKeys(connection, scope, snapshot);
+            collectConstraints(connection, scope, snapshot);
+            collectIndexes(connection, scope, snapshot);
             return snapshot;
+        }
+
+        private void collectTables(Connection connection, ScanScope scope, MetadataSnapshot snapshot) {
+            String sql = """
+                    SELECT TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE, ENGINE, TABLE_COMMENT
+                    FROM information_schema.TABLES
+                    WHERE TABLE_SCHEMA = ?
+                    """;
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, scope.schema());
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String tableName = rs.getString("TABLE_NAME");
+                        if (!inScope(scope, tableName)) {
+                            continue;
+                        }
+                        snapshot.tableFacts().add(new MetadataTableFact(
+                                rs.getString("TABLE_SCHEMA"),
+                                tableName,
+                                rs.getString("TABLE_TYPE"),
+                                rs.getString("ENGINE"),
+                                rs.getString("TABLE_COMMENT")));
+                        snapshot.tables().add(TableId.of(rs.getString("TABLE_SCHEMA"), tableName));
+                    }
+                }
+            } catch (Exception ex) {
+                snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
+                        "MYSQL_METADATA_TABLES_FAILED", ex.getMessage(), "information_schema.TABLES", 0));
+            }
+        }
+
+        private void collectColumns(Connection connection, ScanScope scope, MetadataSnapshot snapshot) {
+            String sql = """
+                    SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, DATA_TYPE, COLUMN_TYPE,
+                           IS_NULLABLE, COLUMN_DEFAULT, EXTRA, GENERATION_EXPRESSION, ORDINAL_POSITION
+                    FROM information_schema.COLUMNS
+                    WHERE TABLE_SCHEMA = ?
+                    ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION
+                    """;
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, scope.schema());
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String tableName = rs.getString("TABLE_NAME");
+                        if (!inScope(scope, tableName)) {
+                            continue;
+                        }
+                        boolean nullable = "YES".equalsIgnoreCase(rs.getString("IS_NULLABLE"));
+                        MetadataColumnFact fact = new MetadataColumnFact(
+                                rs.getString("TABLE_SCHEMA"),
+                                tableName,
+                                rs.getString("COLUMN_NAME"),
+                                rs.getString("DATA_TYPE"),
+                                rs.getString("COLUMN_TYPE"),
+                                nullable,
+                                stringOrNull(rs.getObject("COLUMN_DEFAULT")),
+                                rs.getString("EXTRA"),
+                                rs.getString("GENERATION_EXPRESSION"),
+                                rs.getInt("ORDINAL_POSITION"));
+                        snapshot.columnFacts().add(fact);
+                        snapshot.columns().add(new ColumnRef(
+                                TableId.of(fact.schema(), fact.tableName()),
+                                fact.columnName(),
+                                fact.columnName(),
+                                fact.dataType(),
+                                fact.nullable()));
+                    }
+                }
+            } catch (Exception ex) {
+                snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
+                        "MYSQL_METADATA_COLUMNS_FAILED", ex.getMessage(), "information_schema.COLUMNS", 0));
+            }
         }
 
         /**
@@ -268,7 +358,13 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
                          * REFERENCED_* is the parent/referenced side.
                          */
                         TableId sourceTable = TableId.of(rs.getString("TABLE_SCHEMA"), rs.getString("TABLE_NAME"));
+                        if (!inScope(scope, sourceTable.tableName())) {
+                            continue;
+                        }
                         TableId targetTable = TableId.of(rs.getString("REFERENCED_TABLE_SCHEMA"), rs.getString("REFERENCED_TABLE_NAME"));
+                        if (!inScope(scope, targetTable.tableName())) {
+                            continue;
+                        }
                         RelationshipCandidate candidate = new RelationshipCandidate(
                                 Endpoint.column(ColumnRef.of(sourceTable, rs.getString("COLUMN_NAME"))),
                                 Endpoint.column(ColumnRef.of(targetTable, rs.getString("REFERENCED_COLUMN_NAME"))),
@@ -290,6 +386,313 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
                 snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
                         "MYSQL_METADATA_FK_FAILED", ex.getMessage(), "information_schema.KEY_COLUMN_USAGE", 0));
             }
+        }
+
+        private void collectConstraints(Connection connection, ScanScope scope, MetadataSnapshot snapshot) {
+            String constraintsSql = """
+                    SELECT CONSTRAINT_SCHEMA, TABLE_NAME, CONSTRAINT_NAME, CONSTRAINT_TYPE
+                    FROM information_schema.TABLE_CONSTRAINTS
+                    WHERE CONSTRAINT_SCHEMA = ?
+                    """;
+            String keyUsageSql = """
+                    SELECT CONSTRAINT_SCHEMA, TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME,
+                           ORDINAL_POSITION, POSITION_IN_UNIQUE_CONSTRAINT,
+                           REFERENCED_TABLE_SCHEMA, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+                    FROM information_schema.KEY_COLUMN_USAGE
+                    WHERE CONSTRAINT_SCHEMA = ?
+                    ORDER BY CONSTRAINT_SCHEMA, TABLE_NAME, CONSTRAINT_NAME, ORDINAL_POSITION
+                    """;
+            String refsSql = """
+                    SELECT CONSTRAINT_SCHEMA, CONSTRAINT_NAME, UNIQUE_CONSTRAINT_SCHEMA,
+                           REFERENCED_TABLE_NAME, UPDATE_RULE, DELETE_RULE
+                    FROM information_schema.REFERENTIAL_CONSTRAINTS
+                    WHERE CONSTRAINT_SCHEMA = ?
+                    """;
+            try {
+                Map<String, ConstraintBuilder> builders = new LinkedHashMap<>();
+                try (PreparedStatement ps = connection.prepareStatement(constraintsSql)) {
+                    ps.setString(1, scope.schema());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            String tableName = rs.getString("TABLE_NAME");
+                            if (!inScope(scope, tableName)) {
+                                continue;
+                            }
+                            ConstraintBuilder builder = builder(builders, rs.getString("CONSTRAINT_SCHEMA"), tableName,
+                                    rs.getString("CONSTRAINT_NAME"));
+                            builder.type = rs.getString("CONSTRAINT_TYPE");
+                        }
+                    }
+                }
+                try (PreparedStatement ps = connection.prepareStatement(keyUsageSql)) {
+                    ps.setString(1, scope.schema());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            String tableName = rs.getString("TABLE_NAME");
+                            if (!inScope(scope, tableName)) {
+                                continue;
+                            }
+                            ConstraintBuilder builder = builder(builders, rs.getString("CONSTRAINT_SCHEMA"), tableName,
+                                    rs.getString("CONSTRAINT_NAME"));
+                            builder.columns.add(rs.getString("COLUMN_NAME"));
+                            if (rs.getString("REFERENCED_TABLE_NAME") != null) {
+                                builder.referencedSchema = rs.getString("REFERENCED_TABLE_SCHEMA");
+                                builder.referencedTable = rs.getString("REFERENCED_TABLE_NAME");
+                                builder.referencedColumns.add(rs.getString("REFERENCED_COLUMN_NAME"));
+                            }
+                        }
+                    }
+                }
+                try (PreparedStatement ps = connection.prepareStatement(refsSql)) {
+                    ps.setString(1, scope.schema());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            for (ConstraintBuilder builder : builders.values()) {
+                                if (equalsIgnoreCase(builder.schema, rs.getString("CONSTRAINT_SCHEMA"))
+                                        && equalsIgnoreCase(builder.name, rs.getString("CONSTRAINT_NAME"))) {
+                                    builder.updateRule = rs.getString("UPDATE_RULE");
+                                    builder.deleteRule = rs.getString("DELETE_RULE");
+                                }
+                            }
+                        }
+                    }
+                }
+                builders.values().forEach(builder -> snapshot.constraintFacts().add(builder.toFact()));
+            } catch (Exception ex) {
+                snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
+                        "MYSQL_METADATA_CONSTRAINTS_FAILED", ex.getMessage(), "information_schema.TABLE_CONSTRAINTS", 0));
+            }
+        }
+
+        private void collectIndexes(Connection connection, ScanScope scope, MetadataSnapshot snapshot) {
+            String sql = """
+                    SELECT TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, NON_UNIQUE, SEQ_IN_INDEX,
+                           COLUMN_NAME, INDEX_TYPE, SUB_PART
+                    FROM information_schema.STATISTICS
+                    WHERE TABLE_SCHEMA = ?
+                    ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX
+                    """;
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, scope.schema());
+                Map<String, IndexBuilder> indexes = new LinkedHashMap<>();
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String tableName = rs.getString("TABLE_NAME");
+                        if (!inScope(scope, tableName)) {
+                            continue;
+                        }
+                        String schema = rs.getString("TABLE_SCHEMA");
+                        String indexName = rs.getString("INDEX_NAME");
+                        int nonUnique = rs.getInt("NON_UNIQUE");
+                        String indexType = rs.getString("INDEX_TYPE");
+                        IndexBuilder builder = indexes.computeIfAbsent(
+                                schema + "|" + tableName + "|" + indexName,
+                                ignored -> new IndexBuilder(schema, tableName, indexName, nonUnique == 0,
+                                        "PRIMARY".equalsIgnoreCase(indexName), indexType, true));
+                        builder.entries.add(new IndexEntry(rs.getInt("SEQ_IN_INDEX"), rs.getString("COLUMN_NAME"),
+                                null, stringOrNull(rs.getObject("SUB_PART"))));
+                    }
+                }
+                indexes.values().forEach(builder -> snapshot.indexFacts().add(builder.toFact()));
+            } catch (Exception ex) {
+                snapshot.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
+                        "MYSQL_METADATA_INDEXES_FAILED", ex.getMessage(), "information_schema.STATISTICS", 0));
+            }
+        }
+
+        private ConstraintBuilder builder(Map<String, ConstraintBuilder> builders, String schema, String table, String name) {
+            return builders.computeIfAbsent(schema + "|" + table + "|" + name,
+                    ignored -> new ConstraintBuilder(schema, table, name));
+        }
+
+        private boolean inScope(ScanScope scope, String tableName) {
+            String normalized = normalize(tableName);
+            boolean included = scope.includeTables().isEmpty()
+                    || scope.includeTables().stream().map(this::normalize).anyMatch(normalized::equals);
+            boolean excluded = scope.excludeTables().stream().map(this::normalize).anyMatch(normalized::equals);
+            return included && !excluded;
+        }
+
+        private boolean equalsIgnoreCase(String left, String right) {
+            return normalize(left).equals(normalize(right));
+        }
+
+        private String normalize(String value) {
+            return value == null ? "" : value.toLowerCase(Locale.ROOT);
+        }
+
+        private String stringOrNull(Object value) {
+            return value == null ? null : String.valueOf(value);
+        }
+
+        private static final class ConstraintBuilder {
+            private final String schema;
+            private final String table;
+            private final String name;
+            private String type;
+            private final List<String> columns = new ArrayList<>();
+            private String referencedSchema;
+            private String referencedTable;
+            private final List<String> referencedColumns = new ArrayList<>();
+            private String updateRule;
+            private String deleteRule;
+
+            private ConstraintBuilder(String schema, String table, String name) {
+                this.schema = schema;
+                this.table = table;
+                this.name = name;
+            }
+
+            private MetadataConstraintFact toFact() {
+                return new MetadataConstraintFact(schema, table, name, type, columns,
+                        referencedSchema, referencedTable, referencedColumns, updateRule, deleteRule);
+            }
+        }
+
+        private static final class IndexBuilder {
+            private final String schema;
+            private final String table;
+            private final String name;
+            private final boolean unique;
+            private final boolean primary;
+            private final String type;
+            private final boolean visible;
+            private final List<IndexEntry> entries = new ArrayList<>();
+
+            private IndexBuilder(String schema, String table, String name, boolean unique, boolean primary, String type, boolean visible) {
+                this.schema = schema;
+                this.table = table;
+                this.name = name;
+                this.unique = unique;
+                this.primary = primary;
+                this.type = type;
+                this.visible = visible;
+            }
+
+            private MetadataIndexFact toFact() {
+                entries.sort(Comparator.comparingInt(IndexEntry::seq));
+                return new MetadataIndexFact(schema, table, name, unique, primary, type, visible,
+                        entries.stream().map(IndexEntry::column).filter(value -> value != null && !value.isBlank()).toList(),
+                        entries.stream().map(IndexEntry::expression).filter(value -> value != null && !value.isBlank()).toList(),
+                        entries.stream().map(entry -> entry.subPart() == null ? "" : entry.subPart()).toList(),
+                        entries.stream().map(IndexEntry::seq).toList());
+            }
+        }
+
+        private record IndexEntry(int seq, String column, String expression, String subPart) {
+        }
+    }
+
+    /**
+     * Reads real table DDL from MySQL using {@code SHOW CREATE TABLE}.
+     *
+     * <p>Design mapping: database-owned DDL is a separate source from checked-in
+     * DDL files, but it should still use the same DDL parser runner. This
+     * collector therefore only returns raw DDL text; it does not extract
+     * relationships itself.
+     *
+     * <p>Call relationship:
+     * <pre>
+     * ScanEngine.scan(...)
+     *   -> MySqlDatabaseAdaptor.databaseDdlCollector()
+     *   -> MySqlDatabaseDdlCollector.collect(...)
+     *   -> DdlRelationParserRunner.parseText(...)
+     * </pre>
+     *
+     * <p>Complete SQL shape generated by this collector:
+     * <pre>{@code
+     * SHOW CREATE TABLE `shop`.`orders`
+     * }</pre>
+     *
+     * <p>The returned {@link DatabaseDdlDefinition#source()} is
+     * {@code SHOW CREATE TABLE}; the core runner later rewrites DDL evidence to
+     * {@code EvidenceSourceType.DATABASE_DDL} so operators can see the evidence
+     * came from the live database definition.
+     */
+    static final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
+        @Override
+        public List<DatabaseDdlDefinition> collect(Connection connection, ScanScope scope) {
+            return collect(connection, scope, warning -> {
+            });
+        }
+
+        @Override
+        public List<DatabaseDdlDefinition> collect(
+                Connection connection,
+                ScanScope scope,
+                Consumer<WarningMessage> warnings
+        ) {
+            List<DatabaseDdlDefinition> definitions = new ArrayList<>();
+            for (String tableName : tableNames(connection, scope, warnings)) {
+                collectShowCreate(connection, scope.schema(), tableName, definitions, warnings);
+            }
+            return definitions;
+        }
+
+        private List<String> tableNames(Connection connection, ScanScope scope, Consumer<WarningMessage> warnings) {
+            String sql = """
+                    SELECT TABLE_NAME
+                    FROM information_schema.TABLES
+                    WHERE TABLE_SCHEMA = ?
+                      AND TABLE_TYPE = 'BASE TABLE'
+                    ORDER BY TABLE_NAME
+                    """;
+            List<String> tableNames = new ArrayList<>();
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, scope.schema());
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String tableName = rs.getString("TABLE_NAME");
+                        if (inScope(scope, tableName)) {
+                            tableNames.add(tableName);
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
+                        "MYSQL_DATABASE_DDL_TABLES_FAILED", ex.getMessage(), "information_schema.TABLES", 0));
+            }
+            return tableNames;
+        }
+
+        private void collectShowCreate(
+                Connection connection,
+                String schema,
+                String tableName,
+                List<DatabaseDdlDefinition> definitions,
+                Consumer<WarningMessage> warnings
+        ) {
+            String sql = "SHOW CREATE TABLE " + quote(schema) + "." + quote(tableName);
+            try (Statement statement = connection.createStatement();
+                    ResultSet rs = statement.executeQuery(sql)) {
+                if (rs.next()) {
+                    definitions.add(new DatabaseDdlDefinition(schema, tableName, rs.getString(2), "SHOW CREATE TABLE"));
+                }
+            } catch (Exception ex) {
+                warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
+                        "MYSQL_SHOW_CREATE_TABLE_FAILED", ex.getMessage(), "SHOW CREATE TABLE", 0,
+                        java.util.Map.of("objectSchema", schema,
+                                "objectName", tableName,
+                                "objectType", "TABLE",
+                                "rawStatement", sql,
+                                "exceptionClass", ex.getClass().getSimpleName())));
+            }
+        }
+
+        private boolean inScope(ScanScope scope, String tableName) {
+            String normalized = normalize(tableName);
+            boolean included = scope.includeTables().isEmpty()
+                    || scope.includeTables().stream().map(this::normalize).anyMatch(normalized::equals);
+            boolean excluded = scope.excludeTables().stream().map(this::normalize).anyMatch(normalized::equals);
+            return included && !excluded;
+        }
+
+        private String quote(String identifier) {
+            return "`" + identifier.replace("`", "``") + "`";
+        }
+
+        private String normalize(String value) {
+            return value == null ? "" : value.toLowerCase(Locale.ROOT);
         }
     }
 

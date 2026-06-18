@@ -21,6 +21,7 @@ public final class ScanConfig {
     public List<String> excludeTables = new ArrayList<>();
     public boolean metadataEnabled = true;
     public boolean ddlEnabled;
+    public boolean ddlFromDatabase = true;
     public List<Path> ddlFiles = new ArrayList<>();
     public boolean objectsEnabled;
     public boolean objectsFromDatabase;
@@ -28,6 +29,9 @@ public final class ScanConfig {
     public boolean logsEnabled;
     public List<Path> logFiles = new ArrayList<>();
     public LogFormatHint logFormatHint = LogFormatHint.AUTO;
+    public boolean logsFilterSystemQueries = true;
+    public List<String> logSystemSchemas = new ArrayList<>();
+    public List<String> logMetadataQueryMarkers = new ArrayList<>();
     public boolean dataProfileEnabled;
     public int sampleRows = 10_000;
     public int timeoutSeconds = 30;
@@ -36,4 +40,8 @@ public final class ScanConfig {
     public double minConfidence = 0.30d;
     public boolean includeEvidence = true;
     public boolean includeWarnings = true;
+    public SqlParserMode sqlParserMode = SqlParserMode.ANTLR_PRIMARY;
+    public boolean sqlParserFallbackOnFailure = true;
+    public DdlParserMode ddlParserMode = DdlParserMode.ANTLR_DDL_PRIMARY;
+    public boolean ddlParserFallbackOnFailure = true;
 }

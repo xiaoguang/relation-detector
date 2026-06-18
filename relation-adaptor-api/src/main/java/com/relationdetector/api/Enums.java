@@ -70,6 +70,7 @@ public final class Enums {
     public enum EvidenceSourceType {
         METADATA,
         DDL_FILE,
+        DATABASE_DDL,
         DATABASE_OBJECT,
         NATIVE_LOG,
         PLAIN_SQL,

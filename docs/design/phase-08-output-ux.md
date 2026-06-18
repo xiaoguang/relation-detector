@@ -58,6 +58,7 @@ sources:
     enabled: true
   ddl:
     enabled: true
+    fromDatabase: true
     files:
       - schema.sql
   objects:
@@ -76,6 +77,11 @@ sources:
     timeoutSeconds: 30
     maxCandidatePairs: 1000
 
+parser:
+  sql:
+    mode: antlr-primary
+    fallbackOnFailure: true
+
 output:
   format: json
   minConfidence: 0.30
@@ -88,6 +94,12 @@ output:
 - `database.type` 必填。
 - 至少启用一种 source。
 - 启用文件 source 时文件必须存在。
+- `parser.sql.mode` 可选值为 `simple`、`antlr-shadow`、`antlr-primary`；MySQL/PostgreSQL 默认灰度为 `antlr-primary`，并保持 `parser.sql.fallbackOnFailure=true`。SQL Server/Oracle 仍为 future adaptor，不在本轮 primary 默认切换范围内。
+- `parser.ddl.mode` 可选值为 `simple-ddl`、`antlr-ddl-shadow`、`antlr-ddl-primary`；默认灰度为 `antlr-ddl-primary`，并保持 `parser.ddl.fallbackOnFailure=true`。DDL 和 SQL 的 primary 切换验收分开执行，DDL fallback warning 使用 `missingSimpleDdlRelations`。
+- `sources.ddl.fromDatabase` 默认 `true`。开启时，支持的 adaptor 会读取数据库内表定义；MySQL 当前使用 `SHOW CREATE TABLE`，产生的 evidence source type 为 `DATABASE_DDL`。
+- `sources.logs.filterSystemQueries` 默认 `true`。开启时，native log 中仅访问系统 catalog/schema 的 metadata 查询会被跳过，不记录 parse warning。
+- `sources.logs.systemSchemas` 可覆盖当前数据库类型的默认系统 schema。MySQL 默认 `information_schema/performance_schema/mysql/sys`；PostgreSQL 默认 `pg_catalog/information_schema/pg_toast`。
+- `sources.logs.metadataQueryMarkers` 可配置日志文本标记，例如 `ApplicationName=DBeaver`、`DatabaseMetaData`，用于跳过工具或 JDBC metadata 查询。
 - 启用 JDBC source 时 jdbcUrl、username、password 必须可解析。
 - `sampleRows`、`timeoutSeconds` 必须为正数。
 
@@ -237,7 +249,8 @@ warning 字段：
 - `statementSourceType`：语句来源，例如 `PROCEDURE`、`FUNCTION`、`VIEW`、`TRIGGER`、`NATIVE_LOG`、`PLAIN_SQL`。
 - `endLine`：语句结束行。`line` 字段保留开始行。
 - `exceptionClass`：异常类短名，例如 `IllegalArgumentException`、`NoSuchFileException`。
-- `statementAttributes`：可选，来自 `SqlStatementRecord.attributes` 的对象上下文，例如 `{ "objectType": "PROCEDURE", "schema": "shop", "name": "rebuild_orders" }`。
+- `objectSchema/objectName/objectType`：可选，来自数据库对象定义的上下文，例如 procedure、function、view、trigger、event。
+- `routineSchema/routineName/routineType`：可选，仅 procedure/function 额外提供的别名字段，方便运维按 routine 定位。
 
 示例：
 
@@ -253,6 +266,12 @@ warning 字段：
     "statementSourceType": "PROCEDURE",
     "endLine": 26,
     "exceptionClass": "IllegalArgumentException",
+    "objectSchema": "shop",
+    "objectName": "rebuild_orders",
+    "objectType": "PROCEDURE",
+    "routineSchema": "shop",
+    "routineName": "rebuild_orders",
+    "routineType": "PROCEDURE",
     "rawStatement": "CREATE PROCEDURE rebuild_orders() BEGIN SELECT ... END"
   }
 }

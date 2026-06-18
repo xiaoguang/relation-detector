@@ -1,0 +1,11 @@
+{
+  "caseId": "basic-correctness-case-04",
+  "fixture": "test-fixtures/mysql/basic-correctness/case-04/sql/performance-schema-statements.sql",
+  "fixtureSha256": "a0c789ccd6a04c263e6671c6e94500bf0ffff724c34b8f9dffec814aef6b82e3",
+  "sqlSamples": 4,
+  "simpleRelations": 0,
+  "antlrRelations": 0,
+  "missingSimpleRelations": [],
+  "extraAntlrRelations": [],
+  "warningCodes": {}
+}

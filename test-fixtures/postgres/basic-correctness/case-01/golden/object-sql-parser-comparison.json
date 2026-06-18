@@ -1,0 +1,13 @@
+{
+  "caseId": "postgres-basic-correctness-case-01",
+  "fixture": "test-fixtures/postgres/basic-correctness/case-01/sql/database-objects.sql",
+  "fixtureSha256": "f1cae456e53802b3611debebb910ca67068ca03f388e8c6cabbb6727337b3742",
+  "sqlSamples": 6,
+  "simpleRelations": 0,
+  "antlrRelations": 0,
+  "missingSimpleRelations": [],
+  "extraAntlrRelations": [],
+  "warningCodes": {
+    "DYNAMIC_SQL_UNRESOLVED": 6
+  }
+}

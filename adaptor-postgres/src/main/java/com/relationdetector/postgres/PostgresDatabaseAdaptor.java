@@ -50,7 +50,6 @@ import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
 import com.relationdetector.core.DiagnosticWarnings;
 import com.relationdetector.core.PlainSqlLogExtractor;
-import com.relationdetector.core.RelationExtractionVisitor;
 import com.relationdetector.core.ShadowSqlRelationParser;
 import com.relationdetector.core.SimpleSqlRelationParser;
 
@@ -121,7 +120,7 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
         return new ShadowSqlRelationParser(
                 new SimpleSqlRelationParser(),
                 new PostgresAntlrSqlParser(),
-                new RelationExtractionVisitor());
+                new PostgresRelationExtractionVisitor());
     }
 
     @Override

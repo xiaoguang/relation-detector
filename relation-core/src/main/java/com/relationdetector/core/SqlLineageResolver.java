@@ -132,16 +132,20 @@ final class SqlLineageResolver {
      *
      * <p>Call chain:
      * SimpleSqlRelationParser.parse() -> analyze() -> analyzeCtes(),
-     * analyzeDerivedTables(), applyRowsetReferenceAliases().
+     * applyRowsetReferenceAliases(), analyzeDerivedTables(),
+     * applyRowsetReferenceAliases().
      *
-     * <p>The order is important. CTEs and derived tables first define rowsets;
-     * later FROM/JOIN references create aliases to those rowsets. After this
-     * method returns, SimpleSqlRelationParser can call resolve(alias, column)
-     * whenever it sees an equality predicate.
+     * <p>The order is important. CTEs first define rowsets, then aliases such
+     * as {@code FROM recent_orders ro} are copied before derived/LATERAL tables
+     * are analyzed. That lets a later body such as
+     * {@code JOIN LATERAL (SELECT ro.user_id AS buyer_id) x} resolve
+     * {@code ro.user_id} back to the CTE's base table column. A final alias pass
+     * then copies newly discovered derived rowsets to their outer aliases.
      */
     static SqlLineageResolver analyze(String sql, Set<String> cteNames) {
         SqlLineageResolver resolver = new SqlLineageResolver(sql, cteNames);
         resolver.analyzeCtes(sql);
+        resolver.applyRowsetReferenceAliases(sql);
         resolver.analyzeDerivedTables(sql);
         resolver.applyRowsetReferenceAliases(sql);
         return resolver;
@@ -327,6 +331,7 @@ final class SqlLineageResolver {
             Map<String, TableId> outerAliases
     ) {
         analyzeCtes(query);
+        applyRowsetReferenceAliases(query);
         analyzeDerivedTables(query);
         applyRowsetReferenceAliases(query);
 

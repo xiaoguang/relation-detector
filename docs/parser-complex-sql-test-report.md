@@ -47,9 +47,14 @@ relation-core/src/test/java/com/relationdetector/core/SimpleSqlRelationParserCom
 relation-core/src/test/java/com/relationdetector/core/DialectSqlRelationParserComplexMatrixTest.java
 relation-core/src/test/java/com/relationdetector/core/DialectParserEvidenceConfidenceTest.java
 relation-core/src/test/java/com/relationdetector/core/AntlrShadowGoldenComparisonTest.java
+relation-core/src/test/java/com/relationdetector/core/AntlrDdlGoldenComparisonTest.java
+relation-core/src/test/java/com/relationdetector/core/DdlRelationExtractionVisitorIndependenceTest.java
+relation-core/src/test/java/com/relationdetector/core/DdlRelationParserRunnerTest.java
 relation-core/src/test/java/com/relationdetector/core/ScanEngineDiagnosticsTest.java
 adaptor-mysql/src/test/java/com/relationdetector/mysql/MySqlDdlParserTest.java
+adaptor-mysql/src/test/java/com/relationdetector/mysql/MySqlAntlrShadowZeroMissingTest.java
 adaptor-postgres/src/test/java/com/relationdetector/postgres/PostgresDdlParserTest.java
+adaptor-postgres/src/test/java/com/relationdetector/postgres/PostgresAntlrShadowZeroMissingTest.java
 ```
 
 测试类型：
@@ -61,6 +66,8 @@ adaptor-postgres/src/test/java/com/relationdetector/postgres/PostgresDdlParserTe
 - 使用方言化复杂 SQL 矩阵覆盖 MySQL/PostgreSQL 合法但差异明显的写法。
 - 使用 evidence/confidence 专项测试断言证据类型、来源类型、joinKind 和最终评分。
 - 使用 ANTLR shadow golden comparison 确保 shadow path 不丢 primary parser 当前识别的关系。
+- 使用 MySQL/PostgreSQL adaptor-level zero-missing 测试，确保真实 adaptor 暴露的方言 ANTLR parser 在复杂 SQL fixture 上 `missingSimpleRelations` 持续为 0。
+- 使用 DDL golden comparison、DDL 独立 visitor 测试和 DDL runner fallback 测试，覆盖 `simple-ddl`、`antlr-ddl-shadow`、`antlr-ddl-primary` 这条独立切换链路。
 - 使用扫描级诊断测试覆盖 DDL/SQL/log parser 抛异常时的 warning 输出和原始 SQL/DDL 保留。
 - 使用 MySQL/PostgreSQL adaptor DDL 测试覆盖方言 parser 失败时通过 `AdaptorContext` 上报 `DDL_PARSE_FAILED`。
 
@@ -218,6 +225,45 @@ adaptor-postgres/src/test/java/com/relationdetector/postgres/PostgresDdlParserTe
 
 - 输出表级 `CO_OCCURRENCE`。
 - evidence attributes 中记录 `naturalJoin=true`。
+
+### 3.9 SQL ANTLR 持续归零 fixture
+
+新增 adaptor-level fixture 直接调用 `MySqlDatabaseAdaptor.sqlRelationParser()` 和 `PostgresDatabaseAdaptor.sqlRelationParser()`，不是只调用 core parser。目的是真实验证“一库一解析”的 wiring：
+
+- MySQL multi-table `UPDATE orders o, users u JOIN accounts a ... WHERE o.user_id = u.id`：覆盖 MySQL `table_references` 中逗号表引用和显式 JOIN 混用。期望 ANTLR shadow 不缺 Simple baseline，并抽出 `orders.user_id -> users.id`、`users.account_id -> accounts.id`。
+- MySQL `DELETE FROM o USING orders AS o LEFT JOIN users AS u ...`：覆盖 MySQL multi-table DELETE 的 `USING table_references` 写法。期望保留 `LEFT_JOIN` 语义，不把 `u.id IS NULL` 当成关系。
+- MySQL CTE + `JOIN LATERAL (SELECT ro.user_id AS buyer_id)`：覆盖 CTE alias 进入 LATERAL derived table 的列血缘。期望回溯到 `orders.user_id -> users.id`，且不输出 `recent_orders`、`buyer_projection`、`lateral` 伪表。
+- PostgreSQL recursive CTE：覆盖递归 rowset 自引用。期望保守输出 `employees.manager_id -> employees.id`，且不输出 `employee_paths` 伪表。
+- PostgreSQL `LEFT JOIN LATERAL`：覆盖 correlated derived table。期望回溯 `orders.user_id -> users.id`，且不输出 lateral alias 伪表。
+- PostgreSQL `MERGE INTO ... USING ... ON t.source_order_id = s.id`：覆盖 PostgreSQL MERGE join condition。期望输出 `target_orders.source_order_id -> source_orders.id`。
+
+验收标准：
+
+- 每个 fixture 的 `missingSimpleRelations` 必须为空。
+- ANTLR shadow 可以输出额外弱关系，但如果额外关系来自 CTE、derived alias、function rowset 或 `LATERAL` 伪表，测试必须失败。
+- 新增 fixture batch 后仍要重新执行全量 `mvn test`；只有持续归零并人工审核 extra，才能继续维持 MySQL/PostgreSQL SQL `antlr-primary + fallbackOnFailure=true` 灰度。
+
+### 3.10 DDL ANTLR primary 链路
+
+DDL 切换链路与 SQL 独立：
+
+- `simple-ddl`：只运行现有 DDL parser。
+- `antlr-ddl-shadow`：返回现有 DDL parser 结果，同时运行 ANTLR DDL extractor 并比较。
+- `antlr-ddl-primary`：返回 ANTLR DDL 结果；缺失 baseline 时按配置 fallback 并输出 `ANTLR_DDL_PRIMARY_FALLBACK`。
+
+当前 DDL golden fixture 覆盖：
+
+- `CREATE TABLE ... FOREIGN KEY`
+- inline `REFERENCES`
+- `ALTER TABLE ... ADD CONSTRAINT`
+- `CREATE INDEX`
+- `CREATE UNIQUE INDEX`
+- primary key / unique target evidence
+
+验收标准：
+
+- `missingSimpleDdlRelations` 必须为空。
+- fallback warning 必须保留 `rawStatement` 和缺失的 DDL fingerprints。
 
 置信度策略：
 
@@ -515,6 +561,8 @@ relation-core/src/test/java/com/relationdetector/core/DialectParserEvidenceConfi
 
 ```text
 relation-core/src/test/java/com/relationdetector/core/AntlrShadowGoldenComparisonTest.java
+adaptor-mysql/src/test/java/com/relationdetector/mysql/MySqlAntlrParserSelectionTest.java
+adaptor-postgres/src/test/java/com/relationdetector/postgres/PostgresAntlrParserSelectionTest.java
 ```
 
 覆盖：
@@ -529,6 +577,10 @@ relation-core/src/test/java/com/relationdetector/core/AntlrShadowGoldenCompariso
 - `ShadowSqlRelationParser` 最终输出与 primary `SimpleSqlRelationParser` baseline 一致。
 - ANTLR path 至少产生 `TABLE_REFERENCE` 和 `COLUMN_EQUALITY`。
 - diagnostics 中包含 `PARSER_COMPARISON`。
+- MySQL structured parser 输出 `attributes.grammar=MySqlRelationSql`、`attributes.parser=MySqlRelationSqlParser`、`attributes.eventVisitor=MySqlStructuredSqlEventVisitor`。
+- PostgreSQL structured parser 输出 `attributes.grammar=PostgresRelationSql`、`attributes.parser=PostgresRelationSqlParser`、`attributes.eventVisitor=PostgresStructuredSqlEventVisitor`。
+- MySQL/PostgreSQL shadow diagnostics 分别报告 `MySqlRelationExtractionVisitor` / `PostgresRelationExtractionVisitor`。
+- PostgreSQL parser selection 测试包含负向断言：MySQL 反引号 SQL 不应被 PostgreSQL structured event visitor 当成表引用。
 
 这个测试不是为了证明 ANTLR visitor 已经完全替代 primary parser，而是为了保护迁移过程：未来每迁移一种规则，ANTLR 可以多识别关系，但不能少于 golden baseline。
 
@@ -544,8 +596,8 @@ mvn test
 
 ```text
 relation-core: Tests run: 80, Failures: 0, Errors: 0, Skipped: 1
-adaptor-mysql: Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
-adaptor-postgres: Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+adaptor-mysql: Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+adaptor-postgres: Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
@@ -602,6 +654,14 @@ BUILD SUCCESS
 - MERGE target alias 未进入 alias map；现在 `MERGE INTO target t USING source s ON t.source_id = s.id` 会输出普通 `SQL_LOG_JOIN` evidence。
 - rowset 修饰词/函数被误当物理表；现在跳过 `LATERAL`、`unnest(...)`、`json_table(...)` 这类非持久表名。
 
+本轮方言化 ANTLR parser 一期落地又固化了以下能力：
+
+- MySQL/PostgreSQL 不再只通过同一个 `RelationSql.g4` 伪装方言；现在有独立 generated grammar：`MySqlRelationSql.g4` 和 `PostgresRelationSql.g4`。
+- `MySqlAntlrSqlParser` / `PostgresAntlrSqlParser` 分别调用自己的 lexer/parser，并在 `StructuredParseResult.attributes` 中暴露 `grammar`、`lexer`、`parser` 和 `eventVisitor`。
+- `StructuredSqlEventVisitor` 已从 parser 主体拆出；MySQL/PostgreSQL 各自有 event visitor，用于隔离 quoted identifier 规则。
+- `RelationExtractionVisitor` 已不再委托 primary parser；它独立消费 ANTLR event 并产出基础 equality 关系。MySQL/PostgreSQL 方言子类仍保留，作为后续迁移方言专属规则的落点。
+- PostgreSQL event visitor 不把 MySQL backtick identifier 当成 PostgreSQL 表引用。
+
 ## 6. 当前 parser 能力结论
 
 当前 `SimpleSqlRelationParser` 可以识别：
@@ -647,6 +707,9 @@ BUILD SUCCESS
 - MySQL adaptor 私有归一化：`CREATE UNIQUE INDEX ... USING BTREE ON ... INVISIBLE` 可在 MySQL parser 中生成 `TARGET_UNIQUE`，但 core fallback 不识别该私有写法。
 - PostgreSQL adaptor 私有归一化：`CREATE UNIQUE INDEX ... ON ONLY ...` 可在 PostgreSQL parser 中生成 `TARGET_UNIQUE`，但 core fallback 不识别该私有写法。
 - ANTLR 结构化 parser 已进入 shadow mode：`AntlrStructuredSqlParser` 产生 `TABLE_REFERENCE`、`COLUMN_EQUALITY`、`PARSER_COMPARISON` 等事件，MySQL/PostgreSQL adaptor 负责选择自己的 ANTLR SQL/DDL parser。
+- MySQL/PostgreSQL SQL shadow parser 已拆分 grammar 入口：MySQL 使用 `MySqlRelationSqlLexer/Parser`，PostgreSQL 使用 `PostgresRelationSqlLexer/Parser`，core fallback 仍保留 `RelationSqlLexer/Parser`。
+- MySQL/PostgreSQL SQL parser 已拆分 structured event visitor 和 relation extraction visitor；`RelationExtractionVisitor` 现在独立消费 ANTLR 事件并产出基础 equality 关系，不再委托 `SimpleSqlRelationParser`。
+- SQL parser 可通过 `parser.sql.mode` 选择 `simple`、`antlr-shadow`、`antlr-primary`。MySQL/PostgreSQL 默认灰度为 `antlr-primary + fallbackOnFailure=true`；缺失 Simple baseline 时会记录 `ANTLR_PRIMARY_FALLBACK` 并按配置回退。SQL Server/Oracle 仍为 future adaptor，不随本轮切 primary。
 - 新 SQL 来源类型已纳入证据映射：materialized view/rule 使用 `VIEW_JOIN`，event/package 使用 `PROCEDURE_JOIN`，migration 使用普通 SQL 来源。
 - 动态 SQL 识别：`PREPARE`、`EXECUTE`、`EXECUTE IMMEDIATE` 会生成 `DYNAMIC_SQL_UNRESOLVED` warning，并保留 `attributes.rawStatement`。
 - 解析/提取失败诊断：DDL parser、SQL parser、object 文件、native log 失败会生成 warning，并在可取得输入文本时保留 `attributes.rawStatement`。
@@ -654,7 +717,7 @@ BUILD SUCCESS
 
 ## 7. 当前边界
 
-当前 primary parser 仍是 `SimpleSqlRelationParser`。ANTLR parser 已在 MySQL/PostgreSQL 中以 shadow mode 接入，但其关系输出尚未取代 primary parser。以下场景仍不保证准确：
+当前 MySQL/PostgreSQL 默认输出已进入 `antlr-primary + fallbackOnFailure=true` 灰度：ANTLR relation extractor 独立产出 table-reference、equality、IN/tuple IN、raw equality fallback、CTE/derived lineage 等关系；如果 `missingSimpleRelations` 非空则回退 Simple baseline。以下场景仍不保证准确：
 
 - `SELECT *` 或 `alias.*` 的完整列展开。
 - `UNION` / `INTERSECT` / `EXCEPT` 分支输出列和来源表之间的 lineage。
@@ -673,4 +736,4 @@ BUILD SUCCESS
 - 输入过滤表识别依赖同一对象体内的 `CREATE TEMP/TEMPORARY TABLE`；不再使用命名前缀兜底。
 - DDL parser 仍不是完整数据库方言 parser；复杂分区表、继承表、排除约束、跨方言特殊索引参数、动态生成 DDL 等仍建议交给数据库 adaptor 的元数据 collector 或未来 parser-backed 实现。
 
-后续如果要覆盖这些场景，应按设计文档逐步把具体规则从 primary parser 迁移到 ANTLR visitor，或为 MySQL/PostgreSQL 接入更完整的官方/社区 grammar；不要继续堆叠 regex。
+后续如果要覆盖这些场景，应按设计文档逐步把具体规则迁移到 ANTLR event/visitor 语义层，或为 MySQL/PostgreSQL 接入更完整的官方/社区 grammar；不要继续堆叠 regex。

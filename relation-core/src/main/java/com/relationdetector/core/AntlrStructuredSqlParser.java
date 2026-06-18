@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
@@ -45,16 +46,53 @@ import com.relationdetector.core.antlr.RelationSqlParser;
  */
 public class AntlrStructuredSqlParser implements StructuredSqlParser {
     private final SqlDialect dialect;
+    private final StructuredSqlEventVisitor eventVisitor;
 
     public AntlrStructuredSqlParser(SqlDialect dialect) {
+        this(dialect, new StructuredSqlEventVisitor("RelationSqlStructuredSqlEventVisitor",
+                Set.of(RelationSqlLexer.IDENTIFIER, RelationSqlLexer.QUOTED_IDENTIFIER)));
+    }
+
+    protected AntlrStructuredSqlParser(SqlDialect dialect, StructuredSqlEventVisitor eventVisitor) {
         this.dialect = dialect;
+        this.eventVisitor = eventVisitor;
     }
 
     @Override
     public StructuredParseResult parseSql(SqlStatementRecord statement, AdaptorContext context) {
         List<WarningMessage> warnings = new ArrayList<>();
         SyntaxErrorCounter errors = new SyntaxErrorCounter();
-        RelationSqlLexer lexer = new RelationSqlLexer(CharStreams.fromString(statement.sql()));
+        ParsedSql parsed = parseAntlr(statement.sql(), errors);
+        List<Token> visibleTokens = parsed.visibleTokens();
+        List<StructuredSqlEvent> events = new ArrayList<>(eventVisitor.extractEvents(statement, visibleTokens));
+        detectDynamicSql(statement).ifPresent(warnings::add);
+        warnings.forEach(warning -> {
+            if (context != null) {
+                context.warn(warning);
+            }
+        });
+
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        attributes.put("grammar", parsed.grammarName());
+        attributes.put("parser", parsed.parserName());
+        attributes.put("lexer", parsed.lexerName());
+        attributes.put("eventVisitor", eventVisitor.name());
+        attributes.put("syntaxErrors", errors.count);
+        attributes.put("tokenCount", visibleTokens.size());
+        return new StructuredParseResult("ANTLR", dialect.name(), statement.sourceName(),
+                events, warnings, attributes);
+    }
+
+    /**
+     * Runs the fallback tolerant grammar.
+     *
+     * <p>Dialect subclasses override this method to use their generated parser
+     * while preserving the same structured event contract and warning behavior.
+     * Keeping the override this small is the Phase-1 migration point: it proves
+     * grammar selection is no longer hard-coded to one universal parser.
+     */
+    protected ParsedSql parseAntlr(String sql, SyntaxErrorCounter errors) {
+        RelationSqlLexer lexer = new RelationSqlLexer(CharStreams.fromString(sql));
         lexer.removeErrorListeners();
         lexer.addErrorListener(errors);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -75,23 +113,10 @@ public class AntlrStructuredSqlParser implements StructuredSqlParser {
                 .filter(token -> token.getType() != Token.EOF)
                 .filter(token -> token.getChannel() == Token.DEFAULT_CHANNEL)
                 .toList();
-        List<StructuredSqlEvent> events = new ArrayList<>();
-        events.addAll(extractTableReferences(statement, visibleTokens));
-        events.addAll(extractColumnEqualities(statement, visibleTokens));
-        detectDynamicSql(statement).ifPresent(warnings::add);
-        warnings.forEach(warning -> {
-            if (context != null) {
-                context.warn(warning);
-            }
-        });
-
-        Map<String, Object> attributes = new LinkedHashMap<>();
-        attributes.put("parser", RelationSqlParser.class.getSimpleName());
-        attributes.put("lexer", RelationSqlLexer.class.getSimpleName());
-        attributes.put("syntaxErrors", errors.count);
-        attributes.put("tokenCount", visibleTokens.size());
-        return new StructuredParseResult("ANTLR", dialect.name(), statement.sourceName(),
-                events, warnings, attributes);
+        return new ParsedSql("RelationSql",
+                RelationSqlLexer.class.getSimpleName(),
+                RelationSqlParser.class.getSimpleName(),
+                visibleTokens);
     }
 
     /**
@@ -191,6 +216,7 @@ public class AntlrStructuredSqlParser implements StructuredSqlParser {
         attributes.put("rawStatement", statement.sql());
         attributes.put("statementSourceType", statement.sourceType().name());
         attributes.put("dialect", dialect.name());
+        attributes.putAll(statement.attributes());
         return java.util.Optional.of(WarningMessage.warn(WarningType.PARSE_WARNING,
                 "DYNAMIC_SQL_UNRESOLVED",
                 "dynamic SQL is present but cannot be statically resolved",
@@ -268,7 +294,15 @@ public class AntlrStructuredSqlParser implements StructuredSqlParser {
     private record ColumnRead(String qualifier, String column) {
     }
 
-    private static final class SyntaxErrorCounter extends BaseErrorListener {
+    public record ParsedSql(
+            String grammarName,
+            String lexerName,
+            String parserName,
+            List<Token> visibleTokens
+    ) {
+    }
+
+    protected static final class SyntaxErrorCounter extends BaseErrorListener {
         private int count;
 
         @Override

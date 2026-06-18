@@ -669,6 +669,15 @@ sources:
       - routines.sql
   logs:
     enabled: true
+    filterSystemQueries: true
+    systemSchemas:
+      - information_schema
+      - performance_schema
+      - mysql
+      - sys
+    metadataQueryMarkers:
+      - ApplicationName=DBeaver
+      - DatabaseMetaData
     files:
       - mysql-general.log
       - app-sql.sql
@@ -676,6 +685,14 @@ sources:
     enabled: false
     sampleRows: 10000
     timeoutSeconds: 30
+
+parser:
+  sql:
+    mode: antlr-primary
+    fallbackOnFailure: true
+  ddl:
+    mode: antlr-ddl-primary
+    fallbackOnFailure: true
 
 output:
   format: json

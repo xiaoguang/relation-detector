@@ -1,0 +1,9 @@
+id: mysql-sql-system-log-noise
+databaseType: MYSQL
+parserTarget: SQL
+sourceType: NATIVE_LOG
+schema: shop
+parserModes: simple,antlr-shadow,antlr-primary
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

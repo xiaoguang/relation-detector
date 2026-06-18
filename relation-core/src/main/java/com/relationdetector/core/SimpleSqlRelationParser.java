@@ -1184,6 +1184,7 @@ public final class SimpleSqlRelationParser {
                 if (tableName.equalsIgnoreCase("select")
                         || isIgnoredRowsetKeyword(tableName)
                         || isFunctionRowset(sql, matcher.end(1))
+                        || !SqlLogNoiseFilter.isValidIdentifierToken(tableName)
                         || tableName.isBlank()
                         || isCteName(tableName, cteNames)) {
                     continue;
@@ -1237,6 +1238,7 @@ public final class SimpleSqlRelationParser {
                 if (tableName.isBlank()
                         || isIgnoredRowsetKeyword(tableName)
                         || isFunctionRowset(sql, matcher.end(1))
+                        || !SqlLogNoiseFilter.isValidIdentifierToken(tableName)
                         || isCteName(tableName, cteNames)) {
                     continue;
                 }
@@ -1254,29 +1256,210 @@ public final class SimpleSqlRelationParser {
          * that path and mixing both strategies would duplicate table refs.
          */
         private static void extractCommaSeparatedFrom(String sql, Set<String> cteNames, List<TableRef> refs) {
-            Matcher matcher = FROM_BLOCK.matcher(sql);
-            if (!matcher.find()) {
-                return;
-            }
-            String block = matcher.group(1);
-            if (!block.contains(",") || Pattern.compile("(?i)\\bjoin\\b").matcher(block).find()) {
-                return;
-            }
-            for (String part : block.split(",")) {
-                String[] tokens = part.trim().split("\\s+");
-                if (tokens.length == 0 || tokens[0].isBlank()) {
+            for (FromBlock fromBlock : fromBlocks(sql)) {
+                String block = fromBlock.text();
+                if (!block.contains(",") || Pattern.compile("(?i)\\bjoin\\b").matcher(block).find()) {
                     continue;
                 }
-                String rawTable = tokens[0];
-                String schema = schemaName(rawTable);
-                String tableName = cleanTable(rawTable);
-                if (isCteName(tableName, cteNames)) {
+                for (String part : splitTopLevelComma(block)) {
+                    String[] tokens = part.trim().split("\\s+");
+                    if (tokens.length == 0 || tokens[0].isBlank()) {
+                        continue;
+                    }
+                    String rawTable = tokens[0];
+                    String schema = schemaName(rawTable);
+                    String tableName = cleanTable(rawTable);
+                    if (isCteName(tableName, cteNames)
+                            || isIgnoredRowsetKeyword(tableName)
+                            || !SqlLogNoiseFilter.isValidIdentifierToken(tableName)) {
+                        continue;
+                    }
+                    TableId table = TableId.of(schema, tableName);
+                    String alias = tokens.length > 1 && !isKeyword(tokens[1]) ? clean(tokens[1]) : "";
+                    refs.add(new TableRef(fromBlock.position(), table, alias));
+                }
+            }
+        }
+
+        private static List<FromBlock> fromBlocks(String sql) {
+            List<FromBlock> blocks = new ArrayList<>();
+            String lower = sql.toLowerCase(Locale.ROOT);
+            int start = 0;
+            while (start < lower.length()) {
+                int fromIndex = keywordAtAnyDepth(sql, "from", start);
+                if (fromIndex < 0) {
+                    break;
+                }
+                int depth = depthBefore(sql, fromIndex);
+                int blockStart = fromIndex + "from".length();
+                int blockEnd = sql.length();
+                int closeParen = closeParenLeavingDepth(sql, blockStart, depth);
+                if (closeParen >= 0) {
+                    blockEnd = closeParen;
+                }
+                for (String terminator : List.of("where", "group", "order", "having", "limit", "union")) {
+                    int index = keywordAtDepth(sql, terminator, blockStart, depth);
+                    if (index >= 0 && index < blockEnd) {
+                        blockEnd = index;
+                    }
+                }
+                blocks.add(new FromBlock(fromIndex, sql.substring(blockStart, blockEnd)));
+                start = blockStart;
+            }
+            return blocks;
+        }
+
+        private static int closeParenLeavingDepth(String sql, int start, int targetDepth) {
+            int depth = depthBefore(sql, start);
+            char quote = 0;
+            for (int i = start; i < sql.length(); i++) {
+                char c = sql.charAt(i);
+                if (quote != 0) {
+                    if (c == quote) {
+                        quote = 0;
+                    }
                     continue;
                 }
-                TableId table = TableId.of(schema, tableName);
-                String alias = tokens.length > 1 && !isKeyword(tokens[1]) ? clean(tokens[1]) : "";
-                refs.add(new TableRef(matcher.start(), table, alias));
+                if (c == '\'' || c == '"' || c == '`') {
+                    quote = c;
+                    continue;
+                }
+                if (c == '(') {
+                    depth++;
+                    continue;
+                }
+                if (c == ')' && depth > 0) {
+                    depth--;
+                    if (depth < targetDepth) {
+                        return i;
+                    }
+                }
             }
+            return -1;
+        }
+
+        private static int keywordAtAnyDepth(String sql, String keyword, int start) {
+            String lower = sql.toLowerCase(Locale.ROOT);
+            char quote = 0;
+            for (int i = start; i < lower.length(); i++) {
+                char c = lower.charAt(i);
+                if (quote != 0) {
+                    if (c == quote) {
+                        quote = 0;
+                    }
+                    continue;
+                }
+                if (c == '\'' || c == '"' || c == '`') {
+                    quote = c;
+                    continue;
+                }
+                if (isKeywordAt(lower, keyword, i)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        private static int keywordAtDepth(String sql, String keyword, int start, int targetDepth) {
+            String lower = sql.toLowerCase(Locale.ROOT);
+            int depth = depthBefore(sql, start);
+            char quote = 0;
+            for (int i = start; i < lower.length(); i++) {
+                char c = lower.charAt(i);
+                if (quote != 0) {
+                    if (c == quote) {
+                        quote = 0;
+                    }
+                    continue;
+                }
+                if (c == '\'' || c == '"' || c == '`') {
+                    quote = c;
+                    continue;
+                }
+                if (c == '(') {
+                    depth++;
+                    continue;
+                }
+                if (c == ')' && depth > 0) {
+                    depth--;
+                    continue;
+                }
+                if (depth == targetDepth && isKeywordAt(lower, keyword, i)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        private static int depthBefore(String sql, int index) {
+            int depth = 0;
+            char quote = 0;
+            for (int i = 0; i < index; i++) {
+                char c = sql.charAt(i);
+                if (quote != 0) {
+                    if (c == quote) {
+                        quote = 0;
+                    }
+                    continue;
+                }
+                if (c == '\'' || c == '"' || c == '`') {
+                    quote = c;
+                    continue;
+                }
+                if (c == '(') {
+                    depth++;
+                } else if (c == ')' && depth > 0) {
+                    depth--;
+                }
+            }
+            return depth;
+        }
+
+        private static boolean isKeywordAt(String lower, String keyword, int index) {
+            return lower.startsWith(keyword, index)
+                    && (index == 0 || !Character.isLetterOrDigit(lower.charAt(index - 1)))
+                    && (index + keyword.length() >= lower.length()
+                    || !Character.isLetterOrDigit(lower.charAt(index + keyword.length())));
+        }
+
+        private static List<String> splitTopLevelComma(String block) {
+            List<String> parts = new ArrayList<>();
+            StringBuilder current = new StringBuilder();
+            int depth = 0;
+            char quote = 0;
+            for (int i = 0; i < block.length(); i++) {
+                char c = block.charAt(i);
+                if (quote != 0) {
+                    current.append(c);
+                    if (c == quote) {
+                        quote = 0;
+                    }
+                    continue;
+                }
+                if (c == '\'' || c == '"' || c == '`') {
+                    quote = c;
+                    current.append(c);
+                    continue;
+                }
+                if (c == '(') {
+                    depth++;
+                    current.append(c);
+                    continue;
+                }
+                if (c == ')' && depth > 0) {
+                    depth--;
+                    current.append(c);
+                    continue;
+                }
+                if (c == ',' && depth == 0) {
+                    parts.add(current.toString());
+                    current.setLength(0);
+                    continue;
+                }
+                current.append(c);
+            }
+            parts.add(current.toString());
+            return parts;
         }
 
         private static boolean isCteName(String tableName, Set<String> cteNames) {
@@ -1324,6 +1507,9 @@ public final class SimpleSqlRelationParser {
         }
 
         record TableRef(int position, TableId table, String alias) {
+        }
+
+        record FromBlock(int position, String text) {
         }
     }
 
