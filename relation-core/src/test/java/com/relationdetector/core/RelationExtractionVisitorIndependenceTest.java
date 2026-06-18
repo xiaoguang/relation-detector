@@ -57,6 +57,50 @@ class RelationExtractionVisitorIndependenceTest {
                 () -> "Empty events must not delegate to Simple parser evidence: " + relations.get(0).evidence());
     }
 
+    @Test
+    void commonVisitorDoesNotOwnMysqlOnlyStraightJoinFallback() {
+        SqlStatementRecord statement = record("SELECT * FROM orders o STRAIGHT_JOIN users u ON o.user_id = u.id");
+        StructuredParseResult structured = structured(List.of());
+
+        List<RelationshipCandidate> relations = new RelationExtractionVisitor().extract(statement, structured);
+
+        assertTrue(relations.isEmpty(),
+                () -> "MySQL-only STRAIGHT_JOIN rowset regex belongs in MySqlRelationExtractionVisitor: " + relations);
+    }
+
+    @Test
+    void commonVisitorDoesNotOwnPostgresOnlyOnlyFallback() {
+        SqlStatementRecord statement = record("SELECT * FROM ONLY orders o JOIN users u ON o.user_id = u.id");
+        StructuredParseResult structured = structured(List.of());
+
+        List<RelationshipCandidate> relations = new RelationExtractionVisitor().extract(statement, structured);
+
+        assertTrue(relations.isEmpty(),
+                () -> "PostgreSQL-only ONLY rowset regex belongs in PostgresRelationExtractionVisitor: " + relations);
+    }
+
+    @Test
+    void commonVisitorDoesNotOwnMysqlOnlyOdbcIndexHintJsonTableOrPartitionFallbacks() {
+        List<String> mysqlOnlySql = List.of(
+                "SELECT * FROM { OJ orders o LEFT OUTER JOIN users u ON o.user_id = u.id }",
+                "SELECT * FROM orders o FORCE INDEX FOR JOIN (idx_orders_user) JOIN users u ON o.user_id = u.id",
+                "SELECT * FROM orders PARTITION (p202501) o JOIN users u ON o.user_id = u.id",
+                """
+                SELECT *
+                FROM JSON_TABLE(payload, '$[*]' COLUMNS (user_id BIGINT PATH '$.user_id')) jt
+                JOIN users u ON jt.user_id = u.id
+                """
+        );
+
+        for (String sql : mysqlOnlySql) {
+            List<RelationshipCandidate> relations = new RelationExtractionVisitor().extract(record(sql), structured(List.of()));
+
+            assertTrue(relations.isEmpty(),
+                    () -> "MySQL-only rowset fallback belongs in MySqlRelationExtractionVisitor. SQL: " + sql
+                            + " Actual: " + relations);
+        }
+    }
+
     private SqlStatementRecord record(String sql) {
         return new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL, "independence.sql", 1, 1, Map.of());
     }

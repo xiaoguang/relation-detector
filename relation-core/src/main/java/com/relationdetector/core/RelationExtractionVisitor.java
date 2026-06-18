@@ -49,12 +49,15 @@ public class RelationExtractionVisitor {
             "(?is)(?:\\bwith\\s+(?:recursive\\s+)?|,\\s*)([`\"\\w]+)(?:\\s*\\([^)]*\\))?\\s+as\\s*\\(");
     private static final Pattern TEMP_TABLE_NAME = Pattern.compile(
             "(?is)\\bcreate\\s+(?:temporary|temp)\\s+table\\s+(?:if\\s+not\\s+exists\\s+)?([`\"\\w.]+)");
-    private static final Pattern JOIN_USING = Pattern.compile(
-            "(?is)\\b(?:join|straight_join)\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?([`\"\\w]+))?\\s+using\\s*\\(([^)]*)\\)");
-    private static final Pattern ROWSET_TEXT_REFERENCE = Pattern.compile(
-            "(?is)\\b(?:from|join|straight_join)\\s+(?:\\{\\s*oj\\s+)?\\(*\\s*([`\"\\w.]+)");
-    private static final Pattern ROWSET_TEXT_REFERENCE_WITH_ALIAS = Pattern.compile(
-            "(?is)\\b(?:from|join|straight_join)\\s+(?:\\{\\s*oj\\s+)?\\(*\\s*([`\"\\w.]+)(?:\\s+(?:as\\s+)?([`\"\\w]+))?");
+    private static final Pattern EXISTS_START = Pattern.compile("(?is)\\bexists\\s*\\(");
+    private static final Pattern COMMON_JOIN_USING = Pattern.compile(
+            "(?is)\\bjoin\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?([`\"\\w]+))?\\s+using\\s*\\(([^)]*)\\)");
+    private static final Pattern COMMON_ROWSET_TEXT_REFERENCE = Pattern.compile(
+            "(?is)\\b(?:from|join)\\s+([`\"\\w.]+)"
+                    + "(?=\\s*(?:,|\\b(?:join|left|right|inner|outer|full|cross|natural|where|on|group|order|having|limit|union|set|using)\\b|$))");
+    private static final Pattern COMMON_ROWSET_TEXT_REFERENCE_WITH_ALIAS = Pattern.compile(
+            "(?is)\\b(?:from|join)\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?([`\"\\w]+))?"
+                    + "(?=\\s*(?:,|\\b(?:join|left|right|inner|outer|full|cross|natural|where|on|group|order|having|limit|union|set|using)\\b|$))");
     private static final Pattern RAW_EQUALITY = Pattern.compile(
             "([`\"\\w]+)\\.([`\"\\w]+)\\s*=\\s*([`\"\\w]+)\\.([`\"\\w]+)");
     private static final Pattern IN_SUBQUERY = Pattern.compile(
@@ -83,6 +86,7 @@ public class RelationExtractionVisitor {
         Set<String> systemSchemas = SqlLogNoiseFilter.systemSchemasFromStatementOrDialect(statement, result.dialect());
         SqlLineageResolver lineage = SqlLineageResolver.analyze(sql, ignoredRowsets);
         Map<String, TableId> aliases = aliasesFromEvents(statement.sql(), result.events(), ignoredRowsets, systemSchemas);
+        List<SqlSpan> existsSpans = existsSpansFor(statement.sourceType(), sql);
 
         List<RelationshipCandidate> candidates = new ArrayList<>();
         for (StructuredSqlEvent event : result.events()) {
@@ -126,11 +130,13 @@ public class RelationExtractionVisitor {
                     Map.of("joinKind", joinKind, "lineageResolved", lineageResolved)));
             candidates.add(candidate);
         }
+        candidates.addAll(extractExistsSubqueries(statement, sql, aliases, lineage, existsSpans));
         candidates.addAll(extractTupleInSubqueries(statement, sql, aliases, lineage));
         candidates.addAll(extractScalarInSubqueries(statement, sql, aliases, lineage));
-        addRawEqualityCandidates(statement, sql, aliases, lineage, candidates);
+        addRawEqualityCandidates(statement, sql, aliases, lineage, existsSpans, candidates);
         addUsingJoinCoOccurrences(statement, sql, result.events(), ignoredRowsets, systemSchemas, candidates);
         addTableCoOccurrenceBaseline(statement, sql, result.events(), result.dialect(), ignoredRowsets, systemSchemas, candidates);
+        removeJoinCandidatesCoveredByExists(candidates);
         return candidates;
     }
 
@@ -172,7 +178,7 @@ public class RelationExtractionVisitor {
                 aliases.put(alias, table);
             }
         }
-        Matcher matcher = ROWSET_TEXT_REFERENCE_WITH_ALIAS.matcher(sql);
+        Matcher matcher = rowsetTextReferenceWithAliasPattern().matcher(sql);
         while (matcher.find()) {
             String qualifiedTable = matcher.group(1);
             String tableName = cleanTable(qualifiedTable);
@@ -264,7 +270,7 @@ public class RelationExtractionVisitor {
             Set<String> systemSchemas,
             List<RelationshipCandidate> candidates
     ) {
-        if (!candidates.isEmpty() && !keepsMySqlTableBreadthBaseline(sql, dialect)) {
+        if (!candidates.isEmpty() && !keepsTableBreadthBaseline(sql, dialect)) {
             return;
         }
         List<TableId> physicalTables = physicalTablesFromEvents(sql, events, ignoredRowsets, systemSchemas);
@@ -288,15 +294,6 @@ public class RelationExtractionVisitor {
                 existing.add(key);
             }
         }
-    }
-
-    private boolean keepsMySqlTableBreadthBaseline(String sql, String dialect) {
-        return isMySqlMultiTableUpdate(sql, dialect);
-    }
-
-    private boolean isMySqlMultiTableUpdate(String sql, String dialect) {
-        return "MYSQL".equalsIgnoreCase(dialect)
-                && sql.stripLeading().toLowerCase(Locale.ROOT).startsWith("update ");
     }
 
     /**
@@ -329,7 +326,7 @@ public class RelationExtractionVisitor {
         Set<String> existing = candidates.stream()
                 .map(relation -> relation.source().table().normalizedName() + "->" + relation.target().table().normalizedName())
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-        Matcher matcher = JOIN_USING.matcher(statement.sql());
+        Matcher matcher = joinUsingPattern().matcher(statement.sql());
         while (matcher.find()) {
             String joinedTableName = cleanTable(matcher.group(1));
             TableId target = physicalTables.stream()
@@ -385,7 +382,7 @@ public class RelationExtractionVisitor {
                 tables.add(table);
             }
         }
-        Matcher matcher = ROWSET_TEXT_REFERENCE.matcher(sql);
+        Matcher matcher = rowsetTextReferenceWithAliasPattern().matcher(sql);
         while (matcher.find()) {
             String qualifiedTable = matcher.group(1);
             String tableName = cleanTable(qualifiedTable);
@@ -431,9 +428,7 @@ public class RelationExtractionVisitor {
         if (tableName.isBlank() || isKeyword(tableName) || containsIgnoreCase(ignoredRowsets, tableName)) {
             return false;
         }
-        if (tableName.equalsIgnoreCase("lateral")
-                || tableName.equalsIgnoreCase("unnest")
-                || tableName.equalsIgnoreCase("json_table")) {
+        if (isDialectRowsetModifier(tableName)) {
             return false;
         }
         if (SqlLogNoiseFilter.isSystemRowset(qualifiedTable, systemSchemas)) {
@@ -466,6 +461,7 @@ public class RelationExtractionVisitor {
             String sql,
             Map<String, TableId> aliases,
             SqlLineageResolver lineage,
+            List<SqlSpan> existsSpans,
             List<RelationshipCandidate> candidates
     ) {
         Set<String> existing = candidates.stream()
@@ -473,6 +469,9 @@ public class RelationExtractionVisitor {
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
         Matcher matcher = RAW_EQUALITY.matcher(sql);
         while (matcher.find()) {
+            if (insideAnySpan(matcher.start(), existsSpans)) {
+                continue;
+            }
             String leftAlias = clean(matcher.group(1));
             String leftColumnName = clean(matcher.group(2));
             String rightAlias = clean(matcher.group(3));
@@ -515,6 +514,73 @@ public class RelationExtractionVisitor {
         return relation.relationType() + ":"
                 + relation.source().displayName() + "->" + relation.target().displayName()
                 + ":" + evidenceTypes;
+    }
+
+    private void removeJoinCandidatesCoveredByExists(List<RelationshipCandidate> candidates) {
+        Set<String> existsPairs = candidates.stream()
+                .filter(candidate -> candidate.evidence().stream()
+                        .anyMatch(evidence -> evidence.type() == EvidenceType.SQL_LOG_EXISTS))
+                .map(this::endpointPair)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        if (existsPairs.isEmpty()) {
+            return;
+        }
+        candidates.removeIf(candidate -> existsPairs.contains(endpointPair(candidate))
+                && candidate.evidence().stream().anyMatch(evidence -> evidence.type() == EvidenceType.SQL_LOG_JOIN)
+                && candidate.evidence().stream().noneMatch(evidence -> evidence.type() == EvidenceType.SQL_LOG_EXISTS));
+    }
+
+    private String endpointPair(RelationshipCandidate relation) {
+        return relation.source().displayName() + "->" + relation.target().displayName();
+    }
+
+    private List<RelationshipCandidate> extractExistsSubqueries(
+            SqlStatementRecord statement,
+            String sql,
+            Map<String, TableId> aliases,
+            SqlLineageResolver lineage,
+            List<SqlSpan> existsSpans
+    ) {
+        List<RelationshipCandidate> candidates = new ArrayList<>();
+        for (SqlSpan span : existsSpans) {
+            Matcher matcher = RAW_EQUALITY.matcher(sql.substring(span.start(), span.end()));
+            while (matcher.find()) {
+                String leftAlias = clean(matcher.group(1));
+                String leftColumnName = clean(matcher.group(2));
+                String rightAlias = clean(matcher.group(3));
+                String rightColumnName = clean(matcher.group(4));
+                ColumnRef left = resolveColumn(leftAlias, leftColumnName, aliases, lineage);
+                ColumnRef right = resolveColumn(rightAlias, rightColumnName, aliases, lineage);
+                if (unusableColumnPair(left, right)) {
+                    continue;
+                }
+
+                boolean leftLooksSource = looksLikeForeignKey(left, right);
+                boolean rightLooksSource = looksLikeForeignKey(right, left);
+                if (!leftLooksSource && !rightLooksSource) {
+                    candidates.add(coOccurrence(statement, Endpoint.table(left.table()), Endpoint.table(right.table()),
+                            "ANTLR ambiguous EXISTS equality: " + matcher.group(),
+                            Map.of("joinKind", "EXISTS", "lineageResolved", false)));
+                    continue;
+                }
+
+                ColumnRef sourceColumn = leftLooksSource && !rightLooksSource ? left : right;
+                ColumnRef targetColumn = leftLooksSource && !rightLooksSource ? right : left;
+                boolean lineageResolved = lineage.hasLineage(leftAlias, leftColumnName)
+                        || lineage.hasLineage(rightAlias, rightColumnName);
+                RelationshipCandidate candidate = new RelationshipCandidate(
+                        Endpoint.column(sourceColumn), Endpoint.column(targetColumn),
+                        RelationType.FK_LIKE, RelationSubType.SUBQUERY_INFERRED_FK);
+                candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_EXISTS,
+                        BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_EXISTS),
+                        sourceType(statement.sourceType()),
+                        statement.sourceName(),
+                        "ANTLR EXISTS equality: " + matcher.group(),
+                        Map.of("joinKind", "EXISTS", "lineageResolved", lineageResolved)));
+                candidates.add(candidate);
+            }
+        }
+        return candidates;
     }
 
     private List<RelationshipCandidate> extractScalarInSubqueries(
@@ -670,6 +736,7 @@ public class RelationExtractionVisitor {
         while (temp.find()) {
             names.add(cleanTable(temp.group(1)));
         }
+        collectDialectIgnoredRowsets(sql, names);
         return names;
     }
 
@@ -677,16 +744,119 @@ public class RelationExtractionVisitor {
         return values.stream().anyMatch(value -> value.equalsIgnoreCase(candidate));
     }
 
-    private boolean isKeyword(String value) {
+    protected boolean isKeyword(String value) {
         String lower = clean(value).toLowerCase(Locale.ROOT);
         return lower.equals("on") || lower.equals("where") || lower.equals("join") || lower.equals("left")
                 || lower.equals("right") || lower.equals("inner") || lower.equals("outer") || lower.equals("full")
                 || lower.equals("cross") || lower.equals("using") || lower.equals("group") || lower.equals("order")
                 || lower.equals("having") || lower.equals("limit") || lower.equals("union")
                 || lower.equals("select") || lower.equals("from") || lower.equals("update") || lower.equals("into")
-                || lower.equals("delete") || lower.equals("set") || lower.equals("values")
-                || lower.equals("straight_join") || lower.equals("force") || lower.equals("use")
-                || lower.equals("ignore") || lower.equals("index") || lower.equals("key") || lower.equals("partition");
+                || lower.equals("delete") || lower.equals("set") || lower.equals("values");
+    }
+
+    /**
+     * Regex hook for {@code JOIN ... USING (...)} syntax. The core default is
+     * deliberately dialect-neutral; MySQL/PostgreSQL subclasses own any
+     * database-specific join spellings.
+     */
+    protected Pattern joinUsingPattern() {
+        return COMMON_JOIN_USING;
+    }
+
+    /**
+     * Regex hook for text-level rowset fallback used when structured events are
+     * incomplete. The core default recognizes only standard {@code FROM/JOIN}.
+     */
+    protected Pattern rowsetTextReferencePattern() {
+        return COMMON_ROWSET_TEXT_REFERENCE;
+    }
+
+    /**
+     * Alias-aware rowset fallback counterpart to
+     * {@link #rowsetTextReferencePattern()}.
+     */
+    protected Pattern rowsetTextReferenceWithAliasPattern() {
+        return COMMON_ROWSET_TEXT_REFERENCE_WITH_ALIAS;
+    }
+
+    /**
+     * Dialect hook for rowset modifiers or function-like rowsets that must not
+     * become physical tables in relationship output.
+     */
+    protected boolean isDialectRowsetModifier(String tableName) {
+        return false;
+    }
+
+    /**
+     * Dialect hook for statement-local rowsets whose declaration syntax is not
+     * part of the cross-dialect CTE/local-temp patterns.
+     */
+    protected void collectDialectIgnoredRowsets(String sql, Set<String> names) {
+    }
+
+    /**
+     * Dialect hook for preserving known legacy table-breadth baselines.
+     */
+    protected boolean keepsTableBreadthBaseline(String sql, String dialect) {
+        return false;
+    }
+
+    private List<SqlSpan> existsSpansFor(StatementSourceType sourceType, String sql) {
+        if (sourceType != StatementSourceType.NATIVE_LOG && sourceType != StatementSourceType.PLAIN_SQL) {
+            return List.of();
+        }
+        List<SqlSpan> spans = new ArrayList<>();
+        Matcher matcher = EXISTS_START.matcher(sql);
+        while (matcher.find()) {
+            int openParen = sql.indexOf('(', matcher.start());
+            int closeParen = matchingParen(sql, openParen);
+            if (openParen >= 0 && closeParen > openParen) {
+                spans.add(new SqlSpan(openParen + 1, closeParen));
+            }
+        }
+        return spans;
+    }
+
+    private boolean insideAnySpan(int position, List<SqlSpan> spans) {
+        for (SqlSpan span : spans) {
+            if (position >= span.start() && position < span.end()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private int matchingParen(String sql, int openParen) {
+        if (openParen < 0 || openParen >= sql.length() || sql.charAt(openParen) != '(') {
+            return -1;
+        }
+        int depth = 0;
+        char quote = 0;
+        for (int i = openParen; i < sql.length(); i++) {
+            char c = sql.charAt(i);
+            if (quote != 0) {
+                if (c == quote) {
+                    quote = 0;
+                }
+                continue;
+            }
+            if (c == '\'' || c == '"' || c == '`') {
+                quote = c;
+                continue;
+            }
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+                if (depth == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private record SqlSpan(int start, int end) {
     }
 
     private String text(StructuredSqlEvent event, String key) {

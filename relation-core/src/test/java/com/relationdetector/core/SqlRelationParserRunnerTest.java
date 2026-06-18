@@ -59,30 +59,29 @@ class SqlRelationParserRunnerTest {
     @Test
     void antlrPrimaryFallsBackToSimpleAndWarnsWhenBaselineIsMissing() {
         AtomicInteger structuredCalls = new AtomicInteger();
-        ShadowSqlRelationParser shadow = shadow(emptyStructuredParser(structuredCalls));
+        ShadowSqlRelationParser shadow = new ShadowSqlRelationParser(
+                new SimpleSqlRelationParser(),
+                emptyStructuredParser(structuredCalls),
+                new RelationExtractionVisitor() {
+                    @Override
+                    public List<RelationshipCandidate> extract(SqlStatementRecord statement, StructuredParseResult result) {
+                        return List.of();
+                    }
+                });
         ScanConfig config = new ScanConfig();
         config.sqlParserMode = SqlParserMode.ANTLR_PRIMARY;
         config.sqlParserFallbackOnFailure = true;
         List<WarningMessage> warnings = new ArrayList<>();
-        SqlStatementRecord existsStatement = new SqlStatementRecord("""
-                SELECT *
-                FROM orders o
-                WHERE EXISTS (
-                    SELECT 1
-                    FROM users u
-                    WHERE u.id = o.user_id
-                )
-                """, StatementSourceType.PLAIN_SQL, "runner.sql", 1, 7, Map.of());
 
         List<RelationshipCandidate> relations = new SqlRelationParserRunner()
-                .parse(new TestAdaptor(shadow), config, existsStatement, context(warnings));
+                .parse(new TestAdaptor(shadow), config, statement(), context(warnings));
 
         assertEquals(1, relations.size());
         assertEquals("orders.user_id", relations.get(0).source().displayName());
         assertTrue(warnings.stream().anyMatch(warning ->
                 warning.code().equals("ANTLR_PRIMARY_FALLBACK")
-                        && String.valueOf(warning.attributes().get("rawStatement")).contains("WHERE EXISTS")
-                        && String.valueOf(warning.attributes().get("missingSimpleRelations")).contains("SQL_LOG_EXISTS")));
+                        && String.valueOf(warning.attributes().get("rawStatement")).contains("orders o JOIN users u")
+                        && String.valueOf(warning.attributes().get("missingSimpleRelations")).contains("SQL_LOG_JOIN")));
     }
 
     @Test

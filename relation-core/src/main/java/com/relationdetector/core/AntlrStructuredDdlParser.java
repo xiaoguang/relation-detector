@@ -23,10 +23,15 @@ import com.relationdetector.api.StructuredParseResult;
  */
 public class AntlrStructuredDdlParser implements StructuredDdlParser {
     private final SqlDialect dialect;
-    private final DdlStructuredEventVisitor eventVisitor = new DdlStructuredEventVisitor();
+    private final DdlStructuredEventVisitor eventVisitor;
 
     public AntlrStructuredDdlParser(SqlDialect dialect) {
+        this(dialect, eventVisitorFor(dialect));
+    }
+
+    protected AntlrStructuredDdlParser(SqlDialect dialect, DdlStructuredEventVisitor eventVisitor) {
         this.dialect = dialect;
+        this.eventVisitor = eventVisitor;
     }
 
     @Override
@@ -36,5 +41,13 @@ public class AntlrStructuredDdlParser implements StructuredDdlParser {
         attributes.put("ddlEventVisitor", eventVisitor.getClass().getSimpleName());
         return new StructuredParseResult("ANTLR", dialect.name(), sourceName,
                 eventVisitor.extractEvents(ddl, sourceName), List.of(), attributes);
+    }
+
+    private static DdlStructuredEventVisitor eventVisitorFor(SqlDialect dialect) {
+        return switch (dialect) {
+            case MYSQL -> new MySqlDdlStructuredEventVisitor();
+            case POSTGRES -> new PostgresDdlStructuredEventVisitor();
+            default -> new DdlStructuredEventVisitor();
+        };
     }
 }

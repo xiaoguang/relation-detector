@@ -37,12 +37,13 @@
 | `DdlRelationExtractionVisitorIndependenceTest` | DDL primary | DDL ANTLR 抽取不能委托 simple parser |
 | `AntlrShadowGoldenComparisonTest` | SQL primary | SQL simple baseline 与 ANTLR shadow comparison |
 | `ShadowSqlRelationParserParityTest` | SQL primary | shadow parity、missing/extra diagnostics |
-| `RelationExtractionVisitorIndependenceTest` | SQL primary | SQL ANTLR 抽取不能委托 simple parser |
+| `RelationExtractionVisitorIndependenceTest` | SQL primary / 方言边界 | SQL ANTLR 抽取不能委托 simple parser；公共 visitor 不承接 MySQL-only 或 PostgreSQL-only rowset regex；公共层只保留 correlated EXISTS 这类跨方言关系语义，EXISTS 内部方言 rowset 仍由子类负责 |
+| `MySqlAntlrParserSelectionTest` / `PostgresAntlrParserSelectionTest` | SQL primary / DDL primary / 方言边界 | SQL/DDL ANTLR parser、event visitor、relation visitor 选择；MySQL-only `STRAIGHT_JOIN`/ODBC `{ OJ ... }`/index hint/`PARTITION`/`JSON_TABLE`/multi-table DML 留在 MySQL visitor，Postgres 不继承；Postgres-only `ONLY`/`TABLESAMPLE`/`ROWS FROM`/`JOIN USING AS` 不污染 MySQL |
 | `AntlrStructuredSqlParserTest` | SQL primary | ANTLR structured event 基础行为 |
 | `DialectSqlRelationParserComplexMatrixTest` | SQL primary | 复杂 JOIN/CTE/DML 方言场景；含 1 个 SQL Server future fixture skipped |
 | `SimpleSqlRelationParserComplexSqlTest` | SQL primary | simple parser 复杂 SQL baseline |
 | `SimpleSqlRelationParserJoinSyntaxMatrixTest` | SQL primary | JOIN 写法矩阵：逗号 join、alias、quoted identifier 等 |
-| `DialectParserEvidenceConfidenceTest` | SQL primary / confidence | evidence type/source type、joinKind、confidence 示例 |
+| `DialectParserEvidenceConfidenceTest` | SQL primary / confidence | evidence type/source type、joinKind、confidence 示例；验证 correlated EXISTS 输出 `SQL_LOG_EXISTS` 而不是普通 `SQL_LOG_JOIN` |
 | `AntlrSqlNoiseAndUsingTest` | SQL primary / noise filter | SQL log 系统查询过滤、JOIN USING 防误报 |
 | `SqlParserAdditionalSourceTypesTest` | SQL primary / warning-fallback | view/procedure/trigger/function 等 source type 行为 |
 | `ScanEngineDiagnosticsTest` | warning-fallback | parse failure、raw SQL/DDL warning 保留 |
@@ -93,6 +94,8 @@
 | `postgres/sql-recursive-cte` | SQL primary | recursive CTE 边界 |
 | `postgres/sql-unnest-ordinality` | SQL primary | UNNEST WITH ORDINALITY rowset 边界 |
 | `postgres/sql-update-from-aliases` | SQL primary | UPDATE FROM alias/no alias |
+| `postgres/postgres-official-*-sql` | SQL primary | PostgreSQL 官方 regression/docs 启发的 outer/natural/USING alias/nested join、嵌套与递归 CTE、MATERIALIZED/NOT MATERIALIZED、EXISTS/tuple IN/ANY/SOME/ALL、LATERAL/ROWS FROM/function rowset 场景，跑 simple/shadow/primary |
+| `postgres/postgres-official-*-ddl` | DDL primary | PostgreSQL 官方 create_index/docs 启发的 CONCURRENTLY/ONLY/opclass/collation/NULLS、INCLUDE/partial/NULLS NOT DISTINCT、expression/access method/storage parameter、ALTER INDEX 边界，跑 simple-ddl/shadow/primary |
 
 ## Primary 切换验收矩阵
 
@@ -105,7 +108,7 @@
 | SQL Server/Oracle SQL 是否可 primary | 不切 | 当前只保留接口和 future fixture，尚未建立独立 adaptor/golden 验收 |
 | warning/fallback 链路是否有保护 | 有 | runner、diagnostics、object provenance、dynamic SQL warning、parser failure warning 均有测试 |
 | metadata 增强是否有保护 | 有 | MySQL metadata facts、database DDL collector、metadata evidence enhancer 测试覆盖 |
-| confidence 是否有保护 | 有 | confidence examples、evidence aggregation、dialect parser evidence/confidence 测试覆盖 |
+| confidence 是否有保护 | 有 | confidence examples、evidence aggregation、dialect parser evidence/confidence 测试覆盖；correlated EXISTS 验证为 `SQL_LOG_EXISTS`，且同 endpoint pair 不应再重复产出普通 `SQL_LOG_JOIN` 造成虚高计分 |
 | noise filter 是否有保护 | 有 | MySQL system log fixture、ANTLR USING/noise 单元测试覆盖 |
 
 ## 后续补强优先级

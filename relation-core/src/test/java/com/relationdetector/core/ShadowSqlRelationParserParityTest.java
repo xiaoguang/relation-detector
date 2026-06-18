@@ -30,19 +30,16 @@ import com.relationdetector.api.Enums.StructuredParseEventType;
 class ShadowSqlRelationParserParityTest {
     @Test
     void comparisonEventReportsMissingSimpleBaselineRelations() {
-        SqlStatementRecord statement = record("""
-                SELECT *
-                FROM orders o
-                WHERE EXISTS (
-                    SELECT 1
-                    FROM users u
-                    WHERE u.id = o.user_id
-                )
-                """);
+        SqlStatementRecord statement = record("SELECT * FROM orders o JOIN users u ON o.user_id = u.id");
         ShadowSqlRelationParser parser = new ShadowSqlRelationParser(
                 new SimpleSqlRelationParser(),
                 emptyStructuredParser(),
-                new RelationExtractionVisitor());
+                new RelationExtractionVisitor() {
+                    @Override
+                    public List<RelationshipCandidate> extract(SqlStatementRecord statement, StructuredParseResult result) {
+                        return List.of();
+                    }
+                });
 
         ShadowSqlRelationParser.Result result = parser.parseWithDiagnostics(statement, context());
 
@@ -52,11 +49,11 @@ class ShadowSqlRelationParserParityTest {
                 .orElseThrow();
         assertEquals(1, comparison.attributes().get("missingSimpleCount"));
         assertTrue(String.valueOf(comparison.attributes().get("missingSimpleRelations"))
-                        .contains("SQL_LOG_EXISTS"),
+                        .contains("SQL_LOG_JOIN"),
                 () -> "Missing relation fingerprints should be operator-readable: " + comparison.attributes());
         assertEquals(1, result.missingSimpleRelations().size());
         assertEquals(1, result.primaryCount());
-        assertEquals(1, result.shadowCount());
+        assertEquals(0, result.shadowCount());
     }
 
     private StructuredSqlParser emptyStructuredParser() {

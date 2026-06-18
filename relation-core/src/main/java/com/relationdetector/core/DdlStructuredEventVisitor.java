@@ -27,16 +27,16 @@ import com.relationdetector.api.Enums.StructuredParseEventType;
  * DDL primary-switch phase: it emits explicit FK and index facts without
  * calling {@link SimpleDdlParser}.
  */
-public final class DdlStructuredEventVisitor {
-    private static final String IDENTIFIER =
+public class DdlStructuredEventVisitor {
+    protected static final String IDENTIFIER =
             "(?:`[^`]+`|\"[^\"]+\"|[\\w$]+)(?:\\s*\\.\\s*(?:`[^`]+`|\"[^\"]+\"|[\\w$]+))*";
-    private static final String INDEX_NAME = "(?:`[^`]+`|\"[^\"]+\"|[\\w$.-]+)";
+    protected static final String INDEX_NAME = "(?:`[^`]+`|\"[^\"]+\"|[\\w$.-]+)";
 
     private static final Pattern CREATE_TABLE = Pattern.compile(
             "(?is)\\bcreate\\s+(?:temporary\\s+|unlogged\\s+)?table\\s+(?:if\\s+not\\s+exists\\s+)?("
                     + IDENTIFIER + ")\\s*\\(");
     private static final Pattern ALTER_TABLE = Pattern.compile(
-            "(?is)\\balter\\s+table\\s+(?:if\\s+exists\\s+)?(?:only\\s+)?("
+            "(?is)\\balter\\s+table\\s+(?:if\\s+exists\\s+)?("
                     + IDENTIFIER + ")\\s+(.+)");
     private static final Pattern TABLE_FK = Pattern.compile(
             "(?is)(?:constraint\\s+(?:`[^`]+`|\"[^\"]+\"|[\\w$.-]+)\\s+)?foreign\\s+key\\s*\\(([^)]+)\\)\\s+references\\s+("
@@ -44,12 +44,12 @@ public final class DdlStructuredEventVisitor {
     private static final Pattern INLINE_REFERENCES = Pattern.compile(
             "(?is)\\breferences\\s+(" + IDENTIFIER + ")\\s*\\(([^)]+)\\)");
     private static final Pattern CREATE_INDEX = Pattern.compile(
-            "(?is)\\bcreate\\s+(unique\\s+)?(?:fulltext\\s+|spatial\\s+)?index\\s+"
-                    + "(?:concurrently\\s+)?(?:if\\s+not\\s+exists\\s+)?"
+            "(?is)\\bcreate\\s+(unique\\s+)?index\\s+"
+                    + "(?:if\\s+not\\s+exists\\s+)?"
                     + INDEX_NAME
-                    + "\\s+(?:using\\s+\\w+\\s+)?on\\s+(?:only\\s+)?("
+                    + "\\s+on\\s+("
                     + IDENTIFIER + ")(?:\\s+using\\s+\\w+)?\\s*\\((.*?)\\)\\s*"
-                    + "(?:include\\s*\\([^)]*\\)\\s*)?(where\\b.*)?$");
+                    + "(where\\b.*)?$");
 
     public List<StructuredSqlEvent> extractEvents(String ddl, String sourceName) {
         List<StructuredSqlEvent> events = new ArrayList<>();
@@ -83,7 +83,7 @@ public final class DdlStructuredEventVisitor {
             long line,
             List<StructuredSqlEvent> events
     ) {
-        Matcher tableMatcher = CREATE_TABLE.matcher(statement);
+        Matcher tableMatcher = createTablePattern().matcher(statement);
         if (!tableMatcher.find()) {
             return;
         }
@@ -150,7 +150,7 @@ public final class DdlStructuredEventVisitor {
     }
 
     private void extractAlterTable(String statement, String sourceName, long line, List<StructuredSqlEvent> events) {
-        Matcher alter = ALTER_TABLE.matcher(statement);
+        Matcher alter = alterTablePattern().matcher(statement);
         if (!alter.find()) {
             return;
         }
@@ -179,7 +179,10 @@ public final class DdlStructuredEventVisitor {
      * evidence for relation scoring and are therefore skipped.
      */
     private void extractCreateIndex(String statement, String sourceName, long line, List<StructuredSqlEvent> events) {
-        Matcher index = CREATE_INDEX.matcher(statement.trim());
+        if (!acceptCreateIndexStatement(statement)) {
+            return;
+        }
+        Matcher index = createIndexPattern().matcher(statement.trim());
         if (!index.find()) {
             return;
         }
@@ -224,15 +227,31 @@ public final class DdlStructuredEventVisitor {
                 Map.of("table", table, "column", column, "role", role, "kind", kind));
     }
 
-    private boolean isTableUniqueDefinition(String lower) {
+    protected Pattern createTablePattern() {
+        return CREATE_TABLE;
+    }
+
+    protected Pattern alterTablePattern() {
+        return ALTER_TABLE;
+    }
+
+    protected Pattern createIndexPattern() {
+        return CREATE_INDEX;
+    }
+
+    protected boolean acceptCreateIndexStatement(String statement) {
+        return true;
+    }
+
+    protected boolean isTableUniqueDefinition(String lower) {
         return lower.startsWith("unique")
                 || lower.startsWith("unique key")
                 || lower.startsWith("unique index")
                 || lower.startsWith("constraint") && lower.contains(" unique");
     }
 
-    private boolean isTableIndexDefinition(String lower) {
-        return lower.startsWith("index ") || lower.startsWith("key ");
+    protected boolean isTableIndexDefinition(String lower) {
+        return false;
     }
 
     private List<String> columnsInsideLastParens(String text) {

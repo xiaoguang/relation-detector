@@ -1,0 +1,10 @@
+id: postgres-official-expression-access-method-index-ddl
+databaseType: POSTGRESQL
+parserTarget: DDL
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: public
+parserModes: simple-ddl,antlr-ddl-shadow,antlr-ddl-primary
+input: input.ddl.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

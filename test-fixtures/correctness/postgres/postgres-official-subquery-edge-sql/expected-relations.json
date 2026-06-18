@@ -1,0 +1,16 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:orders->invoices:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:orders->payments:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:orders->users:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:products->orders:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:refunds->orders:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:refunds->payments:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_SUBQUERY_IN",
+    "FK_LIKE:order_items.product_id->products.id:SQL_LOG_SUBQUERY_IN",
+    "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_EXISTS"
+  ],
+  "forbiddenTables": [
+    "projected_orders"
+  ]
+}

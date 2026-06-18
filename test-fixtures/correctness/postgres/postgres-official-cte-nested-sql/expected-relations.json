@@ -1,0 +1,15 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:departments->departments:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": [
+    "base_orders",
+    "customer_orders",
+    "customer_regions",
+    "department_tree"
+  ]
+}
