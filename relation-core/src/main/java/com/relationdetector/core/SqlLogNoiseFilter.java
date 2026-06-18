@@ -114,7 +114,6 @@ public final class SqlLogNoiseFilter {
         return refs;
     }
 
-    @SuppressWarnings("unchecked")
     static Set<String> systemSchemasFromStatementOrDialect(SqlStatementRecord statement, String dialect) {
         Object configured = statement.attributes().get("logSystemSchemas");
         if (configured instanceof Iterable<?> iterable) {

@@ -58,24 +58,6 @@ public final class SimpleSqlRelationParser {
             "(?i)\\b(?:from|join|straight_join)\\s+(?:\\{\\s*oj\\s+)?\\(*\\s*([`\"\\w.]+)(?:\\s+(?:as\\s+)?" + ALIAS_KEYWORD_GUARD + "([`\"\\w]+))?");
 
     /*
-     * Extracts the raw FROM list before WHERE for old-style comma joins.
-     *
-     * Complete SQL example:
-     *   SELECT *
-     *   FROM users u, audit_logs l, security_events se
-     *   WHERE l.user_id = u.id AND se.user_id = u.id
-     *
-     * Purpose:
-     *   The normal FROM_OR_JOIN pattern only sees the first table after FROM.
-     *   This pattern lets AliasExtractor add the remaining comma-separated
-     *   tables so parseCoOccurrence can produce table-level relationships.
-     *
-     * Limit:
-     *   If the FROM block contains explicit JOIN, we leave it to FROM_OR_JOIN.
-     */
-    private static final Pattern FROM_BLOCK = Pattern.compile("(?is)\\bfrom\\s+(.+?)(?:\\bwhere\\b|$)");
-
-    /*
      * Recognizes equality predicates between two aliased columns.
      *
      * Complete SQL examples:

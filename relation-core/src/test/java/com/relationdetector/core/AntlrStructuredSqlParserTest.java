@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.SqlStatementRecord;
 import com.relationdetector.api.StructuredParseResult;
-import com.relationdetector.api.StructuredSqlEvent;
 import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.StructuredParseEventType;

@@ -20,7 +20,6 @@ import com.relationdetector.api.SqlStatementRecord;
 import com.relationdetector.api.StructuredParseResult;
 import com.relationdetector.api.StructuredSqlEvent;
 import com.relationdetector.api.WarningMessage;
-import com.relationdetector.api.Enums.StructuredParseEventType;
 import com.relationdetector.api.Enums.WarningType;
 import com.relationdetector.core.antlr.RelationSqlLexer;
 import com.relationdetector.core.antlr.RelationSqlParser;
@@ -120,83 +119,6 @@ public class AntlrStructuredSqlParser implements StructuredSqlParser {
     }
 
     /**
-     * Extracts table references from tokens following FROM/JOIN/UPDATE/INTO.
-     *
-     * <p>Complete SQL examples handled here:
-     *
-     * <pre>{@code
-     * SELECT * FROM orders o JOIN users u ON o.user_id = u.id
-     * SELECT * FROM "public"."orders" AS o JOIN "public"."users" u ON o.user_id = u.id
-     * UPDATE orders o SET status = 'X' FROM users u WHERE o.user_id = u.id
-     * INSERT INTO order_archive SELECT * FROM orders o JOIN users u ON o.user_id = u.id
-     * }</pre>
-     */
-    private List<StructuredSqlEvent> extractTableReferences(SqlStatementRecord statement, List<Token> tokens) {
-        List<StructuredSqlEvent> events = new ArrayList<>();
-        for (int i = 0; i < tokens.size(); i++) {
-            String lower = lower(tokens.get(i));
-            if (!lower.equals("from") && !lower.equals("join") && !lower.equals("update") && !lower.equals("into")) {
-                continue;
-            }
-            IdentifierRead table = readQualifiedIdentifier(tokens, i + 1);
-            if (table == null) {
-                continue;
-            }
-            int aliasIndex = table.nextIndex;
-            if (aliasIndex < tokens.size() && lower(tokens.get(aliasIndex)).equals("as")) {
-                aliasIndex++;
-            }
-            String alias = null;
-            if (aliasIndex < tokens.size() && isIdentifier(tokens.get(aliasIndex)) && !isKeyword(lower(tokens.get(aliasIndex)))) {
-                alias = cleanIdentifier(tokens.get(aliasIndex).getText());
-            }
-            Map<String, Object> attributes = new LinkedHashMap<>();
-            attributes.put("keyword", lower.toUpperCase(Locale.ROOT));
-            attributes.put("qualifiedTable", table.qualifiedName);
-            attributes.put("table", baseName(table.qualifiedName));
-            if (alias != null) {
-                attributes.put("alias", alias);
-            }
-            events.add(new StructuredSqlEvent(StructuredParseEventType.TABLE_REFERENCE,
-                    statement.sourceName(), line(statement, tokens.get(i)), attributes));
-        }
-        return events;
-    }
-
-    /**
-     * Extracts simple equality predicates between two qualified column names.
-     *
-     * <p>This intentionally mirrors the existing lightweight parser's first
-     * useful predicate shape:
-     *
-     * <pre>{@code
-     * SELECT * FROM orders o JOIN users u ON o.user_id = u.id
-     * SELECT * FROM `orders` o JOIN `users` u ON o.`user_id` = u.`id`
-     * }</pre>
-     */
-    private List<StructuredSqlEvent> extractColumnEqualities(SqlStatementRecord statement, List<Token> tokens) {
-        List<StructuredSqlEvent> events = new ArrayList<>();
-        for (int i = 0; i < tokens.size(); i++) {
-            if (!tokens.get(i).getText().equals("=")) {
-                continue;
-            }
-            ColumnRead left = readColumnBackwards(tokens, i - 1);
-            ColumnRead right = readColumnForward(tokens, i + 1);
-            if (left == null || right == null) {
-                continue;
-            }
-            Map<String, Object> attributes = new LinkedHashMap<>();
-            attributes.put("leftAlias", left.qualifier);
-            attributes.put("leftColumn", left.column);
-            attributes.put("rightAlias", right.qualifier);
-            attributes.put("rightColumn", right.column);
-            events.add(new StructuredSqlEvent(StructuredParseEventType.COLUMN_EQUALITY,
-                    statement.sourceName(), line(statement, tokens.get(i)), attributes));
-        }
-        return events;
-    }
-
-    /**
      * Detects dynamic SQL that cannot be safely resolved by static parsing.
      *
      * <p>Examples:
@@ -223,75 +145,6 @@ public class AntlrStructuredSqlParser implements StructuredSqlParser {
                 statement.sourceName(),
                 statement.startLine(),
                 attributes));
-    }
-
-    private IdentifierRead readQualifiedIdentifier(List<Token> tokens, int index) {
-        if (index >= tokens.size() || !isIdentifier(tokens.get(index))) {
-            return null;
-        }
-        List<String> parts = new ArrayList<>();
-        int cursor = index;
-        parts.add(cleanIdentifier(tokens.get(cursor++).getText()));
-        while (cursor + 1 < tokens.size() && tokens.get(cursor).getText().equals(".") && isIdentifier(tokens.get(cursor + 1))) {
-            cursor++;
-            parts.add(cleanIdentifier(tokens.get(cursor++).getText()));
-        }
-        return new IdentifierRead(String.join(".", parts), cursor);
-    }
-
-    private ColumnRead readColumnForward(List<Token> tokens, int index) {
-        if (index + 2 >= tokens.size() || !isIdentifier(tokens.get(index)) || !tokens.get(index + 1).getText().equals(".")
-                || !isIdentifier(tokens.get(index + 2))) {
-            return null;
-        }
-        return new ColumnRead(cleanIdentifier(tokens.get(index).getText()), cleanIdentifier(tokens.get(index + 2).getText()));
-    }
-
-    private ColumnRead readColumnBackwards(List<Token> tokens, int index) {
-        if (index - 2 < 0 || !isIdentifier(tokens.get(index)) || !tokens.get(index - 1).getText().equals(".")
-                || !isIdentifier(tokens.get(index - 2))) {
-            return null;
-        }
-        return new ColumnRead(cleanIdentifier(tokens.get(index - 2).getText()), cleanIdentifier(tokens.get(index).getText()));
-    }
-
-    private boolean isIdentifier(Token token) {
-        int type = token.getType();
-        return type == RelationSqlLexer.IDENTIFIER || type == RelationSqlLexer.QUOTED_IDENTIFIER;
-    }
-
-    private boolean isKeyword(String lower) {
-        return switch (lower) {
-            case "on", "where", "join", "left", "right", "inner", "outer", "full", "cross", "using", "natural",
-                    "group", "order", "having", "limit", "union", "set", "values", "select", "from" -> true;
-            default -> false;
-        };
-    }
-
-    private String cleanIdentifier(String value) {
-        if ((value.startsWith("`") && value.endsWith("`")) || (value.startsWith("\"") && value.endsWith("\""))) {
-            return value.substring(1, value.length() - 1);
-        }
-        return value;
-    }
-
-    private String baseName(String qualifiedName) {
-        int dot = qualifiedName.lastIndexOf('.');
-        return dot >= 0 ? qualifiedName.substring(dot + 1) : qualifiedName;
-    }
-
-    private String lower(Token token) {
-        return cleanIdentifier(token.getText()).toLowerCase(Locale.ROOT);
-    }
-
-    private long line(SqlStatementRecord statement, Token token) {
-        return statement.startLine() + Math.max(0, token.getLine() - 1);
-    }
-
-    private record IdentifierRead(String qualifiedName, int nextIndex) {
-    }
-
-    private record ColumnRead(String qualifier, String column) {
     }
 
     public record ParsedSql(
