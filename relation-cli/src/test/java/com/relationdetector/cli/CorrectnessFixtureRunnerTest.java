@@ -51,7 +51,7 @@ import com.relationdetector.postgres.PostgresDatabaseAdaptor;
  *
  * <p>Large SQL/DDL examples and their golden expectations belong under
  * {@code test-fixtures/correctness}. Java tests still cover local behavior such
- * as config parsing, mock JDBC collectors, fallback branches, and merger
+ * as config parsing, mock JDBC collectors, warning diagnostics, and merger
  * internals; this runner is the shared baseline for input-to-relation
  * correctness.
  */

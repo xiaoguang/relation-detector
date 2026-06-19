@@ -142,7 +142,7 @@ class PostgresTokenEventDialectBoundaryTest {
     }
 
     @Test
-    void postgresRelationVisitorDoesNotInheritMysqlOnlyStraightJoinFallback() {
+    void postgresRelationVisitorDoesNotInheritMysqlOnlyStraightJoinCompatibility() {
         java.util.List<RelationshipCandidate> relations = postgresRelations(
                 "SELECT * FROM orders o STRAIGHT_JOIN users u ON o.user_id = u.id");
 
@@ -150,7 +150,7 @@ class PostgresTokenEventDialectBoundaryTest {
     }
 
     @Test
-    void postgresRelationVisitorDoesNotInheritMysqlOnlyOdbcPartitionIndexHintOrJsonTableFallbacks() {
+    void postgresRelationVisitorDoesNotInheritMysqlOnlyOdbcPartitionIndexHintOrJsonTableCompatibility() {
         java.util.List<String> mysqlOnlySql = java.util.List.of(
                 "SELECT STRAIGHT_JOIN * FROM orders o JOIN users u ON o.user_id = u.id",
                 "SELECT * FROM { OJ orders o LEFT OUTER JOIN users u ON o.user_id = u.id }",
@@ -173,7 +173,7 @@ class PostgresTokenEventDialectBoundaryTest {
     }
 
     @Test
-    void postgresRelationVisitorDoesNotInheritMysqlOnlyMultiTableDmlFallbacks() {
+    void postgresRelationVisitorDoesNotInheritMysqlOnlyMultiTableDmlCompatibility() {
         java.util.List<String> mysqlOnlySql = java.util.List.of(
                 "UPDATE orders o JOIN users u ON o.user_id = u.id SET o.status = 'PAID'",
                 "UPDATE orders o, users u SET o.status = 'PAID' WHERE o.user_id = u.id",
@@ -189,7 +189,7 @@ class PostgresTokenEventDialectBoundaryTest {
     }
 
     @Test
-    void postgresRelationVisitorOwnsOnlyAndTableSampleFallback() {
+    void postgresRelationVisitorOwnsOnlyAndTableSampleCompatibility() {
         java.util.List<RelationshipCandidate> relations = postgresRelations("""
                 SELECT *
                 FROM ONLY orders o TABLESAMPLE SYSTEM (10)
@@ -199,7 +199,7 @@ class PostgresTokenEventDialectBoundaryTest {
         assertTrue(relations.stream().anyMatch(relation ->
                 relation.source().displayName().equals("orders.user_id")
                         && relation.target().displayName().equals("users.id")),
-                () -> "Postgres visitor must own ONLY/TABLESAMPLE rowset fallback: " + relations);
+                () -> "Postgres Token/Event builder must own ONLY/TABLESAMPLE rowset compatibility: " + relations);
         assertFalse(relations.stream().anyMatch(relation ->
                 relation.source().table().tableName().equalsIgnoreCase("ONLY")
                         || relation.target().table().tableName().equalsIgnoreCase("ONLY")

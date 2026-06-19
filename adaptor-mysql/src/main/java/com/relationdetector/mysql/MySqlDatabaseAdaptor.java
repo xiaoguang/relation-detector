@@ -153,7 +153,8 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
      * <p>This class is the adaptor-side implementation of the common
      * {@link MetadataCollector} SPI. It only reads database-owned metadata; SQL text
      * from procedures/views/triggers is handled by {@link MySqlObjectCollector} and
-     * then parsed by the MySQL ANTLR SQL parser.
+     * then parsed by the MySQL Token/Event SQL parser, with ANTLR used only as
+     * low-level lexer/parser support.
      *
      * <p>Call relationship:
      * <pre>

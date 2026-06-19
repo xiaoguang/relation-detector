@@ -16,7 +16,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.relationdetector.api.AdaptorContext;
 import com.relationdetector.api.DatabaseDdlDefinition;
 import com.relationdetector.api.Evidence;
 import com.relationdetector.api.RelationshipCandidate;
@@ -25,9 +24,7 @@ import com.relationdetector.api.SqlStatementRecord;
 import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.DatabaseObjectType;
-import com.relationdetector.api.Enums.EvidenceSourceType;
 import com.relationdetector.api.Enums.StatementSourceType;
-import com.relationdetector.core.DdlRelationParserRunner;
 import com.relationdetector.core.ScanConfig;
 import com.relationdetector.core.SqlLogNoiseFilter;
 import com.relationdetector.core.SqlRelationParserRunner;
@@ -72,11 +69,10 @@ public final class MySqlBasicCorrectnessFixtureExporter {
             Path root = ROOT.resolve(caseDirectory);
             Path ddlFixture = root.resolve("ddl/show-create-tables.sql");
             Path sqlFixture = root.resolve("sql/performance-schema-statements.sql");
-            Path ddlGolden = root.resolve("golden/ddl-parser-comparison.json");
             Path sqlGolden = root.resolve("golden/sql-parser-comparison.json");
             Files.createDirectories(ddlFixture.getParent());
             Files.createDirectories(sqlFixture.getParent());
-            Files.createDirectories(ddlGolden.getParent());
+            Files.createDirectories(sqlGolden.getParent());
             Path procedureFixture = root.resolve("sql/routines-procedures.sql");
             Path functionFixture = root.resolve("sql/routines-functions.sql");
             Path correctnessRoot = Path.of("test-fixtures/correctness/mysql");
@@ -88,7 +84,6 @@ public final class MySqlBasicCorrectnessFixtureExporter {
             try (Connection connection = DriverManager.getConnection(urlPrefix + schema + urlOptions, username, password)) {
                 MySqlDatabaseAdaptor adaptor = new MySqlDatabaseAdaptor();
                 ScanScope scope = new ScanScope(null, schema, List.of(), List.of());
-                ScanConfig config = config(schema);
 
                 List<WarningMessage> ddlWarnings = new ArrayList<>();
                 List<DatabaseDdlDefinition> definitions = adaptor.databaseDdlCollector()
@@ -100,8 +95,6 @@ public final class MySqlBasicCorrectnessFixtureExporter {
                         .toList();
                 String ddlText = writeDdlFixture(caseId, anonymizedSchema, definitions);
                 Files.writeString(ddlFixture, ddlText);
-                Files.writeString(ddlGolden, ddlGolden(adaptor, config, scope, ddlText,
-                        definitions.size(), ddlWarnings, caseId, ddlFixture));
 
                 List<SqlSample> samples = collectSqlSamples(connection, schema);
                 String sqlText = writeSqlFixture(caseId, samples);
@@ -120,7 +113,6 @@ public final class MySqlBasicCorrectnessFixtureExporter {
 
             System.out.println("Generated " + ddlFixture);
             System.out.println("Generated " + sqlFixture);
-            System.out.println("Generated " + ddlGolden);
             System.out.println("Generated " + sqlGolden);
             System.out.println("Generated " + procedureFixture);
             System.out.println("Generated " + functionFixture);
@@ -170,34 +162,6 @@ public final class MySqlBasicCorrectnessFixtureExporter {
             out.append(definition.ddl().stripTrailing()).append(";\n\n");
         }
         return out.toString();
-    }
-
-    private static String ddlGolden(
-            MySqlDatabaseAdaptor adaptor,
-            ScanConfig config,
-            ScanScope scope,
-            String ddlFixture,
-            int definitionCount,
-            List<WarningMessage> ddlWarnings,
-            String caseId,
-            Path fixturePath
-    ) throws Exception {
-        List<RelationshipCandidate> relations = new DdlRelationParserRunner().parseText(
-                adaptor,
-                config,
-                ddlFixture,
-                fixturePath.toString(),
-                EvidenceSourceType.DATABASE_DDL,
-                new AdaptorContext(scope, Map.of(), ddlWarnings::add));
-
-        Map<String, Object> json = new LinkedHashMap<>();
-        json.put("caseId", caseId);
-        json.put("fixture", fixturePath.toString());
-        json.put("fixtureSha256", sha256(ddlFixture));
-        json.put("ddlDefinitions", definitionCount);
-        json.put("relationCount", relations.size());
-        json.put("warningCodes", warningCodes(ddlWarnings));
-        return toJson(json);
     }
 
     private static List<SqlSample> collectSqlSamples(Connection connection, String schema) {

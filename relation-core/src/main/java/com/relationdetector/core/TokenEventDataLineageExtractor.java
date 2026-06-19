@@ -38,6 +38,13 @@ public final class TokenEventDataLineageExtractor {
             StructuredParseResult structured,
             Set<TableId> knownPhysicalTables
     ) {
+        /*
+         * Data Lineage v1 only filters local temporary tables when the SQL text
+         * explicitly declares them through LOCAL_TEMP_TABLE_DECLARATION events.
+         * knownPhysicalTables is intentionally kept as a future extension point
+         * for metadata-aware lineage, but it must not reintroduce name-based temp
+         * table guessing.
+         */
         return extractNative(statement, structured);
     }
 
@@ -72,7 +79,7 @@ public final class TokenEventDataLineageExtractor {
             BigDecimal score = score(transform, flowKind);
             candidate.confidence(score);
             Map<String, Object> attributes = new LinkedHashMap<>();
-            attributes.put("tokenEventV2Native", true);
+            attributes.put("tokenEventNative", true);
             attributes.put("mappingKind", text(event, "mappingKind"));
             candidate.attributes().putAll(attributes);
             candidate.evidence().add(new DataLineageEvidence(

@@ -97,8 +97,6 @@ public final class PostgresBasicCorrectnessFixtureExporter {
 
             Path rawGolden = caseNaming.rawRoot().resolve("golden");
             Files.createDirectories(rawGolden);
-            Files.writeString(rawGolden.resolve("ddl-parser-comparison.json"),
-                    ddlGolden(adaptor, config(anonymizedSchema), scope, ddlText, tables.size(), caseId, ddlFixture));
             Files.writeString(rawGolden.resolve("object-sql-parser-comparison.json"),
                     sqlGolden(adaptor, scope, objectSqlText, objectSamples, caseId, objectSqlFixture));
             Files.writeString(rawGolden.resolve("statement-sql-parser-comparison.json"),
@@ -390,33 +388,6 @@ public final class PostgresBasicCorrectnessFixtureExporter {
             out.append("-- relation-detector-fixture-end\n\n");
         }
         return out.toString();
-    }
-
-    private static String ddlGolden(
-            PostgresDatabaseAdaptor adaptor,
-            ScanConfig config,
-            ScanScope scope,
-            String ddlText,
-            int tableCount,
-            String caseId,
-            Path fixturePath
-    ) throws Exception {
-        List<RelationshipCandidate> relations = new DdlRelationParserRunner().parseText(
-                adaptor,
-                config,
-                ddlText,
-                fixturePath.toString(),
-                EvidenceSourceType.DATABASE_DDL,
-                new AdaptorContext(scope, Map.of(), warning -> {
-                }));
-
-        Map<String, Object> json = new LinkedHashMap<>();
-        json.put("caseId", caseId);
-        json.put("fixture", fixturePath.toString());
-        json.put("fixtureSha256", sha256(ddlText));
-        json.put("tables", tableCount);
-        json.put("relationCount", relations.size());
-        return toJson(json);
     }
 
     private static String sqlGolden(

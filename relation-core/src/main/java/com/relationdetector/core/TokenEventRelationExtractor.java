@@ -387,7 +387,7 @@ public final class TokenEventRelationExtractor {
                 statement.sourceName(),
                 detail,
                 Map.of("joinKind", joinKind.isBlank() ? "WHERE_OR_UNKNOWN" : joinKind,
-                        "tokenEventV2Native", true)));
+                        "tokenEventNative", true)));
         return candidate;
     }
 
@@ -447,7 +447,7 @@ public final class TokenEventRelationExtractor {
                 statement.sourceName(),
                 detail,
                 Map.of("joinKind", "IN_SUBQUERY",
-                        "tokenEventV2Native", true)));
+                        "tokenEventNative", true)));
         return candidate;
     }
 
@@ -470,7 +470,7 @@ public final class TokenEventRelationExtractor {
                 statement.sourceName(),
                 detail,
                 Map.of("joinKind", joinKind.isBlank() ? "WHERE_OR_UNKNOWN" : joinKind,
-                        "tokenEventV2Native", true)));
+                        "tokenEventNative", true)));
         return candidate;
     }
 

@@ -16,9 +16,9 @@ import com.relationdetector.api.Enums.StructuredParseEventType;
 /**
  * Extracts relationship-relevant structural events from ANTLR tokens.
  *
- * <p>Design mapping: Phase 6 ANTLR-only parser. The generated parser owns
- * dialect syntax; this visitor owns the small dialect-neutral event contract
- * consumed by diagnostics and future relation extraction:
+ * <p>ANTLR provides low-level lexer/parser support. This class owns the small
+ * dialect-neutral event contract consumed by Token/Event relationship and
+ * data-lineage extraction:
  *
  * <pre>{@code
  * StructuredSqlParser
@@ -27,11 +27,11 @@ import com.relationdetector.api.Enums.StructuredParseEventType;
  *   -> TABLE_REFERENCE / COLUMN_EQUALITY events
  * }</pre>
  *
- * <p>The visitor works on tokens rather than a rich parse-tree model in this
- * first phase because the grammar is still deliberately tolerant. MySQL and
+ * <p>The visitor works on tokens rather than a rich parse-tree model because
+ * the grammar is deliberately tolerant. MySQL and
  * PostgreSQL subclasses provide different identifier token ids and unquoting
  * rules, which is enough to prove the parser stack is truly dialect-owned
- * while keeping the relationship output owned by the ANTLR relation visitor.
+ * while keeping relationship output owned by the Token/Event extractor.
  */
 public class TokenEventSqlTokenSupport {
     private final String name;

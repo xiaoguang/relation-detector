@@ -43,7 +43,7 @@ import com.relationdetector.api.Enums.StatementSourceType;
  * <p>Legacy parser modes have been removed. The runner now always
  * invokes the Token/Event parser exposed for the dialect, and a hard parser
  * failure is surfaced as a warning by {@link ScanEngine} rather than being
- * hidden by any removed fallback parser.
+ * hidden by any removed parser path.
  */
 class SqlRelationParserRunnerTest {
     @Test
@@ -62,7 +62,7 @@ class SqlRelationParserRunnerTest {
     }
 
     @Test
-    void runnerDoesNotFallbackToSimpleWhenAdaptorParserHardFails() {
+    void runnerDoesNotUseRemovedParserWhenAdaptorParserHardFails() {
         ScanConfig config = new ScanConfig();
         List<WarningMessage> warnings = new ArrayList<>();
 
@@ -74,7 +74,7 @@ class SqlRelationParserRunnerTest {
         } catch (IllegalStateException ex) {
             assertEquals("Token/Event parser exploded", ex.getMessage());
         }
-        assertTrue(warnings.isEmpty(), "runner must not emit fallback warnings after old parser removal");
+        assertTrue(warnings.isEmpty(), "runner must not emit removed-parser warnings after old parser removal");
     }
 
     @Test

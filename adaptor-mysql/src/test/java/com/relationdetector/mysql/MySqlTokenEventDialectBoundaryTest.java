@@ -101,7 +101,7 @@ class MySqlTokenEventDialectBoundaryTest {
     }
 
     @Test
-    void mysqlRelationVisitorOwnsMysqlOnlyStraightJoinFallback() {
+    void mysqlRelationVisitorOwnsMysqlOnlyStraightJoinCompatibility() {
         SqlStatementRecord statement = new SqlStatementRecord(
                 "SELECT * FROM orders o STRAIGHT_JOIN users u ON o.user_id = u.id",
                 StatementSourceType.PLAIN_SQL,
@@ -115,38 +115,38 @@ class MySqlTokenEventDialectBoundaryTest {
         assertTrue(relations.stream().anyMatch(relation ->
                 relation.source().displayName().equals("orders.user_id")
                         && relation.target().displayName().equals("users.id")),
-                () -> "MySQL visitor must own STRAIGHT_JOIN rowset fallback: " + relations);
+                () -> "MySQL Token/Event builder must own STRAIGHT_JOIN rowset compatibility: " + relations);
     }
 
     @Test
-    void mysqlRelationVisitorOwnsMysqlSelectStraightJoinModifierFallback() {
+    void mysqlRelationVisitorOwnsMysqlSelectStraightJoinModifierCompatibility() {
         java.util.List<RelationshipCandidate> relations = mysqlRelations(
                 "SELECT STRAIGHT_JOIN * FROM orders o JOIN users u ON o.user_id = u.id");
 
         assertHasRelation(relations, "orders.user_id", "users.id",
-                "MySQL visitor must own SELECT STRAIGHT_JOIN modifier fallback");
+                "MySQL Token/Event builder must own SELECT STRAIGHT_JOIN modifier compatibility");
     }
 
     @Test
-    void mysqlRelationVisitorOwnsPartitionAndIndexHintFallbacks() {
+    void mysqlRelationVisitorOwnsPartitionAndIndexHintCompatibility() {
         java.util.List<RelationshipCandidate> partitionRelations = mysqlRelations(
                 "SELECT * FROM orders PARTITION (p202501) o JOIN users u ON o.user_id = u.id");
         java.util.List<RelationshipCandidate> hintRelations = mysqlRelations(
                 "SELECT * FROM orders o FORCE INDEX FOR JOIN (idx_orders_user) JOIN users u USE INDEX (PRIMARY) ON o.user_id = u.id");
 
         assertHasRelation(partitionRelations, "orders.user_id", "users.id",
-                "MySQL visitor must own PARTITION table-reference fallback");
+                "MySQL Token/Event builder must own PARTITION table-reference compatibility");
         assertHasRelation(hintRelations, "orders.user_id", "users.id",
-                "MySQL visitor must own FORCE/USE INDEX hint fallback");
+                "MySQL Token/Event builder must own FORCE/USE INDEX hint compatibility");
     }
 
     @Test
-    void mysqlRelationVisitorOwnsOdbcOuterJoinFallback() {
+    void mysqlRelationVisitorOwnsOdbcOuterJoinCompatibility() {
         java.util.List<RelationshipCandidate> relations = mysqlRelations(
                 "SELECT * FROM { OJ orders o LEFT OUTER JOIN users u ON o.user_id = u.id }");
 
         assertHasRelation(relations, "orders.user_id", "users.id",
-                "MySQL visitor must own ODBC { OJ ... } outer join fallback");
+                "MySQL Token/Event builder must own ODBC { OJ ... } outer join compatibility");
     }
 
     @Test
@@ -170,7 +170,7 @@ class MySqlTokenEventDialectBoundaryTest {
     }
 
     @Test
-    void mysqlRelationVisitorOwnsMysqlMultiTableDmlFallbacks() {
+    void mysqlRelationVisitorOwnsMysqlMultiTableDmlCompatibility() {
         java.util.List<RelationshipCandidate> updateRelations = mysqlRelations(
                 "UPDATE orders o JOIN users u ON o.user_id = u.id SET o.status = 'PAID'");
         java.util.List<RelationshipCandidate> commaUpdateRelations = mysqlRelations(
@@ -181,13 +181,13 @@ class MySqlTokenEventDialectBoundaryTest {
                 "DELETE FROM o USING orders o JOIN users u ON o.user_id = u.id");
 
         assertHasRelation(updateRelations, "orders.user_id", "users.id",
-                "MySQL visitor must own UPDATE JOIN fallback");
+                "MySQL Token/Event builder must own UPDATE JOIN compatibility");
         assertHasRelation(commaUpdateRelations, "orders.user_id", "users.id",
-                "MySQL visitor must own comma UPDATE fallback");
+                "MySQL Token/Event builder must own comma UPDATE compatibility");
         assertHasRelation(deleteRelations, "orders.user_id", "users.id",
-                "MySQL visitor must own DELETE target FROM fallback");
+                "MySQL Token/Event builder must own DELETE target FROM compatibility");
         assertHasRelation(deleteUsingRelations, "orders.user_id", "users.id",
-                "MySQL visitor must own DELETE FROM target USING fallback");
+                "MySQL Token/Event builder must own DELETE FROM target USING compatibility");
     }
 
     @Test

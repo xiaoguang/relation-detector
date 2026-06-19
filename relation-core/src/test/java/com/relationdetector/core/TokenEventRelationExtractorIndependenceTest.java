@@ -22,7 +22,7 @@ import com.relationdetector.api.Enums.StructuredParseEventType;
  * <p>These tests deliberately give {@link TokenEventRelationExtractor} structured
  * events that do not match the raw SQL text. Relationship extraction must stay
  * inside the Token/Event pipeline; empty events must not trigger raw SQL
- * fallback or any removed parser.
+ * rescan or any removed parser.
  */
 class TokenEventRelationExtractorIndependenceTest {
     @Test
@@ -45,7 +45,7 @@ class TokenEventRelationExtractorIndependenceTest {
     }
 
     @Test
-    void emptyStructuredEventsDoNotUseRawSqlFallback() {
+    void emptyStructuredEventsDoNotRescanRawSql() {
         SqlStatementRecord statement = record("SELECT * FROM orders o JOIN users u ON o.user_id = u.id");
         StructuredParseResult structured = structured(List.of());
 
@@ -55,7 +55,7 @@ class TokenEventRelationExtractorIndependenceTest {
     }
 
     @Test
-    void tokenEventExtractorDoesNotOwnMysqlOnlyStraightJoinFallback() {
+    void tokenEventExtractorDoesNotOwnMysqlOnlyStraightJoinCompatibility() {
         SqlStatementRecord statement = record("SELECT * FROM orders o STRAIGHT_JOIN users u ON o.user_id = u.id");
         StructuredParseResult structured = structured(List.of());
 
@@ -67,7 +67,7 @@ class TokenEventRelationExtractorIndependenceTest {
     }
 
     @Test
-    void tokenEventExtractorDoesNotOwnPostgresOnlyOnlyFallback() {
+    void tokenEventExtractorDoesNotOwnPostgresOnlyOnlyCompatibility() {
         SqlStatementRecord statement = record("SELECT * FROM ONLY orders o JOIN users u ON o.user_id = u.id");
         StructuredParseResult structured = structured(List.of());
 
@@ -79,7 +79,7 @@ class TokenEventRelationExtractorIndependenceTest {
     }
 
     @Test
-    void tokenEventExtractorDoesNotOwnMysqlOnlyOdbcIndexHintJsonTableOrPartitionFallbacks() {
+    void tokenEventExtractorDoesNotOwnMysqlOnlyOdbcIndexHintJsonTableOrPartitionCompatibility() {
         List<String> mysqlOnlySql = List.of(
                 "SELECT * FROM { OJ orders o LEFT OUTER JOIN users u ON o.user_id = u.id }",
                 "SELECT * FROM orders o FORCE INDEX FOR JOIN (idx_orders_user) JOIN users u ON o.user_id = u.id",

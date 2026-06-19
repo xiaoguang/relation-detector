@@ -21,13 +21,21 @@ import org.junit.jupiter.api.Test;
 class TokenEventArchitectureCleanupTest {
     private static final List<Pattern> FORBIDDEN_PATTERNS = List.of(
             Pattern.compile("\\bTokenEventV2\\w*"),
+            Pattern.compile("\\b\\w*V2\\w*\\b"),
             Pattern.compile("\\bToken/Event v2\\b"),
+            Pattern.compile("\\btokenEventV2Native\\b"),
+            Pattern.compile("\\bread\\w+V2\\b"),
+            Pattern.compile("\\bNativeV2Events\\b"),
+            Pattern.compile("\\bDataLineageV2\\b"),
+            Pattern.compile("\\brelationV2Only\\b"),
             Pattern.compile("\\bv2 primary\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bproduction v2\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bv2-only\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bshadow runner\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\blegacy current ANTLR\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bcurrent ANTLR\\b", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bCurrentParser\\w*\\b"),
+            Pattern.compile("\\bcurrent parser\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bStructuredSqlEventVisitor\\b"),
             Pattern.compile("\\bAntlrStructuredSqlParser\\b"),
             Pattern.compile("\\bAntlrStructuredDdlParser\\b"),
@@ -49,7 +57,11 @@ class TokenEventArchitectureCleanupTest {
             Pattern.compile("\\bmissing current\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bextra v2\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bDdlParser\\s+ddlParser\\s*\\("),
-            Pattern.compile("\\bddlParser\\s*\\(")
+            Pattern.compile("\\bddlParser\\s*\\("),
+            Pattern.compile("\\bparser\\.ddl\\.mode\\b"),
+            Pattern.compile("\\bparser\\.ddl\\.fallbackOnFailure\\b"),
+            Pattern.compile("\\bantlr-ddl-primary\\b"),
+            Pattern.compile("\\bddl-parser-comparison\\.json\\b")
     );
 
     @Test
@@ -68,7 +80,11 @@ class TokenEventArchitectureCleanupTest {
                 root.resolve("docs/design"),
                 root.resolve("docs/test-assets-map.md"),
                 root.resolve("docs/code-implementation-guide.md"),
-                root.resolve("docs/relation-detector-execution-plan.md")
+                root.resolve("docs/design/sql-lineage-resolver.md"),
+                root.resolve("docs/relation-detector-execution-plan.md"),
+                root.resolve("test-fixtures/examples"),
+                root.resolve("test-fixtures/mysql/basic-correctness"),
+                root.resolve("test-fixtures/postgres/basic-correctness")
         );
 
         List<String> violations;
@@ -101,7 +117,11 @@ class TokenEventArchitectureCleanupTest {
 
     private static boolean isRelevantFile(Path path) {
         String name = path.getFileName().toString();
-        return name.endsWith(".java") || name.endsWith(".md");
+        return name.endsWith(".java")
+                || name.endsWith(".md")
+                || name.endsWith(".yml")
+                || name.endsWith(".yaml")
+                || name.endsWith(".json");
     }
 
     private static Stream<String> violationsIn(Path path) {
@@ -124,6 +144,9 @@ class TokenEventArchitectureCleanupTest {
         if (fileName.equals("RelationExtractionVisitorIndependenceTest.java")) {
             return Stream.of(path + " uses old RelationExtractionVisitor test naming");
         }
+        if (fileName.equals("ddl-parser-comparison.json")) {
+            return Stream.of(path + " keeps old DDL parser comparison golden");
+        }
         return Stream.empty();
     }
 
@@ -132,12 +155,14 @@ class TokenEventArchitectureCleanupTest {
         String regex = pattern.pattern();
         if (!(regex.contains("parser\\.sql\\.mode")
                 || regex.contains("parser\\.ddl\\.mode")
+                || regex.contains("parser\\.ddl\\.fallbackOnFailure")
                 || regex.contains("antlr-shadow")
                 || regex.contains("simple-ddl")
                 || regex.contains("antlr-ddl-shadow"))) {
             return false;
         }
         return normalized.endsWith("ParserConfigRemovalTest.java")
+                || normalized.endsWith("SimpleYamlConfigLoader.java")
                 || normalized.endsWith("docs/design/phase-03-adaptor-api-spi.md")
                 || normalized.endsWith("docs/design/phase-06-parser-enhancement.md")
                 || normalized.endsWith("docs/design/phase-08-output-ux.md")

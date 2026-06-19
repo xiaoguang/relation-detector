@@ -38,7 +38,7 @@ class ParserConfigRemovalTest {
     }
 
     @Test
-    void defaultConfigurationHasNoParserModeFallbackSurface() throws Exception {
+    void defaultConfigurationHasNoLegacyParserModeSurface() throws Exception {
         Path file = Files.createTempFile("relation-detector-parser-mode-default", ".yml");
         Files.writeString(file, """
                 database:

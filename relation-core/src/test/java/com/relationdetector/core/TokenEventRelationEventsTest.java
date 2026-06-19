@@ -45,7 +45,7 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void extractsBasicFkLikeRelationFromNativeV2EventsWithoutCurrentParserEvents() {
+    void extractsBasicFkLikeRelationFromTokenEventNativeEventsUsingTokenEventEventsOnly() {
         SqlStatementRecord statement = statement("""
                 SELECT *
                 FROM orders o
@@ -70,7 +70,7 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void extractsExistsAndScalarInRelationsFromNativeV2EventsWithoutCurrentParserEvents() {
+    void extractsExistsAndScalarInRelationsFromTokenEventNativeEventsUsingTokenEventEventsOnly() {
         SqlStatementRecord statement = statement("""
                 SELECT *
                 FROM orders o
@@ -107,7 +107,7 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void extractsTupleInRelationsFromNativeV2EventsWithoutCurrentParserEvents() {
+    void extractsTupleInRelationsFromTokenEventNativeEventsUsingTokenEventEventsOnly() {
         SqlStatementRecord statement = statement("""
                 SELECT *
                 FROM orders o
@@ -167,7 +167,7 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void extractsRelationsFromNativeV2RowsetReferencesWithoutCurrentTableEvents() {
+    void extractsRelationsFromTokenEventNativeRowsetReferencesWithoutCurrentTableEvents() {
         SqlStatementRecord statement = statement("""
                 SELECT *
                 FROM orders o, users u
@@ -198,7 +198,7 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void extractsColumnCoOccurrenceForAmbiguousDmlEqualityFromNativeV2Events() {
+    void extractsColumnCoOccurrenceForAmbiguousDmlEqualityFromTokenEventNativeEvents() {
         SqlStatementRecord statement = statement("""
                 UPDATE warehouse_inventory wi
                 JOIN order_items oi ON wi.product_id = oi.product_id
@@ -229,7 +229,7 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void extractsRelationsThroughDerivedProjectionFromNativeV2Events() {
+    void extractsRelationsThroughDerivedProjectionFromTokenEventNativeEvents() {
         SqlStatementRecord statement = statement("""
                 UPDATE users u
                 LEFT JOIN (
@@ -241,7 +241,7 @@ class TokenEventRelationEventsTest {
                 """);
         StructuredParseResult full = new TokenEventStructuredSqlParser(SqlDialect.MYSQL).parseSql(statement, null);
 
-        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, relationV2Only(full))
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, tokenEventRelationOnly(full))
                 .stream()
                 .map(this::relationFingerprint)
                 .sorted()
@@ -251,7 +251,7 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void extractsRelationsThroughCteAliasProjectionFromNativeV2Events() {
+    void extractsRelationsThroughCteAliasProjectionFromTokenEventNativeEvents() {
         SqlStatementRecord statement = statement("""
                 WITH recent_orders AS (
                     SELECT o.id AS order_id, o.customer_id
@@ -266,7 +266,7 @@ class TokenEventRelationEventsTest {
                 """);
         StructuredParseResult full = new TokenEventStructuredSqlParser(SqlDialect.POSTGRES).parseSql(statement, null);
 
-        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, relationV2Only(full))
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, tokenEventRelationOnly(full))
                 .stream()
                 .map(this::relationFingerprint)
                 .sorted()
@@ -278,14 +278,14 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void extractsMysqlOdbcOuterJoinFromNativeV2Events() {
+    void extractsMysqlOdbcOuterJoinFromTokenEventNativeEvents() {
         SqlStatementRecord statement = statement("""
                 SELECT o.id, c.id
                 FROM { OJ orders AS o LEFT OUTER JOIN customers AS c ON o.customer_id = c.id }
                 """);
         StructuredParseResult full = new TokenEventStructuredSqlParser(SqlDialect.MYSQL).parseSql(statement, null);
 
-        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, relationV2Only(full))
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, tokenEventRelationOnly(full))
                 .stream()
                 .map(this::relationFingerprint)
                 .sorted()
@@ -295,7 +295,7 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void extractsRelationsThroughMultiLayerCteProjectionFromNativeV2Events() {
+    void extractsRelationsThroughMultiLayerCteProjectionFromTokenEventNativeEvents() {
         SqlStatementRecord statement = statement("""
                 WITH "a" AS (
                   SELECT o.id AS order_id, o.customer_id
@@ -318,7 +318,7 @@ class TokenEventRelationEventsTest {
                 """);
         StructuredParseResult full = new TokenEventStructuredSqlParser(SqlDialect.POSTGRES).parseSql(statement, null);
 
-        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, relationV2Only(full))
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, tokenEventRelationOnly(full))
                 .stream()
                 .map(this::relationFingerprint)
                 .sorted()
@@ -331,7 +331,7 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void extractsMysqlAndPostgresDmlRelationsFromNativeV2Events() {
+    void extractsMysqlAndPostgresDmlRelationsFromTokenEventNativeEvents() {
         SqlStatementRecord mysqlDelete = statement("""
                 DELETE o, oi
                 FROM orders o, order_items oi, users u
@@ -339,7 +339,7 @@ class TokenEventRelationEventsTest {
                   AND o.user_id = u.id
                 """);
         StructuredParseResult mysqlFull = new TokenEventStructuredSqlParser(SqlDialect.MYSQL).parseSql(mysqlDelete, null);
-        List<String> mysqlFingerprints = new TokenEventRelationExtractor().extract(mysqlDelete, relationV2Only(mysqlFull))
+        List<String> mysqlFingerprints = new TokenEventRelationExtractor().extract(mysqlDelete, tokenEventRelationOnly(mysqlFull))
                 .stream()
                 .map(this::relationFingerprint)
                 .sorted()
@@ -353,7 +353,7 @@ class TokenEventRelationEventsTest {
                   AND s.merchant_id = m.id
                 """);
         StructuredParseResult postgresFull = new TokenEventStructuredSqlParser(SqlDialect.POSTGRES).parseSql(postgresUpdate, null);
-        List<String> postgresFingerprints = new TokenEventRelationExtractor().extract(postgresUpdate, relationV2Only(postgresFull))
+        List<String> postgresFingerprints = new TokenEventRelationExtractor().extract(postgresUpdate, tokenEventRelationOnly(postgresFull))
                 .stream()
                 .map(this::relationFingerprint)
                 .sorted()
@@ -368,7 +368,7 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void emitsAndExtractsNativeUpdateAssignmentsForDataLineageV2() {
+    void emitsAndExtractsNativeUpdateAssignmentsForTokenEventDataLineage() {
         SqlStatementRecord statement = statement("""
                 UPDATE users u
                 JOIN orders o ON o.user_id = u.id
@@ -394,7 +394,7 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void emitsAndExtractsNativeInsertSelectAndMergeMappingsForDataLineageV2() {
+    void emitsAndExtractsNativeInsertSelectAndMergeMappingsForTokenEventDataLineage() {
         SqlStatementRecord insert = statement("""
                 INSERT INTO order_archive (order_id, user_id)
                 SELECT o.id, o.user_id
@@ -433,7 +433,7 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
-    void extractsDerivedAggregateLineageFromNativeV2Events() {
+    void extractsDerivedAggregateLineageFromTokenEventNativeEvents() {
         SqlStatementRecord statement = statement("""
                 UPDATE users u
                 LEFT JOIN (
@@ -498,7 +498,7 @@ class TokenEventRelationEventsTest {
         return result.events().stream().anyMatch(event -> event.type() == type);
     }
 
-    private StructuredParseResult relationV2Only(StructuredParseResult full) {
+    private StructuredParseResult tokenEventRelationOnly(StructuredParseResult full) {
         return new StructuredParseResult(
                 full.backend(),
                 full.dialect(),

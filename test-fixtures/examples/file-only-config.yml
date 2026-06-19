@@ -38,14 +38,6 @@ sources:
     timeoutSeconds: 30
     maxCandidatePairs: 1000
 
-parser:
-  sql:
-    mode: antlr-primary
-    fallbackOnFailure: true
-  ddl:
-    mode: antlr-ddl-primary
-    fallbackOnFailure: true
-
 output:
   format: json
   minConfidence: 0.20

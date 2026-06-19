@@ -53,7 +53,7 @@ class DdlRelationParserRunnerTest {
     }
 
     @Test
-    void ddlRunnerDoesNotFallbackToSimpleWhenStructuredParserFindsNoRelations() throws Exception {
+    void ddlRunnerDoesNotUseRemovedParserWhenStructuredParserFindsNoRelations() throws Exception {
         Path ddl = ddlFile();
         AtomicInteger structuredCalls = new AtomicInteger();
         ScanConfig config = new ScanConfig();
@@ -62,7 +62,7 @@ class DdlRelationParserRunnerTest {
                 .parse(new TestAdaptor(emptyStructuredDdlParser(structuredCalls)),
                         config, ddl, context(new ArrayList<>()));
 
-        assertTrue(relations.isEmpty(), "empty ANTLR DDL output must not be replaced by an old parser output");
+        assertTrue(relations.isEmpty(), "empty Token/Event DDL output must not be replaced by an old parser output");
         assertEquals(1, structuredCalls.get());
     }
 

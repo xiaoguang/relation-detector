@@ -3,7 +3,7 @@ package com.relationdetector.core;
 import java.util.regex.Pattern;
 
 /**
- * PostgreSQL-specific DDL event extractor for the ANTLR DDL path.
+ * PostgreSQL-specific DDL event extractor for the Token/Event DDL path.
  *
  * <p>PostgreSQL has DDL modifiers that look like ordinary identifiers to a
  * generic scanner, such as {@code ONLY}, {@code CONCURRENTLY},
@@ -21,7 +21,10 @@ public final class PostgresDdlStructuredEventVisitor extends DdlStructuredEventV
                     + INDEX_NAME
                     + "\\s+on\\s+(?:only\\s+)?("
                     + IDENTIFIER + ")(?:\\s+using\\s+\\w+)?\\s*\\((.*?)\\)\\s*"
-                    + "(?:include\\s*\\([^)]*\\)\\s*)?(where\\b.*)?$");
+                    + "(?:include\\s*\\([^)]*\\)\\s*)?"
+                    + "(?:with\\s*\\([^)]*\\)\\s*)?"
+                    + "(?:tablespace\\s+\\w+\\s*)?"
+                    + "(where\\b.*)?$");
 
     @Override
     protected Pattern alterTablePattern() {

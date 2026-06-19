@@ -209,7 +209,7 @@ default Optional<DatabaseDdlCollector> databaseDdlCollector() {
 
 - 从 live database 读取表定义 DDL 文本，但不直接生成关系。
 - MySQL v1 使用 `SHOW CREATE TABLE schema.table`，返回 `DatabaseDdlDefinition(schema, table, ddl, "SHOW CREATE TABLE")`。
-- `ScanEngine` 把返回的 DDL text 喂给 `DdlRelationParserRunner.parseText(...)`，因此统一走 ANTLR DDL extraction。
+- `ScanEngine` 把返回的 DDL text 喂给 `DdlRelationParserRunner.parseText(...)`，因此统一走 Token/Event DDL extraction。
 - 解析出的 evidence 使用 `EvidenceSourceType.DATABASE_DDL`，与用户提供的 `DDL_FILE` 区分。
 - collector 必须遵守 `includeTables/excludeTables`，并且单表读取失败时记录 warning 后继续读取其它表。
 

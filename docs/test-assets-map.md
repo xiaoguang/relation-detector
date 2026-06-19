@@ -13,7 +13,7 @@ Token/Event 当前状态：MySQL/PostgreSQL SQL relation、Data Lineage 和 DDL 
 ## 当前默认策略
 
 - MySQL/PostgreSQL SQL parser 以方言 Token/Event parser 为唯一正确性基线。
-- MySQL/PostgreSQL DDL parser 以方言 ANTLR DDL event pipeline 为唯一正确性基线。
+- MySQL/PostgreSQL DDL parser 以方言 Token/Event DDL pipeline 为唯一正确性基线。
 - `simple`、`antlr-shadow`、`simple-ddl`、`antlr-ddl-shadow` 以及对应 parser mode/fallback 配置已经移除；配置中出现旧 key 时应报错。
 - SQL Server/Oracle 只保留接口和 future fixture，不在本轮 primary 切换范围内。
 
@@ -21,7 +21,7 @@ Token/Event 当前状态：MySQL/PostgreSQL SQL relation、Data Lineage 和 DDL 
 
 | 路径 | 类型 | 作用 |
 | --- | --- | --- |
-| `relation-core/src/test/java/com/relationdetector/core` | Java 单元/集成测试 | core parser、runner、scoring、warning、metadata enhancer、fallback 行为 |
+| `relation-core/src/test/java/com/relationdetector/core` | Java 单元/集成测试 | core parser、runner、scoring、warning、metadata enhancer、diagnostics 行为 |
 | `adaptor-mysql/src/test/java/com/relationdetector/mysql` | Java 单元/导出工具测试 | MySQL adaptor、DDL parser、metadata collector、真实库 fixture golden |
 | `adaptor-postgres/src/test/java/com/relationdetector/postgres` | Java 单元/导出工具测试 | Postgres adaptor、DDL parser、真实库 fixture exporter |
 | `relation-cli/src/test/java/com/relationdetector/cli` | Java CLI/config/fixture runner 测试 | YAML/CLI 配置、统一 correctness fixture runner |
@@ -52,9 +52,9 @@ Token/Event 当前状态：MySQL/PostgreSQL SQL relation、Data Lineage 和 DDL 
 | `DialectSqlRelationParserComplexMatrixTest` | SQL primary / Token/Event | 复杂 JOIN/CTE/DML 方言场景直接跑 MySQL/PostgreSQL Token/Event parser；含 1 个 SQL Server future fixture skipped |
 | `DialectParserEvidenceConfidenceTest` | SQL primary / Token/Event / confidence | evidence type/source type、joinKind、confidence 示例；验证 correlated EXISTS 输出 `SQL_LOG_EXISTS` 而不是普通 `SQL_LOG_JOIN` |
 | `TokenEventSqlNoiseAndUsingTest` | SQL primary / Token/Event / noise filter | 系统 schema、截断 token、JOIN USING 防误报 |
-| `SqlParserAdditionalSourceTypesTest` | SQL primary / Token/Event / warning-fallback | view/procedure/trigger/function/rule/event/package/migration 等 source type 行为 |
-| `ScanEngineDiagnosticsTest` | warning-fallback | parse failure、raw SQL/DDL warning 保留 |
-| `ScanEngineObjectWarningProvenanceTest` | warning-fallback | routine/object warning provenance 字段 |
+| `SqlParserAdditionalSourceTypesTest` | SQL primary / Token/Event / warning diagnostics | view/procedure/trigger/function/rule/event/package/migration 等 source type 行为 |
+| `ScanEngineDiagnosticsTest` | warning diagnostics | parse failure、raw SQL/DDL warning 保留 |
+| `ScanEngineObjectWarningProvenanceTest` | warning diagnostics | routine/object warning provenance 字段 |
 | `ScanEngineDatabaseDdlSourceTest` | DDL primary / metadata | 数据库内 DDL source 接入 ScanEngine |
 | `MetadataEvidenceEnhancerTest` | metadata / confidence | TARGET_UNIQUE、SOURCE_INDEX、COLUMN_TYPE_COMPATIBLE 增强 |
 | `RelationshipMergerEvidenceAggregationTest` | confidence | raw/aggregated evidence、递减增益和上限 |
@@ -97,7 +97,7 @@ Token/Event 当前状态：MySQL/PostgreSQL SQL relation、Data Lineage 和 DDL 
 | `postgres/ddl-partial-index-boundary` | DDL primary / metadata | partial index 不作为全局唯一证据 |
 | `postgres/ddl-unique-include-index` | DDL primary | `CREATE UNIQUE INDEX ... INCLUDE` |
 | `postgres/postgres-basic-correctness-case-01-ddl` | DDL primary / real fixture | 真实 Postgres catalog DDL，186 张表，516 条关系 |
-| `postgres/postgres-basic-correctness-case-01-objects-sql` | SQL primary / warning-fallback / real fixture | 真实 object SQL；当前主要验证 `DYNAMIC_SQL_UNRESOLVED` warning |
+| `postgres/postgres-basic-correctness-case-01-objects-sql` | SQL primary / warning diagnostics / real fixture | 真实 object SQL；当前主要验证 `DYNAMIC_SQL_UNRESOLVED` warning |
 | `postgres/postgres-basic-correctness-case-01-statements-sql` | SQL primary / real fixture | `pg_stat_statements` 样本入口；当前无可用样本 |
 | `postgres/sql-delete-using-no-alias` | SQL primary | Postgres DELETE USING，无 alias 情况 |
 | `postgres/sql-lateral-derived` | SQL primary | LATERAL/derived table 伪表过滤 |
@@ -121,7 +121,7 @@ Token/Event 当前状态：MySQL/PostgreSQL SQL relation、Data Lineage 和 DDL 
 | MySQL SQL 是否为 Token/Event primary | 是 | MySQL correctness fixture、noise filter、UPDATE/DELETE/JOIN 矩阵均以 Token/Event SQL gold 验收 |
 | Postgres SQL 是否为 Token/Event primary | 是 | Postgres correctness fixture、真实库对象/statement 样本、三份复杂 SQL 样本均以 Token/Event SQL gold 验收 |
 | SQL Server/Oracle SQL 是否可 primary | 不切 | 当前只保留接口和 future fixture，尚未建立独立 adaptor/golden 验收 |
-| warning/fallback 链路是否有保护 | 有 | runner、diagnostics、object provenance、dynamic SQL warning、parser failure warning 均有测试 |
+| warning/diagnostics 链路是否有保护 | 有 | runner、diagnostics、object provenance、dynamic SQL warning、parser failure warning 均有测试 |
 | metadata 增强是否有保护 | 有 | MySQL metadata facts、database DDL collector、metadata evidence enhancer 测试覆盖 |
 | confidence 是否有保护 | 有 | confidence examples、evidence aggregation、dialect parser evidence/confidence 测试覆盖；correlated EXISTS 验证为 `SQL_LOG_EXISTS`，且同 endpoint pair 不应再重复产出普通 `SQL_LOG_JOIN` 造成虚高计分 |
 | noise filter 是否有保护 | 有 | MySQL system log fixture、ANTLR USING/noise 单元测试覆盖 |

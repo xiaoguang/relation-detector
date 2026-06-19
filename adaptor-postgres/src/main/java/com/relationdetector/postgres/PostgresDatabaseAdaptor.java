@@ -140,7 +140,8 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
      * {@link MetadataCollector} SPI. It reads only authoritative catalog data.
      * SQL bodies from functions/procedures/views are collected by
      * {@link PostgresObjectCollector}; SQL text relationship inference then happens
-     * in the PostgreSQL ANTLR SQL parser.
+     * in the PostgreSQL Token/Event SQL parser, with ANTLR used only as
+     * low-level lexer/parser support.
      *
      * <p>Call relationship:
      * <pre>

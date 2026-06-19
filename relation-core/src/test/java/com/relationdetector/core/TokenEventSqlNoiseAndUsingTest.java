@@ -84,7 +84,7 @@ class TokenEventSqlNoiseAndUsingTest {
     }
 
     @Test
-    void tokenEventV2CoversNoiseAndUsingWithoutLegacyTableCoOccurrence() {
+    void tokenEventCoversNoiseAndUsingWithoutLegacyTableCoOccurrence() {
         SqlStatementRecord usingStatement = statement("""
                 SELECT *
                 FROM orders o

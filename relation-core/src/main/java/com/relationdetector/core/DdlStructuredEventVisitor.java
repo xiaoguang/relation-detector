@@ -54,11 +54,17 @@ public class DdlStructuredEventVisitor {
     public List<StructuredSqlEvent> extractEvents(String ddl, String sourceName) {
         List<StructuredSqlEvent> events = new ArrayList<>();
         int statementIndex = 0;
-        for (String statement : splitTopLevel(ddl, ';')) {
+        for (String statement : DdlTokenCursor.splitTopLevel(ddl, ';')) {
             statementIndex++;
-            extractCreateTable(statement, sourceName, statementIndex, events);
-            extractAlterTable(statement, sourceName, statementIndex, events);
-            extractCreateIndex(statement, sourceName, statementIndex, events);
+            DdlStatementView view = DdlStatementView.of(statement, statementIndex);
+            switch (view.kind()) {
+                case CREATE_TABLE -> extractCreateTable(view.text(), sourceName, view.statementIndex(), events);
+                case ALTER_TABLE -> extractAlterTable(view.text(), sourceName, view.statementIndex(), events);
+                case CREATE_INDEX -> extractCreateIndex(view.text(), sourceName, view.statementIndex(), events);
+                case OTHER -> {
+                    // Other DDL statements do not currently emit relationship evidence.
+                }
+            }
         }
         return events;
     }
@@ -89,11 +95,11 @@ public class DdlStructuredEventVisitor {
         }
         String table = tableMatcher.group(1);
         int bodyStart = statement.indexOf('(', tableMatcher.end() - 1);
-        int bodyEnd = findMatchingParen(statement, bodyStart);
+        int bodyEnd = DdlTokenCursor.findMatchingParen(statement, bodyStart);
         if (bodyStart < 0 || bodyEnd < 0) {
             return;
         }
-        for (String item : splitTopLevel(statement.substring(bodyStart + 1, bodyEnd), ',')) {
+        for (String item : DdlTokenCursor.splitTopLevel(statement.substring(bodyStart + 1, bodyEnd), ',')) {
             String trimmed = item.trim();
             if (trimmed.isBlank()) {
                 continue;
@@ -132,7 +138,7 @@ public class DdlStructuredEventVisitor {
             long line,
             List<StructuredSqlEvent> events
     ) {
-        String column = firstIdentifier(item);
+        String column = DdlTokenCursor.firstIdentifier(item);
         if (column.isBlank()) {
             return;
         }
@@ -259,7 +265,7 @@ public class DdlStructuredEventVisitor {
         if (open < 0) {
             return List.of();
         }
-        int close = findMatchingParen(text, open);
+        int close = DdlTokenCursor.findMatchingParen(text, open);
         if (close < 0) {
             return List.of();
         }
@@ -274,7 +280,7 @@ public class DdlStructuredEventVisitor {
         if (open < 0) {
             return List.of();
         }
-        int close = findMatchingParen(text, open);
+        int close = DdlTokenCursor.findMatchingParen(text, open);
         if (close < 0) {
             return List.of();
         }
@@ -283,8 +289,8 @@ public class DdlStructuredEventVisitor {
 
     private List<String> columns(String rawColumns) {
         List<String> result = new ArrayList<>();
-        for (String item : splitTopLevel(rawColumns, ',')) {
-            String column = firstIdentifier(item.trim());
+        for (String item : DdlTokenCursor.splitTopLevel(rawColumns, ',')) {
+            String column = DdlTokenCursor.firstIdentifier(item.trim());
             if (!column.isBlank()) {
                 result.add(column);
             }
@@ -294,131 +300,19 @@ public class DdlStructuredEventVisitor {
 
     private List<IndexPart> indexParts(String rawColumns) {
         List<IndexPart> result = new ArrayList<>();
-        for (String item : splitTopLevel(rawColumns, ',')) {
+        for (String item : DdlTokenCursor.splitTopLevel(rawColumns, ',')) {
             result.add(parseIndexPart(item.trim()));
         }
         return result;
     }
 
     private IndexPart parseIndexPart(String rawPart) {
-        String part = rawPart.trim();
-        if (part.isBlank() || part.startsWith("(")) {
-            return new IndexPart("", false);
-        }
-        int identifierEnd = firstIdentifierEnd(part);
-        String column = identifierEnd > 0 ? clean(part.substring(0, identifierEnd)) : "";
-        if (column.isBlank()) {
-            return new IndexPart("", false);
-        }
-        String afterColumn = part.substring(identifierEnd).stripLeading();
-        return new IndexPart(column, !afterColumn.startsWith("("));
-    }
-
-    private String firstIdentifier(String text) {
-        int end = firstIdentifierEnd(text);
-        return end == 0 ? "" : clean(text.stripLeading().substring(0, end));
-    }
-
-    private int firstIdentifierEnd(String text) {
-        String trimmed = text.stripLeading();
-        if (trimmed.isBlank()) {
-            return 0;
-        }
-        char first = trimmed.charAt(0);
-        if (first == '`' || first == '"') {
-            int end = trimmed.indexOf(first, 1);
-            return end > 0 ? end + 1 : 0;
-        }
-        int end = 0;
-        while (end < trimmed.length() && isIdentifierPart(trimmed.charAt(end))) {
-            end++;
-        }
-        return end;
-    }
-
-    private List<String> splitTopLevel(String text, char delimiter) {
-        List<String> parts = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        int depth = 0;
-        char quote = 0;
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if ((c == '\'' || c == '"' || c == '`') && quote == 0) {
-                quote = c;
-                current.append(c);
-                continue;
-            }
-            if (c == quote) {
-                quote = 0;
-                current.append(c);
-                continue;
-            }
-            if (quote == 0 && c == '(') {
-                depth++;
-            } else if (quote == 0 && c == ')' && depth > 0) {
-                depth--;
-            }
-            if (c == delimiter && quote == 0 && depth == 0) {
-                String value = current.toString().trim();
-                if (!value.isBlank()) {
-                    parts.add(value);
-                }
-                current.setLength(0);
-            } else {
-                current.append(c);
-            }
-        }
-        String value = current.toString().trim();
-        if (!value.isBlank()) {
-            parts.add(value);
-        }
-        return parts;
-    }
-
-    private int findMatchingParen(String text, int openPosition) {
-        if (openPosition < 0) {
-            return -1;
-        }
-        int depth = 0;
-        char quote = 0;
-        for (int i = openPosition; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if ((c == '\'' || c == '"' || c == '`') && quote == 0) {
-                quote = c;
-                continue;
-            }
-            if (c == quote) {
-                quote = 0;
-                continue;
-            }
-            if (quote != 0) {
-                continue;
-            }
-            if (c == '(') {
-                depth++;
-            } else if (c == ')') {
-                depth--;
-                if (depth == 0) {
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
-
-    private boolean isIdentifierPart(char c) {
-        return Character.isLetterOrDigit(c) || c == '_' || c == '$';
+        DdlIndexPartParser.IndexPart part = DdlIndexPartParser.parse(rawPart);
+        return new IndexPart(part.column(), part.safeColumn());
     }
 
     private String clean(String identifier) {
-        if (identifier == null) {
-            return "";
-        }
-        String value = identifier.trim();
-        if ((value.startsWith("`") && value.endsWith("`")) || (value.startsWith("\"") && value.endsWith("\""))) {
-            value = value.substring(1, value.length() - 1);
-        }
-        return value;
+        return DdlTokenCursor.cleanIdentifier(identifier);
     }
 
     private record IndexPart(String column, boolean safeColumn) {

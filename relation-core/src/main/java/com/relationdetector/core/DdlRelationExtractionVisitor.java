@@ -22,7 +22,7 @@ import com.relationdetector.api.Enums.RelationType;
 import com.relationdetector.api.Enums.StructuredParseEventType;
 
 /**
- * Converts structured ANTLR DDL events into relationship candidates.
+ * Converts Token/Event DDL facts into relationship candidates.
  *
  * <p>This visitor consumes only {@link StructuredSqlEvent} facts produced by
  * {@link DdlStructuredEventVisitor} and intentionally mirrors the same
@@ -62,7 +62,7 @@ public final class DdlRelationExtractionVisitor {
                 BigDecimal.valueOf(DefaultEvidenceScores.DDL_FOREIGN_KEY),
                 EvidenceSourceType.DDL_FILE,
                 state.source(),
-                "ANTLR DDL foreign key",
+                "Token/Event DDL foreign key",
                 java.util.Map.of(
                         "compositePosition", intValue(event, "compositePosition", 1),
                         "compositeSize", intValue(event, "compositeSize", 1))));
@@ -189,11 +189,11 @@ public final class DdlRelationExtractionVisitor {
                 ColumnKey targetKey = ColumnKey.of(candidate.target().table(), candidate.target().column().columnName());
                 if (sourceIndexes.contains(sourceKey)) {
                     candidate.evidence().add(Evidence.of(EvidenceType.SOURCE_INDEX, DefaultEvidenceScores.SOURCE_INDEX,
-                            EvidenceSourceType.DDL_FILE, source, "ANTLR DDL source-side index"));
+                            EvidenceSourceType.DDL_FILE, source, "Token/Event DDL source-side index"));
                 }
                 if (targetUnique.contains(targetKey)) {
                     candidate.evidence().add(Evidence.of(EvidenceType.TARGET_UNIQUE, DefaultEvidenceScores.TARGET_UNIQUE,
-                            EvidenceSourceType.DDL_FILE, source, "ANTLR DDL target-side primary/unique key"));
+                            EvidenceSourceType.DDL_FILE, source, "Token/Event DDL target-side primary/unique key"));
                 }
             }
         }

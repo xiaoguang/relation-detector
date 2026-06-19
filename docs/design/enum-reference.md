@@ -430,8 +430,8 @@ public enum StructuredParseEventType {
 | --- | --- |
 | `TABLE_REFERENCE` | 识别出表引用和 alias。 |
 | `COLUMN_EQUALITY` | 识别出 `alias.column = alias.column` 谓词。 |
-| `DDL_FOREIGN_KEY` | ANTLR DDL event visitor 识别出的外键关系事件，包括 table-level FK、inline `REFERENCES`、`ALTER TABLE ADD CONSTRAINT`。 |
-| `DDL_INDEX` | ANTLR DDL event visitor 识别出的索引/唯一性事件，例如 source index、primary key、unique constraint、unique index。 |
+| `DDL_FOREIGN_KEY` | Token/Event DDL event visitor 识别出的外键关系事件，包括 table-level FK、inline `REFERENCES`、`ALTER TABLE ADD CONSTRAINT`。 |
+| `DDL_INDEX` | Token/Event DDL event visitor 识别出的索引/唯一性事件，例如 source index、primary key、unique constraint、unique index。 |
 | `DYNAMIC_SQL` | 为可静态还原的动态 SQL 事件预留。当前不可还原时输出 warning。 |
 
 ## 11. LogFormatHint

@@ -3,7 +3,7 @@ package com.relationdetector.core;
 import java.util.regex.Pattern;
 
 /**
- * MySQL-specific DDL event extractor for the ANTLR DDL path.
+ * MySQL-specific DDL event extractor for the Token/Event DDL path.
  *
  * <p>The shared {@link DdlStructuredEventVisitor} keeps only conservative
  * cross-dialect DDL. MySQL-only index spelling, inline {@code KEY}/{@code INDEX}

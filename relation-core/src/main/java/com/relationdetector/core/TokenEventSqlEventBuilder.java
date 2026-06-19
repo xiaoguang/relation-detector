@@ -76,8 +76,8 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             if (!tokens.get(index).getText().equals("=") || !isSetAssignmentEquality(tokens, index)) {
                 continue;
             }
-            ColumnRead left = readColumnBackwardsV2(tokens, index - 1);
-            ColumnRead right = readColumnForwardV2(tokens, index + 1);
+            ColumnRead left = readTokenEventColumnBackwards(tokens, index - 1);
+            ColumnRead right = readTokenEventColumnForward(tokens, index + 1);
             if (left == null || right == null) {
                 continue;
             }
@@ -103,8 +103,8 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
                 continue;
             }
             boolean setAssignment = isSetAssignmentEquality(tokens, index);
-            ColumnRead left = readColumnBackwardsV2(tokens, index - 1);
-            ColumnRead right = readColumnForwardV2(tokens, index + 1);
+            ColumnRead left = readTokenEventColumnBackwards(tokens, index - 1);
+            ColumnRead right = readTokenEventColumnForward(tokens, index + 1);
             if (left == null && right != null) {
                 left = readColumnBackwardsWithDefault(tokens, index - 1, defaultOuterRowsetBefore(tokens, index));
             }
@@ -254,7 +254,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             }
             return;
         }
-        IdentifierRead table = readQualifiedIdentifierV2(tokens, actualTableIndex);
+        IdentifierRead table = readTokenEventQualifiedIdentifier(tokens, actualTableIndex);
         if (table == null || isCommonNonTableKeyword(table.qualifiedName)) {
             return;
         }
@@ -377,7 +377,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
                 cursor++;
             }
             while (cursor < tokens.size()) {
-                IdentifierRead name = readQualifiedIdentifierV2(tokens, cursor);
+                IdentifierRead name = readTokenEventQualifiedIdentifier(tokens, cursor);
                 if (name == null) {
                     break;
                 }
@@ -445,7 +445,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         if (update < 0 || set < 0) {
             return events;
         }
-        IdentifierRead target = readQualifiedIdentifierV2(tokens, update + 1);
+        IdentifierRead target = readTokenEventQualifiedIdentifier(tokens, update + 1);
         if (target != null) {
             addWriteTarget(statement, tokens, events, update, target.qualifiedName, aliasAfter(tokens, target.nextIndex), "UPDATE");
         }
@@ -475,7 +475,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         if (insert < 0 || into < 0) {
             return events;
         }
-        IdentifierRead target = readQualifiedIdentifierV2(tokens, into + 1);
+        IdentifierRead target = readTokenEventQualifiedIdentifier(tokens, into + 1);
         if (target == null || target.nextIndex >= tokens.size() || !tokens.get(target.nextIndex).getText().equals("(")) {
             return events;
         }
@@ -519,7 +519,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         if (merge < 0 || into < 0) {
             return events;
         }
-        IdentifierRead target = readQualifiedIdentifierV2(tokens, into + 1);
+        IdentifierRead target = readTokenEventQualifiedIdentifier(tokens, into + 1);
         if (target == null) {
             return events;
         }
@@ -688,7 +688,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
                 cursor++;
             }
             while (cursor < tokens.size()) {
-                IdentifierRead name = readQualifiedIdentifierV2(tokens, cursor);
+                IdentifierRead name = readTokenEventQualifiedIdentifier(tokens, cursor);
                 if (name == null || name.nextIndex >= tokens.size()) {
                     break;
                 }
@@ -741,7 +741,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             if (!temporary || cursor >= tokens.size() || !lower(tokens.get(cursor)).equals("table")) {
                 continue;
             }
-            IdentifierRead table = readQualifiedIdentifierV2(tokens, cursor + 1);
+            IdentifierRead table = readTokenEventQualifiedIdentifier(tokens, cursor + 1);
             if (table == null) {
                 continue;
             }
@@ -766,7 +766,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
                 if (!lower(tokens.get(cursor)).equals("on")) {
                     continue;
                 }
-                IdentifierRead target = readQualifiedIdentifierV2(tokens, cursor + 1);
+                IdentifierRead target = readTokenEventQualifiedIdentifier(tokens, cursor + 1);
                 if (target == null) {
                     continue;
                 }
@@ -974,8 +974,8 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             if (!tokens.get(index).getText().equals("=")) {
                 continue;
             }
-            ColumnRead left = readColumnBackwardsV2(tokens, index - 1);
-            ColumnRead right = readColumnForwardV2(tokens, index + 1);
+            ColumnRead left = readTokenEventColumnBackwards(tokens, index - 1);
+            ColumnRead right = readTokenEventColumnForward(tokens, index + 1);
             if (left != null && right != null) {
                 return new ColumnEquality(left, right);
             }
@@ -1003,7 +1003,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         if (selectIndex < 0 || fromIndex < 0) {
             return null;
         }
-        IdentifierRead table = readQualifiedIdentifierV2(tokens, fromIndex + 1);
+        IdentifierRead table = readTokenEventQualifiedIdentifier(tokens, fromIndex + 1);
         if (table == null) {
             return null;
         }
@@ -1041,7 +1041,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             cursor++;
             endExclusive--;
         }
-        ColumnRead selected = readColumnForwardV2(tokens, cursor);
+        ColumnRead selected = readTokenEventColumnForward(tokens, cursor);
         int consumedUntil = selected == null ? cursor + 1 : cursor + 3;
         if (selected == null) {
             selected = readColumnForwardWithDefaultForProjection(tokens, cursor, defaultQualifier);
@@ -1096,7 +1096,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             return null;
         }
         List<ColumnRead> columns = readColumnList(tokens, selectIndex + 1, fromIndex);
-        IdentifierRead table = readQualifiedIdentifierV2(tokens, fromIndex + 1);
+        IdentifierRead table = readTokenEventQualifiedIdentifier(tokens, fromIndex + 1);
         if (columns.isEmpty() || table == null) {
             return null;
         }
@@ -1114,7 +1114,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
     private List<ColumnRead> readColumnList(List<Token> tokens, int startInclusive, int endExclusive) {
         List<ColumnRead> columns = new ArrayList<>();
         for (int index = startInclusive; index < endExclusive; index++) {
-            ColumnRead column = readColumnForwardV2(tokens, index);
+            ColumnRead column = readTokenEventColumnForward(tokens, index);
             if (column != null) {
                 columns.add(column);
                 index += 2;
@@ -1153,7 +1153,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         return columns;
     }
 
-    private ColumnRead readColumnForwardV2(List<Token> tokens, int index) {
+    private ColumnRead readTokenEventColumnForward(List<Token> tokens, int index) {
         if (index + 2 >= tokens.size() || !tokens.get(index + 1).getText().equals(".")) {
             return null;
         }
@@ -1188,7 +1188,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         return new ColumnRead(defaultQualifier, column);
     }
 
-    private ColumnRead readColumnBackwardsV2(List<Token> tokens, int index) {
+    private ColumnRead readTokenEventColumnBackwards(List<Token> tokens, int index) {
         if (index - 2 < 0 || !tokens.get(index - 1).getText().equals(".")) {
             return null;
         }
@@ -1201,7 +1201,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
     }
 
     private ColumnRead readColumnBackwardsWithDefault(List<Token> tokens, int index, String defaultQualifier) {
-        ColumnRead qualified = readColumnBackwardsV2(tokens, index);
+        ColumnRead qualified = readTokenEventColumnBackwards(tokens, index);
         if (qualified != null || defaultQualifier.isBlank() || index < 0) {
             return qualified;
         }
@@ -1236,7 +1236,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         return value.length() >= 2 && value.startsWith("'") && value.endsWith("'");
     }
 
-    private IdentifierRead readQualifiedIdentifierV2(List<Token> tokens, int index) {
+    private IdentifierRead readTokenEventQualifiedIdentifier(List<Token> tokens, int index) {
         if (index >= tokens.size()) {
             return null;
         }
@@ -1348,7 +1348,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         if (actualTableIndex >= tokens.size() || tokens.get(actualTableIndex).getText().equals("(")) {
             return "";
         }
-        IdentifierRead table = readQualifiedIdentifierV2(tokens, actualTableIndex);
+        IdentifierRead table = readTokenEventQualifiedIdentifier(tokens, actualTableIndex);
         if (table == null || isCommonNonTableKeyword(table.qualifiedName)) {
             return "";
         }
@@ -1588,7 +1588,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
 
     private ColumnRead readAssignmentTarget(List<Token> tokens, int startInclusive, int endExclusive) {
         for (int index = startInclusive; index < endExclusive; index++) {
-            ColumnRead qualified = readColumnForwardV2(tokens, index);
+            ColumnRead qualified = readTokenEventColumnForward(tokens, index);
             if (qualified != null) {
                 return qualified;
             }
@@ -1602,7 +1602,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
 
     private ColumnRead firstColumnInSpan(List<Token> tokens, int startInclusive, int endExclusive) {
         for (int index = startInclusive; index < endExclusive; index++) {
-            ColumnRead column = readColumnForwardV2(tokens, index);
+            ColumnRead column = readTokenEventColumnForward(tokens, index);
             if (column != null) {
                 return column;
             }
@@ -1623,7 +1623,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
     }
 
     private String defaultProjectionSourceQualifier(List<Token> tokens, int fromIndex) {
-        IdentifierRead table = readQualifiedIdentifierV2(tokens, fromIndex + 1);
+        IdentifierRead table = readTokenEventQualifiedIdentifier(tokens, fromIndex + 1);
         if (table == null) {
             return "";
         }
