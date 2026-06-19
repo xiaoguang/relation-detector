@@ -67,6 +67,30 @@ class SqlLineageResolverTest {
         assertEquals("public.orders.id", orderId.get().displayName());
     }
 
+    @Test
+    void resolvesCteAliasIntroducedByCommaRowset() {
+        String sql = """
+                WITH user_financial_snapshot AS (
+                  SELECT t.user_id
+                  FROM transaction_ledgers t
+                ),
+                dormant_risk_scores AS (
+                  SELECT u.id AS user_id
+                  FROM users u, user_financial_snapshot snap
+                  WHERE u.id = snap.user_id
+                )
+                SELECT drs.user_id
+                FROM dormant_risk_scores drs
+                """;
+
+        SqlLineageResolver resolver = SqlLineageResolver.analyze(sql,
+                Set.of("user_financial_snapshot", "dormant_risk_scores"));
+
+        var snapUserId = resolver.resolve("snap", "user_id");
+        assertTrue(snapUserId.isPresent(), () -> "known rowsets=" + knownRowsets(resolver));
+        assertEquals("transaction_ledgers.user_id", snapUserId.get().displayName());
+    }
+
     private static Object knownRowsets(SqlLineageResolver resolver) {
         try {
             var field = SqlLineageResolver.class.getDeclaredField("rowsets");

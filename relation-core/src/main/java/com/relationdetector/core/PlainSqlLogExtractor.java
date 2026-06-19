@@ -40,7 +40,7 @@ public final class PlainSqlLogExtractor {
             String text = Files.readString(file);
             List<SqlStatementRecord> statements = new ArrayList<>();
             int line = 1;
-            for (String part : text.split(";")) {
+            for (String part : splitSqlStatements(text)) {
                 String sql = part.trim();
                 if (!sql.isBlank()) {
                     statements.add(new SqlStatementRecord(sql, sourceType, file.toString(), line, line + countLines(part), java.util.Map.of()));
@@ -56,5 +56,47 @@ public final class PlainSqlLogExtractor {
 
     private int countLines(String text) {
         return (int) text.chars().filter(ch -> ch == '\n').count() + 1;
+    }
+
+    /**
+     * Splits SQL text on statement semicolons while preserving semicolons that
+     * are part of string literals.
+     *
+     * <p>Complete PostgreSQL example that must remain one statement:
+     *
+     * <pre>{@code
+     * SELECT STRING_AGG(category, '; ' ORDER BY category) FROM transactions;
+     * }</pre>
+     */
+    private List<String> splitSqlStatements(String text) {
+        List<String> statements = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        char quote = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            current.append(c);
+            if (quote != 0) {
+                if (c == quote) {
+                    if (quote == '\'' && i + 1 < text.length() && text.charAt(i + 1) == '\'') {
+                        current.append(text.charAt(++i));
+                        continue;
+                    }
+                    quote = 0;
+                }
+                continue;
+            }
+            if (c == '\'' || c == '"') {
+                quote = c;
+                continue;
+            }
+            if (c == ';') {
+                statements.add(current.toString());
+                current.setLength(0);
+            }
+        }
+        if (!current.isEmpty()) {
+            statements.add(current.toString());
+        }
+        return statements;
     }
 }

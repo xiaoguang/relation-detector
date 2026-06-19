@@ -1,0 +1,10 @@
+id: basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql
+databaseType: MYSQL
+parserTarget: SQL
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+objectSourceFilter: PROCEDURE:case_01.proc_generate_purchase_inbound_from_order
+schema: case_01
+input: ../../../mysql/basic-correctness/case-01/sql/routines-procedures.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

@@ -11,7 +11,7 @@
 - adaptor 可以参与全链路扩展，但默认流程由 core 编排。
 - core 统一做候选关系归并、最终评分和输出。
 - adaptor 可以提供 evidence 权重修正，但不能绕过输出 evidence 的要求。
-- core 可以提供轻量 fallback parser，但明显属于某个数据库方言的 DDL、日志、对象定义差异应进入对应 adaptor。这样 MySQL、PostgreSQL、SQL Server、Oracle 后续可以独立演进，而不把所有语法分支堆进 core。
+- core 提供统一 runner、关系归并和评分；SQL/DDL 文本解析由对应数据库 adaptor 暴露的 Token/Event parser 承担，ANTLR 只作为底层 lexer/parser/token 支撑。明显属于某个数据库方言的 DDL、日志、对象定义差异应进入对应 adaptor。这样 MySQL、PostgreSQL、SQL Server、Oracle 后续可以独立演进，而不把所有语法分支堆进 core。
 
 ## DatabaseAdaptor 接口
 
@@ -25,9 +25,10 @@ public interface DatabaseAdaptor {
   IdentifierRules identifierRules();
   MetadataCollector metadataCollector();
   ObjectDefinitionCollector objectDefinitionCollector();
-  DdlParser ddlParser();
   SqlLogExtractor sqlLogExtractor();
   SqlRelationParser sqlRelationParser();
+  Optional<StructuredSqlParser> structuredSqlParser();
+  Optional<StructuredDdlParser> structuredDdlParser();
   Optional<DataProfiler> dataProfiler();
   EvidenceWeightAdjuster evidenceWeightAdjuster();
   AdaptorCapabilities capabilities();
@@ -134,20 +135,14 @@ public record AdaptorContext(
 
 ## 解析器接口
 
-### DdlParser
+### StructuredDdlParser
 
-```java
-public interface DdlParser {
-  List<Evidence> parseDdl(Path file, ParseContext context);
-}
-```
-
-DDL parser 可以直接产生 evidence，也可以产生 metadata-like 结构，再交给 core 转换。
+DDL 不再通过旧 `DdlParser` SPI 暴露。adaptor 只通过 `structuredDdlParser()` 返回 Token/Event DDL parser，core 的 `DdlRelationParserRunner` 负责读取 DDL 文本、调用结构化 parser、再用 `DdlRelationExtractionVisitor` 生成统一 `RelationshipCandidate`。
 
 方言拆分规则：
 
-- MySQL/PostgreSQL DDL 均走 ANTLR DDL event pipeline。MySQL 专属写法，例如反引号标识符、`KEY`/`INDEX` 选项、prefix index、invisible index、storage engine/table options、`SHOW CREATE TABLE` 格式，应在 MySQL DDL event visitor 或 `MySqlDdlParser` 中处理。
-- PostgreSQL 专属写法，例如 `ALTER TABLE ONLY`、`NOT VALID`、`CREATE INDEX CONCURRENTLY/IF NOT EXISTS`、`INCLUDE`、partial/expression index、opclass、partition/inheritance，应在 PostgreSQL DDL event visitor 或 `PostgresDdlParser` 中处理。
+- MySQL/PostgreSQL DDL 均走 Token/Event DDL pipeline。MySQL 专属写法，例如反引号标识符、`KEY`/`INDEX` 选项、prefix index、invisible index、storage engine/table options、`SHOW CREATE TABLE` 格式，应在 `MySqlDdlStructuredEventVisitor` 或 `MySqlTokenEventStructuredDdlParser` 中处理。
+- PostgreSQL 专属写法，例如 `ALTER TABLE ONLY`、`NOT VALID`、`CREATE INDEX CONCURRENTLY/IF NOT EXISTS`、`INCLUDE`、partial/expression index、opclass、partition/inheritance，应在 `PostgresDdlStructuredEventVisitor` 或 `PostgresTokenEventStructuredDdlParser` 中处理。
 - adaptor parser 的输出仍必须是统一的 `RelationshipCandidate` 和 `Evidence`，不能绕过 core 的合并与置信度计算。
 - 方言 parser 应有自己的单元测试，并包含正向和反向负向用例。这样可以证明某个数据库的语法增强不会悄悄改变其他数据库的解析行为。
 
@@ -191,14 +186,14 @@ default Optional<StructuredDdlParser> structuredDdlParser() {
 - 提供方言感知的结构化解析前端。
 - 输出 `StructuredParseResult`，包含 parser backend、dialect、结构化事件、warning 和诊断 attributes。
 - 不直接决定最终 confidence。
-- SQL 与 DDL 是两个独立 SPI，不应合并为一个 `structuredParser()`。二者可以共享底层方言 lexer/parser 规则，但 Java 端必须保留不同入口，便于独立 visitor、fallback、diagnostics 和 primary 切换。
+- SQL 与 DDL 是两个独立 SPI，不应合并为一个 `structuredParser()`。二者可以共享底层方言 lexer/parser 规则，但 Java 端必须保留不同入口，便于独立 visitor、diagnostics、warning provenance 和 correctness fixture 验收。
 
 当前策略：
 
-- MySQL adaptor 暴露 `MySqlAntlrSqlParser` / `MySqlAntlrDdlParser`。
-- PostgreSQL adaptor 暴露 `PostgresAntlrSqlParser` / `PostgresAntlrDdlParser`。
-- SQL 关系输出由 `SqlRelationParserRunner` 调度到 adaptor 的 ANTLR SQL parser。`parser.sql.mode` 和 simple/shadow fallback 已移除；ANTLR 硬失败记录 warning 后继续扫描。
-- DDL 关系输出由 `DdlRelationParserRunner` 调度到 adaptor 的 ANTLR DDL parser。`parser.ddl.mode` 和 simple-ddl/shadow fallback 已移除；ANTLR DDL 硬失败记录 warning 后继续扫描。
+- MySQL adaptor 暴露 `MySqlTokenEventStructuredSqlParser` / `MySqlTokenEventStructuredDdlParser`。
+- PostgreSQL adaptor 暴露 `PostgresTokenEventStructuredSqlParser` / `PostgresTokenEventStructuredDdlParser`。
+- SQL 关系输出由 `SqlRelationParserRunner` 调度到 adaptor 的 Token/Event SQL parser。`parser.sql.mode` 和 simple/shadow fallback 已移除；硬失败记录 warning 后继续扫描。
+- DDL 关系输出由 `DdlRelationParserRunner` 调度到 adaptor 的 Token/Event DDL parser。`parser.ddl.mode` 和 simple-ddl/shadow fallback 已移除；硬失败记录 warning 后继续扫描。
 - 第三方 adaptor 可以只实现 `structuredSqlParser()` 或只实现 `structuredDdlParser()`，但缺失的一侧不应再由 core simple parser 假装支持；应明确作为 future capability 或返回空/ warning。
 - 如果某个方言后续引入完整 ANTLR grammar，推荐在同一方言 grammar 下拆出 SQL entry rule 与 DDL entry rule，再分别返回 `StructuredSqlParser` 和 `StructuredDdlParser` 实例；不推荐把 DDL constraint、SQL join 和日志噪声过滤写进一个通用 visitor。
 

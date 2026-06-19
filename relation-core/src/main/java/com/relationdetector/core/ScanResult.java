@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.relationdetector.api.DataLineageCandidate;
 import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.WarningMessage;
 
@@ -13,6 +14,7 @@ public final class ScanResult {
     private final String schema;
     private final Instant generatedAt;
     private final List<RelationshipCandidate> relationships = new ArrayList<>();
+    private final List<DataLineageCandidate> dataLineages = new ArrayList<>();
     private final List<WarningMessage> warnings = new ArrayList<>();
     private final List<String> sources = new ArrayList<>();
 
@@ -36,6 +38,10 @@ public final class ScanResult {
 
     public List<RelationshipCandidate> relationships() {
         return relationships;
+    }
+
+    public List<DataLineageCandidate> dataLineages() {
+        return dataLineages;
     }
 
     public List<WarningMessage> warnings() {

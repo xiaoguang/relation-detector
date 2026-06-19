@@ -184,7 +184,7 @@ PostgreSQL 触发器逻辑通常在函数中，因此需要把 trigger 与 trigg
 - 识别 `statement:` 后的 SQL。
 - 识别 `execute <name>:` 后的 SQL。
 - 跳过 connection/auth/checkpoint 等非 SQL 日志。
-- 多行 SQL 按日志前缀或分号归并。
+- 多行 SQL 按日志前缀或语句级分号归并；字符串字面量中的分号不拆分，例如 `STRING_AGG(category, '; ')` 必须保留在同一条 SQL 中。
 
 ## 数据画像查询
 

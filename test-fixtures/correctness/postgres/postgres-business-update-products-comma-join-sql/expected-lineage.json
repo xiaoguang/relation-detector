@@ -1,0 +1,8 @@
+{
+  "fingerprints": [],
+  "forbiddenSources": [
+    "CURRENT_TIMESTAMP"
+  ],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

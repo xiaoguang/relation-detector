@@ -1,0 +1,9 @@
+{
+  "fingerprints": [],
+  "forbiddenSources": [
+    "o_summary.actual_total",
+    "0.00"
+  ],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

@@ -28,7 +28,6 @@ import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.SqlStatementRecord;
 import com.relationdetector.api.Collectors.DataProfiler;
 import com.relationdetector.api.Collectors.DatabaseDdlCollector;
-import com.relationdetector.api.Collectors.DdlParser;
 import com.relationdetector.api.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.api.Collectors.MetadataCollector;
 import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
@@ -141,14 +140,8 @@ class ScanEngineDatabaseDdlSourceTest {
             return (connection, scope) -> List.of();
         }
 
-        @Override
-        public DdlParser ddlParser() {
-            return (file, context) -> List.of();
-        }
-
-        @Override
         public Optional<StructuredDdlParser> structuredDdlParser() {
-            return Optional.of(new AntlrStructuredDdlParser(SqlDialect.MYSQL));
+            return Optional.of(new TokenEventStructuredDdlParser(SqlDialect.MYSQL));
         }
 
         @Override

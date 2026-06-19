@@ -77,11 +77,6 @@ sources:
     timeoutSeconds: 30
     maxCandidatePairs: 1000
 
-parser:
-  sql:
-    mode: antlr-primary
-    fallbackOnFailure: true
-
 output:
   format: json
   minConfidence: 0.30
@@ -94,7 +89,7 @@ output:
 - `database.type` 必填。
 - 至少启用一种 source。
 - 启用文件 source 时文件必须存在。
-- `parser.sql.mode`、`parser.sql.fallbackOnFailure`、`parser.ddl.mode`、`parser.ddl.fallbackOnFailure` 已移除；配置中出现这些 key 时应显式报错。MySQL/PostgreSQL SQL/DDL 均使用方言 ANTLR parser。
+- `parser.sql.mode`、`parser.sql.fallbackOnFailure`、`parser.ddl.mode`、`parser.ddl.fallbackOnFailure` 已移除；配置中出现这些 key 时应显式报错。MySQL/PostgreSQL SQL/DDL 均使用方言 Token/Event parser，ANTLR 只作为底层 lexer/parser 支撑。
 - SQL Server/Oracle 仍为 future adaptor；没有对应 ANTLR adaptor 前，不再用 simple parser 作为兼容假象。
 - `sources.ddl.fromDatabase` 默认 `true`。开启时，支持的 adaptor 会读取数据库内表定义；MySQL 当前使用 `SHOW CREATE TABLE`，产生的 evidence source type 为 `DATABASE_DDL`。
 - `sources.logs.filterSystemQueries` 默认 `true`。开启时，native log 中仅访问系统 catalog/schema 的 metadata 查询会被跳过，不记录 parse warning。

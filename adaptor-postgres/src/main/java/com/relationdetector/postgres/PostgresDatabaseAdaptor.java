@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 import com.relationdetector.api.AdaptorContext;
 import com.relationdetector.api.ColumnRef;
 import com.relationdetector.api.Collectors.DataProfiler;
-import com.relationdetector.api.Collectors.DdlParser;
 import com.relationdetector.api.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.api.Collectors.MetadataCollector;
 import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
@@ -50,7 +49,7 @@ import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
 import com.relationdetector.core.DiagnosticWarnings;
 import com.relationdetector.core.PlainSqlLogExtractor;
-import com.relationdetector.core.AntlrSqlRelationParser;
+import com.relationdetector.core.TokenEventSqlRelationParser;
 
 /** PostgreSQL 12+ adaptor implementing the Phase 5 design. */
 public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
@@ -105,28 +104,23 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
     }
 
     @Override
-    public DdlParser ddlParser() {
-        return new PostgresDdlParser();
-    }
-
-    @Override
     public SqlLogExtractor sqlLogExtractor() {
         return new PostgresLogExtractor();
     }
 
     @Override
     public SqlRelationParser sqlRelationParser() {
-        return new AntlrSqlRelationParser(new PostgresAntlrSqlParser(), new PostgresRelationExtractionVisitor());
+        return new TokenEventSqlRelationParser(new PostgresTokenEventStructuredSqlParser());
     }
 
     @Override
     public Optional<StructuredSqlParser> structuredSqlParser() {
-        return Optional.of(new PostgresAntlrSqlParser());
+        return Optional.of(new PostgresTokenEventStructuredSqlParser());
     }
 
     @Override
     public Optional<StructuredDdlParser> structuredDdlParser() {
-        return Optional.of(new PostgresAntlrDdlParser());
+        return Optional.of(new PostgresTokenEventStructuredDdlParser());
     }
 
     @Override

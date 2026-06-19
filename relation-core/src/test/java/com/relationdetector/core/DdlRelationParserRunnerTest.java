@@ -24,7 +24,6 @@ import com.relationdetector.api.ScanScope;
 import com.relationdetector.api.StructuredParseResult;
 import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Collectors.DataProfiler;
-import com.relationdetector.api.Collectors.DdlParser;
 import com.relationdetector.api.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.api.Collectors.MetadataCollector;
 import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
@@ -46,7 +45,7 @@ class DdlRelationParserRunnerTest {
         ScanConfig config = new ScanConfig();
 
         List<RelationshipCandidate> relations = new DdlRelationParserRunner()
-                .parse(new TestAdaptor(failingDdlParser(), emptyStructuredDdlParser(structuredCalls)),
+                .parse(new TestAdaptor(emptyStructuredDdlParser(structuredCalls)),
                         config, ddl, context(new ArrayList<>()));
 
         assertTrue(relations.isEmpty());
@@ -60,10 +59,10 @@ class DdlRelationParserRunnerTest {
         ScanConfig config = new ScanConfig();
 
         List<RelationshipCandidate> relations = new DdlRelationParserRunner()
-                .parse(new TestAdaptor(failingDdlParser(), emptyStructuredDdlParser(structuredCalls)),
+                .parse(new TestAdaptor(emptyStructuredDdlParser(structuredCalls)),
                         config, ddl, context(new ArrayList<>()));
 
-        assertTrue(relations.isEmpty(), "empty ANTLR DDL output must not be replaced by a legacy parser output");
+        assertTrue(relations.isEmpty(), "empty ANTLR DDL output must not be replaced by an old parser output");
         assertEquals(1, structuredCalls.get());
     }
 
@@ -74,12 +73,6 @@ class DdlRelationParserRunnerTest {
                 CREATE TABLE orders(user_id BIGINT REFERENCES users(id));
                 """);
         return ddl;
-    }
-
-    private DdlParser failingDdlParser() {
-        return (file, context) -> {
-            throw new AssertionError("legacy DdlParser must not be called by DdlRelationParserRunner");
-        };
     }
 
     private StructuredDdlParser emptyStructuredDdlParser(AtomicInteger calls) {
@@ -93,7 +86,7 @@ class DdlRelationParserRunnerTest {
         return new AdaptorContext(new ScanScope(null, null, List.of(), List.of()), Map.of(), warnings::add);
     }
 
-    private record TestAdaptor(DdlParser ddlParser, StructuredDdlParser structuredDdl) implements DatabaseAdaptor {
+    private record TestAdaptor(StructuredDdlParser structuredDdl) implements DatabaseAdaptor {
         @Override
         public String id() {
             return "ddl-test";
@@ -127,11 +120,6 @@ class DdlRelationParserRunnerTest {
         @Override
         public ObjectDefinitionCollector objectDefinitionCollector() {
             return (connection, scope) -> List.of();
-        }
-
-        @Override
-        public DdlParser ddlParser() {
-            return ddlParser;
         }
 
         @Override

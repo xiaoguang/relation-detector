@@ -4,13 +4,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Structured parse output from an ANTLR or fallback parser frontend.
+ * Structured parse output from the ANTLR-backed Token/Event parser frontend.
  *
  * <p>The final JSON relationship model remains based on
  * {@link RelationshipCandidate}. This result is a diagnostic and extraction
  * bridge: visitors consume {@link #events()}, operators can inspect
- * {@link #warnings()}, and shadow mode can compare parser backends without
- * changing public relationship output prematurely.
+ * {@link #warnings()}, and parser diagnostics can keep backend/dialect
+ * provenance without changing the public relationship model.
  */
 public record StructuredParseResult(
         String backend,

@@ -263,7 +263,7 @@ orders.user_id -> users.id
 
 注意这里的方向不是 SQL 等号左右顺序，而是系统的 FK-like 归一方向：引用列/外键样列指向被引用键列。SQL 写作 `u.id = o_summary.user_id`，但输出仍是 `orders.user_id -> users.id`。
 
-这个规则是受控开启的：默认公共 lineage 仍不把裸列投影当成精确来源；当前只由 MySQL ANTLR relation visitor 在 `UPDATE` 场景中启用。这样既覆盖 MySQL 业务中常见的 derived aggregate 回写，又避免全局改变 PostgreSQL 或 legacy fixture 的保守基线。
+这个规则是受控开启的：默认公共 lineage 仍不把裸列投影当成精确来源；当前只由 MySQL/PostgreSQL ANTLR relation visitor 在已由 correctness fixture 覆盖的 `UPDATE` 派生聚合回写场景中启用。这样既覆盖业务中常见的 derived aggregate 回写，又避免全局改变其它语句形态的保守基线。
 
 同一派生表中的聚合列仍不会生成精确 lineage：
 
@@ -281,9 +281,9 @@ orders.pay_amount -> users.total_spent, transform=SUM
 
 但当前 `SqlLineageResolver` 只服务关系抽取，不输出正式 Data Lineage。这个业务血缘会作为后续独立设计边界记录，而不是混入 FK-like 关系或现有 JSON relationship 输出。
 
-### 3.4 不安全来源
+### 3.4 表达式来源边界
 
-这些写法不会生成精确列级 lineage：
+这些写法通常不会生成精确列级 lineage：
 
 ```sql
 SELECT COALESCE(a.user_id, b.user_id) AS user_id
@@ -299,7 +299,7 @@ SELECT a.user_id + 1 AS user_id
 - 函数、聚合、窗口函数会改变语义。
 - 表达式结果不一定还能代表外键值。
 
-此时 parser 仍可解析子查询内部显式 JOIN，但不会把表达式输出列继续推成列级 `FK_LIKE`。
+例外边界：`COALESCE(a.col, b.col) AS col` 在已审核 business fixture 覆盖的关系抽取路径中，可以使用第一个直接物理参数作为保守端点，例如 `COALESCE(a.account_id, b.account_id) AS account_id` 记录为 `a.account_id`。这不是完整 Data Lineage，也不会同时展开所有输入列；parser 仍可解析子查询内部显式 JOIN，但不会把其它表达式输出列继续推成列级 `FK_LIKE`。
 
 ### 3.4 LATERAL 的安全边界
 
@@ -314,7 +314,6 @@ SELECT o.customer_id
 这些形态不生成精确 lineage：
 
 ```sql
-SELECT COALESCE(o.user_id, fallback.user_id) AS user_id
 SELECT max(o.user_id) AS user_id
 SELECT row_number() OVER (ORDER BY o.id) AS rn
 SELECT *
@@ -330,7 +329,7 @@ SELECT *
 alias.column -> real_table.real_column
 ```
 
-`RelationExtractionVisitor` 在解析 ANTLR 结构化等值事件和 raw equality 兜底时消费这个映射。
+`TokenEventRelationExtractor` 在解析 ANTLR 结构化等值事件和 raw equality 兜底时消费这个映射。
 
 如果等值条件来自真实表列：
 
@@ -389,7 +388,7 @@ attributes.lineageResolved: true
 - 表达式、聚合、窗口函数、类型转换后的强列级推断。
 - 动态 SQL。
 
-这些场景后续应考虑继续增强数据库专用 ANTLR parser/visitor，并把当前 resolver 保持为保守 lineage helper。
+这些场景后续应考虑继续增强数据库专用 Token/Event parser/event builder，并把当前 resolver 保持为保守 lineage helper。
 
 ## 6. 测试策略
 
@@ -405,7 +404,7 @@ relation-cli/src/test/java/com/relationdetector/cli/CorrectnessFixtureRunnerTest
 
 - 多层 CTE 中 `regional_orders.region_id` 回溯到 `customers.region_id`。
 - 多层派生表中 `projected_orders.customer_id` 回溯到 `orders.customer_id`。
-- `COALESCE(a.user_id, b.user_id) AS user_id` 不被误判为精确列来源。
+- `COALESCE(a.user_id, b.user_id) AS user_id` 只在已审核 business fixture 中按首个直接物理参数做保守回溯，不展开为多源 Data Lineage。
 
 这些测试既验证正向识别，也验证“不乱猜”的负向边界。
 

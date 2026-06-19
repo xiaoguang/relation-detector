@@ -1,8 +1,8 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:accounts->orders:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:staging_orders->orders:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "FK_LIKE:order_staging.order_id->orders.id:SQL_LOG_JOIN"
+    "CO_OCCURRENCE:accounts.user_id->orders.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "FK_LIKE:order_staging.order_id->orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:staging_orders.order_id->orders.id:SQL_LOG_JOIN"
   ],
   "forbiddenTables": [
     "archived_rows",

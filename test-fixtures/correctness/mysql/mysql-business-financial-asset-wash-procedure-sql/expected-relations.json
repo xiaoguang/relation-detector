@@ -1,0 +1,16 @@
+{
+  "fingerprints": [
+    "FK_LIKE:account_balances.user_id->users.id:PROCEDURE_JOIN",
+    "FK_LIKE:transaction_ledgers.user_id->users.id:PROCEDURE_JOIN"
+  ],
+  "forbiddenTables": [
+    "memory_input_cargo",
+    "user_financial_snapshot",
+    "dormant_risk_scores",
+    "drs_engine",
+    "jt",
+    "snap",
+    "snap_main",
+    "drs"
+  ]
+}

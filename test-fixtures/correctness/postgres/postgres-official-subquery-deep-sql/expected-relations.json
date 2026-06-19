@@ -1,10 +1,10 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:customers->invoices:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:orders->payments:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:products->orders:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:refunds->payments:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:shipments->payments:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:customers.external_ref->invoices.customer_ref:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:orders.user_id->payments.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:products.category_id->orders.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:refunds.user_id->payments.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:shipments.user_id->payments.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
     "FK_LIKE:orders.user_id->users.id:SQL_LOG_EXISTS",
     "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
     "FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS",

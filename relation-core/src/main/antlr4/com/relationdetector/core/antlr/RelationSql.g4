@@ -1,13 +1,13 @@
 grammar RelationSql;
 
 /*
- * A deliberately tolerant ANTLR grammar for the migration bridge.
+ * A deliberately tolerant ANTLR grammar for shared Token/Event parser support.
  *
  * This is not intended to be a complete MySQL/PostgreSQL grammar. It gives the
  * Java code a real ANTLR lexer/parser/token stream that can survive procedural
  * bodies, dialect-specific clauses, partial log statements, and DDL fragments.
  * Higher-level visitors then extract the small set of relationship-relevant
- * facts we currently need. Future tasks can replace this grammar with richer
+ * facts required by the Token/Event extractors. Future tasks can replace this grammar with richer
  * dialect grammars while keeping the StructuredSqlParser API stable.
  */
 script
@@ -44,7 +44,7 @@ QUOTED_IDENTIFIER
     ;
 
 STRING_LITERAL
-    : '\'' ('\\' . | '\'\'' | ~['\\])* '\''
+    : '\'' ('\'\'' | ~'\'')* '\''
     ;
 
 DOLLAR_QUOTED_STRING

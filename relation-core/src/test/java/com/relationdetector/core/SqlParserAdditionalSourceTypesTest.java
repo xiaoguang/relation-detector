@@ -21,9 +21,8 @@ import com.relationdetector.api.Enums.StatementSourceType;
  * packages, and migration scripts.
  */
 class SqlParserAdditionalSourceTypesTest {
-    private final AntlrSqlRelationParser parser = new AntlrSqlRelationParser(
-            new AntlrStructuredSqlParser(SqlDialect.MYSQL),
-            new RelationExtractionVisitor());
+    private final TokenEventSqlRelationParser parser = new TokenEventSqlRelationParser(
+            new TokenEventStructuredSqlParser(SqlDialect.MYSQL));
 
     @Test
     void materializedViewsAndRulesUseViewJoinEvidence() {

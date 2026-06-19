@@ -1,0 +1,1558 @@
+{
+  "description": "Pre-switch correctness golden snapshot captured from Git HEAD before Token/Event v2 primary golden refresh.",
+  "fileCount": 142,
+  "files": {
+    "test-fixtures/correctness/common/sql-basic-join/expected-diagnostics.json": {
+      "fixtureSha256": "95f329f8c244927701995c3a66c7fab580652263fffe5d31a714de4888bb6166",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/common/sql-basic-join/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/common/sql-join-using/expected-diagnostics.json": {
+      "fixtureSha256": "e8268768e9a800bb56bf686e958b95019b9b1fe113a14bc8583da5bd3444978c",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/common/sql-join-using/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:orders->order_tags:SQL_LOG_TABLE_CO_OCCURRENCE"
+      ],
+      "forbiddenTables": [
+        "order_id"
+      ]
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-01-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "ae0d9d645c83efe8922b4be227c1f0381d7d99cb4c846523498f9551d21e59c7",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-01-ddl/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:GRAPH_CHECKPOINT.thread_id->GRAPH_THREAD.thread_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+        "FK_LIKE:fe_agent_message.sessionId->fe_agent_session.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-01-sql/expected-diagnostics.json": {
+      "fixtureSha256": "cf12ffbabd9771c36d03b4d5fbad691ba72c80727e9f695afb2d5b68b52fe7f1",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-01-sql/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-02-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "c9475cf306ee3b5cf917bc04f8d1f786c3e1909b92ebe5487981b11fc5950732",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-02-ddl/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:GRAPH_CHECKPOINT.thread_id->GRAPH_THREAD.thread_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+        "FK_LIKE:fe_agent_message.sessionId->fe_agent_session.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-02-sql/expected-diagnostics.json": {
+      "fixtureSha256": "807584a88cf3883b35d009665329a050c28c19c7d181313ed5e84191f0f3ff08",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-02-sql/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-03-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "590b38ccd72929bdeed678a3a3dd27a9d5e592101d6b61f9b24b9bc184ddc7f3",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-03-ddl/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:fe_agent_message.sessionId->fe_agent_session.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+        "FK_LIKE:graph_checkpoint.thread_id->graph_thread.thread_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-03-sql/expected-diagnostics.json": {
+      "fixtureSha256": "331674b83a93be4cc7db7a6683e45439ad8a2fd09eb1c2c492b56792c97aca00",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-03-sql/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-04-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "13ae0ba46e9bad27857c6cd6296f114cb57c1d251935ec71bdaf3d4e073ecaab",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-04-ddl/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:act_tool_info.think_act_record_id->think_act_record.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+        "FK_LIKE:agent_execution_record.plan_execution_id->plan_execution_record.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+        "FK_LIKE:dynamic_agent_tools.agent_id->dynamic_agents.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+        "FK_LIKE:dynamic_agents.model_id->dynamic_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+        "FK_LIKE:memory_plan_mappings.memory_id->dynamic_memories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+        "FK_LIKE:plan_execution_steps.plan_execution_id->plan_execution_record.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+        "FK_LIKE:think_act_record.agent_execution_record_id->agent_execution_record.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+        "FK_LIKE:user_input_wait_state.root_task_manager_id->root_task_manager.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+        "FK_LIKE:user_preferences.user_id->users.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-04-sql/expected-diagnostics.json": {
+      "fixtureSha256": "a0c789ccd6a04c263e6671c6e94500bf0ffff724c34b8f9dffec814aef6b82e3",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/basic-correctness-case-04-sql/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/ddl-create-table-fk-index/expected-diagnostics.json": {
+      "fixtureSha256": "8b486c94a72fa9ffb53dc8b2151ab564de2ec064d5dedf70d3e61c13f6b13ec2",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/ddl-create-table-fk-index/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/mysql-commerce-promotion-update-comma-join-sql/expected-diagnostics.json": {
+      "fixtureSha256": "301b90598880281fc174c987e84400200181453a79c524cdd5b5a549d54bd909",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-commerce-promotion-update-comma-join-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:products.category_id->discount_policies.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+        "FK_LIKE:products.shop_id->shops.id:SQL_LOG_JOIN",
+        "FK_LIKE:shops.merchant_id->merchants.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/mysql-commerce-promotion-update-explicit-join-sql/expected-diagnostics.json": {
+      "fixtureSha256": "292cb66c9d045ca0475bad0b012f02ddfbf04b791ba96dd6b0ae5038f3e5b70a",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-commerce-promotion-update-explicit-join-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:products.category_id->discount_policies.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+        "FK_LIKE:products.shop_id->shops.id:SQL_LOG_JOIN",
+        "FK_LIKE:shops.merchant_id->merchants.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/mysql-invalid-orders-delete-comma-join-sql/expected-diagnostics.json": {
+      "fixtureSha256": "2369413aa0bfc0ef8aee04a9ab022a263c7c20a9dcb1cc2246925f73c0787996",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-invalid-orders-delete-comma-join-sql/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "o",
+        "oi"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-invalid-orders-delete-explicit-join-sql/expected-diagnostics.json": {
+      "fixtureSha256": "30792f79922516a4c23583bb960427b05e1717f31969ba224551d5cfc2178426",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-invalid-orders-delete-explicit-join-sql/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "o",
+        "oi"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-official-alter-index-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "baa3440b91708c97aaf58bfaf36afe4096ce5a7fdcced9b51a87d6e7ea6fd18d",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-alter-index-ddl/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/mysql-official-complex-index-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "e272babb7f17e9b13a8ca512e17bae0bdaf6647f5c12684f508ffff21694efc3",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-complex-index-ddl/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/mysql-official-cte-dml-sql/expected-diagnostics.json": {
+      "fixtureSha256": "79b8e21d2d1b2b90f9fee044dfe7185d7042ae0a97742d09ea16eb5b1dd06fb6",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-cte-dml-sql/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.audit_account_id->accounts.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
+        "FK_LIKE:users.account_id->accounts.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "candidate_orders",
+        "candidate_accounts",
+        "removable_orders"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-official-cte-nested-sql/expected-diagnostics.json": {
+      "fixtureSha256": "1378360e5ff232cd278f8837688143c97b9bff91d2dbe0550e4e97c8dec31676",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-cte-nested-sql/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:customers.account_id->accounts.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.region_id->regions.id:SQL_LOG_JOIN",
+        "FK_LIKE:purchase_orders.id->purchase_order_approvals.purchase_order_id:SQL_LOG_SUBQUERY_IN",
+        "FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "recent_orders",
+        "regional_orders",
+        "customer_orders",
+        "supplier_orders",
+        "approved_supplier_orders",
+        "audit"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-official-derived-subquery-sql/expected-diagnostics.json": {
+      "fixtureSha256": "1ca0df917bb17650df5c6855aa6c54c1f5ca97e0b71b620b4222bc85ef68ed90",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-derived-subquery-sql/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:account_logs.account_id->accounts.id:SQL_LOG_JOIN",
+        "FK_LIKE:log_permissions.log_id->account_logs.id:SQL_LOG_EXISTS",
+        "FK_LIKE:material_places.material_id->materials.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.id->shipments.order_id:SQL_LOG_SUBQUERY_IN",
+        "FK_LIKE:shipments.customer_id->customers.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "d",
+        "latest",
+        "outer_order",
+        "nested_customer"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-official-functional-index-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "f721b9e79a927beb7b6119efb655b295b7455cba8af8e3dcfda20d52a9e71a04",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-functional-index-ddl/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/mysql-official-index-options-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "600d3fcc3c694827cdfe236da351ece82f86d91044a72bcbef2810dbc2e83e5e",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-index-options-ddl/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/mysql-official-invisible-index-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "f1be14b2ec19e31174c00336b424c5d3921cd57020ab46c4032518f612961968",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-invisible-index-ddl/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/mysql-official-join-edge-sql/expected-diagnostics.json": {
+      "fixtureSha256": "5a61def322cdd70418690a744d1460ebb237d3cedf7722b7b0193ab3b65b0afb",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-join-edge-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:order_status->status_labels:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:order_items.product_id->products.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "status_code",
+        "idx_orders_user",
+        "PRIMARY"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-official-join-matrix-sql/expected-diagnostics.json": {
+      "fixtureSha256": "dd99d4bb1f943dddb0a92c68c0dfda9f78d4c9d7883c7c7454a33b3c186fe0bf",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-join-matrix-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:orders->order_audit:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "FK_LIKE:invoices.customer_id->customers.id:SQL_LOG_JOIN",
+        "FK_LIKE:invoices.payment_id->payments.id:SQL_LOG_JOIN",
+        "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.warehouse_id->warehouses.id:SQL_LOG_JOIN",
+        "FK_LIKE:returns.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:shipments.carrier_id->carriers.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "order_id"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-official-lateral-derived-edge-sql/expected-diagnostics.json": {
+      "fixtureSha256": "75971aa9b2781714dee9efd082528fe784ff3daf500c88d911ccd3b23bda450f",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-lateral-derived-edge-sql/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:customers.account_id->accounts.id:SQL_LOG_JOIN",
+        "FK_LIKE:line_items.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:line_items.product_id->products.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "projected",
+        "outer_order",
+        "customer_projection",
+        "nested_projection"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-official-recursive-cte-sql/expected-diagnostics.json": {
+      "fixtureSha256": "302f772cd4210f13b794d9132a032a3134da3793218923470cb5d6b903e6ff9c",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-recursive-cte-sql/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN",
+        "FK_LIKE:employees.manager_id->employees.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "employee_tree",
+        "category_path"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-official-special-index-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "5a024a83f2ec4641c65509832be8e22769dd15bbb5db14eeaf830a1195949759",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-special-index-ddl/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": [
+        "$.tagIds",
+        "$.primaryName"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-official-subquery-edge-sql/expected-diagnostics.json": {
+      "fixtureSha256": "9c97154ff921e9415319cbd4d10e39d542b559f5adcc39fd477f238ef3bf6710",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-official-subquery-edge-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:blocked_carriers.region_id->shipments.region_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+        "FK_LIKE:customers.account_id->accounts.id:SQL_LOG_SUBQUERY_IN",
+        "FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_SUBQUERY_IN",
+        "FK_LIKE:orders.region_id->customers.region_id:SQL_LOG_SUBQUERY_IN",
+        "FK_LIKE:payments.order_id->orders.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/mysql-orphan-reviews-delete-left-join-sql/expected-diagnostics.json": {
+      "fixtureSha256": "56175056f72a4cb2e208b6e666a1b1bc48d6dafbf3f6e8d7eb672210bf98a8b3",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-orphan-reviews-delete-left-join-sql/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:product_reviews.product_id->products.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "pr",
+        "p"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-orphan-reviews-delete-not-exists-sql/expected-diagnostics.json": {
+      "fixtureSha256": "62a31e4a67396f874ba4f66ee7c2b1c568983819dc4a13f5b750a9c26e239f13",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-orphan-reviews-delete-not-exists-sql/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:product_reviews.product_id->products.id:SQL_LOG_EXISTS"
+      ],
+      "forbiddenTables": [
+        "pr",
+        "p"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-supply-chain-update-comma-and-subquery-sql/expected-diagnostics.json": {
+      "fixtureSha256": "e27e9679caf04de7f425f1fc75a23fe11884588a5583b92bb11b7720079eea02",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-supply-chain-update-comma-and-subquery-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:warehouse_inventory.primary_supplier_id->supplier_manifests.supplier_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+        "CO_OCCURRENCE:warehouse_inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+        "CO_OCCURRENCE:warehouse_inventory.product_id->supplier_manifests.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+        "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.customer_id->customer_profiles.id:SQL_LOG_JOIN",
+        "FK_LIKE:warehouse_inventory.bin_id->bin_locations.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "latest_orders",
+        "sm",
+        "ranking",
+        "avg_cost"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-supply-chain-update-explicit-join-sql/expected-diagnostics.json": {
+      "fixtureSha256": "233f4f97d0dbb068928a27fc6725ef614f6534a07ff1bf0eafdf781ef397bd41",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-supply-chain-update-explicit-join-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:warehouse_inventory.primary_supplier_id->supplier_manifests.supplier_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+        "CO_OCCURRENCE:warehouse_inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+        "CO_OCCURRENCE:warehouse_inventory.product_id->supplier_manifests.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+        "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.customer_id->customer_profiles.id:SQL_LOG_JOIN",
+        "FK_LIKE:warehouse_inventory.bin_id->bin_locations.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "latest_orders",
+        "sm",
+        "ranking",
+        "avg_cost"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-user-spending-comma-join-update-sql/expected-diagnostics.json": {
+      "fixtureSha256": "da4602ea556be1509c2e6fe4c29da97772ef5e8ad527b4e3d1c7b21aed392f24",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-user-spending-comma-join-update-sql/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "o_summary"
+      ]
+    },
+    "test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/expected-diagnostics.json": {
+      "fixtureSha256": "577f2daf5e09e7608e38bcd2bbf67ff80f7591d5dfb600bc8e087fb1a06d9968",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "o_summary"
+      ]
+    },
+    "test-fixtures/correctness/mysql/sql-cte-lateral/expected-diagnostics.json": {
+      "fixtureSha256": "ca6af73ede1e7bd7a0ff6ced2262cc646513be354632fc5b878c0c42ec4c9ecf",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/sql-cte-lateral/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "recent_orders",
+        "buyer_projection",
+        "lateral"
+      ]
+    },
+    "test-fixtures/correctness/mysql/sql-delete-left-join/expected-diagnostics.json": {
+      "fixtureSha256": "d4240a08497fc75da01eb546dbb9a9a7b2dd30b4b47b1eff72d6d2d78fef0ffc",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/sql-delete-left-join/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/sql-multi-table-update/expected-diagnostics.json": {
+      "fixtureSha256": "314cda127c33daf605192f1179a6b77c6cc3d18d7842a4669446a0cfe8e4420e",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/sql-multi-table-update/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
+        "FK_LIKE:users.account_id->accounts.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/mysql/sql-system-log-noise/expected-diagnostics.json": {
+      "fixtureSha256": "46474022b42801a523f184555e126f0dcabafdffc2f830e2fb00c0961989d3cb",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/mysql/sql-system-log-noise/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": [
+        "information_schema",
+        "KEY_COLUMN_USAGE",
+        "TABLE_CONSTRAINTS"
+      ]
+    },
+    "test-fixtures/correctness/postgres/ddl-alter-table-fk/expected-diagnostics.json": {
+      "fixtureSha256": "35622dc586acec23e9864d20d7e2397ef3e89d641e347c0b6712717d4125c3c6",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/ddl-alter-table-fk/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/ddl-partial-index-boundary/expected-diagnostics.json": {
+      "fixtureSha256": "f44db5b4c8a0f8644e8b6c97b8d846e9b40b4341c7ecb427993c913f84b231ed",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/ddl-partial-index-boundary/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_email->users.email:DDL_FOREIGN_KEY"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/ddl-unique-include-index/expected-diagnostics.json": {
+      "fixtureSha256": "5cade79e1525afdce7ce3f329aa43ccd384b95df8dd59a12321a635a14a8ac18",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/ddl-unique-include-index/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:invoices.account_no->accounts.account_no:DDL_FOREIGN_KEY,TARGET_UNIQUE",
+        "FK_LIKE:invoices.archived_account_no->accounts.account_no:DDL_FOREIGN_KEY,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/generated-comprehensive-query-sql/expected-diagnostics.json": {
+      "fixtureSha256": "fb06bf2102cb76d3c43655041888b52c9b455232a57ffe2ca1a5cdfec39726b5",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/generated-comprehensive-query-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:app_users->external_profiles:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:app_users->user_activities:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:application_users->security_compliance_thresholds:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:application_users->structural_statuses:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:application_users->user_role_mappings:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:assembly_stations->calibration_logs:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:assembly_stations->production_lines:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:catalog_categories->running_promotions:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:catalog_products->catalog_categories:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:crm_customers->customer_interactions:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:customer_disputes->sales_orders:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:customer_interactions->customer_agents:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:customer_interactions->interaction_resolutions:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:dim_products->dim_sub_categories:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:dim_products->dim_suppliers:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:dim_sub_categories->dim_categories:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:dim_warehouses->dim_locations:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:erp_stock_table->wms_stock_table:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:fact_inventory_snapshots->dim_products:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:fact_inventory_snapshots->dim_warehouses:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:factory_telemetry->assembly_stations:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:factory_telemetry->manufactured_parts:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:financial_assets->financial_ledgers:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:financial_ledgers->ledger_transactions:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:financial_subsidiaries->corporate_tax_matrix:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:hr_departments->hr_locations:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:hr_employees->hr_departments:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:hr_employees->hr_employees:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:interaction_resolutions->feedback_surveys:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:journal_entries->chart_of_accounts:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:ledger_transactions->account_balances:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:loyalty_program_tiers->loyalty_transactions:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:maritime_vessels->logistics_carriers:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:media_catalog->media_tags_array:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:medical_claims->claim_diagnoses:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:medical_claims->healthcare_providers:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:medical_claims->patient_registry:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:order_fulfillments->sales_orders:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:package_dependencies->software_packages:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:patient_registry->insurance_policies:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:payment_cards->point_of_sale_transactions:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:performance_reviews->employee_directory:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:purchase_order_lines->asset_products:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:security_siem_logs->corporate_networks_whitelist:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:shipping_manifests->transit_legs:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:structural_statuses->security_compliance_thresholds:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:structural_statuses->user_role_mappings:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:system_tenants->tenant_config_values:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:system_tenants->tenant_configurations:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:tenant_configurations->system_modules:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:tenant_configurations->tenant_config_values:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:tracking_tickets->quality_gates:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:transit_legs->maritime_vessels:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:user_role_mappings->security_compliance_thresholds:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "FK_LIKE:iot_devices.hardware_architecture->firmware_compliance_matrix.arch_type:SQL_LOG_SUBQUERY_IN",
+        "FK_LIKE:iot_devices.installed_version->firmware_compliance_matrix.patched_version_string:SQL_LOG_SUBQUERY_IN",
+        "FK_LIKE:membership_registry.member_id->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN"
+      ],
+      "forbiddenTables": [
+        "rawledger",
+        "normalizedbalances",
+        "structuredreport",
+        "network_hops",
+        "clickstream_deltas",
+        "session_demarcation",
+        "session_assignment",
+        "regional_revenues",
+        "tax_rules",
+        "calculated_tax",
+        "wiki_breadcrumbs",
+        "base_metrics",
+        "ranked_employees",
+        "tier_assignments",
+        "erp_inventory",
+        "wms_inventory",
+        "reconciled_delta",
+        "media_base",
+        "extracted_tags",
+        "combined_metadata",
+        "network_alerts",
+        "whitelisted_ranges",
+        "tier_rules",
+        "customer_points",
+        "assigned_status",
+        "derived_view",
+        "lateral",
+        "unnest",
+        "UNNEST"
+      ]
+    },
+    "test-fixtures/correctness/postgres/generated-industrial-complex-sql/expected-diagnostics.json": {
+      "fixtureSha256": "d47fac7c96e4c0198731b87a5c1204ac0c6e4d136f2b96c9d2edbd2680140223",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/generated-industrial-complex-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:base_catalog->extension_catalog:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:base_catalog->vendor_registry:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:employees->R_projects:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:extension_catalog->vendor_registry:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:financial_accounts->audit_trail:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:internal_staff->external_vendors:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:payment_transactions->system_config:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:system_logs->user_preferences:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:user_roles_mapping->role_permissions:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:workflow_tasks->workflow_tasks:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "FK_LIKE:profiles.user_id->users.id:SQL_LOG_JOIN",
+        "FK_LIKE:user_roles.role_id->roles.id:SQL_LOG_JOIN",
+        "FK_LIKE:user_roles.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "asset_hierarchy",
+        "sub",
+        "consolidated",
+        "flattened_json_cte",
+        "ranked_json",
+        "filtered_logs_cte",
+        "lateral",
+        "unnest",
+        "1"
+      ]
+    },
+    "test-fixtures/correctness/postgres/generated-provided-complex-sql/expected-diagnostics.json": {
+      "fixtureSha256": "2845e1507920e40579a5e273cf5740638822dfefd9bb7ea71c10882870987210",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/generated-provided-complex-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:accounts->account_metadata:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:branch_a->branch_b:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:categories->sub_labels:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:departments->employees:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:documents->revisions:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:main_catalog->products:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:products->audit_logs:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:products->categories:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:products->departments:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:side_a->side_b:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:system_releases->beta_builds:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:table_alpha->table_beta:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:vocabulary_prefix->vocabulary_suffix:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "org_path",
+        "sub",
+        "ranked",
+        "combo",
+        "flattened",
+        "attachment",
+        "the",
+        "1"
+      ]
+    },
+    "test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "d6328168e9481fa83cf571d66d3cf87e444faf0c14ab3162acfde4a305cf786a",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-ddl/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:case_01.cpat_results.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.ensembl_compara.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.ensembl_coordinate_systems.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.ensembl_pseudogene_exons.region_id->ensembl_pseudogene_regions.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.ensembl_pseudogene_regions.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.go_term_annotations.evidence_code->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.go_term_annotations.ontology_term_id->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.go_term_publication_map.go_term_annotation_id->go_term_annotations.go_term_annotation_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.go_term_publication_map.reference_id->rnc_references.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.insdc_so_term_mapping.so_term_id->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.pipeline_tracking_genome_mapping.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.pipeline_tracking_qa_scan.urs->rna.upi:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.pipeline_tracking_traveler.urs->rna.upi:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.precompute_urs.urs->rna.upi:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.precompute_urs_taxid.precompute_urs_id->precompute_urs.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.precompute_urs_taxid.urs->rna.upi:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.qa_status.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.r2dt_model_extra_data.model_id->r2dt_models.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.r2dt_models.so_term_id->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.r2dt_results.model_id->r2dt_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.r2dt_results.urs->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rfam_analyzed_sequences.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rfam_go_terms.ontology_term_id->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rfam_go_terms.rfam_model_id->rfam_models.rfam_model_id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rfam_model_hits.rfam_model_id->rfam_models.rfam_model_id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rfam_model_hits.rnc_sequence_features_id->rnc_sequence_features.rnc_sequence_features_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rfam_model_hits.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rfam_models.rfam_clan_id->rfam_clans.rfam_clan_id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rfam_models.so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_accession_sequence_feature.accession->rnc_accessions.accession:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_accession_sequence_feature.rnc_sequence_feature_id->rnc_sequence_features.rnc_sequence_features_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_accession_sequence_region.accession->rnc_accessions.accession:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_accession_sequence_region.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_accessions.rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_database_references.dbid->rnc_database.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_database_references.reference_id->rnc_references.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_feedback_overlap.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_feedback_overlap.upi_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_feedback_target_assemblies.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_feedback_target_assemblies.dbid->rnc_database.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_gene_status.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_gene_status.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_gene_status.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_import_tracker.db_id->rnc_database.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_interactions.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_locus.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_locus_members.locus_id->rnc_locus.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_locus_members.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_locus_members.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_modifications.accession->rnc_accessions.accession:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_reference_map.reference_id->rnc_references.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_related_sequences.relationship_type->rnc_relationship_types.relationship_type:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_related_sequences.source_accession->rnc_accessions.accession:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_related_sequences.source_urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_related_sequences.target_urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_rna_precomputed.assigned_so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_rna_precomputed.last_release->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_rna_precomputed.so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_sequence_exons.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_sequence_features.accession->rnc_accessions.accession:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_sequence_features.feature_name->rnc_sequence_feature_types.feature_name:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_sequence_features.feature_provider->rnc_sequence_feature_providers.name:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.rnc_sequence_features.taxid->rnc_taxonomy.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_sequence_features.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_sequence_regions.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_sequence_regions.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.rnc_taxonomy.replaced_by->rnc_taxonomy.id:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.validate_layout_counts.name->rna.upi:DDL_FOREIGN_KEY",
+        "FK_LIKE:case_01.xref_p10_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p10_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p10_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p10_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p10_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p10_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p10_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p10_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p11_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p11_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p11_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p11_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p11_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p11_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p11_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p11_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p12_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p12_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p12_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p12_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p12_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p12_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p12_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p12_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p13_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p13_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p13_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p13_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p13_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p13_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p13_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p13_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p14_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p14_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p14_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p14_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p14_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p14_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p14_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p14_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p15_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p15_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p15_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p15_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p15_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p15_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p15_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p15_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p16_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p16_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p16_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p16_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p16_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p16_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p16_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p16_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p17_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p17_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p17_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p17_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p17_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p17_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p17_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p17_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p18_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p18_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p18_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p18_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p18_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p18_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p18_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p18_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p19_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p19_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p19_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p19_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p19_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p19_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p19_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p19_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p1_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p1_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p1_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p1_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p1_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p1_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p1_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p1_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p20_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p20_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p20_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p20_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p20_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p20_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p20_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p20_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p21_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p21_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p21_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p21_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p21_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p21_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p21_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p21_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p22_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p22_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p22_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p22_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p22_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p22_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p22_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p22_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p23_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p23_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p23_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p23_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p23_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p23_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p23_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p23_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p24_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p24_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p24_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p24_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p24_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p24_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p24_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p24_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p25_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p25_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p25_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p25_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p25_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p25_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p25_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p25_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p26_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p26_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p26_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p26_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p26_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p26_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p26_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p26_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p27_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p27_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p27_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p27_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p27_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p27_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p27_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p27_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p28_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p28_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p28_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p28_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p28_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p28_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p28_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p28_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p29_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p29_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p29_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p29_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p29_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p29_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p29_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p29_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p2_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p2_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p2_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p2_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p2_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p2_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p2_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p2_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p30_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p30_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p30_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p30_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p30_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p30_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p30_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p30_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p31_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p31_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p31_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p31_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p31_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p31_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p31_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p31_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p32_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p32_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p32_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p32_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p32_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p32_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p32_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p32_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p33_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p33_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p33_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p33_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p33_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p33_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p33_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p33_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p34_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p34_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p34_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p34_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p34_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p34_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p34_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p34_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p35_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p35_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p35_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p35_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p35_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p35_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p35_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p35_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p36_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p36_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p36_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p36_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p36_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p36_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p36_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p36_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p37_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p37_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p37_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p37_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p37_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p37_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p37_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p37_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p38_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p38_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p38_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p38_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p38_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p38_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p38_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p38_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p39_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p39_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p39_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p39_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p39_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p39_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p39_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p39_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p3_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p3_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p3_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p3_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p3_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p3_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p3_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p3_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p40_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p40_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p40_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p40_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p40_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p40_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p40_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p40_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p41_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p41_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p41_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p41_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p41_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p41_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p41_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p41_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p42_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p42_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p42_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p42_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p42_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p42_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p42_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p42_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p43_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p43_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p43_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p43_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p43_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p43_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p43_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p43_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p44_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p44_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p44_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p44_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p44_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p44_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p44_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p44_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p45_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p45_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p45_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p45_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p45_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p45_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p45_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p45_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p46_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p46_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p46_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p46_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p46_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p46_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p46_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p46_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p47_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p47_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p47_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p47_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p47_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p47_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p47_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p47_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p48_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p48_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p48_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p48_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p48_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p48_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p48_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p48_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p49_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p49_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p49_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p49_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p49_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p49_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p49_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p49_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p4_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p4_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p4_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p4_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p4_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p4_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p4_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p4_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p50_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p50_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p50_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p50_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p50_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p50_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p50_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p50_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p51_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p51_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p51_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p51_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p51_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p51_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p51_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p51_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p52_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p52_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p52_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p52_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p52_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p52_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p52_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p52_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p53_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p53_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p53_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p53_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p53_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p53_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p53_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p53_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p54_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p54_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p54_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p54_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p54_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p54_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p54_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p54_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p55_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p55_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p55_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p55_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p55_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p55_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p55_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p55_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p56_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p56_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p56_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p56_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p56_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p56_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p56_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p56_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p5_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p5_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p5_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p5_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p5_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p5_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p5_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p5_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p6_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p6_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p6_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p6_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p6_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p6_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p6_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p6_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p7_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p7_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p7_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p7_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p7_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p7_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p7_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p7_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p8_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p8_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p8_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p8_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p8_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p8_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p8_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p8_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p9_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p9_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p9_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p9_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p9_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p9_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p9_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+        "FK_LIKE:case_01.xref_p9_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-objects-sql/expected-diagnostics.json": {
+      "fixtureSha256": "f1cae456e53802b3611debebb910ca67068ca03f388e8c6cabbb6727337b3742",
+      "warningCodes": {
+        "DYNAMIC_SQL_UNRESOLVED": 1
+      }
+    },
+    "test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-objects-sql/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-statements-sql/expected-diagnostics.json": {
+      "fixtureSha256": "1239b4a8034c904341c2229c1f53b412222653a285c1cc28f2a7e29addfe9cc3",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-statements-sql/expected-relations.json": {
+      "fingerprints": [],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/postgres-official-alter-index-boundary-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "fab2db26c224bad0334b47a9401369e4c0bae64f2a99274a2d53cee5de7d7c7e",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-alter-index-boundary-ddl/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:password_resets.user_id->users.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/postgres-official-cte-dml-sql/expected-diagnostics.json": {
+      "fixtureSha256": "7a97419c80c32689db6c9d20d323a81563357d514c138c65c4a1c02b03527952",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-cte-dml-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:accounts->orders:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:staging_orders->orders:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "FK_LIKE:order_staging.order_id->orders.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "archived_rows",
+        "candidates",
+        "moved_rows",
+        "source_rows",
+        "updated_accounts"
+      ]
+    },
+    "test-fixtures/correctness/postgres/postgres-official-cte-nested-sql/expected-diagnostics.json": {
+      "fixtureSha256": "5f3800778ac3ef617612df5c0dfce295bef39288392a6ba7e87518d182458c30",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-cte-nested-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:departments->departments:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "base_orders",
+        "customer_orders",
+        "customer_regions",
+        "department_tree"
+      ]
+    },
+    "test-fixtures/correctness/postgres/postgres-official-expression-access-method-index-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "70ef90e4cb2ce757049e3629f3fc13a3bca6789ddd9adec2535201fc082b3832",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-expression-access-method-index-ddl/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:documents.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/postgres-official-index-include-partial-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "f7e0c12a16ad7ab81499d15dd79d4be1a94fd978905b69f6df2611d09ccdecff",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-index-include-partial-ddl/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:ledger_entries.account_no->accounts.account_no:DDL_FOREIGN_KEY"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/postgres-official-index-opclass-expression-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "6315f9bba4ed4c9cdde1a9432acbd74e53aca5a9e04cdcdf2ee8e8cb0b2e327e",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-index-opclass-expression-ddl/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:invoices.customer_ref->customers.external_ref:DDL_FOREIGN_KEY,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/postgres-official-index-options-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "8d03870d870a74efe5f20aab7950b16435eb5466faff19fbd2a5960db28cc33f",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-index-options-ddl/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:public.orders.user_id->public.users.id:DDL_FOREIGN_KEY,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/postgres-official-index-partition-boundary-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "08c4d3cec2d512a9c16fc99604aade3136c69e015da5337bbdeedd49c9fc2f6d",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-index-partition-boundary-ddl/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:tenant_orders.tenant_id->tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/postgres-official-index-storage-ddl/expected-diagnostics.json": {
+      "fixtureSha256": "7dbe258427452185299fd4a64f6fa2dd88ddaaf54646a6fb3b84c3c6972932c5",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-index-storage-ddl/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:public.orders.user_id->public.users.id:DDL_FOREIGN_KEY,TARGET_UNIQUE"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/postgres-official-join-edge-sql/expected-diagnostics.json": {
+      "fixtureSha256": "21fcd42468809c53a39b5890afa695e549ba516523d6f0474a5ecdd29ad201b0",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-join-edge-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:customers->customer_audit:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:orders->order_tags:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "FK_LIKE:invoices.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
+        "FK_LIKE:payments.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:refunds.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "order_join"
+      ]
+    },
+    "test-fixtures/correctness/postgres/postgres-official-lateral-function-sql/expected-diagnostics.json": {
+      "fixtureSha256": "288289d04ba73c3e7d29ffcabc52deca3d4cd0d7645d36350dcdc17465796a42",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-lateral-function-sql/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
+        "FK_LIKE:products.manufacturer_id->manufacturers.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "projected_user",
+        "expanded",
+        "ROWS",
+        "json_to_recordset",
+        "generate_series",
+        "get_product_names",
+        "pname"
+      ]
+    },
+    "test-fixtures/correctness/postgres/postgres-official-lateral-nested-join-sql/expected-diagnostics.json": {
+      "fixtureSha256": "638664a755fa280c4cb4f835efbb3f5186b24fed558de80bc72c795251f4ead2",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-lateral-nested-join-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:orders->products:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_EXISTS",
+        "FK_LIKE:line_items.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:line_items.product_id->products.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "decoded",
+        "generate_series",
+        "get_order_users",
+        "gou",
+        "json_to_recordset",
+        "liq"
+      ]
+    },
+    "test-fixtures/correctness/postgres/postgres-official-multiway-join-sql/expected-diagnostics.json": {
+      "fixtureSha256": "e78e2bc977b65a8d351c2bb6ec9c3c5cd11aa6a6cc2b9cf33a7febbfd6c67753",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-multiway-join-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:order_items->order_roots:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:payments->order_roots:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:refunds->order_roots:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:shipments->order_roots:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "FK_LIKE:orders.tenant_id->tenants.id:SQL_LOG_JOIN",
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
+        "FK_LIKE:payments.invoice_id->invoices.id:SQL_LOG_JOIN",
+        "FK_LIKE:shipments.carrier_id->carriers.id:SQL_LOG_JOIN",
+        "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:users.tenant_id->tenants.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "pay"
+      ]
+    },
+    "test-fixtures/correctness/postgres/postgres-official-subquery-deep-sql/expected-diagnostics.json": {
+      "fixtureSha256": "f896f5bf349f8215fbf2cf12cf3ce020bead6c8c6231fd400baf9aca603307d6",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-subquery-deep-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:customers->invoices:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:orders->payments:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:products->orders:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:refunds->payments:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:shipments->payments:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_EXISTS",
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
+        "FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS",
+        "FK_LIKE:users.account_id->accounts.id:SQL_LOG_EXISTS"
+      ],
+      "forbiddenTables": [
+        "paid_orders"
+      ]
+    },
+    "test-fixtures/correctness/postgres/postgres-official-subquery-edge-sql/expected-diagnostics.json": {
+      "fixtureSha256": "daac5895b61f50b08f506d12d4aaf873f3db29593e5a97b9013ee663316932ea",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/postgres-official-subquery-edge-sql/expected-relations.json": {
+      "fingerprints": [
+        "CO_OCCURRENCE:orders->invoices:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:orders->payments:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:orders->users:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:products->orders:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:refunds->orders:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "CO_OCCURRENCE:refunds->payments:SQL_LOG_TABLE_CO_OCCURRENCE",
+        "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_SUBQUERY_IN",
+        "FK_LIKE:order_items.product_id->products.id:SQL_LOG_SUBQUERY_IN",
+        "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_EXISTS"
+      ],
+      "forbiddenTables": [
+        "projected_orders"
+      ]
+    },
+    "test-fixtures/correctness/postgres/sql-delete-using-no-alias/expected-diagnostics.json": {
+      "fixtureSha256": "308923e53f76ff342a5a100e44eaa99874d1956723712f7f0e473cd52b31b01e",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/sql-delete-using-no-alias/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/sql-lateral-derived/expected-diagnostics.json": {
+      "fixtureSha256": "d73fbc3d9bb99c8444f1c2babdad95f01f1c63f771c896479183fe81d590f747",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/sql-lateral-derived/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "x",
+        "lateral"
+      ]
+    },
+    "test-fixtures/correctness/postgres/sql-merge-using/expected-diagnostics.json": {
+      "fixtureSha256": "bd98733bea343adedba46df5f4c9a90e2d6eee30e70404984f71d726dd3a86cc",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/sql-merge-using/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:target_orders.source_order_id->source_orders.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/sql-multi-layer-cte/expected-diagnostics.json": {
+      "fixtureSha256": "762c87cc95502dae56e22694970763b2f5d43205a278a22f82e9ba32bdecf4c7",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/sql-multi-layer-cte/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:invoices.order_id->public.orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:public.customers.region_id->public.regions.id:SQL_LOG_JOIN",
+        "FK_LIKE:public.orders.customer_id->public.customers.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    "test-fixtures/correctness/postgres/sql-quoted-mixed-alias/expected-diagnostics.json": {
+      "fixtureSha256": "cd11fc2c8d774818c4cd4ef248fdc18fc2f9dd4ad7f1e76f4b0a1752c8dde735",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/sql-quoted-mixed-alias/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:payments.order_id->public.orders.id:SQL_LOG_JOIN",
+        "FK_LIKE:public.orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": []
+    },
+    "test-fixtures/correctness/postgres/sql-recursive-cte/expected-diagnostics.json": {
+      "fixtureSha256": "2a99913f7386e7e5dba3f8eca5c50f905ecfd99950f83e343c1582b0b7f40b48",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/sql-recursive-cte/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:employees.manager_id->employees.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "employee_paths"
+      ]
+    },
+    "test-fixtures/correctness/postgres/sql-unnest-ordinality/expected-diagnostics.json": {
+      "fixtureSha256": "2117b055b9225cc3dd2d5594e81c363d12cf6a6a3447da37c725482056a8a9fe",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/sql-unnest-ordinality/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": [
+        "unnest",
+        "input_ids"
+      ]
+    },
+    "test-fixtures/correctness/postgres/sql-update-from-aliases/expected-diagnostics.json": {
+      "fixtureSha256": "35c4afa5bca3492081a460943bf577df9062bc5f367919d5c44490339a690071",
+      "warningCodes": {}
+    },
+    "test-fixtures/correctness/postgres/sql-update-from-aliases/expected-relations.json": {
+      "fingerprints": [
+        "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+      ],
+      "forbiddenTables": []
+    }
+  },
+  "source": "git show HEAD:<path>"
+}

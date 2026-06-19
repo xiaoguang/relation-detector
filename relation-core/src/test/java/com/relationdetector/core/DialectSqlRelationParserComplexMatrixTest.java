@@ -33,9 +33,10 @@ import com.relationdetector.api.Enums.StatementSourceType;
  * or function rowset pseudo-relations.
  */
 class DialectSqlRelationParserComplexMatrixTest {
-    private final AntlrSqlRelationParser parser = new AntlrSqlRelationParser(
-            new AntlrStructuredSqlParser(SqlDialect.MYSQL),
-            new RelationExtractionVisitor());
+    private final TokenEventSqlRelationParser mysqlParser = new TokenEventSqlRelationParser(
+            new TokenEventStructuredSqlParser(SqlDialect.MYSQL));
+    private final TokenEventSqlRelationParser postgresParser = new TokenEventSqlRelationParser(
+            new TokenEventStructuredSqlParser(SqlDialect.POSTGRES));
 
     @Test
     void mysqlNestedCteResolvesBaseRelationsAndDoesNotEmitCtePseudoTables() {
@@ -56,7 +57,7 @@ class DialectSqlRelationParserComplexMatrixTest {
                 JOIN regions r ON ro.region_id = r.id
                 """;
 
-        List<RelationshipCandidate> relations = parse(sql);
+        List<RelationshipCandidate> relations = parseMysql(sql);
 
         assertColumnRelation(relations, "orders", "customer_id", "customers", "id", EvidenceType.SQL_LOG_JOIN);
         assertColumnRelation(relations, "customers", "region_id", "regions", "id", EvidenceType.SQL_LOG_JOIN);
@@ -75,7 +76,7 @@ class DialectSqlRelationParserComplexMatrixTest {
                   AND a.closed_at IS NULL
                 """;
 
-        List<RelationshipCandidate> relations = parse(sql);
+        List<RelationshipCandidate> relations = parseMysql(sql);
 
         assertColumnRelation(relations, "orders", "user_id", "users", "id", EvidenceType.SQL_LOG_JOIN);
         assertColumnRelation(relations, "users", "account_id", "accounts", "id", EvidenceType.SQL_LOG_JOIN);
@@ -92,7 +93,7 @@ class DialectSqlRelationParserComplexMatrixTest {
                 WHERE u.id IS NULL
                 """;
 
-        List<RelationshipCandidate> relations = parse(sql);
+        List<RelationshipCandidate> relations = parseMysql(sql);
 
         assertColumnRelation(relations, "orders", "user_id", "users", "id", EvidenceType.SQL_LOG_JOIN);
         assertEvidenceAttribute(relations, "orders", "user_id", "joinKind", "LEFT_JOIN");
@@ -111,7 +112,7 @@ class DialectSqlRelationParserComplexMatrixTest {
                 JOIN invoices i ON i.order_id = projected.order_id
                 """;
 
-        List<RelationshipCandidate> relations = parse(sql);
+        List<RelationshipCandidate> relations = parseMysql(sql);
 
         assertColumnRelation(relations, "orders", "user_id", "users", "id", EvidenceType.SQL_LOG_JOIN);
         assertColumnRelation(relations, "invoices", "order_id", "orders", "id", EvidenceType.SQL_LOG_JOIN);
@@ -141,7 +142,7 @@ class DialectSqlRelationParserComplexMatrixTest {
                 JOIN invoices i ON i.order_id = c.order_id
                 """;
 
-        List<RelationshipCandidate> relations = parse(sql);
+        List<RelationshipCandidate> relations = parsePostgres(sql);
 
         assertColumnRelation(relations, "orders", "customer_id", "customers", "id", EvidenceType.SQL_LOG_JOIN);
         assertColumnRelation(relations, "customers", "region_id", "regions", "id", EvidenceType.SQL_LOG_JOIN);
@@ -168,7 +169,7 @@ class DialectSqlRelationParserComplexMatrixTest {
                 JOIN employees manager ON ep.manager_id = manager.id
                 """;
 
-        List<RelationshipCandidate> relations = parse(sql);
+        List<RelationshipCandidate> relations = parsePostgres(sql);
 
         assertColumnRelation(relations, "employees", "manager_id", "employees", "id", EvidenceType.SQL_LOG_JOIN);
         assertNoRelationContainingTable(relations, "employee_paths");
@@ -185,7 +186,7 @@ class DialectSqlRelationParserComplexMatrixTest {
                 JOIN users u ON x.user_id = u.id
                 """;
 
-        List<RelationshipCandidate> relations = parse(sql);
+        List<RelationshipCandidate> relations = parsePostgres(sql);
 
         assertColumnRelation(relations, "orders", "user_id", "users", "id", EvidenceType.SQL_LOG_JOIN);
         assertNoRelationContainingTable(relations, "x");
@@ -202,7 +203,7 @@ class DialectSqlRelationParserComplexMatrixTest {
                   ON input_ids.user_id = u.id
                 """;
 
-        List<RelationshipCandidate> relations = parse(sql);
+        List<RelationshipCandidate> relations = parsePostgres(sql);
 
         assertColumnRelation(relations, "orders", "user_id", "users", "id", EvidenceType.SQL_LOG_JOIN);
         assertNoRelationContainingTable(relations, "unnest");
@@ -221,7 +222,7 @@ class DialectSqlRelationParserComplexMatrixTest {
                   INSERT (source_order_id) VALUES (s.id)
                 """;
 
-        List<RelationshipCandidate> relations = parse(sql);
+        List<RelationshipCandidate> relations = parsePostgres(sql);
 
         assertColumnRelation(relations, "target_orders", "source_order_id",
                 "source_orders", "id", EvidenceType.SQL_LOG_JOIN);
@@ -245,14 +246,26 @@ class DialectSqlRelationParserComplexMatrixTest {
                 ) AS latest_payment
                 """;
 
-        List<RelationshipCandidate> relations = parse(sql);
+        List<RelationshipCandidate> relations = parseFutureSqlServer(sql);
 
         assertColumnRelation(relations, "orders", "user_id", "users", "id", EvidenceType.SQL_LOG_JOIN);
         assertColumnRelation(relations, "payments", "order_id", "orders", "id", EvidenceType.SQL_LOG_JOIN);
     }
 
-    private List<RelationshipCandidate> parse(String sql) {
-        return parser.parse(new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL,
+    private List<RelationshipCandidate> parseMysql(String sql) {
+        return mysqlParser.parse(new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL,
+                "dialect-complex-matrix.sql", 1, sql.lines().count(), java.util.Map.of()));
+    }
+
+    private List<RelationshipCandidate> parsePostgres(String sql) {
+        return postgresParser.parse(new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL,
+                "dialect-complex-matrix.sql", 1, sql.lines().count(), java.util.Map.of()));
+    }
+
+    private List<RelationshipCandidate> parseFutureSqlServer(String sql) {
+        return new TokenEventSqlRelationParser(
+                new TokenEventStructuredSqlParser(SqlDialect.MYSQL),
+                new TokenEventRelationExtractor()).parse(new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL,
                 "dialect-complex-matrix.sql", 1, sql.lines().count(), java.util.Map.of()));
     }
 

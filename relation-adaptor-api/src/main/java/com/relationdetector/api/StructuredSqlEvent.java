@@ -7,10 +7,10 @@ import com.relationdetector.api.Enums.StructuredParseEventType;
 /**
  * One parser-level fact extracted before relationship scoring.
  *
- * <p>ANTLR migration note: this is intentionally not a relationship. It is the
- * intermediate event stream that lets dialect parsers describe table
- * references, predicates, DDL clauses, dynamic SQL markers, and comparison
- * diagnostics without coupling the grammar layer to confidence scoring.
+ * <p>This is intentionally not a relationship. It is the intermediate
+ * Token/Event stream that lets dialect parsers describe table references,
+ * predicates, DDL clauses, dynamic SQL markers, and write expressions without
+ * coupling the grammar layer to confidence scoring.
  */
 public record StructuredSqlEvent(
         StructuredParseEventType type,

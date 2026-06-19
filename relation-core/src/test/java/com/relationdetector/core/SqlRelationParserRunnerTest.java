@@ -24,7 +24,6 @@ import com.relationdetector.api.SqlStatementRecord;
 import com.relationdetector.api.TableId;
 import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Collectors.DataProfiler;
-import com.relationdetector.api.Collectors.DdlParser;
 import com.relationdetector.api.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.api.Collectors.MetadataCollector;
 import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
@@ -41,10 +40,10 @@ import com.relationdetector.api.Enums.StatementSourceType;
 /**
  * Tests SQL parser dispatch without running a full scan.
  *
- * <p>Simple and shadow parser modes have been removed. The runner now always
- * invokes the adaptor parser exposed for the dialect, and a hard parser failure
- * is surfaced as a warning by {@link ScanEngine} rather than being hidden by a
- * Simple parser fallback.
+ * <p>Legacy parser modes have been removed. The runner now always
+ * invokes the Token/Event parser exposed for the dialect, and a hard parser
+ * failure is surfaced as a warning by {@link ScanEngine} rather than being
+ * hidden by any removed fallback parser.
  */
 class SqlRelationParserRunnerTest {
     @Test
@@ -59,7 +58,7 @@ class SqlRelationParserRunnerTest {
                 }), config, statement(), context(new ArrayList<>()));
 
         assertTrue(relations.isEmpty());
-        assertEquals(1, parserCalls.get(), "runner should call the adaptor's ANTLR parser exactly once");
+        assertEquals(1, parserCalls.get(), "runner should call the adaptor's Token/Event parser exactly once");
     }
 
     @Test
@@ -70,12 +69,12 @@ class SqlRelationParserRunnerTest {
         try {
             new SqlRelationParserRunner()
                     .parse(new TestAdaptor((statement, context) -> {
-                        throw new IllegalStateException("ANTLR parser exploded");
+                        throw new IllegalStateException("Token/Event parser exploded");
                     }), config, statement(), context(warnings));
         } catch (IllegalStateException ex) {
-            assertEquals("ANTLR parser exploded", ex.getMessage());
+            assertEquals("Token/Event parser exploded", ex.getMessage());
         }
-        assertTrue(warnings.isEmpty(), "runner must not emit fallback warnings after legacy parser removal");
+        assertTrue(warnings.isEmpty(), "runner must not emit fallback warnings after old parser removal");
     }
 
     @Test
@@ -98,7 +97,7 @@ class SqlRelationParserRunnerTest {
                 }), config, statement, context(new ArrayList<>()));
 
         assertTrue(relations.isEmpty(), "metadata-only native log SQL should be filtered as noise");
-        assertEquals(0, structuredCalls.get(), "filtered log SQL must not enter the ANTLR parser");
+        assertEquals(0, structuredCalls.get(), "filtered log SQL must not enter the Token/Event parser");
     }
 
     @Test
@@ -195,12 +194,6 @@ class SqlRelationParserRunnerTest {
             return (connection, scope) -> new MetadataSnapshot();
         }
 
-        @Override
-        public DdlParser ddlParser() {
-            return (file, context) -> List.of();
-        }
-
-        @Override
         public SqlLogExtractor sqlLogExtractor() {
             return (file, hint) -> Stream.empty();
         }

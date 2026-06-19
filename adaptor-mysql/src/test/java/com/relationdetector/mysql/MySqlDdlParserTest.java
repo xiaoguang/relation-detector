@@ -5,35 +5,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.relationdetector.api.AdaptorContext;
-import com.relationdetector.api.Collectors.DdlParser;
 import com.relationdetector.api.RelationshipCandidate;
-import com.relationdetector.api.ScanScope;
-import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Enums.EvidenceType;
+import com.relationdetector.core.DdlRelationExtractionVisitor;
 
 /**
- * Guards the MySQL adaptor DDL extension point.
+ * Guards the MySQL adaptor Token/Event DDL extension point.
  *
  * <p>MySQL and PostgreSQL have different DDL grammar. This test makes sure the
- * MySQL adaptor owns a MySQL-specific parser class instead of exposing core's
- * fallback parser directly.
+ * MySQL adaptor owns a MySQL-specific Token/Event parser class instead of
+ * exposing a generic core parser directly.
  */
 class MySqlDdlParserTest {
     @TempDir
     Path tempDir;
 
     @Test
-    void adaptorReturnsMysqlSpecificDdlParser() {
-        DdlParser parser = new MySqlDatabaseAdaptor().ddlParser();
+    void adaptorReturnsMysqlSpecificStructuredDdlParser() {
+        var parser = new MySqlDatabaseAdaptor().structuredDdlParser().orElseThrow();
 
-        assertEquals(MySqlDdlParser.class, parser.getClass());
+        assertEquals(MySqlTokenEventStructuredDdlParser.class, parser.getClass());
     }
 
     @Test
@@ -56,7 +52,7 @@ class MySqlDdlParserTest {
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
                 """);
 
-        List<RelationshipCandidate> relations = new MySqlDdlParser().parseDdl(ddl, null);
+        List<RelationshipCandidate> relations = parseDdl(ddl);
 
         assertTrue(relations.stream().anyMatch(relation ->
                 relation.source().displayName().equals("shop.orders.user_id")
@@ -85,26 +81,12 @@ class MySqlDdlParserTest {
                 """;
         Files.writeString(ddl, ddlText);
 
-        List<RelationshipCandidate> mysqlRelations = new MySqlDdlParser().parseDdl(ddl, null);
+        List<RelationshipCandidate> mysqlRelations = parseDdl(ddl);
 
         assertHasEvidence(mysqlRelations, "shop.orders.user_email", "shop.users.email", EvidenceType.TARGET_UNIQUE);
     }
 
     @Test
-    void mysqlParserReportsDdlReadFailuresThroughContextWarnings() {
-        List<WarningMessage> warnings = new ArrayList<>();
-        AdaptorContext context = new AdaptorContext(new ScanScope(null, "shop", List.of(), List.of()),
-                java.util.Map.of(), warnings::add);
-
-        List<RelationshipCandidate> relations = new MySqlDdlParser().parseDdl(
-                tempDir.resolve("missing-schema.sql"), context);
-
-        assertTrue(relations.isEmpty());
-        assertEquals(1, warnings.size());
-        assertEquals("DDL_PARSE_FAILED", warnings.get(0).code());
-        assertEquals("NoSuchFileException", warnings.get(0).attributes().get("exceptionClass"));
-    }
-
     private void assertHasEvidence(
             List<RelationshipCandidate> relations,
             String source,
@@ -125,5 +107,11 @@ class MySqlDdlParserTest {
                 relation.source().displayName().equals(source)
                         && relation.target().displayName().equals(target)
                         && relation.evidence().stream().anyMatch(e -> e.type() == evidenceType));
+    }
+
+    private List<RelationshipCandidate> parseDdl(Path ddl) throws Exception {
+        String ddlText = Files.readString(ddl);
+        var structured = new MySqlTokenEventStructuredDdlParser().parseDdl(ddlText, ddl.toString(), null);
+        return new DdlRelationExtractionVisitor().extract(ddlText, ddl.toString(), structured);
     }
 }

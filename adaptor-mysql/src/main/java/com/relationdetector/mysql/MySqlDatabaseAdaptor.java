@@ -22,7 +22,6 @@ import com.relationdetector.api.AdaptorContext;
 import com.relationdetector.api.ColumnRef;
 import com.relationdetector.api.Collectors.DataProfiler;
 import com.relationdetector.api.Collectors.DatabaseDdlCollector;
-import com.relationdetector.api.Collectors.DdlParser;
 import com.relationdetector.api.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.api.Collectors.MetadataCollector;
 import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
@@ -60,7 +59,7 @@ import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
 import com.relationdetector.core.DiagnosticWarnings;
 import com.relationdetector.core.PlainSqlLogExtractor;
-import com.relationdetector.core.AntlrSqlRelationParser;
+import com.relationdetector.core.TokenEventSqlRelationParser;
 
 /** MySQL 5.7/8.0 adaptor implementing the Phase 4 design. */
 public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
@@ -114,11 +113,6 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
     }
 
     @Override
-    public DdlParser ddlParser() {
-        return new MySqlDdlParser();
-    }
-
-    @Override
     public Optional<DatabaseDdlCollector> databaseDdlCollector() {
         return Optional.of(new MySqlDatabaseDdlCollector());
     }
@@ -130,17 +124,17 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
 
     @Override
     public SqlRelationParser sqlRelationParser() {
-        return new AntlrSqlRelationParser(new MySqlAntlrSqlParser(), new MySqlRelationExtractionVisitor());
+        return new TokenEventSqlRelationParser(new MySqlTokenEventStructuredSqlParser());
     }
 
     @Override
     public Optional<StructuredSqlParser> structuredSqlParser() {
-        return Optional.of(new MySqlAntlrSqlParser());
+        return Optional.of(new MySqlTokenEventStructuredSqlParser());
     }
 
     @Override
     public Optional<StructuredDdlParser> structuredDdlParser() {
-        return Optional.of(new MySqlAntlrDdlParser());
+        return Optional.of(new MySqlTokenEventStructuredDdlParser());
     }
 
     @Override

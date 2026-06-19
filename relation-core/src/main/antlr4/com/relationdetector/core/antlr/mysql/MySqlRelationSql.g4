@@ -1,12 +1,12 @@
 grammar MySqlRelationSql;
 
 /*
- * MySQL structural grammar for ANTLR shadow mode.
+ * MySQL structural grammar for the Token/Event SQL parser.
  *
  * This is intentionally still a tolerant grammar, not a full MySQL grammar.
- * The important Phase-1 boundary is architectural: MySQL now owns a separate
- * generated lexer/parser class, so later MySQL 8.x grammar rules, sql_mode
- * gates, and server-version switches can evolve without changing PostgreSQL.
+ * The important boundary is architectural: MySQL owns a separate generated
+ * lexer/parser class, so later MySQL 8.x grammar rules, sql_mode gates, and
+ * server-version switches can evolve without changing PostgreSQL.
  *
  * MySQL-specific choice in this first grammar:
  *   - backtick identifiers are quoted identifiers;
@@ -46,7 +46,7 @@ QUOTED_IDENTIFIER
     ;
 
 STRING_LITERAL
-    : '\'' ('\\' . | '\'\'' | ~['\\])* '\''
+    : '\'' ('\'\'' | ~'\'')* '\''
     | '"' ('\\' . | '""' | ~["\\])* '"'
     ;
 

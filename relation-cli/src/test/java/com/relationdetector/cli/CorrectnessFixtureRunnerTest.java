@@ -25,15 +25,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import com.relationdetector.api.AdaptorContext;
+import com.relationdetector.api.DataLineageCandidate;
 import com.relationdetector.api.DatabaseAdaptor;
 import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.ScanScope;
 import com.relationdetector.api.SqlStatementRecord;
+import com.relationdetector.api.StructuredParseResult;
 import com.relationdetector.api.WarningMessage;
+import com.relationdetector.api.Collectors.StructuredSqlParser;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.EvidenceSourceType;
 import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.core.DdlRelationParserRunner;
+import com.relationdetector.core.TokenEventDataLineageExtractor;
+import com.relationdetector.core.DataLineageMerger;
 import com.relationdetector.core.PlainSqlLogExtractor;
 import com.relationdetector.core.ScanConfig;
 import com.relationdetector.core.SqlLogNoiseFilter;
@@ -71,14 +76,86 @@ class CorrectnessFixtureRunnerTest {
                         .toList());
     }
 
+    @Test
+    void objectBlockStatementFormatKeepsRoutineBodyTogether() {
+        String text = """
+                -- relation-detector-fixture-source: ROUTINE:case_01.rebuild_order_rollups
+                BEGIN
+                  SELECT *
+                  FROM orders o
+                  JOIN users u ON o.user_id = u.id;
+                  SELECT *
+                  FROM order_items oi
+                  JOIN products p ON oi.product_id = p.id;
+                END
+                -- relation-detector-fixture-end
+                """;
+
+        List<SqlStatementRecord> statements = parseObjectBlockStatements(
+                text,
+                StatementSourceType.PROCEDURE,
+                "routine-fixture.sql");
+
+        assertEquals(1, statements.size());
+        assertTrue(statements.get(0).sql().contains("JOIN users u ON o.user_id = u.id;"));
+        assertTrue(statements.get(0).sql().contains("JOIN products p ON oi.product_id = p.id;"));
+        assertEquals("ROUTINE:case_01.rebuild_order_rollups", statements.get(0).sourceName());
+    }
+
+    @Test
+    void objectBlockStatementFormatCanFilterOneRoutineSource() {
+        String text = """
+                -- relation-detector-fixture-source: ROUTINE:case_01.skip_me
+                BEGIN
+                  SELECT * FROM ignored_orders;
+                END
+                -- relation-detector-fixture-end
+                -- relation-detector-fixture-source: ROUTINE:case_01.keep_me
+                BEGIN
+                  UPDATE orders o
+                  JOIN users u ON o.user_id = u.id
+                  SET o.audit_user_id = u.id;
+                END
+                -- relation-detector-fixture-end
+                """;
+
+        List<SqlStatementRecord> statements = parseObjectBlockStatements(
+                text,
+                StatementSourceType.PROCEDURE,
+                "routine-fixture.sql",
+                "ROUTINE:case_01.keep_me");
+
+        assertEquals(1, statements.size());
+        assertEquals("ROUTINE:case_01.keep_me", statements.get(0).sourceName());
+        assertTrue(statements.get(0).sql().contains("SET o.audit_user_id = u.id"));
+        assertFalse(statements.get(0).sql().contains("ignored_orders"));
+    }
+
+    @Test
+    void objectBlockStatementFormatRequiresEndMarker() {
+        String text = """
+                -- relation-detector-fixture-source: ROUTINE:case_01.rebuild_order_rollups
+                BEGIN
+                  SELECT * FROM orders o JOIN users u ON o.user_id = u.id;
+                END
+                """;
+
+        IllegalArgumentException error = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> parseObjectBlockStatements(text, StatementSourceType.PROCEDURE, "routine-fixture.sql"));
+
+        assertTrue(error.getMessage().contains("Missing relation-detector-fixture-end"));
+    }
+
     private void runFixture(CorrectnessFixture fixture) throws Exception {
         String input = Files.readString(fixture.inputFile());
         ExpectedRelations expectedRelations = ExpectedRelations.read(fixture.expectedRelationsFile());
         ExpectedDiagnostics expectedDiagnostics = ExpectedDiagnostics.read(fixture.expectedDiagnosticsFile());
+        ExpectedLineage expectedLineage = ExpectedLineage.readIfPresent(fixture.expectedLineageFile());
         assertEquals(expectedDiagnostics.fixtureSha256(), sha256(input), fixture.id() + " fixture hash");
 
         if (fixture.parserTarget().equals("SQL")) {
-            runSqlFixture(fixture, expectedRelations, expectedDiagnostics);
+            runSqlFixture(fixture, expectedRelations, expectedDiagnostics, expectedLineage);
             return;
         }
         if (fixture.parserTarget().equals("DDL")) {
@@ -91,22 +168,56 @@ class CorrectnessFixtureRunnerTest {
     private void runSqlFixture(
             CorrectnessFixture fixture,
             ExpectedRelations expectedRelations,
-            ExpectedDiagnostics expectedDiagnostics
-    ) {
+            ExpectedDiagnostics expectedDiagnostics,
+            ExpectedLineage expectedLineage
+    ) throws Exception {
         DatabaseAdaptor adaptor = adaptor(fixture.databaseType());
         ScanConfig config = config(fixture);
         List<WarningMessage> warnings = new ArrayList<>();
         AdaptorContext context = context(fixture, warnings);
-        List<SqlStatementRecord> statements = new PlainSqlLogExtractor()
-                .extract(fixture.inputFile(), fixture.sourceType(), warnings::add)
-                .toList();
+        List<SqlStatementRecord> statements = sqlStatements(fixture, inputOf(fixture), warnings);
         List<RelationshipCandidate> relationships = new ArrayList<>();
+        List<DataLineageCandidate> lineages = new ArrayList<>();
         SqlRelationParserRunner runner = new SqlRelationParserRunner();
+        TokenEventDataLineageExtractor lineageExtractor = new TokenEventDataLineageExtractor();
+        StructuredSqlParser structuredSqlParser = adaptor.structuredSqlParser()
+                .orElseThrow(() -> new IllegalStateException("No structured SQL parser for " + fixture.databaseType()));
         for (SqlStatementRecord statement : statements) {
             relationships.addAll(runner.parse(adaptor, config, statement, context));
+            /*
+             * Relationship parsing already goes through the adaptor SQL parser.
+             * Data Lineage consumes the same token/event model directly; parse
+             * with a null context so fixture warning assertions are not polluted by
+             * this second, lineage-only structural parse.
+             */
+            StructuredParseResult structured = structuredSqlParser.parseSql(statement, null);
+            lineages.addAll(lineageExtractor.extract(statement, structured));
         }
         assertRelations(fixture, expectedRelations, relationships);
+        assertLineage(fixture, expectedLineage,
+                new DataLineageMerger().merge(lineages).stream().map(this::lineageFingerprint).toList());
         assertWarningCodes(fixture, expectedDiagnostics, warnings);
+    }
+
+    private String inputOf(CorrectnessFixture fixture) throws Exception {
+        return Files.readString(fixture.inputFile());
+    }
+
+    private List<SqlStatementRecord> sqlStatements(
+            CorrectnessFixture fixture,
+            String input,
+            List<WarningMessage> warnings
+    ) {
+        if ("OBJECT_BLOCKS".equalsIgnoreCase(fixture.statementFormat())) {
+            return parseObjectBlockStatements(
+                    input,
+                    fixture.sourceType(),
+                    fixture.inputFile().toString(),
+                    fixture.objectSourceFilter());
+        }
+        return new PlainSqlLogExtractor()
+                .extract(fixture.inputFile(), fixture.sourceType(), warnings::add)
+                .toList();
     }
 
     private void runDdlFixture(
@@ -114,7 +225,7 @@ class CorrectnessFixtureRunnerTest {
             String input,
             ExpectedRelations expectedRelations,
             ExpectedDiagnostics expectedDiagnostics
-    ) {
+    ) throws Exception {
         DatabaseAdaptor adaptor = adaptor(fixture.databaseType());
         ScanConfig config = config(fixture);
         List<WarningMessage> warnings = new ArrayList<>();
@@ -129,10 +240,15 @@ class CorrectnessFixtureRunnerTest {
             CorrectnessFixture fixture,
             ExpectedRelations expected,
             List<RelationshipCandidate> actual
-    ) {
+    ) throws Exception {
         Set<String> actualFingerprints = actual.stream()
                 .map(this::fingerprint)
                 .collect(Collectors.toCollection(TreeSet::new));
+        if (Boolean.getBoolean("updateCorrectnessGold")) {
+            Files.writeString(fixture.expectedRelationsFile(),
+                    expectedRelationsJson(actualFingerprints.stream().toList(), expected.forbiddenTables()));
+            return;
+        }
         assertEquals(new TreeSet<>(expected.fingerprints()), actualFingerprints,
                 () -> fixture.id() + " relation fingerprints");
 
@@ -155,6 +271,39 @@ class CorrectnessFixtureRunnerTest {
         assertEquals(expected.warningCodes(), actualCodes, fixture.id() + " warningCodes");
     }
 
+    private void assertLineage(
+            CorrectnessFixture fixture,
+            ExpectedLineage expected,
+            List<String> actualFingerprints
+    ) throws Exception {
+        if (Boolean.getBoolean("updateCorrectnessGold")
+                && (expected.exists() || !actualFingerprints.isEmpty())) {
+            Files.writeString(fixture.expectedLineageFile(),
+                    expectedLineageJson(new TreeSet<>(actualFingerprints).stream().toList(),
+                            expected.forbiddenSources(),
+                            expected.forbiddenTargets(),
+                            expected.warningCodes()));
+            return;
+        }
+        if (!expected.exists()) {
+            return;
+        }
+        assertEquals(new TreeSet<>(expected.fingerprints()), new TreeSet<>(actualFingerprints),
+                () -> fixture.id() + " data lineage fingerprints");
+        for (String forbiddenSource : expected.forbiddenSources()) {
+            assertTrue(actualFingerprints.stream().noneMatch(lineage -> lineage.contains(forbiddenSource + "->")
+                            || lineage.contains("," + forbiddenSource + "->")
+                            || lineage.contains(":" + forbiddenSource + ",")),
+                    () -> fixture.id() + " emitted forbidden lineage source " + forbiddenSource
+                            + ". Actual=" + actualFingerprints);
+        }
+        for (String forbiddenTarget : expected.forbiddenTargets()) {
+            assertTrue(actualFingerprints.stream().noneMatch(lineage -> lineage.endsWith("->" + forbiddenTarget)),
+                    () -> fixture.id() + " emitted forbidden lineage target " + forbiddenTarget
+                            + ". Actual=" + actualFingerprints);
+        }
+    }
+
     private String fingerprint(RelationshipCandidate relation) {
         String evidenceTypes = relation.evidence().stream()
                 .map(evidence -> evidence.type().name())
@@ -162,6 +311,58 @@ class CorrectnessFixtureRunnerTest {
         return relation.relationType() + ":"
                 + relation.source().displayName() + "->" + relation.target().displayName()
                 + ":" + evidenceTypes;
+    }
+
+    private String lineageFingerprint(DataLineageCandidate lineage) {
+        return lineage.flowKind() + ":"
+                + lineage.transformType() + ":"
+                + lineage.sources().stream()
+                        .map(com.relationdetector.api.Endpoint::displayName)
+                        .collect(Collectors.joining(","))
+                + "->" + lineage.target().displayName();
+    }
+
+    private static String expectedRelationsJson(List<String> fingerprints, List<String> forbiddenTables) {
+        return "{\n"
+                + "  \"fingerprints\": " + stringArrayJson(fingerprints) + ",\n"
+                + "  \"forbiddenTables\": " + stringArrayJson(forbiddenTables) + "\n"
+                + "}\n";
+    }
+
+    private static String expectedLineageJson(
+            List<String> fingerprints,
+            List<String> forbiddenSources,
+            List<String> forbiddenTargets,
+            Map<String, Long> warningCodes
+    ) {
+        return "{\n"
+                + "  \"fingerprints\": " + stringArrayJson(fingerprints) + ",\n"
+                + "  \"forbiddenSources\": " + stringArrayJson(forbiddenSources) + ",\n"
+                + "  \"forbiddenTargets\": " + stringArrayJson(forbiddenTargets) + ",\n"
+                + "  \"warningCodes\": " + longMapJson(warningCodes) + "\n"
+                + "}\n";
+    }
+
+    private static String stringArrayJson(List<String> values) {
+        if (values.isEmpty()) {
+            return "[]";
+        }
+        return values.stream()
+                .map(value -> "    \"" + escapeJson(value) + "\"")
+                .collect(Collectors.joining(",\n", "[\n", "\n  ]"));
+    }
+
+    private static String longMapJson(Map<String, Long> values) {
+        if (values.isEmpty()) {
+            return "{}";
+        }
+        return values.entrySet().stream()
+                .map(entry -> "    \"" + escapeJson(entry.getKey()) + "\": " + entry.getValue())
+                .collect(Collectors.joining(",\n", "{\n", "\n  }"));
+    }
+
+    private static String escapeJson(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private DatabaseAdaptor adaptor(DatabaseType databaseType) {
@@ -202,17 +403,83 @@ class CorrectnessFixtureRunnerTest {
         throw new IllegalStateException("Cannot locate relation-detector workspace root");
     }
 
+    private static List<SqlStatementRecord> parseObjectBlockStatements(
+            String text,
+            StatementSourceType sourceType,
+            String sourceFile
+    ) {
+        return parseObjectBlockStatements(text, sourceType, sourceFile, "");
+    }
+
+    private static List<SqlStatementRecord> parseObjectBlockStatements(
+            String text,
+            StatementSourceType sourceType,
+            String sourceFile,
+            String objectSourceFilter
+    ) {
+        List<SqlStatementRecord> statements = new ArrayList<>();
+        String[] lines = text.split("\\R", -1);
+        String currentSource = null;
+        StringBuilder currentSql = new StringBuilder();
+        long startLine = 0;
+        String filter = objectSourceFilter == null ? "" : objectSourceFilter.trim();
+        for (int index = 0; index < lines.length; index++) {
+            String line = lines[index];
+            String trimmed = line.trim();
+            if (trimmed.startsWith("-- relation-detector-fixture-source:")) {
+                if (currentSource != null) {
+                    throw new IllegalArgumentException(
+                            "Missing relation-detector-fixture-end before line " + (index + 1) + " in " + sourceFile);
+                }
+                currentSource = trimmed.substring("-- relation-detector-fixture-source:".length()).trim();
+                currentSql.setLength(0);
+                startLine = index + 2L;
+                continue;
+            }
+            if (trimmed.equals("-- relation-detector-fixture-end")) {
+                if (currentSource == null) {
+                    throw new IllegalArgumentException(
+                            "Unexpected relation-detector-fixture-end at line " + (index + 1) + " in " + sourceFile);
+                }
+                String sql = currentSql.toString().strip();
+                if (!sql.isBlank() && (filter.isBlank() || currentSource.equals(filter))) {
+                    statements.add(new SqlStatementRecord(sql, sourceType, currentSource,
+                            startLine, index, java.util.Map.of("fixtureObjectSource", currentSource)));
+                }
+                currentSource = null;
+                currentSql.setLength(0);
+                continue;
+            }
+            if (currentSource != null) {
+                currentSql.append(line).append('\n');
+            }
+        }
+        if (currentSource != null) {
+            throw new IllegalArgumentException(
+                    "Missing relation-detector-fixture-end for " + currentSource + " in " + sourceFile);
+        }
+        if (!filter.isBlank() && statements.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "No relation-detector-fixture-source matched objectSourceFilter "
+                            + filter + " in " + sourceFile);
+        }
+        return List.copyOf(statements);
+    }
+
     private record CorrectnessFixture(
             Path path,
             String id,
             DatabaseType databaseType,
             String parserTarget,
             StatementSourceType sourceType,
+            String statementFormat,
             EvidenceSourceType evidenceSourceType,
             String schema,
             Path inputFile,
             Path expectedRelationsFile,
-            Path expectedDiagnosticsFile
+            Path expectedLineageFile,
+            Path expectedDiagnosticsFile,
+            String objectSourceFilter
     ) {
         static CorrectnessFixture read(Path manifest) throws Exception {
             Map<String, String> values = readSimpleManifest(manifest);
@@ -223,11 +490,14 @@ class CorrectnessFixtureRunnerTest {
                     DatabaseType.valueOf(required(values, "databaseType", manifest)),
                     required(values, "parserTarget", manifest),
                     StatementSourceType.valueOf(values.getOrDefault("sourceType", "PLAIN_SQL")),
+                    values.getOrDefault("statementFormat", "SEMICOLON"),
                     EvidenceSourceType.valueOf(values.getOrDefault("evidenceSourceType", "DDL_FILE")),
                     values.getOrDefault("schema", "public"),
                     root.resolve(required(values, "input", manifest)).normalize(),
                     root.resolve(required(values, "expectedRelations", manifest)).normalize(),
-                    root.resolve(required(values, "expectedDiagnostics", manifest)).normalize());
+                    root.resolve(values.getOrDefault("expectedLineage", "expected-lineage.json")).normalize(),
+                    root.resolve(required(values, "expectedDiagnostics", manifest)).normalize(),
+                    values.getOrDefault("objectSourceFilter", ""));
         }
 
         private static Map<String, String> readSimpleManifest(Path manifest) throws Exception {
@@ -276,6 +546,26 @@ class CorrectnessFixtureRunnerTest {
             String text = Files.readString(file);
             return new ExpectedDiagnostics(
                     stringField(text, "fixtureSha256"),
+                    objectLongs(text, "warningCodes"));
+        }
+    }
+
+    private record ExpectedLineage(
+            boolean exists,
+            List<String> fingerprints,
+            List<String> forbiddenSources,
+            List<String> forbiddenTargets,
+            Map<String, Long> warningCodes
+    ) {
+        static ExpectedLineage readIfPresent(Path file) throws Exception {
+            if (!Files.exists(file)) {
+                return new ExpectedLineage(false, List.of(), List.of(), List.of(), Map.of());
+            }
+            String text = Files.readString(file);
+            return new ExpectedLineage(true,
+                    stringArray(text, "fingerprints"),
+                    stringArray(text, "forbiddenSources"),
+                    stringArray(text, "forbiddenTargets"),
                     objectLongs(text, "warningCodes"));
         }
     }

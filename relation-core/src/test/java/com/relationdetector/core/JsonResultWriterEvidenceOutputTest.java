@@ -2,11 +2,15 @@ package com.relationdetector.core;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.api.ColumnRef;
+import com.relationdetector.api.DataLineageCandidate;
+import com.relationdetector.api.DataLineageEvidence;
 import com.relationdetector.api.DefaultEvidenceScores;
 import com.relationdetector.api.Endpoint;
 import com.relationdetector.api.Evidence;
@@ -14,6 +18,8 @@ import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.TableId;
 import com.relationdetector.api.Enums.EvidenceSourceType;
 import com.relationdetector.api.Enums.EvidenceType;
+import com.relationdetector.api.Enums.LineageFlowKind;
+import com.relationdetector.api.Enums.LineageTransformType;
 import com.relationdetector.api.Enums.RelationSubType;
 import com.relationdetector.api.Enums.RelationType;
 
@@ -44,6 +50,30 @@ class JsonResultWriterEvidenceOutputTest {
                 "Grouped evidence should show bounded sample details as a JSON array");
         assertTrue(json.contains("\"type\": \"REPEATED_OBSERVATION\""),
                 "Repeated observations should be represented as a capped bonus evidence item");
+    }
+
+    @Test
+    void writesTopLevelDataLineages() {
+        ScanResult result = new ScanResult("mysql", "public");
+        DataLineageCandidate lineage = new DataLineageCandidate(
+                List.of(Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "pay_amount"))),
+                Endpoint.column(ColumnRef.of(TableId.of(null, "users"), "total_spent")),
+                LineageFlowKind.VALUE,
+                LineageTransformType.AGGREGATE);
+        lineage.confidence(BigDecimal.valueOf(0.80));
+        lineage.evidence().add(new DataLineageEvidence(LineageTransformType.AGGREGATE,
+                BigDecimal.valueOf(0.80), EvidenceSourceType.PLAIN_SQL, "fixture.sql",
+                "SUM(pay_amount)", Map.of("lineageResolved", true)));
+        result.dataLineages().add(lineage);
+
+        String json = new JsonResultWriter().write(result, true, true);
+
+        assertTrue(json.contains("\"dataLineageCount\": 1"), "Summary should include lineage count");
+        assertTrue(json.contains("\"dataLineages\": ["), "JSON should expose top-level dataLineages");
+        assertTrue(json.contains("\"flowKind\": \"VALUE\""), "Lineage flow kind should be serialized");
+        assertTrue(json.contains("\"transformType\": \"AGGREGATE\""), "Lineage transform should be serialized");
+        assertTrue(json.contains("\"table\": \"orders\""), "Lineage source table should be serialized");
+        assertTrue(json.contains("\"column\": \"total_spent\""), "Lineage target column should be serialized");
     }
 
     private RelationshipCandidate sqlLogJoin(String detail) {

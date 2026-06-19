@@ -52,23 +52,18 @@ import com.relationdetector.api.TableId;
  * --   dt.customer_id -> orders.customer_id
  * }</pre>
  *
- * <p>Unsafe examples are intentionally skipped:
+ * <p>Most expression examples are intentionally skipped:
  *
  * <pre>{@code
- * WITH x AS (
- *   SELECT COALESCE(a.user_id, b.user_id) AS user_id
- *   FROM account_events a
- *   JOIN backup_account_events b ON b.account_event_id = a.id
- * )
- * SELECT * FROM x JOIN users u ON x.user_id = u.id
- *
  * SELECT SUM(p.amount) AS total_amount FROM payments p
  * SELECT ROW_NUMBER() OVER (ORDER BY o.id) AS rn FROM orders o
  * }</pre>
  *
  * In those cases the output column is expression-derived. We may still parse
  * explicit joins inside the subquery, but we do not create precise column-level
- * FK-like evidence from the expression output.
+ * FK-like evidence from the expression output. The narrow exception is
+ * {@code COALESCE(a.col, b.col) AS col}: reviewed business fixtures can use the
+ * first direct physical argument as a conservative relationship endpoint.
  */
 final class SqlLineageResolver {
     /*
@@ -93,8 +88,11 @@ final class SqlLineageResolver {
      *   SELECT `o`.`customer_id` FROM `orders` `o`
      *   SELECT "o"."customer_id" FROM "orders" "o"
      *
-     * Rejected complete SQL examples:
+     * Narrow expression exception:
      *   SELECT COALESCE(o.customer_id, fallback.customer_id) AS customer_id FROM orders o
+     *   -- resolves conservatively to o.customer_id only
+     *
+     * Rejected complete SQL examples:
      *   SELECT o.customer_id + 1 AS customer_id FROM orders o
      *   SELECT lower(o.email) AS email FROM orders o
      */
@@ -115,7 +113,7 @@ final class SqlLineageResolver {
      *   ro.order_id -> orders.id
      */
     private static final Pattern FROM_OR_JOIN_NAME = Pattern.compile(
-            "(?i)\\b(?:from|join)\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+([`\"\\w]+)|"
+            "(?i)\\b(?:from|join|using)\\s+(?!\\()([`\"\\w.]+)(?:\\s+(?:as\\s+([`\"\\w]+)|"
                     + "(?!(?:join|left|right|inner|outer|full|cross|natural|where|on|group|order|having|limit|union|set|using|select)\\b)"
                     + "([`\"\\w]+)))?");
 
@@ -136,7 +134,7 @@ final class SqlLineageResolver {
      * Entry point called by relation visitors before relationship extraction.
      *
      * <p>Call chain:
-     * RelationExtractionVisitor.extract() -> analyze() -> analyzeCtes(),
+     * TokenEventRelationExtractor.extract() -> analyze() -> analyzeCtes(),
      * applyRowsetReferenceAliases(), analyzeDerivedTables(),
      * applyRowsetReferenceAliases().
      *
@@ -152,15 +150,15 @@ final class SqlLineageResolver {
     }
 
     /**
-     * Entry point used by dialect ANTLR visitors that can safely enable extra
-     * lineage rules for a narrow SQL shape.
+     * Entry point used by dialect Token/Event builders that can safely enable
+     * extra lineage rules for a narrow SQL shape.
      *
      * <p>{@code allowSingleTableUnqualifiedProjection} means a derived table
      * body such as {@code SELECT user_id FROM orders} may expose
      * {@code user_id -> orders.user_id}. The default is false because broad
-     * cross-dialect use can change legacy fixture baselines; MySQL enables it
-     * only for UPDATE-derived-table cases where this projection shape is common
-     * and unambiguous.
+     * cross-dialect use can change correctness baselines; MySQL enables it only
+     * for UPDATE-derived-table cases where this projection shape is common and
+     * unambiguous.
      */
     static SqlLineageResolver analyze(
             String sql,
@@ -253,7 +251,7 @@ final class SqlLineageResolver {
                 return;
             }
             String body = text.substring(position + 1, bodyEnd);
-            Map<String, ColumnRef> output = analyzeSelectOutput(body, explicitColumns);
+            Map<String, ColumnRef> output = analyzeQueryOutput(body, explicitColumns);
             addRowset(cteName.value(), output);
             position = bodyEnd + 1;
             position = skipWhitespace(text, position);
@@ -301,6 +299,14 @@ final class SqlLineageResolver {
             }
             position = close + 1;
         }
+    }
+
+    private Map<String, ColumnRef> analyzeQueryOutput(String query, List<String> explicitOutputColumns) {
+        String trimmed = query.stripLeading().toLowerCase(Locale.ROOT);
+        if (trimmed.startsWith("delete ")) {
+            return analyzeDeleteReturningOutput(query, explicitOutputColumns);
+        }
+        return analyzeSelectOutput(query, explicitOutputColumns);
     }
 
     /**
@@ -392,6 +398,52 @@ final class SqlLineageResolver {
     }
 
     /**
+     * Builds output-column lineage for PostgreSQL data-modifying CTEs that use
+     * {@code DELETE ... RETURNING}.
+     *
+     * <p>Complete SQL example:
+     *
+     * <pre>{@code
+     * WITH deleted_orders AS (
+     *   DELETE FROM orders o
+     *   USING users u
+     *   WHERE o.user_id = u.id
+     *   RETURNING o.id
+     * )
+     * DELETE FROM order_items oi
+     * USING deleted_orders do
+     * WHERE oi.order_id = do.id
+     * }</pre>
+     *
+     * This method records {@code deleted_orders.id -> orders.id}. The outer
+     * DELETE can then emit {@code order_items.order_id -> orders.id} instead
+     * of a fake relationship to the CTE name.
+     */
+    private Map<String, ColumnRef> analyzeDeleteReturningOutput(String query, List<String> explicitOutputColumns) {
+        int returning = findTopLevelKeyword(query, "returning", 0);
+        if (returning < 0) {
+            return Map.of();
+        }
+        Set<String> ignoredRowsets = new LinkedHashSet<>(cteNames);
+        ignoredRowsets.addAll(rowsets.keySet());
+        Map<String, TableId> aliases = extractPhysicalAliases(query.substring(0, returning), ignoredRowsets);
+        List<String> projections = splitTopLevel(query.substring(returning + "returning".length()), ',');
+        Map<String, ColumnRef> output = new LinkedHashMap<>();
+        for (int i = 0; i < projections.size(); i++) {
+            Projection projection = parseProjection(projections.get(i));
+            String outputColumn = i < explicitOutputColumns.size()
+                    ? explicitOutputColumns.get(i)
+                    : projection.outputColumn();
+            if (outputColumn.isBlank()) {
+                continue;
+            }
+            directColumnSource(projection.expression(), aliases, aliases, Map.of())
+                    .ifPresent(source -> output.put(normalize(outputColumn), source));
+        }
+        return output;
+    }
+
+    /**
      * Reads physical table aliases that appear before a derived SELECT.
      *
      * <p>Called only by analyzeDerivedTables() for correlated/LATERAL rowsets.
@@ -423,6 +475,20 @@ final class SqlLineageResolver {
                 aliases.put(alias, table);
             }
         }
+        for (RowsetReference reference : commaRowsetReferences(sql)) {
+            String tableName = cleanTable(reference.rawName());
+            if (tableName.isBlank()
+                    || isKeyword(tableName)
+                    || ignoredRowsets.contains(normalize(tableName))
+                    || !SqlLogNoiseFilter.isValidIdentifierToken(tableName)) {
+                continue;
+            }
+            TableId table = TableId.of(schemaName(reference.rawName()), tableName);
+            aliases.put(table.tableName(), table);
+            if (!reference.alias().isBlank() && !isKeyword(reference.alias())) {
+                aliases.put(reference.alias(), table);
+            }
+        }
         return aliases;
     }
 
@@ -451,6 +517,17 @@ final class SqlLineageResolver {
                 aliases.put(normalize(alias), output);
             }
         }
+        for (RowsetReference reference : commaRowsetReferences(sql)) {
+            String rowsetName = normalize(cleanTable(reference.rawName()));
+            Map<String, ColumnRef> output = rowsets.get(rowsetName);
+            if (output == null) {
+                continue;
+            }
+            aliases.put(rowsetName, output);
+            if (!reference.alias().isBlank() && !isKeyword(reference.alias())) {
+                aliases.put(normalize(reference.alias()), output);
+            }
+        }
         return aliases;
     }
 
@@ -463,7 +540,9 @@ final class SqlLineageResolver {
      * column. A bare column such as {@code user_id} is accepted only when the
      * SELECT body has exactly one physical source table, for example
      * {@code SELECT user_id FROM orders}; multi-table SELECT bodies remain
-     * ambiguous and are skipped. Expressions return Optional.empty().
+     * ambiguous and are skipped. Most expressions return Optional.empty();
+     * {@code COALESCE(alias.column, ...)} is the only expression-level
+     * exception and resolves to its first direct physical column.
      */
     private Optional<ColumnRef> directColumnSource(
             String expression,
@@ -481,6 +560,11 @@ final class SqlLineageResolver {
         if (allowSingleTableUnqualifiedProjection && PLAIN_UNQUALIFIED_COLUMN.matcher(cleaned).matches()) {
             return singlePhysicalTable(localAliases).map(table -> ColumnRef.of(table, clean(cleaned)));
         }
+        Optional<ColumnRef> firstCoalesceSource = firstCoalesceColumnSource(cleaned,
+                aliases, localAliases, localRowsetAliases);
+        if (firstCoalesceSource.isPresent()) {
+            return firstCoalesceSource;
+        }
         if (PLAIN_COLUMN.matcher(cleaned).matches()) {
             String[] parts = cleaned.split("\\.", 2);
             String alias = clean(parts[0]);
@@ -496,6 +580,38 @@ final class SqlLineageResolver {
             return Optional.of(ColumnRef.of(table, column));
         }
         return Optional.empty();
+    }
+
+    /**
+     * Conservative lineage for {@code COALESCE(a.col, b.col)} projections.
+     *
+     * <p>The resolver uses only the first argument, and only if that argument is
+     * itself a direct column or known rowset column. This supports reviewed
+     * relationship fixtures without turning the resolver into a full expression
+     * lineage engine.
+     */
+    private Optional<ColumnRef> firstCoalesceColumnSource(
+            String expression,
+            Map<String, TableId> aliases,
+            Map<String, TableId> localAliases,
+            Map<String, Map<String, ColumnRef>> localRowsetAliases
+    ) {
+        if (!startsWithWord(expression, 0, "coalesce")) {
+            return Optional.empty();
+        }
+        int open = expression.indexOf('(');
+        if (open < 0) {
+            return Optional.empty();
+        }
+        int close = findMatchingParen(expression, open);
+        if (close != expression.length() - 1 || close <= open + 1) {
+            return Optional.empty();
+        }
+        List<String> arguments = splitTopLevel(expression.substring(open + 1, close), ',');
+        if (arguments.isEmpty()) {
+            return Optional.empty();
+        }
+        return directColumnSource(arguments.get(0), aliases, localAliases, localRowsetAliases);
     }
 
     private Optional<ColumnRef> singleRowsetColumn(
@@ -617,6 +733,84 @@ final class SqlLineageResolver {
             }
             addRowset(alias, output);
         }
+        for (RowsetReference reference : commaRowsetReferences(text)) {
+            String rowsetName = normalize(cleanTable(reference.rawName()));
+            Map<String, ColumnRef> output = rowsets.get(rowsetName);
+            if (output == null || reference.alias().isBlank() || isKeyword(reference.alias())) {
+                continue;
+            }
+            addRowset(reference.alias(), output);
+        }
+    }
+
+    /**
+     * Reads rowsets introduced by traditional comma syntax inside top-level
+     * FROM clauses.
+     *
+     * <p>The broad FROM/JOIN scanner does not see the second rowset in:
+     *
+     * <pre>{@code
+     * SELECT u.id
+     * FROM users u, user_financial_snapshot snap
+     * WHERE u.id = snap.user_id
+     * }</pre>
+     *
+     * This helper first isolates a top-level FROM clause and then splits only
+     * that clause by top-level commas. Commas in SELECT lists, function calls,
+     * JSON_TABLE column lists, and nested subqueries are therefore ignored.
+     */
+    private List<RowsetReference> commaRowsetReferences(String sql) {
+        List<RowsetReference> references = new ArrayList<>();
+        int position = 0;
+        while (position < sql.length()) {
+            int from = findTopLevelKeyword(sql, "from", position);
+            if (from < 0) {
+                return references;
+            }
+            int start = from + "from".length();
+            int end = fromClauseEnd(sql, start);
+            List<String> parts = splitTopLevel(sql.substring(start, end), ',');
+            if (parts.size() > 1) {
+                for (String part : parts) {
+                    leadingRowsetReference(part).ifPresent(references::add);
+                }
+            }
+            position = Math.max(end, start + 1);
+        }
+        return references;
+    }
+
+    private Optional<RowsetReference> leadingRowsetReference(String fromPart) {
+        String trimmed = fromPart.stripLeading();
+        if (trimmed.isBlank() || trimmed.startsWith("(")) {
+            return Optional.empty();
+        }
+        List<String> tokens = splitWhitespaceAtTopLevel(trimmed);
+        if (tokens.isEmpty()) {
+            return Optional.empty();
+        }
+        String rawName = tokens.get(0);
+        if (rawName.contains("(") || isKeyword(rawName)) {
+            return Optional.empty();
+        }
+        String alias = "";
+        if (tokens.size() >= 3 && tokens.get(1).equalsIgnoreCase("as")) {
+            alias = clean(tokens.get(2));
+        } else if (tokens.size() >= 2 && !isKeyword(tokens.get(1))) {
+            alias = clean(tokens.get(1));
+        }
+        return Optional.of(new RowsetReference(rawName, alias));
+    }
+
+    private int fromClauseEnd(String sql, int start) {
+        int end = sql.length();
+        for (String keyword : List.of("where", "group", "having", "order", "limit", "union", "set", "returning")) {
+            int candidate = findTopLevelKeyword(sql, keyword, start);
+            if (candidate >= 0) {
+                end = Math.min(end, candidate);
+            }
+        }
+        return end;
     }
 
     private static String aliasFromRowsetMatcher(Matcher matcher) {
@@ -915,6 +1109,9 @@ final class SqlLineageResolver {
     }
 
     private record Projection(String expression, String outputColumn) {
+    }
+
+    private record RowsetReference(String rawName, String alias) {
     }
 
     private record AliasAfterParen(String alias, List<String> columnNames) {

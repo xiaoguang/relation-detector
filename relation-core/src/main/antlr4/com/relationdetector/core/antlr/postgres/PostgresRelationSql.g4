@@ -1,7 +1,7 @@
 grammar PostgresRelationSql;
 
 /*
- * PostgreSQL structural grammar for ANTLR shadow mode.
+ * PostgreSQL structural grammar for the Token/Event SQL parser.
  *
  * This remains tolerant by design, but it is no longer the same generated
  * parser as MySQL. PostgreSQL-specific syntax can now grow here independently:
@@ -46,7 +46,7 @@ QUOTED_IDENTIFIER
     ;
 
 STRING_LITERAL
-    : '\'' ('\\' . | '\'\'' | ~['\\])* '\''
+    : '\'' ('\'\'' | ~'\'')* '\''
     ;
 
 DOLLAR_QUOTED_STRING

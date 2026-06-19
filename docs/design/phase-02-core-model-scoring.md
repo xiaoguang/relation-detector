@@ -70,6 +70,67 @@ public final class RelationshipCandidate {
 - 数据画像：若 A 列值域大部分包含于 B，且 B 唯一或接近唯一，则 A 为 source，B 为 target。
 - 无法确定方向时，不生成列级 `FK_LIKE`；退化为表级 `CO_OCCURRENCE`，并记录 warning。
 
+### DataLineageCandidate
+
+字段血缘是独立模型，不混入 `RelationshipCandidate`：
+
+```java
+public final class DataLineageCandidate {
+  private List<Endpoint> sources;
+  private Endpoint target;
+  private LineageFlowKind flowKind;
+  private LineageTransformType transformType;
+  private BigDecimal confidence;
+  private List<DataLineageEvidence> evidence;
+  private List<WarningMessage> warnings;
+  private Map<String, Object> attributes;
+}
+```
+
+设计边界：
+
+- v1 只输出数据库内部字段血缘，即 `table.column -> table.column`。
+- 不输出 parameter、JSON path、literal、局部变量到字段的绑定；这些属于后续 Parameter Binding 模型。
+- `target` 必须是物理表字段；`sources` 可以有多个物理表字段。
+- `flowKind=VALUE` 表示源字段值参与目标字段写入；`flowKind=CONTROL` 表示源字段控制写入结果，例如 `CASE WHEN source.col ... THEN ...`。
+- `DataLineageCandidate.confidence` 只表示血缘可信度，不参与 `RelationshipCandidate.confidence` 计算。
+- `RelationshipMerger` 不处理字段血缘；字段血缘由 `DataLineageMerger` 按 `sources + target + flowKind + transformType` 去重。
+
+默认血缘置信度：
+
+| TransformType | VALUE 默认分 | CONTROL 默认分 | 说明 |
+| --- | ---: | ---: | --- |
+| `DIRECT` | 0.90 | 不适用 | `SET a.x = b.y`。 |
+| `AGGREGATE` | 0.80 | 不适用 | `SUM(o.pay_amount) AS total` 后写入目标列。 |
+| `COALESCE` | 0.75 | 不适用 | 多个字段兜底选择。 |
+| `ARITHMETIC` | 0.75 | 不适用 | 加减乘除等数值表达式。 |
+| `CONCAT_FORMAT` | 0.70 | 不适用 | `CONCAT`、`FORMAT`、`||`、字符串聚合等格式化。 |
+| `FUNCTION_CALL` | 0.65 | 不适用 | 其它函数调用，能抽到物理字段参数。 |
+| `CASE_WHEN` | 0.65 | 0.55 | THEN/ELSE 字段是 VALUE；WHEN 条件字段是 CONTROL。v1 当前优先输出控制血缘。 |
+| `WINDOW_DERIVED` | 0.50 | 不适用 | 窗口函数派生字段，通常需要人工审核。 |
+| `UNKNOWN_EXPRESSION` | 0.35 | 不适用 | 能抽到来源字段但表达式形态不可精确分类。 |
+
+例子：
+
+```sql
+UPDATE users u
+SET total_spent = COALESCE(o_summary.actual_total, 0.00)
+FROM (
+  SELECT user_id, SUM(pay_amount) AS actual_total
+  FROM orders
+  GROUP BY user_id
+) o_summary
+WHERE u.id = o_summary.user_id;
+```
+
+输出字段血缘：
+
+```text
+VALUE:AGGREGATE:orders.pay_amount->users.total_spent
+```
+
+注意：这不会给 `orders.user_id -> users.id` 的关系置信度加分。关系置信度仍由 JOIN/EXISTS/DDL/metadata/profile 等 evidence 计算。
+
 ## 关系类型
 
 `RelationType`：

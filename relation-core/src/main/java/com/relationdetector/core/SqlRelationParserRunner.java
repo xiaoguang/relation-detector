@@ -11,10 +11,10 @@ import com.relationdetector.api.SqlStatementRecord;
 /**
  * Applies common SQL parser pre-processing before invoking the adaptor parser.
  *
- * <p>Design mapping: SQL parser is now ANTLR-only for MySQL/PostgreSQL. The
- * runner no longer selects Simple/shadow modes or performs parser fallback; it
- * only filters native-log noise and passes dialect system-schema policy through
- * statement attributes for the ANTLR visitor:
+ * <p>Design mapping: SQL parser now uses the Token/Event primary pipeline for
+ * MySQL/PostgreSQL. The runner no longer selects removed parser modes or
+ * performs parser fallback; it only filters native-log noise and passes
+ * dialect system-schema policy through statement attributes:
  *
  * <pre>{@code
  * ScanEngine.safeParseStatement(...)

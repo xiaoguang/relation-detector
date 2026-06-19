@@ -5,18 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.relationdetector.api.AdaptorContext;
-import com.relationdetector.api.Collectors.DdlParser;
 import com.relationdetector.api.RelationshipCandidate;
-import com.relationdetector.api.ScanScope;
-import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Enums.EvidenceType;
+import com.relationdetector.core.DdlRelationExtractionVisitor;
 
 /**
  * Guards the PostgreSQL adaptor DDL extension point.
@@ -30,10 +26,10 @@ class PostgresDdlParserTest {
     Path tempDir;
 
     @Test
-    void adaptorReturnsPostgresSpecificDdlParser() {
-        DdlParser parser = new PostgresDatabaseAdaptor().ddlParser();
+    void adaptorReturnsPostgresSpecificStructuredDdlParser() {
+        var parser = new PostgresDatabaseAdaptor().structuredDdlParser().orElseThrow();
 
-        assertEquals(PostgresDdlParser.class, parser.getClass());
+        assertEquals(PostgresTokenEventStructuredDdlParser.class, parser.getClass());
     }
 
     @Test
@@ -59,7 +55,7 @@ class PostgresDdlParserTest {
                   NOT VALID;
                 """);
 
-        List<RelationshipCandidate> relations = new PostgresDdlParser().parseDdl(ddl, null);
+        List<RelationshipCandidate> relations = parseDdl(ddl);
 
         assertTrue(relations.stream().anyMatch(relation ->
                 relation.source().displayName().equals("public.orders.user_email")
@@ -87,26 +83,12 @@ class PostgresDdlParserTest {
                 """;
         Files.writeString(ddl, ddlText);
 
-        List<RelationshipCandidate> postgresRelations = new PostgresDdlParser().parseDdl(ddl, null);
+        List<RelationshipCandidate> postgresRelations = parseDdl(ddl);
 
         assertHasEvidence(postgresRelations, "public.orders.user_email", "public.users.email", EvidenceType.TARGET_UNIQUE);
     }
 
     @Test
-    void postgresParserReportsDdlReadFailuresThroughContextWarnings() {
-        List<WarningMessage> warnings = new ArrayList<>();
-        AdaptorContext context = new AdaptorContext(new ScanScope(null, "public", List.of(), List.of()),
-                java.util.Map.of(), warnings::add);
-
-        List<RelationshipCandidate> relations = new PostgresDdlParser().parseDdl(
-                tempDir.resolve("missing-schema.sql"), context);
-
-        assertTrue(relations.isEmpty());
-        assertEquals(1, warnings.size());
-        assertEquals("DDL_PARSE_FAILED", warnings.get(0).code());
-        assertEquals("NoSuchFileException", warnings.get(0).attributes().get("exceptionClass"));
-    }
-
     private void assertHasEvidence(
             List<RelationshipCandidate> relations,
             String source,
@@ -127,5 +109,11 @@ class PostgresDdlParserTest {
                 relation.source().displayName().equals(source)
                         && relation.target().displayName().equals(target)
                         && relation.evidence().stream().anyMatch(e -> e.type() == evidenceType));
+    }
+
+    private List<RelationshipCandidate> parseDdl(Path ddl) throws Exception {
+        String ddlText = Files.readString(ddl);
+        var structured = new PostgresTokenEventStructuredDdlParser().parseDdl(ddlText, ddl.toString(), null);
+        return new DdlRelationExtractionVisitor().extract(ddlText, ddl.toString(), structured);
     }
 }

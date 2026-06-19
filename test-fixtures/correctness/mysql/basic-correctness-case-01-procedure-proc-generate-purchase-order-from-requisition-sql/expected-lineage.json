@@ -1,0 +1,33 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:jsh_depot_item.oper_number->jsh_depot_head.other_money",
+    "VALUE:ARITHMETIC:jsh_depot_item.oper_number->jsh_depot_head.status",
+    "VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_head.organ_id",
+    "VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_head.sales_man",
+    "VALUE:DIRECT:jsh_depot_item.id->jsh_depot_head.tenant_id",
+    "VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_head.default_number",
+    "VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_head.sub_type",
+    "VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_head.link_apply",
+    "VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_head.number",
+    "VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_head.oper_time",
+    "VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_head.account_id",
+    "VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_head.remark",
+    "VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_head.create_time",
+    "VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_head.discount_money",
+    "VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_head.discount",
+    "VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_head.pay_type",
+    "VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_head.delete_flag",
+    "VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_head.creator"
+  ],
+  "forbiddenSources": [
+    "p_",
+    "v_",
+    "tmp_",
+    "temp_",
+    "jsh_temp_",
+    "CURRENT_TIMESTAMP",
+    "NOW"
+  ],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

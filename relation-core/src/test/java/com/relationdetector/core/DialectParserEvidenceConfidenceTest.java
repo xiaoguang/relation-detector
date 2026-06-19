@@ -27,9 +27,8 @@ import com.relationdetector.api.Enums.StatementSourceType;
  * metadata/profile support signals.
  */
 class DialectParserEvidenceConfidenceTest {
-    private final AntlrSqlRelationParser parser = new AntlrSqlRelationParser(
-            new AntlrStructuredSqlParser(SqlDialect.MYSQL),
-            new RelationExtractionVisitor());
+    private final TokenEventSqlRelationParser parser = new TokenEventSqlRelationParser(
+            new TokenEventStructuredSqlParser(SqlDialect.MYSQL));
     private final RelationshipMerger merger = new RelationshipMerger();
 
     @Test

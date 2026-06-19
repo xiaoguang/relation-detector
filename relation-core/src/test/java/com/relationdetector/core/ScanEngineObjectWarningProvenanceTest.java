@@ -27,7 +27,6 @@ import com.relationdetector.api.MetadataSnapshot;
 import com.relationdetector.api.SqlStatementRecord;
 import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Collectors.DataProfiler;
-import com.relationdetector.api.Collectors.DdlParser;
 import com.relationdetector.api.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.api.Collectors.MetadataCollector;
 import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
@@ -132,12 +131,6 @@ class ScanEngineObjectWarningProvenanceTest {
                     "information_schema.ROUTINES"));
         }
 
-        @Override
-        public DdlParser ddlParser() {
-            return (file, context) -> List.of();
-        }
-
-        @Override
         public SqlLogExtractor sqlLogExtractor() {
             return new SqlLogExtractor() {
                 @Override
@@ -149,9 +142,9 @@ class ScanEngineObjectWarningProvenanceTest {
 
         @Override
         public SqlRelationParser sqlRelationParser() {
-            return new AntlrSqlRelationParser(
-                    new AntlrStructuredSqlParser(SqlDialect.MYSQL),
-                    new RelationExtractionVisitor());
+            return new TokenEventSqlRelationParser(
+                    new TokenEventStructuredSqlParser(SqlDialect.MYSQL),
+                    new TokenEventRelationExtractor());
         }
 
         @Override

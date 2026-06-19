@@ -1,0 +1,16 @@
+{
+  "fingerprints": [
+    "VALUE:AGGREGATE:jsh_temp_org_pdf.running_sum,jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end",
+    "VALUE:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight",
+    "VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id",
+    "VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark"
+  ],
+  "forbiddenSources": [
+    "p_tenant_id",
+    "v_total_w",
+    "CURRENT_TIMESTAMP",
+    "NOW"
+  ],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

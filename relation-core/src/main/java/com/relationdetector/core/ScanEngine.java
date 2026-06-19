@@ -4,20 +4,25 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import com.relationdetector.api.AdaptorContext;
 import com.relationdetector.api.ColumnRef;
+import com.relationdetector.api.DataLineageCandidate;
 import com.relationdetector.api.DatabaseAdaptor;
 import com.relationdetector.api.DatabaseDdlDefinition;
 import com.relationdetector.api.DatabaseObjectDefinition;
 import com.relationdetector.api.Endpoint;
+import com.relationdetector.api.MetadataTableFact;
 import com.relationdetector.api.MetadataSnapshot;
 import com.relationdetector.api.ProfileRequest;
 import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.ScanScope;
 import com.relationdetector.api.SqlStatementRecord;
+import com.relationdetector.api.StructuredParseResult;
 import com.relationdetector.api.TableId;
 import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Enums.EvidenceSourceType;
@@ -37,12 +42,15 @@ public final class ScanEngine {
     private final SqlRelationParserRunner sqlParserRunner = new SqlRelationParserRunner();
     private final DdlRelationParserRunner ddlParserRunner = new DdlRelationParserRunner();
     private final MetadataEvidenceEnhancer metadataEvidenceEnhancer = new MetadataEvidenceEnhancer();
+    private final TokenEventDataLineageExtractor dataLineageExtractor = new TokenEventDataLineageExtractor();
+    private final DataLineageMerger dataLineageMerger = new DataLineageMerger();
 
     public ScanResult scan(ScanConfig config, DatabaseAdaptor adaptor) {
         ScanScope scope = new ScanScope(config.catalog, config.schema, config.includeTables, config.excludeTables);
         ScanResult result = new ScanResult(config.databaseType.name(), config.schema);
         AdaptorContext context = new AdaptorContext(scope, java.util.Map.of(), result.warnings()::add);
         List<RelationshipCandidate> candidates = new ArrayList<>();
+        List<DataLineageCandidate> dataLineageCandidates = new ArrayList<>();
         MetadataSnapshot metadataSnapshot = null;
 
         try (Connection connection = openConnection(config)) {
@@ -62,6 +70,7 @@ public final class ScanEngine {
 
             if (config.objectsEnabled && config.objectsFromDatabase && connection != null) {
                 result.sources().add("database-objects");
+                Set<TableId> databaseKnownPhysicalTables = knownPhysicalTables(metadataSnapshot);
                 for (DatabaseObjectDefinition definition : collectDatabaseObjects(adaptor, connection, scope, result)) {
                     StatementSourceType sourceType = switch (definition.type()) {
                         case VIEW -> StatementSourceType.VIEW;
@@ -77,7 +86,7 @@ public final class ScanEngine {
                     candidates.addAll(safeParseStatement(adaptor, config,
                             new SqlStatementRecord(definition.sql(), sourceType, objectSourceName(definition), 0, 0,
                                     objectAttributes(definition)),
-                            context, result));
+                            context, result, dataLineageCandidates, databaseKnownPhysicalTables));
                 }
             }
 
@@ -107,17 +116,21 @@ public final class ScanEngine {
 
         if (config.objectsEnabled) {
             result.sources().add("object-files");
+            Set<TableId> fileKnownPhysicalTables = knownPhysicalTables(metadataSnapshot);
             for (Path file : config.objectFiles) {
                 plainExtractor.extract(file, StatementSourceType.PROCEDURE, result.warnings()::add)
-                        .forEach(statement -> candidates.addAll(safeParseStatement(adaptor, config, statement, context, result)));
+                        .forEach(statement -> candidates.addAll(safeParseStatement(adaptor, config, statement, context,
+                                result, dataLineageCandidates, fileKnownPhysicalTables)));
             }
         }
 
         if (config.logsEnabled) {
             result.sources().add("logs");
+            Set<TableId> logKnownPhysicalTables = knownPhysicalTables(metadataSnapshot);
             for (Path file : config.logFiles) {
                 safeExtractLog(adaptor, file, config, result)
-                        .forEach(statement -> candidates.addAll(safeParseStatement(adaptor, config, statement, context, result)));
+                        .forEach(statement -> candidates.addAll(safeParseStatement(adaptor, config, statement, context,
+                                result, dataLineageCandidates, logKnownPhysicalTables)));
             }
         }
 
@@ -125,6 +138,7 @@ public final class ScanEngine {
             metadataEvidenceEnhancer.enhance(candidates, metadataSnapshot);
         }
         result.relationships().addAll(merger.merge(candidates, config.minConfidence));
+        result.dataLineages().addAll(dataLineageMerger.merge(dataLineageCandidates));
         return result;
     }
 
@@ -187,14 +201,33 @@ public final class ScanEngine {
             ScanConfig config,
             SqlStatementRecord statement,
             AdaptorContext context,
-            ScanResult result
+            ScanResult result,
+            List<DataLineageCandidate> dataLineageCandidates,
+            Set<TableId> knownPhysicalTables
     ) {
         try {
+            if (!SqlLogNoiseFilter.shouldSkip(config, statement)) {
+                adaptor.structuredSqlParser().ifPresent(structuredParser -> {
+                    StructuredParseResult structured = structuredParser.parseSql(statement, null);
+                    dataLineageCandidates.addAll(dataLineageExtractor.extract(statement, structured, knownPhysicalTables));
+                });
+            }
             return sqlParserRunner.parse(adaptor, config, statement, context);
         } catch (Exception ex) {
             result.warnings().add(DiagnosticWarnings.sqlParseFailed(statement, ex));
             return List.of();
         }
+    }
+
+    private Set<TableId> knownPhysicalTables(MetadataSnapshot metadataSnapshot) {
+        if (metadataSnapshot == null) {
+            return Set.of();
+        }
+        Set<TableId> tables = new LinkedHashSet<>(metadataSnapshot.tables());
+        for (MetadataTableFact fact : metadataSnapshot.tableFacts()) {
+            tables.add(TableId.of(fact.schema(), fact.tableName()));
+        }
+        return tables;
     }
 
     /**

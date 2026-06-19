@@ -12,10 +12,10 @@ import com.relationdetector.api.StructuredParseResult;
 import com.relationdetector.api.Enums.EvidenceSourceType;
 
 /**
- * Runs the ANTLR DDL relation extraction pipeline.
+ * Runs the Token/Event DDL relation extraction pipeline.
  *
- * <p>DDL no longer has Simple/shadow/primary modes. The adaptor supplies the
- * dialect structured DDL parser, and this runner converts its events into
+ * <p>DDL parser mode selection has been removed. The adaptor supplies the
+ * dialect Token/Event DDL parser, and this runner converts its events into
  * relationship candidates:
  *
  * <pre>{@code
@@ -36,7 +36,8 @@ public final class DdlRelationParserRunner {
     ) {
         String ddl = read(file);
         StructuredParseResult structured = adaptor.structuredDdlParser()
-                .orElseGet(() -> new AntlrStructuredDdlParser(SqlDialect.MYSQL))
+                .orElseThrow(() -> new IllegalStateException(
+                        "No Token/Event DDL parser for adaptor " + adaptor.id()))
                 .parseDdl(ddl, file.toString(), context);
         return visitor.extract(ddl, file.toString(), structured);
     }
@@ -60,7 +61,8 @@ public final class DdlRelationParserRunner {
             AdaptorContext context
     ) {
         StructuredParseResult structured = adaptor.structuredDdlParser()
-                .orElseGet(() -> new AntlrStructuredDdlParser(SqlDialect.MYSQL))
+                .orElseThrow(() -> new IllegalStateException(
+                        "No Token/Event DDL parser for adaptor " + adaptor.id()))
                 .parseDdl(ddl, sourceName, context);
         return rewriteEvidenceSource(
                 visitor.extract(ddl, sourceName, structured),

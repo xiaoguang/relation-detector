@@ -1,0 +1,9 @@
+id: mysql-business-cross-border-reconciliation-procedure-sql
+databaseType: MYSQL
+parserTarget: SQL
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+schema: finance
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

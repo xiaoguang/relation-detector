@@ -101,7 +101,7 @@ public final class SimpleYamlConfigLoader {
             case "parser.sql.mode", "parser.sql.fallbackOnFailure",
                     "parser.ddl.mode", "parser.ddl.fallbackOnFailure" ->
                     throw new IllegalArgumentException(path
-                            + " has been removed; MySQL/PostgreSQL SQL and DDL parsing always use ANTLR");
+                            + " has been removed; MySQL/PostgreSQL SQL and DDL parsing always use Token/Event");
             default -> {
                 // Unknown keys are ignored to allow forward-compatible configs.
             }

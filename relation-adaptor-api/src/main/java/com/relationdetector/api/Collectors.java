@@ -1,6 +1,5 @@
 package com.relationdetector.api;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.List;
@@ -86,58 +85,13 @@ public final class Collectors {
         }
     }
 
-    public interface DdlParser {
-        List<RelationshipCandidate> parseDdl(Path file, AdaptorContext context);
-
-        /**
-         * Parses DDL that was already loaded into memory.
-         *
-         * <p>Call relationship for database DDL:
-         * <pre>
-         * ScanEngine
-         *   -> DatabaseAdaptor.databaseDdlCollector()
-         *   -> DdlRelationParserRunner.parseText(...)
-         *   -> DdlParser.parseDdlText(...)
-         * </pre>
-         *
-         * <p>Existing adaptor implementations remain source-compatible because
-         * this default writes a short-lived temporary file and delegates to the
-         * original file-based method. Adaptors with a native text parser should
-         * override this method so diagnostics can keep the logical source name
-         * such as {@code SHOW CREATE TABLE}.
-         */
-        default List<RelationshipCandidate> parseDdlText(
-                String ddl,
-                String sourceName,
-                AdaptorContext context
-        ) {
-            try {
-                Path tempFile = Files.createTempFile("relation-detector-ddl-", ".sql");
-                try {
-                    Files.writeString(tempFile, ddl);
-                    return parseDdl(tempFile, context);
-                } finally {
-                    Files.deleteIfExists(tempFile);
-                }
-            } catch (Exception ex) {
-                if (context != null) {
-                    context.warn(WarningMessage.warn(Enums.WarningType.PARSE_WARNING,
-                            "DDL_TEXT_PARSE_FAILED", ex.getMessage(), sourceName, 0,
-                            java.util.Map.of("rawStatement", ddl,
-                                    "exceptionClass", ex.getClass().getSimpleName())));
-                }
-                return List.of();
-            }
-        }
-    }
-
     /**
      * Collects table DDL text from the live database.
      *
      * <p>For MySQL this runs {@code SHOW CREATE TABLE} for tables inside the
      * configured scope. The collector returns text only; relationship extraction
-     * still belongs to the normal DDL parser runner so simple/ANTLR shadow/
-     * primary behavior stays centralized.
+     * still belongs to the normal ANTLR DDL parser runner so relationship
+     * extraction behavior stays centralized.
      */
     public interface DatabaseDdlCollector {
         List<DatabaseDdlDefinition> collect(Connection connection, ScanScope scope);

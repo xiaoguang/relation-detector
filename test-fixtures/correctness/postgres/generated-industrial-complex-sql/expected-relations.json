@@ -1,15 +1,11 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:base_catalog->extension_catalog:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:base_catalog->vendor_registry:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:employees->R_projects:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:extension_catalog->vendor_registry:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:financial_accounts->audit_trail:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:internal_staff->external_vendors:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:payment_transactions->system_config:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:system_logs->user_preferences:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:user_roles_mapping->role_permissions:SQL_LOG_TABLE_CO_OCCURRENCE",
-    "CO_OCCURRENCE:workflow_tasks->workflow_tasks:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:product_variants.product_id->products.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:system_logs.triggered_by->user_preferences.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:user_roles_mapping.role_id->role_permissions.role_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "FK_LIKE:R_projects.manager_id->employees.id:SQL_LOG_JOIN",
+    "FK_LIKE:infrastructure_nodes.parent_id->infrastructure_nodes.id:SQL_LOG_JOIN",
     "FK_LIKE:profiles.user_id->users.id:SQL_LOG_JOIN",
     "FK_LIKE:user_roles.role_id->roles.id:SQL_LOG_JOIN",
     "FK_LIKE:user_roles.user_id->users.id:SQL_LOG_JOIN"

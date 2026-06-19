@@ -46,6 +46,25 @@ public final class Enums {
         TABLE_CO_OCCURRENCE
     }
 
+    /** Field-level value flow category for Data Lineage output. */
+    public enum LineageFlowKind {
+        VALUE,
+        CONTROL
+    }
+
+    /** Coarse transform shape used to score and explain Data Lineage. */
+    public enum LineageTransformType {
+        DIRECT,
+        AGGREGATE,
+        COALESCE,
+        CASE_WHEN,
+        CONCAT_FORMAT,
+        ARITHMETIC,
+        FUNCTION_CALL,
+        WINDOW_DERIVED,
+        UNKNOWN_EXPRESSION
+    }
+
     /** Individual evidence type used by the scoring model. */
     public enum EvidenceType {
         METADATA_FOREIGN_KEY,
@@ -114,10 +133,26 @@ public final class Enums {
     public enum StructuredParseEventType {
         TABLE_REFERENCE,
         COLUMN_EQUALITY,
+        ROWSET_REFERENCE,
+        PREDICATE_EQUALITY,
+        JOIN_USING_COLUMNS,
+        EXISTS_PREDICATE,
+        IN_SUBQUERY_PREDICATE,
+        TUPLE_IN_SUBQUERY_PREDICATE,
+        CTE_DECLARATION,
+        IGNORED_ROWSET,
+        LOCAL_TEMP_TABLE_DECLARATION,
+        TRIGGER_TARGET_TABLE,
+        TRIGGER_PSEUDO_ROWSET,
+        WRITE_TARGET,
+        UPDATE_ASSIGNMENT,
+        INSERT_SELECT_MAPPING,
+        MERGE_WRITE_MAPPING,
+        PROJECTION_ITEM,
+        EXPRESSION_SOURCE,
         DDL_FOREIGN_KEY,
         DDL_INDEX,
-        DYNAMIC_SQL,
-        PARSER_COMPARISON
+        DYNAMIC_SQL
     }
 
     /** Hint used by adaptors when extracting SQL from raw log files. */

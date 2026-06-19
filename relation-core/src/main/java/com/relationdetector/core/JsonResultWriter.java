@@ -4,6 +4,8 @@ import java.math.RoundingMode;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.relationdetector.api.DataLineageCandidate;
+import com.relationdetector.api.DataLineageEvidence;
 import com.relationdetector.api.Evidence;
 import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.WarningMessage;
@@ -24,6 +26,7 @@ public final class JsonResultWriter {
                 .append(escape(result.schema())).append("\" },\n");
         out.append("  \"generatedAt\": \"").append(result.generatedAt()).append("\",\n");
         out.append("  \"summary\": { \"relationshipCount\": ").append(result.relationships().size())
+                .append(", \"dataLineageCount\": ").append(result.dataLineages().size())
                 .append(", \"warningCount\": ").append(result.warnings().size()).append(", \"sources\": ");
         writeStringArray(out, result.sources());
         out.append(" },\n");
@@ -31,6 +34,15 @@ public final class JsonResultWriter {
         for (int i = 0; i < result.relationships().size(); i++) {
             writeRelationship(out, result.relationships().get(i), includeEvidence);
             if (i + 1 < result.relationships().size()) {
+                out.append(",");
+            }
+            out.append("\n");
+        }
+        out.append("  ],\n");
+        out.append("  \"dataLineages\": [\n");
+        for (int i = 0; i < result.dataLineages().size(); i++) {
+            writeDataLineage(out, result.dataLineages().get(i), includeEvidence);
+            if (i + 1 < result.dataLineages().size()) {
                 out.append(",");
             }
             out.append("\n");
@@ -77,11 +89,65 @@ public final class JsonResultWriter {
         out.append("\n    }");
     }
 
+    private void writeDataLineage(StringBuilder out, DataLineageCandidate lineage, boolean includeEvidence) {
+        out.append("    {\n");
+        out.append("      \"sources\": [");
+        for (int i = 0; i < lineage.sources().size(); i++) {
+            if (i > 0) {
+                out.append(", ");
+            }
+            out.append("{ \"table\": \"").append(escape(lineage.sources().get(i).table().displayName()))
+                    .append("\", \"column\": ");
+            writeNullable(out, lineage.sources().get(i).isColumnLevel()
+                    ? lineage.sources().get(i).column().columnName() : null);
+            out.append(" }");
+        }
+        out.append("],\n");
+        out.append("      \"target\": { \"table\": \"").append(escape(lineage.target().table().displayName()))
+                .append("\", \"column\": ");
+        writeNullable(out, lineage.target().isColumnLevel() ? lineage.target().column().columnName() : null);
+        out.append(" },\n");
+        out.append("      \"flowKind\": \"").append(lineage.flowKind()).append("\",\n");
+        out.append("      \"transformType\": \"").append(lineage.transformType()).append("\",\n");
+        out.append("      \"confidence\": ").append(lineage.confidence().setScale(4, RoundingMode.HALF_UP)).append(",\n");
+        out.append("      \"evidence\": ");
+        if (includeEvidence) {
+            writeDataLineageEvidence(out, lineage.evidence());
+        } else {
+            out.append("[]");
+        }
+        out.append(",\n      \"warnings\": ");
+        writeWarnings(out, lineage.warnings());
+        out.append(",\n      \"attributes\": ");
+        writeAttributes(out, lineage.attributes());
+        out.append("\n    }");
+    }
+
     private void writeEvidence(StringBuilder out, java.util.List<Evidence> evidence) {
         out.append("[");
         for (int i = 0; i < evidence.size(); i++) {
             Evidence item = evidence.get(i);
             out.append("\n        { \"type\": \"").append(item.type()).append("\", \"sourceType\": \"")
+                    .append(item.sourceType()).append("\", \"score\": ").append(item.score())
+                    .append(", \"source\": \"").append(escape(item.source())).append("\", \"detail\": \"")
+                    .append(escape(item.detail())).append("\", \"attributes\": ");
+            writeAttributes(out, item.attributes());
+            out.append(" }");
+            if (i + 1 < evidence.size()) {
+                out.append(",");
+            }
+        }
+        if (!evidence.isEmpty()) {
+            out.append("\n      ");
+        }
+        out.append("]");
+    }
+
+    private void writeDataLineageEvidence(StringBuilder out, java.util.List<DataLineageEvidence> evidence) {
+        out.append("[");
+        for (int i = 0; i < evidence.size(); i++) {
+            DataLineageEvidence item = evidence.get(i);
+            out.append("\n        { \"transformType\": \"").append(item.transformType()).append("\", \"sourceType\": \"")
                     .append(item.sourceType()).append("\", \"score\": ").append(item.score())
                     .append(", \"source\": \"").append(escape(item.source())).append("\", \"detail\": \"")
                     .append(escape(item.detail())).append("\", \"attributes\": ");

@@ -33,10 +33,9 @@ import com.relationdetector.api.Enums.StatementSourceType;
  * evidence is attached, RelationshipMerger computes the final confidence.
  */
 class ConfidenceScoringExamplesTest {
-    private final AntlrSqlRelationParser sqlParser = new AntlrSqlRelationParser(
-            new AntlrStructuredSqlParser(SqlDialect.MYSQL),
-            new RelationExtractionVisitor());
-    private final AntlrStructuredDdlParser ddlParser = new AntlrStructuredDdlParser(SqlDialect.MYSQL);
+    private final TokenEventSqlRelationParser sqlParser = new TokenEventSqlRelationParser(
+            new TokenEventStructuredSqlParser(SqlDialect.MYSQL));
+    private final TokenEventStructuredDdlParser ddlParser = new TokenEventStructuredDdlParser(SqlDialect.MYSQL);
     private final DdlRelationExtractionVisitor ddlVisitor = new DdlRelationExtractionVisitor();
     private final RelationshipMerger merger = new RelationshipMerger();
 
@@ -174,19 +173,15 @@ class ConfidenceScoringExamplesTest {
 
     @Test
     void example7TableCoOccurrenceScoresAs02500() {
-        String sql = """
-                SELECT o.id, u.email
-                FROM orders o, users u
-                WHERE o.status = 'PAID'
-                  AND u.marketing_opt_in = TRUE;
-                """;
+        RelationshipCandidate relation = new RelationshipCandidate(
+                Endpoint.table(TableId.of(null, "orders")),
+                Endpoint.table(TableId.of(null, "users")),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.TABLE_CO_OCCURRENCE);
+        relation.evidence().add(Evidence.of(EvidenceType.SQL_LOG_TABLE_CO_OCCURRENCE, 0.25d,
+                EvidenceSourceType.NATIVE_LOG, "confidence-example.sql",
+                "Historical table-level co-occurrence scoring example; Token/Event does not auto-emit this from bare comma presence."));
 
-        RelationshipCandidate relation = sqlParser.parse(record(sql, StatementSourceType.NATIVE_LOG)).stream()
-                .filter(r -> r.relationType() == RelationType.CO_OCCURRENCE)
-                .findFirst()
-                .orElse(null);
-
-        assertNotNull(relation, "table co-occurrence relation should be parsed");
         assertConfidence("0.2500", mergeOne(relation));
     }
 

@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import com.relationdetector.api.ScanScope;
 import com.relationdetector.api.SqlStatementRecord;
 import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Enums.DatabaseType;
+import com.relationdetector.api.Enums.DatabaseObjectType;
 import com.relationdetector.api.Enums.EvidenceSourceType;
 import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.core.DdlRelationParserRunner;
@@ -75,6 +77,13 @@ public final class MySqlBasicCorrectnessFixtureExporter {
             Files.createDirectories(ddlFixture.getParent());
             Files.createDirectories(sqlFixture.getParent());
             Files.createDirectories(ddlGolden.getParent());
+            Path procedureFixture = root.resolve("sql/routines-procedures.sql");
+            Path functionFixture = root.resolve("sql/routines-functions.sql");
+            Path correctnessRoot = Path.of("test-fixtures/correctness/mysql");
+            Path procedureCorrectness = correctnessRoot.resolve(caseId + "-procedures-sql");
+            Path functionCorrectness = correctnessRoot.resolve(caseId + "-functions-sql");
+            Files.createDirectories(procedureCorrectness);
+            Files.createDirectories(functionCorrectness);
 
             try (Connection connection = DriverManager.getConnection(urlPrefix + schema + urlOptions, username, password)) {
                 MySqlDatabaseAdaptor adaptor = new MySqlDatabaseAdaptor();
@@ -98,12 +107,23 @@ public final class MySqlBasicCorrectnessFixtureExporter {
                 String sqlText = writeSqlFixture(caseId, samples);
                 Files.writeString(sqlFixture, sqlText);
                 Files.writeString(sqlGolden, sqlGolden(adaptor, scope, sqlText, samples, caseId, sqlFixture));
+
+                List<RoutineSample> routines = collectRoutines(connection, schema, anonymizedSchema);
+                ScanScope anonymizedScope = new ScanScope(null, anonymizedSchema, List.of(), List.of());
+                writeRoutineCorrectnessFixture(adaptor, anonymizedScope, caseId, procedureFixture, procedureCorrectness,
+                        routines.stream().filter(routine -> routine.type() == DatabaseObjectType.PROCEDURE).toList(),
+                        StatementSourceType.PROCEDURE, "procedures");
+                writeRoutineCorrectnessFixture(adaptor, anonymizedScope, caseId, functionFixture, functionCorrectness,
+                        routines.stream().filter(routine -> routine.type() == DatabaseObjectType.FUNCTION).toList(),
+                        StatementSourceType.FUNCTION, "functions");
             }
 
             System.out.println("Generated " + ddlFixture);
             System.out.println("Generated " + sqlFixture);
             System.out.println("Generated " + ddlGolden);
             System.out.println("Generated " + sqlGolden);
+            System.out.println("Generated " + procedureFixture);
+            System.out.println("Generated " + functionFixture);
         }
     }
 
@@ -246,6 +266,155 @@ public final class MySqlBasicCorrectnessFixtureExporter {
         return out.toString();
     }
 
+    private static List<RoutineSample> collectRoutines(Connection connection, String schema, String anonymizedSchema) {
+        String sql = """
+                SELECT ROUTINE_SCHEMA, ROUTINE_NAME, ROUTINE_TYPE, ROUTINE_DEFINITION
+                FROM information_schema.ROUTINES
+                WHERE ROUTINE_SCHEMA = ?
+                  AND ROUTINE_TYPE IN ('PROCEDURE', 'FUNCTION')
+                ORDER BY ROUTINE_TYPE, ROUTINE_NAME
+                """;
+        List<RoutineSample> routines = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, schema);
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    DatabaseObjectType type = "FUNCTION".equalsIgnoreCase(rs.getString("ROUTINE_TYPE"))
+                            ? DatabaseObjectType.FUNCTION
+                            : DatabaseObjectType.PROCEDURE;
+                    String body = anonymizeSchema(rs.getString("ROUTINE_DEFINITION"), schema, anonymizedSchema);
+                    routines.add(new RoutineSample(type, anonymizedSchema, rs.getString("ROUTINE_NAME"), body));
+                }
+            }
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to collect routines from " + schema, ex);
+        }
+        return routines;
+    }
+
+    private static String anonymizeSchema(String sql, String schema, String anonymizedSchema) {
+        if (sql == null) {
+            return "";
+        }
+        return sql.replace("`" + schema + "`.", "`" + anonymizedSchema + "`.")
+                .replace(schema + ".", anonymizedSchema + ".");
+    }
+
+    private static void writeRoutineCorrectnessFixture(
+            MySqlDatabaseAdaptor adaptor,
+            ScanScope scope,
+            String caseId,
+            Path fixturePath,
+            Path correctnessPath,
+            List<RoutineSample> routines,
+            StatementSourceType sourceType,
+            String label
+    ) throws Exception {
+        String fixtureText = writeRoutineFixture(caseId, label, routines);
+        Files.writeString(fixturePath, fixtureText);
+        Files.writeString(correctnessPath.resolve("manifest.yml"), routineManifest(
+                caseId + "-" + label + "-sql",
+                sourceType,
+                scope.schema(),
+                relativePath(correctnessPath, fixturePath)));
+        RoutineGold gold = routineGold(adaptor, scope, routines, sourceType);
+        Files.writeString(correctnessPath.resolve("expected-relations.json"), expectedRelationsJson(gold.fingerprints()));
+        Files.writeString(correctnessPath.resolve("expected-diagnostics.json"),
+                expectedDiagnosticsJson(fixtureText, gold.warningCodes()));
+    }
+
+    private static String writeRoutineFixture(String caseId, String label, List<RoutineSample> routines) {
+        StringBuilder out = new StringBuilder(128 * 1024);
+        out.append("-- Generated from MySQL information_schema.ROUTINES ").append(label)
+                .append(" for ").append(caseId).append(".\n");
+        out.append("-- Refresh with MySqlBasicCorrectnessFixtureExporter.\n\n");
+        for (RoutineSample routine : routines) {
+            out.append("-- relation-detector-fixture-source: ")
+                    .append(routine.type().name())
+                    .append(':')
+                    .append(routine.schema())
+                    .append('.')
+                    .append(routine.name())
+                    .append('\n');
+            out.append(routine.sql().stripTrailing()).append('\n');
+            out.append("-- relation-detector-fixture-end\n\n");
+        }
+        return out.toString();
+    }
+
+    private static String routineManifest(String id, StatementSourceType sourceType, String schema, Path inputPath) {
+        return """
+                id: %s
+                databaseType: MYSQL
+                parserTarget: SQL
+                sourceType: %s
+                statementFormat: OBJECT_BLOCKS
+                schema: %s
+                input: %s
+                expectedRelations: expected-relations.json
+                expectedDiagnostics: expected-diagnostics.json
+                """.formatted(id, sourceType.name(), schema, inputPath.toString().replace('\\', '/'));
+    }
+
+    private static RoutineGold routineGold(
+            MySqlDatabaseAdaptor adaptor,
+            ScanScope scope,
+            List<RoutineSample> routines,
+            StatementSourceType sourceType
+    ) {
+        List<WarningMessage> warnings = new ArrayList<>();
+        AdaptorContext context = new AdaptorContext(scope, Map.of(), warnings::add);
+        ScanConfig config = config(scope.schema());
+        SqlRelationParserRunner runner = new SqlRelationParserRunner();
+        List<String> fingerprints = new ArrayList<>();
+        for (RoutineSample routine : routines) {
+            SqlStatementRecord statement = new SqlStatementRecord(
+                    routine.sql(),
+                    sourceType,
+                    routine.type().name() + ":" + routine.schema() + "." + routine.name(),
+                    1,
+                    routine.sql().lines().count(),
+                    Map.of("objectSchema", routine.schema(),
+                            "objectName", routine.name(),
+                            "objectType", routine.type().name(),
+                            "routineSchema", routine.schema(),
+                            "routineName", routine.name(),
+                            "routineType", routine.type().name()));
+            for (RelationshipCandidate relation : runner.parse(adaptor, config, statement, context)) {
+                fingerprints.add(fingerprint(relation));
+            }
+        }
+        return new RoutineGold(fingerprints.stream().sorted().distinct().toList(), warningCodes(warnings));
+    }
+
+    private static String expectedRelationsJson(List<String> fingerprints) {
+        Map<String, Object> json = new LinkedHashMap<>();
+        json.put("fingerprints", fingerprints);
+        json.put("forbiddenTables", List.of());
+        return toJson(json);
+    }
+
+    private static String expectedDiagnosticsJson(String fixtureText, Map<String, Integer> warningCodes) throws Exception {
+        Map<String, Object> json = new LinkedHashMap<>();
+        json.put("fixtureSha256", sha256(fixtureText));
+        json.put("warningCodes", warningCodes);
+        return toJson(json);
+    }
+
+    private static String fingerprint(RelationshipCandidate relation) {
+        String evidenceTypes = relation.evidence().stream()
+                .map(evidence -> evidence.type().name())
+                .collect(Collectors.joining(","));
+        return relation.relationType() + ":"
+                + relation.source().displayName() + "->" + relation.target().displayName()
+                + ":" + evidenceTypes;
+    }
+
+    private static Path relativePath(Path fromDirectory, Path target) {
+        return fromDirectory.toAbsolutePath().normalize()
+                .relativize(target.toAbsolutePath().normalize());
+    }
+
     private static String sqlGolden(
             MySqlDatabaseAdaptor adaptor,
             ScanScope scope,
@@ -356,5 +525,11 @@ public final class MySqlBasicCorrectnessFixtureExporter {
     }
 
     record SqlSample(String source, String sql) {
+    }
+
+    record RoutineSample(DatabaseObjectType type, String schema, String name, String sql) {
+    }
+
+    record RoutineGold(List<String> fingerprints, Map<String, Integer> warningCodes) {
     }
 }

@@ -1,0 +1,10 @@
+{
+  "fingerprints": [],
+  "forbiddenSources": [
+    "p_input_ledger_json",
+    "p_max_limit_cap",
+    "CURRENT_TIMESTAMP"
+  ],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

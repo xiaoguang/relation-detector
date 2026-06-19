@@ -134,7 +134,65 @@ public enum RelationSubType {
 - 显式数据库 FK 永远不应被数据画像或日志证据覆盖成其他 subtype。
 - `PROFILE_SUPPORTED_FK` 是“画像强支持的推断关系”，不是“画像发现的新关系”。画像默认只对已有候选运行。
 
-## 5. EvidenceType
+## 5. LineageFlowKind
+
+表示字段血缘中的值流动性质。它只用于 `DataLineageCandidate`，不用于 `RelationshipCandidate`。
+
+```java
+public enum LineageFlowKind {
+  VALUE,
+  CONTROL
+}
+```
+
+| 值 | 含义 | 例子 |
+| --- | --- | --- |
+| `VALUE` | 源字段的值参与目标字段写入。 | `SET users.total_spent = SUM(orders.pay_amount)` 输出 `orders.pay_amount -> users.total_spent`。 |
+| `CONTROL` | 源字段不一定成为目标值，但控制目标值如何被选择或分类。 | `SET status = CASE WHEN risk.score > 80 THEN 'HOLD' ELSE 'OK' END` 输出 `risk.score -> status`，flow kind 为 `CONTROL`。 |
+
+维护说明：
+
+- `VALUE` 和 `CONTROL` 可以指向同一个 target，但表示不同语义。
+- v1 不输出 parameter/literal/json path 来源，因此 `CONTROL` source 仍必须是物理 `table.column`。
+- `LineageFlowKind` 不参与关系置信度计算。
+
+## 6. LineageTransformType
+
+表示字段血缘中的表达式变换形态。它只解释字段值如何流动，不代表表关系类型。
+
+```java
+public enum LineageTransformType {
+  DIRECT,
+  AGGREGATE,
+  COALESCE,
+  CASE_WHEN,
+  CONCAT_FORMAT,
+  ARITHMETIC,
+  FUNCTION_CALL,
+  WINDOW_DERIVED,
+  UNKNOWN_EXPRESSION
+}
+```
+
+| 值 | 默认分 | 含义 | 例子 |
+| --- | ---: | --- | --- |
+| `DIRECT` | 0.90 | 直接字段赋值。 | `SET a.x = b.y`。 |
+| `AGGREGATE` | 0.80 | 聚合结果写入目标。 | `SUM(o.pay_amount) -> users.total_spent`。 |
+| `COALESCE` | 0.75 | 多来源兜底选择。 | `COALESCE(sm.avg_cost, wi.default_unit_cost)`。 |
+| `CASE_WHEN` | 0.65 / 0.55 | 条件选择；VALUE 为 0.65，CONTROL 为 0.55。 | `CASE WHEN risk_score > 80 THEN ...`。 |
+| `CONCAT_FORMAT` | 0.70 | 字符串拼接或格式化。 | `FORMAT('Country: %s', u.country_code)`。 |
+| `ARITHMETIC` | 0.75 | 数值运算。 | `stock_reserved + oi.quantity`。 |
+| `FUNCTION_CALL` | 0.65 | 其它函数调用。 | `LOWER(email)`。 |
+| `WINDOW_DERIVED` | 0.50 | 窗口函数派生。 | `DENSE_RANK() OVER (...)`。 |
+| `UNKNOWN_EXPRESSION` | 0.35 | 能抽出字段来源，但表达式类型不确定。 | 方言函数或复杂表达式。 |
+
+维护说明：
+
+- `LineageTransformType` 的 confidence 不参与 `EvidenceType` 的关系分数。
+- 新增 transform type 时，必须同步更新 JSON 输出测试、correctness fixture golden 和本 enum 文档。
+- 如果表达式包含聚合函数，v1 优先以聚合函数参数作为 VALUE source，过滤条件字段不作为 VALUE source。
+
+## 7. EvidenceType
 
 表示单条证据的类型。它回答“这条证据从哪里来、说明了什么”。
 
@@ -237,7 +295,7 @@ RelationSubType: SUBQUERY_INFERRED_FK
 - `NEGATIVE_VALUE_MISMATCH` 是负向证据，会降低最终分数，而不是删除关系。
 - EvidenceType 的默认分值、定分理由、合并公式和完整 SQL 算例，以 [Phase 2：核心模型和评分详细设计](phase-02-core-model-scoring.md) 的“置信度计算”章节为准。维护枚举时必须同步检查该章节，避免 enum 文档和评分模型出现两套解释。
 
-## 6. EvidenceSourceType
+## 8. EvidenceSourceType
 
 表示 evidence 的来源类别。它和 `EvidenceType` 不同：`EvidenceType` 说明“证据是什么”，`EvidenceSourceType` 说明“证据从哪里来”。
 
@@ -273,7 +331,7 @@ public enum EvidenceSourceType {
 - `DATABASE_DDL` 与 `DDL_FILE` 都可能产生 `DDL_FOREIGN_KEY`、`SOURCE_INDEX`、`TARGET_UNIQUE`；区别只在来源：前者来自 live catalog 反查出的表定义，后者来自用户提供的文件。
 - 不要把文件路径作为 enum 值。
 
-## 7. StatementSourceType
+## 9. StatementSourceType
 
 表示一条 SQL 语句来自哪里，用于选择 evidence 类型和解析策略。
 
@@ -319,7 +377,7 @@ public enum StatementSourceType {
 - `MIGRATION` 不是数据库持久对象，证据来源按 `PLAIN_SQL` 处理。
 - `TRIGGER` 解析失败时常见，失败应记录 warning，不应中断扫描。
 
-## 8. DatabaseObjectType
+## 10. DatabaseObjectType
 
 表示从数据库或文件读取到的对象定义类型。
 
@@ -354,7 +412,7 @@ public enum DatabaseObjectType {
 - PostgreSQL trigger 需要关联 `TRIGGER` 与对应 `FUNCTION`，不要只看 trigger 元数据。
 - 不要复用 `VIEW` 表达 materialized view；物化语义不同，虽然当前 JOIN evidence 同样映射为 `VIEW_JOIN`。
 
-## 8.1 StructuredParseEventType
+## 10.1 StructuredParseEventType
 
 表示 ANTLR 结构化解析阶段产生的中间事件，不等价于最终 relationship。
 
@@ -364,8 +422,7 @@ public enum StructuredParseEventType {
   COLUMN_EQUALITY,
   DDL_FOREIGN_KEY,
   DDL_INDEX,
-  DYNAMIC_SQL,
-  PARSER_COMPARISON
+  DYNAMIC_SQL
 }
 ```
 
@@ -376,9 +433,8 @@ public enum StructuredParseEventType {
 | `DDL_FOREIGN_KEY` | ANTLR DDL event visitor 识别出的外键关系事件，包括 table-level FK、inline `REFERENCES`、`ALTER TABLE ADD CONSTRAINT`。 |
 | `DDL_INDEX` | ANTLR DDL event visitor 识别出的索引/唯一性事件，例如 source index、primary key、unique constraint、unique index。 |
 | `DYNAMIC_SQL` | 为可静态还原的动态 SQL 事件预留。当前不可还原时输出 warning。 |
-| `PARSER_COMPARISON` | shadow mode 中 primary parser 和 ANTLR parser 的结果对比。 |
 
-## 9. LogFormatHint
+## 11. LogFormatHint
 
 表示日志文件格式提示。用于 `SqlLogExtractor` 判断如何从文件中抽取 SQL。
 
@@ -406,7 +462,7 @@ public enum LogFormatHint {
 - 原生日志解析只负责抽 SQL，不负责生成关系；关系解析交给 SQL parser。
 - 后续新增云厂商日志格式时，新增 enum 值，例如 `ALIYUN_RDS_MYSQL_AUDIT_LOG`。
 
-## 10. DirectionConfidence
+## 12. DirectionConfidence
 
 表示解析器对关系方向的把握程度。它不直接输出给最终用户，但会影响是否生成列级 `FK_LIKE`。
 
@@ -439,7 +495,7 @@ public enum DirectionConfidence {
 - 不要把 `LOW` 的方向关系直接输出为强 `FK_LIKE`。
 - `DirectionConfidence` 是解析中间状态，不等于最终 confidence 分数。
 
-## 11. WarningType
+## 13. WarningType
 
 表示扫描过程中出现的非致命问题类型。
 
@@ -471,7 +527,7 @@ public enum WarningType {
 - parser 正常返回空关系不自动等价为 `PARSE_WARNING`，因为很多 SQL 不包含可用关系证据。
 - warning detail 不应包含 password 或采样到的真实业务值。
 
-## 12. WarningSeverity
+## 14. WarningSeverity
 
 表示 warning 的严重程度。
 
@@ -494,7 +550,7 @@ public enum WarningSeverity {
 - `ERROR` severity 不等于进程退出码非 0。
 - 只有配置无法读取、数据库无法连接、输出无法写入等不可恢复错误才应让 CLI 返回非零。
 
-## 13. ErrorCode
+## 15. ErrorCode
 
 CLI 退出码建议用 enum 或常量集中管理。虽然 Java 进程退出码是 int，但代码中应避免散落魔法数字。
 
@@ -529,7 +585,7 @@ public enum ErrorCode {
 - 已使用的退出码不要复用给新含义。
 - warning 不应直接改变退出码，除非配置要求“warning as error”。
 
-## 14. AdaptorCapability
+## 16. AdaptorCapability
 
 表示 adaptor 支持的能力。当前设计中也可以用 boolean record，但为了第三方 adaptor 扩展和配置校验，建议实现为 enum set。
 
@@ -559,7 +615,7 @@ public enum AdaptorCapability {
 - 用户开启 adaptor 不支持的能力时，应给明确错误或 warning。
 - 不要通过 capabilities 表示版本号；版本兼容应由 adaptor 自己判断。
 
-## 15. ScanSourceKind
+## 17. ScanSourceKind
 
 表示用户配置中启用的数据来源类型。
 
@@ -586,7 +642,7 @@ public enum ScanSourceKind {
 - `DATA_PROFILE` 依赖已有候选关系，不能作为第一批独立扫描来源。
 - 至少应启用 `METADATA`、`DDL`、`OBJECTS`、`LOGS` 中的一种；只开启 `DATA_PROFILE` 没有意义，应配置失败。
 
-## 16. 枚举之间的关系
+## 18. 枚举之间的关系
 
 一次典型关系输出：
 
@@ -620,7 +676,7 @@ public enum ScanSourceKind {
 - `EvidenceType = VALUE_CONTAINMENT_HIGH`：另一条证据来自数据画像。
 - `EvidenceSourceType` 表示证据来源类别，不替代 evidence type。
 
-## 17. 实现检查清单
+## 19. 实现检查清单
 
 - 每个 enum 都有 JSON 序列化/反序列化测试。
 - 配置中的小写值能映射到内部大写 enum。

@@ -1,0 +1,14 @@
+{
+  "fingerprints": [],
+  "forbiddenSources": [
+    "p_",
+    "v_",
+    "tmp_",
+    "temp_",
+    "jsh_temp_",
+    "CURRENT_TIMESTAMP",
+    "NOW"
+  ],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

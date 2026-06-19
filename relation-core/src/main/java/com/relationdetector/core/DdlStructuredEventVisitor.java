@@ -17,7 +17,7 @@ import com.relationdetector.api.Enums.StructuredParseEventType;
  * <p>Call flow:
  *
  * <pre>{@code
- * AntlrStructuredDdlParser.parseDdl(...)
+ * TokenEventStructuredDdlParser.parseDdl(...)
  *   -> DdlStructuredEventVisitor.extractEvents(...)
  *   -> DdlRelationExtractionVisitor.extract(...)
  * }</pre>

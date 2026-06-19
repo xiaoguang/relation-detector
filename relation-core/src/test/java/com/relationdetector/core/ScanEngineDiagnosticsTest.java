@@ -19,7 +19,6 @@ import com.relationdetector.api.MetadataSnapshot;
 import com.relationdetector.api.SqlStatementRecord;
 import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Collectors.DataProfiler;
-import com.relationdetector.api.Collectors.DdlParser;
 import com.relationdetector.api.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.api.Collectors.MetadataCollector;
 import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
@@ -143,33 +142,30 @@ class ScanEngineDiagnosticsTest {
     }
 
     private static final class TestAdaptor implements DatabaseAdaptor {
-        private final DdlParser ddlParser;
         private final SqlRelationParser sqlRelationParser;
         private final Optional<StructuredDdlParser> structuredDdlParser;
 
-        private TestAdaptor(DdlParser ddlParser, SqlRelationParser sqlRelationParser) {
-            this(ddlParser, sqlRelationParser, Optional.empty());
+        private TestAdaptor(SqlRelationParser sqlRelationParser) {
+            this(sqlRelationParser, Optional.empty());
         }
 
         private TestAdaptor(
-                DdlParser ddlParser,
                 SqlRelationParser sqlRelationParser,
                 Optional<StructuredDdlParser> structuredDdlParser
         ) {
-            this.ddlParser = ddlParser;
             this.sqlRelationParser = sqlRelationParser;
             this.structuredDdlParser = structuredDdlParser;
         }
 
         static TestAdaptor withThrowingDdlParser() {
-            return new TestAdaptor((file, context) -> List.of(), (statement, context) -> List.of(),
+            return new TestAdaptor((statement, context) -> List.of(),
                     Optional.of((ddl, sourceName, context) -> {
                         throw new IllegalStateException("synthetic ddl failure");
                     }));
         }
 
         static TestAdaptor withThrowingSqlParser() {
-            return new TestAdaptor((file, context) -> List.of(), (statement, context) -> {
+            return new TestAdaptor((statement, context) -> {
                 throw new IllegalArgumentException("synthetic sql failure");
             });
         }
@@ -207,11 +203,6 @@ class ScanEngineDiagnosticsTest {
         @Override
         public ObjectDefinitionCollector objectDefinitionCollector() {
             return (connection, scope) -> List.of();
-        }
-
-        @Override
-        public DdlParser ddlParser() {
-            return ddlParser;
         }
 
         @Override
