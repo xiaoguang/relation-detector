@@ -50,8 +50,7 @@ import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
 import com.relationdetector.core.DiagnosticWarnings;
 import com.relationdetector.core.PlainSqlLogExtractor;
-import com.relationdetector.core.ShadowSqlRelationParser;
-import com.relationdetector.core.SimpleSqlRelationParser;
+import com.relationdetector.core.AntlrSqlRelationParser;
 
 /** PostgreSQL 12+ adaptor implementing the Phase 5 design. */
 public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
@@ -117,10 +116,7 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
 
     @Override
     public SqlRelationParser sqlRelationParser() {
-        return new ShadowSqlRelationParser(
-                new SimpleSqlRelationParser(),
-                new PostgresAntlrSqlParser(),
-                new PostgresRelationExtractionVisitor());
+        return new AntlrSqlRelationParser(new PostgresAntlrSqlParser(), new PostgresRelationExtractionVisitor());
     }
 
     @Override
@@ -150,7 +146,7 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
      * {@link MetadataCollector} SPI. It reads only authoritative catalog data.
      * SQL bodies from functions/procedures/views are collected by
      * {@link PostgresObjectCollector}; SQL text relationship inference then happens
-     * in {@link SimpleSqlRelationParser}.
+     * in the PostgreSQL ANTLR SQL parser.
      *
      * <p>Call relationship:
      * <pre>

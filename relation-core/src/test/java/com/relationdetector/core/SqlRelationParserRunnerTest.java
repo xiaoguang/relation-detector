@@ -13,13 +13,15 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.api.AdaptorContext;
+import com.relationdetector.api.ColumnRef;
 import com.relationdetector.api.DatabaseAdaptor;
+import com.relationdetector.api.Endpoint;
 import com.relationdetector.api.IdentifierRules;
 import com.relationdetector.api.MetadataSnapshot;
 import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.ScanScope;
 import com.relationdetector.api.SqlStatementRecord;
-import com.relationdetector.api.StructuredParseResult;
+import com.relationdetector.api.TableId;
 import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Collectors.DataProfiler;
 import com.relationdetector.api.Collectors.DdlParser;
@@ -32,62 +34,53 @@ import com.relationdetector.api.Collectors.StructuredDdlParser;
 import com.relationdetector.api.Collectors.StructuredSqlParser;
 import com.relationdetector.api.Enums.AdaptorCapability;
 import com.relationdetector.api.Enums.DatabaseType;
+import com.relationdetector.api.Enums.RelationSubType;
+import com.relationdetector.api.Enums.RelationType;
 import com.relationdetector.api.Enums.StatementSourceType;
 
 /**
- * Tests parser-mode dispatch without running a full scan.
+ * Tests SQL parser dispatch without running a full scan.
  *
- * <p>The fake adaptor exposes a {@link ShadowSqlRelationParser}; the custom
- * structured parser can be empty to simulate an ANTLR parity miss. That keeps
- * the test focused on runner policy rather than grammar behavior.
+ * <p>Simple and shadow parser modes have been removed. The runner now always
+ * invokes the adaptor parser exposed for the dialect, and a hard parser failure
+ * is surfaced as a warning by {@link ScanEngine} rather than being hidden by a
+ * Simple parser fallback.
  */
 class SqlRelationParserRunnerTest {
     @Test
-    void simpleModeRunsOnlyPrimaryParser() {
-        AtomicInteger structuredCalls = new AtomicInteger();
-        ShadowSqlRelationParser shadow = shadow(emptyStructuredParser(structuredCalls));
+    void runnerAlwaysUsesAdaptorSqlParser() {
+        AtomicInteger parserCalls = new AtomicInteger();
         ScanConfig config = new ScanConfig();
-        config.sqlParserMode = SqlParserMode.SIMPLE;
 
         List<RelationshipCandidate> relations = new SqlRelationParserRunner()
-                .parse(new TestAdaptor(shadow), config, statement(), context(new ArrayList<>()));
+                .parse(new TestAdaptor((statement, context) -> {
+                    parserCalls.incrementAndGet();
+                    return List.of();
+                }), config, statement(), context(new ArrayList<>()));
 
-        assertEquals(1, relations.size());
-        assertEquals(0, structuredCalls.get(), "simple mode must not run ANTLR shadow parser");
+        assertTrue(relations.isEmpty());
+        assertEquals(1, parserCalls.get(), "runner should call the adaptor's ANTLR parser exactly once");
     }
 
     @Test
-    void antlrPrimaryFallsBackToSimpleAndWarnsWhenBaselineIsMissing() {
-        AtomicInteger structuredCalls = new AtomicInteger();
-        ShadowSqlRelationParser shadow = new ShadowSqlRelationParser(
-                new SimpleSqlRelationParser(),
-                emptyStructuredParser(structuredCalls),
-                new RelationExtractionVisitor() {
-                    @Override
-                    public List<RelationshipCandidate> extract(SqlStatementRecord statement, StructuredParseResult result) {
-                        return List.of();
-                    }
-                });
+    void runnerDoesNotFallbackToSimpleWhenAdaptorParserHardFails() {
         ScanConfig config = new ScanConfig();
-        config.sqlParserMode = SqlParserMode.ANTLR_PRIMARY;
-        config.sqlParserFallbackOnFailure = true;
         List<WarningMessage> warnings = new ArrayList<>();
 
-        List<RelationshipCandidate> relations = new SqlRelationParserRunner()
-                .parse(new TestAdaptor(shadow), config, statement(), context(warnings));
-
-        assertEquals(1, relations.size());
-        assertEquals("orders.user_id", relations.get(0).source().displayName());
-        assertTrue(warnings.stream().anyMatch(warning ->
-                warning.code().equals("ANTLR_PRIMARY_FALLBACK")
-                        && String.valueOf(warning.attributes().get("rawStatement")).contains("orders o JOIN users u")
-                        && String.valueOf(warning.attributes().get("missingSimpleRelations")).contains("SQL_LOG_JOIN")));
+        try {
+            new SqlRelationParserRunner()
+                    .parse(new TestAdaptor((statement, context) -> {
+                        throw new IllegalStateException("ANTLR parser exploded");
+                    }), config, statement(), context(warnings));
+        } catch (IllegalStateException ex) {
+            assertEquals("ANTLR parser exploded", ex.getMessage());
+        }
+        assertTrue(warnings.isEmpty(), "runner must not emit fallback warnings after legacy parser removal");
     }
 
     @Test
     void nativeLogSystemMetadataQueryIsSkippedBeforeAnyParserRuns() {
         AtomicInteger structuredCalls = new AtomicInteger();
-        ShadowSqlRelationParser shadow = shadow(emptyStructuredParser(structuredCalls));
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.MYSQL;
 
@@ -99,7 +92,10 @@ class SqlRelationParserRunnerTest {
                 """, StatementSourceType.NATIVE_LOG, "mysql-native.log", 1, 4, Map.of());
 
         List<RelationshipCandidate> relations = new SqlRelationParserRunner()
-                .parse(new TestAdaptor(shadow), config, statement, context(new ArrayList<>()));
+                .parse(new TestAdaptor((record, context) -> {
+                    structuredCalls.incrementAndGet();
+                    return List.of();
+                }), config, statement, context(new ArrayList<>()));
 
         assertTrue(relations.isEmpty(), "metadata-only native log SQL should be filtered as noise");
         assertEquals(0, structuredCalls.get(), "filtered log SQL must not enter the ANTLR parser");
@@ -108,7 +104,6 @@ class SqlRelationParserRunnerTest {
     @Test
     void nativeLogBusinessTableWithSystemLikeNameIsNotSkipped() {
         AtomicInteger structuredCalls = new AtomicInteger();
-        ShadowSqlRelationParser shadow = shadow(emptyStructuredParser(structuredCalls));
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.MYSQL;
 
@@ -119,7 +114,10 @@ class SqlRelationParserRunnerTest {
                 """, StatementSourceType.NATIVE_LOG, "mysql-native.log", 1, 4, Map.of());
 
         List<RelationshipCandidate> relations = new SqlRelationParserRunner()
-                .parse(new TestAdaptor(shadow), config, statement, context(new ArrayList<>()));
+                .parse(new TestAdaptor((record, context) -> {
+                    structuredCalls.incrementAndGet();
+                    return List.of(fkLike("system_config", "user_id", "users", "id"));
+                }), config, statement, context(new ArrayList<>()));
 
         assertEquals(1, relations.size(), "unqualified business tables must not be filtered by name substring");
         assertEquals(1, structuredCalls.get(), "non-system log SQL should still run the configured parser");
@@ -128,7 +126,6 @@ class SqlRelationParserRunnerTest {
     @Test
     void postgresNativeLogSystemCatalogQueryIsSkippedByDialectDefaults() {
         AtomicInteger structuredCalls = new AtomicInteger();
-        ShadowSqlRelationParser shadow = shadow(emptyStructuredParser(structuredCalls));
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.POSTGRESQL;
 
@@ -139,26 +136,28 @@ class SqlRelationParserRunnerTest {
                 """, StatementSourceType.NATIVE_LOG, "postgres-native.log", 1, 4, Map.of());
 
         List<RelationshipCandidate> relations = new SqlRelationParserRunner()
-                .parse(new TestAdaptor(shadow), config, statement, context(new ArrayList<>()));
+                .parse(new TestAdaptor((record, context) -> {
+                    structuredCalls.incrementAndGet();
+                    return List.of();
+                }), config, statement, context(new ArrayList<>()));
 
         assertTrue(relations.isEmpty(), "PostgreSQL catalog-only native log SQL should be filtered");
         assertEquals(0, structuredCalls.get(), "filtered log SQL must not enter the parser");
     }
 
-    private ShadowSqlRelationParser shadow(StructuredSqlParser structuredParser) {
-        return new ShadowSqlRelationParser(new SimpleSqlRelationParser(), structuredParser, new RelationExtractionVisitor());
-    }
-
-    private StructuredSqlParser emptyStructuredParser(AtomicInteger calls) {
-        return (statement, context) -> {
-            calls.incrementAndGet();
-            return new StructuredParseResult("ANTLR", "MYSQL", statement.sourceName(), List.of(), List.of(), Map.of());
-        };
-    }
-
     private SqlStatementRecord statement() {
         return new SqlStatementRecord("SELECT * FROM orders o JOIN users u ON o.user_id = u.id",
                 StatementSourceType.PLAIN_SQL, "runner.sql", 1, 1, Map.of());
+    }
+
+    private RelationshipCandidate fkLike(String sourceTable, String sourceColumn, String targetTable, String targetColumn) {
+        TableId source = TableId.of(null, sourceTable);
+        TableId target = TableId.of(null, targetTable);
+        return new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(source, sourceColumn)),
+                Endpoint.column(ColumnRef.of(target, targetColumn)),
+                RelationType.FK_LIKE,
+                RelationSubType.INFERRED_JOIN_FK);
     }
 
     private AdaptorContext context(List<WarningMessage> warnings) {

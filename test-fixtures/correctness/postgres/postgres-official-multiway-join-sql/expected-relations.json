@@ -1,0 +1,17 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:order_items->order_roots:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:payments->order_roots:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:refunds->order_roots:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:shipments->order_roots:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "FK_LIKE:orders.tenant_id->tenants.id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
+    "FK_LIKE:payments.invoice_id->invoices.id:SQL_LOG_JOIN",
+    "FK_LIKE:shipments.carrier_id->carriers.id:SQL_LOG_JOIN",
+    "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:users.tenant_id->tenants.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": [
+    "pay"
+  ]
+}

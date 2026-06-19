@@ -183,6 +183,7 @@ relationType
 | `SQL_LOG_JOIN` | 0.55 | 运行日志证明真实 SQL 使用过该 JOIN，但单条或少量日志可能只是临时报表、排查语句或 ETL，不一定代表结构关系。 | 慢日志中多次出现 `FROM orders o JOIN users u ON o.user_id = u.id`。 |
 | `SQL_LOG_SUBQUERY_IN` | 0.58 | `IN (SELECT ...)` 通常表达“外层列属于内层集合”，方向比普通 JOIN 更像引用关系，因此略高于普通日志 JOIN。 | `WHERE orders.user_id IN (SELECT users.id FROM users)`。 |
 | `SQL_LOG_EXISTS` | 0.58 | `EXISTS` 相关子查询通常表达存在性校验，和 FK 语义接近；但仍来自运行 SQL，不能超过数据库对象定义。 | `WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = orders.user_id)`。 |
+| `SQL_LOG_COLUMN_CO_OCCURRENCE` | 0.40 | SQL 明确给出两个物理列的等值谓词，信号强于纯表共现；但命名、唯一性或 metadata 不足时不能判断 FK-like 方向，所以低于普通 JOIN FK-like。 | `warehouse_inventory.product_id = order_items.product_id`。 |
 | `SQL_LOG_TABLE_CO_OCCURRENCE` | 0.25 | 只能证明同一条 SQL 中出现多个表，不能证明列级关系，也不能证明方向。它适合提示人工调查，不适合作为高置信关系。 | `SELECT ... FROM orders, users WHERE orders.status = 'PAID' AND users.active = 1;` |
 | `NAMING_MATCH` | 0.20 | 命名能提供弱提示，但误报很多，例如 `owner_id`、`created_user_id`、`legacy_user_id` 可能指向不同语义。 | `orders.user_id` 与 `users.id` 命名匹配。 |
 | `SOURCE_INDEX` | 0.10 | 子表外键列常有索引，但索引也可能只是为了过滤或排序。只能作为辅助证据。 | `CREATE INDEX idx_orders_user_id ON orders(user_id);` |
@@ -470,7 +471,32 @@ confidence = 1 - 0.42 * 0.82 * 0.70
 
 合理性：`IN` 子查询天然表达“外层列属于内层结果集合”，方向比普通 JOIN 更清晰；加上 target 唯一和高包含率后，是中高置信推断关系。
 
-#### 例子 7：只有表共现，不生成列级 FK-like
+#### 例子 7：列级弱共现，不生成 FK-like
+
+SQL：
+
+```sql
+SELECT *
+FROM warehouse_inventory wi
+JOIN order_items oi ON wi.product_id = oi.product_id;
+```
+
+证据：
+
+```text
+SQL_LOG_COLUMN_CO_OCCURRENCE = 0.40
+```
+
+计算：
+
+```text
+confidence = 1 - (1 - 0.40)
+           = 0.40
+```
+
+合理性：SQL 给出了明确的列等值谓词，所以比纯表级共现更有价值；但两侧都是 `product_id`，没有目标 `id`、唯一性或 metadata 证据，不能推断外键方向。
+
+#### 例子 8：只有表共现，不生成列级 FK-like
 
 SQL：
 
@@ -496,7 +522,7 @@ confidence = 1 - (1 - 0.25)
 
 合理性：两张表在同一 SQL 中出现，但没有 `o.user_id = u.id`、`IN`、`EXISTS` 或 lineage 能解析出的列级条件。只能作为低置信表级 `CO_OCCURRENCE`。
 
-#### 例子 8：强推断被数据画像反证
+#### 例子 9：强推断被数据画像反证
 
 SQL：
 

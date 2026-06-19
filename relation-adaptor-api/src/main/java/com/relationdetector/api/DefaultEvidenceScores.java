@@ -20,6 +20,7 @@ public final class DefaultEvidenceScores {
     public static final double SQL_LOG_JOIN = 0.55d;
     public static final double SQL_LOG_SUBQUERY_IN = 0.58d;
     public static final double SQL_LOG_EXISTS = 0.58d;
+    public static final double SQL_LOG_COLUMN_CO_OCCURRENCE = 0.40d;
     public static final double SQL_LOG_TABLE_CO_OCCURRENCE = 0.25d;
     public static final double NAMING_MATCH = 0.20d;
     public static final double SOURCE_INDEX = 0.10d;

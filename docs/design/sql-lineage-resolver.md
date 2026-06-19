@@ -2,7 +2,7 @@
 
 ## 1. 背景和目标
 
-`SimpleSqlRelationParser` 最初只解析真实表别名上的列关系：
+早期 SQL 关系抽取只能直接解析真实表别名上的列关系：
 
 ```sql
 SELECT *
@@ -232,7 +232,56 @@ x.buyer_id -> orders.customer_id
 orders.customer_id -> customers.id
 ```
 
-### 3.3 不安全来源
+### 3.3 MySQL UPDATE 派生表中的单表裸列投影
+
+MySQL 常见的汇总回写语句会把主表 JOIN 到一个单表聚合派生表。例如：
+
+```sql
+UPDATE users u
+LEFT JOIN (
+  SELECT user_id, SUM(pay_amount) AS actual_total
+  FROM orders
+  WHERE order_status = 'PAID'
+  GROUP BY user_id
+) o_summary ON u.id = o_summary.user_id
+SET
+  u.total_spent = COALESCE(o_summary.actual_total, 0.00)
+WHERE u.is_active = 1;
+```
+
+这里 `o_summary.user_id` 来自派生表中的裸列投影 `SELECT user_id FROM orders`。因为该派生表 body 只有一个物理来源表 `orders`，系统可以安全记录：
+
+```text
+o_summary.user_id -> orders.user_id
+```
+
+于是外层条件 `u.id = o_summary.user_id` 可以输出：
+
+```text
+orders.user_id -> users.id
+```
+
+注意这里的方向不是 SQL 等号左右顺序，而是系统的 FK-like 归一方向：引用列/外键样列指向被引用键列。SQL 写作 `u.id = o_summary.user_id`，但输出仍是 `orders.user_id -> users.id`。
+
+这个规则是受控开启的：默认公共 lineage 仍不把裸列投影当成精确来源；当前只由 MySQL ANTLR relation visitor 在 `UPDATE` 场景中启用。这样既覆盖 MySQL 业务中常见的 derived aggregate 回写，又避免全局改变 PostgreSQL 或 legacy fixture 的保守基线。
+
+同一派生表中的聚合列仍不会生成精确 lineage：
+
+```sql
+SELECT SUM(pay_amount) AS actual_total FROM orders
+```
+
+`actual_total` 是聚合结果，不会被推断成 `orders.pay_amount` 的外键关系来源。
+
+从写入血缘角度，`SUM(pay_amount)` 到 `users.total_spent` 是合理的业务 `Data_Lineage`：
+
+```text
+orders.pay_amount -> users.total_spent, transform=SUM
+```
+
+但当前 `SqlLineageResolver` 只服务关系抽取，不输出正式 Data Lineage。这个业务血缘会作为后续独立设计边界记录，而不是混入 FK-like 关系或现有 JSON relationship 输出。
+
+### 3.4 不安全来源
 
 这些写法不会生成精确列级 lineage：
 
@@ -281,7 +330,7 @@ SELECT *
 alias.column -> real_table.real_column
 ```
 
-`SimpleSqlRelationParser` 在解析等值条件时消费这个映射。
+`RelationExtractionVisitor` 在解析 ANTLR 结构化等值事件和 raw equality 兜底时消费这个映射。
 
 如果等值条件来自真实表列：
 
@@ -340,14 +389,16 @@ attributes.lineageResolved: true
 - 表达式、聚合、窗口函数、类型转换后的强列级推断。
 - 动态 SQL。
 
-这些场景后续应考虑引入 JSqlParser 或数据库专用 parser，并把当前 resolver 作为保守 fallback。
+这些场景后续应考虑继续增强数据库专用 ANTLR parser/visitor，并把当前 resolver 保持为保守 lineage helper。
 
 ## 6. 测试策略
 
 当前测试文件：
 
 ```text
-relation-core/src/test/java/com/relationdetector/core/SimpleSqlRelationParserComplexSqlTest.java
+relation-core/src/test/java/com/relationdetector/core/SqlLineageResolverTest.java
+relation-core/src/test/java/com/relationdetector/core/DialectSqlRelationParserComplexMatrixTest.java
+relation-cli/src/test/java/com/relationdetector/cli/CorrectnessFixtureRunnerTest.java
 ```
 
 新增重点测试：

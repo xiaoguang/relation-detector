@@ -17,7 +17,6 @@ import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.ScanScope;
 import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Enums.EvidenceType;
-import com.relationdetector.core.SimpleDdlParser;
 
 /**
  * Guards the MySQL adaptor DDL extension point.
@@ -66,7 +65,7 @@ class MySqlDdlParserTest {
     }
 
     @Test
-    void mysqlParserHandlesIndexTypeBeforeOnWithoutChangingCoreFallback() throws Exception {
+    void mysqlParserHandlesIndexTypeBeforeOn() throws Exception {
         Path ddl = tempDir.resolve("mysql-index-type-before-on.sql");
         String ddlText = """
                 CREATE TABLE `shop`.`users` (
@@ -87,10 +86,8 @@ class MySqlDdlParserTest {
         Files.writeString(ddl, ddlText);
 
         List<RelationshipCandidate> mysqlRelations = new MySqlDdlParser().parseDdl(ddl, null);
-        List<RelationshipCandidate> fallbackRelations = new SimpleDdlParser().parseText(ddlText, ddl.toString());
 
         assertHasEvidence(mysqlRelations, "shop.orders.user_email", "shop.users.email", EvidenceType.TARGET_UNIQUE);
-        assertLacksEvidence(fallbackRelations, "shop.orders.user_email", "shop.users.email", EvidenceType.TARGET_UNIQUE);
     }
 
     @Test
@@ -116,16 +113,6 @@ class MySqlDdlParserTest {
     ) {
         assertTrue(hasEvidence(relations, source, target, evidenceType),
                 () -> "Missing " + evidenceType + " for " + source + " -> " + target);
-    }
-
-    private void assertLacksEvidence(
-            List<RelationshipCandidate> relations,
-            String source,
-            String target,
-            EvidenceType evidenceType
-    ) {
-        assertTrue(!hasEvidence(relations, source, target, evidenceType),
-                () -> "Core fallback should not learn MySQL-only syntax by accident");
     }
 
     private boolean hasEvidence(

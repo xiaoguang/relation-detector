@@ -1,0 +1,9 @@
+id: postgres-official-index-storage-ddl
+databaseType: POSTGRESQL
+parserTarget: DDL
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: public
+input: input.ddl.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

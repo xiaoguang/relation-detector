@@ -40,8 +40,4 @@ public final class ScanConfig {
     public double minConfidence = 0.30d;
     public boolean includeEvidence = true;
     public boolean includeWarnings = true;
-    public SqlParserMode sqlParserMode = SqlParserMode.ANTLR_PRIMARY;
-    public boolean sqlParserFallbackOnFailure = true;
-    public DdlParserMode ddlParserMode = DdlParserMode.ANTLR_DDL_PRIMARY;
-    public boolean ddlParserFallbackOnFailure = true;
 }

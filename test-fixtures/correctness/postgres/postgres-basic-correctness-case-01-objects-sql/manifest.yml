@@ -4,7 +4,6 @@ parserTarget: SQL
 sourceType: PLAIN_SQL
 evidenceSourceType: DATABASE_OBJECT
 schema: case_01
-parserModes: simple,antlr-shadow,antlr-primary
 input: input.sql
 expectedRelations: expected-relations.json
 expectedDiagnostics: expected-diagnostics.json

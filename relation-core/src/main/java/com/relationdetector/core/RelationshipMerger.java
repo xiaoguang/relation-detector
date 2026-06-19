@@ -108,7 +108,7 @@ public final class RelationshipMerger {
         return switch (type) {
             case VIEW_JOIN, PROCEDURE_JOIN, TRIGGER_REFERENCE,
                     SQL_LOG_JOIN, SQL_LOG_SUBQUERY_IN, SQL_LOG_EXISTS,
-                    SQL_LOG_TABLE_CO_OCCURRENCE -> true;
+                    SQL_LOG_COLUMN_CO_OCCURRENCE, SQL_LOG_TABLE_CO_OCCURRENCE -> true;
             default -> false;
         };
     }
@@ -144,6 +144,7 @@ public final class RelationshipMerger {
             case VIEW_JOIN, PROCEDURE_JOIN, TRIGGER_REFERENCE, SQL_LOG_JOIN -> RelationSubType.INFERRED_JOIN_FK;
             case SQL_LOG_SUBQUERY_IN, SQL_LOG_EXISTS -> RelationSubType.SUBQUERY_INFERRED_FK;
             case NAMING_MATCH -> RelationSubType.NAMING_SUPPORTED_FK;
+            case SQL_LOG_COLUMN_CO_OCCURRENCE -> RelationSubType.COLUMN_CO_OCCURRENCE;
             case SQL_LOG_TABLE_CO_OCCURRENCE -> RelationSubType.TABLE_CO_OCCURRENCE;
             case REPEATED_OBSERVATION -> null;
             default -> null;
@@ -168,7 +169,8 @@ public final class RelationshipMerger {
             case INFERRED_JOIN_FK -> 4;
             case SUBQUERY_INFERRED_FK -> 5;
             case NAMING_SUPPORTED_FK -> 6;
-            case TABLE_CO_OCCURRENCE -> 7;
+            case COLUMN_CO_OCCURRENCE -> 7;
+            case TABLE_CO_OCCURRENCE -> 8;
         };
     }
 

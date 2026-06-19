@@ -15,8 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import com.relationdetector.api.AdaptorContext;
@@ -29,12 +27,9 @@ import com.relationdetector.api.Enums.DatabaseObjectType;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.EvidenceSourceType;
 import com.relationdetector.api.Enums.StatementSourceType;
-import com.relationdetector.core.DdlParserMode;
 import com.relationdetector.core.DdlRelationParserRunner;
 import com.relationdetector.core.ScanConfig;
-import com.relationdetector.core.ShadowSqlRelationParser;
 import com.relationdetector.core.SqlLogNoiseFilter;
-import com.relationdetector.core.SqlParserMode;
 import com.relationdetector.core.SqlRelationParserRunner;
 
 /**
@@ -110,16 +105,13 @@ public final class PostgresBasicCorrectnessFixtureExporter {
                     sqlGolden(adaptor, scope, statementSqlText, statementSamples, caseId, statementSqlFixture));
 
             writeCorrectnessCase(caseId + "-ddl", "DDL", "DDL_FILE", "DATABASE_DDL", anonymizedSchema,
-                    "simple-ddl,antlr-ddl-shadow,antlr-ddl-primary", ddlFixture,
-                    ddlText, ddlRelationships(adaptor, config(anonymizedSchema), scope, ddlText, ddlFixture));
+                    ddlFixture, ddlText, ddlRelationships(adaptor, config(anonymizedSchema), scope, ddlText, ddlFixture));
             writeCorrectnessCase(caseId + "-objects-sql", "SQL", "PLAIN_SQL", "DATABASE_OBJECT", anonymizedSchema,
-                    "simple,antlr-shadow,antlr-primary", objectSqlFixture,
+                    objectSqlFixture,
                     objectSqlText,
-                    sqlRelationships(adaptor, config(anonymizedSchema), scope, objectSqlText, StatementSourceType.PLAIN_SQL),
-                    sqlModeWarningCodes(adaptor, config(anonymizedSchema), scope, objectSqlText, StatementSourceType.PLAIN_SQL,
-                            List.of("simple", "antlr-shadow", "antlr-primary")));
+                    sqlRelationships(adaptor, config(anonymizedSchema), scope, objectSqlText, StatementSourceType.PLAIN_SQL));
             writeCorrectnessCase(caseId + "-statements-sql", "SQL", "NATIVE_LOG", "DDL_FILE", anonymizedSchema,
-                    "simple,antlr-shadow,antlr-primary", statementSqlFixture,
+                    statementSqlFixture,
                     statementSqlText, sqlRelationships(adaptor, config(anonymizedSchema), scope, statementSqlText, StatementSourceType.NATIVE_LOG));
 
             System.out.println("Generated " + ddlFixture);
@@ -165,10 +157,6 @@ public final class PostgresBasicCorrectnessFixtureExporter {
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.POSTGRESQL;
         config.schema = schema;
-        config.sqlParserMode = SqlParserMode.ANTLR_SHADOW;
-        config.sqlParserFallbackOnFailure = true;
-        config.ddlParserMode = DdlParserMode.ANTLR_DDL_SHADOW;
-        config.ddlParserFallbackOnFailure = true;
         return config;
     }
 
@@ -413,7 +401,7 @@ public final class PostgresBasicCorrectnessFixtureExporter {
             String caseId,
             Path fixturePath
     ) throws Exception {
-        DdlRelationParserRunner.Result result = new DdlRelationParserRunner().parseTextWithDiagnostics(
+        List<RelationshipCandidate> relations = new DdlRelationParserRunner().parseText(
                 adaptor,
                 config,
                 ddlText,
@@ -421,28 +409,13 @@ public final class PostgresBasicCorrectnessFixtureExporter {
                 EvidenceSourceType.DATABASE_DDL,
                 new AdaptorContext(scope, Map.of(), warning -> {
                 }));
-        ScanConfig primaryConfig = config(scope.schema());
-        primaryConfig.ddlParserMode = DdlParserMode.ANTLR_DDL_PRIMARY;
-        List<WarningMessage> primaryWarnings = new ArrayList<>();
-        List<RelationshipCandidate> primary = new DdlRelationParserRunner().parseText(
-                adaptor,
-                primaryConfig,
-                ddlText,
-                fixturePath.toString(),
-                EvidenceSourceType.DATABASE_DDL,
-                new AdaptorContext(scope, Map.of(), primaryWarnings::add));
 
         Map<String, Object> json = new LinkedHashMap<>();
         json.put("caseId", caseId);
         json.put("fixture", fixturePath.toString());
         json.put("fixtureSha256", sha256(ddlText));
         json.put("tables", tableCount);
-        json.put("simpleRelations", result.primaryCount());
-        json.put("antlrRelations", result.shadowCount());
-        json.put("antlrPrimaryRelations", primary.size());
-        json.put("missingSimpleDdlRelations", result.missingSimpleDdlRelations());
-        json.put("extraAntlrDdlRelations", result.extraAntlrDdlRelations());
-        json.put("primaryWarningCodes", warningCodes(primaryWarnings));
+        json.put("relationCount", relations.size());
         return toJson(json);
     }
 
@@ -454,14 +427,11 @@ public final class PostgresBasicCorrectnessFixtureExporter {
             String caseId,
             Path fixturePath
     ) throws Exception {
-        ShadowSqlRelationParser parser = (ShadowSqlRelationParser) adaptor.sqlRelationParser();
         List<WarningMessage> warnings = new ArrayList<>();
         AdaptorContext context = new AdaptorContext(scope, Map.of(), warnings::add);
         ScanConfig config = config(scope.schema());
-        int simpleRelations = 0;
-        int antlrRelations = 0;
-        Set<String> missing = new TreeSet<>();
-        Set<String> extra = new TreeSet<>();
+        int relationCount = 0;
+        SqlRelationParserRunner runner = new SqlRelationParserRunner();
         for (SqlSample sample : samples) {
             SqlStatementRecord statement = new SqlStatementRecord(
                     sample.sql(),
@@ -473,21 +443,14 @@ public final class PostgresBasicCorrectnessFixtureExporter {
             if (SqlLogNoiseFilter.shouldSkip(config, statement)) {
                 continue;
             }
-            ShadowSqlRelationParser.Result result = parser.parseWithDiagnostics(statement, context);
-            simpleRelations += result.primaryCount();
-            antlrRelations += result.shadowCount();
-            result.missingSimpleRelations().forEach(value -> missing.add(sample.source() + " :: " + value));
-            result.extraAntlrRelations().forEach(value -> extra.add(sample.source() + " :: " + value));
+            relationCount += runner.parse(adaptor, config, statement, context).size();
         }
         Map<String, Object> json = new LinkedHashMap<>();
         json.put("caseId", caseId);
         json.put("fixture", fixturePath.toString());
         json.put("fixtureSha256", sha256(sqlFixture));
         json.put("sqlSamples", samples.size());
-        json.put("simpleRelations", simpleRelations);
-        json.put("antlrRelations", antlrRelations);
-        json.put("missingSimpleRelations", List.copyOf(missing));
-        json.put("extraAntlrRelations", List.copyOf(extra));
+        json.put("relationCount", relationCount);
         json.put("warningCodes", warningCodes(warnings));
         return toJson(json);
     }
@@ -533,70 +496,15 @@ public final class PostgresBasicCorrectnessFixtureExporter {
         return fingerprints(relationships);
     }
 
-    private static Map<String, Map<String, Integer>> sqlModeWarningCodes(
-            PostgresDatabaseAdaptor adaptor,
-            ScanConfig config,
-            ScanScope scope,
-            String sqlText,
-            StatementSourceType sourceType,
-            List<String> modes
-    ) {
-        Map<String, Map<String, Integer>> result = new LinkedHashMap<>();
-        for (String mode : modes) {
-            ScanConfig modeConfig = config(scope.schema());
-            modeConfig.sqlParserMode = switch (mode) {
-                case "simple" -> SqlParserMode.SIMPLE;
-                case "antlr-shadow" -> SqlParserMode.ANTLR_SHADOW;
-                case "antlr-primary" -> SqlParserMode.ANTLR_PRIMARY;
-                default -> throw new IllegalArgumentException("Unsupported SQL parser mode " + mode);
-            };
-            List<WarningMessage> warnings = new ArrayList<>();
-            SqlStatementRecord statement = new SqlStatementRecord(
-                    sqlText,
-                    sourceType,
-                    "postgres-basic-correctness.sql",
-                    1,
-                    sqlText.lines().count(),
-                    Map.of());
-            new SqlRelationParserRunner().parse(
-                    adaptor,
-                    modeConfig,
-                    statement,
-                    new AdaptorContext(scope, Map.of(), warnings::add));
-            Map<String, Integer> counts = warningCodes(warnings);
-            if (!counts.isEmpty()) {
-                result.put(mode, counts);
-            }
-        }
-        return result;
-    }
-
     private static void writeCorrectnessCase(
             String id,
             String target,
             String sourceType,
             String evidenceSourceType,
             String schema,
-            String parserModes,
             Path input,
             String inputText,
             List<String> fingerprints
-    ) throws Exception {
-        writeCorrectnessCase(id, target, sourceType, evidenceSourceType, schema, parserModes, input,
-                inputText, fingerprints, Map.of());
-    }
-
-    private static void writeCorrectnessCase(
-            String id,
-            String target,
-            String sourceType,
-            String evidenceSourceType,
-            String schema,
-            String parserModes,
-            Path input,
-            String inputText,
-            List<String> fingerprints,
-            Map<String, Map<String, Integer>> modeWarningCodes
     ) throws Exception {
         Path root = CORRECTNESS_ROOT.resolve(id);
         Files.createDirectories(root);
@@ -609,13 +517,12 @@ public final class PostgresBasicCorrectnessFixtureExporter {
                 sourceType: %s
                 evidenceSourceType: %s
                 schema: %s
-                parserModes: %s
                 input: %s
                 expectedRelations: expected-relations.json
                 expectedDiagnostics: expected-diagnostics.json
-                """.formatted(id, target, sourceType, evidenceSourceType, schema, parserModes, inputFileName));
+                """.formatted(id, target, sourceType, evidenceSourceType, schema, inputFileName));
         Files.writeString(root.resolve("expected-relations.json"), expectedRelations(fingerprints));
-        Files.writeString(root.resolve("expected-diagnostics.json"), expectedDiagnostics(inputText, modeWarningCodes));
+        Files.writeString(root.resolve("expected-diagnostics.json"), expectedDiagnostics(inputText));
     }
 
     private static String expectedRelations(List<String> fingerprints) {
@@ -625,17 +532,10 @@ public final class PostgresBasicCorrectnessFixtureExporter {
         return toJson(json);
     }
 
-    private static String expectedDiagnostics(String input, Map<String, Map<String, Integer>> modeWarningCodes) throws Exception {
+    private static String expectedDiagnostics(String input) throws Exception {
         Map<String, Object> json = new LinkedHashMap<>();
         json.put("fixtureSha256", sha256(input));
-        json.put("missingSimpleRelations", List.of());
-        json.put("extraAntlrRelations", List.of());
-        json.put("missingSimpleDdlRelations", List.of());
-        json.put("extraAntlrDdlRelations", List.of());
         json.put("warningCodes", Map.of());
-        if (!modeWarningCodes.isEmpty()) {
-            json.put("modeWarningCodes", modeWarningCodes);
-        }
         return toJson(json);
     }
 

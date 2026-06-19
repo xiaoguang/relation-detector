@@ -9,9 +9,7 @@ import java.util.List;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.LogFormatHint;
 import com.relationdetector.api.Enums.OutputFormat;
-import com.relationdetector.core.DdlParserMode;
 import com.relationdetector.core.ScanConfig;
-import com.relationdetector.core.SqlParserMode;
 
 /**
  * Small YAML reader for the documented example configuration.
@@ -100,10 +98,10 @@ public final class SimpleYamlConfigLoader {
             case "output.minConfidence" -> config.minConfidence = Double.parseDouble(value);
             case "output.includeEvidence" -> config.includeEvidence = Boolean.parseBoolean(value);
             case "output.includeWarnings" -> config.includeWarnings = Boolean.parseBoolean(value);
-            case "parser.sql.mode" -> config.sqlParserMode = SqlParserMode.fromConfig(value);
-            case "parser.sql.fallbackOnFailure" -> config.sqlParserFallbackOnFailure = Boolean.parseBoolean(value);
-            case "parser.ddl.mode" -> config.ddlParserMode = DdlParserMode.fromConfig(value);
-            case "parser.ddl.fallbackOnFailure" -> config.ddlParserFallbackOnFailure = Boolean.parseBoolean(value);
+            case "parser.sql.mode", "parser.sql.fallbackOnFailure",
+                    "parser.ddl.mode", "parser.ddl.fallbackOnFailure" ->
+                    throw new IllegalArgumentException(path
+                            + " has been removed; MySQL/PostgreSQL SQL and DDL parsing always use ANTLR");
             default -> {
                 // Unknown keys are ignored to allow forward-compatible configs.
             }

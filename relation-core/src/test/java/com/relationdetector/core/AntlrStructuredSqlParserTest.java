@@ -1,7 +1,6 @@
 package com.relationdetector.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -46,7 +45,7 @@ class AntlrStructuredSqlParserTest {
     }
 
     @Test
-    void relationExtractionVisitorPreservesSimpleParserRelations() {
+    void relationExtractionVisitorResolvesLineageAwareRelations() {
         String sql = """
                 WITH recent_orders AS (
                   SELECT o.id, o.user_id FROM orders o
@@ -63,7 +62,7 @@ class AntlrStructuredSqlParserTest {
         assertTrue(relations.stream().anyMatch(relation ->
                 relation.source().displayName().equals("orders.user_id")
                         && relation.target().displayName().equals("users.id")),
-                () -> "ANTLR extraction must preserve lineage-aware relations from the current parser: " + relations);
+                () -> "ANTLR extraction must resolve lineage-aware relations: " + relations);
     }
 
     @Test
@@ -89,23 +88,19 @@ class AntlrStructuredSqlParserTest {
     }
 
     @Test
-    void shadowParserKeepsPrimaryOutputAndAddsComparisonEvent() {
+    void antlrSqlRelationParserReturnsRelationExtractorOutputDirectly() {
         String sql = "SELECT * FROM orders o JOIN users u ON o.user_id = u.id";
         SqlStatementRecord statement = record(sql, StatementSourceType.NATIVE_LOG);
 
-        ShadowSqlRelationParser parser = new ShadowSqlRelationParser(
-                new SimpleSqlRelationParser(),
+        AntlrSqlRelationParser parser = new AntlrSqlRelationParser(
                 new AntlrStructuredSqlParser(SqlDialect.MYSQL),
                 new RelationExtractionVisitor());
 
-        ShadowSqlRelationParser.Result result = parser.parseWithDiagnostics(statement, null);
+        List<RelationshipCandidate> relationships = parser.parse(statement, null);
 
-        assertFalse(result.relationships().isEmpty());
-        assertEquals(result.relationships().size(), result.primaryCount());
-        assertTrue(result.diagnostics().stream().anyMatch(event ->
-                event.type() == StructuredParseEventType.PARSER_COMPARISON
-                        && Integer.valueOf(result.primaryCount()).equals(event.attributes().get("primaryCount"))
-                        && Integer.valueOf(result.shadowCount()).equals(event.attributes().get("shadowCount"))));
+        assertTrue(relationships.stream().anyMatch(relation ->
+                relation.source().displayName().equals("orders.user_id")
+                        && relation.target().displayName().equals("users.id")));
     }
 
     private SqlStatementRecord record(String sql, StatementSourceType sourceType) {

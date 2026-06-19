@@ -33,13 +33,10 @@ import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.EvidenceSourceType;
 import com.relationdetector.api.Enums.StatementSourceType;
-import com.relationdetector.core.DdlParserMode;
 import com.relationdetector.core.DdlRelationParserRunner;
 import com.relationdetector.core.PlainSqlLogExtractor;
 import com.relationdetector.core.ScanConfig;
-import com.relationdetector.core.ShadowSqlRelationParser;
 import com.relationdetector.core.SqlLogNoiseFilter;
-import com.relationdetector.core.SqlParserMode;
 import com.relationdetector.core.SqlRelationParserRunner;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
@@ -80,46 +77,24 @@ class CorrectnessFixtureRunnerTest {
         ExpectedDiagnostics expectedDiagnostics = ExpectedDiagnostics.read(fixture.expectedDiagnosticsFile());
         assertEquals(expectedDiagnostics.fixtureSha256(), sha256(input), fixture.id() + " fixture hash");
 
-        List<Executable> checks = new ArrayList<>();
-        for (String mode : fixture.parserModes()) {
-            checks.add(() -> runFixtureMode(fixture, input, expectedRelations, expectedDiagnostics, mode));
-        }
-        assertAll(fixture.id(), checks);
-    }
-
-    private void runFixtureMode(
-            CorrectnessFixture fixture,
-            String input,
-            ExpectedRelations expectedRelations,
-            ExpectedDiagnostics expectedDiagnostics,
-            String mode
-    ) {
         if (fixture.parserTarget().equals("SQL")) {
-            runSqlFixtureMode(fixture, input, expectedRelations, expectedDiagnostics, mode);
+            runSqlFixture(fixture, expectedRelations, expectedDiagnostics);
             return;
         }
         if (fixture.parserTarget().equals("DDL")) {
-            runDdlFixtureMode(fixture, input, expectedRelations, expectedDiagnostics, mode);
+            runDdlFixture(fixture, input, expectedRelations, expectedDiagnostics);
             return;
         }
         throw new IllegalArgumentException("Unknown parserTarget " + fixture.parserTarget() + " in " + fixture.path());
     }
 
-    private void runSqlFixtureMode(
+    private void runSqlFixture(
             CorrectnessFixture fixture,
-            String input,
             ExpectedRelations expectedRelations,
-            ExpectedDiagnostics expectedDiagnostics,
-            String mode
+            ExpectedDiagnostics expectedDiagnostics
     ) {
         DatabaseAdaptor adaptor = adaptor(fixture.databaseType());
         ScanConfig config = config(fixture);
-        config.sqlParserMode = switch (mode) {
-            case "simple" -> SqlParserMode.SIMPLE;
-            case "antlr-shadow" -> SqlParserMode.ANTLR_SHADOW;
-            case "antlr-primary" -> SqlParserMode.ANTLR_PRIMARY;
-            default -> throw new IllegalArgumentException("Unsupported SQL parser mode " + mode + " in " + fixture.path());
-        };
         List<WarningMessage> warnings = new ArrayList<>();
         AdaptorContext context = context(fixture, warnings);
         List<SqlStatementRecord> statements = new PlainSqlLogExtractor()
@@ -130,63 +105,28 @@ class CorrectnessFixtureRunnerTest {
         for (SqlStatementRecord statement : statements) {
             relationships.addAll(runner.parse(adaptor, config, statement, context));
         }
-        assertRelations(fixture, mode, expectedRelations, relationships);
-        assertWarningCodes(fixture, mode, expectedDiagnostics, warnings);
-
-        if (mode.equals("antlr-shadow") && adaptor.sqlRelationParser() instanceof ShadowSqlRelationParser shadow) {
-            List<String> missing = new ArrayList<>();
-            List<String> extra = new ArrayList<>();
-            for (SqlStatementRecord statement : statements) {
-                if (SqlLogNoiseFilter.shouldSkip(config, statement)) {
-                    continue;
-                }
-                ShadowSqlRelationParser.Result diagnostics = shadow.parseWithDiagnostics(statement, context);
-                missing.addAll(diagnostics.missingSimpleRelations());
-                extra.addAll(diagnostics.extraAntlrRelations());
-            }
-            assertEquals(expectedDiagnostics.missingSimpleRelations(),
-                    missing, fixture.id() + " missingSimpleRelations");
-            assertEquals(expectedDiagnostics.extraAntlrRelations(),
-                    extra, fixture.id() + " extraAntlrRelations");
-        }
+        assertRelations(fixture, expectedRelations, relationships);
+        assertWarningCodes(fixture, expectedDiagnostics, warnings);
     }
 
-    private void runDdlFixtureMode(
+    private void runDdlFixture(
             CorrectnessFixture fixture,
             String input,
             ExpectedRelations expectedRelations,
-            ExpectedDiagnostics expectedDiagnostics,
-            String mode
+            ExpectedDiagnostics expectedDiagnostics
     ) {
         DatabaseAdaptor adaptor = adaptor(fixture.databaseType());
         ScanConfig config = config(fixture);
-        config.ddlParserMode = switch (mode) {
-            case "simple-ddl" -> DdlParserMode.SIMPLE_DDL;
-            case "antlr-ddl-shadow" -> DdlParserMode.ANTLR_DDL_SHADOW;
-            case "antlr-ddl-primary" -> DdlParserMode.ANTLR_DDL_PRIMARY;
-            default -> throw new IllegalArgumentException("Unsupported DDL parser mode " + mode + " in " + fixture.path());
-        };
         List<WarningMessage> warnings = new ArrayList<>();
         AdaptorContext context = context(fixture, warnings);
         List<RelationshipCandidate> relationships = new DdlRelationParserRunner()
                 .parseText(adaptor, config, input, fixture.id() + ".ddl.sql", fixture.evidenceSourceType(), context);
-        assertRelations(fixture, mode, expectedRelations, relationships);
-        assertWarningCodes(fixture, mode, expectedDiagnostics, warnings);
-
-        if (mode.equals("antlr-ddl-shadow")) {
-            DdlRelationParserRunner.Result diagnostics = new DdlRelationParserRunner()
-                    .parseTextWithDiagnostics(adaptor, config, input, fixture.id() + ".ddl.sql",
-                            fixture.evidenceSourceType(), context);
-            assertEquals(expectedDiagnostics.missingSimpleDdlRelations(),
-                    diagnostics.missingSimpleDdlRelations(), fixture.id() + " missingSimpleDdlRelations");
-            assertEquals(expectedDiagnostics.extraAntlrDdlRelations(),
-                    diagnostics.extraAntlrDdlRelations(), fixture.id() + " extraAntlrDdlRelations");
-        }
+        assertRelations(fixture, expectedRelations, relationships);
+        assertWarningCodes(fixture, expectedDiagnostics, warnings);
     }
 
     private void assertRelations(
             CorrectnessFixture fixture,
-            String mode,
             ExpectedRelations expected,
             List<RelationshipCandidate> actual
     ) {
@@ -194,26 +134,25 @@ class CorrectnessFixtureRunnerTest {
                 .map(this::fingerprint)
                 .collect(Collectors.toCollection(TreeSet::new));
         assertEquals(new TreeSet<>(expected.fingerprints()), actualFingerprints,
-                () -> fixture.id() + " " + mode + " relation fingerprints");
+                () -> fixture.id() + " relation fingerprints");
 
         for (String forbiddenTable : expected.forbiddenTables()) {
             assertTrue(actual.stream().noneMatch(relation ->
                             relation.source().table().tableName().equalsIgnoreCase(forbiddenTable)
                                     || relation.target().table().tableName().equalsIgnoreCase(forbiddenTable)),
-                    () -> fixture.id() + " " + mode + " emitted forbidden table " + forbiddenTable
+                    () -> fixture.id() + " emitted forbidden table " + forbiddenTable
                             + ". Actual=" + actualFingerprints);
         }
     }
 
     private void assertWarningCodes(
             CorrectnessFixture fixture,
-            String mode,
             ExpectedDiagnostics expected,
             List<WarningMessage> actual
     ) {
         Map<String, Long> actualCodes = actual.stream()
                 .collect(Collectors.groupingBy(WarningMessage::code, LinkedHashMap::new, Collectors.counting()));
-        assertEquals(expected.warningCodes(mode), actualCodes, fixture.id() + " " + mode + " warningCodes");
+        assertEquals(expected.warningCodes(), actualCodes, fixture.id() + " warningCodes");
     }
 
     private String fingerprint(RelationshipCandidate relation) {
@@ -237,8 +176,6 @@ class CorrectnessFixtureRunnerTest {
         ScanConfig config = new ScanConfig();
         config.databaseType = fixture.databaseType();
         config.schema = fixture.schema();
-        config.sqlParserFallbackOnFailure = true;
-        config.ddlParserFallbackOnFailure = true;
         return config;
     }
 
@@ -273,7 +210,6 @@ class CorrectnessFixtureRunnerTest {
             StatementSourceType sourceType,
             EvidenceSourceType evidenceSourceType,
             String schema,
-            List<String> parserModes,
             Path inputFile,
             Path expectedRelationsFile,
             Path expectedDiagnosticsFile
@@ -289,7 +225,6 @@ class CorrectnessFixtureRunnerTest {
                     StatementSourceType.valueOf(values.getOrDefault("sourceType", "PLAIN_SQL")),
                     EvidenceSourceType.valueOf(values.getOrDefault("evidenceSourceType", "DDL_FILE")),
                     values.getOrDefault("schema", "public"),
-                    split(values.get("parserModes")),
                     root.resolve(required(values, "input", manifest)).normalize(),
                     root.resolve(required(values, "expectedRelations", manifest)).normalize(),
                     root.resolve(required(values, "expectedDiagnostics", manifest)).normalize());
@@ -319,18 +254,12 @@ class CorrectnessFixtureRunnerTest {
             return value;
         }
 
-        private static List<String> split(String value) {
-            if (value == null || value.isBlank()) {
-                return List.of();
-            }
-            return Stream.of(value.split(","))
-                    .map(String::trim)
-                    .filter(item -> !item.isEmpty())
-                    .toList();
-        }
     }
 
-    private record ExpectedRelations(List<String> fingerprints, List<String> forbiddenTables) {
+    private record ExpectedRelations(
+            List<String> fingerprints,
+            List<String> forbiddenTables
+    ) {
         static ExpectedRelations read(Path file) throws Exception {
             String text = Files.readString(file);
             return new ExpectedRelations(
@@ -341,27 +270,13 @@ class CorrectnessFixtureRunnerTest {
 
     private record ExpectedDiagnostics(
             String fixtureSha256,
-            List<String> missingSimpleRelations,
-            List<String> extraAntlrRelations,
-            List<String> missingSimpleDdlRelations,
-            List<String> extraAntlrDdlRelations,
-            Map<String, Long> warningCodes,
-            Map<String, Map<String, Long>> modeWarningCodes
+            Map<String, Long> warningCodes
     ) {
-        Map<String, Long> warningCodes(String mode) {
-            return modeWarningCodes.getOrDefault(mode, warningCodes);
-        }
-
         static ExpectedDiagnostics read(Path file) throws Exception {
             String text = Files.readString(file);
             return new ExpectedDiagnostics(
                     stringField(text, "fixtureSha256"),
-                    stringArray(text, "missingSimpleRelations"),
-                    stringArray(text, "extraAntlrRelations"),
-                    stringArray(text, "missingSimpleDdlRelations"),
-                    stringArray(text, "extraAntlrDdlRelations"),
-                    objectLongs(text, "warningCodes"),
-                    objectObjectLongs(text, "modeWarningCodes"));
+                    objectLongs(text, "warningCodes"));
         }
     }
 
@@ -387,7 +302,11 @@ class CorrectnessFixtureRunnerTest {
         if (!matcher.find()) {
             return List.of();
         }
-        String body = matcher.group(1).trim();
+        return stringArrayFromBody(matcher.group(1));
+    }
+
+    private static List<String> stringArrayFromBody(String bodyText) {
+        String body = bodyText.trim();
         if (body.isEmpty()) {
             return List.of();
         }
@@ -397,6 +316,19 @@ class CorrectnessFixtureRunnerTest {
             values.add(item.group(1).replace("\\\"", "\"").replace("\\\\", "\\"));
         }
         return List.copyOf(values);
+    }
+
+    private static Map<String, List<String>> objectStringArrays(String json, String field) {
+        String body = objectBody(json, field);
+        if (body == null || body.isBlank()) {
+            return Map.of();
+        }
+        Map<String, List<String>> values = new LinkedHashMap<>();
+        Matcher entry = Pattern.compile("\"([^\"]+)\"\\s*:\\s*\\[(.*?)\\]", Pattern.DOTALL).matcher(body);
+        while (entry.find()) {
+            values.put(entry.group(1), stringArrayFromBody(entry.group(2)));
+        }
+        return values;
     }
 
     private static Map<String, Long> objectLongs(String json, String field) {

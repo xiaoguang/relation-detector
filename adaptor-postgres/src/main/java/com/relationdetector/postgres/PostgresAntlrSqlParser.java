@@ -15,13 +15,9 @@ import com.relationdetector.core.antlr.postgres.PostgresRelationSqlParser;
 /**
  * PostgreSQL dialect selection for the ANTLR structured SQL parser.
  *
- * <p>PostgreSQL now owns a generated lexer/parser pair rather than only passing
- * a dialect enum to the generic parser. Runtime parser mode now defaults to
- * {@code antlr-primary + fallbackOnFailure=true} for PostgreSQL, while
- * {@code antlr-shadow} remains available for comparison diagnostics.
- * {@link com.relationdetector.core.SqlRelationParserRunner} falls back to
- * Simple output if the ANTLR relation extractor misses a Simple baseline
- * relationship.
+ * <p>PostgreSQL owns a generated lexer/parser pair rather than only passing a
+ * dialect enum to the generic parser. The SQL runtime uses this ANTLR path as
+ * the PostgreSQL correctness baseline.
  */
 public final class PostgresAntlrSqlParser extends AntlrStructuredSqlParser {
     public PostgresAntlrSqlParser() {

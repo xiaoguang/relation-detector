@@ -21,8 +21,8 @@ import com.relationdetector.api.Enums.StructuredParseEventType;
  *
  * <p>These tests deliberately give {@link RelationExtractionVisitor} structured
  * events that do not match the raw SQL text. The visitor is allowed to use its
- * own text-level fallback for ANTLR gaps, but it must not delegate to
- * {@link SimpleSqlRelationParser}; the evidence details below make that boundary
+ * own text-level fallback for ANTLR gaps, but relationship extraction must stay
+ * inside the ANTLR pipeline; the evidence details below make that boundary
  * visible.
  */
 class RelationExtractionVisitorIndependenceTest {

@@ -94,8 +94,8 @@ output:
 - `database.type` 必填。
 - 至少启用一种 source。
 - 启用文件 source 时文件必须存在。
-- `parser.sql.mode` 可选值为 `simple`、`antlr-shadow`、`antlr-primary`；MySQL/PostgreSQL 默认灰度为 `antlr-primary`，并保持 `parser.sql.fallbackOnFailure=true`。SQL Server/Oracle 仍为 future adaptor，不在本轮 primary 默认切换范围内。
-- `parser.ddl.mode` 可选值为 `simple-ddl`、`antlr-ddl-shadow`、`antlr-ddl-primary`；默认灰度为 `antlr-ddl-primary`，并保持 `parser.ddl.fallbackOnFailure=true`。DDL 和 SQL 的 primary 切换验收分开执行，DDL fallback warning 使用 `missingSimpleDdlRelations`。
+- `parser.sql.mode`、`parser.sql.fallbackOnFailure`、`parser.ddl.mode`、`parser.ddl.fallbackOnFailure` 已移除；配置中出现这些 key 时应显式报错。MySQL/PostgreSQL SQL/DDL 均使用方言 ANTLR parser。
+- SQL Server/Oracle 仍为 future adaptor；没有对应 ANTLR adaptor 前，不再用 simple parser 作为兼容假象。
 - `sources.ddl.fromDatabase` 默认 `true`。开启时，支持的 adaptor 会读取数据库内表定义；MySQL 当前使用 `SHOW CREATE TABLE`，产生的 evidence source type 为 `DATABASE_DDL`。
 - `sources.logs.filterSystemQueries` 默认 `true`。开启时，native log 中仅访问系统 catalog/schema 的 metadata 查询会被跳过，不记录 parse warning。
 - `sources.logs.systemSchemas` 可覆盖当前数据库类型的默认系统 schema。MySQL 默认 `information_schema/performance_schema/mysql/sys`；PostgreSQL 默认 `pg_catalog/information_schema/pg_toast`。

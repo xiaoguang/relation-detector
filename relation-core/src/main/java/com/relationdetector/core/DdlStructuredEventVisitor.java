@@ -23,9 +23,9 @@ import com.relationdetector.api.Enums.StructuredParseEventType;
  * }</pre>
  *
  * <p>The parser layer still runs ANTLR first to validate/tokenize the input and
- * report syntax diagnostics. This visitor is the semantic bridge for the first
- * DDL primary-switch phase: it emits explicit FK and index facts without
- * calling {@link SimpleDdlParser}.
+ * report syntax diagnostics. This visitor is the semantic bridge for DDL
+ * relation extraction: it emits explicit FK and index facts as structured
+ * events.
  */
 public class DdlStructuredEventVisitor {
     protected static final String IDENTIFIER =

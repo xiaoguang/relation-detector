@@ -15,13 +15,9 @@ import com.relationdetector.core.antlr.mysql.MySqlRelationSqlParser;
 /**
  * MySQL dialect selection for the ANTLR structured SQL parser.
  *
- * <p>MySQL now owns a generated lexer/parser pair rather than only passing a
- * dialect enum to the generic parser. Runtime parser mode now defaults to
- * {@code antlr-primary + fallbackOnFailure=true} for MySQL, while
- * {@code antlr-shadow} remains available for comparison diagnostics.
- * {@link com.relationdetector.core.SqlRelationParserRunner} falls back to
- * Simple output if the ANTLR relation extractor misses a Simple baseline
- * relationship.
+ * <p>MySQL owns a generated lexer/parser pair rather than only passing a
+ * dialect enum to the generic parser. The SQL runtime uses this ANTLR path as
+ * the MySQL correctness baseline.
  */
 public final class MySqlAntlrSqlParser extends AntlrStructuredSqlParser {
     public MySqlAntlrSqlParser() {

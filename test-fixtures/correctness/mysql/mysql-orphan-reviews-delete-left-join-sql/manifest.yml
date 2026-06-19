@@ -1,0 +1,8 @@
+id: mysql-orphan-reviews-delete-left-join-sql
+databaseType: MYSQL
+parserTarget: SQL
+sourceType: PLAIN_SQL
+schema: commerce
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

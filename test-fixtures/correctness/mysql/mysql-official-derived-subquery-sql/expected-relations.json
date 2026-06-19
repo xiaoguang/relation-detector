@@ -1,7 +1,7 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:log_permissions->account_logs:SQL_LOG_TABLE_CO_OCCURRENCE",
     "FK_LIKE:account_logs.account_id->accounts.id:SQL_LOG_JOIN",
+    "FK_LIKE:log_permissions.log_id->account_logs.id:SQL_LOG_EXISTS",
     "FK_LIKE:material_places.material_id->materials.id:SQL_LOG_JOIN",
     "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
     "FK_LIKE:orders.id->shipments.order_id:SQL_LOG_SUBQUERY_IN",

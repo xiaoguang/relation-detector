@@ -9,16 +9,17 @@ import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.SqlStatementRecord;
 
 /**
- * Applies runtime SQL parser mode selection around the adaptor parser.
+ * Applies common SQL parser pre-processing before invoking the adaptor parser.
  *
- * <p>Design mapping: SQL Parser Primary 切换设计计划. Adaptors continue to expose
- * their best parser stack through SPI, while this runner controls how a scan
- * uses that stack:
+ * <p>Design mapping: SQL parser is now ANTLR-only for MySQL/PostgreSQL. The
+ * runner no longer selects Simple/shadow modes or performs parser fallback; it
+ * only filters native-log noise and passes dialect system-schema policy through
+ * statement attributes for the ANTLR visitor:
  *
  * <pre>{@code
  * ScanEngine.safeParseStatement(...)
  *   -> SqlRelationParserRunner.parse(...)
- *      -> simple / antlr-shadow / antlr-primary
+ *      -> adaptor.sqlRelationParser()
  * }</pre>
  */
 public final class SqlRelationParserRunner {
@@ -33,9 +34,6 @@ public final class SqlRelationParserRunner {
         }
         SqlStatementRecord effectiveStatement = withParserPolicyAttributes(config, statement);
         SqlRelationParser parser = adaptor.sqlRelationParser();
-        if (parser instanceof ShadowSqlRelationParser shadow) {
-            return parseShadowCapable(shadow, config, effectiveStatement, context);
-        }
         return parser.parse(effectiveStatement, context);
     }
 
@@ -44,45 +42,5 @@ public final class SqlRelationParserRunner {
         attributes.put("logSystemSchemas", java.util.List.copyOf(SqlLogNoiseFilter.effectiveSystemSchemas(config)));
         return new SqlStatementRecord(statement.sql(), statement.sourceType(), statement.sourceName(),
                 statement.startLine(), statement.endLine(), attributes);
-    }
-
-    private List<RelationshipCandidate> parseShadowCapable(
-            ShadowSqlRelationParser parser,
-            ScanConfig config,
-            SqlStatementRecord statement,
-            AdaptorContext context
-    ) {
-        return switch (config.sqlParserMode) {
-            case SIMPLE -> parser.parsePrimary(statement, context);
-            case ANTLR_SHADOW -> parser.parseWithDiagnostics(statement, context).relationships();
-            case ANTLR_PRIMARY -> parseAntlrPrimary(parser, config, statement, context);
-        };
-    }
-
-    /**
-     * Runs ANTLR as candidate primary while preserving the no-loss guarantee.
-     *
-     * <p>If ANTLR misses any Simple baseline relation and fallback is enabled,
-     * the scan keeps Simple output and emits a warning carrying the raw SQL and
-     * missing fingerprints. This is the runtime counterpart of the golden
-     * comparison tests.
-     */
-    private List<RelationshipCandidate> parseAntlrPrimary(
-            ShadowSqlRelationParser parser,
-            ScanConfig config,
-            SqlStatementRecord statement,
-            AdaptorContext context
-    ) {
-        ShadowSqlRelationParser.Result result = parser.parseWithDiagnostics(statement, context);
-        if (!result.missingSimpleRelations().isEmpty() && config.sqlParserFallbackOnFailure) {
-            if (context != null) {
-                context.warn(DiagnosticWarnings.antlrPrimaryFallback(
-                        statement,
-                        "ANTLR relation extraction missed Simple baseline relationships",
-                        result.missingSimpleRelations()));
-            }
-            return result.relationships();
-        }
-        return result.shadowRelationships();
     }
 }

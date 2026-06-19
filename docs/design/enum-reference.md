@@ -74,13 +74,14 @@ public enum RelationType {
 | 值 | 含义 | 置信度特点 | 例子 |
 | --- | --- | --- | --- |
 | `FK_LIKE` | 类外键关系。一个表的列很可能引用另一个表的主键或唯一键。 | 可以从中到极高。显式 FK 最高，推断关系较低。 | `orders.user_id -> users.id` |
-| `CO_OCCURRENCE` | 表共现关系。两个表经常同时出现在 SQL、视图、过程或触发器中，但没有可靠列级引用证据。 | 通常较低。 | `users -> audit_logs` |
+| `CO_OCCURRENCE` | 弱共现关系。可以是只有表共同出现，也可以是 SQL 明确给出列等值但无法判断 FK-like 方向。 | 通常较低；列级共现高于纯表级共现。 | `users -> audit_logs`；`inventory.product_id -> order_items.product_id` |
 
 使用规则：
 
 - 有明确列级引用证据时，优先输出 `FK_LIKE`。
-- 只有表共同出现、没有明确列关系时，输出 `CO_OCCURRENCE`。
-- 方向不可靠时，不要强行输出列级 `FK_LIKE`，应退化为表级 `CO_OCCURRENCE`。
+- 只有表共同出现、没有明确列关系时，输出表级 `CO_OCCURRENCE`。
+- 等值谓词两侧都是可解析物理列但方向不可靠时，输出列级 `CO_OCCURRENCE`。
+- 方向不可靠时，不要强行输出列级 `FK_LIKE`。
 
 反例：
 
@@ -99,6 +100,7 @@ public enum RelationSubType {
   SUBQUERY_INFERRED_FK,
   PROFILE_SUPPORTED_FK,
   NAMING_SUPPORTED_FK,
+  COLUMN_CO_OCCURRENCE,
   TABLE_CO_OCCURRENCE
 }
 ```
@@ -111,6 +113,7 @@ public enum RelationSubType {
 | `SUBQUERY_INFERRED_FK` | `FK_LIKE` | 从 `IN`、`EXISTS`、相关子查询推断出的类外键关系。 | `SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` | `o.user_id IN (SELECT id FROM users)`。 |
 | `PROFILE_SUPPORTED_FK` | `FK_LIKE` | 数据画像强支持的推断关系。 | `VALUE_CONTAINMENT_HIGH`、`TARGET_UNIQUE` | 抽样发现 `orders.user_id` 99.5% 都存在于 `users.id`。 |
 | `NAMING_SUPPORTED_FK` | `FK_LIKE` | 命名规则与其他弱证据共同支持的关系。 | `NAMING_MATCH`、`SOURCE_INDEX`、`TARGET_UNIQUE` | `user_id` 命中 `users.id`，且目标列唯一。 |
+| `COLUMN_CO_OCCURRENCE` | `CO_OCCURRENCE` | SQL 给出明确列等值，但无法可靠判断 FK-like 方向。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` | `warehouse_inventory.product_id = order_items.product_id`。 |
 | `TABLE_CO_OCCURRENCE` | `CO_OCCURRENCE` | 只能证明两个表共现，不能证明列级引用。 | `SQL_LOG_TABLE_CO_OCCURRENCE` | `FROM users, audit_logs` 且没有连接条件。 |
 
 多证据时的主导优先级：
@@ -121,7 +124,8 @@ public enum RelationSubType {
 4. `INFERRED_JOIN_FK`
 5. `SUBQUERY_INFERRED_FK`
 6. `NAMING_SUPPORTED_FK`
-7. `TABLE_CO_OCCURRENCE`
+7. `COLUMN_CO_OCCURRENCE`
+8. `TABLE_CO_OCCURRENCE`
 
 维护说明：
 
@@ -144,6 +148,7 @@ public enum EvidenceType {
   SQL_LOG_JOIN,
   SQL_LOG_SUBQUERY_IN,
   SQL_LOG_EXISTS,
+  SQL_LOG_COLUMN_CO_OCCURRENCE,
   SQL_LOG_TABLE_CO_OCCURRENCE,
   NAMING_MATCH,
   SOURCE_INDEX,
@@ -191,6 +196,7 @@ Evidence:
 | `SQL_LOG_JOIN` | SQL 日志中的 JOIN 关系。 | 0.55 | 解析 native log 或纯 SQL 文件。 |
 | `SQL_LOG_SUBQUERY_IN` | SQL 日志中的 `IN` 子查询关系。 | 0.58 | 外层列出现在 `IN (SELECT ...)`。 |
 | `SQL_LOG_EXISTS` | SQL 日志中的 `EXISTS` 子查询关系。 | 0.58 | `EXISTS` 内部存在关联条件。 |
+| `SQL_LOG_COLUMN_CO_OCCURRENCE` | SQL 日志中的列级弱共现。 | 0.40 | 等值谓词两侧都是物理列，但不能可靠判断 FK-like 方向。 |
 | `SQL_LOG_TABLE_CO_OCCURRENCE` | SQL 日志中的表共现。 | 0.25 | 多表同 SQL 出现，但无可靠列关系。 |
 | `REPEATED_OBSERVATION` | 同一关系在同一证据类型/来源下重复出现后的派生加分。 | 0.00-0.10 | `RelationshipMerger` 发现同组 evidence 的 `count > 1`。 |
 

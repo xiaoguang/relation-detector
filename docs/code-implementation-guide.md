@@ -72,13 +72,13 @@ relation-detector/
 - `RelationshipMerger.java`
 - `ConfidenceCalculator.java`
 - `DiagnosticWarnings.java`
-- `SimpleSqlRelationParser.java`
+- `AntlrSqlRelationParser.java`
 - `AntlrStructuredSqlParser.java`
 - `AntlrStructuredDdlParser.java`
 - `RelationExtractionVisitor.java`
-- `ShadowSqlRelationParser.java`
 - `SqlLineageResolver.java`
-- `SimpleDdlParser.java`
+- `DdlRelationParserRunner.java`
+- `SqlRelationParserRunner.java`
 - `JsonResultWriter.java`
 - `TableResultWriter.java`
 
@@ -100,33 +100,25 @@ relation-detector/
 
 - `ConfidenceCalculator` 是置信度公式的唯一默认实现。
 - `RelationshipMerger` 负责 `relationSubType` 主导证据优先级。
-- SQL parser 由 `SqlRelationParserRunner` 按配置调度：
-  - `simple`：只运行 `SimpleSqlRelationParser`。
-  - `antlr-shadow`：返回 Simple 结果，同时运行 ANTLR 结构化解析和独立关系抽取，生成 comparison diagnostics。
-  - `antlr-primary`：MySQL/PostgreSQL 的默认灰度模式；返回 ANTLR 抽取结果；如果 ANTLR 缺失 Simple baseline 且 `fallbackOnFailure=true`，记录 `ANTLR_PRIMARY_FALLBACK` warning 并返回 Simple 结果。SQL Server/Oracle 仍是 future adaptor，不在本轮 primary 切换范围内。
-- DDL parser 由 `DdlRelationParserRunner` 独立调度，不混入 SQL primary 切换验收：
-  - `simple-ddl`：只运行现有 adaptor DDL parser，例如 `MySqlDdlParser`、`PostgresDdlParser` 或 core `SimpleDdlParser`。
-  - `antlr-ddl-shadow`：返回现有 DDL parser 结果，同时运行 ANTLR DDL 结构化事件抽取和 `DdlRelationExtractionVisitor`，生成 `missingSimpleDdlRelations` / `extraAntlrDdlRelations` diagnostics。
-  - `antlr-ddl-primary`：默认灰度模式；返回 ANTLR DDL 抽取结果；如果缺失 Simple DDL baseline 且 `parser.ddl.fallbackOnFailure=true`，记录 `ANTLR_DDL_PRIMARY_FALLBACK` warning 并返回现有 DDL parser 结果。
+- SQL parser 由 `SqlRelationParserRunner` 统一调度到数据库 adaptor 暴露的 ANTLR SQL parser。`parser.sql.mode`、`simple`、`antlr-shadow` 和 simple fallback 已移除；ANTLR 硬失败由 `ScanEngine` 记录 `SQL_PARSE_FAILED` warning，并继续扫描其它语句。
+- DDL parser 由 `DdlRelationParserRunner` 统一调度到数据库 adaptor 暴露的 ANTLR DDL parser。`parser.ddl.mode`、`simple-ddl`、`antlr-ddl-shadow` 和 simple DDL fallback 已移除；DDL 硬失败记录 `DDL_PARSE_FAILED` warning，并继续处理其它 DDL source。
 - `AntlrStructuredSqlParser` 是 ANTLR parser 的通用骨架，负责动态 SQL warning、统一 diagnostics attributes 和 `StructuredParseResult`。
 - `RelationSql.g4` 是 core fallback tolerant grammar；MySQL/PostgreSQL 已拆出 `MySqlRelationSql.g4` / `PostgresRelationSql.g4`，由 `MySqlAntlrSqlParser` / `PostgresAntlrSqlParser` 分别调用自己的 generated lexer/parser。
 - ANTLR 只负责把文本变成结构化 token/parse 事件，不负责直接判定业务关系。DDL-only 能力必须进入 DDL entry rule、`DdlStructuredEventVisitor`、`DdlRelationExtractionVisitor` 或 `DdlRelationParserRunner`；SQL-only 能力必须进入 SQL entry rule、`StructuredSqlEventVisitor`、`RelationExtractionVisitor` 或 `SqlRelationParserRunner`。不要把二者回流成一个全局万能 visitor。
-- SQL primary 与 DDL primary 的验收边界必须保持独立：`missingSimpleRelations` 归零只能证明 SQL ANTLR 不少于 SQL Simple baseline；`missingSimpleDdlRelations` 归零只能证明 DDL ANTLR 不少于 DDL Simple baseline。禁止用其中一条链路的通过结果证明另一条链路可以切 primary。
+- SQL 与 DDL 都以 ANTLR correctness fixture golden 为准，但验收边界仍独立：SQL fixture 证明 SQL relation visitor 行为，DDL fixture 证明 DDL event visitor 与 DDL relation extraction 行为。禁止用其中一条链路的通过结果替代另一条链路验收。
 - 新增方言差异时，优先进入对应数据库自己的 ANTLR parser/visitor 子类或 DDL parser 子类，例如 `MySqlStructuredSqlEventVisitor`、`PostgresStructuredSqlEventVisitor`、`MySqlRelationExtractionVisitor`、`PostgresRelationExtractionVisitor`、`MySqlDdlStructuredEventVisitor`、`PostgresDdlStructuredEventVisitor`、`MySqlDdlParser`、`PostgresDdlParser`。只有跨数据库稳定且语义相同的逻辑，才放入 core fallback。
 - `StructuredSqlEventVisitor` 从 ANTLR token stream 产出 `TABLE_REFERENCE`、`COLUMN_EQUALITY`、`PARSER_COMPARISON` 等结构化事件；MySQL/PostgreSQL 已拆出 `MySqlStructuredSqlEventVisitor` / `PostgresStructuredSqlEventVisitor`，用于隔离 quoted identifier 规则。
 - `StructuredSqlEventVisitor` 区分 DML `USING table` 与 `JOIN USING (columns)`：前者可以产生 rowset，后者只保留为表级 co-occurrence 证据，不能把列名当作 `TABLE_REFERENCE`。
-- `RelationExtractionVisitor` 已不再委托 `SimpleSqlRelationParser`。它从 `TABLE_REFERENCE` / `COLUMN_EQUALITY` 事件独立构造基础 FK-like/CO_OCCURRENCE 候选，并复用 `SqlLineageResolver` 做保守 CTE/派生表列回溯。公共 visitor 只保留跨方言语义和标准 `FROM/JOIN` 兜底；MySQL/PostgreSQL 专属 rowset regex、keyword、rowset modifier、CTE modifier 和 table-breadth baseline 必须通过 `MySqlRelationExtractionVisitor` / `PostgresRelationExtractionVisitor` 的 protected hooks 实现。PostgreSQL `ONLY`、`TABLESAMPLE`、`ROWS FROM`、`JOIN USING (...) AS alias` 这类语法必须配套 MySQL 负向测试，防止被 MySQL fallback 当作物理表或共现证据；MySQL `STRAIGHT_JOIN`、ODBC `{ OJ ... }`、optimizer hints、`PARTITION (...)`、`JSON_TABLE(...)`、multi-table `UPDATE/DELETE` 这类语法也必须配套 Postgres 负向测试，防止被 PostgreSQL fallback 误抽为关系。
+- `RelationExtractionVisitor` 从 `TABLE_REFERENCE` / `COLUMN_EQUALITY` 事件独立构造 FK-like/CO_OCCURRENCE 候选，并复用 `SqlLineageResolver` 做保守 CTE/派生表列回溯。公共 visitor 只保留跨方言语义和标准 `FROM/JOIN` 兜底；MySQL/PostgreSQL 专属 rowset regex、keyword、rowset modifier、CTE modifier 和多表 DML rowset fallback 必须通过 `MySqlRelationExtractionVisitor` / `PostgresRelationExtractionVisitor` 的 protected hooks 实现。MySQL 当前通过 hook 启用列级弱共现：明确列等值但方向不可靠时输出 `SQL_LOG_COLUMN_CO_OCCURRENCE`；没有列端点时才输出表级 `SQL_LOG_TABLE_CO_OCCURRENCE`。其它方言要启用同样语义，必须先补自己的 correctness golden。泛化表级 `CO_OCCURRENCE` 只在同一语句没有更强列级关系时作为兜底；如果多表 DML 已抽出 `orders.user_id -> users.id`、`users.account_id -> accounts.id`，不得再额外补 `orders -> accounts` 这类间接表级边。PostgreSQL `ONLY`、`TABLESAMPLE`、`ROWS FROM`、`JOIN USING (...) AS alias` 这类语法必须配套 MySQL 负向测试，防止被 MySQL 当作物理表或共现证据；MySQL `STRAIGHT_JOIN`、ODBC `{ OJ ... }`、optimizer hints、`PARTITION (...)`、`JSON_TABLE(...)`、multi-table `UPDATE/DELETE` 这类语法也必须配套 Postgres 负向测试，防止被 PostgreSQL 误抽为关系。
 - `correlated EXISTS` 是公共 SQL 关系语义，新增或维护这类能力时，公共层只能处理跨方言相关谓词抽取，例如 `WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = o.user_id)` 生成 `SQL_LOG_EXISTS`。EXISTS 子查询内部如果出现 MySQL/PostgreSQL 专属 rowset、function table、hint、`ONLY`、`JSON_TABLE` 等语法，必须下沉到对应方言 visitor，并配套反向负向测试。
 - 同一 correlated EXISTS predicate 不能同时计为 `SQL_LOG_EXISTS` 和普通 `SQL_LOG_JOIN`。`SQL_LOG_EXISTS` 当前分值为 `0.58`，普通 SQL log join 为 `0.55`；当同一 endpoint pair 已由 EXISTS 识别时，移除重复 JOIN candidate 是反重复计分保护，避免单个 SQL 谓词虚高置信度。若未来要把“同一 SQL 中 EXISTS 与外层 JOIN 独立出现”计为两次观察，必须先增加 predicate span/source-location provenance，不能简单取消去重。
 - `RelationExtractionVisitor` 体系里仍存在少量 regex/scanner，这是 ANTLR 渐进迁移期的语义兜底，不表示 ANTLR primary 仍在委托 Simple parser。公共层允许的用途仅限 tuple/IN/correlated EXISTS/raw equality、`JOIN USING` 表级共现、CTE/derived/local-temp rowset 防伪表、系统 schema/截断 token 过滤等跨方言关系语义层能力。新增或修改方言 regex 必须进入对应子类，并同时补 correctness fixture、更新 `docs/design/phase-06-parser-enhancement.md`；未来如果改成完整 parse-tree visitor，也必须同步删除对应 regex 说明。
 - `SqlLogNoiseFilter` 在 `SqlRelationParserRunner` 之前过滤 native log 噪声。默认按数据库类型过滤系统 catalog 查询，并允许 YAML 通过 `sources.logs.filterSystemQueries`、`sources.logs.systemSchemas`、`sources.logs.metadataQueryMarkers` 覆盖。
 - `AntlrStructuredDdlParser` 现在按 dialect 选择 `DdlStructuredEventVisitor` 子类并输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 事件；`DdlRelationExtractionVisitor` 独立把这些事件转换成 DDL FK-like 关系，并用 source index / target unique evidence 增强关系。DDL 方言 regex 属于 `MySqlDdlStructuredEventVisitor` / `PostgresDdlStructuredEventVisitor` 或 adaptor DDL parser，不属于 `DdlRelationExtractionVisitor`。
-- `SqlLineageResolver` 为 Simple 和 ANTLR relation extractor 提供保守列血缘映射，支持 CTE、派生表、多层嵌套查询，以及简单 LATERAL/correlated derived table 中的外层列投影回溯。
-- `SimpleDdlParser` 把显式 FK/inline references 作为强关系证据，把 PK/unique/source index 作为已有 FK 的辅助 evidence；它现在定位为 core fallback。MySQL/PostgreSQL 明显不同的 DDL 写法应进入 `MySqlDdlParser` / `PostgresDdlParser`，再委托或补充 fallback 结果。
-- `MySqlDdlParser` 是 MySQL adaptor 的 DDL 入口。它先做 MySQL 私有归一化，例如 `CREATE UNIQUE INDEX ... USING BTREE ON ... INVISIBLE`，再委托 fallback；后续继续承接反引号、`KEY`/`INDEX` 选项、prefix/invisible index、storage engine/table options、`SHOW CREATE TABLE` 等 MySQL 差异。
-- `PostgresDdlParser` 是 PostgreSQL adaptor 的 DDL 入口。它先做 PostgreSQL 私有归一化，例如 `CREATE INDEX ... ON ONLY ...`，再委托 fallback；后续继续承接 `ALTER TABLE ONLY`、`NOT VALID`、`INCLUDE`、partial/expression index、opclass、partition/inheritance 等 PostgreSQL 差异。
+- `SqlLineageResolver` 为 ANTLR relation extractor 提供保守列血缘映射，支持 CTE、派生表、多层嵌套查询，以及简单 LATERAL/correlated derived table 中的外层列投影回溯。裸列投影（例如 `SELECT user_id FROM orders`）默认不作为全局精确 lineage；当前只允许 MySQL relation visitor 在 `UPDATE` 派生聚合回写这类单表来源场景中通过 hook 开启，新增类似能力必须先说明方言和 SQL 形态边界，并配 correctness fixture。
+- `MySqlDdlParser` / `PostgresDdlParser` 是 adaptor DDL SPI 入口，内部共享 ANTLR DDL event pipeline。数据库私有 DDL 写法应进入对应 `DdlStructuredEventVisitor` 子类或 adaptor DDL parser，不应回流为一个跨库万能 parser。
 - `JsonResultWriter` 当前手写 JSON，后续可替换为 Jackson，但字段结构应保持兼容。
-- `DiagnosticWarnings` 集中构造解析/提取失败 warning。`ScanEngine`、DDL parser、log extractor 不应各自拼装不同格式；失败时应保留 `exceptionClass`，并在能拿到输入文本时把原始 SQL/DDL 放入 `attributes.rawStatement`。SQL ANTLR primary fallback 使用 `attributes.missingSimpleRelations`；DDL ANTLR primary fallback 使用 `attributes.missingSimpleDdlRelations`。
+- `DiagnosticWarnings` 集中构造解析/提取失败 warning。`ScanEngine`、DDL parser、log extractor 不应各自拼装不同格式；失败时应保留 `exceptionClass`，并在能拿到输入文本时把原始 SQL/DDL 放入 `attributes.rawStatement`。ANTLR SQL/DDL 硬失败只产生 warning，不回退 legacy parser。
 
 ### 2.3 relation-cli
 
@@ -459,8 +451,11 @@ sources:
 
 - `ConfidenceCalculator`
 - `RelationshipMerger`
-- `SimpleSqlRelationParser`
-- `SimpleDdlParser`
+- `AntlrSqlRelationParser`
+- `AntlrStructuredSqlParser`
+- `AntlrStructuredDdlParser`
+- `RelationExtractionVisitor`
+- `DdlRelationExtractionVisitor`
 - `SimpleYamlConfigLoader`
 - `AdaptorRegistry`
 
@@ -486,16 +481,14 @@ sources:
   - `EvidenceSourceType` 正确，例如 `NATIVE_LOG`、`PLAIN_SQL`、`DATABASE_OBJECT`。
   - `attributes.joinKind` 正确，例如 `LEFT_JOIN`、`RIGHT_JOIN`、`FULL_JOIN`。
   - 加入 `TARGET_UNIQUE`、`NAMING_MATCH`、`VALUE_CONTAINMENT_HIGH` 后 confidence 与公式一致。
-- ANTLR shadow golden comparison：
-  - 同一 SQL 同时跑 primary parser 和 shadow parser。
-  - 最终关系输出必须与 primary baseline 一致。
-  - shadow path 至少产生 `TABLE_REFERENCE` 和 `COLUMN_EQUALITY` 结构化事件。
-  - MySQL/PostgreSQL parser selection 测试必须断言 `attributes.grammar`、`attributes.lexer`、`attributes.parser` 和 `attributes.eventVisitor`，证明不是继续走通用 grammar。
-  - shadow comparison diagnostics 必须断言 `relationVisitor`，证明 adaptor 使用自己的方言 visitor。
-  - comparison diagnostics 必须记录 `missingSimpleRelations` / `extraAntlrRelations`；`antlr-primary` 缺失 Simple baseline 时必须 fallback 并输出 warning。
+- ANTLR correctness fixture：
+  - `CorrectnessFixtureRunnerTest` 扫描 `test-fixtures/correctness`，以 `expected-relations.json` 中的 ANTLR gold fingerprints 为唯一正确性基线。
+  - MySQL/PostgreSQL parser selection 测试必须断言 `attributes.grammar`、`attributes.lexer`、`attributes.parser` 和 `attributes.eventVisitor`，证明 adaptor 选择了自己的方言 parser/visitor。
+  - fixture 的 `expected-diagnostics.json` 只记录 fixture hash 和 warning code count；不再保存 Simple/ANTLR comparison delta。
 - ANTLR 独立抽取测试：
-  - `RelationExtractionVisitorIndependenceTest` 用“raw SQL 无关系但 events 有关系”和“events 为空但 visitor 自己的 raw equality fallback 可提取关系”两种输入，证明 visitor 没有回退调用 `SimpleSqlRelationParser`，同时允许 ANTLR extractor 的自有兜底能力继续工作。
-  - `SqlRelationParserRunnerTest` 覆盖 `simple` 不运行 ANTLR，以及 `antlr-primary` 缺失 baseline 时写 `ANTLR_PRIMARY_FALLBACK` warning。
+  - `RelationExtractionVisitorIndependenceTest` 用“raw SQL 无关系但 events 有关系”和“events 为空但 visitor 自己的 raw equality fallback 可提取关系”两种输入，证明 SQL 关系抽取独立消费 ANTLR event，同时允许 extractor 的自有兜底能力继续工作。
+  - `SqlRelationParserRunnerTest` 覆盖 runner 总是调用 adaptor ANTLR parser，SQL log noise filter 仍生效，空结果不会被 legacy parser 替换。
+  - `DdlRelationParserRunnerTest` 覆盖 runner 总是调用 structured DDL parser，空 DDL event 结果不会被 legacy parser 替换。
 - 重复 SQL 日志 JOIN 输出两份证据：`rawEvidence` 保留每次观测，`evidence` 聚合为一条基础 evidence 加一条 `REPEATED_OBSERVATION`。
 - YAML 中环境变量缺失时报错。
 - unknown adaptor 报 `ADAPTOR_ERROR`。
@@ -587,7 +580,7 @@ PostgreSQL：
 
 - 引入 picocli 替换手写 CLI 参数解析。
 - 引入 Jackson YAML/JSON 替换轻量解析和手写 JSON。
-- 引入 JSqlParser 或数据库方言 parser 替换 `SimpleSqlRelationParser`。
+- 持续增强 MySQL/PostgreSQL ANTLR grammar 和 visitor，逐步把剩余 regex 兜底替换为 parse-tree visitor。
 - 继续扩展 JUnit 5 用例，并引入 AssertJ、Testcontainers 做更强断言和真实数据库集成测试。
 - 增加 Maven assembly/shade 打包，生成单个可执行发行包。
 - 扩展 MySQL/PostgreSQL unique/index 元数据采集。

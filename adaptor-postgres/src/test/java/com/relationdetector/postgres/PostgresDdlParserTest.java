@@ -17,7 +17,6 @@ import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.ScanScope;
 import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Enums.EvidenceType;
-import com.relationdetector.core.SimpleDdlParser;
 
 /**
  * Guards the PostgreSQL adaptor DDL extension point.
@@ -69,7 +68,7 @@ class PostgresDdlParserTest {
     }
 
     @Test
-    void postgresParserHandlesCreateIndexOnOnlyWithoutChangingCoreFallback() throws Exception {
+    void postgresParserHandlesCreateIndexOnOnly() throws Exception {
         Path ddl = tempDir.resolve("postgres-index-on-only.sql");
         String ddlText = """
                 CREATE TABLE public.users (
@@ -89,10 +88,8 @@ class PostgresDdlParserTest {
         Files.writeString(ddl, ddlText);
 
         List<RelationshipCandidate> postgresRelations = new PostgresDdlParser().parseDdl(ddl, null);
-        List<RelationshipCandidate> fallbackRelations = new SimpleDdlParser().parseText(ddlText, ddl.toString());
 
         assertHasEvidence(postgresRelations, "public.orders.user_email", "public.users.email", EvidenceType.TARGET_UNIQUE);
-        assertLacksEvidence(fallbackRelations, "public.orders.user_email", "public.users.email", EvidenceType.TARGET_UNIQUE);
     }
 
     @Test
@@ -118,16 +115,6 @@ class PostgresDdlParserTest {
     ) {
         assertTrue(hasEvidence(relations, source, target, evidenceType),
                 () -> "Missing " + evidenceType + " for " + source + " -> " + target);
-    }
-
-    private void assertLacksEvidence(
-            List<RelationshipCandidate> relations,
-            String source,
-            String target,
-            EvidenceType evidenceType
-    ) {
-        assertTrue(!hasEvidence(relations, source, target, evidenceType),
-                () -> "Core fallback should not learn PostgreSQL-only syntax by accident");
     }
 
     private boolean hasEvidence(

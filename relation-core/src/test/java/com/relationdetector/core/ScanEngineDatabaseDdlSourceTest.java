@@ -34,6 +34,7 @@ import com.relationdetector.api.Collectors.MetadataCollector;
 import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.api.Collectors.SqlLogExtractor;
 import com.relationdetector.api.Collectors.SqlRelationParser;
+import com.relationdetector.api.Collectors.StructuredDdlParser;
 import com.relationdetector.api.Enums.AdaptorCapability;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.EvidenceSourceType;
@@ -88,8 +89,6 @@ class ScanEngineDatabaseDdlSourceTest {
     }
 
     private static final class DatabaseDdlAdaptor implements DatabaseAdaptor {
-        private final SimpleDdlParser simpleDdlParser = new SimpleDdlParser();
-
         @Override
         public String id() {
             return "test-database-ddl";
@@ -144,21 +143,12 @@ class ScanEngineDatabaseDdlSourceTest {
 
         @Override
         public DdlParser ddlParser() {
-            return new DdlParser() {
-                @Override
-                public List<RelationshipCandidate> parseDdl(Path file, com.relationdetector.api.AdaptorContext context) {
-                    return simpleDdlParser.parse(file);
-                }
+            return (file, context) -> List.of();
+        }
 
-                @Override
-                public List<RelationshipCandidate> parseDdlText(
-                        String ddl,
-                        String sourceName,
-                        com.relationdetector.api.AdaptorContext context
-                ) {
-                    return simpleDdlParser.parseText(ddl, sourceName);
-                }
-            };
+        @Override
+        public Optional<StructuredDdlParser> structuredDdlParser() {
+            return Optional.of(new AntlrStructuredDdlParser(SqlDialect.MYSQL));
         }
 
         @Override

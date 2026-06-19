@@ -3,7 +3,6 @@ databaseType: MYSQL
 parserTarget: SQL
 sourceType: NATIVE_LOG
 schema: case_04
-parserModes: simple,antlr-shadow,antlr-primary
 input: ../../../mysql/basic-correctness/case-04/sql/performance-schema-statements.sql
 expectedRelations: expected-relations.json
 expectedDiagnostics: expected-diagnostics.json

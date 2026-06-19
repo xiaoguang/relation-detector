@@ -15,7 +15,7 @@ import com.relationdetector.api.ColumnRef;
 import com.relationdetector.api.TableId;
 
 /**
- * Conservative SQL column lineage helper for the regex-based parser.
+ * Conservative SQL column lineage helper for ANTLR relation extraction.
  *
  * <p>Design mapping: Phase 6 parser enhancement / SqlLineageResolver. This is
  * not a full SQL AST engine. Its job is deliberately narrower: when a CTE or
@@ -99,6 +99,7 @@ final class SqlLineageResolver {
      *   SELECT lower(o.email) AS email FROM orders o
      */
     private static final Pattern PLAIN_COLUMN = Pattern.compile("^[`\"\\w]+\\.[`\"\\w]+$");
+    private static final Pattern PLAIN_UNQUALIFIED_COLUMN = Pattern.compile("^[`\"\\w]+$");
 
     /*
      * Finds references to already-known derived rowsets so aliases can inherit
@@ -114,24 +115,28 @@ final class SqlLineageResolver {
      *   ro.order_id -> orders.id
      */
     private static final Pattern FROM_OR_JOIN_NAME = Pattern.compile(
-            "(?i)\\b(?:from|join)\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?([`\"\\w]+))?");
+            "(?i)\\b(?:from|join)\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+([`\"\\w]+)|"
+                    + "(?!(?:join|left|right|inner|outer|full|cross|natural|where|on|group|order|having|limit|union|set|using|select)\\b)"
+                    + "([`\"\\w]+)))?");
 
     private final Set<String> cteNames;
+    private final boolean allowSingleTableUnqualifiedProjection;
     private final Map<ColumnKey, ColumnRef> columns = new LinkedHashMap<>();
     private final Map<String, Map<String, ColumnRef>> rowsets = new LinkedHashMap<>();
 
-    private SqlLineageResolver(String sql, Set<String> cteNames) {
+    private SqlLineageResolver(String sql, Set<String> cteNames, boolean allowSingleTableUnqualifiedProjection) {
         this.cteNames = new LinkedHashSet<>();
         for (String cteName : cteNames) {
             this.cteNames.add(normalize(cteName));
         }
+        this.allowSingleTableUnqualifiedProjection = allowSingleTableUnqualifiedProjection;
     }
 
     /**
-     * Entry point called by SimpleSqlRelationParser before relation extraction.
+     * Entry point called by relation visitors before relationship extraction.
      *
      * <p>Call chain:
-     * SimpleSqlRelationParser.parse() -> analyze() -> analyzeCtes(),
+     * RelationExtractionVisitor.extract() -> analyze() -> analyzeCtes(),
      * applyRowsetReferenceAliases(), analyzeDerivedTables(),
      * applyRowsetReferenceAliases().
      *
@@ -143,7 +148,26 @@ final class SqlLineageResolver {
      * then copies newly discovered derived rowsets to their outer aliases.
      */
     static SqlLineageResolver analyze(String sql, Set<String> cteNames) {
-        SqlLineageResolver resolver = new SqlLineageResolver(sql, cteNames);
+        return analyze(sql, cteNames, false);
+    }
+
+    /**
+     * Entry point used by dialect ANTLR visitors that can safely enable extra
+     * lineage rules for a narrow SQL shape.
+     *
+     * <p>{@code allowSingleTableUnqualifiedProjection} means a derived table
+     * body such as {@code SELECT user_id FROM orders} may expose
+     * {@code user_id -> orders.user_id}. The default is false because broad
+     * cross-dialect use can change legacy fixture baselines; MySQL enables it
+     * only for UPDATE-derived-table cases where this projection shape is common
+     * and unambiguous.
+     */
+    static SqlLineageResolver analyze(
+            String sql,
+            Set<String> cteNames,
+            boolean allowSingleTableUnqualifiedProjection
+    ) {
+        SqlLineageResolver resolver = new SqlLineageResolver(sql, cteNames, allowSingleTableUnqualifiedProjection);
         resolver.analyzeCtes(sql);
         resolver.applyRowsetReferenceAliases(sql);
         resolver.analyzeDerivedTables(sql);
@@ -154,7 +178,7 @@ final class SqlLineageResolver {
     /**
      * Resolves a derived alias column to the physical base column, if known.
      *
-     * <p>Called from SimpleSqlRelationParser.resolveColumn(). Empty Optional is
+     * <p>Called from relation visitor column resolution. Empty Optional is
      * a normal outcome and means the caller should fall back to physical table
      * aliases or skip the relation.
      */
@@ -347,7 +371,9 @@ final class SqlLineageResolver {
         Set<String> ignoredRowsets = new LinkedHashSet<>(cteNames);
         ignoredRowsets.addAll(rowsets.keySet());
         Map<String, TableId> aliases = new LinkedHashMap<>(outerAliases);
-        aliases.putAll(SimpleSqlRelationParser.AliasExtractor.extract(query, ignoredRowsets));
+        Map<String, TableId> localAliases = extractPhysicalAliases(query, ignoredRowsets);
+        Map<String, Map<String, ColumnRef>> localRowsetAliases = extractKnownRowsetAliases(query);
+        aliases.putAll(localAliases);
         int projectionEnd = from < 0 ? query.length() : from;
         List<String> projections = splitTopLevel(query.substring(select + "select".length(), projectionEnd), ',');
         Map<String, ColumnRef> output = new LinkedHashMap<>();
@@ -359,7 +385,7 @@ final class SqlLineageResolver {
             if (outputColumn.isBlank()) {
                 continue;
             }
-            directColumnSource(projection.expression(), aliases)
+            directColumnSource(projection.expression(), aliases, localAliases, localRowsetAliases)
                     .ifPresent(source -> output.put(normalize(outputColumn), source));
         }
         return output;
@@ -375,7 +401,57 @@ final class SqlLineageResolver {
     private Map<String, TableId> outerAliasesBefore(String text, int openParen) {
         Set<String> ignoredRowsets = new LinkedHashSet<>(cteNames);
         ignoredRowsets.addAll(rowsets.keySet());
-        return SimpleSqlRelationParser.AliasExtractor.extract(text.substring(0, openParen), ignoredRowsets);
+        return extractPhysicalAliases(text.substring(0, openParen), ignoredRowsets);
+    }
+
+    private Map<String, TableId> extractPhysicalAliases(String sql, Set<String> ignoredRowsets) {
+        Map<String, TableId> aliases = new LinkedHashMap<>();
+        Matcher matcher = FROM_OR_JOIN_NAME.matcher(sql);
+        while (matcher.find()) {
+            String rawTable = matcher.group(1);
+            String tableName = cleanTable(rawTable);
+            if (tableName.isBlank()
+                    || isKeyword(tableName)
+                    || ignoredRowsets.contains(normalize(tableName))
+                    || !SqlLogNoiseFilter.isValidIdentifierToken(tableName)) {
+                continue;
+            }
+            TableId table = TableId.of(schemaName(rawTable), tableName);
+            aliases.put(table.tableName(), table);
+            String alias = aliasFromRowsetMatcher(matcher);
+            if (!alias.isBlank() && !isKeyword(alias)) {
+                aliases.put(alias, table);
+            }
+        }
+        return aliases;
+    }
+
+    /**
+     * Reads CTE/derived rowset aliases visible inside one SELECT body.
+     *
+     * <p>This complements {@link #extractPhysicalAliases}. Physical aliases
+     * answer {@code o.id -> orders.id}; rowset aliases answer
+     * {@code recent_orders.id -> orders.id}. Keeping the two maps separate is
+     * what lets unqualified projection handling stay conservative: a bare
+     * {@code SELECT order_id FROM x} is accepted only when exactly one visible
+     * rowset exposes {@code order_id}.
+     */
+    private Map<String, Map<String, ColumnRef>> extractKnownRowsetAliases(String sql) {
+        Map<String, Map<String, ColumnRef>> aliases = new LinkedHashMap<>();
+        Matcher matcher = FROM_OR_JOIN_NAME.matcher(sql);
+        while (matcher.find()) {
+            String rowsetName = normalize(cleanTable(matcher.group(1)));
+            Map<String, ColumnRef> output = rowsets.get(rowsetName);
+            if (output == null) {
+                continue;
+            }
+            aliases.put(rowsetName, output);
+            String alias = aliasFromRowsetMatcher(matcher);
+            if (!alias.isBlank() && !isKeyword(alias)) {
+                aliases.put(normalize(alias), output);
+            }
+        }
+        return aliases;
     }
 
     /**
@@ -384,25 +460,71 @@ final class SqlLineageResolver {
      * <p>Called by analyzeSelectOutput(). The function first checks whether the
      * expression is exactly {@code alias.column}. If that alias is itself a CTE
      * or derived rowset, resolve() recursively collapses it to the original base
-     * column. Expressions return Optional.empty().
+     * column. A bare column such as {@code user_id} is accepted only when the
+     * SELECT body has exactly one physical source table, for example
+     * {@code SELECT user_id FROM orders}; multi-table SELECT bodies remain
+     * ambiguous and are skipped. Expressions return Optional.empty().
      */
-    private Optional<ColumnRef> directColumnSource(String expression, Map<String, TableId> aliases) {
+    private Optional<ColumnRef> directColumnSource(
+            String expression,
+            Map<String, TableId> aliases,
+            Map<String, TableId> localAliases,
+            Map<String, Map<String, ColumnRef>> localRowsetAliases
+    ) {
         String cleaned = expression.trim();
-        if (!PLAIN_COLUMN.matcher(cleaned).matches()) {
+        if (PLAIN_UNQUALIFIED_COLUMN.matcher(cleaned).matches()) {
+            Optional<ColumnRef> rowsetColumn = singleRowsetColumn(localRowsetAliases, cleaned);
+            if (rowsetColumn.isPresent()) {
+                return rowsetColumn;
+            }
+        }
+        if (allowSingleTableUnqualifiedProjection && PLAIN_UNQUALIFIED_COLUMN.matcher(cleaned).matches()) {
+            return singlePhysicalTable(localAliases).map(table -> ColumnRef.of(table, clean(cleaned)));
+        }
+        if (PLAIN_COLUMN.matcher(cleaned).matches()) {
+            String[] parts = cleaned.split("\\.", 2);
+            String alias = clean(parts[0]);
+            String column = clean(parts[1]);
+            Optional<ColumnRef> rowsetColumn = resolve(alias, column);
+            if (rowsetColumn.isPresent()) {
+                return rowsetColumn;
+            }
+            TableId table = aliases.get(alias);
+            if (table == null) {
+                return Optional.empty();
+            }
+            return Optional.of(ColumnRef.of(table, column));
+        }
+        return Optional.empty();
+    }
+
+    private Optional<ColumnRef> singleRowsetColumn(
+            Map<String, Map<String, ColumnRef>> rowsetAliases,
+            String column
+    ) {
+        String normalizedColumn = normalize(column);
+        Map<String, ColumnRef> unique = new LinkedHashMap<>();
+        for (Map<String, ColumnRef> output : rowsetAliases.values()) {
+            ColumnRef source = output.get(normalizedColumn);
+            if (source != null) {
+                unique.put(source.displayName(), source);
+            }
+        }
+        if (unique.size() != 1) {
             return Optional.empty();
         }
-        String[] parts = cleaned.split("\\.", 2);
-        String alias = clean(parts[0]);
-        String column = clean(parts[1]);
-        Optional<ColumnRef> rowsetColumn = resolve(alias, column);
-        if (rowsetColumn.isPresent()) {
-            return rowsetColumn;
+        return Optional.of(unique.values().iterator().next());
+    }
+
+    private Optional<TableId> singlePhysicalTable(Map<String, TableId> aliases) {
+        Map<String, TableId> uniqueTables = new LinkedHashMap<>();
+        for (TableId table : aliases.values()) {
+            uniqueTables.put(table.normalizedName(), table);
         }
-        TableId table = aliases.get(alias);
-        if (table == null) {
+        if (uniqueTables.size() != 1) {
             return Optional.empty();
         }
-        return Optional.of(ColumnRef.of(table, column));
+        return Optional.of(uniqueTables.values().iterator().next());
     }
 
     /**
@@ -431,9 +553,15 @@ final class SqlLineageResolver {
         if (tokens.size() == 2 && PLAIN_COLUMN.matcher(tokens.get(0)).matches() && !isKeyword(tokens.get(1))) {
             return new Projection(tokens.get(0), clean(tokens.get(1)));
         }
+        if (tokens.size() == 2 && PLAIN_UNQUALIFIED_COLUMN.matcher(tokens.get(0)).matches() && !isKeyword(tokens.get(1))) {
+            return new Projection(tokens.get(0), clean(tokens.get(1)));
+        }
         if (PLAIN_COLUMN.matcher(projection).matches()) {
             String[] pieces = projection.split("\\.", 2);
             return new Projection(projection, clean(pieces[1]));
+        }
+        if (PLAIN_UNQUALIFIED_COLUMN.matcher(projection).matches()) {
+            return new Projection(projection, clean(projection));
         }
         return new Projection(projection, "");
     }
@@ -483,12 +611,21 @@ final class SqlLineageResolver {
             if (output == null) {
                 continue;
             }
-            String alias = clean(matcher.group(2));
+            String alias = aliasFromRowsetMatcher(matcher);
             if (alias.isBlank() || isKeyword(alias)) {
                 continue;
             }
             addRowset(alias, output);
         }
+    }
+
+    private static String aliasFromRowsetMatcher(Matcher matcher) {
+        String explicitAsAlias = matcher.group(2);
+        if (explicitAsAlias != null) {
+            return clean(explicitAsAlias);
+        }
+        String plainAlias = matcher.group(3);
+        return plainAlias == null ? "" : clean(plainAlias);
     }
 
     /**
@@ -524,7 +661,7 @@ final class SqlLineageResolver {
 
     private static boolean startsWithQuery(String text) {
         String trimmed = text.stripLeading().toLowerCase(Locale.ROOT);
-        return trimmed.startsWith("select ") || trimmed.startsWith("with ");
+        return startsWithWord(trimmed, 0, "select") || startsWithWord(trimmed, 0, "with");
     }
 
     private static List<String> splitIdentifierList(String text) {
@@ -722,9 +859,49 @@ final class SqlLineageResolver {
     }
 
     private static String cleanTable(String table) {
-        String value = clean(table);
-        int dot = value.lastIndexOf('.');
-        return dot >= 0 ? value.substring(dot + 1) : value;
+        List<String> parts = identifierParts(table);
+        return parts.isEmpty() ? "" : parts.get(parts.size() - 1);
+    }
+
+    private static String schemaName(String table) {
+        List<String> parts = identifierParts(table);
+        return parts.size() > 1 ? parts.get(parts.size() - 2) : null;
+    }
+
+    private static List<String> identifierParts(String identifier) {
+        List<String> parts = new ArrayList<>();
+        if (identifier == null || identifier.isBlank()) {
+            return parts;
+        }
+        StringBuilder current = new StringBuilder();
+        char quote = 0;
+        for (int i = 0; i < identifier.length(); i++) {
+            char c = identifier.charAt(i);
+            if ((c == '"' || c == '`') && quote == 0) {
+                quote = c;
+                current.append(c);
+                continue;
+            }
+            if (c == quote) {
+                quote = 0;
+                current.append(c);
+                continue;
+            }
+            if (c == '.' && quote == 0) {
+                String part = clean(current.toString());
+                if (!part.isBlank()) {
+                    parts.add(part);
+                }
+                current.setLength(0);
+                continue;
+            }
+            current.append(c);
+        }
+        String part = clean(current.toString());
+        if (!part.isBlank()) {
+            parts.add(part);
+        }
+        return parts;
     }
 
     private static String normalize(String value) {

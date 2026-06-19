@@ -3,7 +3,6 @@ databaseType: MYSQL
 parserTarget: DDL
 evidenceSourceType: DDL_FILE
 schema: official_mysql
-parserModes: simple-ddl,antlr-ddl-shadow,antlr-ddl-primary
 input: input.ddl.sql
 expectedRelations: expected-relations.json
 expectedDiagnostics: expected-diagnostics.json

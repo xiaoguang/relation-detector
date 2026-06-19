@@ -146,11 +146,10 @@ DDL parser 可以直接产生 evidence，也可以产生 metadata-like 结构，
 
 方言拆分规则：
 
-- `relation-core` 的 `SimpleDdlParser` 只作为保守 fallback，处理通用 FK、inline references、PK、unique 和普通 index。
-- `adaptor-mysql` 暴露 `MySqlDdlParser`。MySQL 专属写法，例如反引号标识符、`KEY`/`INDEX` 选项、prefix index、invisible index、storage engine/table options、`SHOW CREATE TABLE` 格式，应在这里处理。
-- `adaptor-postgres` 暴露 `PostgresDdlParser`。PostgreSQL 专属写法，例如 `ALTER TABLE ONLY`、`NOT VALID`、`CREATE INDEX CONCURRENTLY/IF NOT EXISTS`、`INCLUDE`、partial/expression index、opclass、partition/inheritance，应在这里处理。
+- MySQL/PostgreSQL DDL 均走 ANTLR DDL event pipeline。MySQL 专属写法，例如反引号标识符、`KEY`/`INDEX` 选项、prefix index、invisible index、storage engine/table options、`SHOW CREATE TABLE` 格式，应在 MySQL DDL event visitor 或 `MySqlDdlParser` 中处理。
+- PostgreSQL 专属写法，例如 `ALTER TABLE ONLY`、`NOT VALID`、`CREATE INDEX CONCURRENTLY/IF NOT EXISTS`、`INCLUDE`、partial/expression index、opclass、partition/inheritance，应在 PostgreSQL DDL event visitor 或 `PostgresDdlParser` 中处理。
 - adaptor parser 的输出仍必须是统一的 `RelationshipCandidate` 和 `Evidence`，不能绕过 core 的合并与置信度计算。
-- 方言 parser 应有自己的单元测试，并包含“core fallback 不识别该方言私有写法，但 adaptor parser 识别”的隔离用例。这样可以证明某个数据库的语法增强不会悄悄改变其他数据库的解析行为。
+- 方言 parser 应有自己的单元测试，并包含正向和反向负向用例。这样可以证明某个数据库的语法增强不会悄悄改变其他数据库的解析行为。
 
 ### SqlRelationParser
 
@@ -198,9 +197,9 @@ default Optional<StructuredDdlParser> structuredDdlParser() {
 
 - MySQL adaptor 暴露 `MySqlAntlrSqlParser` / `MySqlAntlrDdlParser`。
 - PostgreSQL adaptor 暴露 `PostgresAntlrSqlParser` / `PostgresAntlrDdlParser`。
-- SQL 关系输出由 `SqlRelationParserRunner` 按 `parser.sql.mode` 调度。MySQL/PostgreSQL 默认灰度为 `antlr-primary + fallbackOnFailure=true`，返回 ANTLR 结果；缺失 Simple baseline 时按配置 fallback 并输出 warning。`antlr-shadow` 仍保留为 baseline 对比和回归定位模式。SQL Server/Oracle 仅保留 SPI/future adaptor，不随 MySQL/PostgreSQL 一起切 primary。
-- DDL 关系输出由 `DdlRelationParserRunner` 按 `parser.ddl.mode` 独立调度。默认灰度为 `antlr-ddl-primary + fallbackOnFailure=true`，返回 `DdlRelationExtractionVisitor` 结果；缺失 Simple DDL baseline 时按配置 fallback 并输出 warning。`antlr-ddl-shadow` 仍保留用于对比诊断。
-- 第三方 adaptor 可以只实现 `structuredSqlParser()` 或只实现 `structuredDdlParser()`。未实现的一侧继续使用现有 simple/fallback 链路；不能因为某个数据库的 SQL ANTLR 能力成熟，就假定它的 DDL ANTLR 能力也已经成熟。
+- SQL 关系输出由 `SqlRelationParserRunner` 调度到 adaptor 的 ANTLR SQL parser。`parser.sql.mode` 和 simple/shadow fallback 已移除；ANTLR 硬失败记录 warning 后继续扫描。
+- DDL 关系输出由 `DdlRelationParserRunner` 调度到 adaptor 的 ANTLR DDL parser。`parser.ddl.mode` 和 simple-ddl/shadow fallback 已移除；ANTLR DDL 硬失败记录 warning 后继续扫描。
+- 第三方 adaptor 可以只实现 `structuredSqlParser()` 或只实现 `structuredDdlParser()`，但缺失的一侧不应再由 core simple parser 假装支持；应明确作为 future capability 或返回空/ warning。
 - 如果某个方言后续引入完整 ANTLR grammar，推荐在同一方言 grammar 下拆出 SQL entry rule 与 DDL entry rule，再分别返回 `StructuredSqlParser` 和 `StructuredDdlParser` 实例；不推荐把 DDL constraint、SQL join 和日志噪声过滤写进一个通用 visitor。
 
 ### DatabaseDdlCollector
@@ -215,7 +214,7 @@ default Optional<DatabaseDdlCollector> databaseDdlCollector() {
 
 - 从 live database 读取表定义 DDL 文本，但不直接生成关系。
 - MySQL v1 使用 `SHOW CREATE TABLE schema.table`，返回 `DatabaseDdlDefinition(schema, table, ddl, "SHOW CREATE TABLE")`。
-- `ScanEngine` 把返回的 DDL text 喂给 `DdlRelationParserRunner.parseText(...)`，因此仍遵守 `simple-ddl`、`antlr-ddl-shadow`、`antlr-ddl-primary` 三种模式。
+- `ScanEngine` 把返回的 DDL text 喂给 `DdlRelationParserRunner.parseText(...)`，因此统一走 ANTLR DDL extraction。
 - 解析出的 evidence 使用 `EvidenceSourceType.DATABASE_DDL`，与用户提供的 `DDL_FILE` 区分。
 - collector 必须遵守 `includeTables/excludeTables`，并且单表读取失败时记录 warning 后继续读取其它表。
 

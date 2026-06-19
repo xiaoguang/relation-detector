@@ -42,6 +42,7 @@ public final class Enums {
         SUBQUERY_INFERRED_FK,
         PROFILE_SUPPORTED_FK,
         NAMING_SUPPORTED_FK,
+        COLUMN_CO_OCCURRENCE,
         TABLE_CO_OCCURRENCE
     }
 
@@ -55,6 +56,7 @@ public final class Enums {
         SQL_LOG_JOIN,
         SQL_LOG_SUBQUERY_IN,
         SQL_LOG_EXISTS,
+        SQL_LOG_COLUMN_CO_OCCURRENCE,
         SQL_LOG_TABLE_CO_OCCURRENCE,
         NAMING_MATCH,
         SOURCE_INDEX,

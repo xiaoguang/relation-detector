@@ -19,7 +19,7 @@ expected-diagnostics.json
 ```
 
 `manifest.yml` declares the database dialect, parser target, source type,
-parser modes, and golden file paths. The manifest parser in
+and golden file paths. The manifest parser in
 `CorrectnessFixtureRunnerTest` intentionally supports only this small flat
 format so fixture behavior stays easy to review.
 
@@ -32,11 +32,9 @@ RELATION_TYPE:source->target:EVIDENCE_TYPE[,EVIDENCE_TYPE...]
 It also stores `forbiddenTables` for negative assertions such as CTE names,
 derived-table aliases, system schemas, and truncated log tokens.
 
-`expected-diagnostics.json` stores the fixture hash, warning code counts, and
-ANTLR comparison diagnostics:
-
-- SQL: `missingSimpleRelations`, `extraAntlrRelations`
-- DDL: `missingSimpleDdlRelations`, `extraAntlrDdlRelations`
+`expected-diagnostics.json` stores the fixture hash and warning code counts.
+ANTLR relation output is the only correctness baseline; Simple/ANTLR comparison
+diagnostics are no longer part of fixture acceptance.
 
 ## What Belongs Here
 
@@ -44,7 +42,7 @@ Move parser/relationship correctness scenarios here when the input is SQL,
 DDL, database object text, SQL log text, or database DDL text and the output is
 a relationship, evidence, warning, or parser comparison diagnostic.
 
-Keep focused Java unit tests for config parsing, fallback branch injection,
+Keep focused Java unit tests for config parsing, parser failure warning paths,
 mock JDBC collectors, relationship merger internals, metadata enrichment, and
 adaptor wiring. Those tests are better expressed as code because they validate
 local control flow rather than large input-to-relation behavior.

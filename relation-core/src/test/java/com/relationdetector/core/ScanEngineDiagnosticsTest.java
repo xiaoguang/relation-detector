@@ -25,6 +25,7 @@ import com.relationdetector.api.Collectors.MetadataCollector;
 import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.api.Collectors.SqlLogExtractor;
 import com.relationdetector.api.Collectors.SqlRelationParser;
+import com.relationdetector.api.Collectors.StructuredDdlParser;
 import com.relationdetector.api.Enums.AdaptorCapability;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.LogFormatHint;
@@ -144,16 +145,27 @@ class ScanEngineDiagnosticsTest {
     private static final class TestAdaptor implements DatabaseAdaptor {
         private final DdlParser ddlParser;
         private final SqlRelationParser sqlRelationParser;
+        private final Optional<StructuredDdlParser> structuredDdlParser;
 
         private TestAdaptor(DdlParser ddlParser, SqlRelationParser sqlRelationParser) {
+            this(ddlParser, sqlRelationParser, Optional.empty());
+        }
+
+        private TestAdaptor(
+                DdlParser ddlParser,
+                SqlRelationParser sqlRelationParser,
+                Optional<StructuredDdlParser> structuredDdlParser
+        ) {
             this.ddlParser = ddlParser;
             this.sqlRelationParser = sqlRelationParser;
+            this.structuredDdlParser = structuredDdlParser;
         }
 
         static TestAdaptor withThrowingDdlParser() {
-            return new TestAdaptor((file, context) -> {
-                throw new IllegalStateException("synthetic ddl failure");
-            }, (statement, context) -> List.of());
+            return new TestAdaptor((file, context) -> List.of(), (statement, context) -> List.of(),
+                    Optional.of((ddl, sourceName, context) -> {
+                        throw new IllegalStateException("synthetic ddl failure");
+                    }));
         }
 
         static TestAdaptor withThrowingSqlParser() {
@@ -200,6 +212,11 @@ class ScanEngineDiagnosticsTest {
         @Override
         public DdlParser ddlParser() {
             return ddlParser;
+        }
+
+        @Override
+        public Optional<StructuredDdlParser> structuredDdlParser() {
+            return structuredDdlParser;
         }
 
         @Override

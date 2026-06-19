@@ -24,9 +24,9 @@ import com.relationdetector.api.Enums.StructuredParseEventType;
 /**
  * Converts structured ANTLR DDL events into relationship candidates.
  *
- * <p>This visitor is independent from {@link SimpleDdlParser}. It consumes only
- * {@link StructuredSqlEvent} facts produced by {@link DdlStructuredEventVisitor}
- * and intentionally mirrors the same conservative evidence semantics.
+ * <p>This visitor consumes only {@link StructuredSqlEvent} facts produced by
+ * {@link DdlStructuredEventVisitor} and intentionally mirrors the same
+ * conservative evidence semantics.
  */
 public final class DdlRelationExtractionVisitor {
     public List<RelationshipCandidate> extract(String ddl, String sourceName, StructuredParseResult result) {
@@ -46,8 +46,8 @@ public final class DdlRelationExtractionVisitor {
     }
 
     private void addForeignKey(StructuredSqlEvent event, DdlState state) {
-        TableId sourceTable = table(text(event, "sourceTable"));
-        TableId targetTable = table(text(event, "targetTable"));
+        TableId sourceTable = table(raw(event, "sourceTable"));
+        TableId targetTable = table(raw(event, "targetTable"));
         String sourceColumn = text(event, "sourceColumn");
         String targetColumn = text(event, "targetColumn");
         if (sourceColumn.isBlank() || targetColumn.isBlank()) {
@@ -70,7 +70,7 @@ public final class DdlRelationExtractionVisitor {
     }
 
     private void addIndex(StructuredSqlEvent event, DdlState state) {
-        TableId table = table(text(event, "table"));
+        TableId table = table(raw(event, "table"));
         String column = text(event, "column");
         String role = text(event, "role");
         if (column.isBlank()) {
@@ -127,8 +127,12 @@ public final class DdlRelationExtractionVisitor {
     }
 
     private String text(StructuredSqlEvent event, String key) {
+        return clean(raw(event, key));
+    }
+
+    private String raw(StructuredSqlEvent event, String key) {
         Object value = event.attributes().get(key);
-        return value == null ? "" : clean(String.valueOf(value));
+        return value == null ? "" : String.valueOf(value);
     }
 
     private int intValue(StructuredSqlEvent event, String key, int fallback) {

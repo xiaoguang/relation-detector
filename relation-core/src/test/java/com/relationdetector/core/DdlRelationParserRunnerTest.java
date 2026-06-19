@@ -40,39 +40,31 @@ class DdlRelationParserRunnerTest {
     Path tempDir;
 
     @Test
-    void simpleDdlModeRunsOnlyPrimaryDdlParser() throws Exception {
+    void ddlRunnerAlwaysUsesStructuredDdlParser() throws Exception {
         Path ddl = ddlFile();
         AtomicInteger structuredCalls = new AtomicInteger();
         ScanConfig config = new ScanConfig();
-        config.ddlParserMode = DdlParserMode.SIMPLE_DDL;
 
         List<RelationshipCandidate> relations = new DdlRelationParserRunner()
-                .parse(new TestAdaptor(simpleDdlParser(), emptyStructuredDdlParser(structuredCalls)),
+                .parse(new TestAdaptor(failingDdlParser(), emptyStructuredDdlParser(structuredCalls)),
                         config, ddl, context(new ArrayList<>()));
 
-        assertEquals(1, relations.size());
-        assertEquals(0, structuredCalls.get(), "simple-ddl mode must not run ANTLR DDL shadow parser");
+        assertTrue(relations.isEmpty());
+        assertEquals(1, structuredCalls.get(), "DDL runner should call the adaptor structured DDL parser");
     }
 
     @Test
-    void antlrDdlPrimaryFallsBackToSimpleAndWarnsWhenBaselineIsMissing() throws Exception {
+    void ddlRunnerDoesNotFallbackToSimpleWhenStructuredParserFindsNoRelations() throws Exception {
         Path ddl = ddlFile();
         AtomicInteger structuredCalls = new AtomicInteger();
         ScanConfig config = new ScanConfig();
-        config.ddlParserMode = DdlParserMode.ANTLR_DDL_PRIMARY;
-        config.ddlParserFallbackOnFailure = true;
-        List<WarningMessage> warnings = new ArrayList<>();
 
         List<RelationshipCandidate> relations = new DdlRelationParserRunner()
-                .parse(new TestAdaptor(simpleDdlParser(), emptyStructuredDdlParser(structuredCalls)),
-                        config, ddl, context(warnings));
+                .parse(new TestAdaptor(failingDdlParser(), emptyStructuredDdlParser(structuredCalls)),
+                        config, ddl, context(new ArrayList<>()));
 
-        assertEquals(1, relations.size());
-        assertEquals("orders.user_id", relations.get(0).source().displayName());
-        assertTrue(warnings.stream().anyMatch(warning ->
-                warning.code().equals("ANTLR_DDL_PRIMARY_FALLBACK")
-                        && String.valueOf(warning.attributes().get("rawStatement")).contains("CREATE TABLE orders")
-                        && String.valueOf(warning.attributes().get("missingSimpleDdlRelations")).contains("orders.user_id->users.id")));
+        assertTrue(relations.isEmpty(), "empty ANTLR DDL output must not be replaced by a legacy parser output");
+        assertEquals(1, structuredCalls.get());
     }
 
     private Path ddlFile() throws Exception {
@@ -84,8 +76,10 @@ class DdlRelationParserRunnerTest {
         return ddl;
     }
 
-    private DdlParser simpleDdlParser() {
-        return (file, context) -> new SimpleDdlParser().parseText(read(file), file.toString());
+    private DdlParser failingDdlParser() {
+        return (file, context) -> {
+            throw new AssertionError("legacy DdlParser must not be called by DdlRelationParserRunner");
+        };
     }
 
     private StructuredDdlParser emptyStructuredDdlParser(AtomicInteger calls) {
@@ -93,14 +87,6 @@ class DdlRelationParserRunnerTest {
             calls.incrementAndGet();
             return new StructuredParseResult("ANTLR", "MYSQL", sourceName, List.of(), List.of(), Map.of());
         };
-    }
-
-    private String read(Path file) {
-        try {
-            return Files.readString(file);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
     }
 
     private AdaptorContext context(List<WarningMessage> warnings) {

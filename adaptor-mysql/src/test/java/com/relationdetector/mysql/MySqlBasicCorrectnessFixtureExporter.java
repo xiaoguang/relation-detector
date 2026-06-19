@@ -13,8 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import com.relationdetector.api.AdaptorContext;
@@ -27,12 +25,10 @@ import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.EvidenceSourceType;
 import com.relationdetector.api.Enums.StatementSourceType;
-import com.relationdetector.core.DdlParserMode;
 import com.relationdetector.core.DdlRelationParserRunner;
 import com.relationdetector.core.ScanConfig;
-import com.relationdetector.core.ShadowSqlRelationParser;
 import com.relationdetector.core.SqlLogNoiseFilter;
-import com.relationdetector.core.SqlParserMode;
+import com.relationdetector.core.SqlRelationParserRunner;
 
 /**
  * Manual, read-only fixture exporter for anonymized MySQL basic correctness fixtures.
@@ -138,9 +134,6 @@ public final class MySqlBasicCorrectnessFixtureExporter {
         ScanConfig config = new ScanConfig();
         config.databaseType = DatabaseType.MYSQL;
         config.schema = schema;
-        config.sqlParserMode = SqlParserMode.ANTLR_SHADOW;
-        config.ddlParserMode = DdlParserMode.ANTLR_DDL_SHADOW;
-        config.ddlParserFallbackOnFailure = true;
         return config;
     }
 
@@ -169,37 +162,21 @@ public final class MySqlBasicCorrectnessFixtureExporter {
             String caseId,
             Path fixturePath
     ) throws Exception {
-        DdlRelationParserRunner.Result result = new DdlRelationParserRunner().parseTextWithDiagnostics(
+        List<RelationshipCandidate> relations = new DdlRelationParserRunner().parseText(
                 adaptor,
                 config,
                 ddlFixture,
                 fixturePath.toString(),
                 EvidenceSourceType.DATABASE_DDL,
                 new AdaptorContext(scope, Map.of(), ddlWarnings::add));
-        List<WarningMessage> primaryWarnings = new ArrayList<>();
-        ScanConfig primaryConfig = config(scope.schema());
-        primaryConfig.ddlParserMode = DdlParserMode.ANTLR_DDL_PRIMARY;
-        primaryConfig.ddlParserFallbackOnFailure = true;
-        List<RelationshipCandidate> primaryRelations = new DdlRelationParserRunner().parseText(
-                adaptor,
-                primaryConfig,
-                ddlFixture,
-                fixturePath.toString(),
-                EvidenceSourceType.DATABASE_DDL,
-                new AdaptorContext(scope, Map.of(), primaryWarnings::add));
 
         Map<String, Object> json = new LinkedHashMap<>();
         json.put("caseId", caseId);
         json.put("fixture", fixturePath.toString());
         json.put("fixtureSha256", sha256(ddlFixture));
         json.put("ddlDefinitions", definitionCount);
-        json.put("simpleRelations", result.primaryCount());
-        json.put("antlrRelations", result.shadowCount());
-        json.put("antlrPrimaryRelations", primaryRelations.size());
-        json.put("missingSimpleDdlRelations", result.missingSimpleDdlRelations());
-        json.put("extraAntlrDdlRelations", result.extraAntlrDdlRelations());
+        json.put("relationCount", relations.size());
         json.put("warningCodes", warningCodes(ddlWarnings));
-        json.put("primaryWarningCodes", warningCodes(primaryWarnings));
         return toJson(json);
     }
 
@@ -277,15 +254,12 @@ public final class MySqlBasicCorrectnessFixtureExporter {
             String caseId,
             Path fixturePath
     ) throws Exception {
-        ShadowSqlRelationParser parser = (ShadowSqlRelationParser) adaptor.sqlRelationParser();
         List<WarningMessage> warnings = new ArrayList<>();
         AdaptorContext context = new AdaptorContext(scope, Map.of(), warnings::add);
         ScanConfig config = config(scope.schema());
-        int simpleRelations = 0;
-        int antlrRelations = 0;
-        Set<String> missing = new TreeSet<>();
-        Set<String> extra = new TreeSet<>();
+        int relationCount = 0;
         int line = 1;
+        SqlRelationParserRunner runner = new SqlRelationParserRunner();
         for (SqlSample sample : samples) {
             SqlStatementRecord statement = new SqlStatementRecord(
                     sample.sql(),
@@ -298,11 +272,7 @@ public final class MySqlBasicCorrectnessFixtureExporter {
                 line++;
                 continue;
             }
-            ShadowSqlRelationParser.Result result = parser.parseWithDiagnostics(statement, context);
-            simpleRelations += result.primaryCount();
-            antlrRelations += result.shadowCount();
-            result.missingSimpleRelations().forEach(value -> missing.add(sample.source() + " :: " + value));
-            result.extraAntlrRelations().forEach(value -> extra.add(sample.source() + " :: " + value));
+            relationCount += runner.parse(adaptor, config, statement, context).size();
             line++;
         }
 
@@ -311,10 +281,7 @@ public final class MySqlBasicCorrectnessFixtureExporter {
         json.put("fixture", fixturePath.toString());
         json.put("fixtureSha256", sha256(sqlFixture));
         json.put("sqlSamples", samples.size());
-        json.put("simpleRelations", simpleRelations);
-        json.put("antlrRelations", antlrRelations);
-        json.put("missingSimpleRelations", List.copyOf(missing));
-        json.put("extraAntlrRelations", List.copyOf(extra));
+        json.put("relationCount", relationCount);
         json.put("warningCodes", warningCodes(warnings));
         return toJson(json);
     }

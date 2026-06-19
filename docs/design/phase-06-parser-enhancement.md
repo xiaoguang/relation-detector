@@ -104,7 +104,7 @@ public record StructuredSqlEvent(
 - `COLUMN_EQUALITY`：识别出的 `alias.column = alias.column` 谓词。
 - `DDL_FOREIGN_KEY` / `DDL_INDEX`：ANTLR DDL event visitor 识别出的外键、inline references、source index、target unique/primary key 结构化事件。
 - `DYNAMIC_SQL`：为后续可静态还原的动态 SQL 预留；当前不可还原时输出 warning。
-- `PARSER_COMPARISON`：shadow mode 中 primary parser 与 ANTLR parser 的候选数量、缺失 Simple baseline、ANTLR 额外关系对比。
+- `PARSER_COMPARISON`：shadow mode 中 legacy Simple parser 与 ANTLR parser 的候选数量、Simple-only delta、ANTLR-only delta 对比。
 
 ### 为什么 DDL Parser 和 SQL Parser 必须分层
 
@@ -137,14 +137,24 @@ JOIN users u ON ro.user_id = u.id
 JOIN accounts a ON ro.account_id = a.id;
 ```
 
-SQL 抽取目标是 `JOIN`、`WHERE` 等值谓词、`IN`、`EXISTS`、tuple comparison、CTE/derived table lineage、`UPDATE FROM`、`DELETE USING`、`MERGE USING`、`INSERT ... SELECT` 的 source-target 关系，以及不能确定列时的表级 `CO_OCCURRENCE`。这里的 `ro.user_id = u.id` 必须先经过 alias 和 CTE lineage 才能回溯到 `orders.user_id -> users.id`，置信度也应低于显式 FK。
+SQL 抽取目标是 `JOIN`、`WHERE` 等值谓词、`IN`、`EXISTS`、tuple comparison、CTE/derived table lineage、`UPDATE FROM`、`DELETE USING`、`MERGE USING`、`INSERT ... SELECT` 的 source-target 关系，以及不能确定列时的 `CO_OCCURRENCE`。这里的 `ro.user_id = u.id` 必须先经过 alias 和 CTE lineage 才能回溯到 `orders.user_id -> users.id`，置信度也应低于显式 FK。
+
+`CO_OCCURRENCE` 分两层：如果 SQL 只有多个表共同出现，或者 `JOIN USING` / `NATURAL JOIN` 无法给出可归一的列端点，则输出表级 `SQL_LOG_TABLE_CO_OCCURRENCE`；如果 SQL 明确给出两个可解析物理列的等值谓词，但两侧命名和约束不足以判断 FK-like 方向，可输出列级 `SQL_LOG_COLUMN_CO_OCCURRENCE`。MySQL 方言 visitor 当前已启用该列级弱共现，用于 `warehouse_inventory.product_id = order_items.product_id` 这类场景，分值 `0.40`；其它方言必须补自己的 golden 审核后再启用，避免批量重刷既有正确性基线。
+
+外部材料中常见的 `Affected_Tables`、`Join_Relationships`、`Data_Lineage` 三段式输出可以作为产品概念参考，但当前系统的正式输出仍是统一的 `RelationshipCandidate` 和 `Evidence`。`Affected_Tables` 这类写操作摘要后续可以独立设计；本阶段不会把 `DELETE o, oi` 输出成新的顶层 JSON 字段。
+
+`RelationshipCandidate.source -> target` 表示系统归一后的关系方向，不表示 SQL 文本中等号左右顺序，也不表示级联删除的业务影响方向。对于 FK-like JOIN，方向保持“引用列/外键样列 -> 被引用键列”：即使 SQL 写成 `u.id = o_summary.user_id`，lineage 还原后仍输出 `orders.user_id -> users.id`；即使业务上是从父订单删除影响订单明细，`orders.id = order_items.order_id` 仍输出 `order_items.order_id -> orders.id`。
+
+对照写法的要求也按语义区分：`INNER JOIN` 可以使用传统 comma join 作为等价 fixture；非 `INNER JOIN` 的反连接/孤儿清理不强造 comma join，而使用语义等价的子查询，例如 `LEFT JOIN ... IS NULL` 对应 `NOT EXISTS`。
+
+复杂 `UPDATE` 中的派生表穿透也遵守这个边界。窗口函数或聚合列本身不成为关系端点，但派生表投影出的普通列可以回溯到物理表：`latest_orders.order_id` 可回溯为 `orders.id`，`sm.product_id` 可回溯为 `supplier_manifests.product_id`。因此显式 `INNER JOIN` 版本和把 inner 部分改写成 comma join + `WHERE` 等值谓词的版本，应产生相同 relationship fingerprints；原本的 `LEFT JOIN` 对照则使用等价 correlated subquery，不强造 comma left join。
 
 两条链路最终都输出 `RelationshipCandidate`，但中间语义不同：
 
 - evidence type 不同：DDL 会产生 `DDL_FOREIGN_KEY`、`DDL_INDEX` 等结构证据；SQL 会产生 `SQL_LOG_JOIN`、`VIEW_JOIN`、`PROCEDURE_JOIN`、`SQL_LOG_EXISTS` 等行为证据。
 - confidence 不同：DDL 显式 FK 通常接近确定；SQL JOIN 需要结合 metadata、索引、命名、类型和出现次数做递增增强。
 - 失败策略不同：某张表的 DDL 解析失败只影响该 DDL source；SQL log 中一条截断语句失败不能影响其它日志；routine 中动态 SQL 无法静态还原时应记录对象级 warning。
-- primary 切换不同：DDL primary 要看 `missingSimpleDdlRelations`；SQL primary 要看 `missingSimpleRelations`。任一侧归零都不能证明另一侧可以切 primary。
+- 验收边界不同：SQL correctness fixture 验证 SQL relation visitor，DDL correctness fixture 验证 DDL event visitor 与 DDL relation extraction。两者都以 ANTLR golden 为准，但任一侧的通过结果都不能替代另一侧验收。
 
 ### ANTLR entry rule 与调用关系
 
@@ -182,8 +192,8 @@ flowchart TD
   ddlRelations["DdlRelationExtractionVisitor"]
   sqlRunner["SqlRelationParserRunner"]
   ddlRunner["DdlRelationParserRunner"]
-  sqlDiag["missingSimpleRelations / extraAntlrRelations"]
-  ddlDiag["missingSimpleDdlRelations / extraAntlrDdlRelations"]
+  sqlDiag["SQL_PARSE_FAILED warnings"]
+  ddlDiag["DDL_PARSE_FAILED warnings"]
 
   scan --> adaptor
   adaptor --> sqlSpi
@@ -204,34 +214,28 @@ flowchart TD
 
 运行模式：
 
-- `parser.sql.mode: simple`：只运行 `SimpleSqlRelationParser`，不执行 ANTLR 结构化解析。用于保守回归、排查 ANTLR 相关开销或差异。
-- `parser.sql.mode: antlr-shadow`：返回 Simple 结果，同时完整运行 ANTLR structured parser 和 `RelationExtractionVisitor`，并通过 `PARSER_COMPARISON` 记录 `primaryCount`、`shadowCount`、`missingSimpleRelations`、`extraAntlrRelations`。该模式保留为回归对比和问题定位工具。
-- `parser.sql.mode: antlr-primary`：MySQL/PostgreSQL 的默认灰度模式。返回 ANTLR 抽取结果；如果 `parser.sql.fallbackOnFailure: true` 且 ANTLR 缺失 Simple baseline，则记录 `ANTLR_PRIMARY_FALLBACK` warning，保留 `attributes.rawStatement` 和 `attributes.missingSimpleRelations`，最终返回 Simple 结果。SQL Server/Oracle adaptor 仍处于 future/fallback 阶段，不因 MySQL/PostgreSQL 通过而自动切 primary。
-
-DDL parser 有独立运行模式，不能用 SQL primary 验收代替：
-
-- `parser.ddl.mode: simple-ddl`：只运行现有 DDL parser，不执行 ANTLR DDL 结构化抽取。
-- `parser.ddl.mode: antlr-ddl-shadow`：返回现有 DDL parser 结果，同时运行 ANTLR DDL structured parser 和 `DdlRelationExtractionVisitor`，并通过 `PARSER_COMPARISON` 记录 `missingSimpleDdlRelations`、`extraAntlrDdlRelations`。
-- `parser.ddl.mode: antlr-ddl-primary`：默认灰度模式。返回 ANTLR DDL 抽取结果；如果 `parser.ddl.fallbackOnFailure: true` 且 ANTLR DDL 缺失 Simple DDL baseline，则记录 `ANTLR_DDL_PRIMARY_FALLBACK` warning，保留 `attributes.rawStatement` 和 `attributes.missingSimpleDdlRelations`，最终返回现有 DDL parser 结果。
-
-DDL 切 primary 的门槛是 DDL 自己的 golden comparison 持续归零；SQL 切 primary 的门槛是 SQL 自己的 `missingSimpleRelations` 持续归零。两条线共享“ANTLR 可以多识别，但不能少于 Simple baseline”的原则，但 diagnostics 字段和测试矩阵分别维护。
+- SQL 与 DDL parser 不再提供 `simple`、`shadow` 或 fallback 配置。`parser.sql.mode`、`parser.ddl.mode`、`parser.sql.fallbackOnFailure`、`parser.ddl.fallbackOnFailure` 属于已移除配置；YAML 中出现时应显式报错，CLI 也不再接受对应覆盖参数。
+- MySQL/PostgreSQL SQL 均走对应方言 ANTLR SQL parser：`MySqlAntlrSqlParser` / `PostgresAntlrSqlParser` -> `MySqlRelationExtractionVisitor` / `PostgresRelationExtractionVisitor` -> `SqlRelationParserRunner`。
+- MySQL/PostgreSQL DDL 均走对应方言 ANTLR DDL parser：`MySqlAntlrDdlParser` / `PostgresAntlrDdlParser` -> `DdlStructuredEventVisitor` 方言子类 -> `DdlRelationExtractionVisitor` -> `DdlRelationParserRunner`。
+- ANTLR 硬失败不回退 legacy parser。SQL 失败记录 `SQL_PARSE_FAILED`，DDL 失败记录 `DDL_PARSE_FAILED`，并保留 `rawStatement` / `exceptionClass` 等 provenance，然后继续扫描其它输入。
+- SQL Server/Oracle 只保留 SPI 和 future adaptor 边界；没有对应 ANTLR adaptor 前，不再用 legacy simple parser 假装支持。
 
 当前落地边界：
 
 - `relation-core` 使用 ANTLR 4 Maven plugin 生成三个 SQL grammar：
-  - `RelationSql.g4`：core fallback tolerant grammar，保留给未知/后续数据库和通用测试。
-  - `MySqlRelationSql.g4`：MySQL shadow grammar。第一期只做结构化 token/parser 分离，已把反引号 identifier 作为 MySQL quoted identifier；双引号是否作为 identifier 留给后续 `ANSI_QUOTES` capability flag。
-  - `PostgresRelationSql.g4`：PostgreSQL shadow grammar。第一期已把双引号 identifier 和 dollar-quoted string 放在 PostgreSQL grammar 中；反引号不会被 PostgreSQL structured event visitor 当作表名。
+  - `RelationSql.g4`：容错基础 grammar，供共享结构化 parser 骨架和通用测试使用。
+  - `MySqlRelationSql.g4`：MySQL 方言 grammar，已把反引号 identifier 作为 MySQL quoted identifier；双引号是否作为 identifier 留给后续 `ANSI_QUOTES` capability flag。
+  - `PostgresRelationSql.g4`：PostgreSQL 方言 grammar，已把双引号 identifier 和 dollar-quoted string 放在 PostgreSQL grammar 中；反引号不会被 PostgreSQL structured event visitor 当作表名。
 - `AntlrStructuredSqlParser` 是抽象的结构化解析骨架：负责动态 SQL warning、统一 attributes、统一 `StructuredParseResult`。
 - `MySqlAntlrSqlParser` / `PostgresAntlrSqlParser` 分别调用自己的 generated lexer/parser，并通过 `attributes.grammar`、`attributes.lexer`、`attributes.parser` 暴露真实后端。
 - `StructuredSqlEventVisitor` 负责从 ANTLR token stream 抽取 `TABLE_REFERENCE` / `COLUMN_EQUALITY`。MySQL/PostgreSQL 分别有 `MySqlStructuredSqlEventVisitor` / `PostgresStructuredSqlEventVisitor`，用于隔离 identifier token 和 unquote 规则。当前已覆盖 comma table reference、multi-table DML、MERGE USING，以及跳过 `LATERAL` 这类 rowset modifier，避免把它当成物理表。
-- `RelationExtractionVisitor` 已不再委托 `SimpleSqlRelationParser`。它从 `TABLE_REFERENCE`、`COLUMN_EQUALITY` 事件独立构造基础 FK-like / CO_OCCURRENCE 候选；方向判断、source type 映射、evidence score 与 Simple parser 保持一致，并复用 `SqlLineageResolver` 处理可安全回溯的 CTE/派生表列。
+- `RelationExtractionVisitor` 从 `TABLE_REFERENCE`、`COLUMN_EQUALITY` 事件独立构造基础 FK-like / CO_OCCURRENCE 候选；方向判断、source type 映射、evidence score 使用共享语义，并复用 `SqlLineageResolver` 处理可安全回溯的 CTE/派生表列。
 - `correlated EXISTS` 的关系抽取属于公共 SQL 语义，而不是 PostgreSQL 专属能力。公共 visitor 可以识别 `WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = o.user_id)` 这类跨方言谓词，并生成 `SQL_LOG_EXISTS`；但 EXISTS 子查询内部的 rowset/function/hint/identifier 方言语法仍必须由 `MySqlRelationExtractionVisitor` / `PostgresRelationExtractionVisitor` 处理，例如 PostgreSQL `ONLY` / `UNNEST` / set-returning function，或 MySQL `JSON_TABLE` / `PARTITION` / index hint。
 - `AntlrStructuredDdlParser` 按方言选择 `DdlStructuredEventVisitor` 子类并输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 事件；`DdlRelationExtractionVisitor` 独立转换这些事件，覆盖 `CREATE TABLE ... FOREIGN KEY`、inline `REFERENCES`、`ALTER TABLE ... ADD CONSTRAINT`、`CREATE UNIQUE INDEX` 等核心 DDL 形态。
-- MySQL/PostgreSQL adaptor 已拆出 `MySqlRelationExtractionVisitor` / `PostgresRelationExtractionVisitor`。公共 visitor 只保留跨方言关系语义和标准 `FROM/JOIN` 兜底；MySQL-only 的 `STRAIGHT_JOIN`、ODBC `{ OJ ... }`、optimizer index hints、`PARTITION (...)`、`JSON_TABLE(...)`、MySQL multi-table `UPDATE ... JOIN`、comma `UPDATE`、`DELETE alias FROM`、`DELETE FROM alias USING` breadth baseline，以及 PostgreSQL-only 的 `ONLY`、`TABLESAMPLE`、`JOIN USING (...) AS alias`、`LATERAL`、`UNNEST` / `ROWS FROM` / set-returning rowset、`MATERIALIZED` CTE 边界，都由各自子类通过 protected hooks 或窄 guard 承接。换句话说，`EXISTS` 外壳是公共关系抽取语义，`EXISTS` 内部如何识别真实 rowset 与排除伪表是方言责任。
+- MySQL/PostgreSQL adaptor 已拆出 `MySqlRelationExtractionVisitor` / `PostgresRelationExtractionVisitor`。公共 visitor 只保留跨方言关系语义和标准 `FROM/JOIN` 兜底；MySQL-only 的 `STRAIGHT_JOIN`、ODBC `{ OJ ... }`、optimizer index hints、`PARTITION (...)`、`JSON_TABLE(...)`、MySQL multi-table `UPDATE ... JOIN`、comma `UPDATE`、`DELETE alias FROM`、`DELETE FROM alias USING`，以及 PostgreSQL-only 的 `ONLY`、`TABLESAMPLE`、`JOIN USING (...) AS alias`、`LATERAL`、`UNNEST` / `ROWS FROM` / set-returning rowset、`MATERIALIZED` CTE 边界，都由各自子类通过 protected hooks 或窄 guard 承接。泛化表级 `CO_OCCURRENCE` 只在没有更强列级关系时作为兜底；多表 DML 如果已经抽出明确 FK-like 谓词，不再额外补间接表对表共现。换句话说，`EXISTS` 外壳是公共关系抽取语义，`EXISTS` 内部如何识别真实 rowset 与排除伪表是方言责任。
 - DDL 方言差异不进入 `DdlRelationExtractionVisitor`。MySQL-only 的 `KEY`/`INDEX` inline definition、`VISIBLE`/`INVISIBLE`、`USING BTREE/HASH` before `ON` 等由 `MySqlDdlStructuredEventVisitor` 或 `MySqlDdlParser` 承接；PostgreSQL-only 的 `CONCURRENTLY`、`ON ONLY`、`INCLUDE`、partial index `WHERE`、`NOT VALID` 等由 `PostgresDdlStructuredEventVisitor` 或 `PostgresDdlParser` 承接。
-- `ShadowSqlRelationParser` 默认返回 primary parser 结果，同时生成 ANTLR comparison diagnostics。diagnostics 会记录 `relationVisitor`，用于确认 shadow path 走的是数据库自己的 visitor，并记录 Simple baseline 缺失项，作为是否允许切 primary 的硬门槛。
-- `DdlRelationParserRunner` 默认返回现有 DDL parser 结果，同时生成 DDL comparison diagnostics。diagnostics 会记录 `missingSimpleDdlRelations`，作为是否允许 DDL 切 primary 的硬门槛。
+- `SqlRelationParserRunner` 不做 mode switching 或 comparison diagnostics；它负责 SQL log 噪声过滤、注入系统 schema 配置，并调用 adaptor 的 ANTLR SQL parser。
+- `DdlRelationParserRunner` 不做 mode switching 或 comparison diagnostics；它负责调用 adaptor 的 ANTLR DDL parser，并把 `DATABASE_DDL` / `DDL_FILE` source type 写入 evidence。
 
 ### 为什么 RelationExtractionVisitor 里仍然有正则
 
@@ -248,7 +252,7 @@ ANTLR lexer/parser
 
 - 当前 `RelationSql.g4`、`MySqlRelationSql.g4`、`PostgresRelationSql.g4` 仍是容错迁移 grammar，不是完整 MySQL/PostgreSQL 官方语法树。日志截断、routine/procedure 混合语法、动态 SQL、方言局部语法都要求 parser 能尽量产出诊断，而不是遇到一个不完整节点就丢弃整条语句。
 - ANTLR 给出的只是语法结构，不直接给出业务关系语义。`o.user_id = u.id` 是否应变成 `orders.user_id -> users.id`、方向如何判断、是否要降级为表级共现，仍依赖命名、metadata、lineage、source type 和 evidence scoring。
-- 一些关系抽取能力暂时还需要语义兜底，例如 tuple `IN`、correlated `EXISTS`、raw equality、`JOIN USING` 表级共现、CTE/local temp rowset 忽略、系统 schema 和截断 token 过滤、derived/LATERAL alias 防伪表。这些逻辑必须在 ANTLR relation visitor 层独立于 `SimpleSqlRelationParser` 存在，以保证 `antlr-primary` 不是借 Simple parser 间接通过。
+- 一些关系抽取能力暂时还需要语义兜底，例如 tuple `IN`、correlated `EXISTS`、raw equality、`JOIN USING` 表级共现、CTE/local temp rowset 忽略、系统 schema 和截断 token 过滤、derived/LATERAL alias 防伪表。这些逻辑必须在 ANTLR relation visitor 层维护，并由 correctness fixture 作为 gold 保护。
 
 允许保留的正则范围：
 
@@ -257,9 +261,9 @@ ANTLR lexer/parser
 - 方言规则必须配套反向负向测试：新增 MySQL-only rowset/DML/hint fallback 时，`PostgresRelationExtractionVisitor` 测试要证明不会输出 `JSON_TABLE`、partition 名、hint token、ODBC wrapper、delete target alias 等伪表关系；新增 PostgreSQL-only pattern 时，也必须有 MySQL 负向测试证明不会继承该能力。
 - `EXISTS` span 还承担重复计分保护：同一相关子查询谓词已经生成 `SQL_LOG_EXISTS` 时，raw equality / join fallback 不能再把同一 endpoint pair 生成普通 `SQL_LOG_JOIN`。当前 `SQL_LOG_EXISTS = 0.58`，高于普通 `SQL_LOG_JOIN = 0.55`；保留更具体的 EXISTS evidence 并去掉重复 JOIN evidence，是为了避免同一 SQL predicate 虚高计分，而不是丢弃真实证据。
 - 数据库专属 DDL 语法必须进入对应 structured DDL event visitor 或 adaptor DDL parser，例如 MySQL 的 `VISIBLE` / `INVISIBLE` / inline `KEY`，或 PostgreSQL 的 `CONCURRENTLY` / `ON ONLY` / `INCLUDE` / partial index。
-- 必须有 correctness fixture 或单元测试覆盖，尤其要断言 `missingSimpleRelations=[]`、无非预期 fallback warning，并覆盖负向伪表断言。
+- 必须有 correctness fixture 或单元测试覆盖，尤其要断言 ANTLR golden 稳定、无非预期 parse warning，并覆盖负向伪表断言。
 - 不能把 DDL constraint/index 逻辑写入 SQL visitor；DDL-only regex/scanner 必须进入 DDL visitor/runner 链路。
-- 不能重新调用 `SimpleSqlRelationParser.parse(...)` 作为 ANTLR 关系结果来源。
+- 不能重新引入 legacy parser 作为 ANTLR 关系结果来源或 fallback 裁决层。
 
 长期演进方向：
 
@@ -426,6 +430,38 @@ orders.user_id -> users.id
 ```
 
 当前只支持这种“无本地 FROM、投影是外层 `alias.column`”的简单安全形态。LATERAL body 内部如果包含聚合、窗口函数、表达式投影、多表 JOIN 或 `SELECT *`，仍按普通复杂派生表边界处理，不生成不确定列级 lineage。
+
+### MySQL UPDATE 派生聚合回写示例
+
+MySQL 业务 SQL 中常见把派生聚合结果回写主表：
+
+```sql
+UPDATE users u
+LEFT JOIN (
+  SELECT user_id, SUM(pay_amount) AS actual_total
+  FROM orders
+  WHERE order_status = 'PAID'
+  GROUP BY user_id
+) o_summary ON u.id = o_summary.user_id
+SET u.total_spent = COALESCE(o_summary.actual_total, 0.00);
+```
+
+`o_summary.user_id` 来自单表派生查询 `SELECT user_id FROM orders`，因此 MySQL relation visitor 会在 `UPDATE` 场景中启用受控 lineage：
+
+```text
+o_summary.user_id -> orders.user_id
+orders.user_id -> users.id
+```
+
+这个开关不属于公共默认行为。公共 `RelationExtractionVisitor` 默认仍不把裸列投影当成精确来源；PostgreSQL 和 legacy simple baseline 不因该 MySQL UPDATE 规则被重塑。聚合输出 `actual_total` 仍被视为表达式结果，不参与 FK-like 关系推断。
+
+从业务数据血缘角度，`SUM(pay_amount)` 写入 `users.total_spent` 可以理解为：
+
+```text
+orders.pay_amount -> users.total_spent, transform=SUM
+```
+
+这条血缘是合理的业务解释，但本阶段不进入正式 JSON 输出，也不作为 `RelationshipCandidate`。后续如果要支持正式 `Data_Lineage`，需要另开模型和输出设计，覆盖 `SET` 表达式解析、聚合/函数 transform 表达、目标写入列、以及 golden 验收。
 
 ### 表达式投影不做强推断
 
@@ -666,7 +702,7 @@ evidence: SQL_LOG_JOIN
 
 ## DDL 解析
 
-`SimpleDdlParser` 是 core fallback parser，不是所有数据库方言的最终归宿。它负责识别跨数据库较稳定的 DDL 形态，并保持保守输出。ANTLR DDL primary 链路中，`DdlStructuredEventVisitor` 是结构事件抽取模板；`MySqlDdlStructuredEventVisitor` / `PostgresDdlStructuredEventVisitor` 承接方言 DDL regex 和过滤规则；`DdlRelationExtractionVisitor` 只消费 `DDL_FOREIGN_KEY` / `DDL_INDEX` 事件并生成关系，不参与方言判断。
+ANTLR DDL 链路中，`DdlStructuredEventVisitor` 是结构事件抽取模板；`MySqlDdlStructuredEventVisitor` / `PostgresDdlStructuredEventVisitor` 承接方言 DDL regex 和过滤规则；`DdlRelationExtractionVisitor` 只消费 `DDL_FOREIGN_KEY` / `DDL_INDEX` 事件并生成关系，不参与方言判断。
 
 已经确认属于 MySQL 或 PostgreSQL 的复杂差异，应优先放到对应 structured DDL event visitor 或 adaptor DDL parser 中，再统一输出 `RelationshipCandidate` / `Evidence`。
 
@@ -828,7 +864,7 @@ evidence: SQL_LOG_TABLE_CO_OCCURRENCE
 - LATERAL/correlated derived table 简单列投影 lineage 测试。
 - 函数型 rowset 负向测试，例如 `unnest(...) WITH ORDINALITY` 不输出物理表关系。
 - evidence/confidence 断言测试，包括 source type、joinKind、辅助 evidence 后的最终 confidence。
-- ANTLR shadow golden comparison 测试，确保 shadow path 不少于 primary baseline。
+- ANTLR shadow golden comparison 测试，记录 legacy Simple 与 ANTLR 的 delta；SQL primary 以 ANTLR golden 为准。
 - schema.table 测试。
 - quoted/backtick identifier 测试。
 - subquery alias 测试。

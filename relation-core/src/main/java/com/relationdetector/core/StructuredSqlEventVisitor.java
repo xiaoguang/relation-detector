@@ -118,6 +118,20 @@ public class StructuredSqlEventVisitor {
         if (isKeyword(table.qualifiedName.toLowerCase(Locale.ROOT))) {
             return;
         }
+        if (isFunctionLikeRowset(tokens, table.nextIndex)) {
+            /*
+             * Complete SQL examples:
+             *
+             *   SELECT * FROM json_to_recordset(payload) AS decoded(id bigint)
+             *   SELECT * FROM ROWS FROM (generate_series(1, 3)) AS g(n)
+             *
+             * These names introduce table-function rowsets scoped to the current
+             * statement, not physical database tables. If they become
+             * TABLE_REFERENCE events, the relation visitor can later create fake
+             * table co-occurrence edges such as orders -> json_to_recordset.
+             */
+            return;
+        }
         if (isRowsetModifier(table.qualifiedName)) {
             /*
              * Complete SQL example:
@@ -180,10 +194,28 @@ public class StructuredSqlEventVisitor {
             attributes.put("rightAlias", right.qualifier);
             attributes.put("rightColumn", right.column);
             attributes.put("joinKind", joinKindNear(tokens, i));
+            attributes.put("updateSetAssignment", insideUpdateSetAssignment(tokens, i));
             events.add(new StructuredSqlEvent(StructuredParseEventType.COLUMN_EQUALITY,
                     statement.sourceName(), line(statement, tokens.get(i)), attributes));
         }
         return events;
+    }
+
+    private boolean insideUpdateSetAssignment(List<Token> tokens, int equalityIndex) {
+        int lastUpdate = -1;
+        int lastSet = -1;
+        int lastWhere = -1;
+        for (int i = 0; i < equalityIndex; i++) {
+            String token = lower(tokens.get(i));
+            if ("update".equals(token)) {
+                lastUpdate = i;
+            } else if ("set".equals(token)) {
+                lastSet = i;
+            } else if ("where".equals(token)) {
+                lastWhere = i;
+            }
+        }
+        return lastUpdate >= 0 && lastSet > lastUpdate && lastWhere < lastSet;
     }
 
     /**
@@ -217,7 +249,7 @@ public class StructuredSqlEventVisitor {
             }
         }
         int genericJoin = text.lastIndexOf("join");
-        if (genericJoin > bestIndex) {
+        if (bestIndex < 0 && genericJoin >= 0) {
             best = "INNER_JOIN";
             bestIndex = genericJoin;
         }
@@ -308,6 +340,10 @@ public class StructuredSqlEventVisitor {
         return normalized.equals("lateral")
                 || normalized.equals("unnest")
                 || normalized.equals("json_table");
+    }
+
+    private boolean isFunctionLikeRowset(List<Token> tokens, int nextIndex) {
+        return nextIndex < tokens.size() && tokens.get(nextIndex).getText().equals("(");
     }
 
     private boolean isRowsetComma(List<Token> tokens, int commaIndex) {

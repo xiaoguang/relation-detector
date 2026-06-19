@@ -149,8 +149,7 @@ class ScanEngineObjectWarningProvenanceTest {
 
         @Override
         public SqlRelationParser sqlRelationParser() {
-            return new ShadowSqlRelationParser(
-                    new SimpleSqlRelationParser(),
+            return new AntlrSqlRelationParser(
                     new AntlrStructuredSqlParser(SqlDialect.MYSQL),
                     new RelationExtractionVisitor());
         }

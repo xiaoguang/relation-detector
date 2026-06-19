@@ -33,7 +33,9 @@ import com.relationdetector.api.Enums.StatementSourceType;
  * or function rowset pseudo-relations.
  */
 class DialectSqlRelationParserComplexMatrixTest {
-    private final SimpleSqlRelationParser parser = new SimpleSqlRelationParser();
+    private final AntlrSqlRelationParser parser = new AntlrSqlRelationParser(
+            new AntlrStructuredSqlParser(SqlDialect.MYSQL),
+            new RelationExtractionVisitor());
 
     @Test
     void mysqlNestedCteResolvesBaseRelationsAndDoesNotEmitCtePseudoTables() {

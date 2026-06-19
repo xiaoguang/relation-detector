@@ -1,8 +1,4 @@
 {
   "fixtureSha256": "8b486c94a72fa9ffb53dc8b2151ab564de2ec064d5dedf70d3e61c13f6b13ec2",
-  "missingSimpleRelations": [],
-  "extraAntlrRelations": [],
-  "missingSimpleDdlRelations": [],
-  "extraAntlrDdlRelations": [],
   "warningCodes": {}
 }

@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:blocked_carriers->shipments:SQL_LOG_TABLE_CO_OCCURRENCE",
+    "CO_OCCURRENCE:blocked_carriers.region_id->shipments.region_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
     "FK_LIKE:customers.account_id->accounts.id:SQL_LOG_SUBQUERY_IN",
     "FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN",
     "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_SUBQUERY_IN",

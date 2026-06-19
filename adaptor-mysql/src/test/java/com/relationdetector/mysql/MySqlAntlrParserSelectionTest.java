@@ -11,7 +11,7 @@ import com.relationdetector.api.SqlStatementRecord;
 import com.relationdetector.api.StructuredParseResult;
 import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.StructuredParseEventType;
-import com.relationdetector.core.ShadowSqlRelationParser;
+import com.relationdetector.core.AntlrSqlRelationParser;
 
 /**
  * Verifies that MySQL owns the MySQL-flavored ANTLR parser selection instead of
@@ -83,24 +83,19 @@ class MySqlAntlrParserSelectionTest {
     }
 
     @Test
-    void mysqlShadowParserReportsMysqlRelationVisitorWithoutChangingPrimaryOutput() {
+    void mysqlAdaptorSqlParserUsesAntlrRelationParser() {
         SqlRelationParser parser = new MySqlDatabaseAdaptor().sqlRelationParser();
-        assertTrue(parser instanceof ShadowSqlRelationParser);
+        assertTrue(parser instanceof AntlrSqlRelationParser);
 
-        ShadowSqlRelationParser.Result result = ((ShadowSqlRelationParser) parser).parseWithDiagnostics(
-                new SqlStatementRecord(
-                        "SELECT * FROM `orders` o JOIN `users` u ON o.`user_id` = u.`id`",
-                        StatementSourceType.NATIVE_LOG,
-                        "mysql-shadow.sql",
-                        1,
-                        1,
-                        java.util.Map.of()),
-                null);
+        java.util.List<RelationshipCandidate> relationships = parser.parse(new SqlStatementRecord(
+                "SELECT * FROM `orders` o JOIN `users` u ON o.`user_id` = u.`id`",
+                StatementSourceType.NATIVE_LOG,
+                "mysql-antlr.sql",
+                1,
+                1,
+                java.util.Map.of()), null);
 
-        assertTrue(result.diagnostics().stream().anyMatch(event ->
-                event.type() == StructuredParseEventType.PARSER_COMPARISON
-                        && "MySqlRelationExtractionVisitor".equals(event.attributes().get("relationVisitor"))));
-        assertTrue(result.relationships().stream().anyMatch(relation ->
+        assertTrue(relationships.stream().anyMatch(relation ->
                 relation.source().displayName().equals("orders.user_id")
                         && relation.target().displayName().equals("users.id")));
     }

@@ -36,19 +36,21 @@ import com.relationdetector.api.Enums.StructuredParseEventType;
  * AntlrStructuredSqlParser.parseSql(...)
  *   -> StructuredSqlEventVisitor.extractEvents(...)
  *   -> RelationExtractionVisitor.extract(...)
- *   -> ShadowSqlRelationParser / SqlRelationParserRunner
+ *   -> SqlRelationParserRunner
  * }</pre>
  *
- * <p>This class is intentionally independent from {@link SimpleSqlRelationParser}.
- * It may reuse shared semantic helpers such as {@link SqlLineageResolver}, but
- * it must not call the legacy parser's parse method. That boundary is what lets
- * shadow mode honestly report whether ANTLR is ready to become primary.
+ * <p>This class consumes ANTLR structured events directly. It may reuse shared
+ * semantic helpers such as {@link SqlLineageResolver}; the ANTLR path is the
+ * only SQL parser correctness baseline.
  */
 public class RelationExtractionVisitor {
     private static final Pattern CTE_NAME = Pattern.compile(
-            "(?is)(?:\\bwith\\s+(?:recursive\\s+)?|,\\s*)([`\"\\w]+)(?:\\s*\\([^)]*\\))?\\s+as\\s*\\(");
+            "(?is)(?:\\bwith\\s+(?:recursive\\s+)?|,\\s*)([`\"\\w]+)(?:\\s*\\([^)]*\\))?\\s+as\\s*"
+                    + "(?:(?:not\\s+)?materialized\\s+)?\\(");
     private static final Pattern TEMP_TABLE_NAME = Pattern.compile(
             "(?is)\\bcreate\\s+(?:temporary|temp)\\s+table\\s+(?:if\\s+not\\s+exists\\s+)?([`\"\\w.]+)");
+    private static final Pattern TRIGGER_TARGET_TABLE = Pattern.compile(
+            "(?is)\\bcreate\\s+(?:or\\s+replace\\s+)?trigger\\b.*?\\bon\\s+([`\"\\w.]+)");
     private static final Pattern EXISTS_START = Pattern.compile("(?is)\\bexists\\s*\\(");
     private static final Pattern COMMON_JOIN_USING = Pattern.compile(
             "(?is)\\bjoin\\s+([`\"\\w.]+)(?:\\s+(?:as\\s+)?([`\"\\w]+))?\\s+using\\s*\\(([^)]*)\\)");
@@ -82,9 +84,11 @@ public class RelationExtractionVisitor {
      */
     public List<RelationshipCandidate> extract(SqlStatementRecord statement, StructuredParseResult result) {
         String sql = stripComments(statement.sql());
+        String dialect = result.dialect();
         Set<String> ignoredRowsets = ignoredRowsets(sql);
-        Set<String> systemSchemas = SqlLogNoiseFilter.systemSchemasFromStatementOrDialect(statement, result.dialect());
-        SqlLineageResolver lineage = SqlLineageResolver.analyze(sql, ignoredRowsets);
+        Set<String> systemSchemas = SqlLogNoiseFilter.systemSchemasFromStatementOrDialect(statement, dialect);
+        SqlLineageResolver lineage = SqlLineageResolver.analyze(sql, ignoredRowsets,
+                allowSingleTableUnqualifiedProjectionLineage(sql, dialect));
         Map<String, TableId> aliases = aliasesFromEvents(statement.sql(), result.events(), ignoredRowsets, systemSchemas);
         List<SqlSpan> existsSpans = existsSpansFor(statement.sourceType(), sql);
 
@@ -103,17 +107,22 @@ public class RelationExtractionVisitor {
                 continue;
             }
 
-            boolean leftLooksSource = looksLikeForeignKey(left, right);
-            boolean rightLooksSource = looksLikeForeignKey(right, left);
+            boolean leftLooksSource = looksLikeForeignKey(left, right, dialect);
+            boolean rightLooksSource = looksLikeForeignKey(right, left, dialect);
             String joinKind = textOrDefault(event, "joinKind", "WHERE_OR_UNKNOWN");
             boolean lineageResolved = lineage.hasLineage(leftAlias, leftColumnName)
                     || lineage.hasLineage(rightAlias, rightColumnName);
+            boolean updateSetAssignment = booleanAttribute(event, "updateSetAssignment");
             String predicate = leftAlias + "." + leftColumnName + " = " + rightAlias + "." + rightColumnName;
 
             if (!leftLooksSource && !rightLooksSource) {
-                candidates.add(coOccurrence(statement, Endpoint.table(left.table()), Endpoint.table(right.table()),
+                if (updateSetAssignment && samePhysicalTable(left, right)) {
+                    continue;
+                }
+                candidates.add(ambiguousEqualityCandidate(statement, left, right,
                         "ANTLR ambiguous equality: " + predicate,
-                        Map.of("joinKind", joinKind, "lineageResolved", lineageResolved)));
+                        Map.of("joinKind", joinKind, "lineageResolved", lineageResolved),
+                        dialect));
                 continue;
             }
 
@@ -130,14 +139,47 @@ public class RelationExtractionVisitor {
                     Map.of("joinKind", joinKind, "lineageResolved", lineageResolved)));
             candidates.add(candidate);
         }
-        candidates.addAll(extractExistsSubqueries(statement, sql, aliases, lineage, existsSpans));
+        candidates.addAll(extractExistsSubqueries(statement, sql, aliases, lineage, existsSpans, dialect));
         candidates.addAll(extractTupleInSubqueries(statement, sql, aliases, lineage));
         candidates.addAll(extractScalarInSubqueries(statement, sql, aliases, lineage));
-        addRawEqualityCandidates(statement, sql, aliases, lineage, existsSpans, candidates);
+        addRawEqualityCandidates(statement, sql, aliases, lineage, existsSpans, candidates, dialect);
         addUsingJoinCoOccurrences(statement, sql, result.events(), ignoredRowsets, systemSchemas, candidates);
         addTableCoOccurrenceBaseline(statement, sql, result.events(), result.dialect(), ignoredRowsets, systemSchemas, candidates);
         removeJoinCandidatesCoveredByExists(candidates);
         return candidates;
+    }
+
+    /**
+     * Dialect hook for one intentionally narrow lineage enhancement.
+     *
+     * <p>By default a projection such as {@code SELECT user_id FROM orders} is
+     * not treated as precise lineage, even when the SELECT has one table. That
+     * keeps the shared visitor conservative across dialects. MySQL overrides
+     * this for UPDATE statements that join to a derived aggregate/subquery, for
+     * example {@code UPDATE users u LEFT JOIN (SELECT user_id FROM orders) s
+     * ON u.id = s.user_id ...}.
+     */
+    protected boolean allowSingleTableUnqualifiedProjectionLineage(String sql, String dialect) {
+        return false;
+    }
+
+    /**
+     * Dialect hook for column-level weak co-occurrence.
+     *
+     * <p>The enum is public, but emitting it changes golden output for many
+     * existing fixtures. Dialects opt in after they have coverage proving that
+     * column-level weak evidence is preferred over older table-level fallback.
+     */
+    protected boolean emitColumnCoOccurrenceForAmbiguousEquality(String dialect) {
+        return false;
+    }
+
+    /**
+     * Dialect hook for common {@code *_id = table.id} joins where the source
+     * column does not repeat the target table name.
+     */
+    protected boolean allowGenericIdTargetFk(String dialect) {
+        return false;
     }
 
     /**
@@ -162,6 +204,7 @@ public class RelationExtractionVisitor {
             Set<String> systemSchemas
     ) {
         Map<String, TableId> aliases = new LinkedHashMap<>();
+        addTriggerRowAliases(sql, aliases);
         for (StructuredSqlEvent event : events) {
             if (event.type() != StructuredParseEventType.TABLE_REFERENCE) {
                 continue;
@@ -198,6 +241,39 @@ public class RelationExtractionVisitor {
         return aliases;
     }
 
+    /**
+     * Maps trigger pseudo row aliases back to the physical trigger table.
+     *
+     * <p>Complete SQL example:
+     *
+     * <pre>{@code
+     * CREATE TRIGGER orders_audit_after_insert
+     * AFTER INSERT ON orders
+     * FOR EACH ROW
+     * BEGIN
+     *   SELECT u.email FROM users u WHERE u.id = NEW.user_id;
+     * END
+     * }</pre>
+     *
+     * {@code NEW.user_id} is a column on {@code orders}, not an alias for a
+     * physical table named NEW. The mapping is local to this trigger statement
+     * and lets the normal equality logic emit
+     * {@code orders.user_id -> users.id} with {@code TRIGGER_REFERENCE}
+     * evidence.
+     */
+    private void addTriggerRowAliases(String sql, Map<String, TableId> aliases) {
+        Matcher matcher = TRIGGER_TARGET_TABLE.matcher(sql);
+        if (!matcher.find()) {
+            return;
+        }
+        String qualifiedTable = matcher.group(1);
+        TableId table = TableId.of(schemaName(qualifiedTable), cleanTable(qualifiedTable));
+        aliases.putIfAbsent("new", table);
+        aliases.putIfAbsent("old", table);
+        aliases.putIfAbsent("NEW", table);
+        aliases.putIfAbsent("OLD", table);
+    }
+
     private ColumnRef resolveColumn(
             String alias,
             String columnName,
@@ -227,7 +303,54 @@ public class RelationExtractionVisitor {
     }
 
     /**
-     * Preserves SimpleSqlRelationParser's weak table-level baseline.
+     * Emits column-level weak co-occurrence when an equality predicate gives us
+     * exact physical columns but not enough direction evidence for FK-like.
+     *
+     * <p>Complete SQL example:
+     *
+     * <pre>{@code
+     * UPDATE warehouse_inventory wi
+     * JOIN order_items oi ON wi.product_id = oi.product_id
+     * }</pre>
+     *
+     * The predicate is stronger than table-only co-occurrence because it names
+     * both columns, but it remains weaker than {@code SQL_LOG_JOIN}: neither
+     * side is a clear referenced key, so the parser must not invent FK
+     * direction.
+     */
+    private RelationshipCandidate columnCoOccurrence(
+            SqlStatementRecord record,
+            ColumnRef source,
+            ColumnRef target,
+            String detail,
+            Map<String, Object> attributes
+    ) {
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(source), Endpoint.column(target),
+                RelationType.CO_OCCURRENCE, RelationSubType.COLUMN_CO_OCCURRENCE);
+        candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_COLUMN_CO_OCCURRENCE,
+                BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_COLUMN_CO_OCCURRENCE),
+                sourceType(record.sourceType()), record.sourceName(), detail, attributes));
+        return candidate;
+    }
+
+    private RelationshipCandidate ambiguousEqualityCandidate(
+            SqlStatementRecord record,
+            ColumnRef left,
+            ColumnRef right,
+            String detail,
+            Map<String, Object> attributes,
+            String dialect
+    ) {
+        if (emitColumnCoOccurrenceForAmbiguousEquality(dialect)) {
+            return columnCoOccurrence(record, left, right, detail, attributes);
+        }
+        return coOccurrence(record, Endpoint.table(left.table()), Endpoint.table(right.table()), detail, attributes);
+    }
+
+    /**
+     * Emits conservative table-level co-occurrence for statements where table
+     * participation itself is the available relationship signal.
      *
      * <p>Complete SQL example:
      *
@@ -240,21 +363,15 @@ public class RelationExtractionVisitor {
      *
      * The equality events produce column-level FK-like candidates for
      * {@code orders.user_id -> users.id} and
-     * {@code users.account_id -> accounts.id}. Simple also keeps a weak
-     * {@code orders -> accounts} co-occurrence signal because those physical
-     * tables jointly appear in one statement even though their direct predicate
-     * is not visible. This method rebuilds that conservative baseline from
-     * ANTLR {@code TABLE_REFERENCE} events so {@code missingSimpleRelations}
-     * can stay at zero while ANTLR matures.
+     * {@code users.account_id -> accounts.id}. Once those stronger predicates
+     * exist, this method deliberately does not add a generic
+     * {@code orders -> accounts} table-level edge: that pair is only connected
+     * through the already-extracted path, not by a direct predicate.
      *
-     * <p>The baseline is only used when no stronger relationship has already
-     * been extracted from the statement, except for MySQL legacy multi-table
-     * {@code UPDATE t1, t2 JOIN t3 ...}. That UPDATE shape already has an
-     * accepted fixture contract for preserving the indirect {@code t1 -> t3}
-     * co-occurrence. For ordinary explicit JOIN, CTE, derived-table, and comma
-     * rowset SELECT queries, adding every remaining table pair is too noisy in
-     * {@code antlr-primary}; for example a three-table query with two explicit
-     * joins should not invent extra table-level links between unrelated tables.
+     * <p>Generic breadth is only used when no stronger relationship has already
+     * been extracted from the statement. Ordinary explicit JOIN, CTE,
+     * derived-table, comma rowset SELECT, and multi-table DML queries should
+     * not invent every remaining table pair once column-level evidence exists.
      *
      * <p>CTEs, local temp tables, derived aliases, and function rowsets are
      * filtered before this method sees them by {@link #physicalTablesFromEvents};
@@ -270,7 +387,7 @@ public class RelationExtractionVisitor {
             Set<String> systemSchemas,
             List<RelationshipCandidate> candidates
     ) {
-        if (!candidates.isEmpty() && !keepsTableBreadthBaseline(sql, dialect)) {
+        if (!candidates.isEmpty()) {
             return;
         }
         List<TableId> physicalTables = physicalTablesFromEvents(sql, events, ignoredRowsets, systemSchemas);
@@ -456,13 +573,18 @@ public class RelationExtractionVisitor {
                 && left.normalizedName().equals(right.normalizedName());
     }
 
+    private boolean samePhysicalTable(ColumnRef left, ColumnRef right) {
+        return left.table().normalizedName().equals(right.table().normalizedName());
+    }
+
     private void addRawEqualityCandidates(
             SqlStatementRecord statement,
             String sql,
             Map<String, TableId> aliases,
             SqlLineageResolver lineage,
             List<SqlSpan> existsSpans,
-            List<RelationshipCandidate> candidates
+            List<RelationshipCandidate> candidates,
+            String dialect
     ) {
         Set<String> existing = candidates.stream()
                 .map(this::fingerprint)
@@ -472,6 +594,7 @@ public class RelationExtractionVisitor {
             if (insideAnySpan(matcher.start(), existsSpans)) {
                 continue;
             }
+            boolean updateSetAssignment = insideUpdateSetAssignment(sql, matcher.start());
             String leftAlias = clean(matcher.group(1));
             String leftColumnName = clean(matcher.group(2));
             String rightAlias = clean(matcher.group(3));
@@ -481,13 +604,17 @@ public class RelationExtractionVisitor {
             if (unusableColumnPair(left, right)) {
                 continue;
             }
-            boolean leftLooksSource = looksLikeForeignKey(left, right);
-            boolean rightLooksSource = looksLikeForeignKey(right, left);
+            boolean leftLooksSource = looksLikeForeignKey(left, right, dialect);
+            boolean rightLooksSource = looksLikeForeignKey(right, left, dialect);
             RelationshipCandidate candidate;
             if (!leftLooksSource && !rightLooksSource) {
-                candidate = coOccurrence(statement, Endpoint.table(left.table()), Endpoint.table(right.table()),
+                if (updateSetAssignment && samePhysicalTable(left, right)) {
+                    continue;
+                }
+                candidate = ambiguousEqualityCandidate(statement, left, right,
                         "ANTLR raw equality co-occurrence: " + matcher.group(),
-                        Map.of("joinKind", "WHERE_OR_UNKNOWN", "lineageResolved", false));
+                        Map.of("joinKind", "WHERE_OR_UNKNOWN", "lineageResolved", false),
+                        dialect);
             } else {
                 ColumnRef sourceColumn = leftLooksSource && !rightLooksSource ? left : right;
                 ColumnRef targetColumn = leftLooksSource && !rightLooksSource ? right : left;
@@ -539,7 +666,8 @@ public class RelationExtractionVisitor {
             String sql,
             Map<String, TableId> aliases,
             SqlLineageResolver lineage,
-            List<SqlSpan> existsSpans
+            List<SqlSpan> existsSpans,
+            String dialect
     ) {
         List<RelationshipCandidate> candidates = new ArrayList<>();
         for (SqlSpan span : existsSpans) {
@@ -555,12 +683,13 @@ public class RelationExtractionVisitor {
                     continue;
                 }
 
-                boolean leftLooksSource = looksLikeForeignKey(left, right);
-                boolean rightLooksSource = looksLikeForeignKey(right, left);
+                boolean leftLooksSource = looksLikeForeignKey(left, right, dialect);
+                boolean rightLooksSource = looksLikeForeignKey(right, left, dialect);
                 if (!leftLooksSource && !rightLooksSource) {
-                    candidates.add(coOccurrence(statement, Endpoint.table(left.table()), Endpoint.table(right.table()),
+                    candidates.add(ambiguousEqualityCandidate(statement, left, right,
                             "ANTLR ambiguous EXISTS equality: " + matcher.group(),
-                            Map.of("joinKind", "EXISTS", "lineageResolved", false)));
+                            Map.of("joinKind", "EXISTS", "lineageResolved", false),
+                            dialect));
                     continue;
                 }
 
@@ -674,11 +803,18 @@ public class RelationExtractionVisitor {
     private record ColumnPair(String alias, String column) {
     }
 
-    private boolean looksLikeForeignKey(ColumnRef sourceColumn, ColumnRef targetColumn) {
+    private boolean looksLikeForeignKey(ColumnRef sourceColumn, ColumnRef targetColumn, String dialect) {
         if (sourceColumn.table().normalizedName().equals(targetColumn.table().normalizedName())
                 && "id".equalsIgnoreCase(clean(targetColumn.columnName()))) {
             String source = clean(sourceColumn.columnName()).toLowerCase(Locale.ROOT);
             return source.endsWith("_id") && !source.equals("id");
+        }
+        String source = clean(sourceColumn.columnName()).toLowerCase(Locale.ROOT);
+        if (allowGenericIdTargetFk(dialect)
+                && "id".equalsIgnoreCase(clean(targetColumn.columnName()))
+                && source.endsWith("_id")
+                && !source.equals("id")) {
+            return true;
         }
         return looksLikeForeignKey(sourceColumn.columnName(), targetColumn.table().tableName(), targetColumn.columnName());
     }
@@ -794,13 +930,6 @@ public class RelationExtractionVisitor {
     protected void collectDialectIgnoredRowsets(String sql, Set<String> names) {
     }
 
-    /**
-     * Dialect hook for preserving known legacy table-breadth baselines.
-     */
-    protected boolean keepsTableBreadthBaseline(String sql, String dialect) {
-        return false;
-    }
-
     private List<SqlSpan> existsSpansFor(StatementSourceType sourceType, String sql) {
         if (sourceType != StatementSourceType.NATIVE_LOG && sourceType != StatementSourceType.PLAIN_SQL) {
             return List.of();
@@ -824,6 +953,14 @@ public class RelationExtractionVisitor {
             }
         }
         return false;
+    }
+
+    private boolean insideUpdateSetAssignment(String sql, int position) {
+        String prefix = sql.substring(0, Math.max(0, Math.min(position, sql.length()))).toLowerCase(Locale.ROOT);
+        int lastUpdate = prefix.lastIndexOf("update");
+        int lastSet = prefix.lastIndexOf("set");
+        int lastWhere = prefix.lastIndexOf("where");
+        return lastUpdate >= 0 && lastSet > lastUpdate && lastWhere < lastSet;
     }
 
     private int matchingParen(String sql, int openParen) {
@@ -867,6 +1004,11 @@ public class RelationExtractionVisitor {
     private String textOrDefault(StructuredSqlEvent event, String key, String fallback) {
         String value = text(event, key);
         return value.isBlank() ? fallback : value;
+    }
+
+    private boolean booleanAttribute(StructuredSqlEvent event, String key) {
+        Object value = event.attributes().get(key);
+        return value instanceof Boolean booleanValue && booleanValue;
     }
 
     private String stripComments(String sql) {

@@ -17,8 +17,8 @@ import com.relationdetector.api.Enums.StructuredParseEventType;
 /**
  * Proves the ANTLR DDL relation extractor consumes structured DDL events.
  *
- * <p>The raw input intentionally contains no DDL relationship. If this visitor
- * delegates back to SimpleDdlParser, the first test returns no relationship.
+ * <p>The raw input intentionally contains no DDL relationship, proving the
+ * visitor relies on structured events instead of reparsing raw DDL text.
  */
 class DdlRelationExtractionVisitorIndependenceTest {
     @Test
@@ -52,7 +52,7 @@ class DdlRelationExtractionVisitorIndependenceTest {
                         CREATE TABLE orders(user_id BIGINT REFERENCES users(id));
                         """, "raw-has-fk.sql", structured);
 
-        assertTrue(relations.isEmpty(), () -> "Empty ANTLR DDL events must not delegate to SimpleDdlParser: " + relations);
+        assertTrue(relations.isEmpty(), () -> "Empty ANTLR DDL events must not emit relationships: " + relations);
     }
 
     private StructuredParseResult structured(List<StructuredSqlEvent> events) {

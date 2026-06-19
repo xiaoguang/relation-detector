@@ -31,7 +31,7 @@ import com.relationdetector.core.antlr.RelationSqlParser;
  *
  * <pre>{@code
  * adaptor.sqlRelationParser()
- *   -> ShadowSqlRelationParser
+ *   -> AntlrSqlRelationParser
  *      -> AntlrStructuredSqlParser.parseSql(...)
  *      -> RelationExtractionVisitor.extract(...)
  * }</pre>

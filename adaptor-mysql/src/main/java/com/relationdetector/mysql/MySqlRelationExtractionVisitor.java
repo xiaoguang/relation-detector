@@ -17,8 +17,8 @@ import com.relationdetector.core.RelationExtractionVisitor;
  * semantics such as FK-like direction, evidence construction, and lineage. This
  * subclass owns MySQL-only text fallbacks and filters so syntax such as
  * {@code STRAIGHT_JOIN}, ODBC {@code { OJ ... }}, optimizer index hints,
- * {@code JSON_TABLE}, and MySQL legacy multi-table update breadth do not leak
- * into PostgreSQL behavior.
+ * {@code JSON_TABLE}, and MySQL legacy multi-table DML rowsets do not leak into
+ * PostgreSQL behavior.
  */
 public final class MySqlRelationExtractionVisitor extends RelationExtractionVisitor {
     private static final Pattern MYSQL_JOIN_USING = Pattern.compile(
@@ -75,6 +75,41 @@ public final class MySqlRelationExtractionVisitor extends RelationExtractionVisi
         return MYSQL_ROWSET_TEXT_REFERENCE_WITH_ALIAS;
     }
 
+    /**
+     * MySQL UPDATE commonly joins a target table to a derived aggregate:
+     *
+     * <pre>{@code
+     * UPDATE users u
+     * LEFT JOIN (
+     *   SELECT user_id, SUM(pay_amount) AS actual_total
+     *   FROM orders
+     *   GROUP BY user_id
+     * ) o_summary ON u.id = o_summary.user_id
+     * SET u.total_spent = COALESCE(o_summary.actual_total, 0)
+     * }</pre>
+     *
+     * The derived body has exactly one physical table, so the unqualified
+     * projection {@code user_id} can safely resolve to {@code orders.user_id}.
+     * Keeping this hook MySQL+UPDATE scoped prevents the rule from reshaping
+     * unrelated PostgreSQL fixture baselines.
+     */
+    @Override
+    protected boolean allowSingleTableUnqualifiedProjectionLineage(String sql, String dialect) {
+        return "MYSQL".equalsIgnoreCase(dialect)
+                && sql != null
+                && sql.stripLeading().toLowerCase(Locale.ROOT).startsWith("update ");
+    }
+
+    @Override
+    protected boolean emitColumnCoOccurrenceForAmbiguousEquality(String dialect) {
+        return "MYSQL".equalsIgnoreCase(dialect);
+    }
+
+    @Override
+    protected boolean allowGenericIdTargetFk(String dialect) {
+        return "MYSQL".equalsIgnoreCase(dialect);
+    }
+
     @Override
     protected boolean isKeyword(String value) {
         String lower = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
@@ -108,12 +143,6 @@ public final class MySqlRelationExtractionVisitor extends RelationExtractionVisi
                 .map(match -> match.group(1))
                 .map(MySqlRelationExtractionVisitor::cleanDialectIdentifier)
                 .forEach(names::add);
-    }
-
-    @Override
-    protected boolean keepsTableBreadthBaseline(String sql, String dialect) {
-        return "MYSQL".equalsIgnoreCase(dialect)
-                && sql.stripLeading().toLowerCase(Locale.ROOT).startsWith("update ");
     }
 
     private static String cleanDialectIdentifier(String identifier) {

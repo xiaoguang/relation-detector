@@ -33,8 +33,11 @@ import com.relationdetector.api.Enums.StatementSourceType;
  * evidence is attached, RelationshipMerger computes the final confidence.
  */
 class ConfidenceScoringExamplesTest {
-    private final SimpleSqlRelationParser sqlParser = new SimpleSqlRelationParser();
-    private final SimpleDdlParser ddlParser = new SimpleDdlParser();
+    private final AntlrSqlRelationParser sqlParser = new AntlrSqlRelationParser(
+            new AntlrStructuredSqlParser(SqlDialect.MYSQL),
+            new RelationExtractionVisitor());
+    private final AntlrStructuredDdlParser ddlParser = new AntlrStructuredDdlParser(SqlDialect.MYSQL);
+    private final DdlRelationExtractionVisitor ddlVisitor = new DdlRelationExtractionVisitor();
     private final RelationshipMerger merger = new RelationshipMerger();
 
     @Test
@@ -75,7 +78,7 @@ class ConfidenceScoringExamplesTest {
                 """;
 
         List<RelationshipCandidate> candidates = new ArrayList<>();
-        candidates.addAll(ddlParser.parseText(ddl, "ddl-example.sql"));
+        candidates.addAll(parseDdl(ddl, "ddl-example.sql"));
         candidates.addAll(sqlParser.parse(record(sql, StatementSourceType.NATIVE_LOG)));
 
         RelationshipCandidate relation = findMerged(candidates, "orders", "user_id", "users", "id");
@@ -310,7 +313,7 @@ class ConfidenceScoringExamplesTest {
                 );
                 """;
 
-        RelationshipCandidate relation = find(ddlParser.parseText(ddl, "ddl-auxiliary-score-example.sql"),
+        RelationshipCandidate relation = find(parseDdl(ddl, "ddl-auxiliary-score-example.sql"),
                 "orders", "user_id", "users", "id");
 
         assertEvidenceScore("0.10", relation, EvidenceType.SOURCE_INDEX);
@@ -331,6 +334,10 @@ class ConfidenceScoringExamplesTest {
             String targetColumn
     ) {
         return find(sqlParser.parse(record(sql, sourceType)), sourceTable, sourceColumn, targetTable, targetColumn);
+    }
+
+    private List<RelationshipCandidate> parseDdl(String ddl, String sourceName) {
+        return ddlVisitor.extract(ddl, sourceName, ddlParser.parseDdl(ddl, sourceName, null));
     }
 
     private RelationshipCandidate findMerged(

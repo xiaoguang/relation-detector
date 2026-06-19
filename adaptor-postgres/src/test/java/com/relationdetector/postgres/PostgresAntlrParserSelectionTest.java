@@ -13,7 +13,7 @@ import com.relationdetector.api.StructuredParseResult;
 import com.relationdetector.api.Enums.RelationType;
 import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.StructuredParseEventType;
-import com.relationdetector.core.ShadowSqlRelationParser;
+import com.relationdetector.core.AntlrSqlRelationParser;
 
 /**
  * Verifies that PostgreSQL owns PostgreSQL-flavored ANTLR parser selection.
@@ -83,6 +83,32 @@ class PostgresAntlrParserSelectionTest {
     }
 
     @Test
+    void postgresAntlrSqlParserDoesNotEmitFunctionRowsetAsTableReference() {
+        StructuredParseResult result = new PostgresAntlrSqlParser().parseSql(new SqlStatementRecord(
+                """
+                SELECT *
+                FROM orders o
+                LEFT JOIN LATERAL ROWS FROM (
+                  json_to_recordset(o.payload) AS (product_id BIGINT),
+                  generate_series(1, 3)
+                ) AS decoded(product_id, ordinal) ON true
+                JOIN products p ON decoded.product_id = p.id
+                """,
+                StatementSourceType.PLAIN_SQL,
+                "postgres-function-rowset.sql",
+                1,
+                1,
+                java.util.Map.of()), null);
+
+        assertFalse(result.events().stream().anyMatch(event ->
+                event.type() == StructuredParseEventType.TABLE_REFERENCE
+                        && ("json_to_recordset".equalsIgnoreCase(String.valueOf(event.attributes().get("table")))
+                        || "generate_series".equalsIgnoreCase(String.valueOf(event.attributes().get("table")))
+                        || "decoded".equalsIgnoreCase(String.valueOf(event.attributes().get("table"))))),
+                () -> "Postgres table functions must stay scoped rowsets, not physical table events: " + result.events());
+    }
+
+    @Test
     void postgresAntlrSqlParserDoesNotTreatMysqlBackticksAsQuotedIdentifiers() {
         StructuredParseResult result = new PostgresAntlrSqlParser().parseSql(new SqlStatementRecord(
                 "SELECT * FROM `orders` o JOIN `users` u ON o.`user_id` = u.`id`",
@@ -98,24 +124,19 @@ class PostgresAntlrParserSelectionTest {
     }
 
     @Test
-    void postgresShadowParserReportsPostgresRelationVisitorWithoutChangingPrimaryOutput() {
+    void postgresAdaptorSqlParserUsesAntlrRelationParser() {
         SqlRelationParser parser = new PostgresDatabaseAdaptor().sqlRelationParser();
-        assertTrue(parser instanceof ShadowSqlRelationParser);
+        assertTrue(parser instanceof AntlrSqlRelationParser);
 
-        ShadowSqlRelationParser.Result result = ((ShadowSqlRelationParser) parser).parseWithDiagnostics(
-                new SqlStatementRecord(
-                        "SELECT * FROM \"orders\" o JOIN \"users\" u ON o.\"user_id\" = u.\"id\"",
-                        StatementSourceType.NATIVE_LOG,
-                        "postgres-shadow.sql",
-                        1,
-                        1,
-                        java.util.Map.of()),
-                null);
+        java.util.List<RelationshipCandidate> relationships = parser.parse(new SqlStatementRecord(
+                "SELECT * FROM \"orders\" o JOIN \"users\" u ON o.\"user_id\" = u.\"id\"",
+                StatementSourceType.NATIVE_LOG,
+                "postgres-antlr.sql",
+                1,
+                1,
+                java.util.Map.of()), null);
 
-        assertTrue(result.diagnostics().stream().anyMatch(event ->
-                event.type() == StructuredParseEventType.PARSER_COMPARISON
-                        && "PostgresRelationExtractionVisitor".equals(event.attributes().get("relationVisitor"))));
-        assertTrue(result.relationships().stream().anyMatch(relation ->
+        assertTrue(relationships.stream().anyMatch(relation ->
                 relation.source().displayName().equals("orders.user_id")
                         && relation.target().displayName().equals("users.id")));
     }
