@@ -15,7 +15,8 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 class PostgresFullGrammerExpressionAnalyzerTest {
     @Test
     void analyzerReadsCaseExpressionThroughFullGrammerEvents() {
-        var result = new PostgresFullGrammerStructuredSqlParser()
+        var result = new PostgresFullGrammerDialectModule()
+                .sqlParser()
                 .parseSql(statement("""
                 UPDATE users u
                 SET risk_band = CASE WHEN u.risk_score > 80 THEN 'HIGH' ELSE u.risk_band END

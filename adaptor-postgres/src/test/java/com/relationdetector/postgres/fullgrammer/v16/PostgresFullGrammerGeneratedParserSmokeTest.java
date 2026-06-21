@@ -6,15 +6,18 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.jupiter.api.Test;
 
+import com.relationdetector.core.fullgrammer.FullGrammerSyntaxErrorCounter;
+
 class PostgresFullGrammerGeneratedParserSmokeTest {
     @Test
     void generatedParserParsesSimpleSelect() {
         PostgresFullGrammerLexer lexer = new PostgresFullGrammerLexer(CharStreams.fromString("SELECT 1;"));
         PostgresFullGrammerParser parser = new PostgresFullGrammerParser(new CommonTokenStream(lexer));
 
-        parser.root();
+        FullGrammerSyntaxErrorCounter errors = attachCounter(lexer, parser);
 
-        assertEquals(0, parser.getNumberOfSyntaxErrors());
+        parser.root();
+        assertEquals(0, errors.count());
     }
 
     @Test
@@ -29,8 +32,21 @@ class PostgresFullGrammerGeneratedParserSmokeTest {
                 """));
         PostgresFullGrammerParser parser = new PostgresFullGrammerParser(new CommonTokenStream(lexer));
 
-        parser.root();
+        FullGrammerSyntaxErrorCounter errors = attachCounter(lexer, parser);
 
-        assertEquals(0, parser.getNumberOfSyntaxErrors());
+        parser.root();
+        assertEquals(0, errors.count());
+    }
+
+    private FullGrammerSyntaxErrorCounter attachCounter(
+            PostgresFullGrammerLexer lexer,
+            PostgresFullGrammerParser parser
+    ) {
+        FullGrammerSyntaxErrorCounter errors = new FullGrammerSyntaxErrorCounter();
+        lexer.removeErrorListeners();
+        parser.removeErrorListeners();
+        lexer.addErrorListener(errors);
+        parser.addErrorListener(errors);
+        return errors;
     }
 }

@@ -6,6 +6,8 @@ import java.util.Set;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.postgres.fullgrammer.common.PostgresFullGrammerStructuredDdlParser;
+import com.relationdetector.postgres.fullgrammer.common.PostgresFullGrammerStructuredSqlParser;
 
 /**
  * PostgreSQL 16 full-grammer module 注册入口。
@@ -18,6 +20,7 @@ import com.relationdetector.contracts.Enums.DatabaseType;
  * core depends only on FullGrammerDialectModule.
  */
 public final class PostgresFullGrammerDialectModule implements FullGrammerDialectModule {
+    private final PostgresFullGrammerVersionBinding binding = new PostgresFullGrammerVersionBinding();
     private static final SqlGrammarProfile PROFILE = new SqlGrammarProfile(
             "postgresql-16",
             DatabaseType.POSTGRESQL,
@@ -37,11 +40,11 @@ public final class PostgresFullGrammerDialectModule implements FullGrammerDialec
 
     @Override
     public StructuredSqlParser sqlParser() {
-        return new PostgresFullGrammerStructuredSqlParser();
+        return new PostgresFullGrammerStructuredSqlParser(binding);
     }
 
     @Override
     public StructuredDdlParser structuredDdlParser() {
-        return new PostgresFullGrammerStructuredDdlParser();
+        return new PostgresFullGrammerStructuredDdlParser(binding);
     }
 }
