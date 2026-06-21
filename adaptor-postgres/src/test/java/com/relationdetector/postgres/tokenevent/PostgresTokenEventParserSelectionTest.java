@@ -8,9 +8,9 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import com.relationdetector.api.SqlStatementRecord;
-import com.relationdetector.api.Enums.StatementSourceType;
-import com.relationdetector.api.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 class PostgresTokenEventParserSelectionTest {
     @Test

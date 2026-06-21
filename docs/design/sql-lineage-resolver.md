@@ -320,11 +320,11 @@ WHERE a.left_col = a.right_col
 主要测试入口：
 
 ```text
-relation-core/src/test/java/com/relationdetector/core/lineage/SqlLineageResolverTest.java
-relation-core/src/test/java/com/relationdetector/core/lineage/TokenEventDataLineageExtractorTest.java
-relation-core/src/test/java/com/relationdetector/core/tokenevent/TokenEventRelationEventsTest.java
-relation-cli/src/test/java/com/relationdetector/cli/CorrectnessFixtureRunnerTest.java
-relation-cli/src/test/java/com/relationdetector/cli/FullGrammerCorrectnessShadowTest.java
+core/src/test/java/com/relationdetector/core/lineage/SqlLineageResolverTest.java
+core/src/test/java/com/relationdetector/core/lineage/TokenEventDataLineageExtractorTest.java
+core/src/test/java/com/relationdetector/core/tokenevent/TokenEventRelationEventsTest.java
+cli/src/test/java/com/relationdetector/cli/CorrectnessFixtureRunnerTest.java
+cli/src/test/java/com/relationdetector/cli/FullGrammerCorrectnessShadowTest.java
 ```
 
 测试关注点：

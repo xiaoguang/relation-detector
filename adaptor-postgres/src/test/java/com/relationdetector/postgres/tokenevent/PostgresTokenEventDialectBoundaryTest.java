@@ -6,12 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import com.relationdetector.api.RelationshipCandidate;
-import com.relationdetector.api.Collectors.SqlRelationParser;
-import com.relationdetector.api.SqlStatementRecord;
-import com.relationdetector.api.Enums.RelationType;
-import com.relationdetector.api.Enums.StatementSourceType;
-import com.relationdetector.api.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
+import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.Enums.RelationType;
+import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
 

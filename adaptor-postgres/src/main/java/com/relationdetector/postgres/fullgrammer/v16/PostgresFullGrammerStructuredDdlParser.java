@@ -1,6 +1,6 @@
 package com.relationdetector.postgres.fullgrammer.v16;
 
-import com.relationdetector.core.*;
+import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.fullgrammer.*;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
@@ -11,12 +11,12 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import com.relationdetector.api.AdaptorContext;
-import com.relationdetector.api.Collectors.StructuredDdlParser;
-import com.relationdetector.api.StructuredParseResult;
-import com.relationdetector.api.StructuredSqlEvent;
-import com.relationdetector.api.WarningMessage;
-import com.relationdetector.api.Enums.WarningType;
+import com.relationdetector.contracts.spi.AdaptorContext;
+import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
+import com.relationdetector.contracts.parse.StructuredParseResult;
+import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.model.WarningMessage;
+import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerLexer;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser;
 

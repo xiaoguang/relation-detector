@@ -1,5 +1,6 @@
 package com.relationdetector.mysql.tokenevent;
 
+import com.relationdetector.core.parse.SqlDialect;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,9 +10,9 @@ import java.util.Objects;
 
 import org.junit.jupiter.api.Test;
 
-import com.relationdetector.api.SqlStatementRecord;
-import com.relationdetector.api.Enums.StatementSourceType;
-import com.relationdetector.api.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 class MySqlTokenEventParserSelectionTest {
     @Test

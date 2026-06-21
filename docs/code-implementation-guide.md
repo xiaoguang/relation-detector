@@ -9,13 +9,15 @@
 ```text
 relation-detector/
   pom.xml
-  relation-adaptor-api/
-  relation-core/
-  relation-cli/
+  contracts/
+  core/
+  cli/
   adaptor-mysql/
   adaptor-postgres/
   test-fixtures/examples/
 ```
+
+仓库目录采用短名称以提升本地开发体验；Maven `artifactId` 继续保留 `relation-detector-*` 长名称，例如 `core/` 对应 `relation-detector-core`，`adaptor-mysql/` 对应 `relation-detector-adaptor-mysql`。文档和命令里的 repo 路径使用短目录，外部依赖和 Maven dependency tree 使用长 artifactId。
 
 已实现能力：
 
@@ -33,20 +35,22 @@ relation-detector/
 
 ## 2. 模块说明
 
-### 2.1 relation-adaptor-api
+### 2.1 contracts
 
 核心文件：
 
-- `Enums.java`
-- `DatabaseAdaptor.java`
-- `Collectors.java`
-- `RelationshipCandidate.java`
-- `DataLineageCandidate.java`
-- `DataLineageEvidence.java`
-- `Evidence.java`
-- `TableId.java`
-- `ColumnRef.java`
-- `Endpoint.java`
+- `contracts/Enums.java`
+- `contracts/spi/DatabaseAdaptor.java`
+- `contracts/spi/Collectors.java`
+- `contracts/model/RelationshipCandidate.java`
+- `contracts/model/DataLineageCandidate.java`
+- `contracts/model/DataLineageEvidence.java`
+- `contracts/model/Evidence.java`
+- `contracts/model/TableId.java`
+- `contracts/model/ColumnRef.java`
+- `contracts/model/Endpoint.java`
+- `contracts/metadata/MetadataSnapshot.java`
+- `contracts/parse/StructuredSqlEvent.java`
 
 职责：
 
@@ -63,28 +67,33 @@ relation-detector/
 维护注意：
 
 - enum 的 JSON 字符串不能随意改名。
-- `relation-adaptor-api` 不应依赖 `relation-core`，否则第三方 adaptor 会被迫依赖核心实现。
+- `contracts` 不应依赖 `core`，否则第三方 adaptor 会被迫依赖核心实现。
 - 新增数据库 adaptor 时，应只依赖该 API 和必要的工具库。
 
-### 2.2 relation-core
+### 2.2 core
 
 核心文件：
 
-- `ScanEngine.java`
+- `scan/ScanEngine.java`
+- `scan/ScanConfig.java`
+- `scan/ScanResult.java`
 - `relation/RelationshipMerger.java`
 - `lineage/TokenEventDataLineageExtractor.java`
 - `lineage/DataLineageMerger.java`
-- `ConfidenceCalculator.java`
-- `DiagnosticWarnings.java`
-- `AntlrSqlParseSupport.java`
+- `scoring/ConfidenceCalculator.java`
+- `diagnostics/DiagnosticWarnings.java`
+- `parse/AntlrSqlParseSupport.java`
 - `tokenevent/TokenEventStructuredDdlParser.java`
 - `tokenevent/TokenEventStructuredSqlParser.java`
 - `relation/TokenEventRelationExtractor.java`
 - `lineage/SqlLineageResolver.java`
 - `parser/DdlRelationParserRunner.java`
 - `parser/SqlRelationParserRunner.java`
-- `JsonResultWriter.java`
-- `TableResultWriter.java`
+- `output/JsonResultWriter.java`
+- `output/TableResultWriter.java`
+- `log/PlainSqlLogExtractor.java`
+- `log/SqlLogNoiseFilter.java`
+- `metadata/MetadataEvidenceEnhancer.java`
 
 职责：
 
@@ -93,6 +102,12 @@ relation-detector/
 - 合并多个来源产生的关系候选。
 - 计算最终 confidence。
 - 输出 JSON/table。
+
+结构注释入口：
+
+- 每个生产 package 都有中英双语 `package-info.java`，用于说明该包在当前 parser / relationship / lineage / DDL 架构中的职责边界。
+- `docs/design/phase-06-parser-enhancement.md` 的“代码结构注释索引”和“详细函数级调用结构”是这些 package 注释的设计展开。
+- 新增 package 时必须同步新增 `package-info.java`；新增跨包调用路径时必须同步刷新 Phase 6 详细设计。
 
 设计对应：
 
@@ -130,8 +145,9 @@ relation-detector/
 - `mysql.tokenevent.MySqlTokenEventStructuredDdlParser` / `postgres.tokenevent.PostgresTokenEventStructuredDdlParser` 是 adaptor DDL 入口，内部共享 token-event DDL event pipeline。数据库私有 DDL 写法应进入对应 `DdlStructuredEventVisitor` 子类或 adaptor DDL parser，不应回流为一个跨库万能 parser。
 - `JsonResultWriter` 当前手写 JSON，后续可替换为 Jackson，但字段结构应保持兼容。
 - `DiagnosticWarnings` 集中构造解析/提取失败 warning。`ScanEngine`、DDL parser、log extractor 不应各自拼装不同格式；失败时应保留 `exceptionClass`，并在能拿到输入文本时把原始 SQL/DDL 放入 `attributes.rawStatement`。full-grammer profile 选不中时由 parser selection 层 fallback 到 token-event；full-grammer 或 token-event 已选中后的硬失败只影响当前 statement/source，不回退旧 parser，也不混合另一条 parser 的事件。
+- core 根包不再放生产 Java 类。公共能力按职责分到 `scan`、`parser`、`relation`、`lineage`、`ddl`、`tokenevent`、`fullgrammer`、`parse`、`output`、`diagnostics`、`metadata`、`log`、`scoring` 等子包。新增公共类时必须先判断职责归属，不能重新平铺到 `com.relationdetector.core`。
 
-### 2.3 relation-cli
+### 2.3 cli
 
 核心文件：
 
@@ -164,7 +180,7 @@ relation-detector/
 核心文件：
 
 - `MySqlDatabaseAdaptor.java`
-- `META-INF/services/com.relationdetector.api.DatabaseAdaptor`
+- `META-INF/services/com.relationdetector.contracts.spi.DatabaseAdaptor`
 
 职责：
 
@@ -189,7 +205,7 @@ relation-detector/
 核心文件：
 
 - `PostgresDatabaseAdaptor.java`
-- `META-INF/services/com.relationdetector.api.DatabaseAdaptor`
+- `META-INF/services/com.relationdetector.contracts.spi.DatabaseAdaptor`
 
 职责：
 
@@ -324,7 +340,7 @@ test-fixtures/examples/file-only-config.yml
 当前第一版没有打包 fat jar，直接用模块 classpath 运行：
 
 ```bash
-java -cp "relation-cli/target/classes:relation-core/target/classes:relation-adaptor-api/target/classes:adaptor-mysql/target/classes:adaptor-postgres/target/classes" \
+java -cp "cli/target/classes:core/target/classes:contracts/target/classes:adaptor-mysql/target/classes:adaptor-postgres/target/classes" \
   com.relationdetector.cli.Main \
   scan \
   --config test-fixtures/examples/file-only-config.yml \
@@ -362,7 +378,7 @@ java -cp "relation-cli/target/classes:relation-core/target/classes:relation-adap
 ### 4.4 运行 table 输出
 
 ```bash
-java -cp "relation-cli/target/classes:relation-core/target/classes:relation-adaptor-api/target/classes:adaptor-mysql/target/classes:adaptor-postgres/target/classes" \
+java -cp "cli/target/classes:core/target/classes:contracts/target/classes:adaptor-mysql/target/classes:adaptor-postgres/target/classes" \
   com.relationdetector.cli.Main \
   scan \
   --config test-fixtures/examples/file-only-config.yml \
@@ -382,7 +398,7 @@ Warnings: 0
 ### 4.5 写入输出文件
 
 ```bash
-java -cp "relation-cli/target/classes:relation-core/target/classes:relation-adaptor-api/target/classes:adaptor-mysql/target/classes:adaptor-postgres/target/classes" \
+java -cp "cli/target/classes:core/target/classes:contracts/target/classes:adaptor-mysql/target/classes:adaptor-postgres/target/classes" \
   com.relationdetector.cli.Main \
   scan \
   --config test-fixtures/examples/file-only-config.yml \
@@ -575,8 +591,8 @@ PostgreSQL：
 
 - JSON snapshot 测试字段兼容性。
 - JSON evidence 输出测试：`rawEvidence` 是未压缩数组，`evidence` 是摘要数组，`attributes.count` 为数字，`attributes.sampleDetails` 为数组。
-- correctness 明细报告同步测试：修改 `test-fixtures/correctness` 后运行 `mvn -pl relation-cli -Dtest=CorrectnessSummaryGeneratorTest -DupdateCorrectnessSummary=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新轻量索引报告 `docs/generated/correctness-test-summary.md`，再用普通 `mvn test` 校验报告没有漂移。
-- Data Lineage 全量审核报告同步测试：修改 SQL fixture、`expected-lineage.json` 或 `TokenEventDataLineageExtractor` 后运行 `mvn -pl relation-cli -Dtest=DataLineageAuditGeneratorTest -DupdateDataLineageAudit=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新 `docs/parser-audit/data-lineage-full-audit.md`，再运行不带 update 参数的同一测试确认报告稳定。该报告只生成审核清单，不自动写入新的 lineage golden。
+- correctness 明细报告同步测试：修改 `test-fixtures/correctness` 后运行 `mvn -pl cli -Dtest=CorrectnessSummaryGeneratorTest -DupdateCorrectnessSummary=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新轻量索引报告 `docs/generated/correctness-test-summary.md`，再用普通 `mvn test` 校验报告没有漂移。
+- Data Lineage 全量审核报告同步测试：修改 SQL fixture、`expected-lineage.json` 或 `TokenEventDataLineageExtractor` 后运行 `mvn -pl cli -Dtest=DataLineageAuditGeneratorTest -DupdateDataLineageAudit=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新 `docs/parser-audit/data-lineage-full-audit.md`，再运行不带 update 参数的同一测试确认报告稳定。该报告只生成审核清单，不自动写入新的 lineage golden。
 - enum 序列化值稳定性测试。
 - warning code 稳定性测试。
 - 置信度数值允许小范围精度变化，但 subtype 和 evidence 不应无故改变。

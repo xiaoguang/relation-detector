@@ -39,6 +39,33 @@ full-grammer:
 - Simple SQL/DDL parser 和旧 SQL/DDL parser mode 配置不再是当前能力。
 - correctness fixture 以当前 parser golden 为正式基线；full-grammer parity 测试用于保证版本化 grammar 不低于 token-event fallback。
 
+## 本轮代码结构注释审视
+
+本轮把生产代码结构注释统一落在每个 package 的 `package-info.java`，并要求中文 / English 双语说明同一职责边界。检查范围覆盖：
+
+```text
+contracts
+contracts.model / metadata / parse / spi / scoring
+core.scan / parser / tokenevent / fullgrammer / relation / lineage / ddl
+core.parse / log / metadata / output / diagnostics / scoring
+cli
+mysql / mysql.tokenevent / mysql.fullgrammer.v8_0
+postgres / postgres.tokenevent / postgres.fullgrammer.v16
+```
+
+逐包审视结论：
+
+- `contracts` 只承载跨模块契约、模型、SPI、parse result 和默认 score 常量，不依赖 core。
+- `core.scan` 负责扫描编排；`core.parser` 负责 parser mode/profile 选择；二者没有承载数据库版本实现。
+- `core.tokenevent` 与 `core.fullgrammer` 是事件来源基础设施；relationship / lineage 语义被隔离在 `core.relation` 与 `core.lineage`。
+- `core.ddl` 是 token-event DDL event 支撑；DDL relationship 转换仍在 `core.relation.DdlRelationExtractionVisitor`。
+- `adaptor-mysql` / `adaptor-postgres` 根包只做 adaptor 装配；token-event parser 位于各自 `tokenevent` 子包，版本化 full-grammer 位于 `fullgrammer/v8_0` 或 `fullgrammer/v16`。
+- 没有发现 core 直接 import MySQL/PostgreSQL full-grammer implementation 的职责倒置。
+- 没有发现 adaptor 侧重复实现 relationship / lineage semantic extractor。
+- 没有发现 contracts 反向依赖 core 的设计破坏。
+
+本报告和 `phase-06-parser-enhancement.md` 已按上述 package 注释刷新。若后续新增生产 package，必须同步新增 `package-info.java`，并在 Phase 6 的结构表中登记。
+
 ## 需要特别说明的实现事实
 
 ### 1. fallback 只发生在 parser selection 层

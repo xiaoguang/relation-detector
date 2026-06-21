@@ -15,9 +15,9 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import com.relationdetector.api.DatabaseDdlDefinition;
-import com.relationdetector.api.ScanScope;
-import com.relationdetector.api.WarningMessage;
+import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
+import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.contracts.model.WarningMessage;
 
 /**
  * Unit tests for MySQL's live database DDL collector.

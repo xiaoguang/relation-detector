@@ -15,8 +15,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import com.relationdetector.api.MetadataSnapshot;
-import com.relationdetector.api.ScanScope;
+import com.relationdetector.contracts.metadata.MetadataSnapshot;
+import com.relationdetector.contracts.spi.ScanScope;
 
 class MySqlMetadataCollectorFactsTest {
     @Test

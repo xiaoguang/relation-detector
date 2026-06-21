@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import com.relationdetector.api.Enums.StatementSourceType;
-import com.relationdetector.api.Enums.StructuredParseEventType;
-import com.relationdetector.api.SqlStatementRecord;
+import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.parse.SqlStatementRecord;
 
 class MySqlFullGrammerExpressionAnalyzerTest {
     @Test

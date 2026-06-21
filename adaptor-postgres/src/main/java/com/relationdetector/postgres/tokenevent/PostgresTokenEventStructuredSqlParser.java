@@ -7,10 +7,10 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 
 import com.relationdetector.core.tokenevent.PostgresTokenEventSqlEventBuilder;
-import com.relationdetector.core.SqlDialect;
+import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.tokenevent.TokenEventStructuredSqlParser;
-import com.relationdetector.core.AntlrSqlParseSupport.ParsedSql;
-import com.relationdetector.core.AntlrSqlParseSupport.SyntaxErrorCounter;
+import com.relationdetector.core.parse.AntlrSqlParseSupport.ParsedSql;
+import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.core.antlr.postgres.PostgresRelationSqlLexer;
 import com.relationdetector.core.antlr.postgres.PostgresRelationSqlParser;
 

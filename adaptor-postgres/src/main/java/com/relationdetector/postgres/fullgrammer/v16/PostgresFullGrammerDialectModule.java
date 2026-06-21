@@ -1,12 +1,11 @@
 package com.relationdetector.postgres.fullgrammer.v16;
 
-import com.relationdetector.core.*;
 import com.relationdetector.core.fullgrammer.*;
 import java.util.Set;
 
-import com.relationdetector.api.Collectors.StructuredDdlParser;
-import com.relationdetector.api.Collectors.StructuredSqlParser;
-import com.relationdetector.api.Enums.DatabaseType;
+import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
+import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
+import com.relationdetector.contracts.Enums.DatabaseType;
 
 /** PostgreSQL 16 full-grammer module. */
 public final class PostgresFullGrammerDialectModule implements FullGrammerDialectModule {

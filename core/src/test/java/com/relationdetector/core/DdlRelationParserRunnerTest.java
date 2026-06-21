@@ -1,0 +1,163 @@
+package com.relationdetector.core;
+
+import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.ddl.*;
+import com.relationdetector.core.lineage.*;
+import com.relationdetector.core.parser.*;
+import com.relationdetector.core.relation.*;
+
+import com.relationdetector.core.tokenevent.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import com.relationdetector.contracts.spi.AdaptorContext;
+import com.relationdetector.contracts.spi.DatabaseAdaptor;
+import com.relationdetector.contracts.spi.IdentifierRules;
+import com.relationdetector.contracts.metadata.MetadataSnapshot;
+import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.contracts.parse.StructuredParseResult;
+import com.relationdetector.contracts.model.WarningMessage;
+import com.relationdetector.contracts.spi.Collectors.DataProfiler;
+import com.relationdetector.contracts.spi.Collectors.EvidenceWeightAdjuster;
+import com.relationdetector.contracts.spi.Collectors.MetadataCollector;
+import com.relationdetector.contracts.spi.Collectors.ObjectDefinitionCollector;
+import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
+import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
+import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
+import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
+import com.relationdetector.contracts.Enums.AdaptorCapability;
+import com.relationdetector.contracts.Enums.DatabaseType;
+
+class DdlRelationParserRunnerTest {
+    @TempDir
+    Path tempDir;
+
+    @Test
+    void ddlRunnerAlwaysUsesStructuredDdlParser() throws Exception {
+        Path ddl = ddlFile();
+        AtomicInteger structuredCalls = new AtomicInteger();
+        ScanConfig config = new ScanConfig();
+
+        List<RelationshipCandidate> relations = new DdlRelationParserRunner()
+                .parse(new TestAdaptor(emptyStructuredDdlParser(structuredCalls)),
+                        config, ddl, context(new ArrayList<>()));
+
+        assertTrue(relations.isEmpty());
+        assertEquals(1, structuredCalls.get(), "DDL runner should call the adaptor structured DDL parser");
+    }
+
+    @Test
+    void ddlRunnerDoesNotUseRemovedParserWhenStructuredParserFindsNoRelations() throws Exception {
+        Path ddl = ddlFile();
+        AtomicInteger structuredCalls = new AtomicInteger();
+        ScanConfig config = new ScanConfig();
+
+        List<RelationshipCandidate> relations = new DdlRelationParserRunner()
+                .parse(new TestAdaptor(emptyStructuredDdlParser(structuredCalls)),
+                        config, ddl, context(new ArrayList<>()));
+
+        assertTrue(relations.isEmpty(), "empty token-event DDL output must not be replaced by an old parser output");
+        assertEquals(1, structuredCalls.get());
+    }
+
+    private Path ddlFile() throws Exception {
+        Path ddl = tempDir.resolve("schema.sql");
+        Files.writeString(ddl, """
+                CREATE TABLE users(id BIGINT PRIMARY KEY);
+                CREATE TABLE orders(user_id BIGINT REFERENCES users(id));
+                """);
+        return ddl;
+    }
+
+    private StructuredDdlParser emptyStructuredDdlParser(AtomicInteger calls) {
+        return (ddl, sourceName, context) -> {
+            calls.incrementAndGet();
+            return new StructuredParseResult("ANTLR", "MYSQL", sourceName, List.of(), List.of(), Map.of());
+        };
+    }
+
+    private AdaptorContext context(List<WarningMessage> warnings) {
+        return new AdaptorContext(new ScanScope(null, null, List.of(), List.of()), Map.of(), warnings::add);
+    }
+
+    private record TestAdaptor(StructuredDdlParser structuredDdl) implements DatabaseAdaptor {
+        @Override
+        public String id() {
+            return "ddl-test";
+        }
+
+        @Override
+        public String displayName() {
+            return "DDL Test";
+        }
+
+        @Override
+        public java.util.Set<DatabaseType> supportedDatabaseTypes() {
+            return java.util.Set.of(DatabaseType.MYSQL);
+        }
+
+        @Override
+        public java.util.Set<AdaptorCapability> capabilities() {
+            return java.util.Set.of();
+        }
+
+        @Override
+        public IdentifierRules identifierRules() {
+            return identifier -> identifier;
+        }
+
+        @Override
+        public MetadataCollector metadataCollector() {
+            return (connection, scope) -> new MetadataSnapshot();
+        }
+
+        @Override
+        public ObjectDefinitionCollector objectDefinitionCollector() {
+            return (connection, scope) -> List.of();
+        }
+
+        @Override
+        public SqlLogExtractor sqlLogExtractor() {
+            return (file, hint) -> Stream.empty();
+        }
+
+        @Override
+        public SqlRelationParser sqlRelationParser() {
+            return (statement, context) -> List.of();
+        }
+
+        @Override
+        public Optional<StructuredSqlParser> structuredSqlParser() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<StructuredDdlParser> structuredDdlParser() {
+            return Optional.of(structuredDdl);
+        }
+
+        @Override
+        public Optional<DataProfiler> dataProfiler() {
+            return Optional.empty();
+        }
+
+        @Override
+        public EvidenceWeightAdjuster evidenceWeightAdjuster() {
+            return (evidence, context) -> evidence;
+        }
+    }
+}

@@ -17,19 +17,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.relationdetector.api.AdaptorContext;
-import com.relationdetector.api.DatabaseObjectDefinition;
-import com.relationdetector.api.RelationshipCandidate;
-import com.relationdetector.api.ScanScope;
-import com.relationdetector.api.SqlStatementRecord;
-import com.relationdetector.api.WarningMessage;
-import com.relationdetector.api.Enums.DatabaseObjectType;
-import com.relationdetector.api.Enums.DatabaseType;
-import com.relationdetector.api.Enums.EvidenceSourceType;
-import com.relationdetector.api.Enums.StatementSourceType;
+import com.relationdetector.contracts.spi.AdaptorContext;
+import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
+import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.model.WarningMessage;
+import com.relationdetector.contracts.Enums.DatabaseObjectType;
+import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.contracts.Enums.EvidenceSourceType;
+import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.core.parser.DdlRelationParserRunner;
-import com.relationdetector.core.ScanConfig;
-import com.relationdetector.core.SqlLogNoiseFilter;
+import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.log.SqlLogNoiseFilter;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
 
 /**

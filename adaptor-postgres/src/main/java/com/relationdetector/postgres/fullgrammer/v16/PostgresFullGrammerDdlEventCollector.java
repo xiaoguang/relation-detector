@@ -8,8 +8,8 @@ import java.util.Map;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import com.relationdetector.api.Enums.StructuredParseEventType;
-import com.relationdetector.api.StructuredSqlEvent;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
 /** Emits PostgreSQL DDL relationship facts from full-grammer typed parse-tree contexts. */
 final class PostgresFullGrammerDdlEventCollector {

@@ -1,6 +1,6 @@
 package com.relationdetector.mysql.tokenevent;
 
-import com.relationdetector.core.SqlDialect;
+import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
 
 /**

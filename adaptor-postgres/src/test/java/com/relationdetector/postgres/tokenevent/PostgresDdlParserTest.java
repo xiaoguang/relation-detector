@@ -10,13 +10,13 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.relationdetector.api.RelationshipCandidate;
-import com.relationdetector.api.Enums.StructuredParseEventType;
-import com.relationdetector.api.Enums.EvidenceType;
-import com.relationdetector.api.Enums.EvidenceSourceType;
+import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.Enums.EvidenceType;
+import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 import com.relationdetector.core.parser.DdlRelationParserRunner;
-import com.relationdetector.core.ScanConfig;
+import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
 
 /**

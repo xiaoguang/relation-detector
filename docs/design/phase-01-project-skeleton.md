@@ -11,9 +11,9 @@
 ```text
 relation-detector/
   pom.xml
-  relation-adaptor-api/
-  relation-core/
-  relation-cli/
+  contracts/
+  core/
+  cli/
   adaptor-mysql/
   adaptor-postgres/
   test-fixtures/
@@ -45,7 +45,7 @@ relation-detector/
 
 ## 子模块职责
 
-### relation-adaptor-api
+### contracts
 
 只放稳定 API 和少量无业务依赖的类型：
 
@@ -57,9 +57,9 @@ relation-detector/
 - 数据画像接口
 - warning/error 基础类型
 
-该模块不能依赖 `relation-core`，避免第三方 adaptor 被迫依赖 core 内部实现。
+该模块不能依赖 `core`，避免第三方 adaptor 被迫依赖 core 内部实现。
 
-### relation-core
+### core
 
 实现通用核心能力：
 
@@ -71,7 +71,7 @@ relation-detector/
 
 Phase 1 中只提供最小实现，后续 Phase 2 扩展为完整模型。
 
-### relation-cli
+### cli
 
 实现命令行入口：
 

@@ -1,6 +1,5 @@
 package com.relationdetector.mysql.fullgrammer.v8_0;
 
-import com.relationdetector.core.*;
 import com.relationdetector.core.fullgrammer.*;
 import java.util.List;
 import java.util.ArrayList;
@@ -12,13 +11,13 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
-import com.relationdetector.api.AdaptorContext;
-import com.relationdetector.api.Collectors.StructuredSqlParser;
-import com.relationdetector.api.SqlStatementRecord;
-import com.relationdetector.api.StructuredParseResult;
-import com.relationdetector.api.StructuredSqlEvent;
-import com.relationdetector.api.WarningMessage;
-import com.relationdetector.api.Enums.WarningType;
+import com.relationdetector.contracts.spi.AdaptorContext;
+import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
+import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.parse.StructuredParseResult;
+import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.model.WarningMessage;
+import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerLexer;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser;
 

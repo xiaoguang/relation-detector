@@ -6,7 +6,7 @@
 
 ## 总体原则
 
-- adaptor API 独立放在 `relation-adaptor-api`。
+- adaptor API 独立放在 `contracts`。
 - core 只依赖 adaptor API，不依赖具体 adaptor。
 - adaptor 可以参与全链路扩展，但默认流程由 core 编排。
 - core 统一做候选关系归并、最终评分和输出。

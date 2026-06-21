@@ -1,13 +1,12 @@
 package com.relationdetector.mysql.fullgrammer.v8_0;
 
-import com.relationdetector.core.*;
 import com.relationdetector.core.fullgrammer.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.relationdetector.api.SqlStatementRecord;
-import com.relationdetector.api.StructuredSqlEvent;
+import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CommonTableExpressionContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CreateTableContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CreateTriggerContext;

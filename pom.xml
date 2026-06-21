@@ -9,9 +9,9 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>relation-adaptor-api</module>
-    <module>relation-core</module>
-    <module>relation-cli</module>
+    <module>contracts</module>
+    <module>core</module>
+    <module>cli</module>
     <module>adaptor-mysql</module>
     <module>adaptor-postgres</module>
   </modules>

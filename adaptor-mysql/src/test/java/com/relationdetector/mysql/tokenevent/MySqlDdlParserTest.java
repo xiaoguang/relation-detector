@@ -10,8 +10,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.relationdetector.api.RelationshipCandidate;
-import com.relationdetector.api.Enums.EvidenceType;
+import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
 

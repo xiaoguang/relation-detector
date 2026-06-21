@@ -1,13 +1,12 @@
 package com.relationdetector.postgres.fullgrammer.v16;
 
-import com.relationdetector.core.*;
 import com.relationdetector.core.fullgrammer.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.relationdetector.api.SqlStatementRecord;
-import com.relationdetector.api.StructuredSqlEvent;
+import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser.Common_table_exprContext;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser.A_exprContext;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser.DeletestmtContext;

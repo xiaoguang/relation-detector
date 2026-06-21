@@ -1,6 +1,5 @@
 package com.relationdetector.postgres.fullgrammer.v16;
 
-import com.relationdetector.core.*;
 import com.relationdetector.core.fullgrammer.*;
 /*
 PostgreSQL grammar.
