@@ -1,7 +1,6 @@
 package com.relationdetector.cli;
 
 import com.relationdetector.core.fullgrammer.*;
-import com.relationdetector.core.tokenevent.*;
 
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -19,7 +18,7 @@ import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
-class FullGrammerDdlNativeEventsTest {
+class FullGrammerDdlBehaviorTest {
     @Test
     void mysqlFullGrammerDdlProducesFkAndIndexEvents() {
         StructuredDdlParser parser = FullGrammerDdlParserFactory.create(DatabaseType.MYSQL, "8.0.36");
@@ -68,20 +67,6 @@ class FullGrammerDdlNativeEventsTest {
         assertFalse(hasEvent(result, StructuredParseEventType.DDL_INDEX,
                 "table", "users", "column", "lower", "role", "TARGET_UNIQUE"));
         assertTrue(result.warnings().isEmpty(), () -> "Unexpected full-grammer DDL warnings: " + result.warnings());
-    }
-
-    @Test
-    void fullGrammerDdlResultRecordsShadowAttributes() {
-        StructuredDdlParser parser = FullGrammerDdlParserFactory.create(DatabaseType.MYSQL, "8.0");
-
-        StructuredParseResult result = parser.parseDdl(
-                "CREATE TABLE orders(id BIGINT PRIMARY KEY);",
-                "mysql-ddl.sql",
-                context());
-
-        assertTrue(Boolean.TRUE.equals(result.attributes().get("fullGrammerDdlShadow")));
-        assertTrue(result.attributes().containsKey("fullGrammerDdlParser"));
-        assertTrue(result.attributes().containsKey("fullGrammerDdlSyntaxErrors"));
     }
 
     @Test

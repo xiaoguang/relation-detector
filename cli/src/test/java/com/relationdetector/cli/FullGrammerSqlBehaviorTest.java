@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
-import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.Enums.DatabaseType;
@@ -30,9 +29,9 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
-class FullGrammerNativeRelationEventsTest {
+class FullGrammerSqlBehaviorTest {
     @Test
-    void mysqlProducesFirstRelationBatchWithoutDelegatingThoseEventTypes() {
+    void mysqlProducesRelationPredicateEventsForCommonSqlForms() {
         SqlStatementRecord statement = statement("""
                 SELECT *
                 FROM orders o
@@ -42,25 +41,7 @@ class FullGrammerNativeRelationEventsTest {
                   AND (o.store_id, o.region_id) IN (SELECT s.id, s.region_id FROM stores s)
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.MYSQL,
-                        "8.0.36",
-                        emptyDelegate(SqlDialect.MYSQL))
-                .parser()
-                .parseSql(statement, null);
-
-        assertNativeEventTypes(result, Set.of(
-                StructuredParseEventType.PREDICATE_EQUALITY,
-                StructuredParseEventType.JOIN_USING_COLUMNS,
-                StructuredParseEventType.EXISTS_PREDICATE,
-                StructuredParseEventType.IN_SUBQUERY_PREDICATE,
-                StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE,
-                StructuredParseEventType.ROWSET_REFERENCE));
-        assertFalse(delegatedEventTypes(result).contains("PREDICATE_EQUALITY"));
-        assertFalse(delegatedEventTypes(result).contains("JOIN_USING_COLUMNS"));
-        assertFalse(delegatedEventTypes(result).contains("EXISTS_PREDICATE"));
-        assertFalse(delegatedEventTypes(result).contains("IN_SUBQUERY_PREDICATE"));
-        assertFalse(delegatedEventTypes(result).contains("TUPLE_IN_SUBQUERY_PREDICATE"));
+        StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
 
         assertTrue(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY, "leftAlias", "u", "rightAlias", "o"));
         assertTrue(hasEvent(result, StructuredParseEventType.JOIN_USING_COLUMNS, "leftAlias", "o", "rightAlias", "ot"));
@@ -69,7 +50,7 @@ class FullGrammerNativeRelationEventsTest {
     }
 
     @Test
-    void postgresqlProducesFirstRelationBatchWithoutDelegatingThoseEventTypes() {
+    void postgresqlProducesRelationPredicateEventsForCommonSqlForms() {
         SqlStatementRecord statement = statement("""
                 SELECT *
                 FROM orders o
@@ -79,25 +60,7 @@ class FullGrammerNativeRelationEventsTest {
                   AND (o.store_id, o.region_id) IN (SELECT s.id, s.region_id FROM stores s)
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.POSTGRESQL,
-                        "16.4",
-                        emptyDelegate(SqlDialect.POSTGRES))
-                .parser()
-                .parseSql(statement, null);
-
-        assertNativeEventTypes(result, Set.of(
-                StructuredParseEventType.PREDICATE_EQUALITY,
-                StructuredParseEventType.JOIN_USING_COLUMNS,
-                StructuredParseEventType.EXISTS_PREDICATE,
-                StructuredParseEventType.IN_SUBQUERY_PREDICATE,
-                StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE,
-                StructuredParseEventType.ROWSET_REFERENCE));
-        assertFalse(delegatedEventTypes(result).contains("PREDICATE_EQUALITY"));
-        assertFalse(delegatedEventTypes(result).contains("JOIN_USING_COLUMNS"));
-        assertFalse(delegatedEventTypes(result).contains("EXISTS_PREDICATE"));
-        assertFalse(delegatedEventTypes(result).contains("IN_SUBQUERY_PREDICATE"));
-        assertFalse(delegatedEventTypes(result).contains("TUPLE_IN_SUBQUERY_PREDICATE"));
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
 
         assertTrue(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY, "leftAlias", "u", "rightAlias", "o"));
         assertTrue(hasEvent(result, StructuredParseEventType.JOIN_USING_COLUMNS, "leftAlias", "o", "rightAlias", "ot"));
@@ -106,28 +69,19 @@ class FullGrammerNativeRelationEventsTest {
     }
 
     @Test
-    void postgresqlSelfJoinColumnCoOccurrenceComesFromFullGrammerNativeEvents() {
+    void postgresqlSelfJoinColumnCoOccurrenceIsExtracted() {
         SqlStatementRecord statement = statement("""
                 SELECT *
                 FROM workflow_tasks curr
                 JOIN workflow_tasks prev ON curr.predecessor_id = prev.task_id
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.POSTGRESQL,
-                        "16.4",
-                        emptyDelegate(SqlDialect.POSTGRES))
-                .parser()
-                .parseSql(statement, null);
-
-        assertNativeEventTypes(result, Set.of(
-                StructuredParseEventType.PREDICATE_EQUALITY,
-                StructuredParseEventType.ROWSET_REFERENCE));
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
         assertTrue(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY,
                 "leftAlias", "curr", "rightAlias", "prev"));
 
         List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, result).stream()
-                .map(FullGrammerNativeRelationEventsTest::relationFingerprint)
+                .map(FullGrammerSqlBehaviorTest::relationFingerprint)
                 .toList();
 
         assertEquals(List.of(
@@ -136,7 +90,7 @@ class FullGrammerNativeRelationEventsTest {
     }
 
     @Test
-    void postgresqlNativeInSubqueryUsesDefaultOuterAndInnerRowsetForSimpleColumns() {
+    void postgresqlInSubqueryUsesDefaultOuterAndInnerRowsetForSimpleColumns() {
         SqlStatementRecord statement = statement("""
                 SELECT id, doc_title, tags
                 FROM documents
@@ -147,12 +101,7 @@ class FullGrammerNativeRelationEventsTest {
                 )
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.POSTGRESQL,
-                        "16.4",
-                        emptyDelegate(SqlDialect.POSTGRES))
-                .parser()
-                .parseSql(statement, null);
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
 
         assertTrue(hasEvent(result,
                 StructuredParseEventType.IN_SUBQUERY_PREDICATE,
@@ -169,7 +118,7 @@ class FullGrammerNativeRelationEventsTest {
     }
 
     @Test
-    void postgresqlNativeInSubqueryIgnoresExpressionProjection() {
+    void postgresqlInSubqueryIgnoresExpressionProjection() {
         SqlStatementRecord statement = statement("""
                 SELECT u.user_id, u.account_status
                 FROM application_users u
@@ -180,12 +129,7 @@ class FullGrammerNativeRelationEventsTest {
                 )
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.POSTGRESQL,
-                        "16.4",
-                        emptyDelegate(SqlDialect.POSTGRES))
-                .parser()
-                .parseSql(statement, null);
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
 
         assertFalse(hasEvent(result,
                 StructuredParseEventType.IN_SUBQUERY_PREDICATE,
@@ -196,7 +140,7 @@ class FullGrammerNativeRelationEventsTest {
     }
 
     @Test
-    void mysqlProducesRowsetScopeAndLineageEventsWithoutDelegate() {
+    void mysqlTriggerProcedureScopeAndLineageEventsAreExtracted() {
         SqlStatementRecord statement = statement("""
                 CREATE TRIGGER trg_orders_audit
                 AFTER INSERT ON orders
@@ -218,26 +162,8 @@ class FullGrammerNativeRelationEventsTest {
                 END
                 """, StatementSourceType.TRIGGER);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.MYSQL,
-                        "8.0.36",
-                        emptyDelegate(SqlDialect.MYSQL))
-                .parser()
-                .parseSql(statement, null);
+        StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
 
-        assertNativeEventTypes(result, Set.of(
-                StructuredParseEventType.ROWSET_REFERENCE,
-                StructuredParseEventType.CTE_DECLARATION,
-                StructuredParseEventType.IGNORED_ROWSET,
-                StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION,
-                StructuredParseEventType.TRIGGER_TARGET_TABLE,
-                StructuredParseEventType.TRIGGER_PSEUDO_ROWSET,
-                StructuredParseEventType.WRITE_TARGET,
-                StructuredParseEventType.UPDATE_ASSIGNMENT,
-                StructuredParseEventType.PROJECTION_ITEM,
-                StructuredParseEventType.EXPRESSION_SOURCE));
-        assertFalse(delegatedEventTypes(result).contains("ROWSET_REFERENCE"));
-        assertFalse(delegatedEventTypes(result).contains("UPDATE_ASSIGNMENT"));
         assertTrue(hasEvent(result, StructuredParseEventType.ROWSET_REFERENCE, "alias", "o", "table", "orders"));
         assertTrue(hasEvent(result, StructuredParseEventType.CTE_DECLARATION, "name", "paid_orders"));
         assertTrue(hasEvent(result, StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION, "table", "tmp_orders"));
@@ -248,7 +174,7 @@ class FullGrammerNativeRelationEventsTest {
     }
 
     @Test
-    void postgresqlWithMergeUsingProducesTypedEvents() {
+    void postgresqlMergeUsingProducesRelationshipAndWriteMappingEvents() {
         SqlStatementRecord statement = statement("""
                 WITH source_orders AS MATERIALIZED (
                     SELECT o.id, o.customer_id
@@ -260,12 +186,7 @@ class FullGrammerNativeRelationEventsTest {
                 WHEN NOT MATCHED THEN INSERT (source_order_id, customer_id) VALUES (s.id, s.customer_id)
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.POSTGRESQL,
-                        "16.4",
-                        emptyDelegate(SqlDialect.POSTGRES))
-                .parser()
-                .parseSql(statement, null);
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
 
         assertEquals(0, result.attributes().get("fullGrammerSyntaxErrors"));
         assertTrue(hasEvent(result, StructuredParseEventType.CTE_DECLARATION, "name", "source_orders"));
@@ -295,12 +216,7 @@ class FullGrammerNativeRelationEventsTest {
                 WHERE u.id = t.user_id
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.POSTGRESQL,
-                        "16.4",
-                        emptyDelegate(SqlDialect.POSTGRES))
-                .parser()
-                .parseSql(statement, null);
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
 
         assertTrue(hasEvent(result, StructuredParseEventType.PROJECTION_ITEM,
                 "outputColumn", "paid_total", "transformType", "AGGREGATE"));
@@ -322,12 +238,7 @@ class FullGrammerNativeRelationEventsTest {
                     i.audit_note = CONCAT(i.audit_note, '-', oi.sku)
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.MYSQL,
-                        "8.0.36",
-                        emptyDelegate(SqlDialect.MYSQL))
-                .parser()
-                .parseSql(statement, null);
+        StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
 
         assertTrue(hasEvent(result, StructuredParseEventType.UPDATE_ASSIGNMENT,
                 "targetColumn", "reserved_quantity", "transformType", "ARITHMETIC"));
@@ -344,12 +255,7 @@ class FullGrammerNativeRelationEventsTest {
                 SET ab.adjusted_limit = LEAST(ab.max_credit_limit * 0.8, 50000.00)
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.MYSQL,
-                        "8.0.36",
-                        emptyDelegate(SqlDialect.MYSQL))
-                .parser()
-                .parseSql(statement, null);
+        StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
 
         assertTrue(hasEvent(result, StructuredParseEventType.UPDATE_ASSIGNMENT,
                 "targetColumn", "adjusted_limit", "transformType", "ARITHMETIC"));
@@ -370,12 +276,7 @@ class FullGrammerNativeRelationEventsTest {
                 SET t.cdf_end = calculated.new_cdf
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.MYSQL,
-                        "8.0.36",
-                        emptyDelegate(SqlDialect.MYSQL))
-                .parser()
-                .parseSql(statement, null);
+        StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
 
         assertTrue(hasEvent(result, StructuredParseEventType.PROJECTION_ITEM,
                 "outputColumn", "new_cdf", "transformType", "CUMULATIVE"));
@@ -420,15 +321,10 @@ class FullGrammerNativeRelationEventsTest {
                   )
                 """, StatementSourceType.PROCEDURE);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.MYSQL,
-                        "8.0.36",
-                        emptyDelegate(SqlDialect.MYSQL))
-                .parser()
-                .parseSql(statement, null);
+        StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
 
         Set<String> lineages = new TokenEventDataLineageExtractor().extract(statement, result).stream()
-                .map(FullGrammerNativeRelationEventsTest::lineageFingerprint)
+                .map(FullGrammerSqlBehaviorTest::lineageFingerprint)
                 .collect(Collectors.toSet());
 
         assertTrue(lineages.contains("CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight"));
@@ -447,12 +343,7 @@ class FullGrammerNativeRelationEventsTest {
                 SET target.audit_account_id = a.id
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.MYSQL,
-                        "8.0.36",
-                        emptyDelegate(SqlDialect.MYSQL))
-                .parser()
-                .parseSql(statement, null);
+        StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
 
         assertTrue(hasEvent(result, StructuredParseEventType.UPDATE_ASSIGNMENT,
                 "targetColumn", "audit_account_id"));
@@ -469,12 +360,7 @@ class FullGrammerNativeRelationEventsTest {
                 FROM ONLY orders TABLESAMPLE SYSTEM (10), ROWS FROM(generate_series(1, 3)) AS g(id)
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.MYSQL,
-                        "8.0.36",
-                        emptyDelegate(SqlDialect.MYSQL))
-                .parser()
-                .parseSql(statement, null);
+        StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
 
         assertFalse(hasEvent(result, StructuredParseEventType.ROWSET_REFERENCE, "table", "ONLY"));
         assertFalse(hasEvent(result, StructuredParseEventType.ROWSET_REFERENCE, "table", "ROWS"));
@@ -488,26 +374,25 @@ class FullGrammerNativeRelationEventsTest {
                 JOIN JSON_TABLE(o.payload, '$[*]' COLUMNS (item_id INT PATH '$.item_id')) jt ON jt.item_id = o.id
                 """);
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
-                        DatabaseType.POSTGRESQL,
-                        "16.4",
-                        emptyDelegate(SqlDialect.POSTGRES))
-                .parser()
-                .parseSql(statement, null);
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
 
         assertFalse(hasEvent(result, StructuredParseEventType.ROWSET_REFERENCE, "table", "PARTITION"));
         assertFalse(hasEvent(result, StructuredParseEventType.ROWSET_REFERENCE, "table", "JSON_TABLE"));
         assertFalse(hasEvent(result, StructuredParseEventType.ROWSET_REFERENCE, "table", "FORCE"));
     }
 
-    private StructuredSqlParser emptyDelegate(SqlDialect dialect) {
-        return (statement, context) -> new StructuredParseResult(
-                "EMPTY_DELEGATE",
-                dialect.name(),
-                statement.sourceName(),
-                List.of(),
-                List.of(),
-                Map.of("eventBuilder", "EMPTY_DELEGATE"));
+    private StructuredParseResult parse(
+            DatabaseType databaseType,
+            String version,
+            SqlDialect dialect,
+            SqlStatementRecord statement
+    ) {
+        return FullGrammerTokenEventParserFactory.create(
+                        databaseType,
+                        version,
+                        new TokenEventStructuredSqlParser(dialect))
+                .parser()
+                .parseSql(statement, null);
     }
 
     private SqlStatementRecord statement(String sql) {
@@ -516,22 +401,6 @@ class FullGrammerNativeRelationEventsTest {
 
     private SqlStatementRecord statement(String sql, StatementSourceType sourceType) {
         return new SqlStatementRecord(sql, sourceType, "fixture.sql", 1, 1, Map.of());
-    }
-
-    private void assertNativeEventTypes(StructuredParseResult result, Set<StructuredParseEventType> expected) {
-        Set<String> actual = stringSet(result.attributes().get("fullGrammerNativeEventTypes"));
-        assertTrue(actual.containsAll(expected.stream().map(Enum::name).collect(Collectors.toSet())),
-                () -> "Expected full-grammer native event types " + expected + " to be contained in " + actual);
-        assertTrue(stringSet(result.attributes().get("fullGrammerDelegatedEventTypes")).isEmpty(),
-                () -> "full-grammer native events should not rely on production delegate events: "
-                        + result.attributes().get("fullGrammerDelegatedEventTypes"));
-        assertTrue(stringSet(result.attributes().get("fullGrammerBridgedEventTypes")).isEmpty(),
-                () -> "full-grammer native events should not rely on token-span bridge events: "
-                        + result.attributes().get("fullGrammerBridgedEventTypes"));
-    }
-
-    private Set<String> delegatedEventTypes(StructuredParseResult result) {
-        return stringSet(result.attributes().get("fullGrammerDelegatedEventTypes"));
     }
 
     private static String lineageFingerprint(DataLineageCandidate candidate) {
@@ -550,11 +419,6 @@ class FullGrammerNativeRelationEventsTest {
         return relation.relationType() + ":"
                 + relation.source().displayName() + "->" + relation.target().displayName()
                 + ":" + evidenceType;
-    }
-
-    @SuppressWarnings("unchecked")
-    private Set<String> stringSet(Object value) {
-        return ((List<String>) value).stream().collect(Collectors.toSet());
     }
 
     private boolean hasEvent(

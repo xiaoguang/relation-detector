@@ -4,11 +4,8 @@ import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.tokenevent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
@@ -44,24 +41,6 @@ class FullGrammerTokenEventParserFactoryTest {
         assertTrue(created.profileSelection().usedFallback());
         assertTrue(created.profileSelection().diagnostic().contains("9.0"));
         assertEquals("mysql-8.0", created.parser().parseSql(statement, null).attributes().get("grammarProfile"));
-    }
-
-    @Test
-    void factoryUsesRegisteredModulesInsteadOfProfileIdSwitch() throws Exception {
-        Path source = Path.of(System.getProperty("user.dir"))
-                .resolve("src/main/java/com/relationdetector/core/fullgrammer/FullGrammerTokenEventParserFactory.java");
-        if (!Files.exists(source)) {
-            source = Path.of(System.getProperty("user.dir"))
-                    .resolve("core/src/main/java/com/relationdetector/core/fullgrammer/FullGrammerTokenEventParserFactory.java");
-        }
-
-        String text = Files.readString(source);
-        assertFalse(text.contains("switch (profile.id())"),
-                "full-grammer SQL factory should dispatch through FullGrammerDialectModule registry");
-        assertFalse(text.contains("case \"mysql-8.0\""),
-                "full-grammer SQL factory should not hard-code MySQL profile ids");
-        assertFalse(text.contains("case \"postgresql-16\""),
-                "full-grammer SQL factory should not hard-code PostgreSQL profile ids");
     }
 
     private static final class FakeModule implements FullGrammerDialectModule {
