@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "FK_LIKE:public.orders.user_id->public.users.id:DDL_FOREIGN_KEY,TARGET_UNIQUE"
+  ],
+  "forbiddenTables": []
+}

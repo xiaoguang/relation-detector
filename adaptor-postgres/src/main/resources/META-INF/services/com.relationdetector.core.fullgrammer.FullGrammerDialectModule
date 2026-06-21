@@ -1,1 +1,3 @@
 com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerDialectModule
+com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerDialectModule
+com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerDialectModule

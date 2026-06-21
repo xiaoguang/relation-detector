@@ -1,0 +1,11 @@
+id: postgres18-official-subquery-edge-sql
+parserMode: full-grammer
+grammarProfile: postgresql/18
+databaseVersion: 18.1
+databaseType: POSTGRESQL
+parserTarget: SQL
+sourceType: PLAIN_SQL
+schema: public
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

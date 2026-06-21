@@ -1,0 +1,11 @@
+id: postgres16-postgres-business-update-inventory-comma-join-sql
+parserMode: full-grammer
+grammarProfile: postgresql/16
+databaseVersion: 16.5
+databaseType: POSTGRESQL
+parserTarget: SQL
+sourceType: PLAIN_SQL
+schema: public
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

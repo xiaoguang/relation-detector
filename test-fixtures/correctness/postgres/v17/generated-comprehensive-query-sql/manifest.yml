@@ -1,0 +1,11 @@
+id: postgres17-generated-comprehensive-query-sql
+parserMode: full-grammer
+grammarProfile: postgresql/17
+databaseVersion: 17.5
+databaseType: POSTGRESQL
+parserTarget: SQL
+sourceType: PLAIN_SQL
+schema: public
+input: ../../../../examples/comprehensive-query-sql-001-030.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,83 +1,43 @@
 package com.relationdetector.postgres.fullgrammer.v16;
 
-import com.relationdetector.core.fullgrammer.*;
+import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.fullgrammer.FullGrammerSyntaxErrorCounter;
+import com.relationdetector.postgres.fullgrammer.common.AbstractPostgresFullGrammerStructuredSqlParser;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
-import com.relationdetector.contracts.spi.AdaptorContext;
-import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
-import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.contracts.parse.StructuredParseResult;
-import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.contracts.model.WarningMessage;
-import com.relationdetector.contracts.Enums.WarningType;
-import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerLexer;
-import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser;
-
 /**
- * PostgreSQL 16 full-grammer SQL parser。
+ * PostgreSQL 16 full-grammer SQL parser binding.
  *
- * <p>CN: 使用 vendored PostgreSQL full grammar entry rule 解析 SQL，再由
- * PostgresTokenEventParseTreeVisitor 从 typed parse-tree context 生成统一
- * StructuredSqlEvent。relationship 和 lineage 语义不在这里判断。
+ * <p>CN: 只绑定 PostgreSQL 16 generated lexer/parser 和 v16 typed visitor；公共
+ * parse 生命周期在 common abstract parser 中。
  *
- * <p>EN: PostgreSQL 16 full-grammer SQL parser. It parses SQL with the vendored
- * PostgreSQL full grammar entry rule, then uses PostgresTokenEventParseTreeVisitor
- * to emit unified StructuredSqlEvent records from typed parse-tree contexts. It
- * does not decide relationship or lineage semantics.
+ * <p>EN: PostgreSQL 16 full-grammer SQL parser binding. It only wires the
+ * PostgreSQL 16 generated lexer/parser and typed visitor; the shared parse
+ * lifecycle lives in the common abstract parser.
  */
-final class PostgresFullGrammerStructuredSqlParser implements StructuredSqlParser {
-    PostgresFullGrammerStructuredSqlParser() {
-    }
-
-    /**
-     * 解析 SQL 并返回 full-grammer 结构事件、warning 和 profile 诊断属性。
-     *
-     * <p>EN: Parses SQL and returns full-grammer structured events, warnings,
-     * and profile diagnostic attributes.
-     */
+public final class PostgresFullGrammerStructuredSqlParser extends AbstractPostgresFullGrammerStructuredSqlParser {
     @Override
-    public StructuredParseResult parseSql(SqlStatementRecord statement, AdaptorContext context) {
-        FullGrammerParse parse = parseFullGrammer(statement.sql());
-        List<StructuredSqlEvent> nativeEvents = new ArrayList<>();
-        List<WarningMessage> warnings = new ArrayList<>();
-        if (parse.root() != null) {
-            try {
-                nativeEvents.addAll(new PostgresTokenEventParseTreeVisitor(statement, parse.visibleTokens())
-                        .extract(parse.root()));
-            } catch (RuntimeException ex) {
-                warnings.add(fullGrammerWarning(statement, "full-grammer SQL visitor failed: " + ex.getMessage(),
-                        parse.syntaxErrors()));
-            }
-        }
-        if (parse.syntaxErrors() > 0) {
-            warnings.add(fullGrammerWarning(statement,
-                    "full-grammer SQL parser reported " + parse.syntaxErrors() + " syntax error(s)",
-                    parse.syntaxErrors()));
-        }
-        Map<String, Object> attributes = new LinkedHashMap<>();
-        attributes.put("fullGrammerLexer", PostgresFullGrammerLexer.class.getSimpleName());
-        attributes.put("fullGrammerParser", PostgresFullGrammerParser.class.getSimpleName());
-        attributes.put("fullGrammerEntryRule", "root");
-        attributes.put("fullGrammerSyntaxErrors", parse.syntaxErrors());
-        attributes.put("fullGrammerParseTreeRoot", parse.root() == null ? "" : parse.root().getClass().getSimpleName());
-        attributes.put("fullGrammerNativeEventTypes",
-                FullGrammerEventMerger.eventTypeNames(FullGrammerNativeEventTypes.POSTGRES_NATIVE_EVENTS));
-        attributes.put("fullGrammerBridgedEventTypes",
-                FullGrammerEventMerger.bridgedEventTypeNames(nativeEvents, FullGrammerNativeEventTypes.POSTGRES_BRIDGED_EVENTS));
-        attributes.put("fullGrammerDelegatedEventTypes", List.of());
-        return new StructuredParseResult("POSTGRES_FULL_GRAMMER_PARSE_TREE", "POSTGRES", statement.sourceName(),
-                nativeEvents, warnings, attributes);
+    protected int majorVersion() {
+        return 16;
     }
 
-    private FullGrammerParse parseFullGrammer(String sql) {
+    @Override
+    protected String lexerName() {
+        return PostgresFullGrammerLexer.class.getSimpleName();
+    }
+
+    @Override
+    protected String parserName() {
+        return PostgresFullGrammerParser.class.getSimpleName();
+    }
+
+    @Override
+    protected FullGrammerSqlParse parseFullGrammer(String sql) {
         try {
             PostgresFullGrammerLexer lexer = new PostgresFullGrammerLexer(CharStreams.fromString(sql));
             CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -91,22 +51,18 @@ final class PostgresFullGrammerStructuredSqlParser implements StructuredSqlParse
             List<Token> visibleTokens = tokens.getTokens().stream()
                     .filter(token -> token.getChannel() == Token.DEFAULT_CHANNEL)
                     .toList();
-            return new FullGrammerParse(root, errors.count(), visibleTokens);
+            return new FullGrammerSqlParse(root, errors.count(), visibleTokens);
         } catch (RuntimeException ex) {
-            return new FullGrammerParse(null, 1, List.of());
+            return new FullGrammerSqlParse(null, 1, List.of());
         }
     }
 
-    private WarningMessage fullGrammerWarning(SqlStatementRecord statement, String message, int syntaxErrors) {
-        return WarningMessage.warn(WarningType.PARSE_WARNING,
-                "FULL_GRAMMAR_SQL_PARSE_WARNING",
-                message,
-                statement.sourceName(),
-                statement.startLine(),
-                Map.of("fullGrammerSyntaxErrors", syntaxErrors,
-                        "rawStatement", statement.sql()));
-    }
-
-    private record FullGrammerParse(ParserRuleContext root, int syntaxErrors, List<Token> visibleTokens) {
+    @Override
+    protected List<StructuredSqlEvent> extractEvents(
+            SqlStatementRecord statement,
+            List<Token> visibleTokens,
+            ParserRuleContext root
+    ) {
+        return new PostgresTokenEventParseTreeVisitor(statement, visibleTokens).extract(root);
     }
 }

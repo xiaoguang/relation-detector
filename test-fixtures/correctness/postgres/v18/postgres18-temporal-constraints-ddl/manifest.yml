@@ -1,0 +1,11 @@
+id: postgres18-temporal-constraints-ddl
+parserMode: full-grammer
+grammarProfile: postgresql/18
+databaseVersion: 18.1
+databaseType: POSTGRESQL
+parserTarget: DDL
+sourceType: DDL_FILE
+schema: public
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

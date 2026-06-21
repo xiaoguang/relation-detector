@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.postgres.fullgrammer.common.PostgresExpressionAnalyzer;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser.Common_table_exprContext;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser.A_exprContext;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser.DeletestmtContext;

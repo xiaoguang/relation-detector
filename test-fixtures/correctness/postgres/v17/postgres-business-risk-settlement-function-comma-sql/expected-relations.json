@@ -1,0 +1,9 @@
+{
+  "fingerprints": [],
+  "forbiddenTables": [
+    "temp_risk_inputs",
+    "cte_user_aggregated_metrics",
+    "cte_fraud_scoring",
+    "arr"
+  ]
+}

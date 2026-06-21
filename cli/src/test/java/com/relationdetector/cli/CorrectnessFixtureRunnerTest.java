@@ -180,18 +180,15 @@ class CorrectnessFixtureRunnerTest {
         List<DataLineageCandidate> lineages = new ArrayList<>();
         SqlRelationParserRunner runner = new SqlRelationParserRunner();
         TokenEventDataLineageExtractor lineageExtractor = new TokenEventDataLineageExtractor();
-        StructuredSqlParser structuredSqlParser = adaptor.structuredSqlParser()
-                .orElseThrow(() -> new IllegalStateException("No structured SQL parser for " + fixture.databaseType()));
         for (SqlStatementRecord statement : statements) {
             relationships.addAll(runner.parse(adaptor, config, statement, context));
             /*
-             * Relationship parsing already goes through the adaptor SQL parser.
-             * Data Lineage consumes the same token-event model directly; parse
-             * with a null context so fixture warning assertions are not polluted by
+             * Relationship parsing and Data Lineage must use the same parser-selection policy.
+             * Parse with a null context so fixture warning assertions are not polluted by
              * this second, lineage-only structural parse.
              */
-            StructuredParseResult structured = structuredSqlParser.parseSql(statement, null);
-            lineages.addAll(lineageExtractor.extract(statement, structured));
+            runner.parseStructured(adaptor, config, statement, null)
+                    .ifPresent(structured -> lineages.addAll(lineageExtractor.extract(statement, structured)));
         }
         assertRelations(fixture, expectedRelations, relationships);
         assertLineage(fixture, expectedLineage,
@@ -268,7 +265,26 @@ class CorrectnessFixtureRunnerTest {
     ) {
         Map<String, Long> actualCodes = actual.stream()
                 .collect(Collectors.groupingBy(WarningMessage::code, LinkedHashMap::new, Collectors.counting()));
+        if (isStrictFullGrammerFixture(fixture)) {
+            assertFalse(actualCodes.containsKey("PARSER_MODE_FALLBACK"),
+                    () -> fixture.id() + " must not fallback from its declared full-grammer profile");
+            assertFalse(actualCodes.containsKey("FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX"),
+                    () -> fixture.id() + " must be accepted by its declared full-grammer profile");
+        }
+        if (Boolean.getBoolean("updateCorrectnessGold")) {
+            try {
+                Files.writeString(fixture.expectedDiagnosticsFile(),
+                        expectedDiagnosticsJson(expected.fixtureSha256(), actualCodes));
+            } catch (Exception exception) {
+                throw new IllegalStateException("Cannot update diagnostics gold for " + fixture.id(), exception);
+            }
+            return;
+        }
         assertEquals(expected.warningCodes(), actualCodes, fixture.id() + " warningCodes");
+    }
+
+    private boolean isStrictFullGrammerFixture(CorrectnessFixture fixture) {
+        return fixture.parserMode().equals("full-grammer") && !fixture.grammarProfile().isBlank();
     }
 
     private void assertLineage(
@@ -343,6 +359,13 @@ class CorrectnessFixtureRunnerTest {
                 + "}\n";
     }
 
+    private static String expectedDiagnosticsJson(String fixtureSha256, Map<String, Long> warningCodes) {
+        return "{\n"
+                + "  \"fixtureSha256\": \"" + escapeJson(fixtureSha256) + "\",\n"
+                + "  \"warningCodes\": " + longMapJson(warningCodes) + "\n"
+                + "}\n";
+    }
+
     private static String stringArrayJson(List<String> values) {
         if (values.isEmpty()) {
             return "[]";
@@ -377,6 +400,10 @@ class CorrectnessFixtureRunnerTest {
         ScanConfig config = new ScanConfig();
         config.databaseType = fixture.databaseType();
         config.schema = fixture.schema();
+        config.parserMode = fixture.parserMode();
+        config.grammarProfile = fixture.grammarProfile();
+        config.databaseVersion = fixture.databaseVersion();
+        config.databaseVersionSource = fixture.databaseVersion().isBlank() ? "UNKNOWN" : "CONFIG";
         return config;
     }
 
@@ -479,7 +506,10 @@ class CorrectnessFixtureRunnerTest {
             Path expectedRelationsFile,
             Path expectedLineageFile,
             Path expectedDiagnosticsFile,
-            String objectSourceFilter
+            String objectSourceFilter,
+            String parserMode,
+            String grammarProfile,
+            String databaseVersion
     ) {
         static CorrectnessFixture read(Path manifest) throws Exception {
             Map<String, String> values = readSimpleManifest(manifest);
@@ -497,7 +527,10 @@ class CorrectnessFixtureRunnerTest {
                     root.resolve(required(values, "expectedRelations", manifest)).normalize(),
                     root.resolve(values.getOrDefault("expectedLineage", "expected-lineage.json")).normalize(),
                     root.resolve(required(values, "expectedDiagnostics", manifest)).normalize(),
-                    values.getOrDefault("objectSourceFilter", ""));
+                    values.getOrDefault("objectSourceFilter", ""),
+                    values.getOrDefault("parserMode", "auto"),
+                    values.getOrDefault("grammarProfile", ""),
+                    values.getOrDefault("databaseVersion", ""));
         }
 
         private static Map<String, String> readSimpleManifest(Path manifest) throws Exception {

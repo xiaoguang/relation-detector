@@ -1,0 +1,12 @@
+id: postgres16-postgres-ddl-unique-include-index
+parserMode: full-grammer
+grammarProfile: postgresql/16
+databaseVersion: 16.5
+databaseType: POSTGRESQL
+parserTarget: DDL
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: public
+input: input.ddl.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

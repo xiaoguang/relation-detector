@@ -32,7 +32,19 @@ class SqlGrammarProfileTest {
                     DatabaseType.POSTGRESQL,
                     16,
                     0,
-                    Set.of("merge", "materialized_cte", "lateral", "set_returning_functions"))));
+                    Set.of("merge", "materialized_cte", "lateral", "set_returning_functions"))),
+            new FakeModule(new SqlGrammarProfile(
+                    "postgresql-17",
+                    DatabaseType.POSTGRESQL,
+                    17,
+                    0,
+                    Set.of("merge", "merge_returning", "json_table", "sql_json"))),
+            new FakeModule(new SqlGrammarProfile(
+                    "postgresql-18",
+                    DatabaseType.POSTGRESQL,
+                    18,
+                    0,
+                    Set.of("returning_old_new", "virtual_generated_columns", "temporal_constraints"))));
 
     @Test
     void selectsKnownMysqlProfileFromVersionString() {
@@ -68,45 +80,52 @@ class SqlGrammarProfileTest {
     void configProfileOverridesJdbcVersion() {
         SqlGrammarProfileSelection selection = select(FullGrammerProfileRequest.builder()
                 .databaseType(DatabaseType.POSTGRESQL)
-                .configuredProfile("postgresql/16")
-                .jdbcConnection(connection("PostgreSQL", 17, 2, "PostgreSQL 17.2"))
+                .configuredProfile("postgresql/17")
+                .jdbcConnection(connection("PostgreSQL", 18, 1, "PostgreSQL 18.1"))
                 .build());
 
-        assertEquals("postgresql-16", selection.profile().id());
+        assertEquals("postgresql-17", selection.profile().id());
         assertEquals("CONFIG", selection.versionSource());
         assertFalse(selection.usedFallback());
     }
 
     @Test
     void jdbcPostgresMinorUsesSameMajorProfile() {
-        SqlGrammarProfileSelection selection = select(FullGrammerProfileRequest.builder()
+        SqlGrammarProfileSelection pg17 = select(FullGrammerProfileRequest.builder()
                 .databaseType(DatabaseType.POSTGRESQL)
-                .jdbcConnection(connection("PostgreSQL", 16, 5, "PostgreSQL 16.5"))
+                .jdbcConnection(connection("PostgreSQL", 17, 5, "PostgreSQL 17.5"))
+                .build());
+        SqlGrammarProfileSelection pg18 = select(FullGrammerProfileRequest.builder()
+                .databaseType(DatabaseType.POSTGRESQL)
+                .jdbcConnection(connection("PostgreSQL", 18, 1, "PostgreSQL 18.1"))
                 .build());
 
-        assertEquals("postgresql-16", selection.profile().id());
-        assertEquals("JDBC", selection.versionSource());
-        assertFalse(selection.usedFallback());
+        assertEquals("postgresql-17", pg17.profile().id());
+        assertEquals("JDBC", pg17.versionSource());
+        assertFalse(pg17.usedFallback());
+        assertEquals("postgresql-18", pg18.profile().id());
+        assertEquals("JDBC", pg18.versionSource());
+        assertFalse(pg18.usedFallback());
     }
 
     @Test
     void jdbcPostgresOneMajorAheadFallsBackWithDiagnostic() {
         SqlGrammarProfileSelection selection = select(FullGrammerProfileRequest.builder()
                 .databaseType(DatabaseType.POSTGRESQL)
-                .jdbcConnection(connection("PostgreSQL", 17, 1, "PostgreSQL 17.1"))
+                .jdbcConnection(connection("PostgreSQL", 19, 1, "PostgreSQL 19.1"))
                 .build());
 
-        assertEquals("postgresql-16", selection.profile().id());
+        assertEquals("postgresql-18", selection.profile().id());
         assertEquals("JDBC", selection.versionSource());
         assertTrue(selection.usedFallback());
-        assertTrue(selection.diagnostic().contains("17.1"));
+        assertTrue(selection.diagnostic().contains("19.1"));
     }
 
     @Test
     void jdbcPostgresTwoMajorsAheadDoesNotSelectFullGrammer() {
         SqlGrammarProfileSelection selection = select(FullGrammerProfileRequest.builder()
                 .databaseType(DatabaseType.POSTGRESQL)
-                .jdbcConnection(connection("PostgreSQL", 18, 0, "PostgreSQL 18.0"))
+                .jdbcConnection(connection("PostgreSQL", 20, 0, "PostgreSQL 20.0"))
                 .build());
 
         assertNull(selection.profile());

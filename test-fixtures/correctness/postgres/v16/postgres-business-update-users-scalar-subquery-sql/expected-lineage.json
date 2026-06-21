@@ -1,0 +1,11 @@
+{
+  "fingerprints": [
+    "CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level",
+    "VALUE:AGGREGATE:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.total_spent"
+  ],
+  "forbiddenSources": [
+    "0.00"
+  ],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}
