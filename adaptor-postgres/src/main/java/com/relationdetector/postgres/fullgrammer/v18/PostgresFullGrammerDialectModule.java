@@ -7,6 +7,8 @@ import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.fullgrammer.FullGrammerDialectModule;
 import com.relationdetector.core.fullgrammer.SqlGrammarProfile;
+import com.relationdetector.postgres.fullgrammer.common.PostgresFullGrammerStructuredDdlParser;
+import com.relationdetector.postgres.fullgrammer.common.PostgresFullGrammerStructuredSqlParser;
 
 /**
  * PostgreSQL 18 full-grammer module 注册入口。
@@ -19,6 +21,7 @@ import com.relationdetector.core.fullgrammer.SqlGrammarProfile;
  * correctness cannot silently reuse a lower-version full-grammer implementation.
  */
 public final class PostgresFullGrammerDialectModule implements FullGrammerDialectModule {
+    private final PostgresFullGrammerVersionBinding binding = new PostgresFullGrammerVersionBinding();
     private static final SqlGrammarProfile PROFILE = new SqlGrammarProfile(
             "postgresql-18",
             DatabaseType.POSTGRESQL,
@@ -40,11 +43,11 @@ public final class PostgresFullGrammerDialectModule implements FullGrammerDialec
 
     @Override
     public StructuredSqlParser sqlParser() {
-        return new PostgresFullGrammerStructuredSqlParser();
+        return new PostgresFullGrammerStructuredSqlParser(binding);
     }
 
     @Override
     public StructuredDdlParser structuredDdlParser() {
-        return new PostgresFullGrammerStructuredDdlParser();
+        return new PostgresFullGrammerStructuredDdlParser(binding);
     }
 }
