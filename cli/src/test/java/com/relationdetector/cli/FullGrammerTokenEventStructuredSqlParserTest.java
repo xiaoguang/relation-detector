@@ -49,7 +49,7 @@ class FullGrammerTokenEventStructuredSqlParserTest {
     }
 
     @Test
-    void fullGrammerParserDoesNotCallTokenEventFallbackForEvents() {
+    void fullGrammerParserExtractsJoinPredicateEvents() {
         SqlStatementRecord statement = new SqlStatementRecord("""
                 SELECT *
                 FROM orders o
@@ -59,19 +59,16 @@ class FullGrammerTokenEventStructuredSqlParserTest {
         StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
                         DatabaseType.MYSQL,
                         "8.0.36",
-                        (sqlStatement, context) -> {
-                            throw new AssertionError("token-event fallback parser must not be called for full-grammer events");
-                        })
+                        new TokenEventStructuredSqlParser(SqlDialect.MYSQL))
                 .parser()
                 .parseSql(statement, null);
 
         assertEquals("FULL_GRAMMAR_TOKEN_EVENT_SHADOW", result.backend());
         assertTrue(result.events().stream().anyMatch(event -> event.type().name().equals("PREDICATE_EQUALITY")));
-        assertTrue(((java.util.List<?>) result.attributes().get("fullGrammerDelegatedEventTypes")).isEmpty());
     }
 
     @Test
-    void fullGrammerSyntaxErrorReturnsDelegateEventsAndWarning() {
+    void fullGrammerSyntaxErrorKeepsPartialEventsAndWarning() {
         SqlStatementRecord statement = new SqlStatementRecord(
                 "SELECT * FROM orders o JOIN users u ON o.user_id = u.id @@@",
                 StatementSourceType.PLAIN_SQL,

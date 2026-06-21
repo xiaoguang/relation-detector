@@ -66,6 +66,8 @@ postgres / postgres.tokenevent / postgres.fullgrammer.v16
 
 本报告和 `phase-06-parser-enhancement.md` 已按上述 package 注释刷新。若后续新增生产 package，必须同步新增 `package-info.java`，并在 Phase 6 的结构表中登记。
 
+本轮新增 [代码与设计对应审视报告](code-design-traceability.md)，按 CLI、ScanEngine、SQL/DDL parser、relationship、Data Lineage、confidence、输出和 correctness 报告逐环节列出代码入口、设计章节、测试覆盖和差异状态。
+
 ## 需要特别说明的实现事实
 
 ### 1. fallback 只发生在 parser selection 层
@@ -148,6 +150,7 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 - `CorrectnessSummaryGeneratorTest` 生成轻量索引报告。
 - `DataLineageAuditGeneratorTest` 维护 lineage 审核入口。
 - `FullGrammerCorrectnessShadowTest` 与 `FullGrammerDdlCorrectnessShadowTest` 保护 full-grammer 不低于 token-event。
+- `CliEndToEndGoldenTest` 保护从 CLI YAML/参数到 JSON 输出的完整系统链路，并复用现有 fixture golden。
 
 ## 后续技术债
 

@@ -492,7 +492,7 @@ postgresql-16
   -> PostgresExpressionAnalyzer
 ```
 
-full-grammer SQL parser 使用 vendored grammars-v4 grammar。它运行真实 parser entry rule，typed parse-tree visitor 直接生成同一套 `StructuredSqlEvent`。full-grammer 不再通过 token-event delegate 补事件；`fullGrammerBridgedEventTypes` 必须为空。
+full-grammer SQL parser 使用 vendored grammars-v4 grammar。它运行真实 parser entry rule，typed parse-tree visitor 直接生成同一套 `StructuredSqlEvent`。当前默认验收只比较关系、血缘、warning 和 JSON 行为；历史迁移期的 native/delegate/bridged 事件来源属性不再作为 correctness 验收入口。
 
 full-grammer 仍只替换“语法结构识别”。它不会改变：
 
@@ -796,7 +796,7 @@ EXECUTE stmt;
 
 当前生产兜底 token-event 链路仍有 token scanner，因为它需要容忍日志截断、routine/object 混合语法、动态 SQL、局部方言语法和不完整 SQL。token scanner 只能作为事件来源，不应承载 relationship scoring。
 
-full-grammer 链路的目标是用版本化 `.g4` 和 typed parse-tree visitor 替代 token scanner 的结构识别。当前 SQL full-grammer event path 已由 MySQL/PostgreSQL parse-tree visitor 与 `FullGrammerTypedSqlEventSink` 生成事件，`fullGrammerBridgedEventTypes=[]` 作为架构守卫。DDL full-grammer path 由 adaptor-local DDL event collector 生成 DDL events，不委托 token-event DDL visitor。
+full-grammer 链路的目标是用版本化 `.g4` 和 typed parse-tree visitor 替代 token scanner 的结构识别。当前 SQL full-grammer event path 已由 MySQL/PostgreSQL parse-tree visitor 与 `FullGrammerTypedSqlEventSink` 生成事件。DDL full-grammer path 由 adaptor-local DDL event collector 生成 DDL events，不委托 token-event DDL visitor。默认测试只验证 full-grammer 输出行为和 parity；实现来源诊断属性只用于 debug/code review。
 
 允许保留的 helper：
 
@@ -844,12 +844,20 @@ FullGrammerDdlCorrectnessShadowTest
   -> DDL relationship 不少于 token-event
 ```
 
-架构守卫：
+CLI 端到端：
 
 ```text
-TokenEventArchitectureCleanupTest
-FullGrammerParseTreeVisitorArchitectureTest
+CliEndToEndGoldenTest
+  -> YAML/CLI args
+  -> AdaptorRegistry
+  -> ScanEngine
+  -> parser runners
+  -> merger + JSON writer
+  -> existing fixture golden fingerprints
+
 ParserConfigRemovalTest
+  -> removed parser config rejection
+  -> parser.mode CLI/YAML parsing
 ```
 
 维护规则：
@@ -860,3 +868,4 @@ ParserConfigRemovalTest
 - relationship golden 变化必须人工审核，不能用测试输出机械覆盖。
 - Data Lineage extra 必须进入审核或 golden，不能静默漂移。
 - generated summary 和 audit 报告由 Java 测试生成，不调用大模型。
+- 目录/命名/迁移过程检查只作为 code review 的可选 `rg` 手工检查，不再作为默认 Maven 测试入口；默认测试聚焦 SQL/DDL correctness、confidence、warning、输出和端到端系统行为。

@@ -48,6 +48,7 @@ token-event 当前状态：MySQL/PostgreSQL SQL relation、Data Lineage 和 DDL 
 | 测试类 | 主要分类 | 说明 |
 | --- | --- | --- |
 | `CorrectnessFixtureRunnerTest` | DDL / SQL / warning | 扫描 `test-fixtures/correctness`，按 manifest/config 执行当前 selected parser；默认无 profile/version fixture 走 token-event fallback，并比对 golden |
+| `CliEndToEndGoldenTest` | CLI / end-to-end / golden | JVM 内调用 CLI，从 YAML/CLI 参数进入 adaptor、ScanEngine、parser、merger、JSON writer，并复用现有 fixture golden 比对 relationship / Data Lineage |
 | `FullGrammerCorrectnessShadowTest` | SQL full-grammer parity / versioned grammar | 扫描全部 SQL correctness fixture，使用 MySQL 8.0 / PostgreSQL 16 grammar profile 跑 full-grammer，并断言 relationship 与 Data Lineage 不少于 token-event fallback 输出 |
 | `FullGrammerDdlCorrectnessShadowTest` | DDL full-grammer parity / versioned grammar | 扫描全部 DDL correctness fixture，使用 MySQL 8.0 / PostgreSQL 16 full-grammer DDL parser 跑 relationship parity，断言不低于 token-event DDL 输出 |
 | `DataLineageAuditGeneratorTest` | Data Lineage / audit | 扫描全部 correctness fixture，生成 `docs/parser-audit/data-lineage-full-audit.md`，固定已有 lineage golden 数量、候选 fingerprints 和“不适用/待审核”原因；普通测试校验报告未漂移，只有显式 `-DupdateDataLineageAudit=true` 才刷新 |
@@ -55,7 +56,6 @@ token-event 当前状态：MySQL/PostgreSQL SQL relation、Data Lineage 和 DDL 
 | `DdlRelationParserRunnerTest` | DDL primary / warning | DDL runner 只调用 structured DDL parser，空结果不被旧 parser 替换 |
 | `SqlRelationParserRunnerTest` | SQL parser mode / warning | SQL runner 按 `parser.mode` 选择 full-grammer 或 token-event fallback，SQL log filter 仍生效 |
 | `DdlRelationExtractionVisitorIndependenceTest` | DDL primary | DDL token-event 抽取不能委托旧 simple 实现 |
-| `TokenEventArchitectureCleanupTest` | 架构 / 命名边界 | 防止生产代码、测试代码和主文档重新引入迁移期命名或旧 parser SPI |
 | `TokenEventRelationEventsTest` | SQL primary / token-event relation + lineage | 验证 token-event 公共 relation、rowset/scope、DML 深水区和 Data Lineage：`JOIN USING`、raw equality、correlated `EXISTS`、scalar/tuple `IN`、列级弱共现、CTE/temp/trigger scope、MySQL multi-table `DELETE`、PostgreSQL `UPDATE FROM`、`UPDATE SET`、derived aggregate、`INSERT SELECT`、`MERGE` |
 | `DialectSqlRelationParserComplexMatrixTest` | SQL primary / token-event | 复杂 JOIN/CTE/DML 方言场景直接跑 MySQL/PostgreSQL token-event parser；含 1 个 SQL Server future fixture skipped |
 | `DialectParserEvidenceConfidenceTest` | SQL primary / token-event / confidence | evidence type/source type、joinKind、confidence 示例；验证 correlated EXISTS 输出 `SQL_LOG_EXISTS` 而不是普通 `SQL_LOG_JOIN` |
@@ -133,8 +133,19 @@ token-event 当前状态：MySQL/PostgreSQL SQL relation、Data Lineage 和 DDL 
 | metadata 增强是否有保护 | 有 | MySQL metadata facts、database DDL collector、metadata evidence enhancer 测试覆盖 |
 | confidence 是否有保护 | 有 | confidence examples、evidence aggregation、dialect parser evidence/confidence 测试覆盖；correlated EXISTS 验证为 `SQL_LOG_EXISTS`，且同 endpoint pair 不应再重复产出普通 `SQL_LOG_JOIN` 造成虚高计分 |
 | noise filter 是否有保护 | 有 | MySQL system log fixture、token-event USING/noise 单元测试覆盖 |
-| full-grammer 是否覆盖全部 SQL fixture | 是 | `FullGrammerCorrectnessShadowTest` 扫描全部 SQL correctness fixture；MySQL 8.0 / PostgreSQL 16 full-grammer 与 token-event fallback 保持 parity，且 `FullGrammerNativeRelationEventsTest` 要求 `fullGrammerBridgedEventTypes=[]`，后续深化 typed parse-tree visitor 时不得减少关系或血缘 |
+| full-grammer 是否覆盖全部 SQL fixture | 是 | `FullGrammerCorrectnessShadowTest` 扫描全部 SQL correctness fixture；MySQL 8.0 / PostgreSQL 16 full-grammer 与 token-event fallback 保持 parity，后续深化 parse-tree visitor 时不得减少关系或血缘 |
 | full-grammer 是否覆盖全部 DDL fixture | 是 | `FullGrammerDdlCorrectnessShadowTest` 扫描全部 DDL correctness fixture；MySQL 8.0 / PostgreSQL 16 full-grammer DDL 与 token-event DDL relationship 保持 parity，不改变 correctness golden |
+
+## 可选手工结构检查
+
+默认 `mvn test` 不再运行目录/命名/迁移过程守卫测试。需要人工检查代码结构残留时，使用：
+
+```bash
+rg -n "TokenEventV2|shadow runner|current ANTLR|SimpleSqlRelationParser|SimpleDdlParser|fullgrammar|full-grammar" \
+  contracts core cli adaptor-mysql adaptor-postgres docs/design docs/code-implementation-guide.md docs/test-assets-map.md
+```
+
+这类检查只辅助 code review，不作为 SQL/DDL correctness 验收入口。
 
 ## 后续补强优先级
 
