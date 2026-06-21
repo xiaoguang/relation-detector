@@ -6,6 +6,7 @@ import com.relationdetector.core.relation.*;
 import com.relationdetector.core.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -72,6 +73,53 @@ class TokenEventRelationEventsTest {
 
         assertEquals(List.of("FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"),
                 relationships.stream().map(this::relationFingerprint).toList());
+    }
+
+    @Test
+    void extractsColumnCoOccurrenceForExplicitSelfJoinAliases() {
+        SqlStatementRecord employees = statement("""
+                SELECT *
+                FROM hr_employees e
+                LEFT JOIN hr_employees manager ON e.manager_id = manager.emp_id
+                """);
+        SqlStatementRecord tasks = statement("""
+                SELECT *
+                FROM workflow_tasks curr
+                JOIN workflow_tasks prev ON curr.predecessor_id = prev.task_id
+                """);
+
+        assertEquals(List.of(
+                        "CO_OCCURRENCE:hr_employees.manager_id->hr_employees.emp_id:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                new TokenEventRelationExtractor().extract(employees,
+                                tokenEventRelationOnly(new TokenEventStructuredSqlParser(SqlDialect.POSTGRES).parseSql(employees, null)))
+                        .stream()
+                        .map(this::relationFingerprint)
+                        .sorted()
+                        .toList());
+        assertEquals(List.of(
+                        "CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                new TokenEventRelationExtractor().extract(tasks,
+                                tokenEventRelationOnly(new TokenEventStructuredSqlParser(SqlDialect.POSTGRES).parseSql(tasks, null)))
+                        .stream()
+                        .map(this::relationFingerprint)
+                        .sorted()
+                        .toList());
+    }
+
+    @Test
+    void doesNotEmitColumnCoOccurrenceForSameAliasRowComparison() {
+        SqlStatementRecord statement = statement("""
+                SELECT *
+                FROM accounts a
+                WHERE a.left_col = a.right_col
+                """);
+
+        List<RelationshipCandidate> relationships = new TokenEventRelationExtractor().extract(statement,
+                tokenEventRelationOnly(new TokenEventStructuredSqlParser(SqlDialect.POSTGRES).parseSql(statement, null)));
+
+        assertFalse(relationships.stream()
+                .map(this::relationFingerprint)
+                .anyMatch(fingerprint -> fingerprint.contains("accounts.left_col->accounts.right_col")));
     }
 
     @Test

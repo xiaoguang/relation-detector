@@ -4,7 +4,7 @@
 
 实现 MySQL adaptor，使工具能够从 MySQL 5.7/8.0+ 获取关系证据。该 adaptor 必须通过 Phase 3 的 `DatabaseAdaptor` API 接入，不直接依赖 CLI。
 
-Phase 4 先完成 MySQL 数据采集和基础证据生成；复杂 SQL/DDL 解析规则在 Phase 6 统一增强，但 MySQL adaptor 需要提供方言补丁和日志提取能力。
+当前 MySQL adaptor 不只负责采集，也负责 MySQL 方言 parser 实现：token-event parser 位于 `com.relationdetector.mysql.tokenevent`，MySQL 8.0 full-grammer module 位于 `com.relationdetector.mysql.fullgrammer.v8_0`。core 只通过 runner 和 `FullGrammerDialectModule` registry 调度，不在 core 里 hard-code MySQL 版本实现。
 
 ## 支持范围
 
@@ -133,10 +133,10 @@ MySQL DDL 特点：
 
 MySQL adaptor 负责：
 
-- 在通用 parser 失败时做预处理。
-- 去除或忽略表选项。
-- 保留约束、索引和列定义。
-- 识别 MySQL 特有 `KEY idx_name (col)`。
+- `mysql.tokenevent.MySqlTokenEventStructuredDdlParser` 暴露 MySQL token-event DDL parser。
+- `MySqlDdlStructuredEventVisitor` 处理 MySQL DDL 方言差异，例如反引号、inline `KEY/INDEX`、prefix index、functional/JSON index、VISIBLE/INVISIBLE、表选项。
+- `mysql.fullgrammer.v8_0` 注册 MySQL 8.0 full-grammer DDL parser，用于 `parser.mode=auto|full-grammer` 且 profile 可选中时。
+- 两条 DDL parser 链路都只输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 结构事件；最终 relationship 仍由 core 的 `DdlRelationExtractionVisitor` 生成。
 
 ## 对象定义采集
 

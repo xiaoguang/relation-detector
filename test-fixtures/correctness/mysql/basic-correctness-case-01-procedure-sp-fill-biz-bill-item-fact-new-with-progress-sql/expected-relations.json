@@ -1,5 +1,6 @@
 {
   "fingerprints": [
+    "CO_OCCURRENCE:jsh_depot_head.number->jsh_depot_head.link_number:SQL_LOG_COLUMN_CO_OCCURRENCE",
     "CO_OCCURRENCE:jsh_depot_head.tenant_id->jsh_depot_item.tenant_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
     "CO_OCCURRENCE:jsh_orga_user_rel.tenant_id->jsh_depot_head.tenant_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
     "CO_OCCURRENCE:jsh_orga_user_rel.user_id->jsh_depot_head.creator:SQL_LOG_COLUMN_CO_OCCURRENCE",

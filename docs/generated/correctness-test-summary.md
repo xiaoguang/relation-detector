@@ -1187,6 +1187,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:jsh_depot_head.number->jsh_depot_head.link_number:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:jsh_depot_head.tenant_id->jsh_depot_item.tenant_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:jsh_orga_user_rel.tenant_id->jsh_depot_head.tenant_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:jsh_orga_user_rel.user_id->jsh_depot_head.creator:SQL_LOG_COLUMN_CO_OCCURRENCE`
@@ -4813,6 +4814,7 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:financial_subsidiaries.tax_jurisdiction->corporate_tax_matrix.jurisdiction_string:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:hr_departments.loc_id->hr_locations.loc_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:hr_employees.dept_id->hr_departments.dept_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:hr_employees.manager_id->hr_employees.emp_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:interaction_resolutions.resolution_id->feedback_surveys.resolution_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:journal_entries.account_id->chart_of_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:ledger_transactions.source_account->account_balances.account_no:SQL_LOG_COLUMN_CO_OCCURRENCE`
@@ -4821,6 +4823,7 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:medical_claims.billing_provider_id->healthcare_providers.provider_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:medical_claims.claim_id->claim_diagnoses.claim_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:medical_claims.patient_id->patient_registry.patient_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:network_edges.source_node->network_edges.dest_node:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:order_fulfillments.order_id->sales_orders.order_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:package_dependencies.package_uuid->software_packages.package_uuid:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:patient_registry.policy_id->insurance_policies.policy_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
@@ -4835,6 +4838,7 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:tenant_configurations.module_id->system_modules.module_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:transit_legs.vessel_id->maritime_vessels.vessel_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:user_role_mappings.user_id->application_users.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:wiki_pages.parent_page_id->wiki_pages.page_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:iot_devices.hardware_architecture->firmware_compliance_matrix.arch_type:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:iot_devices.installed_version->firmware_compliance_matrix.patched_version_string:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:membership_registry.member_id->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN`
@@ -4911,6 +4915,7 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:product_variants.product_id->products.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:system_logs.triggered_by->user_preferences.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:user_roles_mapping.role_id->role_permissions.role_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:R_projects.manager_id->employees.id:SQL_LOG_JOIN`
 - `FK_LIKE:infrastructure_nodes.parent_id->infrastructure_nodes.id:SQL_LOG_JOIN`
 - `FK_LIKE:profiles.user_id->users.id:SQL_LOG_JOIN`
@@ -5074,6 +5079,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:departments.parent_department->departments.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_JOIN`
 - `FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN`
 - `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`

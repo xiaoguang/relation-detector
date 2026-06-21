@@ -4,7 +4,7 @@
 
 实现 PostgreSQL adaptor，使工具能够从 PostgreSQL 12+ 获取关系证据。该 adaptor 与 MySQL adaptor 具备同等能力，但遵循 PostgreSQL 的 catalog、schema、标识符和日志规则。
 
-Phase 5 先完成 PostgreSQL 数据采集和基础证据生成；复杂 SQL/DDL 解析规则在 Phase 6 统一增强。
+当前 PostgreSQL adaptor 不只负责采集，也负责 PostgreSQL 方言 parser 实现：token-event parser 位于 `com.relationdetector.postgres.tokenevent`，PostgreSQL 16 full-grammer module 位于 `com.relationdetector.postgres.fullgrammer.v16`。core 只通过 runner 和 `FullGrammerDialectModule` registry 调度，不在 core 里 hard-code PostgreSQL 版本实现。
 
 ## 支持范围
 
@@ -102,10 +102,10 @@ PostgreSQL DDL 特点：
 
 PostgreSQL adaptor 负责：
 
-- 处理 `ONLY`。
-- 处理 identity/serial 语法。
-- 处理 index method。
-- 保留 FK、unique、index 信息。
+- `postgres.tokenevent.PostgresTokenEventStructuredDdlParser` 暴露 PostgreSQL token-event DDL parser。
+- `PostgresDdlStructuredEventVisitor` 处理 PostgreSQL DDL 方言差异，例如 `ONLY`、`NOT VALID`、`CONCURRENTLY`、`INCLUDE`、partial/expression index、opclass/collation/access method。
+- `postgres.fullgrammer.v16` 注册 PostgreSQL 16 full-grammer DDL parser，用于 `parser.mode=auto|full-grammer` 且 profile 可选中时。
+- 两条 DDL parser 链路都只输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 结构事件；最终 relationship 仍由 core 的 `DdlRelationExtractionVisitor` 生成。
 
 ## 对象定义采集
 

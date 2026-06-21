@@ -1,46 +1,23 @@
-# SqlLineageResolver 详细设计
+# SqlLineageResolver 与字段血缘详细设计
 
-## 1. 背景和目标
+## 1. 当前定位
 
-早期 SQL 关系抽取只能直接解析真实表别名上的列关系：
-
-```sql
-SELECT *
-FROM orders o
-JOIN users u ON o.user_id = u.id;
-```
-
-这种 SQL 可以直接得到：
+`SqlLineageResolver` 不是 SQL parser，也不是最终 Data Lineage 输出器。它是 SQL 语义层里的一个保守列来源解析 helper，用来回答：
 
 ```text
-orders.user_id -> users.id
+某个 CTE / derived table / projection alias 的输出列，能否安全回溯到物理表字段？
 ```
 
-但在 CTE、派生表、多层嵌套查询中，外层 JOIN 常常引用的是临时行集别名：
+当前 SQL 解析入口已经分成两类事件来源：
 
-```sql
-WITH x AS (
-  SELECT c.region_id
-  FROM customers c
-)
-SELECT *
-FROM x
-JOIN regions r ON x.region_id = r.id;
-```
+- `token-event`：基于 ANTLR lexer/parser support 和 Java token-event builder 生成结构事件。
+- `full-grammer`：按数据库大版本使用 vendored grammar 与 typed parse-tree visitor 生成结构事件。
 
-如果不做 lineage，系统只能看到 `x.region_id = r.id`。`x` 不是物理表，直接输出 `x.region_id -> regions.id` 是错误的；完全跳过又会漏掉真实关系：
+两条链路最终都产出同一组 `StructuredSqlEvent`，再由 `TokenEventRelationExtractor` 和 `TokenEventDataLineageExtractor` 消费。`SqlLineageResolver` 只服务这些 extractor 中的列端点回溯，不负责解析完整 SQL 文本。
 
-```text
-customers.region_id -> regions.id
-```
+## 2. 为什么需要它
 
-`SqlLineageResolver` 的目标是：在不引入完整 SQL AST parser 的前提下，安全地解析“简单投影列”的来源，把派生行集列回溯到真实表列。
-
-## 2. 能处理 CTE 以外的情况吗？
-
-可以。当前设计不仅处理 CTE，也处理 FROM/JOIN 中的派生表和多层嵌套查询。
-
-### 2.1 CTE
+很多 SQL 关系不直接写在物理表别名之间，而是写在 CTE 或 derived table 列上：
 
 ```sql
 WITH recent_orders AS (
@@ -52,22 +29,75 @@ FROM recent_orders ro
 JOIN customers c ON ro.customer_id = c.id;
 ```
 
-lineage 映射：
+如果直接使用 SQL 表面结构，只能看到：
 
 ```text
-recent_orders.order_id    -> orders.id
+ro.customer_id = customers.id
+```
+
+`ro` 不是物理表，不能输出 `ro.customer_id -> customers.id`。`SqlLineageResolver` 会把投影列回溯成：
+
+```text
 recent_orders.customer_id -> orders.customer_id
-ro.order_id               -> orders.id
 ro.customer_id            -> orders.customer_id
 ```
 
-最终关系：
+于是 relationship extractor 可以生成真实物理端点：
 
 ```text
 orders.customer_id -> customers.id
 ```
 
-### 2.2 多层 CTE
+## 3. 输入和输出
+
+输入来自结构事件，而不是重新扫描 raw SQL：
+
+- `ROWSET_REFERENCE`
+- `CTE_DECLARATION`
+- `PROJECTION_ITEM`
+- `IGNORED_ROWSET`
+- derived alias / CTE alias 的 rowset attributes
+
+输出是列来源映射：
+
+```text
+alias.column -> physical_table.physical_column
+```
+
+这个映射会被两个组件消费：
+
+- `TokenEventRelationExtractor`：把 join / exists / in predicate 中的派生列端点还原成物理列端点。
+- `TokenEventDataLineageExtractor`：把 UPDATE / INSERT / MERGE 写入表达式中的 projection alias 还原成物理字段来源。
+
+`SqlLineageResolver` 本身不创建 `RelationshipCandidate`，不创建 `DataLineageCandidate`，也不计算 confidence。
+
+## 4. 支持范围
+
+### 4.1 CTE
+
+```sql
+WITH x AS (
+  SELECT c.region_id
+  FROM customers c
+)
+SELECT *
+FROM x
+JOIN regions r ON x.region_id = r.id;
+```
+
+映射：
+
+```text
+x.region_id -> customers.region_id
+```
+
+最终关系：
+
+```text
+customers.region_id -> regions.id
+```
+
+### 4.2 多层 CTE
 
 ```sql
 WITH recent_orders AS (
@@ -84,23 +114,15 @@ FROM regional_orders x
 JOIN regions r ON x.region_id = r.id;
 ```
 
-lineage 会逐层传播：
+映射会逐层传播：
 
 ```text
-recent_orders.region_id  -> customers.region_id
+recent_orders.region_id   -> customers.region_id
 regional_orders.region_id -> customers.region_id
-x.region_id              -> customers.region_id
+x.region_id               -> customers.region_id
 ```
 
-最终关系：
-
-```text
-customers.region_id -> regions.id
-```
-
-### 2.3 派生表
-
-MySQL 和 PostgreSQL 都支持 FROM 子句中的 derived table，例如：
+### 4.3 Derived Table
 
 ```sql
 SELECT *
@@ -111,103 +133,14 @@ FROM (
 JOIN customers c ON projected_orders.customer_id = c.id;
 ```
 
-lineage 映射：
+映射：
 
 ```text
 projected_orders.order_id    -> orders.id
 projected_orders.customer_id -> orders.customer_id
 ```
 
-最终关系：
-
-```text
-orders.customer_id -> customers.id
-```
-
-### 2.4 多层嵌套派生表
-
-```sql
-SELECT *
-FROM (
-  SELECT inner_orders.order_id, inner_orders.customer_id
-  FROM (
-    SELECT o.id AS order_id, o.customer_id
-    FROM orders o
-  ) AS inner_orders
-) AS projected_orders
-JOIN customers c ON projected_orders.customer_id = c.id;
-```
-
-lineage 会从内向外传播：
-
-```text
-inner_orders.customer_id     -> orders.customer_id
-projected_orders.customer_id -> orders.customer_id
-```
-
-最终关系：
-
-```text
-orders.customer_id -> customers.id
-```
-
-### 2.5 LATERAL / correlated 派生表
-
-PostgreSQL `LATERAL` 子查询，以及一部分相关派生表，可以引用它左侧已经出现的表别名：
-
-```sql
-SELECT o.id, u.email
-FROM orders o
-JOIN LATERAL (
-  SELECT o.user_id AS user_id
-) x ON true
-JOIN users u ON x.user_id = u.id;
-```
-
-`x` 不是物理表，不能输出：
-
-```text
-x.user_id -> users.id
-```
-
-但 `x.user_id` 是外层 `orders o` 的简单列投影，因此 lineage 可以安全记录：
-
-```text
-x.user_id -> orders.user_id
-```
-
-最终关系：
-
-```text
-orders.user_id -> users.id
-```
-
-实现上，`SqlLineageResolver` 在分析 derived table 时，只把该 derived table 之前已经出现的物理 alias 作为外层只读上下文；不会把 derived table 之后的 alias 泄漏进子查询。这样可以处理 `JOIN LATERAL (...) x`，同时避免错误使用后文表名。
-
-## 3. 安全解析原则
-
-`SqlLineageResolver` 只把“纯列投影”视为精确列来源。
-
-### 3.1 精确来源
-
-这些写法可以安全回溯：
-
-```sql
-SELECT o.id
-SELECT o.id AS order_id
-SELECT o.customer_id customer_id
-```
-
-输出列来源清晰：
-
-```text
-order_id    -> orders.id
-customer_id -> orders.customer_id
-```
-
-### 3.2 显式列名覆盖
-
-CTE 或派生表可以显式指定输出列名：
+### 4.4 显式输出列名
 
 ```sql
 WITH x(order_id, buyer_id) AS (
@@ -219,200 +152,185 @@ FROM x
 JOIN customers c ON x.buyer_id = c.id;
 ```
 
-lineage：
+映射：
 
 ```text
 x.order_id -> orders.id
 x.buyer_id -> orders.customer_id
 ```
 
-最终关系：
+### 4.5 LATERAL / 相关 derived table
 
-```text
-orders.customer_id -> customers.id
-```
-
-### 3.3 MySQL UPDATE 派生表中的单表裸列投影
-
-MySQL 常见的汇总回写语句会把主表 JOIN 到一个单表聚合派生表。例如：
+PostgreSQL `LATERAL` 或相关 derived table 可以引用左侧已出现 alias：
 
 ```sql
-UPDATE users u
-LEFT JOIN (
-  SELECT user_id, SUM(pay_amount) AS actual_total
-  FROM orders
-  WHERE order_status = 'PAID'
-  GROUP BY user_id
-) o_summary ON u.id = o_summary.user_id
-SET
-  u.total_spent = COALESCE(o_summary.actual_total, 0.00)
-WHERE u.is_active = 1;
+SELECT o.id, u.email
+FROM orders o
+JOIN LATERAL (
+  SELECT o.user_id AS user_id
+) x ON true
+JOIN users u ON x.user_id = u.id;
 ```
 
-这里 `o_summary.user_id` 来自派生表中的裸列投影 `SELECT user_id FROM orders`。因为该派生表 body 只有一个物理来源表 `orders`，系统可以安全记录：
+映射：
 
 ```text
-o_summary.user_id -> orders.user_id
+x.user_id -> orders.user_id
 ```
 
-于是外层条件 `u.id = o_summary.user_id` 可以输出：
+作用域规则是结构性的：derived table 只能看到它语法上允许看到的外层 alias，不会把后文 alias 泄漏进子查询。
 
-```text
-orders.user_id -> users.id
-```
+## 5. 精确与保守边界
 
-注意这里的方向不是 SQL 等号左右顺序，而是系统的 FK-like 归一方向：引用列/外键样列指向被引用键列。SQL 写作 `u.id = o_summary.user_id`，但输出仍是 `orders.user_id -> users.id`。
-
-这个规则是受控开启的：默认公共 lineage 仍不把裸列投影当成精确来源；当前只由 MySQL/PostgreSQL token-event relation extractor 在已由 correctness fixture 覆盖的 `UPDATE` 派生聚合回写场景中启用。这样既覆盖业务中常见的 derived aggregate 回写，又避免全局改变其它语句形态的保守基线。
-
-同一派生表中的聚合列仍不会生成精确 lineage：
+`SqlLineageResolver` 只把明确列投影视为精确来源：
 
 ```sql
-SELECT SUM(pay_amount) AS actual_total FROM orders
+SELECT o.id
+SELECT o.id AS order_id
+SELECT o.customer_id customer_id
 ```
 
-`actual_total` 是聚合结果，不会被推断成 `orders.pay_amount` 的外键关系来源。
-
-从写入血缘角度，`SUM(pay_amount)` 到 `users.total_spent` 是合理的业务 `Data_Lineage`：
+这些可以生成：
 
 ```text
-orders.pay_amount -> users.total_spent, transform=SUM
+order_id    -> orders.id
+customer_id -> orders.customer_id
 ```
 
-但当前 `SqlLineageResolver` 只服务关系抽取，不输出正式 Data Lineage。这个业务血缘会作为后续独立设计边界记录，而不是混入 FK-like 关系或现有 JSON relationship 输出。
-
-### 3.4 表达式来源边界
-
-这些写法通常不会生成精确列级 lineage：
+表达式投影不会被它直接当成 FK-like 端点：
 
 ```sql
+SELECT SUM(pay_amount) AS actual_total
 SELECT COALESCE(a.user_id, b.user_id) AS user_id
-SELECT SUM(p.amount) AS total_amount
-SELECT lower(u.email) AS normalized_email
 SELECT row_number() OVER (...) AS rn
 SELECT a.user_id + 1 AS user_id
 ```
 
-原因：
+原因是这些输出列可能来自多个输入、聚合、窗口或计算结果，不一定仍代表可用于关系推断的引用列。表达式作为字段值来源时，由 `TokenEventDataLineageExtractor` 根据 `EXPRESSION_SOURCE`、`PROJECTION_ITEM` 等事件输出正式 Data Lineage。
 
-- 一个输出列可能来自多个输入列。
-- 函数、聚合、窗口函数会改变语义。
-- 表达式结果不一定还能代表外键值。
+## 6. Relationship 与 Data Lineage 的分工
 
-例外边界：`COALESCE(a.col, b.col) AS col` 在已审核 business fixture 覆盖的关系抽取路径中，可以使用第一个直接物理参数作为保守端点，例如 `COALESCE(a.account_id, b.account_id) AS account_id` 记录为 `a.account_id`。这不是完整 Data Lineage，也不会同时展开所有输入列；parser 仍可解析子查询内部显式 JOIN，但不会把其它表达式输出列继续推成列级 `FK_LIKE`。
+### 6.1 Relationship
 
-### 3.4 LATERAL 的安全边界
-
-这些 LATERAL/correlated 形态可以安全回溯：
-
-```sql
-SELECT o.user_id AS user_id
-SELECT o.id order_id
-SELECT o.customer_id
-```
-
-这些形态不生成精确 lineage：
-
-```sql
-SELECT max(o.user_id) AS user_id
-SELECT row_number() OVER (ORDER BY o.id) AS rn
-SELECT *
-```
-
-原因与普通派生表一致：输出列不是单一确定源列，或者需要完整列展开/表达式语义分析。
-
-## 4. 与关系类型和置信度的关系
-
-`SqlLineageResolver` 本身不直接计算 confidence，也不直接创建 `RelationshipCandidate`。它只提供列来源映射：
-
-```text
-alias.column -> real_table.real_column
-```
-
-`TokenEventRelationExtractor` 在解析 ANTLR 结构化等值事件和 raw equality 兜底时消费这个映射。
-
-如果等值条件来自真实表列：
+当 join predicate 是：
 
 ```sql
 x.region_id = r.id
 ```
 
-并且 lineage 可还原：
+且 resolver 能还原：
 
 ```text
 x.region_id -> customers.region_id
 r.id        -> regions.id
 ```
 
-则关系按普通 equality JOIN 处理：
+relationship extractor 按普通 equality 处理：
 
 ```text
 customers.region_id -> regions.id
-relationType: FK_LIKE
-relationSubType: INFERRED_JOIN_FK
 evidence: SQL_LOG_JOIN / VIEW_JOIN / PROCEDURE_JOIN / TRIGGER_REFERENCE
 attributes.lineageResolved: true
 ```
 
-置信度不因为 lineage 本身自动升高。原因是 lineage 只证明“列来自哪里”，不证明“这列一定是外键”。置信度提升仍应来自更强证据：
+置信度不会因为 `lineageResolved=true` 自动升高。lineage 只证明列来源，不证明该列一定是外键；方向与强弱仍由 FK-like 方向规则、唯一性、命名、metadata、profile evidence 等语义层判断。
 
-- 显式 FK。
-- 唯一索引或 PK。
-- 命名匹配。
-- 数据画像中的包含率、重合率、空值率、唯一性。
-- 多来源重复出现。
+### 6.2 Data Lineage
 
-## 5. 当前实现边界
+字段写入血缘是独立模型，不混入 relationship：
 
-当前实现仍是 regex/scanner 混合的轻量方案，不是完整 SQL parser。
+```sql
+UPDATE users u
+LEFT JOIN (
+  SELECT user_id, SUM(pay_amount) AS actual_total
+  FROM orders
+  GROUP BY user_id
+) o_summary ON u.id = o_summary.user_id
+SET u.total_spent = COALESCE(o_summary.actual_total, 0.00);
+```
+
+relationship:
+
+```text
+orders.user_id -> users.id
+```
+
+data lineage:
+
+```text
+VALUE:AGGREGATE:orders.pay_amount->users.total_spent
+```
+
+`SqlLineageResolver` 可以帮助把 `o_summary.actual_total` 回溯到 projection 来源，但正式 `DataLineageCandidate` 由 `TokenEventDataLineageExtractor` 创建。
+
+## 7. 与 self-join 的关系
+
+self-join 的列级弱共现不是靠列名判断，而是靠结构：
+
+```sql
+SELECT *
+FROM hr_employees e
+JOIN hr_employees m ON e.manager_id = m.emp_id;
+```
+
+如果 FK-like 方向无法可靠判断，`TokenEventRelationExtractor` 会在 ambiguous equality 分支检查：
+
+- 两侧解析到同一物理表；
+- SQL alias 不同；
+- 物理列不同；
+- predicate 是明确等值关系。
+
+满足时输出列级弱共现：
+
+```text
+CO_OCCURRENCE:hr_employees.manager_id->hr_employees.emp_id:SQL_LOG_COLUMN_CO_OCCURRENCE
+```
+
+同一 alias 的行内比较不会输出关系：
+
+```sql
+WHERE a.left_col = a.right_col
+```
+
+## 8. 当前边界
 
 已支持：
 
 - CTE 输出列回溯。
 - 多层 CTE 输出列传播。
-- FROM/JOIN 派生表输出列回溯。
-- 多层嵌套派生表输出列传播。
-- CTE/派生表引用别名传播。
-- 简单 `alias.column`、`alias.column AS output`、`alias.column output`。
-- 显式输出列名列表，例如 `WITH x(a, b) AS (...)` 和 derived table column list。
-- 表达式投影跳过。
+- FROM/JOIN derived table 输出列回溯。
+- 多层 nested derived table 输出列传播。
+- CTE/derived alias 传播。
+- 显式输出列名列表。
+- LATERAL / correlated derived table 中已允许作用域的简单列投影。
+- Data-modifying CTE、INSERT SELECT、MERGE 等被已审核 fixture 覆盖的写入场景。
 
-仍不保证：
+仍保持保守：
 
-- `SELECT *` 或 `alias.*` 的完整列展开，因为缺少表结构列清单。
-- `UNION` / `INTERSECT` / `EXCEPT` 分支间的列来源合并。
-- 递归 CTE 中递归分支的稳定 lineage。
-- `LATERAL` / `CROSS APPLY` / `OUTER APPLY` 的跨作用域引用。
-- 数据修改 CTE 的 `RETURNING` 列 lineage。
-- JSON_TABLE、unnest、set-returning function 等函数型行集的列来源。
-- 表达式、聚合、窗口函数、类型转换后的强列级推断。
-- 动态 SQL。
+- `SELECT *` / `alias.*` 不做完整列展开，除非事件中已有可用列清单。
+- 参数、literal、JSON path、局部变量不作为 v1 Data Lineage source。
+- 过程内显式临时表不作为跨语句物理字段血缘 source/target。
+- 动态 SQL 不做静态还原，只记录 warning。
+- 复杂表达式不会被 resolver 当作 relationship 端点；应进入 Data Lineage transform。
 
-这些场景后续应考虑继续增强数据库专用 token-event parser/event builder，并把当前 resolver 保持为保守 lineage helper。
+这些边界不是按特殊表名或列名过滤，而是由语法事件、作用域和 endpoint 类型决定。
 
-## 6. 测试策略
+## 9. 测试策略
 
-当前测试文件：
+主要测试入口：
 
 ```text
-relation-core/src/test/java/com/relationdetector/core/SqlLineageResolverTest.java
-relation-core/src/test/java/com/relationdetector/core/DialectSqlRelationParserComplexMatrixTest.java
+relation-core/src/test/java/com/relationdetector/core/lineage/SqlLineageResolverTest.java
+relation-core/src/test/java/com/relationdetector/core/lineage/TokenEventDataLineageExtractorTest.java
+relation-core/src/test/java/com/relationdetector/core/tokenevent/TokenEventRelationEventsTest.java
 relation-cli/src/test/java/com/relationdetector/cli/CorrectnessFixtureRunnerTest.java
+relation-cli/src/test/java/com/relationdetector/cli/FullGrammerCorrectnessShadowTest.java
 ```
 
-新增重点测试：
+测试关注点：
 
-- 多层 CTE 中 `regional_orders.region_id` 回溯到 `customers.region_id`。
-- 多层派生表中 `projected_orders.customer_id` 回溯到 `orders.customer_id`。
-- `COALESCE(a.user_id, b.user_id) AS user_id` 只在已审核 business fixture 中按首个直接物理参数做保守回溯，不展开为多源 Data Lineage。
-
-这些测试既验证正向识别，也验证“不乱猜”的负向边界。
-
-## 7. 参考语法来源
-
-设计和测试场景参考了官方文档中的语法能力：
-
-- PostgreSQL `WITH` / recursive CTE / data-modifying CTE: https://www.postgresql.org/docs/current/queries-with.html
-- PostgreSQL table expressions and `LATERAL`: https://www.postgresql.org/docs/current/queries-table-expressions.html
-- MySQL `WITH` / recursive CTE: https://dev.mysql.com/doc/refman/8.0/en/with.html
-- MySQL derived tables: https://dev.mysql.com/doc/refman/8.0/en/derived-tables.html
+- CTE / derived alias 能还原到物理表列。
+- CTE 名、derived alias、function rowset alias 不输出为物理表。
+- Relationship 与 Data Lineage 各自输出，不互相污染。
+- self-join 不靠特殊名字匹配。
+- full-grammer 与 token-event 经过同一语义 extractor 后不低于当前 correctness golden。

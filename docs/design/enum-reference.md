@@ -416,12 +416,29 @@ public enum DatabaseObjectType {
 
 ## 10.1 StructuredParseEventType
 
-表示 ANTLR 结构化解析阶段产生的中间事件，不等价于最终 relationship。
+表示 token-event / full-grammer 结构化解析阶段产生的中间事件，不等价于最终 relationship 或 Data Lineage。
 
 ```java
 public enum StructuredParseEventType {
   TABLE_REFERENCE,
   COLUMN_EQUALITY,
+  ROWSET_REFERENCE,
+  PREDICATE_EQUALITY,
+  JOIN_USING_COLUMNS,
+  EXISTS_PREDICATE,
+  IN_SUBQUERY_PREDICATE,
+  TUPLE_IN_SUBQUERY_PREDICATE,
+  CTE_DECLARATION,
+  IGNORED_ROWSET,
+  LOCAL_TEMP_TABLE_DECLARATION,
+  TRIGGER_TARGET_TABLE,
+  TRIGGER_PSEUDO_ROWSET,
+  WRITE_TARGET,
+  UPDATE_ASSIGNMENT,
+  INSERT_SELECT_MAPPING,
+  MERGE_WRITE_MAPPING,
+  PROJECTION_ITEM,
+  EXPRESSION_SOURCE,
   DDL_FOREIGN_KEY,
   DDL_INDEX,
   DYNAMIC_SQL
@@ -430,11 +447,34 @@ public enum StructuredParseEventType {
 
 | 值 | 含义 |
 | --- | --- |
-| `TABLE_REFERENCE` | 识别出表引用和 alias。 |
-| `COLUMN_EQUALITY` | 识别出 `alias.column = alias.column` 谓词。 |
-| `DDL_FOREIGN_KEY` | token-event DDL event visitor 识别出的外键关系事件，包括 table-level FK、inline `REFERENCES`、`ALTER TABLE ADD CONSTRAINT`。 |
-| `DDL_INDEX` | token-event DDL event visitor 识别出的索引/唯一性事件，例如 source index、primary key、unique constraint、unique index。 |
+| `TABLE_REFERENCE` | legacy/bootstrap 表引用事件。当前 semantic extractor 的主输入是归一后的 `ROWSET_REFERENCE`。 |
+| `COLUMN_EQUALITY` | legacy/bootstrap 列等值事件。当前 builder 会归一为 `PREDICATE_EQUALITY`。 |
+| `ROWSET_REFERENCE` | 物理 rowset 或写目标 rowset 引用，包括 table、alias、joinKind、source span 等 attributes。 |
+| `PREDICATE_EQUALITY` | 明确 `alias.column = alias.column` 谓词，供 `TokenEventRelationExtractor` 判断 FK-like 或列级弱共现。 |
+| `JOIN_USING_COLUMNS` | `JOIN ... USING (...)` 的列列表事件，不把列名当作 rowset。 |
+| `EXISTS_PREDICATE` | correlated `EXISTS` 中可解析的相关等值谓词。 |
+| `IN_SUBQUERY_PREDICATE` | scalar `IN (SELECT ...)` 谓词。 |
+| `TUPLE_IN_SUBQUERY_PREDICATE` | tuple `IN` 谓词，例如 `(a,b) IN (SELECT x,y ...)`。 |
+| `CTE_DECLARATION` | CTE 名称和输出列声明，用于 ignored rowset 和 projection lineage。 |
+| `IGNORED_ROWSET` | CTE、derived table、function rowset 等不应作为物理表输出的 rowset。 |
+| `LOCAL_TEMP_TABLE_DECLARATION` | SQL 语法明确创建的本地临时表；不能按名字猜测临时表。 |
+| `TRIGGER_TARGET_TABLE` | trigger 所属目标表。 |
+| `TRIGGER_PSEUDO_ROWSET` | trigger 中 `NEW` / `OLD` pseudo rowset 到目标表的映射。 |
+| `WRITE_TARGET` | DML 写目标表/alias。 |
+| `UPDATE_ASSIGNMENT` | `UPDATE/MERGE UPDATE SET` 的目标列与表达式来源事件。 |
+| `INSERT_SELECT_MAPPING` | `INSERT INTO (...) SELECT ...` 或等价 insert mapping。 |
+| `MERGE_WRITE_MAPPING` | `MERGE` update/insert 写入映射。 |
+| `PROJECTION_ITEM` | CTE/derived/select item 的输出列、来源列和 transform 信息。 |
+| `EXPRESSION_SOURCE` | 表达式内来源列和 transform 分析事件。 |
+| `DDL_FOREIGN_KEY` | DDL event visitor 识别出的外键关系事件，包括 table-level FK、inline `REFERENCES`、`ALTER TABLE ADD CONSTRAINT`。 |
+| `DDL_INDEX` | DDL event visitor 识别出的索引/唯一性事件，例如 source index、primary key、unique constraint、unique index。 |
 | `DYNAMIC_SQL` | 为可静态还原的动态 SQL 事件预留。当前不可还原时输出 warning。 |
+
+维护说明：
+
+- SQL relationship extractor 当前消费 `ROWSET_REFERENCE`、`PREDICATE_EQUALITY`、`JOIN_USING_COLUMNS`、`EXISTS_PREDICATE`、`IN_SUBQUERY_PREDICATE`、`TUPLE_IN_SUBQUERY_PREDICATE`、`PROJECTION_ITEM` 和 scope events。
+- Data Lineage extractor 当前消费写入映射、projection 和 local temp scope events。
+- DDL relationship extractor 只消费 `DDL_FOREIGN_KEY` 和 `DDL_INDEX`。
 
 ## 11. LogFormatHint
 

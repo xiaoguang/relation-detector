@@ -33,7 +33,7 @@ orders -> users
 - CLI 框架：picocli。
 - 配置文件：YAML。
 - JSON 序列化：Jackson。
-- SQL/DDL 解析：通用 Java SQL parser 作为基础，MySQL/PostgreSQL adaptor 补充方言差异。
+- SQL/DDL 解析：统一通过 `parser.mode: auto|full-grammer|token-event` 选择。`token-event` 是无版本信息或 profile 不支持时的兜底链路；`full-grammer` 使用 MySQL/PostgreSQL adaptor 注册的大版本 grammar profile。ANTLR 是底层 lexer/parser 技术，不是业务 parser 模式名。
 - 插件发现：Java SPI / `ServiceLoader`。
 - 测试：
   - JUnit 5。
@@ -68,7 +68,7 @@ relation-detector/
   - 证据合并。
   - 最终置信度计算。
   - 输出模型。
-  - 默认 SQL/DDL 解析能力。
+  - parser 选择、token-event 事件模型、full-grammer profile registry、relationship/Data Lineage/DDL semantic extractor。
 
 - `relation-cli`
   - picocli 命令行入口。
@@ -81,12 +81,16 @@ relation-detector/
   - MySQL 对象定义采集。
   - MySQL general/slow log 解析。
   - MySQL 方言规则。
+  - MySQL token-event parser。
+  - MySQL 8.0 full-grammer module。
 
 - `adaptor-postgres`
   - PostgreSQL 元数据采集。
   - PostgreSQL 对象定义采集。
   - PostgreSQL statement log 解析。
   - PostgreSQL 方言规则。
+  - PostgreSQL token-event parser。
+  - PostgreSQL 16 full-grammer module。
 
 - `test-fixtures`
   - 样例 schema。
@@ -593,10 +597,11 @@ confidence = 1 - product(1 - evidenceScore)
 - 连接能力声明。
 - 标识符规范化规则。
 - 元数据采集器。
-- DDL 解析器。
+- DDL structured parser。
 - 数据库对象定义采集器。
 - 原生日志解析器。
-- SQL 方言补丁。
+- SQL structured parser。
+- full-grammer dialect module，可按数据库大版本独立注册。
 - 数据画像能力。
 - evidence 权重修正能力。
 
@@ -686,6 +691,11 @@ sources:
     sampleRows: 10000
     timeoutSeconds: 30
 
+parser:
+  mode: auto              # auto | full-grammer | token-event
+  grammarProfile: ""      # 可选，例如 postgresql/16 或 mysql/8.0
+  databaseVersion: ""     # 可选，例如 16.5；缺失时可由 JDBC metadata 补充
+
 output:
   format: json
   minConfidence: 0.30
@@ -705,6 +715,7 @@ output:
   },
   "generatedAt": "2026-06-14T00:00:00Z",
   "relationships": [],
+  "dataLineages": [],
   "warnings": []
 }
 ```
@@ -750,6 +761,24 @@ output:
   "relationType": "CO_OCCURRENCE",
   "relationSubType": "TABLE_CO_OCCURRENCE",
   "confidence": 0.25,
+  "evidence": []
+}
+```
+
+Data Lineage 是独立顶层数组，不混入 relationship，也不改变 relationship confidence：
+
+```json
+{
+  "sources": [
+    { "table": "orders", "column": "pay_amount" }
+  ],
+  "target": {
+    "table": "users",
+    "column": "total_spent"
+  },
+  "flowKind": "VALUE",
+  "transformType": "AGGREGATE",
+  "confidence": 0.80,
   "evidence": []
 }
 ```
@@ -829,18 +858,18 @@ output:
 
 ### Phase 6：SQL/DDL/对象解析增强
 
-- 支持 JOIN 条件解析。
-- 支持表别名解析。
-- 支持 schema 限定名解析。
-- 支持 `IN` 子查询。
-- 支持 `EXISTS` 子查询。
-- 支持多表共现识别。
-- 解析失败时记录 warning。
+- 建立 token-event SQL/DDL structured parser。
+- 建立版本化 full-grammer profile 与 adaptor module 注入。
+- 支持 JOIN 条件、表别名、schema 限定名、CTE、derived table、`EXISTS`、scalar/tuple `IN`、DML rowset、对象 SQL。
+- 支持 Data Lineage v1：数据库内部字段到字段的 UPDATE / INSERT SELECT / MERGE 写入血缘。
+- 支持 DDL FK / index 结构事件与 DDL relationship extraction。
+- 解析失败或动态 SQL 时记录 warning，单条语句失败不影响整体扫描。
 
 验收：
 
-- fixture SQL 覆盖常见 JOIN、子查询、视图、触发器。
+- fixture SQL/DDL 覆盖常见 JOIN、子查询、视图、触发器、DML 写入、DDL index/FK。
 - 单条 SQL 失败不影响整体扫描。
+- full-grammer parity 测试证明版本化 profile 不低于当前 token-event correctness gold。
 
 ### Phase 7：可选数据画像
 
@@ -905,10 +934,12 @@ output:
   - 视图 JOIN。
   - 存储过程 JOIN。
   - 触发器引用。
-  - SQL 日志 JOIN。
-  - SQL 日志 `IN` 子查询。
-  - SQL 日志共现。
-  - 数据画像值域包含。
+- SQL 日志 JOIN。
+- SQL 日志 `IN` 子查询。
+- SQL 日志共现。
+- UPDATE / INSERT SELECT / MERGE Data Lineage。
+- full-grammer profile selection 与 token-event fallback。
+- 数据画像值域包含。
 
 ### CLI 测试
 
@@ -932,6 +963,7 @@ v1 完成时应满足：
 - 可以读取过程、视图、触发器定义。
 - 可以解析 MySQL/PostgreSQL 原生日志和纯 SQL 文本。
 - 可以输出列级 FK-like 关系。
+- 可以输出数据库内部字段 Data Lineage。
 - 无法确定列时可以输出低置信度表级共现关系。
 - 可以通过可选数据画像增强或降低置信度。
 - 每条关系都有 evidence 解释。

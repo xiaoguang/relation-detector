@@ -22,11 +22,12 @@ import com.relationdetector.core.fullgrammer.SqlGrammarProfileSelection;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 
 /**
- * Runs the token-event DDL relation extraction pipeline.
+ * Runs the selected DDL relation extraction pipeline.
  *
- * <p>DDL parser mode selection has been removed. The adaptor supplies the
- * dialect token-event DDL parser, and this runner converts its events into
- * relationship candidates:
+ * <p>The adaptor supplies the dialect token-event DDL parser. When
+ * {@code parser.mode} and a versioned grammar profile select full-grammer, the
+ * runner uses the corresponding full-grammer DDL parser instead. In both cases
+ * this runner converts structured DDL events into relationship candidates:
  *
  * <pre>{@code
  * ScanEngine.safeParseDdl(...)

@@ -2,211 +2,129 @@
 
 ## 检查目标
 
-对 Phase 1 到 Phase 8 的详细设计文档进行逻辑一致性检查，确认是否存在明显不自洽、阶段依赖混乱、职责边界冲突或实现风险过高的问题。
+本报告用于检查当前设计文档是否与代码实现保持一致，重点覆盖：
+
+- core / adaptor 职责边界。
+- `token-event` 与 `full-grammer` parser 模式。
+- SQL / DML relationship 抽取。
+- Data Lineage v1。
+- DDL relationship 抽取。
+- correctness fixture 与生成报告。
 
 ## 检查结论
 
-当前设计整体自洽，可以作为后续实现依据。
+当前主设计已经从早期 “Simple / ANTLR primary / shadow” 迁移为：
 
-发现的主要风险已经在阶段文档中通过约束或说明处理：
+```text
+parser.mode=auto|full-grammer|token-event
 
-- Phase 4/5 与 Phase 6 的解析能力依赖。
-- adaptor API 过度开放导致 core 边界模糊。
-- 数据画像可能造成生产库压力。
-- `relationSubType` 在多证据场景下可能歧义。
-- JOIN 推断方向可能错误。
+token-event:
+  ANTLR lexer/parser support
+  -> token-event structured events
+  -> relationship / lineage / DDL semantic extractor
 
-目前没有发现阻塞级设计矛盾。
+full-grammer:
+  adaptor-owned versioned grammar profile
+  -> typed parse-tree visitor
+  -> same structured events
+  -> same semantic extractor
+```
+
+代码中的主要行为与设计一致：
+
+- MySQL/PostgreSQL 是当前一等支持目标。
+- SQL Server/Oracle 仍是 future adaptor。
+- core 不直接 import MySQL/PostgreSQL full-grammer 实现；版本化 module 由 adaptor 注册。
+- Relationship 与 Data Lineage 是两个独立输出模型。
+- Simple SQL/DDL parser 和旧 SQL/DDL parser mode 配置不再是当前能力。
+- correctness fixture 以当前 parser golden 为正式基线；full-grammer parity 测试用于保证版本化 grammar 不低于 token-event fallback。
+
+## 需要特别说明的实现事实
+
+### 1. fallback 只发生在 parser selection 层
+
+当 `parser.mode=auto|full-grammer` 时，如果无法根据 database type / profile / version 选中 full-grammer profile，runner 会使用 adaptor 暴露的 token-event parser，并记录 fallback 诊断。
+
+如果 full-grammer profile 已经选中，full-grammer parser 自己返回 structured events、partial result 和 warning；它不会在 event 层委托 token-event 补齐事件。未捕获异常由 `ScanEngine` 记录当前 statement/source 失败，不会静默混合另一条 parser 链路。
+
+### 2. SQL relationship 与 Data Lineage 当前会各 parse 一次
+
+`ScanEngine.safeParseStatement(...)` 当前先调用 `SqlRelationParserRunner.parseStructured(...)` 给 Data Lineage 使用，再调用 `SqlRelationParserRunner.parse(...)` 生成 relationship。两次都会经过同一 parser selection 逻辑。
+
+这是实现事实，不是设计分歧；后续可以优化为复用同一个 `StructuredParseResult`，但不应改变输出语义。
+
+### 3. full-grammer 与 token-event 共用语义层
+
+full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 Java semantic layer：
+
+- FK-like 方向归一。
+- 列级 / 表级 `CO_OCCURRENCE` 判断。
+- self-join 结构性列级弱共现。
+- Data Lineage transform 映射和 confidence。
+- DDL index / FK 事件到 relationship 的转换。
+
+### 4. 不允许特殊名字过滤
+
+当前设计要求 SQL/DDL/Lineage 过滤只能基于语法结构、事件类型、作用域、endpoint 类型或数据库关键字。不能因为表名或列名包含 `tmp`、`temp`、`manager_id` 等特殊字符串而改变关系/血缘结论。
+
+临时表只能来自明确语法结构，例如 `CREATE TEMPORARY TABLE` / `CREATE TEMP TABLE`。
 
 ## 一致性检查项
 
-### 1. 阶段顺序
+### Core 与 adaptor
 
 结果：通过。
 
-检查：
+- core 负责 parser selection、module registry、relationship merger、lineage merger、confidence、输出模型。
+- adaptor 负责数据库元数据、日志/对象采集、token-event parser、versioned full-grammer module。
+- MySQL `SQL_MODE` helper 只属于 MySQL full-grammer runtime，不是系统 `parser.mode`。
 
-- Phase 1 建立工程骨架。
-- Phase 2 建立核心模型和评分。
-- Phase 3 建立 adaptor API。
-- Phase 4/5 实现 MySQL/PostgreSQL adaptor。
-- Phase 6 增强通用解析能力。
-- Phase 7 增加可选数据画像。
-- Phase 8 完善输出和用户体验。
-
-潜在问题：
-
-- Phase 4/5 需要解析 SQL/DDL，而 Phase 6 才增强解析。
-
-处理：
-
-- Phase 4/5 文档明确只完成采集、基础证据和方言补丁。
-- Phase 6 统一补齐复杂 JOIN、子查询、别名、表共现等能力。
-- 因此阶段顺序可执行。
-
-### 2. Core 与 adaptor 职责边界
+### Relationship 模型
 
 结果：通过。
 
-检查：
+- `RelationType` 仍只保留 `FK_LIKE` 和 `CO_OCCURRENCE`。
+- 列级弱共现使用 `RelationSubType.COLUMN_CO_OCCURRENCE` 与 `EvidenceType.SQL_LOG_COLUMN_CO_OCCURRENCE`。
+- 同表不同 alias 的 self-join 允许输出列级弱共现；同 alias 行内比较不输出关系。
 
-- core 负责候选归并、最终评分、输出模型。
-- adaptor 负责数据库特定采集、解析、日志提取、权重修正。
-- adaptor 可以扩展全链路，但不能绕过 evidence 输出和 core 最终合并。
-
-潜在问题：
-
-- “全链路扩展”可能让不同数据库输出不可比较。
-
-处理：
-
-- Phase 3 明确 core 保留最终评分和输出。
-- adaptor 只能修正 evidence score，不能自行替代最终输出模型。
-
-### 3. relationType 与 relationSubType
+### Data Lineage 模型
 
 结果：通过。
 
-检查：
+- `ScanResult` 已有独立 `dataLineages`。
+- Data Lineage confidence 不参与 relationship confidence。
+- v1 只输出数据库内部 `table.column -> table.column`，不做 Parameter Binding。
+- `CUMULATIVE` 已作为累计/运行聚合 transform 与普通 `AGGREGATE` 区分。
 
-- `relationType` 只保留大类：`FK_LIKE`、`CO_OCCURRENCE`。
-- `relationSubType` 表示主导可信形态。
-- evidence 保存所有细节。
+### Parser 模式
 
-潜在问题：
+结果：通过，需注意文档用词。
 
-- 一条关系同时有 JOIN、命名、数据画像等多个证据时 subtype 可能混乱。
+- 用户可见模式名是 `full-grammer` 与 `token-event`。
+- Java package 使用 `fullgrammer` / `tokenevent`，因为 Java package 不能包含横线。
+- `full-grammer` 具体版本实现在 adaptor，例如 `mysql.fullgrammer.v8_0`、`postgres.fullgrammer.v16`。
+- 无方言或无合理版本信息时使用 token-event。
 
-处理：
-
-- Phase 2 定义 subtype 优先级。
-- 显式 FK 不会被弱证据覆盖。
-- 数据画像只能提升推断型关系，不能覆盖显式 FK。
-
-### 4. 置信度模型
+### DDL
 
 结果：通过。
 
-检查：
+- 当前 DDL production parser 是 token-event DDL structured parser 或被 parser selection 选中的 full-grammer DDL parser。
+- 两者都输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 事件。
+- `DdlRelationExtractionVisitor` 只消费 DDL events，不参与 SQL relation / lineage。
 
-- 正向 evidence 使用统一合并公式。
-- 负向 evidence 降低最终分数。
-- 显式 FK 有最低置信度保护。
-- 最高分封顶。
-
-潜在问题：
-
-- 多个弱证据叠加可能过度接近强证据。
-
-处理：
-
-- 最高封顶为 0.99。
-- 显式 FK 和推断关系仍通过 subtype/evidence 区分。
-- 重复观测按 evidence group 聚合，基础分只保留一次；额外 `REPEATED_OBSERVATION` 使用递减增益并以 0.10 为绝对上限，防止日志频率把普通 JOIN 刷成显式 FK。
-
-### 5. 关系方向
+### 测试资产
 
 结果：通过。
 
-检查：
+- `CorrectnessFixtureRunnerTest` 保护当前 parser golden。
+- `CorrectnessSummaryGeneratorTest` 生成轻量索引报告。
+- `DataLineageAuditGeneratorTest` 维护 lineage 审核入口。
+- `FullGrammerCorrectnessShadowTest` 与 `FullGrammerDdlCorrectnessShadowTest` 保护 full-grammer 不低于 token-event。
 
-- 显式 FK 方向明确。
-- JOIN 推断依赖 unique、命名、metadata。
-- 数据画像通过包含关系和唯一性判断方向。
+## 后续技术债
 
-潜在问题：
-
-- 两侧都非 unique 或命名不明确时可能误判方向。
-
-处理：
-
-- Phase 2 和 Phase 6 明确方向不可靠时退化为表级 `CO_OCCURRENCE`。
-- 不强行输出列级 `FK_LIKE`。
-
-### 6. 数据画像安全性
-
-结果：通过。
-
-检查：
-
-- 默认关闭。
-- 只对候选关系运行。
-- 有 sampleRows、timeoutSeconds、maxCandidatePairs。
-- 不输出真实业务值。
-
-潜在问题：
-
-- 对大表画像仍可能消耗资源。
-
-处理：
-
-- Phase 7 要求所有画像查询受限。
-- 超时记录 warning，不中断扫描。
-- 显式 FK 默认不画像，减少无意义查询。
-
-### 7. MySQL 与 PostgreSQL 能力一致性
-
-结果：通过。
-
-检查：
-
-- 两者都支持元数据、DDL、对象定义、原生日志、数据画像。
-- 各自处理标识符、系统表、日志格式差异。
-
-潜在问题：
-
-- PostgreSQL 触发器逻辑在 trigger function 中，和 MySQL trigger body 不同。
-
-处理：
-
-- Phase 5 明确需要关联 trigger 与 trigger function。
-
-### 8. 输出稳定性
-
-结果：通过。
-
-检查：
-
-- JSON 输出有稳定顶层结构。
-- table 输出面向人读。
-- warning 和错误码有定义。
-
-潜在问题：
-
-- 后续新增字段可能破坏集成方。
-
-处理：
-
-- Phase 8 明确新增字段应向后兼容。
-- JSON 反序列化测试纳入验收。
-
-### 9. ENUM 定义完整性
-
-结果：通过。
-
-检查：
-
-- 已新增 `enum-reference.md`，集中解释所有需要稳定维护的 enum。
-- 覆盖 `DatabaseType`、`OutputFormat`、`RelationType`、`RelationSubType`、`EvidenceType`、`EvidenceSourceType`、`StatementSourceType`、`DatabaseObjectType`、`LogFormatHint`、`DirectionConfidence`、`WarningType`、`WarningSeverity`、`ErrorCode`、`AdaptorCapability`、`ScanSourceKind`。
-- 每个 enum 都说明了含义、取值、使用场景和维护注意点。
-
-潜在问题：
-
-- 阶段文档中曾只列 enum 名称，缺少足够解释，维护人员可能误用。
-
-处理：
-
-- 阶段索引已链接 `enum-reference.md`。
-- 后续实现 Java enum 和 JSON 输出时，以该文档为准。
-
-## 建议后续实现时重点关注
-
-- 先实现 Phase 2 的模型测试，避免后续 adaptor 产物无处归并。
-- Phase 3 的 adaptor API 不要一次写得过深，可先按当前接口建骨架，再在 MySQL/PG 实现中验证。
-- Phase 6 的解析器要有大量 fixture，不要只靠真实数据库集成测试。
-- Phase 7 数据画像应优先实现候选选择和查询限制，再实现复杂统计。
-- Phase 8 JSON 输出建议做 snapshot 或 schema 兼容测试。
-
-## 最终判断
-
-设计可以继续进入实现阶段。当前文档没有发现需要返工的根本性问题，但 parser、数据画像和 adaptor API 是实现阶段的主要复杂点，需要用测试持续约束。
+- SQL relationship 与 Data Lineage parse result 可以复用，减少同一 SQL 双 parse。
+- DDL token-event path 仍有 cursor/helper 层，后续可继续向 typed parse-tree visitor 收敛。
+- full-grammer profile 当前只覆盖 MySQL 8.0 与 PostgreSQL 16；新增大版本需新增 adaptor module、fixture 和 parity test。
+- SQL Server / Oracle 仍需要独立 adaptor，而不是回退到 MySQL/PostgreSQL parser。

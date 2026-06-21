@@ -24,6 +24,8 @@
 - v1 优先完整支持 MySQL 和 PostgreSQL。
 - SQL Server、Oracle 等后续数据库通过 adaptor API 和 Java SPI 扩展。
 - core 统一负责候选关系归并、最终评分、输出模型。
-- adaptor 可以提供采集、解析、证据生成、权重修正等数据库特定能力。
+- adaptor 可以提供采集、token-event parser、versioned full-grammer module、证据生成、权重修正等数据库特定能力。
+- SQL/DDL parser 运行模式统一为 `parser.mode=auto|full-grammer|token-event`。无方言或无合理版本信息时使用 `token-event`；能选中版本化 grammar profile 时可使用 `full-grammer`。
+- Relationship 与 Data Lineage 是独立输出模型；Data Lineage 不参与 relationship confidence。
 - 数据画像默认关闭，只在用户显式开启时读取业务数据。
 - 每条输出关系必须保留 evidence，不能只输出最终 confidence。

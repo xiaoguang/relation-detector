@@ -56,7 +56,7 @@ public final class TokenEventRelationExtractor {
                 RelationshipCandidate candidate = fkLikeCandidate(statement, left, right, text(event, "joinKind"));
                 if (candidate != null) {
                     candidates.add(candidate);
-                } else if (!left.table().equals(right.table())) {
+                } else if (shouldEmitColumnCoOccurrence(left, right, text(event, "leftAlias"), text(event, "rightAlias"))) {
                     candidates.add(columnCoOccurrenceCandidate(statement, left, right,
                             text(event, "joinKind"),
                             "ANTLR token-event ambiguous column equality"));
@@ -473,6 +473,22 @@ public final class TokenEventRelationExtractor {
                 Map.of("joinKind", joinKind.isBlank() ? "WHERE_OR_UNKNOWN" : joinKind,
                         "tokenEventNative", true)));
         return candidate;
+    }
+
+    private boolean shouldEmitColumnCoOccurrence(ColumnRef left, ColumnRef right, String leftAlias, String rightAlias) {
+        if (!left.table().equals(right.table())) {
+            return true;
+        }
+        return isExplicitSelfJoinColumnEquality(left, right, leftAlias, rightAlias);
+    }
+
+    private boolean isExplicitSelfJoinColumnEquality(ColumnRef left, ColumnRef right, String leftAlias, String rightAlias) {
+        String normalizedLeftAlias = normalize(leftAlias);
+        String normalizedRightAlias = normalize(rightAlias);
+        return !normalizedLeftAlias.isBlank()
+                && !normalizedRightAlias.isBlank()
+                && !normalizedLeftAlias.equals(normalizedRightAlias)
+                && !normalize(left.columnName()).equals(normalize(right.columnName()));
     }
 
     private List<String> stringList(Object value) {

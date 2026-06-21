@@ -25,6 +25,7 @@ import com.relationdetector.api.Endpoint;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.StructuredParseEventType;
+import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.SqlStatementRecord;
 import com.relationdetector.api.StructuredParseResult;
 import com.relationdetector.api.StructuredSqlEvent;
@@ -102,6 +103,36 @@ class FullGrammerNativeRelationEventsTest {
         assertTrue(hasEvent(result, StructuredParseEventType.JOIN_USING_COLUMNS, "leftAlias", "o", "rightAlias", "ot"));
         assertTrue(hasEvent(result, StructuredParseEventType.IN_SUBQUERY_PREDICATE, "outerAlias", "o", "innerTable", "customers"));
         assertTrue(hasEvent(result, StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE, "innerTable", "stores", "tokenEventNative", true));
+    }
+
+    @Test
+    void postgresqlSelfJoinColumnCoOccurrenceComesFromFullGrammerNativeEvents() {
+        SqlStatementRecord statement = statement("""
+                SELECT *
+                FROM workflow_tasks curr
+                JOIN workflow_tasks prev ON curr.predecessor_id = prev.task_id
+                """);
+
+        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
+                        DatabaseType.POSTGRESQL,
+                        "16.4",
+                        emptyDelegate(SqlDialect.POSTGRES))
+                .parser()
+                .parseSql(statement, null);
+
+        assertNativeEventTypes(result, Set.of(
+                StructuredParseEventType.PREDICATE_EQUALITY,
+                StructuredParseEventType.ROWSET_REFERENCE));
+        assertTrue(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY,
+                "leftAlias", "curr", "rightAlias", "prev"));
+
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, result).stream()
+                .map(FullGrammerNativeRelationEventsTest::relationFingerprint)
+                .toList();
+
+        assertEquals(List.of(
+                "CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                fingerprints);
     }
 
     @Test
@@ -512,6 +543,13 @@ class FullGrammerNativeRelationEventsTest {
                 + candidate.transformType().name() + ":"
                 + sources + "->"
                 + candidate.target().table().tableName() + "." + candidate.target().column().columnName();
+    }
+
+    private static String relationFingerprint(RelationshipCandidate relation) {
+        String evidenceType = relation.evidence().isEmpty() ? "NO_EVIDENCE" : relation.evidence().get(0).type().name();
+        return relation.relationType() + ":"
+                + relation.source().displayName() + "->" + relation.target().displayName()
+                + ":" + evidenceType;
     }
 
     @SuppressWarnings("unchecked")
