@@ -11,7 +11,7 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 | Total correctness fixtures | 114 |
 | SQL fixtures | 92 |
 | DDL fixtures | 22 |
-| Fixtures with expected lineage | 15 |
+| Fixtures with expected lineage | 13 |
 | Common directory fixtures | 2 |
 | MySQL directory fixtures | 57 |
 | PostgreSQL directory fixtures | 55 |
@@ -935,24 +935,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number->jsh_depot_head.other_money`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number->jsh_depot_head.status`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_head.organ_id`
-- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_head.sales_man`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_head.tenant_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_head.default_number`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_head.sub_type`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_head.link_apply`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_head.number`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_head.oper_time`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_head.account_id`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_head.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_head.create_time`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_head.discount_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_head.discount`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_head.pay_type`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_head.delete_flag`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_head.creator`
+- None
 
 **Forbidden Tables**
 
@@ -1079,8 +1062,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_temp_org_pdf.running_sum,jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
-- `VALUE:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
 
@@ -1213,12 +1196,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_depot_item.tenant_id->biz_sync_progress.tenantId`
-- `VALUE:DIRECT:jsh_depot_head.id->biz_sync_progress.status`
-- `VALUE:DIRECT:jsh_depot_head.oper_time->biz_sync_progress.pct`
-- `VALUE:DIRECT:jsh_depot_head.sub_type->biz_sync_progress.doneRows`
-- `VALUE:DIRECT:jsh_depot_head.type->biz_sync_progress.totalRows`
-- `VALUE:DIRECT:jsh_depot_item.id->biz_sync_progress.msg`
+- None
 
 **Forbidden Tables**
 
@@ -1568,8 +1546,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:AGGREGATE:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
 
 **Forbidden Tables**
@@ -1621,8 +1599,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:AGGREGATE:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
 
 **Forbidden Tables**
@@ -4835,7 +4813,6 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:financial_subsidiaries.tax_jurisdiction->corporate_tax_matrix.jurisdiction_string:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:hr_departments.loc_id->hr_locations.loc_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:hr_employees.dept_id->hr_departments.dept_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `CO_OCCURRENCE:hr_employees.manager_id->hr_employees.emp_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:interaction_resolutions.resolution_id->feedback_surveys.resolution_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:journal_entries.account_id->chart_of_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:ledger_transactions.source_account->account_balances.account_no:SQL_LOG_COLUMN_CO_OCCURRENCE`
@@ -4934,7 +4911,6 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:product_variants.product_id->products.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:system_logs.triggered_by->user_preferences.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:user_roles_mapping.role_id->role_permissions.role_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:R_projects.manager_id->employees.id:SQL_LOG_JOIN`
 - `FK_LIKE:infrastructure_nodes.parent_id->infrastructure_nodes.id:SQL_LOG_JOIN`
 - `FK_LIKE:profiles.user_id->users.id:SQL_LOG_JOIN`
@@ -5100,7 +5076,6 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_JOIN`
 - `FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:departments.parent_department->departments.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
 - `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
 

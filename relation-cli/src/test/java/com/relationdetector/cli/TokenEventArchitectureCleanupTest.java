@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * Guards the Token/Event cleanup boundary.
+ * Guards the token-event cleanup boundary.
  *
  * <p>ANTLR remains the low-level lexer/parser technology, but production code
  * must not reintroduce migration-era v2/shadow/current naming or the old
@@ -22,7 +22,7 @@ class TokenEventArchitectureCleanupTest {
     private static final List<Pattern> FORBIDDEN_PATTERNS = List.of(
             Pattern.compile("\\bTokenEventV2\\w*"),
             Pattern.compile("\\b\\w*V2\\w*\\b"),
-            Pattern.compile("\\bToken/Event v2\\b"),
+            Pattern.compile("\\btoken-event v2\\b"),
             Pattern.compile("\\btokenEventV2Native\\b"),
             Pattern.compile("\\bread\\w+V2\\b"),
             Pattern.compile("\\bNativeV2Events\\b"),
@@ -54,8 +54,16 @@ class TokenEventArchitectureCleanupTest {
             Pattern.compile("\\bTokenEventV2ShadowRunner\\b"),
             Pattern.compile("\\bDdlTokenEventV2ShadowAudit"),
             Pattern.compile("\\bTokenEventV2ShadowAudit"),
+            Pattern.compile("\\bFullGrammar\\w*"),
+            Pattern.compile("\\bfullGrammar\\w*"),
+            Pattern.compile("\\bfullgrammar\\b"),
+            Pattern.compile("\\bfull-grammar\\b"),
+            Pattern.compile("\\bfull grammar\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bmissing current\\b", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bextra v2\\b", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bSqlMode\\b"),
+            Pattern.compile("\\bSqlModes\\b"),
+            Pattern.compile("\\bSet\\s*<\\s*SqlMode\\s*>"),
             Pattern.compile("\\bDdlParser\\s+ddlParser\\s*\\("),
             Pattern.compile("\\bddlParser\\s*\\("),
             Pattern.compile("\\bparser\\.ddl\\.mode\\b"),
@@ -146,6 +154,11 @@ class TokenEventArchitectureCleanupTest {
         }
         if (fileName.equals("ddl-parser-comparison.json")) {
             return Stream.of(path + " keeps old DDL parser comparison golden");
+        }
+        String normalized = path.toString().replace('\\', '/');
+        if (normalized.matches(".*/adaptor-mysql/src/main/java/com/relationdetector/mysql/[^/]+TokenEventStructured[^/]+Parser\\.java")
+                || normalized.matches(".*/adaptor-postgres/src/main/java/com/relationdetector/postgres/[^/]+TokenEventStructured[^/]+Parser\\.java")) {
+            return Stream.of(path + " keeps adaptor token-event parser in the adaptor root package");
         }
         return Stream.empty();
     }

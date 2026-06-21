@@ -59,7 +59,9 @@ import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
 import com.relationdetector.core.DiagnosticWarnings;
 import com.relationdetector.core.PlainSqlLogExtractor;
-import com.relationdetector.core.TokenEventSqlRelationParser;
+import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredDdlParser;
+import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
 
 /** MySQL 5.7/8.0 adaptor implementing the Phase 4 design. */
 public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
@@ -153,7 +155,7 @@ public final class MySqlDatabaseAdaptor implements DatabaseAdaptor {
      * <p>This class is the adaptor-side implementation of the common
      * {@link MetadataCollector} SPI. It only reads database-owned metadata; SQL text
      * from procedures/views/triggers is handled by {@link MySqlObjectCollector} and
-     * then parsed by the MySQL Token/Event SQL parser, with ANTLR used only as
+     * then parsed by the MySQL token-event SQL parser, with ANTLR used only as
      * low-level lexer/parser support.
      *
      * <p>Call relationship:

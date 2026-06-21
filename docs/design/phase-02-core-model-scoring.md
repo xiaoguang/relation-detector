@@ -102,6 +102,7 @@ public final class DataLineageCandidate {
 | --- | ---: | ---: | --- |
 | `DIRECT` | 0.90 | 不适用 | `SET a.x = b.y`。 |
 | `AGGREGATE` | 0.80 | 不适用 | `SUM(o.pay_amount) AS total` 后写入目标列。 |
+| `CUMULATIVE` | 0.80 | 不适用 | running sum、running total、CDF 这类累计聚合衍生值写入目标列。 |
 | `COALESCE` | 0.75 | 不适用 | 多个字段兜底选择。 |
 | `ARITHMETIC` | 0.75 | 不适用 | 加减乘除等数值表达式。 |
 | `CONCAT_FORMAT` | 0.70 | 不适用 | `CONCAT`、`FORMAT`、`||`、字符串聚合等格式化。 |

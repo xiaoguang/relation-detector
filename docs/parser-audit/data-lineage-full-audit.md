@@ -9,10 +9,10 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 | Classification | Count |
 | --- | ---: |
 | TOTAL | 114 |
-| EXISTING_GOLD | 15 |
+| EXISTING_GOLD | 13 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 99 |
+| NOT_APPLICABLE | 101 |
 
 ## `mysql-basic-correctness-case-01-ddl`
 
@@ -633,8 +633,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -643,45 +643,11 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number->jsh_depot_head.other_money`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number->jsh_depot_head.status`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_head.organ_id`
-- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_head.sales_man`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_head.tenant_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_head.default_number`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_head.sub_type`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_head.link_apply`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_head.number`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_head.oper_time`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_head.account_id`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_head.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_head.create_time`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_head.discount_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_head.discount`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_head.pay_type`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_head.delete_flag`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_head.creator`
+- None
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number->jsh_depot_head.other_money`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number->jsh_depot_head.status`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_head.organ_id`
-- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_head.sales_man`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_head.tenant_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_head.default_number`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_head.sub_type`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_head.link_apply`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_head.number`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_head.oper_time`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_head.account_id`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_head.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_head.create_time`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_head.discount_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_head.discount`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_head.pay_type`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_head.delete_flag`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_head.creator`
+- None
 
 **Input Preview**
 
@@ -773,15 +739,15 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_temp_org_pdf.running_sum,jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
-- `VALUE:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_temp_org_pdf.running_sum,jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
-- `VALUE:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
 
@@ -865,8 +831,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -875,21 +841,11 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_depot_item.tenant_id->biz_sync_progress.tenantId`
-- `VALUE:DIRECT:jsh_depot_head.id->biz_sync_progress.status`
-- `VALUE:DIRECT:jsh_depot_head.oper_time->biz_sync_progress.pct`
-- `VALUE:DIRECT:jsh_depot_head.sub_type->biz_sync_progress.doneRows`
-- `VALUE:DIRECT:jsh_depot_head.type->biz_sync_progress.totalRows`
-- `VALUE:DIRECT:jsh_depot_item.id->biz_sync_progress.msg`
+- None
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_depot_item.tenant_id->biz_sync_progress.tenantId`
-- `VALUE:DIRECT:jsh_depot_head.id->biz_sync_progress.status`
-- `VALUE:DIRECT:jsh_depot_head.oper_time->biz_sync_progress.pct`
-- `VALUE:DIRECT:jsh_depot_head.sub_type->biz_sync_progress.doneRows`
-- `VALUE:DIRECT:jsh_depot_head.type->biz_sync_progress.totalRows`
-- `VALUE:DIRECT:jsh_depot_item.id->biz_sync_progress.msg`
+- None
 
 **Input Preview**
 
@@ -1189,15 +1145,15 @@ CREATE PROCEDURE sp_cross_border_reconciliation_engine(
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:AGGREGATE:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:AGGREGATE:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 
 **Input Preview**
 
@@ -1226,15 +1182,15 @@ CREATE PROCEDURE sp_financial_asset_wash_update_comma(
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:AGGREGATE:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:AGGREGATE:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 
 **Input Preview**
 

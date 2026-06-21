@@ -16,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.relationdetector.api.AdaptorContext;
 import com.relationdetector.api.DatabaseDdlDefinition;
 import com.relationdetector.api.Evidence;
 import com.relationdetector.api.RelationshipCandidate;
@@ -27,7 +28,7 @@ import com.relationdetector.api.Enums.DatabaseObjectType;
 import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.core.ScanConfig;
 import com.relationdetector.core.SqlLogNoiseFilter;
-import com.relationdetector.core.SqlRelationParserRunner;
+import com.relationdetector.core.parser.SqlRelationParserRunner;
 
 /**
  * Manual, read-only fixture exporter for anonymized MySQL basic correctness fixtures.

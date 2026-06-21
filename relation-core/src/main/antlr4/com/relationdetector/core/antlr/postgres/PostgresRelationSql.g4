@@ -1,7 +1,7 @@
 grammar PostgresRelationSql;
 
 /*
- * PostgreSQL structural grammar for the Token/Event SQL parser.
+ * PostgreSQL structural grammar for the token-event SQL parser.
  *
  * This remains tolerant by design, but it is no longer the same generated
  * parser as MySQL. PostgreSQL-specific syntax can now grow here independently:

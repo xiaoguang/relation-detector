@@ -49,7 +49,9 @@ import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
 import com.relationdetector.core.DiagnosticWarnings;
 import com.relationdetector.core.PlainSqlLogExtractor;
-import com.relationdetector.core.TokenEventSqlRelationParser;
+import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredDdlParser;
+import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
 
 /** PostgreSQL 12+ adaptor implementing the Phase 5 design. */
 public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
@@ -140,7 +142,7 @@ public final class PostgresDatabaseAdaptor implements DatabaseAdaptor {
      * {@link MetadataCollector} SPI. It reads only authoritative catalog data.
      * SQL bodies from functions/procedures/views are collected by
      * {@link PostgresObjectCollector}; SQL text relationship inference then happens
-     * in the PostgreSQL Token/Event SQL parser, with ANTLR used only as
+     * in the PostgreSQL token-event SQL parser, with ANTLR used only as
      * low-level lexer/parser support.
      *
      * <p>Call relationship:

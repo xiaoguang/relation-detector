@@ -60,7 +60,7 @@ public final class PlainSqlLogExtractor {
 
     /**
      * Splits SQL text on statement semicolons while preserving semicolons that
-     * are part of string literals.
+     * are part of string literals or comments.
      *
      * <p>Complete PostgreSQL example that must remain one statement:
      *
@@ -72,9 +72,24 @@ public final class PlainSqlLogExtractor {
         List<String> statements = new ArrayList<>();
         StringBuilder current = new StringBuilder();
         char quote = 0;
+        boolean lineComment = false;
+        boolean blockComment = false;
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
             current.append(c);
+            if (lineComment) {
+                if (c == '\n' || c == '\r') {
+                    lineComment = false;
+                }
+                continue;
+            }
+            if (blockComment) {
+                if (c == '*' && i + 1 < text.length() && text.charAt(i + 1) == '/') {
+                    current.append(text.charAt(++i));
+                    blockComment = false;
+                }
+                continue;
+            }
             if (quote != 0) {
                 if (c == quote) {
                     if (quote == '\'' && i + 1 < text.length() && text.charAt(i + 1) == '\'') {
@@ -87,6 +102,16 @@ public final class PlainSqlLogExtractor {
             }
             if (c == '\'' || c == '"') {
                 quote = c;
+                continue;
+            }
+            if (c == '-' && i + 1 < text.length() && text.charAt(i + 1) == '-') {
+                current.append(text.charAt(++i));
+                lineComment = true;
+                continue;
+            }
+            if (c == '/' && i + 1 < text.length() && text.charAt(i + 1) == '*') {
+                current.append(text.charAt(++i));
+                blockComment = true;
                 continue;
             }
             if (c == ';') {

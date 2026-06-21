@@ -263,7 +263,7 @@ orders.user_id -> users.id
 
 注意这里的方向不是 SQL 等号左右顺序，而是系统的 FK-like 归一方向：引用列/外键样列指向被引用键列。SQL 写作 `u.id = o_summary.user_id`，但输出仍是 `orders.user_id -> users.id`。
 
-这个规则是受控开启的：默认公共 lineage 仍不把裸列投影当成精确来源；当前只由 MySQL/PostgreSQL Token/Event relation extractor 在已由 correctness fixture 覆盖的 `UPDATE` 派生聚合回写场景中启用。这样既覆盖业务中常见的 derived aggregate 回写，又避免全局改变其它语句形态的保守基线。
+这个规则是受控开启的：默认公共 lineage 仍不把裸列投影当成精确来源；当前只由 MySQL/PostgreSQL token-event relation extractor 在已由 correctness fixture 覆盖的 `UPDATE` 派生聚合回写场景中启用。这样既覆盖业务中常见的 derived aggregate 回写，又避免全局改变其它语句形态的保守基线。
 
 同一派生表中的聚合列仍不会生成精确 lineage：
 
@@ -388,7 +388,7 @@ attributes.lineageResolved: true
 - 表达式、聚合、窗口函数、类型转换后的强列级推断。
 - 动态 SQL。
 
-这些场景后续应考虑继续增强数据库专用 Token/Event parser/event builder，并把当前 resolver 保持为保守 lineage helper。
+这些场景后续应考虑继续增强数据库专用 token-event parser/event builder，并把当前 resolver 保持为保守 lineage helper。
 
 ## 6. 测试策略
 

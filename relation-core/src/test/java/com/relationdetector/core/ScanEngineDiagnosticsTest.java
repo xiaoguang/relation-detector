@@ -1,5 +1,12 @@
 package com.relationdetector.core;
 
+import com.relationdetector.core.ddl.*;
+import com.relationdetector.core.lineage.*;
+import com.relationdetector.core.parser.*;
+import com.relationdetector.core.relation.*;
+
+import com.relationdetector.core.tokenevent.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -25,6 +32,7 @@ import com.relationdetector.api.Collectors.ObjectDefinitionCollector;
 import com.relationdetector.api.Collectors.SqlLogExtractor;
 import com.relationdetector.api.Collectors.SqlRelationParser;
 import com.relationdetector.api.Collectors.StructuredDdlParser;
+import com.relationdetector.api.Collectors.StructuredSqlParser;
 import com.relationdetector.api.Enums.AdaptorCapability;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.LogFormatHint;
@@ -143,31 +151,38 @@ class ScanEngineDiagnosticsTest {
 
     private static final class TestAdaptor implements DatabaseAdaptor {
         private final SqlRelationParser sqlRelationParser;
+        private final Optional<StructuredSqlParser> structuredSqlParser;
         private final Optional<StructuredDdlParser> structuredDdlParser;
 
         private TestAdaptor(SqlRelationParser sqlRelationParser) {
-            this(sqlRelationParser, Optional.empty());
+            this(sqlRelationParser, Optional.empty(), Optional.empty());
         }
 
         private TestAdaptor(
                 SqlRelationParser sqlRelationParser,
+                Optional<StructuredSqlParser> structuredSqlParser,
                 Optional<StructuredDdlParser> structuredDdlParser
         ) {
             this.sqlRelationParser = sqlRelationParser;
+            this.structuredSqlParser = structuredSqlParser;
             this.structuredDdlParser = structuredDdlParser;
         }
 
         static TestAdaptor withThrowingDdlParser() {
             return new TestAdaptor((statement, context) -> List.of(),
+                    Optional.empty(),
                     Optional.of((ddl, sourceName, context) -> {
                         throw new IllegalStateException("synthetic ddl failure");
                     }));
         }
 
         static TestAdaptor withThrowingSqlParser() {
-            return new TestAdaptor((statement, context) -> {
+            StructuredSqlParser structuredParser = (statement, context) -> {
                 throw new IllegalArgumentException("synthetic sql failure");
-            });
+            };
+            return new TestAdaptor((statement, context) -> {
+                throw new AssertionError("legacy SQL parser should not be used");
+            }, Optional.of(structuredParser), Optional.empty());
         }
 
         @Override
@@ -208,6 +223,11 @@ class ScanEngineDiagnosticsTest {
         @Override
         public Optional<StructuredDdlParser> structuredDdlParser() {
             return structuredDdlParser;
+        }
+
+        @Override
+        public Optional<StructuredSqlParser> structuredSqlParser() {
+            return structuredSqlParser;
         }
 
         @Override

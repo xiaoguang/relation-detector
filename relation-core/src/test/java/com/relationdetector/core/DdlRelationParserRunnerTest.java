@@ -1,5 +1,12 @@
 package com.relationdetector.core;
 
+import com.relationdetector.core.ddl.*;
+import com.relationdetector.core.lineage.*;
+import com.relationdetector.core.parser.*;
+import com.relationdetector.core.relation.*;
+
+import com.relationdetector.core.tokenevent.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -62,7 +69,7 @@ class DdlRelationParserRunnerTest {
                 .parse(new TestAdaptor(emptyStructuredDdlParser(structuredCalls)),
                         config, ddl, context(new ArrayList<>()));
 
-        assertTrue(relations.isEmpty(), "empty Token/Event DDL output must not be replaced by an old parser output");
+        assertTrue(relations.isEmpty(), "empty token-event DDL output must not be replaced by an old parser output");
         assertEquals(1, structuredCalls.get());
     }
 

@@ -20,7 +20,7 @@ class CorrectnessSummaryGeneratorTest {
         assertTrue(markdown.contains("| Total correctness fixtures | 114 |"));
         assertTrue(markdown.contains("| SQL fixtures | 92 |"));
         assertTrue(markdown.contains("| DDL fixtures | 22 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 15 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 13 |"));
         assertTrue(markdown.contains("| MySQL directory fixtures | 57 |"));
         assertTrue(markdown.contains("| MYSQL | 59 | 48 | 11 |"));
         assertTrue(markdown.contains("| POSTGRESQL | 55 | 44 | 11 |"));
@@ -30,6 +30,13 @@ class CorrectnessSummaryGeneratorTest {
         assertTrue(markdown.contains("**Input Preview**"));
         assertTrue(markdown.contains("**Expected Data Lineage Fingerprints**"));
         assertTrue(markdown.contains("VALUE:AGGREGATE:orders.pay_amount->users.total_spent"));
+        assertTrue(markdown.contains("VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end"));
+        assertTrue(markdown.contains("VALUE:ARITHMETIC:account_balances.max_credit_limit"
+                + "->account_balances.adjusted_limit"));
+        assertTrue(markdown.contains(
+                "VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,"
+                        + "dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories"
+                        + "->account_balances.compliance_notes"));
         assertTrue(markdown.contains("UPDATE products p"));
         assertTrue(markdown.contains("Preview truncated; see input file for full content."));
         assertTrue(markdown.contains("test-fixtures/correctness/postgres/postgres-business-risk-ledger-update-cte-comma-sql/input.sql"));

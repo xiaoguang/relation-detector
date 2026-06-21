@@ -1,5 +1,12 @@
 package com.relationdetector.core;
 
+import com.relationdetector.core.ddl.*;
+import com.relationdetector.core.lineage.*;
+import com.relationdetector.core.parser.*;
+import com.relationdetector.core.relation.*;
+
+import com.relationdetector.core.tokenevent.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;

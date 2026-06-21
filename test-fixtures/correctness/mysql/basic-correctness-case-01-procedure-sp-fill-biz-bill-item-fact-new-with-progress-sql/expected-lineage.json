@@ -1,12 +1,5 @@
 {
-  "fingerprints": [
-    "VALUE:AGGREGATE:jsh_depot_item.tenant_id->biz_sync_progress.tenantId",
-    "VALUE:DIRECT:jsh_depot_head.id->biz_sync_progress.status",
-    "VALUE:DIRECT:jsh_depot_head.oper_time->biz_sync_progress.pct",
-    "VALUE:DIRECT:jsh_depot_head.sub_type->biz_sync_progress.doneRows",
-    "VALUE:DIRECT:jsh_depot_head.type->biz_sync_progress.totalRows",
-    "VALUE:DIRECT:jsh_depot_item.id->biz_sync_progress.msg"
-  ],
+  "fingerprints": [],
   "forbiddenSources": [
     "p_",
     "v_",

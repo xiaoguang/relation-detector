@@ -56,6 +56,7 @@ public final class Enums {
     public enum LineageTransformType {
         DIRECT,
         AGGREGATE,
+        CUMULATIVE,
         COALESCE,
         CASE_WHEN,
         CONCAT_FORMAT,

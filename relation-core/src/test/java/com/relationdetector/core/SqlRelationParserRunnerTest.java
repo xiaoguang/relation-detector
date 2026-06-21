@@ -1,5 +1,12 @@
 package com.relationdetector.core;
 
+import com.relationdetector.core.ddl.*;
+import com.relationdetector.core.lineage.*;
+import com.relationdetector.core.parser.*;
+import com.relationdetector.core.relation.*;
+
+import com.relationdetector.core.tokenevent.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,6 +28,7 @@ import com.relationdetector.api.MetadataSnapshot;
 import com.relationdetector.api.RelationshipCandidate;
 import com.relationdetector.api.ScanScope;
 import com.relationdetector.api.SqlStatementRecord;
+import com.relationdetector.api.StructuredParseResult;
 import com.relationdetector.api.TableId;
 import com.relationdetector.api.WarningMessage;
 import com.relationdetector.api.Collectors.DataProfiler;
@@ -41,7 +49,7 @@ import com.relationdetector.api.Enums.StatementSourceType;
  * Tests SQL parser dispatch without running a full scan.
  *
  * <p>Legacy parser modes have been removed. The runner now always
- * invokes the Token/Event parser exposed for the dialect, and a hard parser
+ * invokes the token-event parser exposed for the dialect, and a hard parser
  * failure is surfaced as a warning by {@link ScanEngine} rather than being
  * hidden by any removed parser path.
  */
@@ -58,7 +66,28 @@ class SqlRelationParserRunnerTest {
                 }), config, statement(), context(new ArrayList<>()));
 
         assertTrue(relations.isEmpty());
-        assertEquals(1, parserCalls.get(), "runner should call the adaptor's Token/Event parser exactly once");
+        assertEquals(1, parserCalls.get(), "runner should call the adaptor's token-event parser exactly once");
+    }
+
+    @Test
+    void autoModeWithoutGrammarProfileUsesTokenEventWithoutFallbackWarning() {
+        AtomicInteger structuredCalls = new AtomicInteger();
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.MYSQL;
+        List<WarningMessage> warnings = new ArrayList<>();
+
+        List<RelationshipCandidate> relations = new SqlRelationParserRunner()
+                .parse(new TestAdaptor((statement, context) -> {
+                    throw new AssertionError("legacy SQL parser should not be used");
+                }, (statement, context) -> {
+                    structuredCalls.incrementAndGet();
+                    return new StructuredParseResult("token-event", "mysql", statement.sourceName(),
+                            List.of(), List.of(), Map.of());
+                }), config, statement(), context(warnings));
+
+        assertTrue(relations.isEmpty());
+        assertEquals(1, structuredCalls.get(), "auto without profile should choose token-event directly");
+        assertTrue(warnings.isEmpty(), "auto token-event selection should not be reported as fallback");
     }
 
     @Test
@@ -69,10 +98,12 @@ class SqlRelationParserRunnerTest {
         try {
             new SqlRelationParserRunner()
                     .parse(new TestAdaptor((statement, context) -> {
-                        throw new IllegalStateException("Token/Event parser exploded");
+                        throw new AssertionError("legacy SQL parser should not be used");
+                    }, (statement, context) -> {
+                        throw new IllegalStateException("token-event parser exploded");
                     }), config, statement(), context(warnings));
         } catch (IllegalStateException ex) {
-            assertEquals("Token/Event parser exploded", ex.getMessage());
+            assertEquals("token-event parser exploded", ex.getMessage());
         }
         assertTrue(warnings.isEmpty(), "runner must not emit removed-parser warnings after old parser removal");
     }
@@ -97,7 +128,7 @@ class SqlRelationParserRunnerTest {
                 }), config, statement, context(new ArrayList<>()));
 
         assertTrue(relations.isEmpty(), "metadata-only native log SQL should be filtered as noise");
-        assertEquals(0, structuredCalls.get(), "filtered log SQL must not enter the Token/Event parser");
+        assertEquals(0, structuredCalls.get(), "filtered log SQL must not enter the token-event parser");
     }
 
     @Test
@@ -163,7 +194,12 @@ class SqlRelationParserRunnerTest {
         return new AdaptorContext(new ScanScope(null, null, List.of(), List.of()), Map.of(), warnings::add);
     }
 
-    private record TestAdaptor(SqlRelationParser sqlRelationParser) implements DatabaseAdaptor {
+    private record TestAdaptor(SqlRelationParser sqlRelationParser, StructuredSqlParser structuredParser)
+            implements DatabaseAdaptor {
+        private TestAdaptor(SqlRelationParser sqlRelationParser) {
+            this(sqlRelationParser, null);
+        }
+
         @Override
         public String id() {
             return "test";
@@ -215,7 +251,7 @@ class SqlRelationParserRunnerTest {
 
         @Override
         public Optional<StructuredSqlParser> structuredSqlParser() {
-            return Optional.empty();
+            return Optional.ofNullable(structuredParser);
         }
 
         @Override

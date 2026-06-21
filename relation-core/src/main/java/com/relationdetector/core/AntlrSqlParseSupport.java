@@ -19,17 +19,17 @@ import com.relationdetector.core.antlr.RelationSqlLexer;
 import com.relationdetector.core.antlr.RelationSqlParser;
 
 /**
- * Low-level ANTLR SQL support for Token/Event parsers.
+ * Low-level ANTLR SQL support for token-event parsers.
  *
  * <p>This class owns lexer/parser setup, visible token extraction, syntax
  * diagnostics, and dynamic SQL warning creation. It deliberately does not build
- * relationship or lineage events; Token/Event builders consume the returned
+ * relationship or lineage events; token-event builders consume the returned
  * tokens and own all business extraction semantics.
  */
 public final class AntlrSqlParseSupport {
     private final SqlDialect dialect;
 
-    AntlrSqlParseSupport(SqlDialect dialect) {
+    public AntlrSqlParseSupport(SqlDialect dialect) {
         this.dialect = dialect;
     }
 
@@ -60,7 +60,7 @@ public final class AntlrSqlParseSupport {
                 visibleTokens);
     }
 
-    java.util.Optional<WarningMessage> detectDynamicSql(SqlStatementRecord statement) {
+    public java.util.Optional<WarningMessage> detectDynamicSql(SqlStatementRecord statement) {
         String lower = statement.sql().toLowerCase(Locale.ROOT);
         if (!lower.matches("(?s).*\\b(prepare|execute\\s+immediate|execute)\\b.*")) {
             return java.util.Optional.empty();

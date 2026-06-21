@@ -1,5 +1,12 @@
 package com.relationdetector.core;
 
+import com.relationdetector.core.ddl.*;
+import com.relationdetector.core.lineage.*;
+import com.relationdetector.core.parser.*;
+import com.relationdetector.core.relation.*;
+
+import com.relationdetector.core.tokenevent.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,7 +22,7 @@ import com.relationdetector.api.Enums.RelationType;
 import com.relationdetector.api.Enums.StructuredParseEventType;
 
 /**
- * Proves the Token/Event DDL relation extractor consumes structured DDL events.
+ * Proves the token-event DDL relation extractor consumes structured DDL events.
  *
  * <p>The raw input intentionally contains no DDL relationship, proving the
  * visitor relies on structured events instead of reparsing raw DDL text.
@@ -52,7 +59,7 @@ class DdlRelationExtractionVisitorIndependenceTest {
                         CREATE TABLE orders(user_id BIGINT REFERENCES users(id));
                         """, "raw-has-fk.sql", structured);
 
-        assertTrue(relations.isEmpty(), () -> "Empty Token/Event DDL events must not emit relationships: " + relations);
+        assertTrue(relations.isEmpty(), () -> "Empty token-event DDL events must not emit relationships: " + relations);
     }
 
     private StructuredParseResult structured(List<StructuredSqlEvent> events) {

@@ -56,7 +56,7 @@ public final class SqlLogNoiseFilter {
         return rowsets.stream().allMatch(rowset -> isSystemRowset(rowset, systemSchemas));
     }
 
-    static Set<String> effectiveSystemSchemas(ScanConfig config) {
+    public static Set<String> effectiveSystemSchemas(ScanConfig config) {
         if (config != null && !config.logSystemSchemas.isEmpty()) {
             return normalizeSet(config.logSystemSchemas);
         }
@@ -101,7 +101,7 @@ public final class SqlLogNoiseFilter {
         return Pattern.compile("(?i)\\b" + Pattern.quote(clean) + "\\s*(?:\\.\\.\\.|…)").matcher(sql).find();
     }
 
-    static boolean isValidIdentifierToken(String identifier) {
+    public static boolean isValidIdentifierToken(String identifier) {
         String clean = cleanIdentifier(identifier);
         return !clean.isBlank() && clean.matches("[A-Za-z_][A-Za-z0-9_$]*");
     }

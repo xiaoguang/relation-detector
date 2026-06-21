@@ -54,6 +54,7 @@ class ParserConfigRemovalTest {
 
         ScanConfig config = new SimpleYamlConfigLoader().load(file);
 
+        assertEquals("auto", config.parserMode);
         assertTrue(config.ddlFromDatabase);
         assertTrue(config.logsFilterSystemQueries);
     }
@@ -106,6 +107,69 @@ class ParserConfigRemovalTest {
         ScanConfig config = new SimpleYamlConfigLoader().load(file);
 
         assertEquals(false, config.ddlFromDatabase);
+    }
+
+    @Test
+    void yamlConfigCanSetFullGrammerProfileHints() throws Exception {
+        Path file = Files.createTempFile("relation-detector-grammar-profile", ".yml");
+        Files.writeString(file, """
+                database:
+                  type: postgresql
+                sources:
+                  metadata:
+                    enabled: false
+                  logs:
+                    enabled: true
+                    files:
+                      - app.sql
+                parser:
+                  grammarProfile: postgresql/16
+                  databaseVersion: 16.5
+                  mode: full-grammer
+                """);
+
+        ScanConfig config = new SimpleYamlConfigLoader().load(file);
+
+        assertEquals("full-grammer", config.parserMode);
+        assertEquals("postgresql/16", config.grammarProfile);
+        assertEquals("16.5", config.databaseVersion);
+        assertEquals("CONFIG", config.databaseVersionSource);
+    }
+
+    @Test
+    void yamlConfigCanForceTokenEventParserMode() throws Exception {
+        Path file = Files.createTempFile("relation-detector-token-event-mode", ".yml");
+        Files.writeString(file, """
+                database:
+                  type: mysql
+                sources:
+                  metadata:
+                    enabled: false
+                  logs:
+                    enabled: true
+                    files:
+                      - app.sql
+                parser:
+                  mode: token-event
+                """);
+
+        ScanConfig config = new SimpleYamlConfigLoader().load(file);
+
+        assertEquals("token-event", config.parserMode);
+    }
+
+    @Test
+    void cliAcceptsParserModeAndGrammarOverrides() {
+        Main.CliArguments args = Main.CliArguments.parse(new String[] {
+                "scan", "--config", "config.yml",
+                "--parser-mode", "full-grammer",
+                "--grammar-profile", "postgresql/16",
+                "--database-version", "16.5"
+        });
+
+        assertEquals("full-grammer", args.parserMode);
+        assertEquals("postgresql/16", args.grammarProfile);
+        assertEquals("16.5", args.databaseVersion);
     }
 
     @Test

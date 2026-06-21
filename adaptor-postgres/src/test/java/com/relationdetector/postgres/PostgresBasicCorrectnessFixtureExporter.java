@@ -27,10 +27,10 @@ import com.relationdetector.api.Enums.DatabaseObjectType;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.EvidenceSourceType;
 import com.relationdetector.api.Enums.StatementSourceType;
-import com.relationdetector.core.DdlRelationParserRunner;
+import com.relationdetector.core.parser.DdlRelationParserRunner;
 import com.relationdetector.core.ScanConfig;
 import com.relationdetector.core.SqlLogNoiseFilter;
-import com.relationdetector.core.SqlRelationParserRunner;
+import com.relationdetector.core.parser.SqlRelationParserRunner;
 
 /**
  * Manual, read-only exporter for anonymized PostgreSQL correctness fixtures.

@@ -2,7 +2,6 @@
   "fingerprints": [
     "FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_JOIN",
     "FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:departments.parent_department->departments.id:SQL_LOG_COLUMN_CO_OCCURRENCE",
     "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
     "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
   ],

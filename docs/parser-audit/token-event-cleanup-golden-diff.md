@@ -1,6 +1,6 @@
-# Token/Event Cleanup Golden Diff
+# token-event Cleanup Golden Diff
 
-本报告记录当前工作区 correctness golden 相对 Git `HEAD` 的关系/血缘差异，用于确认 Token/Event primary 清理后识别结果是否发生变化。
+本报告记录当前工作区 correctness golden 相对 Git `HEAD` 的关系/血缘差异，用于确认 token-event primary 清理后识别结果是否发生变化。
 
 ## 结论
 
@@ -8,14 +8,14 @@
 - `expected-relations.json`：15 个文件有变化。
 - 新增 relation：76 条。
 - 删除 relation：103 条。
-- 变化类型整体符合 Token/Event primary 的策略：删除旧表级弱共现，新增更明确的列级弱共现或 FK-like；另有 2 条 MySQL `IN` 子查询方向修正。
+- 变化类型整体符合 token-event primary 的策略：删除旧表级弱共现，新增更明确的列级弱共现或 FK-like；另有 2 条 MySQL `IN` 子查询方向修正。
 
 ## 分类统计
 
 | 类型 | 数量 | 解释 |
 |---|---:|---|
 | 新增 `CO_OCCURRENCE ... SQL_LOG_COLUMN_CO_OCCURRENCE` | 60 | 原来只能输出表级共现，现在能定位到两侧物理列，但方向不足以判 FK-like |
-| 新增 `FK_LIKE ... SQL_LOG_JOIN` | 14 | Token/Event 能通过 alias/CTE/derived/DML 回溯到更明确的 FK-like 端点 |
+| 新增 `FK_LIKE ... SQL_LOG_JOIN` | 14 | token-event 能通过 alias/CTE/derived/DML 回溯到更明确的 FK-like 端点 |
 | 新增 `FK_LIKE ... SQL_LOG_SUBQUERY_IN` | 2 | 旧方向被修正为 canonical FK-like 方向 |
 | 删除 `CO_OCCURRENCE ... SQL_LOG_TABLE_CO_OCCURRENCE` | 101 | 旧的表级弱共现被列级/FK-like 替代，或因过宽而删除 |
 | 删除 `FK_LIKE ... SQL_LOG_SUBQUERY_IN` | 2 | 对应 2 条旧反向关系，已由 canonical 方向替代 |
@@ -37,11 +37,11 @@
 | 已由同一组表的列级/FK-like 关系替代 | 69 | 接受，属于精度提升 |
 | 没有同表对替代 | 32 | 需要逐条看 SQL 语义 |
 | 32 条中确认属于安全降噪 | 22 | 接受删除 |
-| 32 条中建议补抽取能力 | 10 | Token/Event 还有可改进点 |
+| 32 条中建议补抽取能力 | 10 | token-event 还有可改进点 |
 
 ## 建议补抽取的 10 条
 
-这些不是“保留旧表级共现”的理由；旧输出仍然太粗。更好的修复是让 Token/Event 输出列级弱共现或 FK-like。
+这些不是“保留旧表级共现”的理由；旧输出仍然太粗。更好的修复是让 token-event 输出列级弱共现或 FK-like。
 
 | 文件 | 旧删除项 | SQL 语义 | 建议新关系 |
 |---|---|---|---|
@@ -93,6 +93,6 @@
 - 新增的 FK-like 多数来自更明确的 `_id -> id` 或 CTE/derived 回溯，方向符合 canonical FK-like 约定。
 - 方向修正的 2 条 MySQL `IN` 子查询是正确修复。
 - 安全删除项应接受删除；恢复它们会让输出重新噪声化。
-- 上面 10 条不应恢复旧表级共现，而应补 Token/Event 列级/FK-like 抽取能力，并新增 golden。
+- 上面 10 条不应恢复旧表级共现，而应补 token-event 列级/FK-like 抽取能力，并新增 golden。
 
 当前没有发现新增关系明显误报；真正的问题集中在“少数旧表级共现删除后，本应升级为列级/FK-like，但目前还没有补出来”的 10 条。

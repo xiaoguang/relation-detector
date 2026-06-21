@@ -1,7 +1,7 @@
 grammar MySqlRelationSql;
 
 /*
- * MySQL structural grammar for the Token/Event SQL parser.
+ * MySQL structural grammar for the token-event SQL parser.
  *
  * This is intentionally still a tolerant grammar, not a full MySQL grammar.
  * The important boundary is architectural: MySQL owns a separate generated

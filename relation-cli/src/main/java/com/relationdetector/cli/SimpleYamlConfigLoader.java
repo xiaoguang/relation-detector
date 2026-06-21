@@ -98,10 +98,16 @@ public final class SimpleYamlConfigLoader {
             case "output.minConfidence" -> config.minConfidence = Double.parseDouble(value);
             case "output.includeEvidence" -> config.includeEvidence = Boolean.parseBoolean(value);
             case "output.includeWarnings" -> config.includeWarnings = Boolean.parseBoolean(value);
+            case "parser.mode" -> config.parserMode = normalizeParserMode(value);
+            case "parser.grammarProfile" -> config.grammarProfile = value;
+            case "parser.databaseVersion" -> {
+                config.databaseVersion = value;
+                config.databaseVersionSource = "CONFIG";
+            }
             case "parser.sql.mode", "parser.sql.fallbackOnFailure",
                     "parser.ddl.mode", "parser.ddl.fallbackOnFailure" ->
                     throw new IllegalArgumentException(path
-                            + " has been removed; MySQL/PostgreSQL SQL and DDL parsing always use Token/Event");
+                            + " has been removed; use parser.mode with auto, full-grammer, or token-event");
             default -> {
                 // Unknown keys are ignored to allow forward-compatible configs.
             }
@@ -134,6 +140,16 @@ public final class SimpleYamlConfigLoader {
         if (config.sampleRows <= 0 || config.timeoutSeconds <= 0) {
             throw new IllegalArgumentException("dataProfile sampleRows and timeoutSeconds must be positive");
         }
+        config.parserMode = normalizeParserMode(config.parserMode);
+    }
+
+    private String normalizeParserMode(String value) {
+        String normalized = value == null || value.isBlank() ? "auto" : value.trim().toLowerCase();
+        return switch (normalized) {
+            case "auto", "full-grammer", "token-event" -> normalized;
+            default -> throw new IllegalArgumentException(
+                    "parser.mode must be one of auto, full-grammer, token-event");
+        };
     }
 
     private String stripComment(String line) {

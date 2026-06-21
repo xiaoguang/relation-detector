@@ -36,13 +36,13 @@ import com.relationdetector.api.Collectors.StructuredSqlParser;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.EvidenceSourceType;
 import com.relationdetector.api.Enums.StatementSourceType;
-import com.relationdetector.core.DdlRelationParserRunner;
-import com.relationdetector.core.TokenEventDataLineageExtractor;
-import com.relationdetector.core.DataLineageMerger;
+import com.relationdetector.core.parser.DdlRelationParserRunner;
+import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.lineage.DataLineageMerger;
 import com.relationdetector.core.PlainSqlLogExtractor;
 import com.relationdetector.core.ScanConfig;
 import com.relationdetector.core.SqlLogNoiseFilter;
-import com.relationdetector.core.SqlRelationParserRunner;
+import com.relationdetector.core.parser.SqlRelationParserRunner;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
 
@@ -186,7 +186,7 @@ class CorrectnessFixtureRunnerTest {
             relationships.addAll(runner.parse(adaptor, config, statement, context));
             /*
              * Relationship parsing already goes through the adaptor SQL parser.
-             * Data Lineage consumes the same token/event model directly; parse
+             * Data Lineage consumes the same token-event model directly; parse
              * with a null context so fixture warning assertions are not polluted by
              * this second, lineage-only structural parse.
              */

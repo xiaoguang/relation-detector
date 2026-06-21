@@ -1,5 +1,12 @@
 package com.relationdetector.core;
 
+import com.relationdetector.core.ddl.*;
+import com.relationdetector.core.lineage.*;
+import com.relationdetector.core.parser.*;
+import com.relationdetector.core.relation.*;
+
+import com.relationdetector.core.tokenevent.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -180,7 +187,7 @@ class ConfidenceScoringExamplesTest {
                 RelationSubType.TABLE_CO_OCCURRENCE);
         relation.evidence().add(Evidence.of(EvidenceType.SQL_LOG_TABLE_CO_OCCURRENCE, 0.25d,
                 EvidenceSourceType.NATIVE_LOG, "confidence-example.sql",
-                "Historical table-level co-occurrence scoring example; Token/Event does not auto-emit this from bare comma presence."));
+                "Historical table-level co-occurrence scoring example; token-event does not auto-emit this from bare comma presence."));
 
         assertConfidence("0.2500", mergeOne(relation));
     }

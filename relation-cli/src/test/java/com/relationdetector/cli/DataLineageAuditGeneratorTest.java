@@ -18,10 +18,10 @@ class DataLineageAuditGeneratorTest {
 
         assertTrue(markdown.contains("# Data Lineage Full Audit"));
         assertTrue(markdown.contains("| TOTAL | 114 |"));
-        assertTrue(markdown.contains("| EXISTING_GOLD | 15 |"));
+        assertTrue(markdown.contains("| EXISTING_GOLD | 13 |"));
         assertTrue(markdown.contains("| SUGGESTED_GOLD | 0 |"));
         assertTrue(markdown.contains("| PENDING_REVIEW | 0 |"));
-        assertTrue(markdown.contains("| NOT_APPLICABLE | 99 |"));
+        assertTrue(markdown.contains("| NOT_APPLICABLE | 101 |"));
         assertTrue(markdown.contains("| Classification | `EXISTING_GOLD` |"));
         assertTrue(markdown.contains("| Classification | `NOT_APPLICABLE` |"));
         assertTrue(markdown.contains("mysql-user-spending-left-join-update-sql"));
@@ -31,7 +31,13 @@ class DataLineageAuditGeneratorTest {
                 "VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,"
                         + "order_items.quantity->order_items.estimated_cost"));
         assertTrue(markdown.contains("mysql-business-financial-asset-wash-procedure-sql"));
+        assertTrue(markdown.contains("VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit"));
+        assertTrue(markdown.contains(
+                "VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,"
+                        + "dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories"
+                        + "->account_balances.compliance_notes"));
         assertTrue(markdown.contains("VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags"));
+        assertTrue(markdown.contains("VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end"));
         assertTrue(markdown.contains("postgres-sql-update-from-aliases"));
         assertTrue(markdown.contains("write statement has no physical table.column source in Data Lineage v1"));
         assertTrue(markdown.contains("postgres-business-risk-settlement-function-sql"));

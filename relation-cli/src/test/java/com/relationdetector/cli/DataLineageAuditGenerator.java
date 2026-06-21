@@ -21,11 +21,11 @@ import com.relationdetector.api.StructuredParseResult;
 import com.relationdetector.api.Collectors.StructuredSqlParser;
 import com.relationdetector.api.Enums.DatabaseType;
 import com.relationdetector.api.Enums.StatementSourceType;
-import com.relationdetector.core.TokenEventDataLineageExtractor;
-import com.relationdetector.core.DataLineageMerger;
+import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.lineage.DataLineageMerger;
 import com.relationdetector.core.PlainSqlLogExtractor;
-import com.relationdetector.mysql.MySqlTokenEventStructuredSqlParser;
-import com.relationdetector.postgres.PostgresTokenEventStructuredSqlParser;
+import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
+import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
 
 /**
  * Generates the human-review audit for Data Lineage correctness fixtures.

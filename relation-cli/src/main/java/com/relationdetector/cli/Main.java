@@ -48,6 +48,16 @@ public final class Main {
                 if (cli.minConfidence != null) {
                     config.minConfidence = cli.minConfidence;
                 }
+                if (cli.parserMode != null) {
+                    config.parserMode = cli.parserMode;
+                }
+                if (cli.grammarProfile != null) {
+                    config.grammarProfile = cli.grammarProfile;
+                }
+                if (cli.databaseVersion != null) {
+                    config.databaseVersion = cli.databaseVersion;
+                    config.databaseVersionSource = "CONFIG";
+                }
                 AdaptorRegistry registry = AdaptorRegistry.load(cli.pluginDir);
                 DatabaseAdaptor adaptor = registry.resolve(config.databaseType, config.adaptorId);
                 var result = new ScanEngine().scan(config, adaptor);
@@ -85,6 +95,9 @@ public final class Main {
                       --output <file>       Write output to file. Defaults to stdout.
                       --plugin-dir <dir>    Directory containing external adaptor jars.
                       --min-confidence <n>  Override output.minConfidence.
+                      --parser-mode <mode>   auto, full-grammer, or token-event.
+                      --grammar-profile <id> Override parser.grammarProfile.
+                      --database-version <v> Override parser.databaseVersion.
                       --help                Show this help.
                     """;
         }
@@ -97,6 +110,9 @@ public final class Main {
         Path output;
         Path pluginDir;
         Double minConfidence;
+        String parserMode;
+        String grammarProfile;
+        String databaseVersion;
 
         static CliArguments parse(String[] args) {
             CliArguments parsed = new CliArguments();
@@ -113,10 +129,22 @@ public final class Main {
                     case "--output" -> parsed.output = Path.of(requireValue(args, index++, arg));
                     case "--plugin-dir" -> parsed.pluginDir = Path.of(requireValue(args, index++, arg));
                     case "--min-confidence" -> parsed.minConfidence = Double.parseDouble(requireValue(args, index++, arg));
+                    case "--parser-mode" -> parsed.parserMode = normalizeParserMode(requireValue(args, index++, arg));
+                    case "--grammar-profile" -> parsed.grammarProfile = requireValue(args, index++, arg);
+                    case "--database-version" -> parsed.databaseVersion = requireValue(args, index++, arg);
                     default -> throw new IllegalArgumentException("Unknown argument: " + arg);
                 }
             }
             return parsed;
+        }
+
+        private static String normalizeParserMode(String value) {
+            String normalized = value == null || value.isBlank() ? "auto" : value.trim().toLowerCase();
+            return switch (normalized) {
+                case "auto", "full-grammer", "token-event" -> normalized;
+                default -> throw new IllegalArgumentException(
+                        "--parser-mode must be one of auto, full-grammer, token-event");
+            };
         }
 
         private static String requireValue(String[] args, int index, String option) {

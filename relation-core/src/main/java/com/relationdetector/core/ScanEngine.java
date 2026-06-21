@@ -25,6 +25,11 @@ import com.relationdetector.api.SqlStatementRecord;
 import com.relationdetector.api.StructuredParseResult;
 import com.relationdetector.api.TableId;
 import com.relationdetector.api.WarningMessage;
+import com.relationdetector.core.lineage.DataLineageMerger;
+import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.parser.DdlRelationParserRunner;
+import com.relationdetector.core.parser.SqlRelationParserRunner;
+import com.relationdetector.core.relation.RelationshipMerger;
 import com.relationdetector.api.Enums.EvidenceSourceType;
 import com.relationdetector.api.Enums.StatementSourceType;
 import com.relationdetector.api.Enums.WarningType;
@@ -54,6 +59,7 @@ public final class ScanEngine {
         MetadataSnapshot metadataSnapshot = null;
 
         try (Connection connection = openConnection(config)) {
+            populateJdbcDatabaseVersion(config, connection);
             if (config.metadataEnabled && connection != null) {
                 result.sources().add("metadata");
                 metadataSnapshot = adaptor.metadataCollector().collect(connection, scope);
@@ -207,8 +213,7 @@ public final class ScanEngine {
     ) {
         try {
             if (!SqlLogNoiseFilter.shouldSkip(config, statement)) {
-                adaptor.structuredSqlParser().ifPresent(structuredParser -> {
-                    StructuredParseResult structured = structuredParser.parseSql(statement, null);
+                sqlParserRunner.parseStructured(adaptor, config, statement, context).ifPresent(structured -> {
                     dataLineageCandidates.addAll(dataLineageExtractor.extract(statement, structured, knownPhysicalTables));
                 });
             }
@@ -228,6 +233,19 @@ public final class ScanEngine {
             tables.add(TableId.of(fact.schema(), fact.tableName()));
         }
         return tables;
+    }
+
+    private void populateJdbcDatabaseVersion(ScanConfig config, Connection connection) {
+        if (connection == null || config == null || config.databaseVersion != null && !config.databaseVersion.isBlank()) {
+            return;
+        }
+        try {
+            var metaData = connection.getMetaData();
+            config.databaseVersion = metaData.getDatabaseMajorVersion() + "." + metaData.getDatabaseMinorVersion();
+            config.databaseVersionSource = "JDBC";
+        } catch (Exception ignored) {
+            config.databaseVersionSource = "UNKNOWN";
+        }
     }
 
     /**

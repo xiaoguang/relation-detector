@@ -164,6 +164,7 @@ public enum LineageFlowKind {
 public enum LineageTransformType {
   DIRECT,
   AGGREGATE,
+  CUMULATIVE,
   COALESCE,
   CASE_WHEN,
   CONCAT_FORMAT,
@@ -178,6 +179,7 @@ public enum LineageTransformType {
 | --- | ---: | --- | --- |
 | `DIRECT` | 0.90 | 直接字段赋值。 | `SET a.x = b.y`。 |
 | `AGGREGATE` | 0.80 | 聚合结果写入目标。 | `SUM(o.pay_amount) -> users.total_spent`。 |
+| `CUMULATIVE` | 0.80 | 运行累计、累计分布、running total 等累计聚合衍生值写入目标。 | `@running_sum := @running_sum + weight` 后写入 `cdf_end`。 |
 | `COALESCE` | 0.75 | 多来源兜底选择。 | `COALESCE(sm.avg_cost, wi.default_unit_cost)`。 |
 | `CASE_WHEN` | 0.65 / 0.55 | 条件选择；VALUE 为 0.65，CONTROL 为 0.55。 | `CASE WHEN risk_score > 80 THEN ...`。 |
 | `CONCAT_FORMAT` | 0.70 | 字符串拼接或格式化。 | `FORMAT('Country: %s', u.country_code)`。 |
@@ -430,8 +432,8 @@ public enum StructuredParseEventType {
 | --- | --- |
 | `TABLE_REFERENCE` | 识别出表引用和 alias。 |
 | `COLUMN_EQUALITY` | 识别出 `alias.column = alias.column` 谓词。 |
-| `DDL_FOREIGN_KEY` | Token/Event DDL event visitor 识别出的外键关系事件，包括 table-level FK、inline `REFERENCES`、`ALTER TABLE ADD CONSTRAINT`。 |
-| `DDL_INDEX` | Token/Event DDL event visitor 识别出的索引/唯一性事件，例如 source index、primary key、unique constraint、unique index。 |
+| `DDL_FOREIGN_KEY` | token-event DDL event visitor 识别出的外键关系事件，包括 table-level FK、inline `REFERENCES`、`ALTER TABLE ADD CONSTRAINT`。 |
+| `DDL_INDEX` | token-event DDL event visitor 识别出的索引/唯一性事件，例如 source index、primary key、unique constraint、unique index。 |
 | `DYNAMIC_SQL` | 为可静态还原的动态 SQL 事件预留。当前不可还原时输出 warning。 |
 
 ## 11. LogFormatHint
