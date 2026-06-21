@@ -340,7 +340,7 @@ README 至少包含：
 
 - 用户能根据 README 跑通 MySQL 示例。
 - 用户能根据 README 跑通 PostgreSQL 示例。
-- JSON 输出可被 Jackson 稳定反序列化。
+- JSON 输出遵守稳定 schema，可被标准 JSON parser 稳定反序列化；当前实现为手写 writer，后续可替换为 Jackson。
 - table 输出在窄终端中仍可读。
 - warning 摘要能帮助定位输入问题。
 - 错误码稳定且有文档说明。

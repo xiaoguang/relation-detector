@@ -7,6 +7,15 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
+/**
+ * Normalizes events emitted by a full-grammer typed visitor.
+ *
+ * <p>CN: sink 统一补 sourceName、line 和 full-grammer 诊断 attributes，使 MySQL/Postgres
+ * visitor 不重复拼装事件外壳。它不解析 SQL，也不判断关系语义。</p>
+ *
+ * <p>EN: The sink attaches source metadata and full-grammer diagnostic
+ * attributes for dialect visitors. It does not parse SQL or infer semantics.</p>
+ */
 final class FullGrammerEventSink {
     private final SqlStatementRecord statement;
     private final String contextSource;
@@ -17,6 +26,11 @@ final class FullGrammerEventSink {
         this.contextSource = contextSource;
     }
 
+    /**
+     * Adds a visitor event and marks it as full-grammer native.
+     *
+     * <p>CN: 该标记用于诊断和 parity；正式输出仍只看 relationship/lineage candidates。</p>
+     */
     void add(StructuredSqlEvent event) {
         Map<String, Object> attributes = new LinkedHashMap<>(event.attributes());
         attributes.put("tokenEventNative", true);

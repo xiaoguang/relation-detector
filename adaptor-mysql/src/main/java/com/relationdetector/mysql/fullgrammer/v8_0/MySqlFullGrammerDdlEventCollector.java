@@ -11,7 +11,16 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
-/** Emits MySQL DDL relationship facts from full-grammer typed parse-tree contexts. */
+/**
+ * MySQL full-grammer DDL event collector。
+ *
+ * <p>CN: 从 MySQL full grammar typed parse-tree contexts 中抽取 FK/index 事实，并
+ * 输出统一 DDL structured events。它不调用 token-event DDL cursor。
+ *
+ * <p>EN: MySQL full-grammer DDL event collector. It extracts FK/index facts
+ * from typed parse-tree contexts and emits unified DDL structured events. It
+ * does not call the token-event DDL cursor.
+ */
 final class MySqlFullGrammerDdlEventCollector {
     List<StructuredSqlEvent> collect(String sourceName, ParserRuleContext root) {
         if (root == null) {

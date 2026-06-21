@@ -41,7 +41,13 @@ full-grammer:
 
 ## 本轮代码结构注释审视
 
-本轮把生产代码结构注释统一落在每个 package 的 `package-info.java`，并要求中文 / English 双语说明同一职责边界。检查范围覆盖：
+本轮把生产代码结构注释分成三层，并要求中文 / English 双语说明同一职责边界：
+
+- package 层：每个生产 package 的 `package-info.java` 说明职责、输入输出、上游/下游和禁止承载的逻辑。
+- class 层：生产类 Javadoc 说明文件负责什么、不负责什么、位于哪条链路。
+- method 层：关键 public 方法、核心编排方法、复杂 private helper 说明调用意图和边界；简单 getter、record accessor 和显而易见的小工具方法不强制注释。
+
+检查范围覆盖：
 
 ```text
 contracts
@@ -64,7 +70,7 @@ postgres / postgres.tokenevent / postgres.fullgrammer.v16
 - 没有发现 adaptor 侧重复实现 relationship / lineage semantic extractor。
 - 没有发现 contracts 反向依赖 core 的设计破坏。
 
-本报告和 `phase-06-parser-enhancement.md` 已按上述 package 注释刷新。若后续新增生产 package，必须同步新增 `package-info.java`，并在 Phase 6 的结构表中登记。
+本报告和 `phase-06-parser-enhancement.md` 已按上述代码注释刷新。若后续新增生产 package、核心类或跨链路调用，必须同步新增/校准代码注释，并在 Phase 6 的结构表与调用链中登记。
 
 本轮新增 [代码与设计对应审视报告](code-design-traceability.md)，按 CLI、ScanEngine、SQL/DDL parser、relationship、Data Lineage、confidence、输出和 correctness 报告逐环节列出代码入口、设计章节、测试覆盖和差异状态。
 

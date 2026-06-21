@@ -91,7 +91,7 @@ adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer/v16
 
 ## 代码结构注释索引
 
-生产代码的结构性注释统一放在各 package 的 `package-info.java`。这些注释是当前详细设计的代码侧入口：中文说明职责，英文说明同一职责边界，避免后续维护者只靠类名猜测调用方向。
+生产代码的结构性注释分成三层：package 的 `package-info.java` 说明职责边界，生产类 Javadoc 说明文件在链路中的位置，关键 public 方法 / 编排方法 / 复杂 helper 说明调用意图。中文说明职责，English 说明同一职责边界，避免后续维护者只靠类名猜测调用方向。
 
 | Package | 结构职责 |
 | --- | --- |
@@ -119,7 +119,7 @@ adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer/v16
 | `mysql.tokenevent` / `postgres.tokenevent` | 方言 token-event parser 入口。 |
 | `mysql.fullgrammer.v8_0` / `postgres.fullgrammer.v16` | 版本化 full-grammer grammar、typed visitor、expression analyzer 和 DDL collector。 |
 
-审视结论：当前 package 注释、目录结构和本文职责表一致。core 不直接承载 MySQL/PostgreSQL 版本实现；adaptor 不承载 relationship/lineage semantic extractor；contracts 不依赖 core。
+审视结论：当前 package 注释、类级注释、关键函数注释、目录结构和本文职责表一致。core 不直接承载 MySQL/PostgreSQL 版本实现；adaptor 不承载 relationship/lineage semantic extractor；contracts 不依赖 core。
 
 ## 解析输入和输出
 

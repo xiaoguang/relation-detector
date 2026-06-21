@@ -1,10 +1,13 @@
 package com.relationdetector.contracts.model;
 
 /**
- * Stable table identity used across metadata, DDL, SQL logs, and output.
+ * 跨 metadata、DDL、SQL log 和输出使用的稳定表标识。
  *
- * <p>Design mapping: Phase 2 TableId. Adaptors own normalization because MySQL
- * and PostgreSQL have different identifier case rules.
+ * <p>CN: adaptor 负责 normalizedName，因为 MySQL/PostgreSQL 的 identifier 大小写规则不同。
+ *
+ * <p>EN: Stable table identity used across metadata, DDL, SQL logs, and output.
+ * Adaptors own normalizedName because MySQL and PostgreSQL use different
+ * identifier case rules.
  */
 public record TableId(String catalog, String schema, String tableName, String normalizedName) {
     public TableId {

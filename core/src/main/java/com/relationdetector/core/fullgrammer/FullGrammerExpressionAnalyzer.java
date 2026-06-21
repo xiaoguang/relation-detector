@@ -8,6 +8,20 @@ import java.util.Set;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+/**
+ * full-grammer 表达式分析基础类。
+ *
+ * <p>CN: 方言 visitor 把 grammar expression context 传入这里，产出 sourceAliases、
+ * sourceColumns、transformType 和 flowKind。当前实现递归 parse tree 节点与 terminal
+ * leaves，不读取整段 SQL 文本做正则结构判断；最终 transform 含义仍由 core lineage
+ * 语义层消费。
+ *
+ * <p>EN: Base expression analyzer for full-grammer profiles. Dialect visitors
+ * pass grammar expression contexts here and receive source aliases, source
+ * columns, transform type, and flow kind. The implementation walks parse-tree
+ * nodes and terminal leaves rather than regex-matching full SQL text; final
+ * transform semantics are consumed by the core lineage layer.
+ */
 public abstract class FullGrammerExpressionAnalyzer {
     private final Set<String> nonColumnIdentifiers = new LinkedHashSet<>();
 
@@ -22,6 +36,12 @@ public abstract class FullGrammerExpressionAnalyzer {
         return analyze(expression, "");
     }
 
+    /**
+     * 分析一个表达式 context，提取字段来源和粗粒度 transform。
+     *
+     * <p>EN: Analyzes one expression context and extracts source columns plus a
+     * coarse transform classification.
+     */
     public FullGrammerExpressionAnalysis analyze(ParseTree expression, String defaultQualifier) {
         Set<ExpressionColumn> columns = new LinkedHashSet<>();
         collectColumns(expression, defaultQualifier, columns);

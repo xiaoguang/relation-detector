@@ -9,7 +9,16 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.model.WarningMessage;
 
-/** Raw metadata result returned by adaptors before core scoring and merging. */
+/**
+ * adaptor 返回给 core 的 metadata 快照。
+ *
+ * <p>CN: 快照包含 catalog facts、metadata 直接发现的 relationship、辅助 evidence 和
+ * warning。core 会把这些内容与 DDL/SQL/log evidence 一起合并评分。
+ *
+ * <p>EN: Raw metadata snapshot returned by adaptors before core scoring and
+ * merging. It contains catalog facts, metadata-discovered relationships,
+ * auxiliary evidence, and warnings.
+ */
 public final class MetadataSnapshot {
     private final List<TableId> tables = new ArrayList<>();
     private final List<ColumnRef> columns = new ArrayList<>();

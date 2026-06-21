@@ -30,15 +30,15 @@ orders -> users
 
 - Java 版本：Java 17。
 - 构建工具：Maven。
-- CLI 框架：picocli。
-- 配置文件：YAML。
-- JSON 序列化：Jackson。
+- CLI 框架：当前为轻量手写 CLI；后续可替换为 picocli。
+- 配置文件：当前为轻量 YAML 子集解析；后续可替换为 Jackson YAML。
+- JSON 序列化：当前为手写 JSON writer；后续可替换为 Jackson，但必须保持输出 schema 兼容。
 - SQL/DDL 解析：统一通过 `parser.mode: auto|full-grammer|token-event` 选择。`token-event` 是无版本信息或 profile 不支持时的兜底链路；`full-grammer` 使用 MySQL/PostgreSQL adaptor 注册的大版本 grammar profile。ANTLR 是底层 lexer/parser 技术，不是业务 parser 模式名。
 - 插件发现：Java SPI / `ServiceLoader`。
 - 测试：
   - JUnit 5。
-  - AssertJ。
-  - Testcontainers，用于 MySQL/PostgreSQL 集成测试。
+  - correctness fixture golden、CLI E2E golden、full-grammer parity、confidence/merger/lineage/DDL 语义单测。
+  - AssertJ / Testcontainers 是后续增强方向，用于更强断言和真实数据库集成测试。
 
 Java SPI 是 Java 标准库自带的插件发现机制。核心模块只定义接口，例如 `DatabaseAdaptor`；MySQL、PostgreSQL、未来的 Oracle/SQL Server adaptor 各自实现接口，并在 jar 包的 `META-INF/services/...` 文件里声明实现类。CLI 启动时通过 `ServiceLoader` 自动发现 adaptor。这样新增数据库时可以增加一个 adaptor jar，而不必修改 core 代码。
 
@@ -71,8 +71,8 @@ relation-detector/
   - parser 选择、token-event 事件模型、full-grammer profile registry、relationship/Data Lineage/DDL semantic extractor。
 
 - `cli`
-  - picocli 命令行入口。
-  - YAML 配置加载。
+  - 当前轻量手写命令行入口；后续可替换为 picocli。
+  - 当前轻量 YAML 子集配置加载；后续可替换为 Jackson YAML。
   - adaptor 加载。
   - JSON/table 输出。
 

@@ -11,7 +11,16 @@ import java.util.ServiceLoader;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.Enums.DatabaseType;
 
-/** Discovers built-in and plugin-dir adaptors via Java SPI. */
+/**
+ * Java SPI adaptor 发现与选择器。
+ *
+ * <p>CN: CLI 通过它加载内置 adaptor 和 plugin-dir 中的外部 adaptor jar，然后按
+ * database.type / adaptorId 选择唯一 adaptor。
+ *
+ * <p>EN: Java SPI adaptor discovery and selection. CLI uses it to load built-in
+ * adaptors plus external adaptor jars from plugin-dir, then selects one adaptor
+ * by database.type and optional adaptorId.
+ */
 public final class AdaptorRegistry {
     private final List<DatabaseAdaptor> adaptors;
 
@@ -19,6 +28,11 @@ public final class AdaptorRegistry {
         this.adaptors = adaptors;
     }
 
+    /**
+     * 加载内置 SPI adaptor，并可选加载 plugin-dir jar。
+     *
+     * <p>EN: Loads built-in SPI adaptors and optionally adaptor jars from plugin-dir.
+     */
     public static AdaptorRegistry load(Path pluginDir) throws Exception {
         List<DatabaseAdaptor> discovered = new ArrayList<>();
         ServiceLoader.load(DatabaseAdaptor.class).forEach(discovered::add);
@@ -40,6 +54,11 @@ public final class AdaptorRegistry {
         return new AdaptorRegistry(discovered);
     }
 
+    /**
+     * 根据数据库类型和可选 adaptorId 选择唯一 adaptor。
+     *
+     * <p>EN: Resolves a single adaptor by database type and optional adaptorId.
+     */
     public DatabaseAdaptor resolve(DatabaseType databaseType, String adaptorId) {
         List<DatabaseAdaptor> matches = adaptors.stream()
                 .filter(adaptor -> adaptor.supportedDatabaseTypes().contains(databaseType))

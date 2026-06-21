@@ -1,6 +1,13 @@
 /**
- * PostgreSQL adaptor 装配层，暴露 metadata、对象、日志、token-event parser 和 full-grammer module。
+ * PostgreSQL adaptor 装配层。
  *
- * <p>EN: PostgreSQL adaptor assembly layer exposing metadata, object, log, token-event parser, and full-grammer module hooks.
+ * <p>CN: 本包暴露 PostgreSQL metadata、数据库 DDL、对象定义、日志、数据画像、
+ * token-event parser 和 full-grammer module。根包只做装配；方言 parser 代码分别
+ * 位于 tokenevent 与 fullgrammer/v16 子包。
+ *
+ * <p>EN: PostgreSQL adaptor assembly layer. It exposes PostgreSQL metadata,
+ * database DDL, object definitions, logs, profiling, token-event parsers, and
+ * full-grammer modules. The root package assembles services; dialect parser
+ * code lives in tokenevent and fullgrammer/v16 subpackages.
  */
 package com.relationdetector.postgres;

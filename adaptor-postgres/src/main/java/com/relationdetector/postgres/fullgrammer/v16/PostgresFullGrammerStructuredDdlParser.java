@@ -20,7 +20,17 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerLexer;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser;
 
-/** PostgreSQL 16 full-grammer DDL shadow parser. */
+/**
+ * PostgreSQL 16 full-grammer DDL parser。
+ *
+ * <p>CN: 使用 PostgreSQL full grammar 解析 DDL，再由 PostgresFullGrammerDdlEventCollector
+ * 产生 DDL_FOREIGN_KEY / DDL_INDEX 事件。最终 relationship 仍由 core DDL extractor 生成。
+ *
+ * <p>EN: PostgreSQL 16 full-grammer DDL parser. It parses DDL with the
+ * PostgreSQL full grammar and uses PostgresFullGrammerDdlEventCollector to emit
+ * DDL_FOREIGN_KEY / DDL_INDEX events. Final relationships are still created by
+ * the core DDL extractor.
+ */
 final class PostgresFullGrammerStructuredDdlParser implements StructuredDdlParser {
     private final PostgresFullGrammerDdlEventCollector collector = new PostgresFullGrammerDdlEventCollector();
 

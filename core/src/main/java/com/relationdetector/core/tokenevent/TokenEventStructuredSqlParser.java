@@ -20,11 +20,16 @@ import com.relationdetector.core.parse.AntlrSqlParseSupport.ParsedSql;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 
 /**
- * Production structured SQL parser for the token-event pipeline.
+ * token-event 结构化 SQL parser 基类。
  *
- * <p>ANTLR remains the low-level lexer/parser technology through
- * {@link AntlrSqlParseSupport}; this class owns the production token-event SQL
- * event builder and parser diagnostics.
+ * <p>CN: ANTLR 仍是底层 lexer/parser 技术；本类负责调用 tolerant grammar、
+ * 收集 visible tokens、调用 token-event event builder，并生成 StructuredParseResult
+ * 与 parser diagnostics。
+ *
+ * <p>EN: Base structured SQL parser for the token-event pipeline. ANTLR remains
+ * the low-level lexer/parser technology; this class invokes tolerant grammars,
+ * collects visible tokens, calls the token-event event builder, and returns
+ * StructuredParseResult plus parser diagnostics.
  */
 public class TokenEventStructuredSqlParser implements StructuredSqlParser {
     private final SqlDialect dialect;
@@ -41,6 +46,11 @@ public class TokenEventStructuredSqlParser implements StructuredSqlParser {
         this.antlrSupport = new AntlrSqlParseSupport(dialect);
     }
 
+    /**
+     * 解析一条 SQL statement 并返回 token-event 结构化结果。
+     *
+     * <p>EN: Parses one SQL statement and returns token-event structured output.
+     */
     @Override
     public StructuredParseResult parseSql(SqlStatementRecord statement, AdaptorContext context) {
         List<WarningMessage> warnings = new ArrayList<>();

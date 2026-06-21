@@ -6,6 +6,8 @@
 
 本阶段不实现真实关系探测，只实现空扫描流程和基本配置加载。
 
+当前实现注记：Phase 1 记录的是工程骨架起点；当前代码已经扩展为 `contracts/core/cli/adaptor-mysql/adaptor-postgres` 五个短目录模块，并实现 token-event / full-grammer parser、relationship、Data Lineage、DDL、confidence、CLI E2E golden 等完整链路。当前实现细节以 Phase 6、代码实现指南和代码与设计对应审视报告为准。
+
 ## 模块结构
 
 ```text
@@ -185,4 +187,3 @@ Warnings: 0
 - `${ENV_NAME}` 替换测试。
 - JSON 空结果序列化测试。
 - table 空结果输出测试。
-

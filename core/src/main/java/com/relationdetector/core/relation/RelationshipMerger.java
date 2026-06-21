@@ -16,15 +16,25 @@ import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.core.scoring.ConfidenceCalculator;
 
 /**
- * Merges candidates from metadata, DDL, objects, logs, naming, and profiling.
+ * relationship 候选合并器。
  *
- * <p>Design mapping: Phase 2 "归并规则". Column-level relations are kept
- * precise; table-level co-occurrence is only folded into an existing column
- * relation when both table endpoints match.
+ * <p>CN: 合并 metadata、DDL、对象 SQL、日志、命名和数据画像产生的候选。列级关系保持精确；
+ * 表级共现只在端点表一致时折叠进已有列级关系。这里还负责 repeated observation
+ * evidence 汇总和最终 confidence 计算。
+ *
+ * <p>EN: Merges candidates from metadata, DDL, object SQL, logs, naming, and
+ * profiling. Column-level relations stay precise; table-level co-occurrence is
+ * folded into column relations only when table endpoints match. It also
+ * summarizes repeated observations and calculates final confidence.
  */
 public final class RelationshipMerger {
     private final ConfidenceCalculator calculator = new ConfidenceCalculator();
 
+    /**
+     * 合并候选并按 minConfidence 过滤输出。
+     *
+     * <p>EN: Merges candidates and filters final output by minConfidence.
+     */
     public List<RelationshipCandidate> merge(List<RelationshipCandidate> candidates, double minConfidence) {
         Map<String, RelationshipCandidate> merged = new LinkedHashMap<>();
         for (RelationshipCandidate candidate : candidates) {

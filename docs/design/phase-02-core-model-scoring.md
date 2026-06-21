@@ -66,9 +66,9 @@ public final class RelationshipCandidate {
 方向规则：
 
 - 显式 FK：子表/引用列是 source，父表/被引用列是 target。
-- JOIN 推断：若一侧是 PK/unique 或命名为 `id`，另一侧命名如 `xxx_id`，则 `xxx_id` 一侧为 source。
+- JOIN/谓词推断：若一侧是 PK/unique 或命名为 `id`，另一侧命名如 `xxx_id`，则 `xxx_id` 一侧为 source。
 - 数据画像：若 A 列值域大部分包含于 B，且 B 唯一或接近唯一，则 A 为 source，B 为 target。
-- 无法确定方向时，不生成列级 `FK_LIKE`；退化为表级 `CO_OCCURRENCE`，并记录 warning。
+- 明确列等值但无法可靠判断 FK-like 方向时，输出列级 `CO_OCCURRENCE`；只有没有可靠列端点或只有表共同出现时，才退化为表级 `CO_OCCURRENCE`。
 
 ### DataLineageCandidate
 
@@ -147,6 +147,7 @@ VALUE:AGGREGATE:orders.pay_amount->users.total_spent
 - `SUBQUERY_INFERRED_FK`
 - `PROFILE_SUPPORTED_FK`
 - `NAMING_SUPPORTED_FK`
+- `COLUMN_CO_OCCURRENCE`
 - `TABLE_CO_OCCURRENCE`
 
 多证据场景下，`relationSubType` 采用主导证据原则：
@@ -157,7 +158,8 @@ VALUE:AGGREGATE:orders.pay_amount->users.total_spent
 4. `INFERRED_JOIN_FK`
 5. `SUBQUERY_INFERRED_FK`
 6. `NAMING_SUPPORTED_FK`
-7. `TABLE_CO_OCCURRENCE`
+7. `COLUMN_CO_OCCURRENCE`
+8. `TABLE_CO_OCCURRENCE`
 
 说明：
 
@@ -187,6 +189,7 @@ public record Evidence(
 - `SQL_LOG_JOIN`
 - `SQL_LOG_SUBQUERY_IN`
 - `SQL_LOG_EXISTS`
+- `SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `SQL_LOG_TABLE_CO_OCCURRENCE`
 - `NAMING_MATCH`
 - `SOURCE_INDEX`

@@ -11,11 +11,16 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 
 /**
- * Production SQL relationship parser backed by the token-event pipeline.
+ * 基于结构事件的 SQL relationship parser facade。
  *
- * <p>The parser converts SQL into token-event records and then uses
- * {@link TokenEventRelationExtractor}. There is no fallback relationship
- * visitor in the MySQL/PostgreSQL production path.
+ * <p>CN: 它把 StructuredSqlParser 产出的事件交给 TokenEventRelationExtractor。名字中
+ * 的 token-event 表示统一事件模型；当 StructuredSqlParser 是 full-grammer 时也走同一
+ * 语义抽取器。
+ *
+ * <p>EN: SQL relationship parser facade backed by structured events. It feeds
+ * events from a StructuredSqlParser into TokenEventRelationExtractor. The
+ * token-event name refers to the shared event model; full-grammer parsers use
+ * the same semantic extractor.
  */
 public final class TokenEventSqlRelationParser implements SqlRelationParser {
     private final StructuredSqlParser structuredParser;

@@ -2,7 +2,14 @@ package com.relationdetector.contracts.metadata;
 
 import java.util.List;
 
-/** Structured index catalog fact collected from database metadata. */
+/**
+ * metadata collector 采集的索引 catalog fact。
+ *
+ * <p>CN: 记录唯一性、主键、索引类型、可见性、列、表达式和前缀长度，用于增强候选关系。
+ *
+ * <p>EN: Structured index catalog fact recording uniqueness, primary status,
+ * index type, visibility, columns, expressions, and prefix parts for evidence enhancement.
+ */
 public record MetadataIndexFact(
         String schema,
         String tableName,

@@ -12,14 +12,22 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.core.scan.ScanResult;
 
 /**
- * Small JSON writer to keep the first code drop dependency-free.
+ * dependency-free JSON 输出 writer。
  *
- * <p>Output contract note: when evidence is requested, each relationship writes
- * two evidence arrays. rawEvidence is the full uncompressed audit trail from
- * scanners/parsers. evidence is the grouped evidence used by the confidence
- * calculator after RelationshipMerger applies repeated-observation summarizing.
+ * <p>CN: 输出层不引入 Jackson，手写稳定 JSON 结构。relationship 在 includeEvidence=true
+ * 时输出 rawEvidence 与 evidence：rawEvidence 是未压缩审计轨迹，evidence 是
+ * RelationshipMerger 聚合 repeated observation 后用于 confidence 的证据。
+ *
+ * <p>EN: Dependency-free JSON writer. It keeps the JSON schema stable without
+ * Jackson. When evidence is requested, relationships write rawEvidence as the
+ * full audit trail and evidence as the grouped evidence used by confidence scoring.
  */
 public final class JsonResultWriter {
+    /**
+     * 将 ScanResult 渲染成最终 JSON 字符串。
+     *
+     * <p>EN: Renders ScanResult into the final JSON string.
+     */
     public String write(ScanResult result, boolean includeEvidence, boolean includeWarnings) {
         StringBuilder out = new StringBuilder(4096);
         out.append("{\n");

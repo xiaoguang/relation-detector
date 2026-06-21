@@ -8,6 +8,17 @@ import org.antlr.v4.runtime.*;
 import java.util.*;
 import java.io.*;
 
+/**
+ * MySQL 8.0 full-grammer parser base helper.
+ *
+ * <p>CN: 该类来自 vendored MySQL grammar runtime，用于向 ANTLR grammar predicates
+ * 提供 serverVersion 与 SQL_MODE 判断。它只服务 MySQL full-grammer parser，不代表系统
+ * {@code parser.mode}。
+ *
+ * <p>EN: Parser base helper for the vendored MySQL 8.0 full-grammer runtime.
+ * It supplies serverVersion and SQL_MODE predicates to ANTLR grammar actions
+ * and is unrelated to the system-level parser.mode setting.
+ */
 public abstract class MySQLParserBase extends Parser {
 
     // To parameterize the parsing process.

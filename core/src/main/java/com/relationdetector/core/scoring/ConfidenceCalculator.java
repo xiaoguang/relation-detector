@@ -9,15 +9,24 @@ import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.Enums.EvidenceType;
 
 /**
- * Implements the explainable scoring model from Phase 2.
+ * Phase 2 的可解释 relationship scoring 公式实现。
  *
- * <p>Positive evidence is combined as 1 - product(1 - score). Negative evidence
- * multiplies the positive confidence by (1 + negativeScore), so a -0.30
- * mismatch reduces confidence by 30% while preserving the evidence trail.
+ * <p>CN: 正向 evidence 按 {@code 1 - product(1 - score)} 合并；负向 evidence 通过
+ * {@code (1 + negativeScore)} 乘到正向 confidence 上。Data Lineage confidence 不走
+ * 这里。
+ *
+ * <p>EN: Explainable relationship scoring model from Phase 2. Positive evidence
+ * combines as {@code 1 - product(1 - score)}; negative evidence multiplies the
+ * positive confidence by {@code (1 + negativeScore)}. Data Lineage confidence is separate.
  */
 public final class ConfidenceCalculator {
     private static final MathContext MC = new MathContext(12, RoundingMode.HALF_UP);
 
+    /**
+     * 根据 evidence 列表计算最终 relationship confidence。
+     *
+     * <p>EN: Calculates final relationship confidence from evidence items.
+     */
     public BigDecimal calculate(List<Evidence> evidence) {
         BigDecimal product = BigDecimal.ONE;
         BigDecimal negativeMultiplier = BigDecimal.ONE;

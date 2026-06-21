@@ -141,7 +141,7 @@ token-event 当前状态：MySQL/PostgreSQL SQL relation、Data Lineage 和 DDL 
 默认 `mvn test` 不再运行目录/命名/迁移过程守卫测试。需要人工检查代码结构残留时，使用：
 
 ```bash
-rg -n "TokenEventV2|shadow runner|current ANTLR|SimpleSqlRelationParser|SimpleDdlParser|fullgrammar|full-grammar" \
+rg -n "TokenEventV2|shadow runner|current ANTLR|SimpleSqlRelationParser|SimpleDdlParser|fullgrammar|full grammar|FullGrammar" \
   contracts core cli adaptor-mysql adaptor-postgres docs/design docs/code-implementation-guide.md docs/test-assets-map.md
 ```
 

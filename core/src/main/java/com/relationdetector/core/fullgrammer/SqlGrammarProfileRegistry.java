@@ -13,7 +13,19 @@ import java.util.regex.Pattern;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
 
-/** Registry for versioned full-grammer dialect modules. */
+/**
+ * full-grammer profile registry 与版本选择器。
+ *
+ * <p>CN: 这里的 regex 只解析配置/JDBC 返回的版本字符串，不解析 SQL/DDL 结构。
+ * 选择规则是：显式 profile 优先，其次配置或 JDBC version；同 major 直接使用，高一
+ * 个 major 可临时降级，超过范围则回退 token-event。
+ *
+ * <p>EN: Registry and selector for versioned full-grammer modules. The regex in
+ * this class parses configuration/JDBC version strings only; it never parses
+ * SQL/DDL structure. Selection prefers explicit profile, then configured/JDBC
+ * version, with same-major match, one-major fallback, and token-event fallback
+ * outside that range.
+ */
 public final class SqlGrammarProfileRegistry {
     private static final Pattern VERSION = Pattern.compile("(\\d+)(?:\\.(\\d+))?.*");
 

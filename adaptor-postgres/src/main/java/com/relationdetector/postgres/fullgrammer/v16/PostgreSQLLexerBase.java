@@ -27,6 +27,16 @@ import org.antlr.v4.runtime.Lexer;
 
 import java.util.Stack;
 
+/**
+ * PostgreSQL 16 full-grammer lexer base helper.
+ *
+ * <p>CN: 该类来自 vendored PostgreSQL grammar runtime，支持 dollar-quoted string、
+ * lexer mode 和少量 token type 调整。它只服务 PostgreSQL full-grammer profile。
+ *
+ * <p>EN: Lexer base helper for the vendored PostgreSQL 16 full-grammer runtime.
+ * It supports dollar-quoted strings, lexer modes, and token-type adjustments for
+ * the PostgreSQL full-grammer profile only.
+ */
 public abstract class PostgreSQLLexerBase extends Lexer {
     protected final Stack<String> tags = new Stack<>();
 

@@ -21,11 +21,28 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerLexer;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser;
 
-/** MySQL 8.0 versioned full-grammer parser. */
+/**
+ * MySQL 8.0 full-grammer SQL parser。
+ *
+ * <p>CN: 使用 vendored MySQL full grammar entry rule 解析 SQL，再由
+ * MySqlTokenEventParseTreeVisitor 从 typed parse-tree context 生成统一 StructuredSqlEvent。
+ * relationship 和 lineage 语义不在这里判断。
+ *
+ * <p>EN: MySQL 8.0 full-grammer SQL parser. It parses SQL with the vendored
+ * MySQL full grammar entry rule, then uses MySqlTokenEventParseTreeVisitor to
+ * emit unified StructuredSqlEvent records from typed parse-tree contexts. It
+ * does not decide relationship or lineage semantics.
+ */
 final class MySqlFullGrammerStructuredSqlParser implements StructuredSqlParser {
     MySqlFullGrammerStructuredSqlParser() {
     }
 
+    /**
+     * 解析 SQL 并返回 full-grammer 结构事件、warning 和 profile 诊断属性。
+     *
+     * <p>EN: Parses SQL and returns full-grammer structured events, warnings,
+     * and profile diagnostic attributes.
+     */
     @Override
     public StructuredParseResult parseSql(SqlStatementRecord statement, AdaptorContext context) {
         FullGrammerParse parse = parseFullGrammer(statement.sql());

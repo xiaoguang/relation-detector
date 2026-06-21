@@ -29,3 +29,4 @@
 - Relationship 与 Data Lineage 是独立输出模型；Data Lineage 不参与 relationship confidence。
 - 数据画像默认关闭，只在用户显式开启时读取业务数据。
 - 每条输出关系必须保留 evidence，不能只输出最终 confidence。
+- 生产代码需要通过 package/class/关键方法的中英双语注释说明职责边界；设计文档以当前已通过 correctness/CLI E2E 的代码行为为事实来源。

@@ -1,6 +1,13 @@
 package com.relationdetector.contracts.model;
 
-/** A relationship endpoint. column is nullable for table-level relationships. */
+/**
+ * relationship 或 lineage 的端点。
+ *
+ * <p>CN: table 必填；column 为空时表示表级 relationship，例如 TABLE_CO_OCCURRENCE。
+ *
+ * <p>EN: Endpoint for relationships or lineage. The table is required; a null
+ * column represents a table-level relationship such as TABLE_CO_OCCURRENCE.
+ */
 public record Endpoint(TableId table, ColumnRef column) {
     public Endpoint {
         if (table == null) {

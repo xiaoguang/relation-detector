@@ -4,11 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Small token-oriented helpers for DDL text.
+ * token-event DDL 文本游标工具。
  *
- * <p>This is not a full DDL parser. It centralizes the quote, parenthesis, and
- * identifier scanning rules that DDL event extraction needs, so the semantic
- * visitor can focus on FK/index event construction.
+ * <p>CN: 这不是 full DDL parser。它集中处理 quote、括号、顶层分隔和 identifier
+ * 读取规则，让 token-event DDL visitor 专注构造 FK/index 事件。full-grammer DDL
+ * 不依赖该 cursor。
+ *
+ * <p>EN: Token-event DDL text cursor helper. It is not a full DDL parser; it
+ * centralizes quote, parenthesis, top-level delimiter, and identifier scanning
+ * so the token-event DDL visitor can focus on FK/index event construction.
+ * Full-grammer DDL does not depend on this cursor.
  */
 final class DdlTokenCursor {
     private DdlTokenCursor() {

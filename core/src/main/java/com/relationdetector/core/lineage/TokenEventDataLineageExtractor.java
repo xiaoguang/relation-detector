@@ -24,12 +24,23 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 /**
- * Data Lineage extractor for token-event.
+ * SQL Data Lineage 语义抽取器。
  *
- * <p>The extractor consumes token-event records produced by the structured SQL
- * parser and emits database-internal field lineage.
+ * <p>CN: 本类消费 token-event 与 full-grammer 共享的写入/projection 结构事件，输出
+ * 数据库内部字段血缘。它不做 Parameter Binding，不把参数、literal、JSON path 或局部变量
+ * 作为 source。
+ *
+ * <p>EN: SQL Data Lineage semantic extractor. It consumes write/projection
+ * structured events shared by token-event and full-grammer and emits
+ * database-internal field lineage. It does not perform parameter binding and
+ * does not treat parameters, literals, JSON paths, or local variables as sources.
  */
 public final class TokenEventDataLineageExtractor {
+    /**
+     * 从结构化 SQL events 抽取字段血缘。
+     *
+     * <p>EN: Extracts field lineage from structured SQL events.
+     */
     public List<DataLineageCandidate> extract(SqlStatementRecord statement, StructuredParseResult structured) {
         return extractNative(statement, structured);
     }
@@ -40,11 +51,14 @@ public final class TokenEventDataLineageExtractor {
             Set<TableId> knownPhysicalTables
     ) {
         /*
-         * Data Lineage v1 only filters local temporary tables when the SQL text
-         * explicitly declares them through LOCAL_TEMP_TABLE_DECLARATION events.
-         * knownPhysicalTables is intentionally kept as a future extension point
-         * for metadata-aware lineage, but it must not reintroduce name-based temp
-         * table guessing.
+         * CN: Data Lineage v1 只过滤 SQL 语法明确声明的本地临时表，即
+         * LOCAL_TEMP_TABLE_DECLARATION events。knownPhysicalTables 保留为未来
+         * metadata-aware lineage 扩展点，但不能重新引入基于 tmp/temp 名字的猜测。
+         *
+         * EN: Data Lineage v1 only filters local temporary tables explicitly
+         * declared through LOCAL_TEMP_TABLE_DECLARATION events. knownPhysicalTables
+         * is a future metadata-aware extension point and must not reintroduce
+         * name-based temp-table guessing.
          */
         return extractNative(statement, structured);
     }

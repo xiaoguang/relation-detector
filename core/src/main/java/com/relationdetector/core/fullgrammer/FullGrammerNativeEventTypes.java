@@ -4,6 +4,16 @@ import java.util.Set;
 
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
+/**
+ * Declares which event families a full-grammer profile is expected to provide natively.
+ *
+ * <p>CN: 这里是 full-grammer profile 的能力声明，供 parser attributes 和 parity 测试使用。
+ * 它不生成事件，也不决定 relationship / lineage 语义。</p>
+ *
+ * <p>EN: This is a capability map for full-grammer parser attributes and parity
+ * checks. It does not emit events and does not decide relationship or lineage
+ * semantics.</p>
+ */
 public final class FullGrammerNativeEventTypes {
     public static final Set<StructuredParseEventType> COMMON_RELATION_EVENTS = Set.of(
             StructuredParseEventType.PREDICATE_EQUALITY,

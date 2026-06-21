@@ -10,10 +10,25 @@ import java.util.Set;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
+/**
+ * 合并 full-grammer native events 与历史对比 events 的通用工具。
+ *
+ * <p>CN: 这个类只用于测试/诊断层的事件去重和来源统计，不承担 SQL 结构识别，
+ * 也不参与 relationship 或 Data Lineage 语义判断。</p>
+ *
+ * <p>EN: This helper only deduplicates and reports event sources for
+ * full-grammer parity diagnostics. It does not recognize SQL structure and does
+ * not make relationship or lineage decisions.</p>
+ */
 public final class FullGrammerEventMerger {
     private FullGrammerEventMerger() {
     }
 
+    /**
+     * native events take precedence over delegated events with the same stable key.
+     *
+     * <p>CN: native 事件优先，delegated 事件只补未被 native 覆盖的事件类型。</p>
+     */
     public static List<StructuredSqlEvent> merge(
             List<StructuredSqlEvent> nativeEvents,
             List<StructuredSqlEvent> delegatedEvents,

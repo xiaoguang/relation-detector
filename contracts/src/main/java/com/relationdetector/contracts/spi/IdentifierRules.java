@@ -1,6 +1,14 @@
 package com.relationdetector.contracts.spi;
 
-/** Database-specific identifier normalization rules. */
+/**
+ * 数据库 identifier 规范化规则。
+ *
+ * <p>CN: MySQL/PostgreSQL 等数据库大小写和引用符规则不同，因此 identifier
+ * normalization 属于 adaptor。
+ *
+ * <p>EN: Database-specific identifier normalization rules. Case folding and
+ * quoting differ by dialect, so normalization belongs to adaptors.
+ */
 public interface IdentifierRules {
     String normalize(String identifier);
 

@@ -21,8 +21,23 @@ import com.relationdetector.core.fullgrammer.FullGrammerTokenEventParserFactory;
 import com.relationdetector.core.fullgrammer.SqlGrammarProfileSelection;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
 
-/** Applies common SQL pre-processing and parser-mode selection. */
+/**
+ * SQL parser mode 选择与运行入口。
+ *
+ * <p>CN: runner 负责 SQL log noise 过滤、parser policy attributes 注入、
+ * full-grammer/profile 选择和 token-event fallback。它不直接抽取关系；关系抽取由
+ * TokenEventSqlRelationParser / TokenEventRelationExtractor 完成。
+ *
+ * <p>EN: SQL parser-mode selection and execution entry point. The runner owns
+ * SQL log noise filtering, parser policy attributes, full-grammer/profile
+ * selection, and token-event fallback. It does not extract relationships directly.
+ */
 public final class SqlRelationParserRunner {
+    /**
+     * 解析一条 SQL statement 并返回 relationship 候选。
+     *
+     * <p>EN: Parses one SQL statement and returns relationship candidates.
+     */
     public List<RelationshipCandidate> parse(
             DatabaseAdaptor adaptor,
             ScanConfig config,
@@ -41,6 +56,11 @@ public final class SqlRelationParserRunner {
         return parser.parse(effectiveStatement, context);
     }
 
+    /**
+     * 只返回结构化 parse result，供 Data Lineage 复用。
+     *
+     * <p>EN: Returns only the structured parse result, mainly for Data Lineage extraction.
+     */
     public Optional<StructuredParseResult> parseStructured(
             DatabaseAdaptor adaptor,
             ScanConfig config,

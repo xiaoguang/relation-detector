@@ -7,7 +7,14 @@ import java.util.Map;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 
-/** Explainable evidence for one field-level Data Lineage candidate. */
+/**
+ * Data Lineage 候选的可解释证据。
+ *
+ * <p>CN: 记录 transform、分值、来源类型和诊断属性，帮助输出层解释字段血缘为何存在。
+ *
+ * <p>EN: Explainable evidence for a field-level Data Lineage candidate,
+ * including transform, score, source provenance, and diagnostic attributes.
+ */
 public record DataLineageEvidence(
         LineageTransformType transformType,
         BigDecimal score,

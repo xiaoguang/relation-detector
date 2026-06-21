@@ -1,12 +1,16 @@
 package com.relationdetector.contracts.scoring;
 
 /**
- * Default evidence weights shared by core parsers and database adaptors.
+ * 默认 evidence 分值常量。
  *
- * <p>Design source of truth:
- * docs/design/phase-02-core-model-scoring.md, section "置信度计算".
- * Keeping these numbers in one class prevents parser/adaptor implementations
- * from silently drifting away from the scoring design document.
+ * <p>CN: 设计真源是 {@code docs/design/phase-02-core-model-scoring.md} 的
+ * “置信度计算”。parser、metadata enhancer 和 adaptor 共享这些基础分，避免各自
+ * 悄悄漂移。
+ *
+ * <p>EN: Default evidence weights shared by core parsers and database adaptors.
+ * The design source of truth is the confidence section in
+ * docs/design/phase-02-core-model-scoring.md. Centralizing these constants keeps
+ * parser/adaptor implementations aligned.
  */
 public final class DefaultEvidenceScores {
     private DefaultEvidenceScores() {

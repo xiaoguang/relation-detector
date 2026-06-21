@@ -39,11 +39,16 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.WarningType;
 
 /**
- * Default scan orchestration.
+ * 默认扫描编排器。
  *
- * <p>Design mapping: Phase 3 states that adaptors may provide full-chain hooks,
- * while core keeps final merging and scoring. This engine calls adaptor hooks,
- * gathers candidates, optionally profiles them, and then merges via core.
+ * <p>CN: ScanEngine 串联 metadata、database DDL、object definitions、log files、
+ * SQL/DDL parser、可选 data profiling、relationship merger 和 Data Lineage merger。
+ * 它负责 source orchestration 与 failure isolation，不负责数据库方言解析细节。
+ *
+ * <p>EN: Default scan orchestrator. It connects metadata, database DDL, object
+ * definitions, log files, SQL/DDL parsers, optional data profiling, relationship
+ * merging, and Data Lineage merging. It owns source orchestration and failure
+ * isolation, not dialect parsing details.
  */
 public final class ScanEngine {
     private final RelationshipMerger merger = new RelationshipMerger();
@@ -54,6 +59,12 @@ public final class ScanEngine {
     private final TokenEventDataLineageExtractor dataLineageExtractor = new TokenEventDataLineageExtractor();
     private final DataLineageMerger dataLineageMerger = new DataLineageMerger();
 
+    /**
+     * 执行一次完整 scan，并返回 relationship、dataLineage、warning 和 source summary。
+     *
+     * <p>EN: Runs one complete scan and returns relationships, data lineages,
+     * warnings, and source summary.
+     */
     public ScanResult scan(ScanConfig config, DatabaseAdaptor adaptor) {
         ScanScope scope = new ScanScope(config.catalog, config.schema, config.includeTables, config.excludeTables);
         ScanResult result = new ScanResult(config.databaseType.name(), config.schema);

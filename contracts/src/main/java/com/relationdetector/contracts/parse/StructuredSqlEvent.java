@@ -5,12 +5,16 @@ import java.util.Map;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 /**
- * One parser-level fact extracted before relationship scoring.
+ * relationship / lineage 评分前的一条 parser-level fact。
  *
- * <p>This is intentionally not a relationship. It is the intermediate
- * Token/Event stream that lets dialect parsers describe table references,
- * predicates, DDL clauses, dynamic SQL markers, and write expressions without
- * coupling the grammar layer to confidence scoring.
+ * <p>CN: 这不是 relationship。它是 token-event 与 full-grammer 共享的中间事件流，
+ * 用于描述 rowset、predicate、DDL clause、dynamic SQL marker 和写入表达式，
+ * 避免 grammar 层耦合 confidence 计算。
+ *
+ * <p>EN: Parser-level fact extracted before relationship or lineage scoring.
+ * It is not a relationship; it is the shared intermediate event stream used by
+ * token-event and full-grammer to describe rowsets, predicates, DDL clauses,
+ * dynamic SQL markers, and write expressions.
  */
 public record StructuredSqlEvent(
         StructuredParseEventType type,

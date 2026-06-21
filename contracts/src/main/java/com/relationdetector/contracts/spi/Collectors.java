@@ -16,14 +16,30 @@ import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 
-/** Small adaptor SPI interfaces grouped to keep the package compact. */
+/**
+ * adaptor SPI 的小型 collector 接口集合。
+ *
+ * <p>CN: 为了让 DatabaseAdaptor 暴露的能力保持紧凑，本类集中定义 metadata、对象、
+ * 数据库 DDL、日志、SQL/DDL parser、画像和权重调整接口。
+ *
+ * <p>EN: Grouped small adaptor SPI interfaces. Keeping these collector
+ * contracts together makes DatabaseAdaptor compact while still separating
+ * metadata, objects, database DDL, logs, SQL/DDL parsers, profiling, and weight
+ * adjustment.
+ */
 public final class Collectors {
     private Collectors() {
     }
 
     /**
-     * Reads authoritative database catalog metadata and converts it into a raw
-     * {@link MetadataSnapshot}.
+     * 读取数据库 catalog metadata 并转换为 MetadataSnapshot。
+     *
+     * <p>CN: 该 collector 属于 adaptor，因为不同数据库 catalog 差异很大；core 只消费
+     * 统一 MetadataSnapshot，并在 merger 前把 snapshot.relationships() 作为普通候选。
+     *
+     * <p>EN: Reads authoritative database catalog metadata and converts it into
+     * a raw {@link MetadataSnapshot}. This collector is adaptor-owned because
+     * catalogs differ across databases; core consumes only the normalized snapshot.
      *
      * <p>Call relationship:
      * <pre>
@@ -33,14 +49,6 @@ public final class Collectors {
      *   -> ScanEngine converts snapshot.relationships() into normal candidates
      *      before RelationshipMerger scores and merges them with DDL/SQL/log evidence.
      * </pre>
-     *
-     * <p>The collector is intentionally adaptor-owned because each database exposes
-     * constraints through different catalogs. For example, MySQL reads
-     * {@code information_schema.KEY_COLUMN_USAGE}, while PostgreSQL reads
-     * {@code pg_catalog.pg_constraint} plus {@code pg_attribute}. The common output
-     * is still a {@link RelationshipCandidate} with
-     * {@code RelationType.FK_LIKE}, {@code RelationSubType.DECLARED_FK}, and
-     * {@code EvidenceType.METADATA_FOREIGN_KEY}.
      *
      * <p>Example source schema:
      * <pre>{@code

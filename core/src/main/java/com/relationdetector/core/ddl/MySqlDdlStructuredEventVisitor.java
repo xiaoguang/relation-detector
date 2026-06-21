@@ -3,12 +3,16 @@ package com.relationdetector.core.ddl;
 import java.util.regex.Pattern;
 
 /**
- * MySQL-specific DDL event extractor for the token-event DDL path.
+ * MySQL token-event DDL 方言 visitor。
  *
- * <p>The shared {@link DdlStructuredEventVisitor} keeps only conservative
- * cross-dialect DDL. MySQL-only index spelling, inline {@code KEY}/{@code INDEX}
- * definitions, visibility flags, and index type placement live here so they do
- * not make PostgreSQL DDL look valid by accident.
+ * <p>CN: 公共 DDL visitor 只保留保守跨库 DDL；MySQL-only index 拼写、inline
+ * {@code KEY}/{@code INDEX}、visibility flag 和 index type 位置放在这里，避免污染
+ * PostgreSQL DDL。
+ *
+ * <p>EN: MySQL-specific DDL event extractor for the token-event DDL path. The
+ * shared visitor stays conservative; MySQL-only index spelling, inline
+ * KEY/INDEX definitions, visibility flags, and index type placement live here
+ * so PostgreSQL DDL does not accidentally accept them.
  */
 public final class MySqlDdlStructuredEventVisitor extends DdlStructuredEventVisitor {
     private static final Pattern MYSQL_CREATE_INDEX = Pattern.compile(

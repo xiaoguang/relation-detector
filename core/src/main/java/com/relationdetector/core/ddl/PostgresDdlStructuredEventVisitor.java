@@ -3,13 +3,16 @@ package com.relationdetector.core.ddl;
 import java.util.regex.Pattern;
 
 /**
- * PostgreSQL-specific DDL event extractor for the token-event DDL path.
+ * PostgreSQL token-event DDL 方言 visitor。
  *
- * <p>PostgreSQL has DDL modifiers that look like ordinary identifiers to a
- * generic scanner, such as {@code ONLY}, {@code CONCURRENTLY},
- * {@code INCLUDE}, partial-index {@code WHERE}, and opclass/collation tokens.
- * Keeping those forms here prevents MySQL DDL parsing from inheriting
- * PostgreSQL-only grammar by accident.
+ * <p>CN: PostgreSQL 的 {@code ONLY}、{@code CONCURRENTLY}、{@code INCLUDE}、
+ * partial-index {@code WHERE}、opclass/collation 等 DDL modifier 对通用 scanner
+ * 很像普通 identifier，因此隔离在这里，避免 MySQL DDL 继承 PostgreSQL-only grammar。
+ *
+ * <p>EN: PostgreSQL-specific DDL event extractor for the token-event DDL path.
+ * PostgreSQL DDL modifiers such as ONLY, CONCURRENTLY, INCLUDE, partial-index
+ * WHERE, and opclass/collation tokens are isolated here so MySQL DDL parsing
+ * does not inherit PostgreSQL-only grammar by accident.
  */
 public final class PostgresDdlStructuredEventVisitor extends DdlStructuredEventVisitor {
     private static final Pattern POSTGRES_ALTER_TABLE = Pattern.compile(

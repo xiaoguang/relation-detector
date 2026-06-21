@@ -1,12 +1,15 @@
 package com.relationdetector.contracts;
 
 /**
- * Central enum definitions for the public adaptor contract.
+ * 公共 contracts 的集中 enum 容器。
  *
- * <p>Design mapping:
- * docs/design/enum-reference.md is the source of truth for the meaning,
- * JSON spelling, and maintenance rules of these values. Keeping the enums in
- * one file makes it harder for adaptor authors to invent near-duplicate states.
+ * <p>CN: {@code docs/design/enum-reference.md} 是这些枚举含义、JSON 拼写和维护规则的
+ * 设计真源。集中放置可避免 adaptor 作者发明相似但不兼容的状态值。
+ *
+ * <p>EN: Central enum container for the public contracts module. The design
+ * source of truth is docs/design/enum-reference.md, which defines semantics,
+ * JSON spelling, and maintenance rules. Keeping enum values centralized prevents
+ * near-duplicate states in adaptors.
  */
 public final class Enums {
     private Enums() {

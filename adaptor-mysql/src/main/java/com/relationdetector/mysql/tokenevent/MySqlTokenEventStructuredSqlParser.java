@@ -15,12 +15,16 @@ import com.relationdetector.core.antlr.mysql.MySqlRelationSqlLexer;
 import com.relationdetector.core.antlr.mysql.MySqlRelationSqlParser;
 
 /**
- * MySQL token-event parser used by the production SQL parser.
+ * MySQL token-event SQL parser。
  *
- * <p>MySQL keeps its own lexer/parser entry point and event builder so
- * MySQL-only syntax such as {@code STRAIGHT_JOIN}, index hints,
- * {@code PARTITION}, and {@code JSON_TABLE} does not leak into PostgreSQL or the
- * common token-event builder.
+ * <p>CN: MySQL 保留自己的 tolerant lexer/parser 入口和 event builder，使
+ * {@code STRAIGHT_JOIN}、index hints、{@code PARTITION}、{@code JSON_TABLE} 等
+ * MySQL-only 语法不会泄漏到 PostgreSQL 或公共 token-event builder。
+ *
+ * <p>EN: MySQL token-event SQL parser. MySQL keeps its own tolerant
+ * lexer/parser entry point and event builder so MySQL-only syntax such as
+ * STRAIGHT_JOIN, index hints, PARTITION, and JSON_TABLE does not leak into
+ * PostgreSQL or the common token-event builder.
  */
 public final class MySqlTokenEventStructuredSqlParser extends TokenEventStructuredSqlParser {
     public MySqlTokenEventStructuredSqlParser() {

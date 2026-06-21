@@ -8,10 +8,14 @@ import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 
 /**
- * Mutable candidate used inside scanning and merging.
+ * relationship 扫描与合并期间的可变候选。
  *
- * <p>Design mapping: Phase 2 RelationshipCandidate. The class remains mutable
- * because multiple sources append evidence before final output.
+ * <p>CN: 多个来源会在 merge 前追加 evidence、rawEvidence 和 warning，因此该类保持
+ * 可变；最终输出由 writer 读取这些字段渲染。
+ *
+ * <p>EN: Mutable relationship candidate used during scanning and merging.
+ * Multiple sources append evidence, rawEvidence, and warnings before final
+ * output, so the candidate intentionally remains mutable.
  */
 public final class RelationshipCandidate {
     private final Endpoint source;

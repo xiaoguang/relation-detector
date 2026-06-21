@@ -7,13 +7,14 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.WarningMessage;
 
 /**
- * Structured parse output from the ANTLR-backed Token/Event parser frontend.
+ * parser frontend 的结构化输出。
  *
- * <p>The final JSON relationship model remains based on
- * {@link RelationshipCandidate}. This result is a diagnostic and extraction
- * bridge: visitors consume {@link #events()}, operators can inspect
- * {@link #warnings()}, and parser diagnostics can keep backend/dialect
- * provenance without changing the public relationship model.
+ * <p>CN: token-event 和 full-grammer 都返回该对象。最终 JSON relationship 仍基于
+ * RelationshipCandidate；这里是事件、warning 和 parser provenance 的桥接层。
+ *
+ * <p>EN: Structured output from parser frontends. Both token-event and
+ * full-grammer return this object. Final JSON relationships still use
+ * RelationshipCandidate; this result bridges events, warnings, and parser provenance.
  */
 public record StructuredParseResult(
         String backend,

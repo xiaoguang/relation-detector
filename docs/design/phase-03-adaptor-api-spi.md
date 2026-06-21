@@ -253,13 +253,13 @@ public interface EvidenceWeightAdjuster {
 每个 adaptor jar 包含：
 
 ```text
-META-INF/services/com.example.relation.api.DatabaseAdaptor
+META-INF/services/com.relationdetector.contracts.spi.DatabaseAdaptor
 ```
 
 内容：
 
 ```text
-com.example.relation.mysql.MySqlDatabaseAdaptor
+com.relationdetector.mysql.MySqlDatabaseAdaptor
 ```
 
 CLI 启动时：

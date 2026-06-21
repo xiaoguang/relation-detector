@@ -22,9 +22,14 @@ import com.relationdetector.core.fullgrammer.SqlGrammarProfileSelection;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 
 /**
- * Runs the selected DDL relation extraction pipeline.
+ * 运行选中的 DDL relationship 抽取链路。
  *
- * <p>The adaptor supplies the dialect token-event DDL parser. When
+ * <p>CN: adaptor 提供方言 token-event DDL parser；当 parser.mode/profile 选中
+ * full-grammer 时，runner 使用对应 full-grammer DDL parser。两种 parser 都输出同一
+ * DDL 结构事件，再交给 DdlRelationExtractionVisitor。
+ *
+ * <p>EN: Runs the selected DDL relation extraction pipeline. The adaptor
+ * supplies the dialect token-event DDL parser. When
  * {@code parser.mode} and a versioned grammar profile select full-grammer, the
  * runner uses the corresponding full-grammer DDL parser instead. In both cases
  * this runner converts structured DDL events into relationship candidates:
@@ -39,6 +44,11 @@ import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 public final class DdlRelationParserRunner {
     private final DdlRelationExtractionVisitor visitor = new DdlRelationExtractionVisitor();
 
+    /**
+     * 从 DDL 文件解析 relationship 候选。
+     *
+     * <p>EN: Parses relationship candidates from a DDL file.
+     */
     public List<RelationshipCandidate> parse(
             DatabaseAdaptor adaptor,
             ScanConfig config,
@@ -52,7 +62,9 @@ public final class DdlRelationParserRunner {
     }
 
     /**
-     * Parses DDL text that came from a non-file source, such as MySQL
+     * 解析来自非文件来源的 DDL 文本，例如 MySQL {@code SHOW CREATE TABLE}。
+     *
+     * <p>EN: Parses DDL text that came from a non-file source, such as MySQL
      * {@code SHOW CREATE TABLE}.
      *
      * <p>The parsing and comparison behavior mirrors {@link #parse(DatabaseAdaptor,

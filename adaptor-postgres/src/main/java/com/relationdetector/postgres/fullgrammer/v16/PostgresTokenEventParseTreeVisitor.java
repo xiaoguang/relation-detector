@@ -28,10 +28,15 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 
 /**
- * PostgreSQL 16 parse-tree visitor for full-grammer shadow parsing.
+ * PostgreSQL 16 full-grammer SQL parse-tree visitor。
  *
- * <p>The visitor emits SQL events from concrete PostgreSQL grammar contexts.
- * Token helpers are limited to source text/location handled by the shared sink.
+ * <p>CN: visitor 从具体 PostgreSQL grammar context 生成 StructuredSqlEvent。token
+ * helper 仅用于 source text/location 和 identifier 读取；relationship / lineage 语义仍在 core。
+ *
+ * <p>EN: PostgreSQL 16 full-grammer SQL parse-tree visitor. It emits
+ * StructuredSqlEvent records from concrete PostgreSQL grammar contexts. Token
+ * helpers are limited to source text/location and identifier reading;
+ * relationship and lineage semantics remain in core.
  */
 final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParserBaseVisitor<Void> {
     private final SqlStatementRecord statement;
@@ -45,6 +50,11 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
         this.sink = new FullGrammerTypedSqlEventSink(statement, new PostgresExpressionAnalyzer());
     }
 
+    /**
+     * 访问 parse tree 并返回该 SQL 的结构事件。
+     *
+     * <p>EN: Visits the parse tree and returns structured events for the SQL.
+     */
     List<StructuredSqlEvent> extract(ParseTree tree) {
         if (tree != null) {
             visit(tree);

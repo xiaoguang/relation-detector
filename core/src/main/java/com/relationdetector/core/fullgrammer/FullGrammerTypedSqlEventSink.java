@@ -20,11 +20,16 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
 /**
- * Event sink used by full-grammer typed visitors.
+ * full-grammer typed visitor 使用的事件 sink。
  *
- * <p>This class does not classify SQL by token span splitting. Dialect visitors
- * call it from concrete grammar contexts; the sink only normalizes identifiers,
- * records source locations, and emits the existing token-event event shape.
+ * <p>CN: 本类不通过 token span 拆分来判断 SQL 结构。方言 visitor 从具体 grammar
+ * context 调用它；sink 只负责规范化 identifier、记录 source location，并输出既有
+ * token-event event shape。
+ *
+ * <p>EN: Event sink used by full-grammer typed visitors. This class does not
+ * classify SQL by token span splitting. Dialect visitors call it from concrete
+ * grammar contexts; the sink only normalizes identifiers, records source
+ * locations, and emits the existing token-event event shape.
  */
 public final class FullGrammerTypedSqlEventSink {
     private final SqlStatementRecord statement;
@@ -45,10 +50,20 @@ public final class FullGrammerTypedSqlEventSink {
         this.expressionAnalyzer = expressionAnalyzer;
     }
 
+    /**
+     * 返回 visitor 已收集的结构事件。
+     *
+     * <p>EN: Returns structured events collected by the visitor.
+     */
     public List<StructuredSqlEvent> events() {
         return events;
     }
 
+    /**
+     * 在 derived/CTE projection scope 内访问子树。
+     *
+     * <p>EN: Visits a subtree while binding projection ownership for derived/CTE scopes.
+     */
     public void withProjectionOwner(String owner, Runnable visitor) {
         if (owner == null || owner.isBlank()) {
             visitor.run();
@@ -64,6 +79,11 @@ public final class FullGrammerTypedSqlEventSink {
         }
     }
 
+    /**
+     * 在 UPDATE/MERGE/INSERT write target scope 内访问子树。
+     *
+     * <p>EN: Visits a subtree while binding the current write target scope.
+     */
     public void withWriteTarget(String tableOrAlias, Runnable visitor) {
         if (tableOrAlias == null || tableOrAlias.isBlank()) {
             visitor.run();
@@ -77,6 +97,11 @@ public final class FullGrammerTypedSqlEventSink {
         }
     }
 
+    /**
+     * 在 SELECT scope 内访问子树，用于限制 projection 默认 rowset。
+     *
+     * <p>EN: Visits a subtree inside a SELECT scope to bound default projection rowsets.
+     */
     public void withSelectScope(Runnable visitor) {
         selectRowsetBases.push(rowsetTables.size());
         try {

@@ -20,7 +20,16 @@ import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerLexer;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser;
 
-/** MySQL 8.0 full-grammer DDL shadow parser. */
+/**
+ * MySQL 8.0 full-grammer DDL parser。
+ *
+ * <p>CN: 使用 MySQL full grammar 解析 DDL，再由 MySqlFullGrammerDdlEventCollector
+ * 产生 DDL_FOREIGN_KEY / DDL_INDEX 事件。最终 relationship 仍由 core DDL extractor 生成。
+ *
+ * <p>EN: MySQL 8.0 full-grammer DDL parser. It parses DDL with the MySQL full
+ * grammar and uses MySqlFullGrammerDdlEventCollector to emit DDL_FOREIGN_KEY /
+ * DDL_INDEX events. Final relationships are still created by the core DDL extractor.
+ */
 final class MySqlFullGrammerStructuredDdlParser implements StructuredDdlParser {
     private final MySqlFullGrammerDdlEventCollector collector = new MySqlFullGrammerDdlEventCollector();
 

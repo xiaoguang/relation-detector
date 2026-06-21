@@ -9,7 +9,15 @@ import java.util.Map;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 
-/** Field-level data flow candidate independent from relationship confidence. */
+/**
+ * 字段级 Data Lineage 候选。
+ *
+ * <p>CN: 该模型独立于 RelationshipCandidate，用于表达一个目标字段从哪些物理字段
+ * 取值或受控。它的 confidence 只解释血缘可信度，不参与 relationship confidence。
+ *
+ * <p>EN: Field-level Data Lineage candidate independent from RelationshipCandidate.
+ * Its confidence explains lineage trust only and never feeds relationship confidence.
+ */
 public final class DataLineageCandidate {
     private final List<Endpoint> sources;
     private final Endpoint target;

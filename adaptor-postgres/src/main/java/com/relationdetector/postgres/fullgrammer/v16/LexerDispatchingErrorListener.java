@@ -27,6 +27,15 @@ import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.*;
 import org.antlr.v4.runtime.misc.*;
 
+/**
+ * PostgreSQL full-grammer lexer error dispatcher.
+ *
+ * <p>CN: vendored PostgreSQL grammar helper，把 lexer 诊断转发给父 lexer 的 listener
+ * 集合，保持 full-grammer syntax warning 与 ANTLR runtime 行为一致。
+ *
+ * <p>EN: Vendored PostgreSQL grammar helper that forwards lexer diagnostics to
+ * the parent lexer listeners so full-grammer syntax warnings follow ANTLR behavior.
+ */
 public class LexerDispatchingErrorListener implements ANTLRErrorListener
 {
     Lexer _parent;

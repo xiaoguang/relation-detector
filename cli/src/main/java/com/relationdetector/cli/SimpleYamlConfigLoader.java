@@ -12,13 +12,22 @@ import com.relationdetector.contracts.Enums.OutputFormat;
 import com.relationdetector.core.scan.ScanConfig;
 
 /**
- * Small YAML reader for the documented example configuration.
+ * 轻量 YAML 配置读取器。
  *
- * <p>Design mapping: Phase 8 YAML configuration. This parser supports the
- * subset used by examples: two-level sections, scalar values, and simple lists.
- * Replacing it with Jackson YAML later will not affect core/adaptor code.
+ * <p>CN: 当前只支持项目文档示例需要的 YAML 子集：两层 section、scalar value 和简单 list。
+ * 未来替换为 Jackson YAML 不应影响 core/adaptor，因为输出仍是 ScanConfig。
+ *
+ * <p>EN: Lightweight YAML reader for the documented configuration subset:
+ * two-level sections, scalar values, and simple lists. Replacing it with
+ * Jackson YAML later should not affect core/adaptor code because the output
+ * remains ScanConfig.
  */
 public final class SimpleYamlConfigLoader {
+    /**
+     * 从 YAML 文件加载 ScanConfig。
+     *
+     * <p>EN: Loads ScanConfig from a YAML file.
+     */
     public ScanConfig load(Path file) throws IOException {
         if (!Files.isRegularFile(file)) {
             throw new IllegalArgumentException("config file does not exist: " + file);

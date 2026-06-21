@@ -12,7 +12,16 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 /**
- * Extracts relationship-relevant DDL facts into structured events.
+ * token-event DDL 结构事件 visitor。
+ *
+ * <p>CN: 该 visitor 从 CREATE/ALTER/INDEX DDL 文本中抽取 relationship 相关事实，
+ * 输出 DDL_FOREIGN_KEY 与 DDL_INDEX 事件。它属于 token-event fallback DDL 链路；
+ * full-grammer DDL 使用 adaptor 内的 typed collector。
+ *
+ * <p>EN: Token-event DDL structured-event visitor. It extracts
+ * relationship-relevant facts from CREATE/ALTER/INDEX DDL text and emits
+ * DDL_FOREIGN_KEY / DDL_INDEX events. This is the token-event fallback DDL path;
+ * full-grammer DDL uses typed collectors in adaptor modules.
  *
  * <p>Call flow:
  *
@@ -51,6 +60,11 @@ public class DdlStructuredEventVisitor {
                     + IDENTIFIER + ")(?:\\s+using\\s+\\w+)?\\s*\\((.*?)\\)\\s*"
                     + "(where\\b.*)?$");
 
+    /**
+     * 将 DDL 文本拆成 statement 并抽取 DDL 结构事件。
+     *
+     * <p>EN: Splits DDL text into statements and extracts DDL structured events.
+     */
     public List<StructuredSqlEvent> extractEvents(String ddl, String sourceName) {
         List<StructuredSqlEvent> events = new ArrayList<>();
         int statementIndex = 0;

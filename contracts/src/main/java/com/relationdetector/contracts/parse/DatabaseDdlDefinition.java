@@ -1,14 +1,14 @@
 package com.relationdetector.contracts.parse;
 
 /**
- * DDL text collected from the live database catalog.
+ * 从 live database catalog 采集到的 DDL 文本。
  *
- * <p>Design mapping: this is the database counterpart of user-provided DDL
- * files. For MySQL the first producer is {@code SHOW CREATE TABLE}; future
- * adaptors can map PostgreSQL/SQL Server/Oracle catalog DDL reconstruction into
- * the same record. The scanner feeds {@link #ddl()} into the normal DDL parser
- * runner, then rewrites evidence provenance to {@code DATABASE_DDL} so operators
- * can distinguish catalog-derived DDL from checked-in schema files.
+ * <p>CN: 它是用户提供 DDL 文件的数据库侧对应物。ScanEngine 会把 ddl() 送入正常
+ * DDL parser runner，然后把 evidence provenance 改写为 DATABASE_DDL。
+ *
+ * <p>EN: DDL text collected from the live database catalog. It is the database
+ * counterpart of user-provided DDL files. ScanEngine feeds ddl() into the normal
+ * DDL parser runner and rewrites evidence provenance to DATABASE_DDL.
  */
 public record DatabaseDdlDefinition(
         String schema,

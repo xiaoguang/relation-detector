@@ -27,6 +27,15 @@ import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.*;
 import org.antlr.v4.runtime.misc.*;
 
+/**
+ * PostgreSQL full-grammer parser error dispatcher.
+ *
+ * <p>CN: vendored PostgreSQL grammar helper，把 parser ambiguity、full-context 和
+ * syntax diagnostics 转发给父 parser 的 listener 集合。
+ *
+ * <p>EN: Vendored PostgreSQL grammar helper that forwards parser ambiguity,
+ * full-context, context-sensitivity, and syntax diagnostics to parent listeners.
+ */
 public class ParserDispatchingErrorListener implements ANTLRErrorListener
 {
     Parser _parent;

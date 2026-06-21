@@ -1,7 +1,13 @@
 package com.relationdetector.contracts.model;
 
 /**
- * Column reference. Endpoints may omit a column for table-level CO_OCCURRENCE.
+ * 列级 endpoint 的稳定列标识。
+ *
+ * <p>CN: ColumnRef 始终绑定 TableId；当 relationship 退化为表级共现时，
+ * Endpoint 可以不携带 ColumnRef。
+ *
+ * <p>EN: Stable column identity for column-level endpoints. ColumnRef is always
+ * bound to a TableId; table-level co-occurrence endpoints omit the column.
  */
 public record ColumnRef(
         TableId table,
@@ -19,6 +25,11 @@ public record ColumnRef(
         }
     }
 
+    /**
+     * 用默认 normalizedName 创建列引用。
+     *
+     * <p>EN: Creates a column reference using the column name as the default normalized name.
+     */
     public static ColumnRef of(TableId table, String columnName) {
         return new ColumnRef(table, columnName, columnName, null, true);
     }

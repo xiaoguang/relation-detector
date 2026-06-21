@@ -26,12 +26,13 @@ relation-detector/
 - MySQL/PostgreSQL 内置 adaptor。
 - DDL 外键解析，包括 inline references、ALTER TABLE FK、复合 FK、quoted schema-qualified 名称，以及 PK/unique/index 辅助 evidence。
 - 纯 SQL 文本、MySQL 日志、PostgreSQL statement log 的 SQL 抽取。
-- 简易 JOIN、IN 子查询、表共现解析。
+- SQL/DML relationship 抽取，包括 JOIN、comma rowset、EXISTS、IN/tuple IN、CTE/derived 回溯、列级/表级共现、自连接弱共现，以及 MySQL/PostgreSQL 多表 DML。
+- Data Lineage v1，包括 `UPDATE SET`、`INSERT SELECT`、基础 `MERGE`、projection alias、derived aggregate、CASE/control flow、COALESCE、算术、函数和 CUMULATIVE transform。
 - 关系证据合并和置信度计算。
 - JSON/table 输出。
 - file-only 示例配置和输入数据。
 
-第一版故意保持低外部依赖，目前没有引入 picocli、Jackson、JSqlParser、JUnit、Testcontainers。设计文档中这些仍是推荐演进方向；当前代码先保证结构清楚、可编译、可运行，后续可以按模块替换实现。
+当前 CLI/YAML/JSON 仍采用轻量手写实现，以保持核心链路可读、依赖边界清晰；测试体系已经以 JUnit 5 为主，并用 correctness fixture、CLI E2E golden、full-grammer parity 和语义单测保护 SQL/DDL 行为。后续可按模块引入 picocli、Jackson、AssertJ、Testcontainers 等工程化增强，但不能改变 relationship / Data Lineage JSON schema 或 confidence 语义。
 
 ## 2. 模块说明
 
@@ -108,6 +109,8 @@ relation-detector/
 - 每个生产 package 都有中英双语 `package-info.java`，用于说明该包在当前 parser / relationship / lineage / DDL 架构中的职责边界。
 - `docs/design/phase-06-parser-enhancement.md` 的“代码结构注释索引”和“详细函数级调用结构”是这些 package 注释的设计展开。
 - 新增 package 时必须同步新增 `package-info.java`；新增跨包调用路径时必须同步刷新 Phase 6 详细设计。
+- 每个生产类需要类级中英双语 Javadoc，说明文件负责什么、不负责什么、位于哪条链路；关键 public 方法、核心编排方法和复杂 private helper 需要方法级中英双语注释。
+- 不强制给 record accessor、简单 getter、显而易见的小工具方法写注释；避免把注释变成逐行翻译或噪声。
 
 设计对应：
 
@@ -337,7 +340,7 @@ test-fixtures/examples/file-only-config.yml
 
 ### 4.3 运行 JSON 输出
 
-当前第一版没有打包 fat jar，直接用模块 classpath 运行：
+当前尚未打包 fat jar，直接用模块 classpath 运行：
 
 ```bash
 java -cp "cli/target/classes:core/target/classes:contracts/target/classes:adaptor-mysql/target/classes:adaptor-postgres/target/classes" \
@@ -470,9 +473,9 @@ sources:
 
 本章用于指导后续测试开发和系统测试。
 
-### 5.1 白盒单元测试
+### 5.1 语义单元测试
 
-建议优先覆盖 core，因为 core 决定输出稳定性。
+建议优先覆盖 core semantic layer，因为 relationship、Data Lineage、confidence、warning 和 JSON 输出稳定性由 core 决定。测试应保护 SQL/DDL 行为和输出语义，不再把目录命名、delegate/native 事件来源、迁移过程属性作为默认验收目标。
 
 核心测试对象：
 
@@ -480,7 +483,6 @@ sources:
 - `RelationshipMerger`
 - `AntlrSqlParseSupport`
 - `TokenEventStructuredSqlParser`
-- `TokenEventSqlEventBuilder`
 - `TokenEventStructuredDdlParser`
 - `TokenEventRelationExtractor`
 - `TokenEventDataLineageExtractor`
@@ -518,10 +520,10 @@ sources:
   - `DataLineageAuditGeneratorTest` 从全部 correctness fixture 和 `TokenEventDataLineageExtractor` 当前输出生成 `docs/parser-audit/data-lineage-full-audit.md`。该报告不是 golden 自动扩容工具，而是人工审核索引：每个 fixture 被归类为 `EXISTING_GOLD`、`SUGGESTED_GOLD`、`PENDING_REVIEW` 或 `NOT_APPLICABLE`，并列出 extractor 候选 fingerprints 和未进入 golden 的原因。
   - MySQL/PostgreSQL parser selection 测试必须断言 `attributes.grammar`、`attributes.lexer`、`attributes.parser` 和 `attributes.eventBuilder`，证明 adaptor 选择了自己的方言 parser/event builder。
   - fixture 的 `expected-diagnostics.json` 只记录 fixture hash 和 warning code count；不再保存 Simple/ANTLR comparison delta。
-- token-event 独立抽取测试：
-  - `TokenEventRelationExtractorIndependenceTest` 用“raw SQL 无关系但 events 有关系”和“events 为空时 extractor 不回退解析 raw SQL”两种输入，证明 SQL 关系抽取独立消费 token-event event。
-  - `SqlRelationParserRunnerTest` 覆盖 runner 总是调用 adaptor token-event parser，SQL log noise filter 仍生效，空结果不会被旧 parser 替换。
-  - `DdlRelationParserRunnerTest` 覆盖 runner 总是调用 structured DDL parser，空 DDL event 结果不会被旧 parser 替换。
+- token-event / full-grammer 行为测试：
+  - `SqlRelationParserRunnerTest` 覆盖 `parser.mode`、profile/version 选择、unsupported version fallback、SQL log noise filter 和 warning 行为。
+  - `DdlRelationParserRunnerTest` 覆盖同一 parser mode 策略下的 DDL relationship 抽取和 failure warning。
+  - full-grammer 测试只断言 SQL/DDL relationship、Data Lineage、warning parity 和具体方言行为，不断言内部 native/delegate/bridge 过程属性。
 - 重复 SQL 日志 JOIN 输出两份证据：`rawEvidence` 保留每次观测，`evidence` 聚合为一条基础 evidence 加一条 `REPEATED_OBSERVATION`。
 - YAML 中环境变量缺失时报错。
 - unknown adaptor 报 `ADAPTOR_ERROR`。
@@ -616,7 +618,7 @@ PostgreSQL：
 - 引入 picocli 替换手写 CLI 参数解析。
 - 引入 Jackson YAML/JSON 替换轻量解析和手写 JSON。
 - 按 `SqlGrammarProfile` 继续引入 MySQL/PostgreSQL 大版本 full-grammer module。新增 profile 必须通过 full-grammer shadow correctness 证明不低于 token-event，并补对应版本 fixture；无方言或无版本信息仍使用 token-event fallback。
-- 继续扩展 JUnit 5 用例，并引入 AssertJ、Testcontainers 做更强断言和真实数据库集成测试。
+- 在现有 JUnit 5 基础上引入 AssertJ、Testcontainers 做更强断言和真实数据库集成测试。
 - 增加 Maven assembly/shade 打包，生成单个可执行发行包。
 - 扩展 MySQL/PostgreSQL unique/index 元数据采集。
 - 按 adaptor API 增加 SQL Server 和 Oracle 模块。

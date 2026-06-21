@@ -22,13 +22,22 @@ import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 /**
- * Converts token-event DDL facts into relationship candidates.
+ * DDL relationship 语义抽取器。
  *
- * <p>This visitor consumes only {@link StructuredSqlEvent} facts produced by
- * {@link DdlStructuredEventVisitor} and intentionally mirrors the same
- * conservative evidence semantics.
+ * <p>CN: 本类消费 token-event 或 full-grammer DDL parser 输出的 DDL_FOREIGN_KEY /
+ * DDL_INDEX 事件，并转换为 RelationshipCandidate。DDL parser 不直接创建最终关系。
+ *
+ * <p>EN: DDL relationship semantic extractor. It consumes DDL_FOREIGN_KEY and
+ * DDL_INDEX events emitted by token-event or full-grammer DDL parsers and turns
+ * them into RelationshipCandidate instances. DDL parsers do not create final
+ * relationships directly.
  */
 public final class DdlRelationExtractionVisitor {
+    /**
+     * 从 DDL structured events 生成 relationship 候选。
+     *
+     * <p>EN: Builds relationship candidates from DDL structured events.
+     */
     public List<RelationshipCandidate> extract(String ddl, String sourceName, StructuredParseResult result) {
         DdlState state = new DdlState(sourceName);
         for (StructuredSqlEvent event : result.events()) {

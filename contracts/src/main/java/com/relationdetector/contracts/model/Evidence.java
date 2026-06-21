@@ -8,10 +8,14 @@ import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 
 /**
- * One explainable signal supporting or weakening a relationship.
+ * relationship 候选的一条可解释证据。
  *
- * <p>Design mapping: Phase 2 Evidence model. The final confidence must be
- * reproducible from evidence scores, so evidence is part of public output.
+ * <p>CN: 最终 confidence 必须能从 evidence score 复现，所以 Evidence 是公共输出的一部分。
+ * parser、metadata 和 data-profile 都通过 Evidence 描述自己贡献了什么信号。
+ *
+ * <p>EN: One explainable signal supporting a relationship candidate. Final
+ * confidence must be reproducible from evidence scores, so Evidence is part of
+ * public output and records parser/metadata/profile provenance.
  */
 public record Evidence(
         EvidenceType type,

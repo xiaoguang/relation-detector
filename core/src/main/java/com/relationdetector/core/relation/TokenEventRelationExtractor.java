@@ -27,12 +27,23 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 /**
- * Relationship extractor for token-event.
+ * SQL relationship 语义抽取器。
  *
- * <p>The extractor consumes structured token-event records directly and is the
- * production relationship extraction architecture.
+ * <p>CN: 本类消费 token-event 与 full-grammer 共享的 StructuredSqlEvent，并输出
+ * RelationshipCandidate。FK-like 方向、EXISTS/IN 证据、列级弱共现、JOIN USING 和
+ * self-join 弱关系都在这里统一处理，不放入方言 parser。
+ *
+ * <p>EN: SQL relationship semantic extractor. It consumes StructuredSqlEvent
+ * records shared by token-event and full-grammer and emits RelationshipCandidate
+ * instances. FK-like direction, EXISTS/IN evidence, column co-occurrence, JOIN
+ * USING, and self-join weak relations are handled here rather than in dialect parsers.
  */
 public final class TokenEventRelationExtractor {
+    /**
+     * 从结构化 SQL events 抽取 relationship 候选。
+     *
+     * <p>EN: Extracts relationship candidates from structured SQL events.
+     */
     public List<RelationshipCandidate> extract(SqlStatementRecord statement, StructuredParseResult structured) {
         return extractNative(statement, structured);
     }

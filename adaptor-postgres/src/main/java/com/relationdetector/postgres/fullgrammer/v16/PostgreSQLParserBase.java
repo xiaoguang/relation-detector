@@ -27,6 +27,16 @@ import java.util.Iterator;
 import java.util.List;
 import org.antlr.v4.runtime.*;
 
+/**
+ * PostgreSQL 16 full-grammer parser base helper.
+ *
+ * <p>CN: 该类来自 vendored PostgreSQL grammar runtime，用于解析 PL/pgSQL routine body、
+ * meta command 和 grammar action 所需的辅助逻辑。它不承载 relationship/lineage 语义。
+ *
+ * <p>EN: Parser base helper for the vendored PostgreSQL 16 full-grammer runtime.
+ * It supports PL/pgSQL routine-body parsing, meta commands, and grammar-action
+ * helpers, but owns no relationship or lineage semantics.
+ */
 public abstract class PostgreSQLParserBase extends Parser {
 
     public PostgreSQLParserBase(TokenStream input) {

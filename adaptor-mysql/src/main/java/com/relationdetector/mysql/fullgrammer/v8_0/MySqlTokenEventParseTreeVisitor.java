@@ -31,10 +31,15 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 
 /**
- * MySQL 8.0 parse-tree visitor for full-grammer shadow parsing.
+ * MySQL 8.0 full-grammer SQL parse-tree visitor。
  *
- * <p>The visitor emits SQL events from concrete MySQL grammar contexts. Token
- * helpers are limited to source text/location handled by the shared sink.
+ * <p>CN: visitor 从具体 MySQL grammar context 生成 StructuredSqlEvent。token helper
+ * 仅用于 source text/location 和 identifier 读取；relationship / lineage 语义仍在 core。
+ *
+ * <p>EN: MySQL 8.0 full-grammer SQL parse-tree visitor. It emits
+ * StructuredSqlEvent records from concrete MySQL grammar contexts. Token helpers
+ * are limited to source text/location and identifier reading; relationship and
+ * lineage semantics remain in core.
  */
 final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVisitor<Void> {
     private final SqlStatementRecord statement;
@@ -46,6 +51,11 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
         this.sink = new FullGrammerTypedSqlEventSink(statement, new MySqlExpressionAnalyzer());
     }
 
+    /**
+     * 访问 parse tree 并返回该 SQL 的结构事件。
+     *
+     * <p>EN: Visits the parse tree and returns structured events for the SQL.
+     */
     List<StructuredSqlEvent> extract(ParseTree tree) {
         if (tree != null) {
             visit(tree);

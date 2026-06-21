@@ -15,11 +15,16 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 /**
- * Extracts relationship-relevant structural events from ANTLR tokens.
+ * token-event 的低层 token 结构事件提取器。
  *
- * <p>ANTLR provides low-level lexer/parser support. This class owns the small
- * dialect-neutral event contract consumed by token-event relationship and
- * data-lineage extraction:
+ * <p>CN: ANTLR 提供底层 lexer/parser support；本类从 visible token 中抽取
+ * dialect-neutral 的 TABLE_REFERENCE / COLUMN_EQUALITY bootstrap 事件。更复杂的
+ * rowset、predicate、lineage 事件由 TokenEventSqlEventBuilder 及方言子类补充。
+ *
+ * <p>EN: Low-level token-event structural extractor. ANTLR provides lexer/parser
+ * support; this class extracts dialect-neutral TABLE_REFERENCE / COLUMN_EQUALITY
+ * bootstrap events from visible tokens. More complex rowset, predicate, and
+ * lineage events are added by TokenEventSqlEventBuilder and dialect subclasses.
  *
  * <pre>{@code
  * StructuredSqlParser
@@ -27,12 +32,6 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
  *   -> TokenEventSqlTokenSupport
  *   -> TABLE_REFERENCE / COLUMN_EQUALITY events
  * }</pre>
- *
- * <p>The visitor works on tokens rather than a rich parse-tree model because
- * the grammar is deliberately tolerant. MySQL and
- * PostgreSQL subclasses provide different identifier token ids and unquoting
- * rules, which is enough to prove the parser stack is truly dialect-owned
- * while keeping relationship output owned by the token-event extractor.
  */
 public class TokenEventSqlTokenSupport {
     private final String name;

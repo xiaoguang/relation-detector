@@ -2,7 +2,15 @@ package com.relationdetector.contracts.spi;
 
 import java.util.List;
 
-/** Scope requested by CLI/config and passed to adaptors. */
+/**
+ * CLI/config 请求的扫描范围。
+ *
+ * <p>CN: core 将 catalog、schema、include/exclude tables 统一传给 metadata、
+ * object、database DDL 和 profiler collector。
+ *
+ * <p>EN: Scan scope requested by CLI/config and passed to adaptors for
+ * metadata, object, database DDL, and profiling collection.
+ */
 public record ScanScope(
         String catalog,
         String schema,
