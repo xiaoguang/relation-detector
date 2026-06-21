@@ -8,18 +8,18 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 
 | Metric | Count |
 | --- | ---: |
-| Total correctness fixtures | 229 |
-| SQL fixtures | 183 |
-| DDL fixtures | 46 |
-| Fixtures with expected lineage | 45 |
+| Total correctness fixtures | 284 |
+| SQL fixtures | 227 |
+| DDL fixtures | 57 |
+| Fixtures with expected lineage | 60 |
 | Common directory fixtures | 2 |
 | MySQL directory fixtures | 57 |
-| PostgreSQL directory fixtures | 170 |
+| PostgreSQL directory fixtures | 225 |
 
 | Database type | Total | SQL | DDL |
 | --- | ---: | ---: | ---: |
 | MYSQL | 59 | 48 | 11 |
-| POSTGRESQL | 170 | 135 | 35 |
+| POSTGRESQL | 225 | 179 | 46 |
 
 ## Common Fixtures
 
@@ -3607,6 +3607,995 @@ _Preview truncated; see input file for full content._
 | Expected relations | `test-fixtures/correctness/postgres/postgres-official-index-storage-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/postgres-official-index-storage-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:public.orders.user_id->public.users.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official create_index.sql/docs inspired: storage parameters,
+-- TABLESPACE, and access-method-specific options. Complex indexes should not
+-- create FK-like relations by themselves; the declared FK below is the only
+-- expected relationship.
+CREATE TABLE public.users (
+  id BIGINT PRIMARY KEY,
+  email TEXT
+);
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-basic-correctness-case-01-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-basic-correctness-case-01-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-basic-correctness-case-01-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-basic-correctness-case-01-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:case_01.cpat_results.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.ensembl_compara.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.ensembl_coordinate_systems.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.ensembl_pseudogene_exons.region_id->ensembl_pseudogene_regions.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.ensembl_pseudogene_regions.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.go_term_annotations.evidence_code->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.go_term_annotations.ontology_term_id->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.go_term_publication_map.go_term_annotation_id->go_term_annotations.go_term_annotation_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.go_term_publication_map.reference_id->rnc_references.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.insdc_so_term_mapping.so_term_id->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.pipeline_tracking_genome_mapping.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.pipeline_tracking_qa_scan.urs->rna.upi:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.pipeline_tracking_traveler.urs->rna.upi:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.precompute_urs.urs->rna.upi:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.precompute_urs_taxid.precompute_urs_id->precompute_urs.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.precompute_urs_taxid.urs->rna.upi:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.qa_status.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.r2dt_model_extra_data.model_id->r2dt_models.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.r2dt_models.so_term_id->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.r2dt_results.model_id->r2dt_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.r2dt_results.urs->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rfam_analyzed_sequences.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rfam_go_terms.ontology_term_id->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rfam_go_terms.rfam_model_id->rfam_models.rfam_model_id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rfam_model_hits.rfam_model_id->rfam_models.rfam_model_id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rfam_model_hits.rnc_sequence_features_id->rnc_sequence_features.rnc_sequence_features_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rfam_model_hits.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rfam_models.rfam_clan_id->rfam_clans.rfam_clan_id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rfam_models.so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_accession_sequence_feature.accession->rnc_accessions.accession:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_accession_sequence_feature.rnc_sequence_feature_id->rnc_sequence_features.rnc_sequence_features_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_accession_sequence_region.accession->rnc_accessions.accession:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_accession_sequence_region.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_accessions.rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_database_references.dbid->rnc_database.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_database_references.reference_id->rnc_references.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_feedback_overlap.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_feedback_overlap.upi_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_feedback_target_assemblies.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_feedback_target_assemblies.dbid->rnc_database.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_gene_status.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_gene_status.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_gene_status.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_import_tracker.db_id->rnc_database.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_interactions.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_locus.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_locus_members.locus_id->rnc_locus.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_locus_members.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_locus_members.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_modifications.accession->rnc_accessions.accession:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_reference_map.reference_id->rnc_references.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_related_sequences.relationship_type->rnc_relationship_types.relationship_type:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_related_sequences.source_accession->rnc_accessions.accession:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_related_sequences.source_urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_related_sequences.target_urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_rna_precomputed.assigned_so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_rna_precomputed.last_release->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_rna_precomputed.so_rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_sequence_exons.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_sequence_features.accession->rnc_accessions.accession:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_sequence_features.feature_name->rnc_sequence_feature_types.feature_name:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_sequence_features.feature_provider->rnc_sequence_feature_providers.name:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.rnc_sequence_features.taxid->rnc_taxonomy.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_sequence_features.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_sequence_regions.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_sequence_regions.urs_taxid->rnc_rna_precomputed.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.rnc_taxonomy.replaced_by->rnc_taxonomy.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.validate_layout_counts.name->rna.upi:DDL_FOREIGN_KEY`
+- `FK_LIKE:case_01.xref_p10_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p10_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p10_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p10_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p10_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p10_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p10_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p10_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p11_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p11_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p11_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p11_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p11_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p11_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p11_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p11_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p12_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p12_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p12_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p12_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p12_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p12_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p12_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p12_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p13_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p13_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p13_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p13_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p13_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p13_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p13_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p13_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p14_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p14_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p14_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p14_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p14_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p14_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p14_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p14_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p15_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p15_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p15_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p15_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p15_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p15_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p15_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p15_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p16_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p16_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p16_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p16_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p16_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p16_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p16_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p16_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p17_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p17_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p17_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p17_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p17_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p17_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p17_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p17_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p18_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p18_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p18_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p18_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p18_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p18_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p18_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p18_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p19_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p19_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p19_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p19_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p19_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p19_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p19_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p19_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p1_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p1_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p1_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p1_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p1_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p1_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p1_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p1_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p20_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p20_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p20_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p20_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p20_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p20_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p20_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p20_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p21_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p21_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p21_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p21_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p21_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p21_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p21_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p21_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p22_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p22_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p22_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p22_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p22_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p22_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p22_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p22_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p23_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p23_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p23_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p23_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p23_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p23_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p23_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p23_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p24_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p24_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p24_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p24_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p24_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p24_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p24_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p24_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p25_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p25_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p25_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p25_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p25_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p25_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p25_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p25_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p26_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p26_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p26_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p26_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p26_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p26_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p26_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p26_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p27_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p27_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p27_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p27_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p27_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p27_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p27_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p27_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p28_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p28_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p28_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p28_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p28_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p28_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p28_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p28_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p29_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p29_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p29_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p29_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p29_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p29_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p29_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p29_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p2_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p2_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p2_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p2_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p2_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p2_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p2_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p2_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p30_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p30_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p30_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p30_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p30_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p30_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p30_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p30_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p31_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p31_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p31_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p31_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p31_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p31_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p31_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p31_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p32_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p32_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p32_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p32_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p32_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p32_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p32_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p32_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p33_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p33_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p33_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p33_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p33_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p33_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p33_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p33_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p34_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p34_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p34_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p34_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p34_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p34_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p34_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p34_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p35_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p35_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p35_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p35_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p35_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p35_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p35_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p35_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p36_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p36_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p36_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p36_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p36_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p36_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p36_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p36_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p37_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p37_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p37_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p37_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p37_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p37_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p37_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p37_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p38_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p38_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p38_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p38_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p38_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p38_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p38_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p38_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p39_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p39_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p39_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p39_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p39_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p39_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p39_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p39_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p3_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p3_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p3_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p3_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p3_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p3_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p3_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p3_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p40_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p40_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p40_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p40_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p40_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p40_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p40_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p40_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p41_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p41_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p41_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p41_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p41_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p41_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p41_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p41_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p42_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p42_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p42_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p42_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p42_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p42_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p42_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p42_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p43_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p43_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p43_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p43_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p43_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p43_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p43_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p43_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p44_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p44_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p44_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p44_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p44_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p44_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p44_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p44_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p45_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p45_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p45_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p45_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p45_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p45_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p45_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p45_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p46_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p46_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p46_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p46_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p46_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p46_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p46_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p46_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p47_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p47_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p47_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p47_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p47_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p47_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p47_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p47_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p48_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p48_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p48_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p48_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p48_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p48_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p48_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p48_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p49_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p49_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p49_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p49_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p49_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p49_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p49_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p49_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p4_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p4_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p4_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p4_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p4_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p4_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p4_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p4_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p50_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p50_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p50_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p50_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p50_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p50_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p50_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p50_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p51_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p51_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p51_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p51_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p51_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p51_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p51_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p51_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p52_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p52_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p52_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p52_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p52_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p52_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p52_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p52_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p53_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p53_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p53_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p53_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p53_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p53_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p53_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p53_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p54_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p54_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p54_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p54_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p54_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p54_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p54_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p54_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p55_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p55_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p55_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p55_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p55_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p55_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p55_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p55_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p56_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p56_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p56_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p56_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p56_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p56_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p56_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p56_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p5_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p5_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p5_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p5_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p5_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p5_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p5_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p5_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p6_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p6_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p6_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p6_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p6_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p6_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p6_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p6_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p7_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p7_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p7_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p7_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p7_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p7_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p7_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p7_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p8_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p8_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p8_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p8_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p8_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p8_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p8_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p8_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p9_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p9_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p9_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p9_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p9_not_deleted.created->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p9_not_deleted.dbid->rnc_database.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p9_not_deleted.last->rnc_release.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:case_01.xref_p9_not_deleted.upi->rna.upi:DDL_FOREIGN_KEY,SOURCE_INDEX`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from PostgreSQL catalog for postgres-basic-correctness-case-01.
+-- Refresh with PostgresBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_01.auth_permission
+CREATE TABLE case_01.auth_permission (
+  id integer DEFAULT nextval('auth_permission_id_seq'::regclass) NOT NULL,
+  name character varying(255) NOT NULL,
+  content_type_id integer NOT NULL,
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-ddl-alter-table-fk`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/ddl-alter-table-fk/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/ddl-alter-table-fk/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/ddl-alter-table-fk/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE users (
+  id bigint PRIMARY KEY,
+  email text
+);
+
+CREATE TABLE orders (
+  id bigint PRIMARY KEY,
+  user_id bigint NOT NULL
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-ddl-partial-index-boundary`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/ddl-partial-index-boundary/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/ddl-partial-index-boundary/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/ddl-partial-index-boundary/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_email->users.email:DDL_FOREIGN_KEY`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE users (
+  id BIGINT,
+  email TEXT
+);
+
+CREATE TABLE orders (
+  user_email TEXT,
+  CONSTRAINT fk_orders_users_email
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-ddl-unique-include-index`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/ddl-unique-include-index/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/ddl-unique-include-index/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/ddl-unique-include-index/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:invoices.account_no->accounts.account_no:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:invoices.archived_account_no->accounts.account_no:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE accounts (
+  id BIGINT,
+  account_no TEXT,
+  deleted_at TIMESTAMP
+);
+
+CREATE TABLE invoices (
+  account_no TEXT,
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-alter-index-boundary-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-alter-index-boundary-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-alter-index-boundary-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-alter-index-boundary-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:password_resets.user_id->users.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: create_index.sql and ALTER INDEX.
+CREATE TABLE users (
+  id BIGINT PRIMARY KEY,
+  email TEXT
+);
+
+CREATE TABLE password_resets (
+  id BIGINT PRIMARY KEY,
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-expression-access-method-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-expression-access-method-index-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-expression-access-method-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-expression-access-method-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:documents.account_id->accounts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: create_index.sql and CREATE INDEX.
+CREATE TABLE documents (
+  id BIGINT PRIMARY KEY,
+  account_id BIGINT,
+  body TEXT,
+  tags TEXT[],
+  geom BOX,
+  payload JSONB
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-index-include-partial-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-index-include-partial-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-index-include-partial-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-index-include-partial-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:ledger_entries.account_no->accounts.account_no:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: create_index.sql and CREATE INDEX.
+CREATE TABLE accounts (
+  id BIGINT PRIMARY KEY,
+  account_no TEXT,
+  deleted_at TIMESTAMP
+);
+
+CREATE TABLE ledger_entries (
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-index-opclass-expression-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-index-opclass-expression-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-index-opclass-expression-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-index-opclass-expression-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:invoices.customer_ref->customers.external_ref:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official CREATE INDEX inspired: expression indexes, function-call
+-- expressions, opclass parameters, collation, sort order, and NULLS options.
+CREATE TABLE customers (
+  id BIGINT PRIMARY KEY,
+  external_ref TEXT UNIQUE,
+  email TEXT,
+  metadata JSONB
+);
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-index-options-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-index-options-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-index-options-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-index-options-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:public.orders.user_id->public.users.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: create_index.sql and CREATE INDEX.
+CREATE TABLE public.users (
+  id BIGINT PRIMARY KEY,
+  email TEXT,
+  locale TEXT
+);
+
+CREATE TABLE public.orders (
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-index-partition-boundary-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-index-partition-boundary-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-index-partition-boundary-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-index-partition-boundary-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:tenant_orders.tenant_id->tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official CREATE INDEX inspired: ONLY and partition-oriented index
+-- syntax. ALTER INDEX ATTACH PARTITION is a parser-stability boundary and must
+-- not create relationships.
+CREATE TABLE tenants (
+  id BIGINT PRIMARY KEY
+);
+
+CREATE TABLE tenant_orders (
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-index-storage-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-index-storage-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-index-storage-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-index-storage-ddl/expected-diagnostics.json` |
 
 **Expected Relation Fingerprints**
 
@@ -7779,6 +8768,2139 @@ JOIN unnest(ARRAY[1, 2, 3]) WITH ORDINALITY AS input_ids(user_id, ord)
 | Expected relations | `test-fixtures/correctness/postgres/sql-update-from-aliases/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/sql-update-from-aliases/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE orders o
+SET status = 'PAID'
+FROM users u
+WHERE o.user_id = u.id;
+```
+
+### `postgres16-postgres-basic-correctness-case-01-objects-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `case_01` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-basic-correctness-case-01-objects-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-basic-correctness-case-01-objects-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-basic-correctness-case-01-objects-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from PostgreSQL SQL sources for postgres-basic-correctness-case-01.
+-- Refresh with PostgresBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: TRIGGER:pg_trigger:rna.rna_audit
+CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCTION trigger_fct_rna_audit()
+-- relation-detector-fixture-end
+
+-- relation-detector-fixture-source: TRIGGER:pg_trigger:rnc_database.rnc_database_audit
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-basic-correctness-case-01-statements-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Schema | `case_01` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-basic-correctness-case-01-statements-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-basic-correctness-case-01-statements-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-basic-correctness-case-01-statements-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from PostgreSQL SQL sources for postgres-basic-correctness-case-01.
+-- Refresh with PostgresBasicCorrectnessFixtureExporter.
+
+```
+
+### `postgres16-postgres-business-account-balances-financial-cte-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-account-balances-financial-cte-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-account-balances-financial-cte-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-account-balances-financial-cte-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-account-balances-financial-cte-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:account_balances.user_id->users.id:SQL_LOG_JOIN`
+- `FK_LIKE:transaction_ledgers.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+
+**Forbidden Tables**
+
+- `user_financial_snapshot`
+- `dormant_risk_scores`
+- `snap_main`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 10: financial CTE update with aggregate CTEs and comma rowsets.
+-- Future data-lineage boundary: merchant_category, country_code, and activity dates contribute to compliance_notes.
+WITH user_financial_snapshot AS (
+    SELECT
+        t.user_id,
+        COUNT(DISTINCT t.currency) AS active_currencies,
+        SUM(CASE WHEN t.direction = 'INFLOW' THEN t.amount ELSE -t.amount END) AS net_cash_flow,
+        ROUND(AVG(t.amount)::numeric, 2) AS avg_transaction_size,
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-account-balances-financial-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-account-balances-financial-explicit-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-account-balances-financial-explicit-join-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-account-balances-financial-explicit-join-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-account-balances-financial-explicit-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:account_balances.user_id->users.id:SQL_LOG_JOIN`
+- `FK_LIKE:transaction_ledgers.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+
+**Forbidden Tables**
+
+- `user_financial_snapshot`
+- `dormant_risk_scores`
+- `snap_main`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 10 equivalent: explicit JOIN version of the final financial rowsets.
+WITH user_financial_snapshot AS (
+    SELECT
+        t.user_id,
+        COUNT(DISTINCT t.currency) AS active_currencies,
+        SUM(CASE WHEN t.direction = 'INFLOW' THEN t.amount ELSE -t.amount END) AS net_cash_flow,
+        ROUND(AVG(t.amount)::numeric, 2) AS avg_transaction_size,
+        STRING_AGG(DISTINCT t.merchant_category, '; ' ORDER BY t.merchant_category) AS primary_categories,
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-asset-balances-update-outer-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-asset-balances-update-outer-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-asset-balances-update-outer-join-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-asset-balances-update-outer-join-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-asset-balances-update-outer-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:asset_balances.account_id->ledger_system_a.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:asset_balances.last_checked_by->staff_assignments.operator_name:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:ledger_system_a.account_id->ledger_system_b.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:account_extensions.assigned_staff_id->staff_assignments.id:SQL_LOG_JOIN`
+- `FK_LIKE:ledger_system_a.account_id->account_extensions.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
+- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
+
+**Forbidden Tables**
+
+- `unified_ledgers`
+- `balance_a`
+- `balance_b`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 9: UPDATE FROM with FULL OUTER, INNER, and LEFT joins.
+-- The source sample used sys_a/sys_b in SET; this fixture fixes those aliases to the derived rowset columns.
+-- Future data-lineage boundary: ledger balances and staff operator_name drive asset_balances fields.
+UPDATE asset_balances ab
+SET computed_balance = COALESCE(unified_ledgers.balance_a, 0.00) + COALESCE(unified_ledgers.balance_b, 0.00),
+    discrepancy_flag = CASE WHEN unified_ledgers.balance_a != unified_ledgers.balance_b THEN 1 ELSE 0 END,
+    last_checked_by = s.operator_name
+FROM (
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-cross-border-reconciliation-function-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Schema | `finance` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-cross-border-reconciliation-function-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-cross-border-reconciliation-function-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-cross-border-reconciliation-function-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `memory_input_cargo`
+- `fx_valuation`
+- `reconciliation_gap_analysis`
+- `customer_risk_analytics`
+- `unnest`
+- `o`
+- `s`
+- `q`
+- `p`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business function case: nested CTEs, array unnesting, FULL/LEFT joins,
+-- and a correlated subquery inside a returned set function.
+-- relation-detector-fixture-source: FUNCTION:finance.sp_cross_border_reconciliation_engine
+CREATE TYPE order_reconciliation_row AS (
+    reconciliation_id   UUID,
+    merchant_id         INT,
+    sku_code            VARCHAR(50),
+    original_amount     NUMERIC(16,4),
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-delete-cascade-cte-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-delete-cascade-cte-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-delete-cascade-cte-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-delete-cascade-cte-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `deleted_orders`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 3: data-modifying CTE cascade delete.
+WITH deleted_orders AS (
+    DELETE FROM orders o
+    USING users u
+    WHERE o.user_id = u.id
+      AND o.payment_status = 'UNPAID'
+      AND u.risk_level = 'HIGH'
+    RETURNING o.id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-delete-orphan-left-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-delete-orphan-left-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-delete-orphan-left-join-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-delete-orphan-left-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:product_reviews.product_id->products.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `pr`
+- `pr_alias`
+- `p`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 4: orphan cleanup through DELETE USING and LEFT JOIN.
+DELETE FROM product_reviews pr
+USING product_reviews pr_alias
+LEFT JOIN products p ON pr_alias.product_id = p.id
+WHERE pr.id = pr_alias.id
+  AND p.id IS NULL;
+```
+
+### `postgres16-postgres-business-delete-orphan-not-exists-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-delete-orphan-not-exists-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-delete-orphan-not-exists-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-delete-orphan-not-exists-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:product_reviews.product_id->products.id:SQL_LOG_EXISTS`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 4 equivalent: orphan cleanup through NOT EXISTS.
+DELETE FROM product_reviews pr
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM products p
+    WHERE pr.product_id = p.id
+);
+```
+
+### `postgres16-postgres-business-inventory-purge-deep-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-inventory-purge-deep-subquery-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-inventory-purge-deep-subquery-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-inventory-purge-deep-subquery-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:supplier_inventory_logs.sku_code->master_skus.sku_ref:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:supplier_inventory_logs.sku_code->sales_order_items.product_sku:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.quantity_sold->supplier_inventory_logs.sku_code:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:supplier_inventory_logs.archive_status->sales_order_items.quantity_sold:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:supplier_inventory_logs.warehouse_id->warehouse_facilities.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `sales_summary`
+- `core_inv`
+- `metadata_engine`
+- `total_units`
+- `cleaned_batch`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 11: DELETE USING with deep nested subqueries, LEFT/FULL/INNER joins, and regex tools.
+DELETE FROM inventory_snapshots isc
+USING (
+    SELECT
+        core_inv.snapshot_id,
+        core_inv.sku_code,
+        UPPER(REGEXP_REPLACE(core_inv.batch_no, '[^a-zA-Z0-9]', '', 'g')) AS cleaned_batch
+    FROM (
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-inventory-purge-exists-equivalent-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-inventory-purge-exists-equivalent-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-inventory-purge-exists-equivalent-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-inventory-purge-exists-equivalent-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:sales_order_items.product_sku->supplier_inventory_logs.sku_code:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:supplier_inventory_logs.sku_code->master_skus.sku_ref:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_EXISTS`
+- `FK_LIKE:supplier_inventory_logs.warehouse_id->warehouse_facilities.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `soi`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 11 equivalent: correlated subquery form for the low-sales inventory purge.
+DELETE FROM inventory_snapshots isc
+USING supplier_inventory_logs i
+INNER JOIN warehouse_facilities wf ON i.warehouse_id = wf.id
+INNER JOIN master_skus ms ON i.sku_code = ms.sku_ref
+WHERE isc.snapshot_id = i.id
+  AND ms.is_perishable = true
+  AND isc.logged_date < NOW() - INTERVAL '180 days'
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-risk-ledger-update-cte-comma-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-comma-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-comma-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-comma-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-comma-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:order_ledgers.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+
+**Forbidden Tables**
+
+- `active_users`
+- `fraud_orders`
+- `rnk`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 7: nested CTE UPDATE with window function and comma rowsets.
+-- Future data-lineage boundary: users.risk_level contributes to order_ledgers.remarks via string concat.
+WITH active_users AS (
+    SELECT id, risk_level
+    FROM users
+    WHERE status = 'ACTIVE' AND risk_level IN ('HIGH', 'MEDIUM')
+),
+fraud_orders AS (
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-risk-ledger-update-cte-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-explicit-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-explicit-join-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-explicit-join-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-explicit-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:order_ledgers.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+
+**Forbidden Tables**
+
+- `active_users`
+- `fraud_orders`
+- `rnk`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 7 equivalent: explicit INNER JOIN version of the final CTE rowsets.
+WITH active_users AS (
+    SELECT id, risk_level
+    FROM users
+    WHERE status = 'ACTIVE' AND risk_level IN ('HIGH', 'MEDIUM')
+),
+fraud_orders AS (
+    SELECT
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-risk-settlement-function-comma-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Schema | `finance` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-risk-settlement-function-comma-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-risk-settlement-function-comma-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-risk-settlement-function-comma-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `temp_risk_inputs`
+- `cte_user_aggregated_metrics`
+- `cte_fraud_scoring`
+- `arr`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business function case: comma-rowset equivalent of the users join.
+-- Expected fingerprints must match postgres-business-risk-settlement-function-sql.
+-- relation-detector-fixture-source: FUNCTION:finance.fn_risk_settlement_engine_comma
+CREATE OR REPLACE FUNCTION fn_risk_settlement_engine_comma(
+    p_user_ids INT[],
+    p_amounts NUMERIC[],
+    p_risk_flags TEXT[]
+)
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-risk-settlement-function-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Schema | `finance` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-risk-settlement-function-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-risk-settlement-function-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-risk-settlement-function-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `temp_risk_inputs`
+- `cte_user_aggregated_metrics`
+- `cte_fraud_scoring`
+- `arr`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business function case: temp array inputs are joined to users through CTEs.
+-- The sample output in the prompt appears copied from a different account_balances case;
+-- this fixture treats only relationships inferable from this SQL as expected.
+-- relation-detector-fixture-source: FUNCTION:finance.fn_risk_settlement_engine
+CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
+    p_user_ids INT[],
+    p_amounts NUMERIC[],
+    p_risk_flags TEXT[]
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-update-inventory-comma-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-inventory-comma-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-update-inventory-comma-join-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-inventory-comma-join-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-update-inventory-comma-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.last_ordered_from->suppliers.supplier_name:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:inventory.supplier_id->suppliers.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 5 equivalent: INNER JOIN rewritten as comma rowsets plus WHERE equality.
+UPDATE inventory i
+SET stock_reserved = i.stock_reserved + oi.quantity,
+    last_ordered_from = s.supplier_name
+FROM order_items oi, suppliers s
+WHERE i.product_id = oi.product_id
+  AND i.supplier_id = s.id
+  AND oi.status = 'PENDING';
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-update-inventory-from-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-inventory-from-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-update-inventory-from-join-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-inventory-from-join-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-update-inventory-from-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.last_ordered_from->suppliers.supplier_name:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:inventory.supplier_id->suppliers.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 5: UPDATE FROM with one ambiguous equality and one FK-like join.
+UPDATE inventory i
+SET stock_reserved = i.stock_reserved + oi.quantity,
+    last_ordered_from = s.supplier_name
+FROM order_items oi
+INNER JOIN suppliers s ON i.supplier_id = s.id
+WHERE i.product_id = oi.product_id
+  AND oi.status = 'PENDING';
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-update-products-comma-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-products-comma-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-update-products-comma-join-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-products-comma-join-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-update-products-comma-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:products.shop_id->shops.id:SQL_LOG_JOIN`
+- `FK_LIKE:shops.merchant_id->merchants.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 1 equivalent: INNER JOIN rewritten as comma rowsets plus WHERE equality.
+UPDATE products p
+SET is_on_sale = 1,
+    promo_price = p.original_price * 0.9
+FROM shops s, merchants m
+WHERE p.shop_id = s.id
+  AND s.merchant_id = m.id
+  AND m.status = 'ACTIVE'
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-update-products-from-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-products-from-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-update-products-from-join-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-products-from-join-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-update-products-from-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:products.shop_id->shops.id:SQL_LOG_JOIN`
+- `FK_LIKE:shops.merchant_id->merchants.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 1: UPDATE FROM with an explicit INNER JOIN.
+UPDATE products p
+SET is_on_sale = 1,
+    promo_price = p.original_price * 0.9
+FROM shops s
+INNER JOIN merchants m ON s.merchant_id = m.id
+WHERE p.shop_id = s.id
+  AND m.status = 'ACTIVE'
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-update-users-aggregate-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-users-aggregate-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-update-users-aggregate-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-users-aggregate-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-update-users-aggregate-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+
+**Forbidden Tables**
+
+- `o_summary`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 2: UPDATE FROM aggregate derived table.
+UPDATE users u
+SET total_spent = COALESCE(o_summary.actual_total, 0.00),
+    level = CASE
+        WHEN o_summary.actual_total >= 10000 THEN 'VIP'
+        WHEN o_summary.actual_total >= 5000 THEN 'GOLD'
+        ELSE 'REGULAR'
+    END
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-update-users-scalar-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-users-scalar-subquery-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-update-users-scalar-subquery-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-users-scalar-subquery-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-update-users-scalar-subquery-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.total_spent`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 2 equivalent: aggregate relation expressed through correlated scalar subqueries.
+UPDATE users u
+SET total_spent = COALESCE((
+        SELECT SUM(o.pay_amount)
+        FROM orders o
+        WHERE o.user_id = u.id
+          AND o.order_status = 'PAID'
+    ), 0.00),
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-update-warehouse-comma-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-warehouse-comma-subquery-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-update-warehouse-comma-subquery-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-warehouse-comma-subquery-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-update-warehouse-comma-subquery-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:order_items.product_id->supplier_manifests.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouse_inventory.primary_supplier_id->supplier_manifests.supplier_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouse_inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:order_items.product_id->bin_locations.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customer_profiles.id:SQL_LOG_JOIN`
+- `FK_LIKE:warehouse_inventory.bin_id->bin_locations.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+
+**Forbidden Tables**
+
+- `latest_orders`
+- `sm`
+- `ranking`
+- `avg_cost`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 6 equivalent: INNER joins as comma rowsets, LEFT aggregate as derived subquery relation.
+UPDATE warehouse_inventory wi
+SET stock_reserved = wi.stock_reserved + oi.quantity,
+    last_audit_status = CASE
+        WHEN latest_orders.risk_score > 80 THEN 'HOLD_FOR_REVIEW'
+        WHEN wi.stock_available - oi.quantity < 10 THEN 'LOW_STOCK_WARNING'
+        ELSE 'ALLOCATED'
+    END
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-update-warehouse-complex-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-warehouse-complex-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-update-warehouse-complex-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-warehouse-complex-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-update-warehouse-complex-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:order_items.product_id->supplier_manifests.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouse_inventory.primary_supplier_id->supplier_manifests.supplier_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouse_inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:order_items.product_id->bin_locations.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customer_profiles.id:SQL_LOG_JOIN`
+- `FK_LIKE:warehouse_inventory.bin_id->bin_locations.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+
+**Forbidden Tables**
+
+- `latest_orders`
+- `sm`
+- `ranking`
+- `avg_cost`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 6: complex UPDATE FROM with nested derived tables and window function projection.
+UPDATE warehouse_inventory wi
+SET stock_reserved = wi.stock_reserved + oi.quantity,
+    last_audit_status = CASE
+        WHEN latest_orders.risk_score > 80 THEN 'HOLD_FOR_REVIEW'
+        WHEN wi.stock_available - oi.quantity < 10 THEN 'LOW_STOCK_WARNING'
+        ELSE 'ALLOCATED'
+    END
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-user-coupons-delete-derived-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-user-coupons-delete-derived-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-user-coupons-delete-derived-join-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-user-coupons-delete-derived-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:coupon_redemptions.coupon_id->coupons.id:SQL_LOG_JOIN`
+- `FK_LIKE:coupons.merchant_id->merchants.id:SQL_LOG_JOIN`
+- `FK_LIKE:user_coupons.coupon_id->coupons.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `red_summary`
+- `target_coupons`
+- `usage_cnt`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 8: DELETE USING with nested aggregate derived table and outer INNER JOIN.
+DELETE FROM user_coupons uc
+USING (
+    SELECT c_sub.id AS coupon_id, c_sub.merchant_id
+    FROM coupons c_sub
+    LEFT JOIN (
+        SELECT coupon_id, COUNT(id) AS usage_cnt
+        FROM coupon_redemptions
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-business-user-coupons-delete-exists-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-user-coupons-delete-exists-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-business-user-coupons-delete-exists-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-business-user-coupons-delete-exists-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:coupon_redemptions.coupon_id->coupons.id:SQL_LOG_EXISTS`
+- `FK_LIKE:coupons.merchant_id->merchants.id:SQL_LOG_JOIN`
+- `FK_LIKE:user_coupons.coupon_id->coupons.id:SQL_LOG_EXISTS`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `cr`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 8 equivalent: correlated EXISTS/NOT EXISTS version of the nested coupon cleanup.
+DELETE FROM user_coupons uc
+USING coupons c
+INNER JOIN merchants m ON c.merchant_id = m.id
+WHERE uc.coupon_id = c.id
+  AND m.compliance_status = 'SUSPENDED'
+  AND (
+      c.expire_at < NOW()
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-generated-comprehensive-query-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/examples/comprehensive-query-sql-001-030.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/generated-comprehensive-query-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/generated-comprehensive-query-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:app_users.email_hash->external_profiles.email_hash:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:app_users.user_id->user_activities.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:assembly_stations.line_id->production_lines.line_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:assembly_stations.station_id->calibration_logs.station_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:catalog_categories.category_id->running_promotions.target_category_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:catalog_products.category_id->catalog_categories.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:crm_customers.customer_uuid->customer_interactions.customer_uuid:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:customer_disputes.customer_id->sales_orders.customer_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:customer_interactions.assigned_agent_id->customer_agents.agent_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:customer_interactions.interaction_id->interaction_resolutions.interaction_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:dim_products.sub_category_key->dim_sub_categories.sub_category_key:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:dim_products.supplier_key->dim_suppliers.supplier_key:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:dim_sub_categories.category_key->dim_categories.category_key:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:dim_warehouses.location_key->dim_locations.location_key:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:erp_stock_table.sku->wms_stock_table.product_sku:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:fact_inventory_snapshots.product_key->dim_products.product_key:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:fact_inventory_snapshots.warehouse_key->dim_warehouses.warehouse_key:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:factory_telemetry.part_key->manufactured_parts.part_key:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:factory_telemetry.station_key->assembly_stations.station_key:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:financial_assets.ledger_key->financial_ledgers.ledger_key:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:financial_ledgers.ledger_id->ledger_transactions.ledger_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:financial_subsidiaries.tax_jurisdiction->corporate_tax_matrix.jurisdiction_string:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:hr_departments.loc_id->hr_locations.loc_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:hr_employees.dept_id->hr_departments.dept_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:hr_employees.manager_id->hr_employees.emp_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:interaction_resolutions.resolution_id->feedback_surveys.resolution_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:journal_entries.account_id->chart_of_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:ledger_transactions.source_account->account_balances.account_no:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:maritime_vessels.carrier_id->logistics_carriers.carrier_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:media_catalog.asset_id->media_tags_array.asset_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:medical_claims.billing_provider_id->healthcare_providers.provider_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:medical_claims.claim_id->claim_diagnoses.claim_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:medical_claims.patient_id->patient_registry.patient_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:network_edges.source_node->network_edges.dest_node:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:order_fulfillments.order_id->sales_orders.order_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:package_dependencies.package_uuid->software_packages.package_uuid:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:patient_registry.policy_id->insurance_policies.policy_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:payment_cards.card_token_id->point_of_sale_transactions.payment_token_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:performance_reviews.emp_uuid->employee_directory.emp_uuid:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:purchase_order_lines.product_id->asset_products.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:shipping_manifests.first_leg_id->transit_legs.leg_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:shipping_manifests.second_leg_id->transit_legs.leg_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:system_tenants.tenant_id->tenant_config_values.tenant_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:system_tenants.tier_level->tenant_configurations.minimum_tier:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:tenant_configurations.config_id->tenant_config_values.config_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:tenant_configurations.module_id->system_modules.module_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:transit_legs.vessel_id->maritime_vessels.vessel_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:user_role_mappings.user_id->application_users.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:wiki_pages.parent_page_id->wiki_pages.page_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:customer_interactions.channel_type->interaction_resolutions.resolution_summary:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:iot_devices.hardware_architecture->firmware_compliance_matrix.arch_type:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:iot_devices.installed_version->firmware_compliance_matrix.patched_version_string:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:membership_registry.is_verified->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:membership_registry.member_id->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:membership_registry.member_id->access_audit_logs.ip_address:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `rawledger`
+- `normalizedbalances`
+- `structuredreport`
+- `network_hops`
+- `clickstream_deltas`
+- `session_demarcation`
+- `session_assignment`
+- `regional_revenues`
+- `tax_rules`
+- `calculated_tax`
+- `wiki_breadcrumbs`
+- `base_metrics`
+- `ranked_employees`
+- `tier_assignments`
+- `erp_inventory`
+- `wms_inventory`
+- `reconciled_delta`
+- `media_base`
+- `extracted_tags`
+- `combined_metadata`
+- `network_alerts`
+- `whitelisted_ranges`
+- `tier_rules`
+- `customer_points`
+- `assigned_status`
+- `derived_view`
+- `lateral`
+- `unnest`
+- `UNNEST`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Comprehensive query SQL examples, CASE 01-30.
+-- These statements are parser stress samples for joins, CTEs, subqueries,
+-- recursive queries, derived tables, and complex expression-heavy predicates.
+
+-- ============================================================================
+-- CASE 01: Snowflake Schema Multi-Stage Warehouse Join with Path Concatenation
+-- ============================================================================
+SELECT 
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-generated-industrial-complex-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/examples/industrial-complex-sql-001-050.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/generated-industrial-complex-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/generated-industrial-complex-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:base_catalog.status->extension_catalog.is_approved:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:product_variants.product_id->products.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:system_logs.triggered_by->user_preferences.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:user_roles_mapping.role_id->role_permissions.role_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:R_projects.manager_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:infrastructure_nodes.parent_id->infrastructure_nodes.id:SQL_LOG_JOIN`
+- `FK_LIKE:profiles.user_id->users.id:SQL_LOG_JOIN`
+- `FK_LIKE:user_roles.role_id->roles.id:SQL_LOG_JOIN`
+- `FK_LIKE:user_roles.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `asset_hierarchy`
+- `sub`
+- `consolidated`
+- `flattened_json_cte`
+- `ranked_json`
+- `filtered_logs_cte`
+- `lateral`
+- `unnest`
+- `1`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Industrial complex SQL examples, SQL 001-050.
+-- These statements are saved as parser stress samples and are not expected to run
+-- against the project test databases without matching demo schemas.
+
+-- SQL 001: 窗口函数无缝嵌套多层 CASE WHEN 与字段双竖线动态组合
+SELECT 
+    tr.transaction_id,
+    'TX_' || tr.merchant_code || '_' || TO_CHAR(tr.created_at, 'YYYYMMDD') || '_' ||
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-generated-provided-complex-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/generated-provided-complex-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/generated-provided-complex-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/generated-provided-complex-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:side_a.id->side_b.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:account_metadata.account_id->accounts.id:SQL_LOG_JOIN`
+- `FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:categories.s_id->sub_labels.id:SQL_LOG_JOIN`
+- `FK_LIKE:departments.manager_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:documents.doc_title->revisions.LIKE:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN`
+- `FK_LIKE:main_catalog.p_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.c_id->categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.dept_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:revisions.doc_id->documents.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:system_releases.major_version->beta_builds.minor_version:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `org_path`
+- `sub`
+- `ranked`
+- `combo`
+- `flattened`
+- `attachment`
+- `the`
+- `1`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Provided complex SQL collection.
+-- Source:
+-- - 001-025 from attachment 87388f7d-2c4c-499a-b085-d158b969af45/pasted-text.txt
+-- - 026-050 from attachment c61899d0-fc27-4a25-974a-56bc89fb0b7f/pasted-text.txt
+-- - 051-075 from the chat message on 2026-06-18.
+-- Notes:
+-- - SQL 052 appears truncated in the chat message and is preserved as received.
+-- - SQL 053-058 were not present in the supplied text.
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-cte-dml-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-cte-dml-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-cte-dml-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-official-cte-dml-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-cte-dml-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:accounts.user_id->orders.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:orders.customer_id->staging_orders.customer_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:accounts.user_id->users.id:SQL_LOG_JOIN`
+- `FK_LIKE:order_staging.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:order_staging.user_id->users.id:SQL_LOG_JOIN`
+- `FK_LIKE:staging_orders.order_id->orders.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+
+**Forbidden Tables**
+
+- `archived_rows`
+- `candidates`
+- `moved_rows`
+- `source_rows`
+- `updated_accounts`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official docs inspired: WITH Queries and data-modifying
+-- statements in WITH. Covers DELETE RETURNING, INSERT SELECT, UPDATE FROM,
+-- MERGE USING, MATERIALIZED, and NOT MATERIALIZED boundaries.
+WITH moved_rows AS (
+  DELETE FROM order_staging os
+  USING orders o
+  WHERE os.order_id = o.id
+  RETURNING os.order_id, os.user_id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-cte-nested-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-cte-nested-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-cte-nested-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-cte-nested-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:departments.parent_department->departments.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `base_orders`
+- `customer_orders`
+- `customer_regions`
+- `department_tree`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: with.sql and WITH Queries.
+-- Covers nested WITH, recursive CTEs, MATERIALIZED / NOT MATERIALIZED, and CTE
+-- reuse without promoting CTE names to physical tables.
+WITH base_orders AS MATERIALIZED (
+  SELECT o.id AS order_id, o.user_id, o.customer_id
+  FROM orders o
+  JOIN users u ON o.user_id = u.id
+),
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-join-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-join-edge-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-join-edge-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-join-edge-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:orders.order_id->order_tags.order_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:invoices.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+- `FK_LIKE:payments.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:refunds.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.order_id->orders.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `order_join`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: join.sql and Table Expressions.
+-- Covers explicit outer joins, JOIN USING alias, NATURAL join, parenthesized
+-- join trees, and legacy comma join predicates.
+SELECT *
+FROM orders o
+INNER JOIN users u ON o.user_id = u.id
+LEFT OUTER JOIN payments p ON p.order_id = o.id
+RIGHT JOIN shipments s ON s.order_id = o.id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-lateral-function-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-lateral-function-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-lateral-function-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-lateral-function-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.manufacturer_id->manufacturers.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `projected_user`
+- `expanded`
+- `ROWS`
+- `json_to_recordset`
+- `generate_series`
+- `get_product_names`
+- `pname`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: Table Expressions.
+-- Covers ROWS FROM, json_to_recordset, generate_series, and LATERAL function
+-- rowsets without treating functions or their aliases as physical tables.
+SELECT *
+FROM orders o
+LEFT JOIN LATERAL (
+  SELECT o.user_id
+) projected_user ON true
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-lateral-nested-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-lateral-nested-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-lateral-nested-join-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-lateral-nested-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_EXISTS`
+- `FK_LIKE:line_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:line_items.product_id->products.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `decoded`
+- `generate_series`
+- `get_order_users`
+- `gou`
+- `json_to_recordset`
+- `liq`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official docs inspired: Table Expressions, LATERAL, ROWS FROM,
+-- table functions, UNNEST WITH ORDINALITY, and nested LATERAL joins.
+SELECT *
+FROM orders o
+LEFT JOIN LATERAL (
+  SELECT li.order_id, li.product_id
+  FROM line_items li
+  WHERE li.order_id = o.id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-multiway-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-multiway-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-multiway-join-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-multiway-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:order_items.tenant_id->order_roots.tenant_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->order_roots.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.tenant_id->tenants.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+- `FK_LIKE:payments.invoice_id->invoices.id:SQL_LOG_JOIN`
+- `FK_LIKE:payments.order_id->order_roots.id:SQL_LOG_JOIN`
+- `FK_LIKE:refunds.order_id->order_roots.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.carrier_id->carriers.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.order_id->order_roots.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:users.tenant_id->tenants.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `pay`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: join.sql and Table Expressions.
+-- Covers multiway outer joins, parenthesized join trees, derived joins,
+-- legacy comma join mixed with explicit JOIN, and multiple ON equality keys.
+SELECT *
+FROM order_roots o
+LEFT JOIN order_items oi
+  ON oi.order_id = o.id
+ AND oi.tenant_id = o.tenant_id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-subquery-deep-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-subquery-deep-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-subquery-deep-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-subquery-deep-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:customers.external_ref->invoices.customer_ref:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:orders.user_id->payments.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:products.category_id->orders.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:refunds.user_id->payments.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:shipments.user_id->payments.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:order_items.product_id->products.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_EXISTS`
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+- `FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS`
+- `FK_LIKE:users.account_id->accounts.id:SQL_LOG_EXISTS`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `paid_orders`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: subselect.sql and Subquery
+-- Expressions. Covers nested correlated EXISTS, tuple IN/NOT IN, row
+-- constructor ANY/SOME/ALL, scalar subquery equality, and nested subquery joins.
+SELECT *
+FROM orders o
+WHERE EXISTS (
+  SELECT 1
+  FROM users u
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-official-subquery-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-subquery-edge-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres-official-subquery-edge-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres-official-subquery-edge-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:orders.customer_id->invoices.customer_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:orders.user_id->payments.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:products.category_id->orders.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:refunds.user_id->payments.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:order_items.product_id->products.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+- `FK_LIKE:refunds.order_id->orders.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:shipments.order_id->orders.id:SQL_LOG_EXISTS`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `projected_orders`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: subselect.sql and Subquery
+-- Expressions. Covers extra parentheses, correlated EXISTS, tuple IN/NOT IN,
+-- scalar subquery equality, and ANY/SOME/ALL boundaries.
+SELECT *
+FROM ((SELECT o.id, o.user_id FROM orders o)) projected_orders
+JOIN users u ON projected_orders.user_id = u.id;
+
+SELECT *
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-sql-delete-using-no-alias`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-delete-using-no-alias/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/sql-delete-using-no-alias/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/sql-delete-using-no-alias/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE FROM orders
+USING users
+WHERE orders.user_id = users.id;
+```
+
+### `postgres16-postgres-sql-lateral-derived`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-lateral-derived/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/sql-lateral-derived/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/sql-lateral-derived/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `x`
+- `lateral`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT o.id, u.email
+FROM orders o
+JOIN LATERAL (
+  SELECT o.user_id AS user_id
+) x ON true
+JOIN users u ON x.user_id = u.id;
+```
+
+### `postgres16-postgres-sql-merge-using`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-merge-using/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/sql-merge-using/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/sql-merge-using/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/sql-merge-using/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:target_orders.source_order_id->source_orders.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:source_orders.id->target_orders.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+MERGE INTO target_orders AS t
+USING source_orders AS s
+ON t.source_order_id = s.id
+WHEN MATCHED AND s.cancelled_at IS NULL THEN
+  UPDATE SET synced_at = CURRENT_TIMESTAMP
+WHEN NOT MATCHED THEN
+  INSERT (source_order_id) VALUES (s.id);
+```
+
+### `postgres16-postgres-sql-multi-layer-cte`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-multi-layer-cte/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/sql-multi-layer-cte/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/sql-multi-layer-cte/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:invoices.order_id->public.orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:public.customers.region_id->public.regions.id:SQL_LOG_JOIN`
+- `FK_LIKE:public.orders.customer_id->public.customers.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `a`
+- `b`
+- `c`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+WITH "a" AS (
+  SELECT o.id AS order_id, o.customer_id
+  FROM "public"."orders" o
+  JOIN "public"."customers" c ON o.customer_id = c.id
+),
+b AS (
+  SELECT a.order_id, c.region_id
+  FROM "a" a
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-sql-quoted-mixed-alias`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-quoted-mixed-alias/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/sql-quoted-mixed-alias/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/sql-quoted-mixed-alias/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->public.orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:public.orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT *
+FROM "public"."orders" o
+JOIN users ON o."user_id" = users.id
+JOIN "payments" ON "payments".order_id = o.id;
+```
+
+### `postgres16-postgres-sql-recursive-cte`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-recursive-cte/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/sql-recursive-cte/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/sql-recursive-cte/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:employees.manager_id->employees.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `employee_paths`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+WITH RECURSIVE employee_paths(id, manager_id) AS (
+  SELECT e.id, e.manager_id
+  FROM employees e
+  WHERE e.manager_id IS NULL
+  UNION ALL
+  SELECT e.id, e.manager_id
+  FROM employees e
+  JOIN employee_paths ep ON ep.id = e.manager_id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-postgres-sql-unnest-ordinality`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-unnest-ordinality/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/sql-unnest-ordinality/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/sql-unnest-ordinality/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `unnest`
+- `input_ids`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT u.id
+FROM users u
+JOIN orders o ON o.user_id = u.id
+JOIN unnest(ARRAY[1, 2, 3]) WITH ORDINALITY AS input_ids(user_id, ord)
+  ON input_ids.user_id = u.id;
+```
+
+### `postgres16-postgres-sql-update-from-aliases`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-update-from-aliases/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/sql-update-from-aliases/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/sql-update-from-aliases/expected-diagnostics.json` |
 
 **Expected Relation Fingerprints**
 

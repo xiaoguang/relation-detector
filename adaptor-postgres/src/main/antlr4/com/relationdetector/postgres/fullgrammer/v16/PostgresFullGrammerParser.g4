@@ -796,7 +796,7 @@ columnlist
     ;
 
 columnElem
-    : PERIOD? colid (WITHOUT OVERLAPS)?
+    : colid
     ;
 
 c_include_
@@ -3810,7 +3810,6 @@ func_expr_common_subexpr
     | JSON '(' json_value_expr json_key_uniqueness_constraint? ')'
     | JSON_SCALAR '(' a_expr ')'
     | JSON_SERIALIZE '(' json_value_expr json_returning_clause? ')'
-    | MERGE_ACTION '(' ')'
     | JSON_QUERY '('
 		json_value_expr ',' a_expr json_passing_clause?
 		json_returning_clause?
@@ -4839,10 +4838,8 @@ col_name_keyword
     | JSON_QUERY
     | JSON_SCALAR
     | JSON_SERIALIZE
-    | JSON_TABLE
     | JSON_VALUE
     | LEAST
-    | MERGE_ACTION
     | NATIONAL
     | NCHAR
     | NONE
@@ -5209,7 +5206,6 @@ bare_label_keyword
     | JSON_QUERY
     | JSON_SCALAR
     | JSON_SERIALIZE
-    | JSON_TABLE
     | JSON_VALUE
     | KEEP
     | KEY
@@ -5240,7 +5236,6 @@ bare_label_keyword
     | MATERIALIZED
     | MAXVALUE
     | MERGE
-    | MERGE_ACTION
     | METHOD
     | MINVALUE
     | MODE

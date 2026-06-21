@@ -265,6 +265,12 @@ class CorrectnessFixtureRunnerTest {
     ) {
         Map<String, Long> actualCodes = actual.stream()
                 .collect(Collectors.groupingBy(WarningMessage::code, LinkedHashMap::new, Collectors.counting()));
+        if (isStrictFullGrammerFixture(fixture)) {
+            assertFalse(actualCodes.containsKey("PARSER_MODE_FALLBACK"),
+                    () -> fixture.id() + " must not fallback from its declared full-grammer profile");
+            assertFalse(actualCodes.containsKey("FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX"),
+                    () -> fixture.id() + " must be accepted by its declared full-grammer profile");
+        }
         if (Boolean.getBoolean("updateCorrectnessGold")) {
             try {
                 Files.writeString(fixture.expectedDiagnosticsFile(),
@@ -275,6 +281,10 @@ class CorrectnessFixtureRunnerTest {
             return;
         }
         assertEquals(expected.warningCodes(), actualCodes, fixture.id() + " warningCodes");
+    }
+
+    private boolean isStrictFullGrammerFixture(CorrectnessFixture fixture) {
+        return fixture.parserMode().equals("full-grammer") && !fixture.grammarProfile().isBlank();
     }
 
     private void assertLineage(

@@ -7,18 +7,16 @@ import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.fullgrammer.FullGrammerDialectModule;
 import com.relationdetector.core.fullgrammer.SqlGrammarProfile;
-import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerStructuredDdlParser;
-import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerStructuredSqlParser;
 
 /**
  * PostgreSQL 17 full-grammer module 注册入口。
  *
- * <p>CN: 版本由 package/profile 表达。当前 parser 入口复用 PostgreSQL full-grammer
- * typed visitor；profile 层负责让 17.x fixture 不再降级到 postgresql-16。
+ * <p>CN: 版本由 package/profile 表达。该 module 只返回 v17 package 内的 parser，
+ * 避免 17.x correctness 误用 v16 full-grammer。
  *
  * <p>EN: PostgreSQL 17 full-grammer module entry point. The version is carried by
- * the package/profile; the parser entry point reuses the PostgreSQL full-grammer
- * typed visitor while profile selection keeps 17.x fixtures off the v16 fallback path.
+ * the package/profile; it returns only parsers from the v17 package so 17.x
+ * correctness cannot silently reuse the v16 full-grammer implementation.
  */
 public final class PostgresFullGrammerDialectModule implements FullGrammerDialectModule {
     private static final SqlGrammarProfile PROFILE = new SqlGrammarProfile(

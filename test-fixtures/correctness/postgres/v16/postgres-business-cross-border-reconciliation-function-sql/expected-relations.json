@@ -1,0 +1,14 @@
+{
+  "fingerprints": [],
+  "forbiddenTables": [
+    "memory_input_cargo",
+    "fx_valuation",
+    "reconciliation_gap_analysis",
+    "customer_risk_analytics",
+    "unnest",
+    "o",
+    "s",
+    "q",
+    "p"
+  ]
+}

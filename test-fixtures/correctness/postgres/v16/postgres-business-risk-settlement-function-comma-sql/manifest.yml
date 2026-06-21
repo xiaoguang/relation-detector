@@ -1,0 +1,12 @@
+id: postgres16-postgres-business-risk-settlement-function-comma-sql
+parserMode: full-grammer
+grammarProfile: postgresql/16
+databaseVersion: 16.5
+databaseType: POSTGRESQL
+parserTarget: SQL
+sourceType: FUNCTION
+statementFormat: OBJECT_BLOCKS
+schema: finance
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

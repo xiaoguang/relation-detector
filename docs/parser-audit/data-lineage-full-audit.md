@@ -8,11 +8,11 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 
 | Classification | Count |
 | --- | ---: |
-| TOTAL | 229 |
-| EXISTING_GOLD | 45 |
+| TOTAL | 284 |
+| EXISTING_GOLD | 60 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 184 |
+| NOT_APPLICABLE | 224 |
 
 ## `mysql-basic-correctness-case-01-ddl`
 
@@ -2294,6 +2294,369 @@ CREATE TABLE public.users (
 );
 ```
 
+## `postgres16-postgres-basic-correctness-case-01-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-basic-correctness-case-01-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from PostgreSQL catalog for postgres-basic-correctness-case-01.
+-- Refresh with PostgresBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_01.auth_permission
+CREATE TABLE case_01.auth_permission (
+  id integer DEFAULT nextval('auth_permission_id_seq'::regclass) NOT NULL,
+  name character varying(255) NOT NULL,
+  content_type_id integer NOT NULL,
+```
+
+## `postgres16-postgres-ddl-alter-table-fk`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/postgres/v16/ddl-alter-table-fk/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE users (
+  id bigint PRIMARY KEY,
+  email text
+);
+
+CREATE TABLE orders (
+  id bigint PRIMARY KEY,
+  user_id bigint NOT NULL
+```
+
+## `postgres16-postgres-ddl-partial-index-boundary`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/postgres/v16/ddl-partial-index-boundary/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE users (
+  id BIGINT,
+  email TEXT
+);
+
+CREATE TABLE orders (
+  user_email TEXT,
+  CONSTRAINT fk_orders_users_email
+```
+
+## `postgres16-postgres-ddl-unique-include-index`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/postgres/v16/ddl-unique-include-index/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE accounts (
+  id BIGINT,
+  account_no TEXT,
+  deleted_at TIMESTAMP
+);
+
+CREATE TABLE invoices (
+  account_no TEXT,
+```
+
+## `postgres16-postgres-official-alter-index-boundary-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-alter-index-boundary-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: create_index.sql and ALTER INDEX.
+CREATE TABLE users (
+  id BIGINT PRIMARY KEY,
+  email TEXT
+);
+
+CREATE TABLE password_resets (
+  id BIGINT PRIMARY KEY,
+```
+
+## `postgres16-postgres-official-expression-access-method-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-expression-access-method-index-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: create_index.sql and CREATE INDEX.
+CREATE TABLE documents (
+  id BIGINT PRIMARY KEY,
+  account_id BIGINT,
+  body TEXT,
+  tags TEXT[],
+  geom BOX,
+  payload JSONB
+```
+
+## `postgres16-postgres-official-index-include-partial-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-index-include-partial-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: create_index.sql and CREATE INDEX.
+CREATE TABLE accounts (
+  id BIGINT PRIMARY KEY,
+  account_no TEXT,
+  deleted_at TIMESTAMP
+);
+
+CREATE TABLE ledger_entries (
+```
+
+## `postgres16-postgres-official-index-opclass-expression-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-index-opclass-expression-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official CREATE INDEX inspired: expression indexes, function-call
+-- expressions, opclass parameters, collation, sort order, and NULLS options.
+CREATE TABLE customers (
+  id BIGINT PRIMARY KEY,
+  external_ref TEXT UNIQUE,
+  email TEXT,
+  metadata JSONB
+);
+```
+
+## `postgres16-postgres-official-index-options-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-index-options-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: create_index.sql and CREATE INDEX.
+CREATE TABLE public.users (
+  id BIGINT PRIMARY KEY,
+  email TEXT,
+  locale TEXT
+);
+
+CREATE TABLE public.orders (
+```
+
+## `postgres16-postgres-official-index-partition-boundary-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-index-partition-boundary-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official CREATE INDEX inspired: ONLY and partition-oriented index
+-- syntax. ALTER INDEX ATTACH PARTITION is a parser-stability boundary and must
+-- not create relationships.
+CREATE TABLE tenants (
+  id BIGINT PRIMARY KEY
+);
+
+CREATE TABLE tenant_orders (
+```
+
+## `postgres16-postgres-official-index-storage-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-index-storage-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official create_index.sql/docs inspired: storage parameters,
+-- TABLESPACE, and access-method-specific options. Complex indexes should not
+-- create FK-like relations by themselves; the declared FK below is the only
+-- expected relationship.
+CREATE TABLE public.users (
+  id BIGINT PRIMARY KEY,
+  email TEXT
+);
+```
+
 ## `postgres17-basic-correctness-case-01-ddl`
 
 | Field | Value |
@@ -4491,6 +4854,1443 @@ JOIN unnest(ARRAY[1, 2, 3]) WITH ORDINALITY AS input_ids(user_id, ord)
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Input | `test-fixtures/correctness/postgres/sql-update-from-aliases/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE orders o
+SET status = 'PAID'
+FROM users u
+WHERE o.user_id = u.id;
+```
+
+## `postgres16-postgres-basic-correctness-case-01-objects-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-basic-correctness-case-01-objects-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from PostgreSQL SQL sources for postgres-basic-correctness-case-01.
+-- Refresh with PostgresBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: TRIGGER:pg_trigger:rna.rna_audit
+CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCTION trigger_fct_rna_audit()
+-- relation-detector-fixture-end
+
+-- relation-detector-fixture-source: TRIGGER:pg_trigger:rnc_database.rnc_database_audit
+```
+
+## `postgres16-postgres-basic-correctness-case-01-statements-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-basic-correctness-case-01-statements-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from PostgreSQL SQL sources for postgres-basic-correctness-case-01.
+-- Refresh with PostgresBasicCorrectnessFixtureExporter.
+
+```
+
+## `postgres16-postgres-business-account-balances-financial-cte-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-account-balances-financial-cte-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-account-balances-financial-cte-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 10: financial CTE update with aggregate CTEs and comma rowsets.
+-- Future data-lineage boundary: merchant_category, country_code, and activity dates contribute to compliance_notes.
+WITH user_financial_snapshot AS (
+    SELECT
+        t.user_id,
+        COUNT(DISTINCT t.currency) AS active_currencies,
+        SUM(CASE WHEN t.direction = 'INFLOW' THEN t.amount ELSE -t.amount END) AS net_cash_flow,
+        ROUND(AVG(t.amount)::numeric, 2) AS avg_transaction_size,
+```
+
+## `postgres16-postgres-business-account-balances-financial-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-account-balances-financial-explicit-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-account-balances-financial-explicit-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 10 equivalent: explicit JOIN version of the final financial rowsets.
+WITH user_financial_snapshot AS (
+    SELECT
+        t.user_id,
+        COUNT(DISTINCT t.currency) AS active_currencies,
+        SUM(CASE WHEN t.direction = 'INFLOW' THEN t.amount ELSE -t.amount END) AS net_cash_flow,
+        ROUND(AVG(t.amount)::numeric, 2) AS avg_transaction_size,
+        STRING_AGG(DISTINCT t.merchant_category, '; ' ORDER BY t.merchant_category) AS primary_categories,
+```
+
+## `postgres16-postgres-business-asset-balances-update-outer-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-asset-balances-update-outer-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-asset-balances-update-outer-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
+- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 9: UPDATE FROM with FULL OUTER, INNER, and LEFT joins.
+-- The source sample used sys_a/sys_b in SET; this fixture fixes those aliases to the derived rowset columns.
+-- Future data-lineage boundary: ledger balances and staff operator_name drive asset_balances fields.
+UPDATE asset_balances ab
+SET computed_balance = COALESCE(unified_ledgers.balance_a, 0.00) + COALESCE(unified_ledgers.balance_b, 0.00),
+    discrepancy_flag = CASE WHEN unified_ledgers.balance_a != unified_ledgers.balance_b THEN 1 ELSE 0 END,
+    last_checked_by = s.operator_name
+FROM (
+```
+
+## `postgres16-postgres-business-cross-border-reconciliation-function-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-cross-border-reconciliation-function-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business function case: nested CTEs, array unnesting, FULL/LEFT joins,
+-- and a correlated subquery inside a returned set function.
+-- relation-detector-fixture-source: FUNCTION:finance.sp_cross_border_reconciliation_engine
+CREATE TYPE order_reconciliation_row AS (
+    reconciliation_id   UUID,
+    merchant_id         INT,
+    sku_code            VARCHAR(50),
+    original_amount     NUMERIC(16,4),
+```
+
+## `postgres16-postgres-business-delete-cascade-cte-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-delete-cascade-cte-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 3: data-modifying CTE cascade delete.
+WITH deleted_orders AS (
+    DELETE FROM orders o
+    USING users u
+    WHERE o.user_id = u.id
+      AND o.payment_status = 'UNPAID'
+      AND u.risk_level = 'HIGH'
+    RETURNING o.id
+```
+
+## `postgres16-postgres-business-delete-orphan-left-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-delete-orphan-left-join-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 4: orphan cleanup through DELETE USING and LEFT JOIN.
+DELETE FROM product_reviews pr
+USING product_reviews pr_alias
+LEFT JOIN products p ON pr_alias.product_id = p.id
+WHERE pr.id = pr_alias.id
+  AND p.id IS NULL;
+```
+
+## `postgres16-postgres-business-delete-orphan-not-exists-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-delete-orphan-not-exists-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 4 equivalent: orphan cleanup through NOT EXISTS.
+DELETE FROM product_reviews pr
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM products p
+    WHERE pr.product_id = p.id
+);
+```
+
+## `postgres16-postgres-business-inventory-purge-deep-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-inventory-purge-deep-subquery-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 11: DELETE USING with deep nested subqueries, LEFT/FULL/INNER joins, and regex tools.
+DELETE FROM inventory_snapshots isc
+USING (
+    SELECT
+        core_inv.snapshot_id,
+        core_inv.sku_code,
+        UPPER(REGEXP_REPLACE(core_inv.batch_no, '[^a-zA-Z0-9]', '', 'g')) AS cleaned_batch
+    FROM (
+```
+
+## `postgres16-postgres-business-inventory-purge-exists-equivalent-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-inventory-purge-exists-equivalent-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 11 equivalent: correlated subquery form for the low-sales inventory purge.
+DELETE FROM inventory_snapshots isc
+USING supplier_inventory_logs i
+INNER JOIN warehouse_facilities wf ON i.warehouse_id = wf.id
+INNER JOIN master_skus ms ON i.sku_code = ms.sku_ref
+WHERE isc.snapshot_id = i.id
+  AND ms.is_perishable = true
+  AND isc.logged_date < NOW() - INTERVAL '180 days'
+```
+
+## `postgres16-postgres-business-risk-ledger-update-cte-comma-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-comma-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-comma-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 7: nested CTE UPDATE with window function and comma rowsets.
+-- Future data-lineage boundary: users.risk_level contributes to order_ledgers.remarks via string concat.
+WITH active_users AS (
+    SELECT id, risk_level
+    FROM users
+    WHERE status = 'ACTIVE' AND risk_level IN ('HIGH', 'MEDIUM')
+),
+fraud_orders AS (
+```
+
+## `postgres16-postgres-business-risk-ledger-update-cte-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-explicit-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-explicit-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 7 equivalent: explicit INNER JOIN version of the final CTE rowsets.
+WITH active_users AS (
+    SELECT id, risk_level
+    FROM users
+    WHERE status = 'ACTIVE' AND risk_level IN ('HIGH', 'MEDIUM')
+),
+fraud_orders AS (
+    SELECT
+```
+
+## `postgres16-postgres-business-risk-settlement-function-comma-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-risk-settlement-function-comma-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business function case: comma-rowset equivalent of the users join.
+-- Expected fingerprints must match postgres-business-risk-settlement-function-sql.
+-- relation-detector-fixture-source: FUNCTION:finance.fn_risk_settlement_engine_comma
+CREATE OR REPLACE FUNCTION fn_risk_settlement_engine_comma(
+    p_user_ids INT[],
+    p_amounts NUMERIC[],
+    p_risk_flags TEXT[]
+)
+```
+
+## `postgres16-postgres-business-risk-settlement-function-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-risk-settlement-function-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business function case: temp array inputs are joined to users through CTEs.
+-- The sample output in the prompt appears copied from a different account_balances case;
+-- this fixture treats only relationships inferable from this SQL as expected.
+-- relation-detector-fixture-source: FUNCTION:finance.fn_risk_settlement_engine
+CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
+    p_user_ids INT[],
+    p_amounts NUMERIC[],
+    p_risk_flags TEXT[]
+```
+
+## `postgres16-postgres-business-update-inventory-comma-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-inventory-comma-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-inventory-comma-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 5 equivalent: INNER JOIN rewritten as comma rowsets plus WHERE equality.
+UPDATE inventory i
+SET stock_reserved = i.stock_reserved + oi.quantity,
+    last_ordered_from = s.supplier_name
+FROM order_items oi, suppliers s
+WHERE i.product_id = oi.product_id
+  AND i.supplier_id = s.id
+  AND oi.status = 'PENDING';
+```
+
+## `postgres16-postgres-business-update-inventory-from-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-inventory-from-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-inventory-from-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 5: UPDATE FROM with one ambiguous equality and one FK-like join.
+UPDATE inventory i
+SET stock_reserved = i.stock_reserved + oi.quantity,
+    last_ordered_from = s.supplier_name
+FROM order_items oi
+INNER JOIN suppliers s ON i.supplier_id = s.id
+WHERE i.product_id = oi.product_id
+  AND oi.status = 'PENDING';
+```
+
+## `postgres16-postgres-business-update-products-comma-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-products-comma-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-products-comma-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 1 equivalent: INNER JOIN rewritten as comma rowsets plus WHERE equality.
+UPDATE products p
+SET is_on_sale = 1,
+    promo_price = p.original_price * 0.9
+FROM shops s, merchants m
+WHERE p.shop_id = s.id
+  AND s.merchant_id = m.id
+  AND m.status = 'ACTIVE'
+```
+
+## `postgres16-postgres-business-update-products-from-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-products-from-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-products-from-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 1: UPDATE FROM with an explicit INNER JOIN.
+UPDATE products p
+SET is_on_sale = 1,
+    promo_price = p.original_price * 0.9
+FROM shops s
+INNER JOIN merchants m ON s.merchant_id = m.id
+WHERE p.shop_id = s.id
+  AND m.status = 'ACTIVE'
+```
+
+## `postgres16-postgres-business-update-users-aggregate-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-users-aggregate-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-users-aggregate-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 2: UPDATE FROM aggregate derived table.
+UPDATE users u
+SET total_spent = COALESCE(o_summary.actual_total, 0.00),
+    level = CASE
+        WHEN o_summary.actual_total >= 10000 THEN 'VIP'
+        WHEN o_summary.actual_total >= 5000 THEN 'GOLD'
+        ELSE 'REGULAR'
+    END
+```
+
+## `postgres16-postgres-business-update-users-scalar-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-users-scalar-subquery-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-users-scalar-subquery-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.total_spent`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 2 equivalent: aggregate relation expressed through correlated scalar subqueries.
+UPDATE users u
+SET total_spent = COALESCE((
+        SELECT SUM(o.pay_amount)
+        FROM orders o
+        WHERE o.user_id = u.id
+          AND o.order_status = 'PAID'
+    ), 0.00),
+```
+
+## `postgres16-postgres-business-update-warehouse-comma-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-warehouse-comma-subquery-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-warehouse-comma-subquery-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 6 equivalent: INNER joins as comma rowsets, LEFT aggregate as derived subquery relation.
+UPDATE warehouse_inventory wi
+SET stock_reserved = wi.stock_reserved + oi.quantity,
+    last_audit_status = CASE
+        WHEN latest_orders.risk_score > 80 THEN 'HOLD_FOR_REVIEW'
+        WHEN wi.stock_available - oi.quantity < 10 THEN 'LOW_STOCK_WARNING'
+        ELSE 'ALLOCATED'
+    END
+```
+
+## `postgres16-postgres-business-update-warehouse-complex-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-update-warehouse-complex-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-business-update-warehouse-complex-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 6: complex UPDATE FROM with nested derived tables and window function projection.
+UPDATE warehouse_inventory wi
+SET stock_reserved = wi.stock_reserved + oi.quantity,
+    last_audit_status = CASE
+        WHEN latest_orders.risk_score > 80 THEN 'HOLD_FOR_REVIEW'
+        WHEN wi.stock_available - oi.quantity < 10 THEN 'LOW_STOCK_WARNING'
+        ELSE 'ALLOCATED'
+    END
+```
+
+## `postgres16-postgres-business-user-coupons-delete-derived-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-user-coupons-delete-derived-join-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 8: DELETE USING with nested aggregate derived table and outer INNER JOIN.
+DELETE FROM user_coupons uc
+USING (
+    SELECT c_sub.id AS coupon_id, c_sub.merchant_id
+    FROM coupons c_sub
+    LEFT JOIN (
+        SELECT coupon_id, COUNT(id) AS usage_cnt
+        FROM coupon_redemptions
+```
+
+## `postgres16-postgres-business-user-coupons-delete-exists-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-business-user-coupons-delete-exists-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL business case 8 equivalent: correlated EXISTS/NOT EXISTS version of the nested coupon cleanup.
+DELETE FROM user_coupons uc
+USING coupons c
+INNER JOIN merchants m ON c.merchant_id = m.id
+WHERE uc.coupon_id = c.id
+  AND m.compliance_status = 'SUSPENDED'
+  AND (
+      c.expire_at < NOW()
+```
+
+## `postgres16-postgres-generated-comprehensive-query-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/examples/comprehensive-query-sql-001-030.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Comprehensive query SQL examples, CASE 01-30.
+-- These statements are parser stress samples for joins, CTEs, subqueries,
+-- recursive queries, derived tables, and complex expression-heavy predicates.
+
+-- ============================================================================
+-- CASE 01: Snowflake Schema Multi-Stage Warehouse Join with Path Concatenation
+-- ============================================================================
+SELECT 
+```
+
+## `postgres16-postgres-generated-industrial-complex-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/examples/industrial-complex-sql-001-050.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Industrial complex SQL examples, SQL 001-050.
+-- These statements are saved as parser stress samples and are not expected to run
+-- against the project test databases without matching demo schemas.
+
+-- SQL 001: 窗口函数无缝嵌套多层 CASE WHEN 与字段双竖线动态组合
+SELECT 
+    tr.transaction_id,
+    'TX_' || tr.merchant_code || '_' || TO_CHAR(tr.created_at, 'YYYYMMDD') || '_' ||
+```
+
+## `postgres16-postgres-generated-provided-complex-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/generated-provided-complex-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Provided complex SQL collection.
+-- Source:
+-- - 001-025 from attachment 87388f7d-2c4c-499a-b085-d158b969af45/pasted-text.txt
+-- - 026-050 from attachment c61899d0-fc27-4a25-974a-56bc89fb0b7f/pasted-text.txt
+-- - 051-075 from the chat message on 2026-06-18.
+-- Notes:
+-- - SQL 052 appears truncated in the chat message and is preserved as received.
+-- - SQL 053-058 were not present in the supplied text.
+```
+
+## `postgres16-postgres-official-cte-dml-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-cte-dml-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres-official-cte-dml-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official docs inspired: WITH Queries and data-modifying
+-- statements in WITH. Covers DELETE RETURNING, INSERT SELECT, UPDATE FROM,
+-- MERGE USING, MATERIALIZED, and NOT MATERIALIZED boundaries.
+WITH moved_rows AS (
+  DELETE FROM order_staging os
+  USING orders o
+  WHERE os.order_id = o.id
+  RETURNING os.order_id, os.user_id
+```
+
+## `postgres16-postgres-official-cte-nested-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-cte-nested-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: with.sql and WITH Queries.
+-- Covers nested WITH, recursive CTEs, MATERIALIZED / NOT MATERIALIZED, and CTE
+-- reuse without promoting CTE names to physical tables.
+WITH base_orders AS MATERIALIZED (
+  SELECT o.id AS order_id, o.user_id, o.customer_id
+  FROM orders o
+  JOIN users u ON o.user_id = u.id
+),
+```
+
+## `postgres16-postgres-official-join-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-join-edge-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: join.sql and Table Expressions.
+-- Covers explicit outer joins, JOIN USING alias, NATURAL join, parenthesized
+-- join trees, and legacy comma join predicates.
+SELECT *
+FROM orders o
+INNER JOIN users u ON o.user_id = u.id
+LEFT OUTER JOIN payments p ON p.order_id = o.id
+RIGHT JOIN shipments s ON s.order_id = o.id
+```
+
+## `postgres16-postgres-official-lateral-function-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-lateral-function-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: Table Expressions.
+-- Covers ROWS FROM, json_to_recordset, generate_series, and LATERAL function
+-- rowsets without treating functions or their aliases as physical tables.
+SELECT *
+FROM orders o
+LEFT JOIN LATERAL (
+  SELECT o.user_id
+) projected_user ON true
+```
+
+## `postgres16-postgres-official-lateral-nested-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-lateral-nested-join-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official docs inspired: Table Expressions, LATERAL, ROWS FROM,
+-- table functions, UNNEST WITH ORDINALITY, and nested LATERAL joins.
+SELECT *
+FROM orders o
+LEFT JOIN LATERAL (
+  SELECT li.order_id, li.product_id
+  FROM line_items li
+  WHERE li.order_id = o.id
+```
+
+## `postgres16-postgres-official-multiway-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-multiway-join-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: join.sql and Table Expressions.
+-- Covers multiway outer joins, parenthesized join trees, derived joins,
+-- legacy comma join mixed with explicit JOIN, and multiple ON equality keys.
+SELECT *
+FROM order_roots o
+LEFT JOIN order_items oi
+  ON oi.order_id = o.id
+ AND oi.tenant_id = o.tenant_id
+```
+
+## `postgres16-postgres-official-subquery-deep-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-subquery-deep-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: subselect.sql and Subquery
+-- Expressions. Covers nested correlated EXISTS, tuple IN/NOT IN, row
+-- constructor ANY/SOME/ALL, scalar subquery equality, and nested subquery joins.
+SELECT *
+FROM orders o
+WHERE EXISTS (
+  SELECT 1
+  FROM users u
+```
+
+## `postgres16-postgres-official-subquery-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres-official-subquery-edge-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL official regression/docs inspired: subselect.sql and Subquery
+-- Expressions. Covers extra parentheses, correlated EXISTS, tuple IN/NOT IN,
+-- scalar subquery equality, and ANY/SOME/ALL boundaries.
+SELECT *
+FROM ((SELECT o.id, o.user_id FROM orders o)) projected_orders
+JOIN users u ON projected_orders.user_id = u.id;
+
+SELECT *
+```
+
+## `postgres16-postgres-sql-delete-using-no-alias`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-delete-using-no-alias/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE FROM orders
+USING users
+WHERE orders.user_id = users.id;
+```
+
+## `postgres16-postgres-sql-lateral-derived`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-lateral-derived/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT o.id, u.email
+FROM orders o
+JOIN LATERAL (
+  SELECT o.user_id AS user_id
+) x ON true
+JOIN users u ON x.user_id = u.id;
+```
+
+## `postgres16-postgres-sql-merge-using`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-merge-using/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/sql-merge-using/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:source_orders.id->target_orders.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:DIRECT:source_orders.id->target_orders.source_order_id`
+
+**Input Preview**
+
+```sql
+MERGE INTO target_orders AS t
+USING source_orders AS s
+ON t.source_order_id = s.id
+WHEN MATCHED AND s.cancelled_at IS NULL THEN
+  UPDATE SET synced_at = CURRENT_TIMESTAMP
+WHEN NOT MATCHED THEN
+  INSERT (source_order_id) VALUES (s.id);
+```
+
+## `postgres16-postgres-sql-multi-layer-cte`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-multi-layer-cte/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+WITH "a" AS (
+  SELECT o.id AS order_id, o.customer_id
+  FROM "public"."orders" o
+  JOIN "public"."customers" c ON o.customer_id = c.id
+),
+b AS (
+  SELECT a.order_id, c.region_id
+  FROM "a" a
+```
+
+## `postgres16-postgres-sql-quoted-mixed-alias`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-quoted-mixed-alias/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT *
+FROM "public"."orders" o
+JOIN users ON o."user_id" = users.id
+JOIN "payments" ON "payments".order_id = o.id;
+```
+
+## `postgres16-postgres-sql-recursive-cte`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-recursive-cte/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+WITH RECURSIVE employee_paths(id, manager_id) AS (
+  SELECT e.id, e.manager_id
+  FROM employees e
+  WHERE e.manager_id IS NULL
+  UNION ALL
+  SELECT e.id, e.manager_id
+  FROM employees e
+  JOIN employee_paths ep ON ep.id = e.manager_id
+```
+
+## `postgres16-postgres-sql-unnest-ordinality`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-unnest-ordinality/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT u.id
+FROM users u
+JOIN orders o ON o.user_id = u.id
+JOIN unnest(ARRAY[1, 2, 3]) WITH ORDINALITY AS input_ids(user_id, ord)
+  ON input_ids.user_id = u.id;
+```
+
+## `postgres16-postgres-sql-update-from-aliases`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/sql-update-from-aliases/input.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**

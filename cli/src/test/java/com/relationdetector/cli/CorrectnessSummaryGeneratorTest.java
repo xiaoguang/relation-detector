@@ -17,13 +17,13 @@ class CorrectnessSummaryGeneratorTest {
     void generatedSummaryCapturesFixtureCountsAndInputPreview() throws Exception {
         String markdown = CorrectnessSummaryGenerator.generate(WORKSPACE);
 
-        assertTrue(markdown.contains("| Total correctness fixtures | 229 |"));
-        assertTrue(markdown.contains("| SQL fixtures | 183 |"));
-        assertTrue(markdown.contains("| DDL fixtures | 46 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 45 |"));
+        assertTrue(markdown.contains("| Total correctness fixtures | 284 |"));
+        assertTrue(markdown.contains("| SQL fixtures | 227 |"));
+        assertTrue(markdown.contains("| DDL fixtures | 57 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 60 |"));
         assertTrue(markdown.contains("| MySQL directory fixtures | 57 |"));
         assertTrue(markdown.contains("| MYSQL | 59 | 48 | 11 |"));
-        assertTrue(markdown.contains("| POSTGRESQL | 170 | 135 | 35 |"));
+        assertTrue(markdown.contains("| POSTGRESQL | 225 | 179 | 46 |"));
         assertTrue(markdown.contains("Lightweight index report. Full SQL/DDL is available in each input file."));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-commerce-promotion-update-explicit-join-sql/input.sql"));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/expected-lineage.json"));
@@ -40,6 +40,7 @@ class CorrectnessSummaryGeneratorTest {
         assertTrue(markdown.contains("UPDATE products p"));
         assertTrue(markdown.contains("Preview truncated; see input file for full content."));
         assertTrue(markdown.contains("test-fixtures/correctness/postgres/postgres-business-risk-ledger-update-cte-comma-sql/input.sql"));
+        assertTrue(markdown.contains("test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-comma-sql/input.sql"));
         assertTrue(markdown.contains("test-fixtures/correctness/postgres/v17/postgres17-json-table-sql/input.sql"));
         assertTrue(markdown.contains("test-fixtures/correctness/postgres/v18/postgres18-temporal-constraints-ddl/input.sql"));
         assertTrue(markdown.contains(
