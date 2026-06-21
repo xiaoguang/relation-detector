@@ -1,0 +1,12 @@
+id: postgres18-official-alter-index-boundary-ddl
+parserMode: full-grammer
+grammarProfile: postgresql/18
+databaseVersion: 18.1
+databaseType: POSTGRESQL
+parserTarget: DDL
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: public
+input: input.ddl.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

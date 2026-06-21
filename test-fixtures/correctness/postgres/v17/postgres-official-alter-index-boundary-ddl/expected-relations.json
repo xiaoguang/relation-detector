@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "FK_LIKE:password_resets.user_id->users.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+  ],
+  "forbiddenTables": []
+}

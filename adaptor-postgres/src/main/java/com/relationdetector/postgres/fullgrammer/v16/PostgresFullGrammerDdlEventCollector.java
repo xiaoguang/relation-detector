@@ -232,8 +232,18 @@ final class PostgresFullGrammerDdlEventCollector {
 
         private List<String> postgresColumns(PostgresFullGrammerParser.ColumnlistContext ctx) {
             return out.nonBlank(ctx.getRuleContexts(PostgresFullGrammerParser.ColumnElemContext.class).stream()
-                    .map(ParseTree::getText)
+                    .map(this::postgresColumn)
                     .toList());
+        }
+
+        private String postgresColumn(PostgresFullGrammerParser.ColumnElemContext elem) {
+            if (elem == null || elem.colid() == null) {
+                return "";
+            }
+            if (elem.PERIOD() != null || elem.WITHOUT() != null) {
+                return "";
+            }
+            return elem.colid().getText();
         }
 
         private String postgresIndexColumn(PostgresFullGrammerParser.Index_elemContext elem) {

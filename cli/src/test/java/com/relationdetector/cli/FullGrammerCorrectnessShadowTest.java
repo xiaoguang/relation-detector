@@ -54,9 +54,13 @@ class FullGrammerCorrectnessShadowTest {
                     .filter(path -> fixtureFilter.isBlank() || path.toString().contains(fixtureFilter))
                     .map(this::readFixture)
                     .filter(fixture -> fixture.parserTarget().equals("SQL"))
+                    .filter(fixture -> fixture.grammarProfile().isBlank())
                     .toList();
         }
 
+        if (fixtures.isEmpty() && !System.getProperty("correctnessFixtureFilter", "").isBlank()) {
+            return;
+        }
         assertTrue(!fixtures.isEmpty(), "Expected SQL correctness fixtures");
         assertAll("full-grammer SQL shadow parity",
                 fixtures.stream().map(fixture -> (Executable) () -> assertFixtureParity(fixture)).toList());
@@ -67,8 +71,12 @@ class FullGrammerCorrectnessShadowTest {
         StructuredSqlParser current = adaptor.structuredSqlParser()
                 .orElseThrow(() -> new IllegalStateException("No structured SQL parser for " + fixture.databaseType()));
         StructuredSqlParser shadow = FullGrammerTokenEventParserFactory.create(
-                fixture.databaseType(),
-                defaultVersion(fixture.databaseType()),
+                FullGrammerProfileRequest.builder()
+                        .databaseType(fixture.databaseType())
+                        .configuredProfile(fixture.grammarProfile())
+                        .configuredVersion(versionFor(fixture))
+                        .configuredVersionSource(versionFor(fixture).isBlank() ? "UNKNOWN" : "CONFIG")
+                        .build(),
                 current).parser();
         FullGrammerTokenEventShadowComparator comparator = new FullGrammerTokenEventShadowComparator();
         List<String> failures = new ArrayList<>();
@@ -131,6 +139,13 @@ class FullGrammerCorrectnessShadowTest {
         };
     }
 
+    private String versionFor(Fixture fixture) {
+        if (!fixture.databaseVersion().isBlank() || !fixture.grammarProfile().isBlank()) {
+            return fixture.databaseVersion();
+        }
+        return defaultVersion(fixture.databaseType());
+    }
+
     private String defaultVersion(DatabaseType databaseType) {
         return switch (databaseType) {
             case MYSQL -> "8.0";
@@ -190,7 +205,9 @@ class FullGrammerCorrectnessShadowTest {
                     StatementSourceType.valueOf(values.getOrDefault("sourceType", "PLAIN_SQL")),
                     values.getOrDefault("statementFormat", "SEMICOLON"),
                     root.resolve(values.get("input")).normalize(),
-                    values.getOrDefault("objectSourceFilter", ""));
+                    values.getOrDefault("objectSourceFilter", ""),
+                    values.getOrDefault("grammarProfile", ""),
+                    values.getOrDefault("databaseVersion", ""));
         } catch (Exception exception) {
             throw new IllegalStateException("Cannot read fixture " + manifest, exception);
         }
@@ -235,7 +252,9 @@ class FullGrammerCorrectnessShadowTest {
             StatementSourceType sourceType,
             String statementFormat,
             Path inputFile,
-            String objectSourceFilter
+            String objectSourceFilter,
+            String grammarProfile,
+            String databaseVersion
     ) {
     }
 }

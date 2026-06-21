@@ -1,0 +1,12 @@
+id: postgres18-basic-correctness-case-01-statements-sql
+parserMode: full-grammer
+grammarProfile: postgresql/18
+databaseVersion: 18.1
+databaseType: POSTGRESQL
+parserTarget: SQL
+sourceType: NATIVE_LOG
+evidenceSourceType: DDL_FILE
+schema: case_01
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

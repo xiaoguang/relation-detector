@@ -304,12 +304,21 @@ public class DdlStructuredEventVisitor {
     private List<String> columns(String rawColumns) {
         List<String> result = new ArrayList<>();
         for (String item : DdlTokenCursor.splitTopLevel(rawColumns, ',')) {
-            String column = DdlTokenCursor.firstIdentifier(item.trim());
+            String trimmed = item.trim();
+            if (isTemporalCoverageColumn(trimmed)) {
+                continue;
+            }
+            String column = DdlTokenCursor.firstIdentifier(trimmed);
             if (!column.isBlank()) {
                 result.add(column);
             }
         }
         return result;
+    }
+
+    private boolean isTemporalCoverageColumn(String item) {
+        String lower = item.stripLeading().toLowerCase(Locale.ROOT);
+        return lower.startsWith("period ") || lower.contains(" without overlaps");
     }
 
     private List<IndexPart> indexParts(String rawColumns) {

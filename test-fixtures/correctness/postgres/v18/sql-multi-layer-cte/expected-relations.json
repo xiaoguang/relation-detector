@@ -1,0 +1,12 @@
+{
+  "fingerprints": [
+    "FK_LIKE:invoices.order_id->public.orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:public.customers.region_id->public.regions.id:SQL_LOG_JOIN",
+    "FK_LIKE:public.orders.customer_id->public.customers.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": [
+    "a",
+    "b",
+    "c"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "fingerprints": [
+    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
+    "FK_LIKE:products.manufacturer_id->manufacturers.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": [
+    "projected_user",
+    "expanded",
+    "ROWS",
+    "json_to_recordset",
+    "generate_series",
+    "get_product_names",
+    "pname"
+  ]
+}

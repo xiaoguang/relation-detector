@@ -1,0 +1,15 @@
+{
+  "fingerprints": [
+    "FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_EXISTS",
+    "FK_LIKE:line_items.order_id->orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:line_items.product_id->products.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": [
+    "decoded",
+    "generate_series",
+    "get_order_users",
+    "gou",
+    "json_to_recordset",
+    "liq"
+  ]
+}

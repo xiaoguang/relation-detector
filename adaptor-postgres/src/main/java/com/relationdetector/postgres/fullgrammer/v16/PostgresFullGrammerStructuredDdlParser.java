@@ -31,8 +31,11 @@ import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser;
  * DDL_FOREIGN_KEY / DDL_INDEX events. Final relationships are still created by
  * the core DDL extractor.
  */
-final class PostgresFullGrammerStructuredDdlParser implements StructuredDdlParser {
+public final class PostgresFullGrammerStructuredDdlParser implements StructuredDdlParser {
     private final PostgresFullGrammerDdlEventCollector collector = new PostgresFullGrammerDdlEventCollector();
+
+    public PostgresFullGrammerStructuredDdlParser() {
+    }
 
     @Override
     public StructuredParseResult parseDdl(String ddl, String sourceName, AdaptorContext context) {

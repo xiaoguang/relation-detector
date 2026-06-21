@@ -73,7 +73,7 @@ class CliEndToEndGoldenTest {
                 fixture("postgres/sql-merge-using"),
                 "full-grammer",
                 "",
-                "18.0",
+                "20.0",
                 SourceKind.LOGS,
                 true,
                 Set.of("PARSER_MODE_FALLBACK"));

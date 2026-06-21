@@ -796,7 +796,7 @@ columnlist
     ;
 
 columnElem
-    : colid
+    : PERIOD? colid (WITHOUT OVERLAPS)?
     ;
 
 c_include_

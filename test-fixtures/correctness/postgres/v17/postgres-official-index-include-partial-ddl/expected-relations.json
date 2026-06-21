@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "FK_LIKE:ledger_entries.account_no->accounts.account_no:DDL_FOREIGN_KEY,TARGET_UNIQUE"
+  ],
+  "forbiddenTables": []
+}

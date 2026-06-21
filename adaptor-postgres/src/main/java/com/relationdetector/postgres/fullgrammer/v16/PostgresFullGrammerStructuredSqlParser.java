@@ -33,8 +33,8 @@ import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser;
  * to emit unified StructuredSqlEvent records from typed parse-tree contexts. It
  * does not decide relationship or lineage semantics.
  */
-final class PostgresFullGrammerStructuredSqlParser implements StructuredSqlParser {
-    PostgresFullGrammerStructuredSqlParser() {
+public final class PostgresFullGrammerStructuredSqlParser implements StructuredSqlParser {
+    public PostgresFullGrammerStructuredSqlParser() {
     }
 
     /**

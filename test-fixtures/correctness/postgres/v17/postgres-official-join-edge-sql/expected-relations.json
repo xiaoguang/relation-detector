@@ -1,0 +1,13 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:orders.order_id->order_tags.order_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "FK_LIKE:invoices.order_id->orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
+    "FK_LIKE:payments.order_id->orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:refunds.order_id->orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": [
+    "order_join"
+  ]
+}

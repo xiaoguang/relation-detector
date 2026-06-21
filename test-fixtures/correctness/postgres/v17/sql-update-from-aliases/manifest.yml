@@ -1,0 +1,11 @@
+id: postgres17-sql-update-from-aliases
+parserMode: full-grammer
+grammarProfile: postgresql/17
+databaseVersion: 17.5
+databaseType: POSTGRESQL
+parserTarget: SQL
+sourceType: PLAIN_SQL
+schema: public
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

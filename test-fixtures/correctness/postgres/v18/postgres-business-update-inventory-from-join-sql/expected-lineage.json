@@ -1,0 +1,11 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved",
+    "VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from"
+  ],
+  "forbiddenSources": [
+    "PENDING"
+  ],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

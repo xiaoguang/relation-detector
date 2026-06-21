@@ -1,0 +1,9 @@
+{
+  "fingerprints": [
+    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": [
+    "jt",
+    "JSON_TABLE"
+  ]
+}

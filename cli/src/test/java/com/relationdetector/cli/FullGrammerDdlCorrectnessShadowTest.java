@@ -43,9 +43,13 @@ class FullGrammerDdlCorrectnessShadowTest {
                     .filter(path -> fixtureFilter.isBlank() || path.toString().contains(fixtureFilter))
                     .map(this::readFixture)
                     .filter(fixture -> fixture.parserTarget().equals("DDL"))
+                    .filter(fixture -> fixture.grammarProfile().isBlank())
                     .toList();
         }
 
+        if (fixtures.isEmpty() && !System.getProperty("correctnessFixtureFilter", "").isBlank()) {
+            return;
+        }
         assertTrue(!fixtures.isEmpty(), "Expected DDL correctness fixtures");
         assertAll("full-grammer DDL shadow parity",
                 fixtures.stream().map(fixture -> (Executable) () -> assertFixtureParity(fixture)).toList());
@@ -56,8 +60,13 @@ class FullGrammerDdlCorrectnessShadowTest {
         StructuredDdlParser current = adaptor.structuredDdlParser()
                 .orElseThrow(() -> new IllegalStateException("No structured DDL parser for " + fixture.databaseType()));
         StructuredDdlParser shadow = FullGrammerDdlParserFactory.create(
-                fixture.databaseType(),
-                defaultVersion(fixture.databaseType()));
+                FullGrammerProfileRequest.builder()
+                        .databaseType(fixture.databaseType())
+                        .configuredProfile(fixture.grammarProfile())
+                        .configuredVersion(versionFor(fixture))
+                        .configuredVersionSource(versionFor(fixture).isBlank() ? "UNKNOWN" : "CONFIG")
+                        .build(),
+                current);
         String ddl = Files.readString(fixture.inputFile());
         DdlRelationExtractionVisitor extractor = new DdlRelationExtractionVisitor();
 
@@ -113,6 +122,13 @@ class FullGrammerDdlCorrectnessShadowTest {
         };
     }
 
+    private String versionFor(Fixture fixture) {
+        if (!fixture.databaseVersion().isBlank() || !fixture.grammarProfile().isBlank()) {
+            return fixture.databaseVersion();
+        }
+        return defaultVersion(fixture.databaseType());
+    }
+
     private String defaultVersion(DatabaseType databaseType) {
         return switch (databaseType) {
             case MYSQL -> "8.0";
@@ -129,7 +145,9 @@ class FullGrammerDdlCorrectnessShadowTest {
                     values.get("id"),
                     DatabaseType.valueOf(values.get("databaseType")),
                     values.get("parserTarget"),
-                    root.resolve(values.get("input")).normalize());
+                    root.resolve(values.get("input")).normalize(),
+                    values.getOrDefault("grammarProfile", ""),
+                    values.getOrDefault("databaseVersion", ""));
         } catch (Exception exception) {
             throw new IllegalStateException("Cannot read fixture " + manifest, exception);
         }
@@ -167,6 +185,13 @@ class FullGrammerDdlCorrectnessShadowTest {
         throw new IllegalStateException("Cannot locate relation-detector workspace root");
     }
 
-    private record Fixture(String id, DatabaseType databaseType, String parserTarget, Path inputFile) {
+    private record Fixture(
+            String id,
+            DatabaseType databaseType,
+            String parserTarget,
+            Path inputFile,
+            String grammarProfile,
+            String databaseVersion
+    ) {
     }
 }
