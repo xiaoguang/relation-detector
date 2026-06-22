@@ -131,18 +131,25 @@ full-grammer module 由 `META-INF/services/com.relationdetector.core.fullgrammer
 
 ## PostgreSQL versioned correctness golden
 
-PostgreSQL 目前有四组 correctness 资产：
+PostgreSQL 目前有四组 correctness 资产。当前统计以 `fingerprints` 字段为准，不按 JSON 顶层字段数统计：
 
-| 路径 | 角色 | Parser/profile | 说明 |
-| --- | --- | --- | --- |
-| `test-fixtures/correctness/postgres` | root baseline | token-event baseline；full-grammer parity 也会覆盖 | 历史兼容基线，不移动到某个大版本目录。 |
-| `test-fixtures/correctness/postgres/v16` | strict version golden | `parserMode: full-grammer`, `grammarProfile: postgresql/16` | PostgreSQL 16.x 严格语法 golden。 |
-| `test-fixtures/correctness/postgres/v17` | strict version golden | `parserMode: full-grammer`, `grammarProfile: postgresql/17` | 在 v16 语义基础上加入 PostgreSQL 17 专属语法，例如 SQL/JSON、`JSON_TABLE`、MERGE 扩展。 |
-| `test-fixtures/correctness/postgres/v18` | strict version golden | `parserMode: full-grammer`, `grammarProfile: postgresql/18` | 在 v17 语义基础上加入 PostgreSQL 18 专属语法，例如 `RETURNING old/new`、virtual generated columns、temporal constraints。 |
+| 路径 | Fixture | Parser/profile | Fingerprints | 说明 |
+| --- | ---: | --- | ---: | --- |
+| `test-fixtures/correctness/postgres` | 66 | token-event baseline | relation 742 / lineage 52 | 历史兼容基线，不移动到某个大版本目录。 |
+| `test-fixtures/correctness/postgres/v16` | 66 | `parserMode: full-grammer`, `grammarProfile: postgresql/16` | relation 745 / lineage 37 | PostgreSQL 16.x 严格语法 golden。 |
+| `test-fixtures/correctness/postgres/v17` | 68 | `parserMode: full-grammer`, `grammarProfile: postgresql/17` | relation 748 / lineage 59 | 加入 PostgreSQL 17 专属 SQL/JSON、`JSON_TABLE`、MERGE 扩展 fixture。 |
+| `test-fixtures/correctness/postgres/v18` | 69 | `parserMode: full-grammer`, `grammarProfile: postgresql/18` | relation 748 / lineage 58 | 加入 PostgreSQL 18 `RETURNING old/new`、virtual generated column、temporal constraint fixture。 |
 
 每个版本目录都有自己的 `expected-relations.json` / `expected-lineage.json` / `expected-diagnostics.json`。版本目录不允许 silent fallback 到 token-event；profile 缺失、版本不匹配或 full-grammer hard failure 都应让对应 correctness 测试失败。
 
 版本之间的差异由 `docs/parser-audit/postgres-version-golden-diff.md` 解释。低版本相对高版本缺失的 relation / evidence / lineage 必须被分类为 `EXPECTED_VERSION_GAP`、`GRAMMAR_GAP`、`SEMANTIC_GAP` 或 `REVIEW_NEEDED`。
+
+当前对比结论：
+
+- root token-event 与 v16/v17/v18 的共同 fixture 中，versioned full-grammer 会多识别若干 CTE / EXISTS / IN / DDL evidence 关系；这些是语法结构能解释的增强，不是名字过滤。
+- v16 相对 v17 少 PostgreSQL 17 专属 fixture，并且在 `pg15` MERGE lineage 上少 9 条高版本增强血缘；这按当前 version golden 归为版本/visitor 能力差异。
+- v17 与 v18 的共同 fixture 输出一致；差异主要来自 v17 专属 SQL/JSON/MERGE fixture 与 v18 专属 DML RETURNING / temporal DDL / virtual generated column fixture。
+- 当前没有新的 `REVIEW_NEEDED` 项；如果后续出现无法用版本语法边界解释的缺失，应进入 `postgres-version-golden-diff.md`。
 
 ## 对象定义采集
 

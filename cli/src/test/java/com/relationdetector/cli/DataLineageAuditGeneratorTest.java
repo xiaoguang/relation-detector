@@ -17,11 +17,11 @@ class DataLineageAuditGeneratorTest {
         String markdown = DataLineageAuditGenerator.generate(WORKSPACE);
 
         assertTrue(markdown.contains("# Data Lineage Full Audit"));
-        assertTrue(markdown.contains("| TOTAL | 328 |"));
-        assertTrue(markdown.contains("| EXISTING_GOLD | 84 |"));
+        assertTrue(markdown.contains("| TOTAL | 385 |"));
+        assertTrue(markdown.contains("| EXISTING_GOLD | 99 |"));
         assertTrue(markdown.contains("| SUGGESTED_GOLD | 0 |"));
         assertTrue(markdown.contains("| PENDING_REVIEW | 0 |"));
-        assertTrue(markdown.contains("| NOT_APPLICABLE | 244 |"));
+        assertTrue(markdown.contains("| NOT_APPLICABLE | 286 |"));
         assertTrue(markdown.contains("| Classification | `EXISTING_GOLD` |"));
         assertTrue(markdown.contains("| Classification | `NOT_APPLICABLE` |"));
         assertTrue(markdown.contains("mysql-user-spending-left-join-update-sql"));
@@ -44,6 +44,7 @@ class DataLineageAuditGeneratorTest {
         assertTrue(markdown.contains("| Source type | `FUNCTION` |"));
         assertTrue(markdown.contains("| Reason | write statement has no physical table.column source in Data Lineage v1 |"));
         assertTrue(markdown.contains("basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql"));
+        assertTrue(markdown.contains("mysql80-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql"));
         assertTrue(markdown.contains("basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql"));
         assertTrue(markdown.contains("basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql"));
         assertTrue(markdown.contains("requires cross-statement temporary-table lineage beyond Data Lineage v1"));

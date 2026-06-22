@@ -1,0 +1,36 @@
+{
+  "fingerprints": [
+    "VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price",
+    "VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money",
+    "VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price",
+    "VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money",
+    "VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number",
+    "VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag",
+    "VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id",
+    "VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id",
+    "VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id",
+    "VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id",
+    "VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type",
+    "VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit",
+    "VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number",
+    "VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price",
+    "VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark",
+    "VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku",
+    "VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money",
+    "VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate",
+    "VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price",
+    "VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id",
+    "VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price"
+  ],
+  "forbiddenSources": [
+    "p_",
+    "v_",
+    "tmp_",
+    "temp_",
+    "jsh_temp_",
+    "CURRENT_TIMESTAMP",
+    "NOW"
+  ],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

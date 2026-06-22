@@ -8,17 +8,17 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 
 | Metric | Count |
 | --- | ---: |
-| Total correctness fixtures | 328 |
-| SQL fixtures | 271 |
-| DDL fixtures | 57 |
-| Fixtures with expected lineage | 84 |
+| Total correctness fixtures | 385 |
+| SQL fixtures | 317 |
+| DDL fixtures | 68 |
+| Fixtures with expected lineage | 99 |
 | Common directory fixtures | 2 |
-| MySQL directory fixtures | 57 |
+| MySQL directory fixtures | 114 |
 | PostgreSQL directory fixtures | 269 |
 
 | Database type | Total | SQL | DDL |
 | --- | ---: | ---: | ---: |
-| MYSQL | 59 | 48 | 11 |
+| MYSQL | 116 | 94 | 22 |
 | POSTGRESQL | 269 | 223 | 46 |
 
 ## Common Fixtures
@@ -552,6 +552,491 @@ _Preview truncated; see input file for full content._
 | Expected relations | `test-fixtures/correctness/mysql/mysql-official-special-index-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/mysql/mysql-official-special-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `$.tagIds`
+- `$.primaryName`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/functional_index.test
+-- - MySQL 8.0 Reference Manual: CREATE INDEX Statement
+-- FULLTEXT, SPATIAL, and JSON expression indexes are useful DDL parser
+-- coverage, but none of them is a relationship on its own.
+
+CREATE TABLE geo_assets (
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-basic-correctness-case-01-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/ddl/show-create-tables.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:GRAPH_CHECKPOINT.thread_id->GRAPH_THREAD.thread_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:fe_agent_message.sessionId->fe_agent_session.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL SHOW CREATE TABLE for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_01.GRAPH_CHECKPOINT
+CREATE TABLE `GRAPH_CHECKPOINT` (
+  `checkpoint_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `thread_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `node_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-basic-correctness-case-02-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `case_02` |
+| Input | `test-fixtures/mysql/basic-correctness/case-02/ddl/show-create-tables.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-02-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-02-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:GRAPH_CHECKPOINT.thread_id->GRAPH_THREAD.thread_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:fe_agent_message.sessionId->fe_agent_session.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL SHOW CREATE TABLE for basic-correctness-case-02.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_02.GRAPH_CHECKPOINT
+CREATE TABLE `GRAPH_CHECKPOINT` (
+  `checkpoint_id` varchar(36) NOT NULL,
+  `thread_id` varchar(36) NOT NULL,
+  `node_id` varchar(255) DEFAULT NULL,
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-basic-correctness-case-03-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `case_03` |
+| Input | `test-fixtures/mysql/basic-correctness/case-03/ddl/show-create-tables.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-03-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-03-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:fe_agent_message.sessionId->fe_agent_session.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:graph_checkpoint.thread_id->graph_thread.thread_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL SHOW CREATE TABLE for basic-correctness-case-03.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_03.biz_bill_item_fact
+CREATE TABLE `biz_bill_item_fact` (
+  `factId` bigint NOT NULL AUTO_INCREMENT COMMENT '事实明细ID，语义层生成',
+  `tenantId` bigint NOT NULL COMMENT '租户ID，来源: jsh_depot_head.tenant_id / jsh_depot_item.tenant_id',
+  `sourceOrderId` bigint NOT NULL COMMENT '主单ID，来源: jsh_depot_head.id',
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-basic-correctness-case-04-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `case_04` |
+| Input | `test-fixtures/mysql/basic-correctness/case-04/ddl/show-create-tables.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-04-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-04-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:act_tool_info.think_act_record_id->think_act_record.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:agent_execution_record.plan_execution_id->plan_execution_record.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dynamic_agent_tools.agent_id->dynamic_agents.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:dynamic_agents.model_id->dynamic_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:memory_plan_mappings.memory_id->dynamic_memories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:plan_execution_steps.plan_execution_id->plan_execution_record.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:think_act_record.agent_execution_record_id->agent_execution_record.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:user_input_wait_state.root_task_manager_id->root_task_manager.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:user_preferences.user_id->users.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL SHOW CREATE TABLE for basic-correctness-case-04.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_04.act_tool_info
+CREATE TABLE `act_tool_info` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `parameters` longtext COLLATE utf8mb4_unicode_ci,
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-ddl-create-table-fk-index`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `shop` |
+| Input | `test-fixtures/correctness/mysql/v8_0/ddl-create-table-fk-index/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/ddl-create-table-fk-index/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/ddl-create-table-fk-index/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE users (
+  id bigint NOT NULL,
+  email varchar(255),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_users_email (email)
+);
+
+CREATE TABLE orders (
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-alter-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-alter-index-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-alter-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-alter-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/invisible_indexes.test
+-- - MySQL 8.0 Reference Manual: CREATE INDEX Statement
+-- ALTER INDEX operations should be parsed without creating relationships.
+
+CREATE TABLE order_search_tokens (
+  token_id BIGINT NOT NULL,
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-complex-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-complex-index-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-complex-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-complex-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/functional_index.test
+-- - mysql/mysql-server mysql-test/t/invisible_indexes.test
+-- - MySQL 8.0 Reference Manual: CREATE INDEX Statement
+
+CREATE TABLE customer_identity (
+  id BIGINT NOT NULL,
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-functional-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-functional-index-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-functional-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-functional-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/functional_index.test
+-- - MySQL 8.0 Reference Manual: CREATE INDEX Statement
+
+CREATE TABLE metric_events (
+  id BIGINT NOT NULL,
+  account_id BIGINT NOT NULL,
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-index-options-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-index-options-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-index-options-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-index-options-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/create_index.test
+-- - MySQL 8.0 Reference Manual: CREATE INDEX Statement
+-- These index options are parser coverage only; they must not create FK-like
+-- relationships by themselves.
+
+CREATE TABLE search_documents (
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-invisible-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-invisible-index-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-invisible-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-invisible-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/invisible_indexes.test
+-- - MySQL 8.0 Reference Manual: CREATE INDEX Statement
+
+CREATE TABLE inventory_snapshots (
+  snapshot_id BIGINT NOT NULL,
+  warehouse_id BIGINT NOT NULL,
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-special-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-special-index-ddl/input.ddl.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-special-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-special-index-ddl/expected-diagnostics.json` |
 
 **Expected Relation Fingerprints**
 
@@ -2615,6 +3100,2145 @@ _Preview truncated; see input file for full content._
 | Expected relations | `test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+
+**Forbidden Tables**
+
+- `o_summary`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE users u
+LEFT JOIN (
+    SELECT user_id, SUM(pay_amount) AS actual_total
+    FROM orders
+    WHERE order_status = 'PAID'
+    GROUP BY user_id
+) o_summary ON u.id = o_summary.user_id
+SET
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-functions.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-functions-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-functions-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES functions for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+```
+
+### `mysql80-basic-correctness-case-01-procedure-internal-flush-buffer-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-internal-flush-buffer-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-internal-flush-buffer-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_material_current_stock.depot_id->jsh_depot_item.depot_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:jsh_material_current_stock.material_id->jsh_depot_item.material_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:jsh_material_extend.material_id->jsh_material_current_stock.material_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:jsh_material_current_stock.material_id->jsh_material.id:PROCEDURE_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:jsh_material_current_stock.depot_id->jsh_depot_item.depot_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:jsh_material_current_stock.material_id->jsh_depot_item.material_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:PROCEDURE_JOIN`
+- `FK_LIKE:jsh_depot_item.material_id->jsh_material.id:PROCEDURE_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:PROCEDURE_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-init-yearly-weights-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-init-yearly-weights-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_material.category_id->jsh_temp_category_affinity.source_cat_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:jsh_material_extend.material_id->jsh_material.id:PROCEDURE_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
+- `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
+- `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_orga_user_rel.orga_id->jsh_temp_org_pdf.org_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:CUMULATIVE:h.hour_val,h.h_cdf->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id,jsh_orga_user_rel.delete_flag->jsh_temp_mock_plan.user_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-sp-fill-biz-bill-item-fact-new-with-progress-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-sp-fill-biz-bill-item-fact-new-with-progress-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-sp-fill-biz-bill-item-fact-new-with-progress-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-sp-fill-biz-bill-item-fact-new-with-progress-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_head.number->jsh_depot_head.link_number:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:jsh_depot_head.tenant_id->jsh_depot_item.tenant_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:jsh_orga_user_rel.tenant_id->jsh_depot_head.tenant_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:jsh_orga_user_rel.user_id->jsh_depot_head.creator:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:jsh_supplier.tenant_id->jsh_depot_head.tenant_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:jsh_depot_head.organ_id->jsh_supplier.id:PROCEDURE_JOIN`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:PROCEDURE_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_apply->biz_bill_item_fact_new.purchaseApplyLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_number->biz_bill_item_fact_new.purchaseOrderLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.another_depot_id->biz_bill_item_fact_new.inWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.depot_id->biz_bill_item_fact_new.outWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.inventoryDirection`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.salesDirection`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.customerId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.memberId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.supplierId`
+- `VALUE:AGGREGATE:jsh_orga_user_rel.orga_id->biz_bill_item_fact_new.storeId`
+- `VALUE:COALESCE:jsh_depot_item.tax_last_money,jsh_depot_item.all_price->biz_bill_item_fact_new.amount`
+- `VALUE:DIRECT:jsh_depot_head.creator->biz_bill_item_fact_new.creator`
+- `VALUE:DIRECT:jsh_depot_head.id->biz_bill_item_fact_new.sourceOrderId`
+- `VALUE:DIRECT:jsh_depot_head.number->biz_bill_item_fact_new.sourceOrderNo`
+- `VALUE:DIRECT:jsh_depot_head.oper_time->biz_bill_item_fact_new.businessDate`
+- `VALUE:DIRECT:jsh_depot_head.sub_type->biz_bill_item_fact_new.sourceSubType`
+- `VALUE:DIRECT:jsh_depot_head.type->biz_bill_item_fact_new.sourceType`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->biz_bill_item_fact_new.warehouseId`
+- `VALUE:DIRECT:jsh_depot_item.id->biz_bill_item_fact_new.sourceOrderItemId`
+- `VALUE:DIRECT:jsh_depot_item.material_id->biz_bill_item_fact_new.productId`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->biz_bill_item_fact_new.quantity`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->biz_bill_item_fact_new.tenantId`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-basic-correctness-case-01-procedure-sp-sync-retail-out-fact-batch-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-sp-sync-retail-out-fact-batch-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-sp-sync-retail-out-fact-batch-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:PROCEDURE_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-basic-correctness-case-01-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Schema | `case_01` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/performance-schema-statements.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL statement log sources for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+```
+
+### `mysql80-mysql-basic-correctness-case-02-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Schema | `case_02` |
+| Input | `test-fixtures/mysql/basic-correctness/case-02/sql/performance-schema-statements.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-02-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-02-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL statement log sources for basic-correctness-case-02.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: performance_schema.events_statements_history
+/* ApplicationName=DBeaver 26.0.3 - Metadata */ SELECT DISTINCT A.REFERENCED_TABLE_SCHEMA AS PKTABLE_CAT,NULL AS PKTABLE_SCHEM, A.REFERENCED_TABLE_NAME AS PKTABLE_NAME, A.REFERENCED_COLUMN_NAME AS PKCOLUMN_NAME, A.TABLE_SCHEMA AS FKTABLE_CAT, NULL AS FKTABLE_SCHEM, A.TABLE_NAME AS FKTABLE_NAME, A.COLUMN_NAME AS FKCOLUMN_NAME, A.ORDINAL_POSITION AS KEY_SEQ,CASE WHEN R.UPDATE_RULE='CASCADE' THEN 0 WHEN R.UPDATE_RULE='SET NULL' THEN 2 WHEN R.UPDATE_RULE='SET DEFAULT' THEN 4 WHEN R.UPDATE_RULE='RESTRICT' THEN 1 WHEN R.UPDATE_RULE='NO ACTION' THEN 1 ELSE 1 END  AS UPDATE_RULE,CASE WHE
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-basic-correctness-case-03-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Schema | `case_03` |
+| Input | `test-fixtures/mysql/basic-correctness/case-03/sql/performance-schema-statements.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-03-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-03-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL statement log sources for basic-correctness-case-03.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: performance_schema.events_statements_history
+/* ApplicationName=DBeaver 26.0.3 - Metadata */ SELECT DISTINCT A.REFERENCED_TABLE_SCHEMA AS PKTABLE_CAT,NULL AS PKTABLE_SCHEM, A.REFERENCED_TABLE_NAME AS PKTABLE_NAME, A.REFERENCED_COLUMN_NAME AS PKCOLUMN_NAME, A.TABLE_SCHEMA AS FKTABLE_CAT, NULL AS FKTABLE_SCHEM, A.TABLE_NAME AS FKTABLE_NAME, A.COLUMN_NAME AS FKCOLUMN_NAME, A.ORDINAL_POSITION AS KEY_SEQ,CASE WHEN R.UPDATE_RULE='CASCADE' THEN 0 WHEN R.UPDATE_RULE='SET NULL' THEN 2 WHEN R.UPDATE_RULE='SET DEFAULT' THEN 4 WHEN R.UPDATE_RULE='RESTRICT' THEN 1 WHEN R.UPDATE_RULE='NO ACTION' THEN 1 ELSE 1 END  AS UPDATE_RULE,CASE WHE
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-basic-correctness-case-04-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Schema | `case_04` |
+| Input | `test-fixtures/mysql/basic-correctness/case-04/sql/performance-schema-statements.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-04-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-04-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL statement log sources for basic-correctness-case-04.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: performance_schema.events_statements_history
+/* ApplicationName=DBeaver 26.0.3 - Metadata */ SELECT DISTINCT A.REFERENCED_TABLE_SCHEMA AS PKTABLE_CAT,NULL AS PKTABLE_SCHEM, A.REFERENCED_TABLE_NAME AS PKTABLE_NAME, A.REFERENCED_COLUMN_NAME AS PKCOLUMN_NAME, A.TABLE_SCHEMA AS FKTABLE_CAT, NULL AS FKTABLE_SCHEM, A.TABLE_NAME AS FKTABLE_NAME, A.COLUMN_NAME AS FKCOLUMN_NAME, A.ORDINAL_POSITION AS KEY_SEQ,CASE WHEN R.UPDATE_RULE='CASCADE' THEN 0 WHEN R.UPDATE_RULE='SET NULL' THEN 2 WHEN R.UPDATE_RULE='SET DEFAULT' THEN 4 WHEN R.UPDATE_RULE='RESTRICT' THEN 1 WHEN R.UPDATE_RULE='NO ACTION' THEN 1 ELSE 1 END  AS UPDATE_RULE,CASE WHE
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-business-cross-border-reconciliation-procedure-comma-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `finance` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-business-cross-border-reconciliation-procedure-comma-subquery-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-business-cross-border-reconciliation-procedure-comma-subquery-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-business-cross-border-reconciliation-procedure-comma-subquery-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:master_skus.native_currency->currency_exchange_rates.source_currency:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:orders.customer_id->transaction_ledgers.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:orders.customer_id->customer_profiles.id:PROCEDURE_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `memory_input_cargo`
+- `fx_valuation`
+- `reconciliation_gap_analysis`
+- `customer_risk_analytics`
+- `jt`
+- `mic`
+- `fx`
+- `rga`
+- `cra`
+- `db_o`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL business procedure companion to mysql-business-cross-border-reconciliation-procedure-sql.
+-- INNER rowsets are rewritten as comma rowsets. Non-INNER semantics are represented with
+-- correlated scalar subqueries / EXISTS instead of forced comma joins.
+-- relation-detector-fixture-source: PROCEDURE:finance.sp_cross_border_reconciliation_engine_comma_subquery
+CREATE PROCEDURE sp_cross_border_reconciliation_engine_comma_subquery(
+    IN p_input_matrix_json JSON,
+    IN p_target_currency VARCHAR(10),
+    IN p_risk_threshold NUMERIC(5,2)
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-business-cross-border-reconciliation-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `finance` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-business-cross-border-reconciliation-procedure-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-business-cross-border-reconciliation-procedure-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-business-cross-border-reconciliation-procedure-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:master_skus.native_currency->currency_exchange_rates.source_currency:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:orders.customer_id->transaction_ledgers.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:orders.customer_id->customer_profiles.id:PROCEDURE_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `memory_input_cargo`
+- `fx_valuation`
+- `reconciliation_gap_analysis`
+- `customer_risk_analytics`
+- `jt`
+- `mic`
+- `fx`
+- `rga`
+- `cra`
+- `db_o`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL business procedure case: JSON_TABLE input, CTEs, simulated FULL OUTER JOIN
+-- via LEFT/RIGHT UNION ALL, correlated subquery, and final comma rowset filtering.
+-- Parameter JSON, literal filters, dynamic result set columns, and Data Lineage are
+-- semantic references only; formal relationship gold records physical table relationships.
+-- relation-detector-fixture-source: PROCEDURE:finance.sp_cross_border_reconciliation_engine
+CREATE PROCEDURE sp_cross_border_reconciliation_engine(
+    IN p_input_matrix_json JSON,
+    IN p_target_currency VARCHAR(10),
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-business-financial-asset-wash-procedure-comma-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `finance` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-business-financial-asset-wash-procedure-comma-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-business-financial-asset-wash-procedure-comma-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-business-financial-asset-wash-procedure-comma-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-business-financial-asset-wash-procedure-comma-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:account_balances.user_id->users.id:PROCEDURE_JOIN`
+- `FK_LIKE:transaction_ledgers.user_id->users.id:PROCEDURE_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+
+**Forbidden Tables**
+
+- `memory_input_cargo`
+- `user_financial_snapshot`
+- `dormant_risk_scores`
+- `drs_engine`
+- `jt`
+- `snap`
+- `snap_main`
+- `drs`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL business procedure case equivalent to mysql-business-financial-asset-wash-procedure-sql.
+-- INNER JOIN portions are rewritten as comma rowsets plus WHERE equality predicates.
+-- Expected fingerprints must match mysql-business-financial-asset-wash-procedure-sql.
+-- relation-detector-fixture-source: PROCEDURE:finance.sp_financial_asset_wash_update_comma
+CREATE PROCEDURE sp_financial_asset_wash_update_comma(
+    IN p_input_ledger_json JSON,
+    IN p_max_limit_cap NUMERIC(16,4)
+)
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-business-financial-asset-wash-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `finance` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-business-financial-asset-wash-procedure-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-business-financial-asset-wash-procedure-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-business-financial-asset-wash-procedure-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-business-financial-asset-wash-procedure-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:account_balances.user_id->users.id:PROCEDURE_JOIN`
+- `FK_LIKE:transaction_ledgers.user_id->users.id:PROCEDURE_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+
+**Forbidden Tables**
+
+- `memory_input_cargo`
+- `user_financial_snapshot`
+- `dormant_risk_scores`
+- `drs_engine`
+- `jt`
+- `snap`
+- `snap_main`
+- `drs`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL business procedure case: JSON_TABLE input, nested CTEs, window functions,
+-- multi-table UPDATE, and a comma rowset against policy configuration.
+-- Parameter JSON and Data Lineage are semantic references only; formal relationship
+-- gold records physical table relationships.
+-- relation-detector-fixture-source: PROCEDURE:finance.sp_financial_asset_wash_update
+CREATE PROCEDURE sp_financial_asset_wash_update(
+    IN p_input_ledger_json JSON,
+    IN p_max_limit_cap NUMERIC(16,4)
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-commerce-promotion-update-comma-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `commerce` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-commerce-promotion-update-comma-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-commerce-promotion-update-comma-join-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-commerce-promotion-update-comma-join-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-commerce-promotion-update-comma-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:products.category_id->discount_policies.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:products.shop_id->shops.id:SQL_LOG_JOIN`
+- `FK_LIKE:shops.merchant_id->merchants.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE products p, shops s, merchants m, discount_policies dp
+SET
+    p.promo_price = p.original_price * 0.90,
+    p.is_on_sale = 1,
+    p.updated_at = NOW()
+WHERE
+    p.shop_id = s.id
+    AND s.merchant_id = m.id
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-commerce-promotion-update-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `commerce` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-commerce-promotion-update-explicit-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-commerce-promotion-update-explicit-join-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-commerce-promotion-update-explicit-join-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-commerce-promotion-update-explicit-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:products.category_id->discount_policies.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:products.shop_id->shops.id:SQL_LOG_JOIN`
+- `FK_LIKE:shops.merchant_id->merchants.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE products p
+INNER JOIN shops s ON p.shop_id = s.id
+INNER JOIN merchants m ON s.merchant_id = m.id
+INNER JOIN discount_policies dp ON p.category_id = dp.category_id
+SET
+    p.promo_price = p.original_price * 0.90,
+    p.is_on_sale = 1,
+    p.updated_at = NOW()
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-invalid-orders-delete-comma-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `commerce` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-invalid-orders-delete-comma-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-invalid-orders-delete-comma-join-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-invalid-orders-delete-comma-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `o`
+- `oi`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE o, oi
+FROM orders o, order_items oi, users u
+WHERE
+    o.id = oi.order_id
+    AND o.user_id = u.id
+    AND o.payment_status = 'UNPAID'
+    AND o.created_at < NOW() - INTERVAL 7 DAY
+    AND u.risk_level = 'HIGH';
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-invalid-orders-delete-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `commerce` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-invalid-orders-delete-explicit-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-invalid-orders-delete-explicit-join-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-invalid-orders-delete-explicit-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `o`
+- `oi`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE o, oi
+FROM orders o
+INNER JOIN order_items oi ON o.id = oi.order_id
+INNER JOIN users u ON o.user_id = u.id
+WHERE
+    o.payment_status = 'UNPAID'
+    AND o.created_at < NOW() - INTERVAL 7 DAY
+    AND u.risk_level = 'HIGH';
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-cte-dml-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-cte-dml-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-cte-dml-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-official-cte-dml-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-cte-dml-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.audit_account_id->accounts.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+- `FK_LIKE:users.account_id->accounts.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:accounts.id->orders.audit_account_id`
+
+**Forbidden Tables**
+
+- `candidate_orders`
+- `candidate_accounts`
+- `removable_orders`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/include/with_non_recursive.inc
+-- - MySQL 8.0 Reference Manual: WITH (Common Table Expressions), UPDATE, DELETE
+-- CTE rowsets are logical rowsets. They must not be emitted as physical tables
+-- even when the CTE feeds UPDATE or DELETE.
+
+WITH candidate_orders(order_id, user_id) AS (
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-cte-nested-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-cte-nested-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-cte-nested-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-cte-nested-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:customers.account_id->accounts.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.region_id->regions.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_approvals.purchase_order_id->purchase_orders.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `recent_orders`
+- `regional_orders`
+- `customer_orders`
+- `supplier_orders`
+- `approved_supplier_orders`
+- `audit`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/include/with_non_recursive.inc
+-- - MySQL 8.0 Reference Manual: WITH (Common Table Expressions)
+-- The case focuses on CTE scope and lineage. CTE names must not be emitted as
+-- physical tables.
+
+WITH recent_orders AS (
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-derived-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-derived-subquery-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-derived-subquery-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-derived-subquery-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:account_logs.account_id->accounts.id:SQL_LOG_JOIN`
+- `FK_LIKE:log_permissions.log_id->account_logs.id:SQL_LOG_EXISTS`
+- `FK_LIKE:material_places.material_id->materials.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.order_id->orders.id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `d`
+- `latest`
+- `outer_order`
+- `nested_customer`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/derived.test
+-- - mysql/mysql-server mysql-test/t/subquery_exists.test
+-- - MySQL 8.0 Reference Manual: Subqueries and Derived Tables
+-- Derived aliases must not be emitted as physical tables.
+
+SELECT m2.id, d.pla_id
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-join-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-join-edge-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-join-edge-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-join-edge-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `status_code`
+- `idx_orders_user`
+- `PRIMARY`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/join.test
+-- - MySQL 8.0 Reference Manual: JOIN Clause
+-- This file focuses on MySQL-specific join forms that are easy to regress:
+-- STRAIGHT_JOIN, NATURAL JOIN, nested parenthesized joins, index hints, and
+-- ODBC escaped outer joins.
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-join-matrix-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-join-matrix-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-join-matrix-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-join-matrix-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:orders.order_id->order_audit.order_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:invoices.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:invoices.payment_id->payments.id:SQL_LOG_JOIN`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:returns.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.carrier_id->carriers.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `order_id`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/join.test
+-- - MySQL 8.0 Reference Manual: JOIN Clause
+-- This file keeps only standalone SQL statements that exercise relation extraction.
+
+SELECT o.id, oi.order_id
+FROM orders AS o
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-lateral-derived-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-lateral-derived-edge-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-lateral-derived-edge-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-lateral-derived-edge-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:customers.account_id->accounts.id:SQL_LOG_JOIN`
+- `FK_LIKE:line_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:line_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `projected`
+- `outer_order`
+- `customer_projection`
+- `nested_projection`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/derived.test
+-- - MySQL 8.0 Reference Manual: Derived Tables and Lateral Derived Tables
+-- Derived and lateral aliases are logical rowsets and must not be emitted as
+-- physical tables.
+
+SELECT o.id, projected.product_id
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-recursive-cte-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-recursive-cte-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-recursive-cte-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-recursive-cte-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.manager_id->employees.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `employee_tree`
+- `category_path`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/include/with_recursive.inc
+-- - MySQL 8.0 Reference Manual: WITH (Common Table Expressions)
+-- Recursive CTE rowsets are logical rowsets; they must not be emitted as
+-- physical tables.
+
+WITH RECURSIVE employee_tree AS (
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-official-subquery-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `official_mysql` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-subquery-edge-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-official-subquery-edge-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-official-subquery-edge-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:blocked_carriers.region_id->shipments.region_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:customers.account_id->accounts.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:orders.region_id->customers.region_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:payments.order_id->orders.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/subquery_exists.test
+-- - MySQL 8.0 Reference Manual: Subqueries
+-- This fixture stresses row/tuple subqueries, ANY/SOME/ALL, correlated
+-- subqueries, and scalar subquery equality.
+
+SELECT o.id
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-orphan-reviews-delete-left-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `commerce` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-orphan-reviews-delete-left-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-orphan-reviews-delete-left-join-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-orphan-reviews-delete-left-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:product_reviews.product_id->products.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `pr`
+- `p`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE pr
+FROM product_reviews pr
+LEFT JOIN products p ON pr.product_id = p.id
+WHERE
+    p.id IS NULL
+    AND pr.created_at < NOW() - INTERVAL 1 MONTH;
+```
+
+### `mysql80-mysql-orphan-reviews-delete-not-exists-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `commerce` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-orphan-reviews-delete-not-exists-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-orphan-reviews-delete-not-exists-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-orphan-reviews-delete-not-exists-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:product_reviews.product_id->products.id:SQL_LOG_EXISTS`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `pr`
+- `p`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE pr
+FROM product_reviews pr
+WHERE
+    NOT EXISTS (
+        SELECT 1
+        FROM products p
+        WHERE p.id = pr.product_id
+    )
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-sql-cte-lateral`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `shop` |
+| Input | `test-fixtures/correctness/mysql/v8_0/sql-cte-lateral/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/sql-cte-lateral/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/sql-cte-lateral/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `recent_orders`
+- `buyer_projection`
+- `lateral`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+WITH recent_orders AS (
+  SELECT o.id AS order_id, o.user_id
+  FROM `orders` AS o
+  WHERE o.created_at >= CURRENT_DATE - INTERVAL 7 DAY
+)
+SELECT ro.order_id, u.email
+FROM recent_orders ro
+JOIN LATERAL (
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-sql-delete-left-join`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `shop` |
+| Input | `test-fixtures/correctness/mysql/v8_0/sql-delete-left-join/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/sql-delete-left-join/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/sql-delete-left-join/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE FROM o
+USING orders AS o
+LEFT JOIN users AS u ON o.user_id = u.id
+WHERE u.id IS NULL;
+```
+
+### `mysql80-mysql-sql-multi-table-update`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `shop` |
+| Input | `test-fixtures/correctness/mysql/v8_0/sql-multi-table-update/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/sql-multi-table-update/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/sql-multi-table-update/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+- `FK_LIKE:users.account_id->accounts.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE orders o, users u
+JOIN accounts a ON u.account_id = a.id
+SET o.reviewed_at = CURRENT_TIMESTAMP
+WHERE o.user_id = u.id
+  AND o.status = 'PAID'
+  AND a.closed_at IS NULL;
+```
+
+### `mysql80-mysql-sql-system-log-noise`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Schema | `shop` |
+| Input | `test-fixtures/correctness/mysql/v8_0/sql-system-log-noise/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/sql-system-log-noise/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/sql-system-log-noise/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- `information_schema`
+- `KEY_COLUMN_USAGE`
+- `TABLE_CONSTRAINTS`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT kcu.TABLE_SCHEMA, kcu.TABLE_NAME, tc.CONSTRAINT_TYPE
+FROM information_schema.KEY_COLUMN_USAGE kcu
+JOIN information_schema.TABLE_CONSTRAINTS tc
+  ON kcu.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+ AND kcu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME;
+```
+
+### `mysql80-mysql-supply-chain-update-comma-and-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `supply_chain` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-supply-chain-update-comma-and-subquery-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-supply-chain-update-comma-and-subquery-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-supply-chain-update-comma-and-subquery-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-supply-chain-update-comma-and-subquery-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:warehouse_inventory.primary_supplier_id->supplier_manifests.supplier_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouse_inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouse_inventory.product_id->supplier_manifests.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customer_profiles.id:SQL_LOG_JOIN`
+- `FK_LIKE:warehouse_inventory.bin_id->bin_locations.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.product_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,supplier_manifests.manifest_id,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+
+**Forbidden Tables**
+
+- `latest_orders`
+- `sm`
+- `ranking`
+- `avg_cost`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE warehouse_inventory wi,
+       bin_locations bl,
+       order_items oi,
+       (
+           SELECT
+               o.id AS order_id,
+               o.customer_id,
+               c.risk_score,
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-supply-chain-update-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `supply_chain` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-supply-chain-update-explicit-join-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-supply-chain-update-explicit-join-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-supply-chain-update-explicit-join-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-supply-chain-update-explicit-join-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:warehouse_inventory.primary_supplier_id->supplier_manifests.supplier_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouse_inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouse_inventory.product_id->supplier_manifests.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customer_profiles.id:SQL_LOG_JOIN`
+- `FK_LIKE:warehouse_inventory.bin_id->bin_locations.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+
+**Forbidden Tables**
+
+- `latest_orders`
+- `sm`
+- `ranking`
+- `avg_cost`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE warehouse_inventory wi
+INNER JOIN bin_locations bl ON wi.bin_id = bl.id AND bl.zone_type = 'PICKING'
+INNER JOIN order_items oi ON wi.product_id = oi.product_id
+INNER JOIN (
+    SELECT
+        o.id AS order_id,
+        o.customer_id,
+        c.risk_score,
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-user-spending-comma-join-update-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `commerce` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-user-spending-comma-join-update-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-user-spending-comma-join-update-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-user-spending-comma-join-update-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-user-spending-comma-join-update-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+
+**Forbidden Tables**
+
+- `o_summary`
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE users u,
+(
+    SELECT user_id, SUM(pay_amount) AS actual_total
+    FROM orders
+    WHERE order_status = 'PAID'
+    GROUP BY user_id
+) o_summary
+SET
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-mysql-user-spending-left-join-update-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `commerce` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-user-spending-left-join-update-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql-user-spending-left-join-update-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-user-spending-left-join-update-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql-user-spending-left-join-update-sql/expected-diagnostics.json` |
 
 **Expected Relation Fingerprints**
 
@@ -9660,7 +12284,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:pg14_room_bookings.room_id->pg14_room_bookings.p_room_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- None
 
 **Expected Data Lineage Fingerprints**
 
@@ -14168,7 +16792,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:pg14_room_bookings.room_id->pg14_room_bookings.p_room_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- None
 
 **Expected Data Lineage Fingerprints**
 
@@ -16811,7 +19435,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:pg14_room_bookings.room_id->pg14_room_bookings.p_room_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- None
 
 **Expected Data Lineage Fingerprints**
 

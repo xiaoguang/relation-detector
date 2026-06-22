@@ -1,0 +1,11 @@
+id: mysql80-mysql-basic-correctness-case-02-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: mysql/8.0
+databaseVersion: 8.0
+sourceType: NATIVE_LOG
+schema: case_02
+input: ../../../../mysql/basic-correctness/case-02/sql/performance-schema-statements.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

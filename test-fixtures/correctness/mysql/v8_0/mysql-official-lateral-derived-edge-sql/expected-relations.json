@@ -1,0 +1,14 @@
+{
+  "fingerprints": [
+    "FK_LIKE:customers.account_id->accounts.id:SQL_LOG_JOIN",
+    "FK_LIKE:line_items.order_id->orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:line_items.product_id->products.id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": [
+    "projected",
+    "outer_order",
+    "customer_projection",
+    "nested_projection"
+  ]
+}

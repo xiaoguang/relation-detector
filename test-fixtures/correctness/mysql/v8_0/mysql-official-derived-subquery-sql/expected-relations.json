@@ -1,0 +1,16 @@
+{
+  "fingerprints": [
+    "FK_LIKE:account_logs.account_id->accounts.id:SQL_LOG_JOIN",
+    "FK_LIKE:log_permissions.log_id->account_logs.id:SQL_LOG_EXISTS",
+    "FK_LIKE:material_places.material_id->materials.id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
+    "FK_LIKE:shipments.customer_id->customers.id:SQL_LOG_JOIN",
+    "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_SUBQUERY_IN"
+  ],
+  "forbiddenTables": [
+    "d",
+    "latest",
+    "outer_order",
+    "nested_customer"
+  ]
+}

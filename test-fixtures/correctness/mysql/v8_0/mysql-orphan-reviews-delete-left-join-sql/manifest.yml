@@ -1,0 +1,11 @@
+id: mysql80-mysql-orphan-reviews-delete-left-join-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: mysql/8.0
+databaseVersion: 8.0
+sourceType: PLAIN_SQL
+schema: commerce
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

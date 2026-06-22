@@ -31,6 +31,7 @@
 | confidence / merger / output | `RelationshipMerger`, `ConfidenceCalculator`, `JsonResultWriter` | `phase-02`, `phase-08` | `ConfidenceScoringExamplesTest`, `RelationshipMergerEvidenceAggregationTest`, `JsonResultWriterEvidenceOutputTest`, `CliEndToEndGoldenTest` | MATCHED | Data Lineage confidence 不参与 relationship confidence；JSON schema 未改变。 |
 | correctness fixture / generated reports | `CorrectnessFixtureRunnerTest`, `CorrectnessSummaryGeneratorTest`, `DataLineageAuditGeneratorTest` | `test-assets-map`, `code-implementation-guide` | 同名测试 | DOC_UPDATED | correctness fixture 是主 golden；generated summary/audit 是 Java 程序生成，不调用大模型。 |
 | PostgreSQL versioned golden | `test-fixtures/correctness/postgres/v16|v17|v18`, PostgreSQL `FullGrammerDialectModule` | `phase-05 PostgreSQL versioned correctness golden`, `phase-06 PostgreSQL 版本化 correctness` | `CorrectnessFixtureRunnerTest` with version filters, `FullGrammerCorrectnessShadowTest` | DOC_UPDATED | root `postgres` 是历史兼容 baseline；`v16`、`v17`、`v18` 是严格 full-grammer version golden，不存在 `postgres/v1` 这个版本。 |
+| MySQL versioned golden | `test-fixtures/correctness/mysql/v8_0`, MySQL `FullGrammerDialectModule` | `phase-04 Correctness 与 golden 状态`, `phase-06 MySQL correctness 命名约定` | `CorrectnessFixtureRunnerTest`, `FullGrammerCorrectnessShadowTest`, `FullGrammerDdlCorrectnessShadowTest` | DOC_UPDATED | root `mysql` 是 token-event baseline；`mysql/v8_0` 是严格 MySQL 8.0 full-grammer version golden。 |
 | 代码结构注释 | `**/package-info.java`, production class/method Javadocs | `phase-06 代码结构注释索引`, `code-implementation-guide` | compile + semantic tests | DOC_UPDATED | 注释用于说明职责边界，不作为结构守卫测试；后续新增包/关键类需同步文档。 |
 
 ## 已知实现事实
@@ -39,7 +40,7 @@
 - `CorrectnessFixtureRunnerTest` 为避免 warning 计数污染，lineage-only structural parse 使用 null context。这是测试实现细节，不影响正式 CLI / ScanEngine 链路。
 - 目录、命名、迁移过程检查已从默认测试入口移除。后续如需审查旧命名残留，按 `docs/test-assets-map.md` 中的可选 `rg` 命令手工执行。
 - `SqlGrammarProfileRegistry` 中的版本字符串解析会使用字符串/正则处理配置值；这不属于 SQL/DDL 结构解析。SQL/DDL relationship 和 lineage 不能依赖特殊表名/列名过滤。
-- MySQL 8.0 full-grammer 当前通过 root MySQL correctness + full-grammer parity 验收，还没有独立 `test-fixtures/correctness/mysql/v8_0` versioned golden。若未来需要 MySQL 严格版本证明，应新增版本目录和独立 golden。
+- MySQL 8.0 full-grammer 当前已有独立 `test-fixtures/correctness/mysql/v8_0` versioned golden。root MySQL correctness 仍是 token-event baseline；两者都必须保持独立，不能互相覆盖。
 
 ## 需要后续审视的非行为差异
 

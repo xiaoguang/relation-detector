@@ -534,7 +534,7 @@ public abstract class FullGrammerExpressionAnalyzer {
                 || normalized.equals("current_timestamp");
     }
 
-    private boolean isNonColumnIdentifier(String value) {
+    public boolean isNonColumnIdentifier(String value) {
         return nonColumnIdentifiers.contains(cleanIdentifier(value).toLowerCase(Locale.ROOT));
     }
 

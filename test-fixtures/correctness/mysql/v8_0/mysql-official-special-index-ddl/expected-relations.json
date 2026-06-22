@@ -1,0 +1,7 @@
+{
+  "fingerprints": [],
+  "forbiddenTables": [
+    "$.tagIds",
+    "$.primaryName"
+  ]
+}

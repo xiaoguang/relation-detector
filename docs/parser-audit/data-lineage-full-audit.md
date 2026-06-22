@@ -8,11 +8,11 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 
 | Classification | Count |
 | --- | ---: |
-| TOTAL | 328 |
-| EXISTING_GOLD | 84 |
+| TOTAL | 385 |
+| EXISTING_GOLD | 99 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 244 |
+| NOT_APPLICABLE | 286 |
 
 ## `mysql-basic-correctness-case-01-ddl`
 
@@ -354,6 +354,369 @@ CREATE TABLE inventory_snapshots (
 | Parser target | `DDL` |
 | Source type | `PLAIN_SQL` |
 | Input | `test-fixtures/correctness/mysql/mysql-official-special-index-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/functional_index.test
+-- - MySQL 8.0 Reference Manual: CREATE INDEX Statement
+-- FULLTEXT, SPATIAL, and JSON expression indexes are useful DDL parser
+-- coverage, but none of them is a relationship on its own.
+
+CREATE TABLE geo_assets (
+```
+
+## `mysql80-mysql-basic-correctness-case-01-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/ddl/show-create-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL SHOW CREATE TABLE for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_01.GRAPH_CHECKPOINT
+CREATE TABLE `GRAPH_CHECKPOINT` (
+  `checkpoint_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `thread_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `node_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+```
+
+## `mysql80-mysql-basic-correctness-case-02-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-02/ddl/show-create-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL SHOW CREATE TABLE for basic-correctness-case-02.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_02.GRAPH_CHECKPOINT
+CREATE TABLE `GRAPH_CHECKPOINT` (
+  `checkpoint_id` varchar(36) NOT NULL,
+  `thread_id` varchar(36) NOT NULL,
+  `node_id` varchar(255) DEFAULT NULL,
+```
+
+## `mysql80-mysql-basic-correctness-case-03-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-03/ddl/show-create-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL SHOW CREATE TABLE for basic-correctness-case-03.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_03.biz_bill_item_fact
+CREATE TABLE `biz_bill_item_fact` (
+  `factId` bigint NOT NULL AUTO_INCREMENT COMMENT '事实明细ID，语义层生成',
+  `tenantId` bigint NOT NULL COMMENT '租户ID，来源: jsh_depot_head.tenant_id / jsh_depot_item.tenant_id',
+  `sourceOrderId` bigint NOT NULL COMMENT '主单ID，来源: jsh_depot_head.id',
+```
+
+## `mysql80-mysql-basic-correctness-case-04-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-04/ddl/show-create-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL SHOW CREATE TABLE for basic-correctness-case-04.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_04.act_tool_info
+CREATE TABLE `act_tool_info` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `parameters` longtext COLLATE utf8mb4_unicode_ci,
+```
+
+## `mysql80-mysql-ddl-create-table-fk-index`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/mysql/v8_0/ddl-create-table-fk-index/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE users (
+  id bigint NOT NULL,
+  email varchar(255),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_users_email (email)
+);
+
+CREATE TABLE orders (
+```
+
+## `mysql80-mysql-official-alter-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-alter-index-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/invisible_indexes.test
+-- - MySQL 8.0 Reference Manual: CREATE INDEX Statement
+-- ALTER INDEX operations should be parsed without creating relationships.
+
+CREATE TABLE order_search_tokens (
+  token_id BIGINT NOT NULL,
+```
+
+## `mysql80-mysql-official-complex-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-complex-index-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/functional_index.test
+-- - mysql/mysql-server mysql-test/t/invisible_indexes.test
+-- - MySQL 8.0 Reference Manual: CREATE INDEX Statement
+
+CREATE TABLE customer_identity (
+  id BIGINT NOT NULL,
+```
+
+## `mysql80-mysql-official-functional-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-functional-index-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/functional_index.test
+-- - MySQL 8.0 Reference Manual: CREATE INDEX Statement
+
+CREATE TABLE metric_events (
+  id BIGINT NOT NULL,
+  account_id BIGINT NOT NULL,
+```
+
+## `mysql80-mysql-official-index-options-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-index-options-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/create_index.test
+-- - MySQL 8.0 Reference Manual: CREATE INDEX Statement
+-- These index options are parser coverage only; they must not create FK-like
+-- relationships by themselves.
+
+CREATE TABLE search_documents (
+```
+
+## `mysql80-mysql-official-invisible-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-invisible-index-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/invisible_indexes.test
+-- - MySQL 8.0 Reference Manual: CREATE INDEX Statement
+
+CREATE TABLE inventory_snapshots (
+  snapshot_id BIGINT NOT NULL,
+  warehouse_id BIGINT NOT NULL,
+```
+
+## `mysql80-mysql-official-special-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-special-index-ddl/input.ddl.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -1907,6 +2270,1571 @@ SET
 | Source type | `PLAIN_SQL` |
 | Input | `test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/input.sql` |
 | Expected lineage | `test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+
+**Extractor Candidate Fingerprints**
+
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+
+**Input Preview**
+
+```sql
+UPDATE users u
+LEFT JOIN (
+    SELECT user_id, SUM(pay_amount) AS actual_total
+    FROM orders
+    WHERE order_status = 'PAID'
+    GROUP BY user_id
+) o_summary ON u.id = o_summary.user_id
+SET
+```
+
+## `mysql80-basic-correctness-case-01-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES functions for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+```
+
+## `mysql80-basic-correctness-case-01-procedure-internal-flush-buffer-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
+- `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
+- `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
+
+**Extractor Candidate Fingerprints**
+
+- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
+- `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
+- `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:CUMULATIVE:h.hour_val,h.h_cdf->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id,jsh_orga_user_rel.delete_flag->jsh_temp_mock_plan.user_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-sp-fill-biz-bill-item-fact-new-with-progress-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-sp-fill-biz-bill-item-fact-new-with-progress-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_apply->biz_bill_item_fact_new.purchaseApplyLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_number->biz_bill_item_fact_new.purchaseOrderLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.another_depot_id->biz_bill_item_fact_new.inWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.depot_id->biz_bill_item_fact_new.outWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.inventoryDirection`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.salesDirection`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.customerId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.memberId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.supplierId`
+- `VALUE:AGGREGATE:jsh_orga_user_rel.orga_id->biz_bill_item_fact_new.storeId`
+- `VALUE:COALESCE:jsh_depot_item.tax_last_money,jsh_depot_item.all_price->biz_bill_item_fact_new.amount`
+- `VALUE:DIRECT:jsh_depot_head.creator->biz_bill_item_fact_new.creator`
+- `VALUE:DIRECT:jsh_depot_head.id->biz_bill_item_fact_new.sourceOrderId`
+- `VALUE:DIRECT:jsh_depot_head.number->biz_bill_item_fact_new.sourceOrderNo`
+- `VALUE:DIRECT:jsh_depot_head.oper_time->biz_bill_item_fact_new.businessDate`
+- `VALUE:DIRECT:jsh_depot_head.sub_type->biz_bill_item_fact_new.sourceSubType`
+- `VALUE:DIRECT:jsh_depot_head.type->biz_bill_item_fact_new.sourceType`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->biz_bill_item_fact_new.warehouseId`
+- `VALUE:DIRECT:jsh_depot_item.id->biz_bill_item_fact_new.sourceOrderItemId`
+- `VALUE:DIRECT:jsh_depot_item.material_id->biz_bill_item_fact_new.productId`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->biz_bill_item_fact_new.quantity`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->biz_bill_item_fact_new.tenantId`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-basic-correctness-case-01-procedure-sp-sync-retail-out-fact-batch-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql80-mysql-basic-correctness-case-01-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/performance-schema-statements.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL statement log sources for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+```
+
+## `mysql80-mysql-basic-correctness-case-02-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Input | `test-fixtures/mysql/basic-correctness/case-02/sql/performance-schema-statements.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL statement log sources for basic-correctness-case-02.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: performance_schema.events_statements_history
+/* ApplicationName=DBeaver 26.0.3 - Metadata */ SELECT DISTINCT A.REFERENCED_TABLE_SCHEMA AS PKTABLE_CAT,NULL AS PKTABLE_SCHEM, A.REFERENCED_TABLE_NAME AS PKTABLE_NAME, A.REFERENCED_COLUMN_NAME AS PKCOLUMN_NAME, A.TABLE_SCHEMA AS FKTABLE_CAT, NULL AS FKTABLE_SCHEM, A.TABLE_NAME AS FKTABLE_NAME, A.COLUMN_NAME AS FKCOLUMN_NAME, A.ORDINAL_POSITION AS KEY_SEQ,CASE WHEN R.UPDATE_RULE='CASCADE' THEN 0 WHEN R.UPDATE_RULE='SET NULL' THEN 2 WHEN R.UPDATE_RULE='SET DEFAULT' THEN 4 WHEN R.UPDATE_RULE='RESTRICT' THEN 1 WHEN R.UPDATE_RULE='NO ACTION' THEN 1 ELSE 1 END  AS UPDATE_RULE,CASE WHE
+```
+
+## `mysql80-mysql-basic-correctness-case-03-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Input | `test-fixtures/mysql/basic-correctness/case-03/sql/performance-schema-statements.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL statement log sources for basic-correctness-case-03.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: performance_schema.events_statements_history
+/* ApplicationName=DBeaver 26.0.3 - Metadata */ SELECT DISTINCT A.REFERENCED_TABLE_SCHEMA AS PKTABLE_CAT,NULL AS PKTABLE_SCHEM, A.REFERENCED_TABLE_NAME AS PKTABLE_NAME, A.REFERENCED_COLUMN_NAME AS PKCOLUMN_NAME, A.TABLE_SCHEMA AS FKTABLE_CAT, NULL AS FKTABLE_SCHEM, A.TABLE_NAME AS FKTABLE_NAME, A.COLUMN_NAME AS FKCOLUMN_NAME, A.ORDINAL_POSITION AS KEY_SEQ,CASE WHEN R.UPDATE_RULE='CASCADE' THEN 0 WHEN R.UPDATE_RULE='SET NULL' THEN 2 WHEN R.UPDATE_RULE='SET DEFAULT' THEN 4 WHEN R.UPDATE_RULE='RESTRICT' THEN 1 WHEN R.UPDATE_RULE='NO ACTION' THEN 1 ELSE 1 END  AS UPDATE_RULE,CASE WHE
+```
+
+## `mysql80-mysql-basic-correctness-case-04-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Input | `test-fixtures/mysql/basic-correctness/case-04/sql/performance-schema-statements.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL statement log sources for basic-correctness-case-04.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: performance_schema.events_statements_history
+/* ApplicationName=DBeaver 26.0.3 - Metadata */ SELECT DISTINCT A.REFERENCED_TABLE_SCHEMA AS PKTABLE_CAT,NULL AS PKTABLE_SCHEM, A.REFERENCED_TABLE_NAME AS PKTABLE_NAME, A.REFERENCED_COLUMN_NAME AS PKCOLUMN_NAME, A.TABLE_SCHEMA AS FKTABLE_CAT, NULL AS FKTABLE_SCHEM, A.TABLE_NAME AS FKTABLE_NAME, A.COLUMN_NAME AS FKCOLUMN_NAME, A.ORDINAL_POSITION AS KEY_SEQ,CASE WHEN R.UPDATE_RULE='CASCADE' THEN 0 WHEN R.UPDATE_RULE='SET NULL' THEN 2 WHEN R.UPDATE_RULE='SET DEFAULT' THEN 4 WHEN R.UPDATE_RULE='RESTRICT' THEN 1 WHEN R.UPDATE_RULE='NO ACTION' THEN 1 ELSE 1 END  AS UPDATE_RULE,CASE WHE
+```
+
+## `mysql80-mysql-business-cross-border-reconciliation-procedure-comma-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-business-cross-border-reconciliation-procedure-comma-subquery-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL business procedure companion to mysql-business-cross-border-reconciliation-procedure-sql.
+-- INNER rowsets are rewritten as comma rowsets. Non-INNER semantics are represented with
+-- correlated scalar subqueries / EXISTS instead of forced comma joins.
+-- relation-detector-fixture-source: PROCEDURE:finance.sp_cross_border_reconciliation_engine_comma_subquery
+CREATE PROCEDURE sp_cross_border_reconciliation_engine_comma_subquery(
+    IN p_input_matrix_json JSON,
+    IN p_target_currency VARCHAR(10),
+    IN p_risk_threshold NUMERIC(5,2)
+```
+
+## `mysql80-mysql-business-cross-border-reconciliation-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-business-cross-border-reconciliation-procedure-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL business procedure case: JSON_TABLE input, CTEs, simulated FULL OUTER JOIN
+-- via LEFT/RIGHT UNION ALL, correlated subquery, and final comma rowset filtering.
+-- Parameter JSON, literal filters, dynamic result set columns, and Data Lineage are
+-- semantic references only; formal relationship gold records physical table relationships.
+-- relation-detector-fixture-source: PROCEDURE:finance.sp_cross_border_reconciliation_engine
+CREATE PROCEDURE sp_cross_border_reconciliation_engine(
+    IN p_input_matrix_json JSON,
+    IN p_target_currency VARCHAR(10),
+```
+
+## `mysql80-mysql-business-financial-asset-wash-procedure-comma-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-business-financial-asset-wash-procedure-comma-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-business-financial-asset-wash-procedure-comma-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+
+**Input Preview**
+
+```sql
+-- MySQL business procedure case equivalent to mysql-business-financial-asset-wash-procedure-sql.
+-- INNER JOIN portions are rewritten as comma rowsets plus WHERE equality predicates.
+-- Expected fingerprints must match mysql-business-financial-asset-wash-procedure-sql.
+-- relation-detector-fixture-source: PROCEDURE:finance.sp_financial_asset_wash_update_comma
+CREATE PROCEDURE sp_financial_asset_wash_update_comma(
+    IN p_input_ledger_json JSON,
+    IN p_max_limit_cap NUMERIC(16,4)
+)
+```
+
+## `mysql80-mysql-business-financial-asset-wash-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-business-financial-asset-wash-procedure-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-business-financial-asset-wash-procedure-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+
+**Input Preview**
+
+```sql
+-- MySQL business procedure case: JSON_TABLE input, nested CTEs, window functions,
+-- multi-table UPDATE, and a comma rowset against policy configuration.
+-- Parameter JSON and Data Lineage are semantic references only; formal relationship
+-- gold records physical table relationships.
+-- relation-detector-fixture-source: PROCEDURE:finance.sp_financial_asset_wash_update
+CREATE PROCEDURE sp_financial_asset_wash_update(
+    IN p_input_ledger_json JSON,
+    IN p_max_limit_cap NUMERIC(16,4)
+```
+
+## `mysql80-mysql-commerce-promotion-update-comma-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-commerce-promotion-update-comma-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-commerce-promotion-update-comma-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+
+**Input Preview**
+
+```sql
+UPDATE products p, shops s, merchants m, discount_policies dp
+SET
+    p.promo_price = p.original_price * 0.90,
+    p.is_on_sale = 1,
+    p.updated_at = NOW()
+WHERE
+    p.shop_id = s.id
+    AND s.merchant_id = m.id
+```
+
+## `mysql80-mysql-commerce-promotion-update-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-commerce-promotion-update-explicit-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-commerce-promotion-update-explicit-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+
+**Input Preview**
+
+```sql
+UPDATE products p
+INNER JOIN shops s ON p.shop_id = s.id
+INNER JOIN merchants m ON s.merchant_id = m.id
+INNER JOIN discount_policies dp ON p.category_id = dp.category_id
+SET
+    p.promo_price = p.original_price * 0.90,
+    p.is_on_sale = 1,
+    p.updated_at = NOW()
+```
+
+## `mysql80-mysql-invalid-orders-delete-comma-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-invalid-orders-delete-comma-join-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE o, oi
+FROM orders o, order_items oi, users u
+WHERE
+    o.id = oi.order_id
+    AND o.user_id = u.id
+    AND o.payment_status = 'UNPAID'
+    AND o.created_at < NOW() - INTERVAL 7 DAY
+    AND u.risk_level = 'HIGH';
+```
+
+## `mysql80-mysql-invalid-orders-delete-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-invalid-orders-delete-explicit-join-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE o, oi
+FROM orders o
+INNER JOIN order_items oi ON o.id = oi.order_id
+INNER JOIN users u ON o.user_id = u.id
+WHERE
+    o.payment_status = 'UNPAID'
+    AND o.created_at < NOW() - INTERVAL 7 DAY
+    AND u.risk_level = 'HIGH';
+```
+
+## `mysql80-mysql-official-cte-dml-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-cte-dml-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-official-cte-dml-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:accounts.id->orders.audit_account_id`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:DIRECT:accounts.id->orders.audit_account_id`
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/include/with_non_recursive.inc
+-- - MySQL 8.0 Reference Manual: WITH (Common Table Expressions), UPDATE, DELETE
+-- CTE rowsets are logical rowsets. They must not be emitted as physical tables
+-- even when the CTE feeds UPDATE or DELETE.
+
+WITH candidate_orders(order_id, user_id) AS (
+```
+
+## `mysql80-mysql-official-cte-nested-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-cte-nested-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/include/with_non_recursive.inc
+-- - MySQL 8.0 Reference Manual: WITH (Common Table Expressions)
+-- The case focuses on CTE scope and lineage. CTE names must not be emitted as
+-- physical tables.
+
+WITH recent_orders AS (
+```
+
+## `mysql80-mysql-official-derived-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-derived-subquery-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/derived.test
+-- - mysql/mysql-server mysql-test/t/subquery_exists.test
+-- - MySQL 8.0 Reference Manual: Subqueries and Derived Tables
+-- Derived aliases must not be emitted as physical tables.
+
+SELECT m2.id, d.pla_id
+```
+
+## `mysql80-mysql-official-join-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-join-edge-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/join.test
+-- - MySQL 8.0 Reference Manual: JOIN Clause
+-- This file focuses on MySQL-specific join forms that are easy to regress:
+-- STRAIGHT_JOIN, NATURAL JOIN, nested parenthesized joins, index hints, and
+-- ODBC escaped outer joins.
+```
+
+## `mysql80-mysql-official-join-matrix-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-join-matrix-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/join.test
+-- - MySQL 8.0 Reference Manual: JOIN Clause
+-- This file keeps only standalone SQL statements that exercise relation extraction.
+
+SELECT o.id, oi.order_id
+FROM orders AS o
+```
+
+## `mysql80-mysql-official-lateral-derived-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-lateral-derived-edge-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/derived.test
+-- - MySQL 8.0 Reference Manual: Derived Tables and Lateral Derived Tables
+-- Derived and lateral aliases are logical rowsets and must not be emitted as
+-- physical tables.
+
+SELECT o.id, projected.product_id
+```
+
+## `mysql80-mysql-official-recursive-cte-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-recursive-cte-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/include/with_recursive.inc
+-- - MySQL 8.0 Reference Manual: WITH (Common Table Expressions)
+-- Recursive CTE rowsets are logical rowsets; they must not be emitted as
+-- physical tables.
+
+WITH RECURSIVE employee_tree AS (
+```
+
+## `mysql80-mysql-official-subquery-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-official-subquery-edge-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/subquery_exists.test
+-- - MySQL 8.0 Reference Manual: Subqueries
+-- This fixture stresses row/tuple subqueries, ANY/SOME/ALL, correlated
+-- subqueries, and scalar subquery equality.
+
+SELECT o.id
+```
+
+## `mysql80-mysql-orphan-reviews-delete-left-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-orphan-reviews-delete-left-join-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE pr
+FROM product_reviews pr
+LEFT JOIN products p ON pr.product_id = p.id
+WHERE
+    p.id IS NULL
+    AND pr.created_at < NOW() - INTERVAL 1 MONTH;
+```
+
+## `mysql80-mysql-orphan-reviews-delete-not-exists-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-orphan-reviews-delete-not-exists-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE pr
+FROM product_reviews pr
+WHERE
+    NOT EXISTS (
+        SELECT 1
+        FROM products p
+        WHERE p.id = pr.product_id
+    )
+```
+
+## `mysql80-mysql-sql-cte-lateral`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/sql-cte-lateral/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+WITH recent_orders AS (
+  SELECT o.id AS order_id, o.user_id
+  FROM `orders` AS o
+  WHERE o.created_at >= CURRENT_DATE - INTERVAL 7 DAY
+)
+SELECT ro.order_id, u.email
+FROM recent_orders ro
+JOIN LATERAL (
+```
+
+## `mysql80-mysql-sql-delete-left-join`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/sql-delete-left-join/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE FROM o
+USING orders AS o
+LEFT JOIN users AS u ON o.user_id = u.id
+WHERE u.id IS NULL;
+```
+
+## `mysql80-mysql-sql-multi-table-update`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/sql-multi-table-update/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE orders o, users u
+JOIN accounts a ON u.account_id = a.id
+SET o.reviewed_at = CURRENT_TIMESTAMP
+WHERE o.user_id = u.id
+  AND o.status = 'PAID'
+  AND a.closed_at IS NULL;
+```
+
+## `mysql80-mysql-sql-system-log-noise`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Input | `test-fixtures/correctness/mysql/v8_0/sql-system-log-noise/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT kcu.TABLE_SCHEMA, kcu.TABLE_NAME, tc.CONSTRAINT_TYPE
+FROM information_schema.KEY_COLUMN_USAGE kcu
+JOIN information_schema.TABLE_CONSTRAINTS tc
+  ON kcu.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+ AND kcu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME;
+```
+
+## `mysql80-mysql-supply-chain-update-comma-and-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-supply-chain-update-comma-and-subquery-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-supply-chain-update-comma-and-subquery-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.product_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,supplier_manifests.manifest_id,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+
+**Extractor Candidate Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.product_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,supplier_manifests.manifest_id,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+
+**Input Preview**
+
+```sql
+UPDATE warehouse_inventory wi,
+       bin_locations bl,
+       order_items oi,
+       (
+           SELECT
+               o.id AS order_id,
+               o.customer_id,
+               c.risk_score,
+```
+
+## `mysql80-mysql-supply-chain-update-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-supply-chain-update-explicit-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-supply-chain-update-explicit-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+
+**Extractor Candidate Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+
+**Input Preview**
+
+```sql
+UPDATE warehouse_inventory wi
+INNER JOIN bin_locations bl ON wi.bin_id = bl.id AND bl.zone_type = 'PICKING'
+INNER JOIN order_items oi ON wi.product_id = oi.product_id
+INNER JOIN (
+    SELECT
+        o.id AS order_id,
+        o.customer_id,
+        c.risk_score,
+```
+
+## `mysql80-mysql-user-spending-comma-join-update-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-user-spending-comma-join-update-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-user-spending-comma-join-update-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+
+**Extractor Candidate Fingerprints**
+
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+
+**Input Preview**
+
+```sql
+UPDATE users u,
+(
+    SELECT user_id, SUM(pay_amount) AS actual_total
+    FROM orders
+    WHERE order_status = 'PAID'
+    GROUP BY user_id
+) o_summary
+SET
+```
+
+## `mysql80-mysql-user-spending-left-join-update-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v8_0/mysql-user-spending-left-join-update-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql-user-spending-left-join-update-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 

@@ -1,0 +1,11 @@
+id: mysql80-mysql-supply-chain-update-explicit-join-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: mysql/8.0
+databaseVersion: 8.0
+sourceType: PLAIN_SQL
+schema: supply_chain
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

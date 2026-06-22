@@ -17,12 +17,12 @@ class CorrectnessSummaryGeneratorTest {
     void generatedSummaryCapturesFixtureCountsAndInputPreview() throws Exception {
         String markdown = CorrectnessSummaryGenerator.generate(WORKSPACE);
 
-        assertTrue(markdown.contains("| Total correctness fixtures | 328 |"));
-        assertTrue(markdown.contains("| SQL fixtures | 271 |"));
-        assertTrue(markdown.contains("| DDL fixtures | 57 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 84 |"));
-        assertTrue(markdown.contains("| MySQL directory fixtures | 57 |"));
-        assertTrue(markdown.contains("| MYSQL | 59 | 48 | 11 |"));
+        assertTrue(markdown.contains("| Total correctness fixtures | 385 |"));
+        assertTrue(markdown.contains("| SQL fixtures | 317 |"));
+        assertTrue(markdown.contains("| DDL fixtures | 68 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 99 |"));
+        assertTrue(markdown.contains("| MySQL directory fixtures | 114 |"));
+        assertTrue(markdown.contains("| MYSQL | 116 | 94 | 22 |"));
         assertTrue(markdown.contains("| POSTGRESQL | 269 | 223 | 46 |"));
         assertTrue(markdown.contains("Lightweight index report. Full SQL/DDL is available in each input file."));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-commerce-promotion-update-explicit-join-sql/input.sql"));
@@ -48,6 +48,8 @@ class CorrectnessSummaryGeneratorTest {
                 "test-fixtures/correctness/postgres/v18/postgres18-extreme-nesting-withrelation-withlineage-sql/expected-lineage.json"));
         assertTrue(markdown.contains(
                 "test-fixtures/correctness/mysql/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json"));
+        assertTrue(markdown.contains(
+                "test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json"));
         assertTrue(markdown.contains("FK_LIKE:products.shop_id->shops.id:SQL_LOG_JOIN"));
         assertTrue(markdown.contains("```sql"));
         assertFalse(markdown.contains("SHOW CREATE TABLE `jsh_account_head`;"),

@@ -1,0 +1,11 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:products.original_price->products.promo_price"
+  ],
+  "forbiddenSources": [
+    "0.90",
+    "NOW"
+  ],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

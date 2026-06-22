@@ -131,7 +131,7 @@ public final class FullGrammerTypedSqlEventSink {
         attributes.put("alias", clean(alias));
         add(ctx, StructuredParseEventType.ROWSET_REFERENCE, attributes);
         aliasToTable.put(baseName(qualifiedTable).toLowerCase(Locale.ROOT), baseName(qualifiedTable));
-        rowsetTables.add(baseName(qualifiedTable));
+        rowsetTables.add(clean(alias).isBlank() ? baseName(qualifiedTable) : clean(alias));
         if (!clean(alias).isBlank()) {
             aliasToTable.put(clean(alias).toLowerCase(Locale.ROOT), baseName(qualifiedTable));
         }
@@ -351,8 +351,8 @@ public final class FullGrammerTypedSqlEventSink {
     }
 
     public void predicateEquality(ParserRuleContext ctx, ParseTree leftExpression, ParseTree rightExpression, String joinKind) {
-        Optional<ExpressionColumn> left = singleDirectColumn(leftExpression);
-        Optional<ExpressionColumn> right = singleDirectColumn(rightExpression);
+        Optional<ExpressionColumn> left = singlePredicateColumn(leftExpression, rightExpression);
+        Optional<ExpressionColumn> right = singlePredicateColumn(rightExpression, leftExpression);
         if (left.isEmpty() || right.isEmpty()) {
             return;
         }
@@ -366,8 +366,8 @@ public final class FullGrammerTypedSqlEventSink {
     }
 
     public void existsPredicateEquality(ParserRuleContext ctx, ParseTree leftExpression, ParseTree rightExpression) {
-        Optional<ExpressionColumn> left = singleDirectColumn(leftExpression);
-        Optional<ExpressionColumn> right = singleDirectColumn(rightExpression);
+        Optional<ExpressionColumn> left = singlePredicateColumn(leftExpression, rightExpression);
+        Optional<ExpressionColumn> right = singlePredicateColumn(rightExpression, leftExpression);
         if (left.isEmpty() || right.isEmpty()) {
             return;
         }
@@ -381,6 +381,9 @@ public final class FullGrammerTypedSqlEventSink {
             ExpressionColumn right,
             String joinKind
     ) {
+        if (sameQualifier(left, right)) {
+            return;
+        }
         Map<String, Object> attributes = nativeAttributes();
         attributes.put("leftAlias", left.qualifier());
         attributes.put("leftColumn", left.column());
@@ -388,6 +391,11 @@ public final class FullGrammerTypedSqlEventSink {
         attributes.put("rightColumn", right.column());
         attributes.put("joinKind", blankTo(joinKind, "WHERE_OR_UNKNOWN"));
         add(ctx, eventType, attributes);
+    }
+
+    private boolean sameQualifier(ExpressionColumn left, ExpressionColumn right) {
+        return !clean(left.qualifier()).isBlank()
+                && clean(left.qualifier()).equalsIgnoreCase(clean(right.qualifier()));
     }
 
     public void inSubqueryPredicate(ParserRuleContext ctx, ParseTree outerExpression, ParseTree subquery) {
@@ -463,8 +471,10 @@ public final class FullGrammerTypedSqlEventSink {
         }
         int equalsIndex = directLeafIndex(tree, "=");
         if (equalsIndex > 0) {
-            Optional<ExpressionColumn> left = singleDirectColumnInChildren(tree, 0, equalsIndex);
-            Optional<ExpressionColumn> right = singleDirectColumnInChildren(tree, equalsIndex + 1, tree.getChildCount());
+            Optional<ExpressionColumn> left = singlePredicateColumnInChildren(tree, 0, equalsIndex,
+                    equalsIndex + 1, tree.getChildCount());
+            Optional<ExpressionColumn> right = singlePredicateColumnInChildren(tree, equalsIndex + 1, tree.getChildCount(),
+                    0, equalsIndex);
             if (left.isPresent() && right.isPresent()) {
                 result.add(new ColumnPair(left.get(), right.get()));
                 return;
@@ -531,7 +541,35 @@ public final class FullGrammerTypedSqlEventSink {
         return tableFor(aliasOrTable);
     }
 
-    private Optional<ExpressionColumn> singleDirectColumn(ParseTree tree) {
+    private Optional<ExpressionColumn> singlePredicateColumn(ParseTree tree, ParseTree oppositeTree) {
+        Optional<ExpressionColumn> explicit = singleDirectColumnNoDefault(tree);
+        if (explicit.isPresent()) {
+            return explicit;
+        }
+        if (singleDirectColumnNoDefault(oppositeTree).isEmpty()) {
+            return Optional.empty();
+        }
+        return singleDirectColumnWithDefault(tree);
+    }
+
+    private Optional<ExpressionColumn> singlePredicateColumnInChildren(
+            ParseTree tree,
+            int startInclusive,
+            int endExclusive,
+            int oppositeStartInclusive,
+            int oppositeEndExclusive
+    ) {
+        Optional<ExpressionColumn> explicit = singleDirectColumnInChildrenNoDefault(tree, startInclusive, endExclusive);
+        if (explicit.isPresent()) {
+            return explicit;
+        }
+        if (singleDirectColumnInChildrenNoDefault(tree, oppositeStartInclusive, oppositeEndExclusive).isEmpty()) {
+            return Optional.empty();
+        }
+        return singleDirectColumnInChildrenWithDefault(tree, startInclusive, endExclusive);
+    }
+
+    private Optional<ExpressionColumn> singleDirectColumnWithDefault(ParseTree tree) {
         Optional<ExpressionColumn> naked = nakedColumn(tree);
         if (naked.isPresent()) {
             return naked;
@@ -540,7 +578,16 @@ public final class FullGrammerTypedSqlEventSink {
         return columns.size() == 1 ? Optional.of(columns.get(0)) : Optional.empty();
     }
 
-    private Optional<ExpressionColumn> singleDirectColumnInChildren(ParseTree tree, int startInclusive, int endExclusive) {
+    private Optional<ExpressionColumn> singleDirectColumnNoDefault(ParseTree tree) {
+        Optional<ExpressionColumn> naked = nakedColumnNoDefault(tree);
+        if (naked.isPresent()) {
+            return naked;
+        }
+        List<ExpressionColumn> columns = directColumnListNoDefault(tree);
+        return columns.size() == 1 ? Optional.of(columns.get(0)) : Optional.empty();
+    }
+
+    private Optional<ExpressionColumn> singleDirectColumnInChildrenWithDefault(ParseTree tree, int startInclusive, int endExclusive) {
         List<ExpressionColumn> columns = new ArrayList<>();
         for (int index = startInclusive; index < endExclusive; index++) {
             Optional<ExpressionColumn> naked = nakedColumn(tree.getChild(index));
@@ -552,6 +599,28 @@ public final class FullGrammerTypedSqlEventSink {
         }
         List<ExpressionColumn> unique = columns.stream().distinct().toList();
         return unique.size() == 1 ? Optional.of(unique.get(0)) : Optional.empty();
+    }
+
+    private Optional<ExpressionColumn> singleDirectColumnInChildrenNoDefault(ParseTree tree, int startInclusive, int endExclusive) {
+        List<ExpressionColumn> columns = new ArrayList<>();
+        for (int index = startInclusive; index < endExclusive; index++) {
+            Optional<ExpressionColumn> naked = nakedColumnNoDefault(tree.getChild(index));
+            if (naked.isPresent()) {
+                columns.add(naked.get());
+            } else {
+                columns.addAll(directColumnListNoDefault(tree.getChild(index)));
+            }
+        }
+        List<ExpressionColumn> unique = columns.stream().distinct().toList();
+        return unique.size() == 1 ? Optional.of(unique.get(0)) : Optional.empty();
+    }
+
+    private List<ExpressionColumn> directColumnListNoDefault(ParseTree tree) {
+        Optional<ExpressionColumn> naked = nakedColumnNoDefault(tree);
+        if (naked.isPresent()) {
+            return List.of(naked.get());
+        }
+        return directExpressionColumns(tree, "");
     }
 
     private List<ExpressionColumn> directColumnList(ParseTree tree) {
@@ -600,6 +669,10 @@ public final class FullGrammerTypedSqlEventSink {
         return nakedColumnWithDefault(tree, defaultProjectionQualifier());
     }
 
+    private Optional<ExpressionColumn> nakedColumnNoDefault(ParseTree tree) {
+        return nakedColumnWithDefault(tree, "");
+    }
+
     private Optional<ExpressionColumn> nakedColumnWithDefault(ParseTree tree, String defaultQualifier) {
         ParseTree current = unwrapTransparentSingleChild(tree);
         if (current == null) {
@@ -616,11 +689,18 @@ public final class FullGrammerTypedSqlEventSink {
                 .filter(part -> !part.isBlank())
                 .toList();
         if (parts.size() >= 2 && isIdentifier(parts.get(parts.size() - 2)) && isIdentifier(parts.get(parts.size() - 1))) {
-            return Optional.of(new ExpressionColumn(parts.get(parts.size() - 2), parts.get(parts.size() - 1)));
+            String qualifier = parts.get(parts.size() - 2);
+            String column = parts.get(parts.size() - 1);
+            if (expressionAnalyzer.isNonColumnIdentifier(qualifier)
+                    || expressionAnalyzer.isNonColumnIdentifier(column)) {
+                return Optional.empty();
+            }
+            return Optional.of(new ExpressionColumn(qualifier, column));
         }
         if (parts.size() == 1 && isIdentifier(parts.get(0))) {
-            if (!defaultQualifier.isBlank()) {
-                return Optional.of(new ExpressionColumn(defaultQualifier, parts.get(0)));
+            String column = parts.get(0);
+            if (!defaultQualifier.isBlank() && !expressionAnalyzer.isNonColumnIdentifier(column)) {
+                return Optional.of(new ExpressionColumn(defaultQualifier, column));
             }
         }
         return Optional.empty();

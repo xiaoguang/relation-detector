@@ -1,0 +1,12 @@
+id: mysql80-mysql-basic-correctness-case-03-ddl
+databaseType: MYSQL
+parserTarget: DDL
+parserMode: full-grammer
+grammarProfile: mysql/8.0
+databaseVersion: 8.0
+sourceType: DDL_FILE
+evidenceSourceType: DATABASE_DDL
+schema: case_03
+input: ../../../../mysql/basic-correctness/case-03/ddl/show-create-tables.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

@@ -160,10 +160,12 @@ parser.mode = auto | full-grammer | token-event
 
 当前 MySQL correctness golden 分两类：
 
-- root MySQL correctness：覆盖 MySQL metadata/DDL/log/object/procedure/business SQL，是正式 token-event baseline，也用于 full-grammer parity。
-- MySQL 8.0 full-grammer：通过 `FullGrammerCorrectnessShadowTest`、`FullGrammerDdlCorrectnessShadowTest` 和语义单测证明不低于 token-event baseline；当前没有单独的 `mysql/v8_0` versioned correctness 目录。
+- root MySQL correctness：`test-fixtures/correctness/mysql`，57 个 fixture，覆盖 MySQL metadata/DDL/log/object/procedure/business SQL，是正式 token-event baseline。
+- MySQL 8.0 full-grammer：`test-fixtures/correctness/mysql/v8_0`，57 个 fixture，manifest 强制 `parserMode: full-grammer`、`grammarProfile: mysql/8.0`，是 MySQL 8.0 strict version golden。
 
-如果后续要把 MySQL full-grammer 也做成和 PostgreSQL 一样的独立版本 golden，应新增 `test-fixtures/correctness/mysql/v8_0`，而不是覆盖 root MySQL baseline。
+当前 MySQL 8.0 full-grammer 与 root MySQL token-event baseline 逐 fixture 对齐：fixture 数、SQL/DDL 分类一致，full-grammer 相对 token-event 没有删除 relation 或 lineage，只在 8 个 procedure/business fixture 中新增了更完整的物理表关系和字段血缘。新增项来自 full-grammer 对 procedure body、CTE/derived projection、MERGE/INSERT/UPDATE 写入映射和表达式来源的更强解析；参数、literal、局部变量、JSON path 和显式临时表仍不进入 v1 lineage。
+
+如果后续要支持 MySQL 5.7 或 MySQL 8.4 的严格 full-grammer，应新增独立 version package 和对应 version golden，例如 `mysql/v5_7` 或 `mysql/v8_4`，而不是修改 `mysql/v8_0` 或 root token-event baseline。
 
 ## 对象定义采集
 

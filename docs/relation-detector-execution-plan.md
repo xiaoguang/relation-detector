@@ -116,12 +116,12 @@ auto | full-grammer | token-event
 
 | 数据库 | Profile | 归属 | correctness golden |
 | --- | --- | --- | --- |
-| MySQL | `mysql/8.0` | `adaptor-mysql/fullgrammer/v8_0` | root MySQL golden + full-grammer parity；尚无独立 `mysql/v8_0` 目录。 |
+| MySQL | `mysql/8.0` | `adaptor-mysql/fullgrammer/v8_0` | `test-fixtures/correctness/mysql/v8_0` |
 | PostgreSQL | `postgresql/16` | `adaptor-postgres/fullgrammer/v16` | `test-fixtures/correctness/postgres/v16` |
 | PostgreSQL | `postgresql/17` | `adaptor-postgres/fullgrammer/v17` | `test-fixtures/correctness/postgres/v17` |
 | PostgreSQL | `postgresql/18` | `adaptor-postgres/fullgrammer/v18` | `test-fixtures/correctness/postgres/v18` |
 
-root `test-fixtures/correctness/postgres` 仍是历史兼容 baseline，不代表一个叫 `v1` 的 PostgreSQL 版本。
+root `test-fixtures/correctness/mysql` 与 root `test-fixtures/correctness/postgres` 是 token-event baseline，不代表严格数据库版本目录。严格 full-grammer 版本证明分别位于 `mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`。
 
 ### 4.1 表和列
 

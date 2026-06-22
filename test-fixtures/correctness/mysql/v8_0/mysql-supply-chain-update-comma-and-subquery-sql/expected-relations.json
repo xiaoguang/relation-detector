@@ -1,0 +1,16 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:warehouse_inventory.primary_supplier_id->supplier_manifests.supplier_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:warehouse_inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:warehouse_inventory.product_id->supplier_manifests.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.customer_id->customer_profiles.id:SQL_LOG_JOIN",
+    "FK_LIKE:warehouse_inventory.bin_id->bin_locations.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": [
+    "latest_orders",
+    "sm",
+    "ranking",
+    "avg_cost"
+  ]
+}

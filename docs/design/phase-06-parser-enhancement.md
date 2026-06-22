@@ -380,6 +380,40 @@ flowchart LR
 
 core 只知道 `FullGrammerDialectModule` 接口和 profile selection 规则，不直接 import `adaptor-mysql` / `adaptor-postgres` 的版本实现。新增大版本时应在对应 adaptor 中新增 version package、module registration、fixture/parity test。
 
+### correctness / golden 验收链
+
+```mermaid
+flowchart TD
+  fixtures["test-fixtures/correctness"]
+  tokenRoot["root token-event baseline\ncommon + mysql + postgres"]
+  mysql8["mysql/v8_0\nMySQL 8.0 full-grammer golden"]
+  pg16["postgres/v16\nPostgreSQL 16 full-grammer golden"]
+  pg17["postgres/v17\nPostgreSQL 17 full-grammer golden"]
+  pg18["postgres/v18\nPostgreSQL 18 full-grammer golden"]
+  runner["CorrectnessFixtureRunnerTest"]
+  shadowSql["FullGrammerCorrectnessShadowTest"]
+  shadowDdl["FullGrammerDdlCorrectnessShadowTest"]
+  cliE2E["CliEndToEndGoldenTest"]
+
+  fixtures --> tokenRoot
+  fixtures --> mysql8
+  fixtures --> pg16
+  fixtures --> pg17
+  fixtures --> pg18
+
+  tokenRoot --> runner
+  mysql8 --> runner
+  pg16 --> runner
+  pg17 --> runner
+  pg18 --> runner
+
+  tokenRoot --> shadowSql
+  tokenRoot --> shadowDdl
+  tokenRoot --> cliE2E
+```
+
+root baseline 明确使用 `parserMode: token-event`；versioned 目录明确使用 `parserMode: full-grammer` 和对应 `grammarProfile`。full-grammer parity 测试只证明 baseline profile 不低于 token-event；严格版本语法证明由 `mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18` 的独立 golden 负责。
+
 ## Parser mode 和 profile 选择
 
 系统运行模式：
@@ -409,6 +443,12 @@ PostgreSQL versioned correctness 的命名约定：
 - `postgres/v16`、`postgres/v17`、`postgres/v18` 是严格版本测试目录，分别代表 PostgreSQL 16.x、17.x、18.x。
 - 不使用 `postgres/v1` 这类聚合前缀来表达测试范围。即使 fixture filter 技术上可能按字符串前缀匹配多个目录，设计文档、测试命令和验收描述也必须显式写 `postgres/v16|postgres/v17|postgres/v18`，避免维护者把 `v1` 误解成真实版本。
 - root `test-fixtures/correctness/postgres` 仍是历史/兼容 baseline，不作为严格版本 grammar 证明；严格版本证明只看 `postgres/v16`、`postgres/v17`、`postgres/v18`。
+
+MySQL correctness 的命名约定：
+
+- root `test-fixtures/correctness/mysql` 是 MySQL token-event baseline。
+- `test-fixtures/correctness/mysql/v8_0` 是 MySQL 8.0 strict full-grammer golden，manifest 强制 `parserMode: full-grammer` 和 `grammarProfile: mysql/8.0`。
+- MySQL 5.7 / 8.4 / 未知版本当前没有 strict full-grammer 目录；这些场景由 token-event 宽松 fallback 承担，或者后续新增独立 version package 与 golden。
 
 不要混淆三类 mode：
 
@@ -527,20 +567,44 @@ missingProductionLineages = []
 
 当前 PostgreSQL versioned full-grammer 在 correctness fixture 上相对 token-event 不弱，并在若干场景识别更多内容。这个结论只针对已有 fixture gold，不表示 full-grammer 可以宽松解析未知版本语法；未知或 unsupported version 仍由 token-event fallback 承担。
 
-| 对比项 | 当前结果 | 设计含义 |
+| 组别 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| PostgreSQL root token-event | 66 | 55 / 11 | 742 | 52 | 1 |
+| PostgreSQL full-grammer v16 | 66 | 55 / 11 | 745 | 37 | 1 |
+| PostgreSQL full-grammer v17 | 68 | 57 / 11 | 748 | 59 | 0 |
+| PostgreSQL full-grammer v18 | 69 | 56 / 13 | 748 | 58 | 0 |
+
+root token-event 与 v16/v17/v18 的同名 fixture 对比结果：
+
+| 对比 | 差异 | 设计解释 |
 | --- | --- | --- |
-| common 55 个 PostgreSQL fixture 在 v16/v17/v18 之间 | relation / lineage / diagnostics 差异均为 0 | 三个 strict version 目录对共同 SQL/DDL 的语义输出一致；版本差异只来自专属 fixture |
-| full-grammer vs token-event relationship | full-grammer 多 19 条，token-event 侧剩 3 条 fingerprint 差异 | 多出的主要是更强的 derived/CTE/EXISTS/IN/DDL evidence；3 条差异不是 endpoint 丢失，而是 evidence 类型或 DDL evidence 丰富度变化 |
-| full-grammer vs token-event Data Lineage | full-grammer 多 25 条，token-event 少 0 条 | full-grammer 对 UPDATE/INSERT/MERGE、derived aggregate、CASE/COALESCE/算术/拼接等血缘识别更强 |
-| full-grammer vs token-event diagnostics | token-event 多 1 个 `DYNAMIC_SQL_UNRESOLVED` | 这是 token-event 对 root baseline 的兼容 warning，不代表 full-grammer 缺失 relation 或 lineage |
+| root -> v16 | relation +6 / -2，lineage +0 / -7；root-only `postgres-pg17-sql`，v16-only `postgres-pg17-version-boundary-sql` | v16 对 PG17-only SQL 使用负向版本边界 fixture；relation 增强来自 CTE/IN/DDL evidence，lineage 少量缺失来自严格 v16 的 MERGE lineage 边界。 |
+| root -> v17 | relation +6 / -2，lineage +7 / -2；v17-only `postgres-json-table-sql`、`postgres-merge-returning-sql` | v17 新增 SQL/JSON 与 MERGE 扩展 fixture；共同 fixture 中 full-grammer 对 CTE/IN/DDL evidence 和 MERGE lineage 更强。 |
+| root -> v18 | relation +6 / -2，lineage +7 / -2；v18-only `postgres-returning-old-new-sql`、`postgres-temporal-constraints-ddl`、`postgres-virtual-generated-ddl` | v18 新增 `old/new` RETURNING、temporal constraints、virtual generated column fixture；共同 fixture 与 v17 行为一致。 |
+| v16 -> v17 | relation 无变化，lineage +9；v16-only `postgres-pg17-version-boundary-sql`，v17-only PG17 专属 fixture | v17 在 `pg15` MERGE lineage 上补齐 9 条字段血缘，并新增 PG17-only 正向 fixture。 |
+| v17 -> v18 | 共同 fixture relation/lineage 无变化；fixture 集合不同 | v17 与 v18 的共同 SQL/DDL 语义输出一致，差异来自各自版本专属 fixture。 |
 
-已知 3 条 relationship fingerprint 差异按以下方式解释：
+当前不需要新的人工审核项。已知 relation 差异都可由明确 SQL/DDL 结构解释：例如 `generated-comprehensive-query-sql` 的 `SQL_LOG_SUBQUERY_IN`、`postgres-official-cte-dml-sql` 的 CTE DML 回溯、`postgres-official-index-include-partial-ddl` 的 `TARGET_UNIQUE` evidence 丰富度、`postgres-official-subquery-deep-sql` 的 tuple/subquery IN 关系。若后续出现 endpoint 缺失、lineage 缺失，或 evidence 变化无法由 SQL 语法结构解释，应进入 `docs/parser-audit/postgres-version-golden-diff.md` 或新的审核报告。
 
-- `inventory_snapshots.snapshot_id -> supplier_inventory_logs.id`：token-event evidence 是 `SQL_LOG_JOIN`，full-grammer evidence 是 `SQL_LOG_EXISTS`；endpoint 没丢，full-grammer 更贴近 EXISTS 写法。
-- `user_coupons.coupon_id -> coupons.id`：token-event evidence 是 `SQL_LOG_JOIN`，full-grammer evidence 是 `SQL_LOG_EXISTS`；endpoint 没丢，full-grammer 更贴近 EXISTS 写法。
-- `ledger_entries.account_no -> accounts.account_no`：token-event evidence 是 `DDL_FOREIGN_KEY`，full-grammer evidence 是 `DDL_FOREIGN_KEY,TARGET_UNIQUE`；full-grammer 多保留了目标唯一性证据。
+### MySQL 8.0 full-grammer 与 token-event 当前对比
 
-这组差异当前不需要人工审核；如果后续出现 endpoint 缺失、lineage 缺失，或 evidence 变化无法由 SQL 语法结构解释，应进入 `docs/parser-audit/postgres-version-golden-diff.md` 或新的审核报告。
+MySQL 当前同时有 root token-event baseline 和 MySQL 8.0 strict full-grammer golden：
+
+| 组别 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| MySQL root token-event | 57 | 46 / 11 | 108 | 24 | 1 |
+| MySQL full-grammer v8_0 | 57 | 46 / 11 | 119 | 95 | 0 |
+
+逐 fixture 对比中，MySQL v8_0 相对 root token-event 只有新增，没有删除：
+
+| 差异类型 | 数量 | 主要来源 |
+| --- | ---: | --- |
+| Relationship added | 11 | procedure body 中更完整的 JOIN / procedure relation、business financial procedure 的物理表关系。 |
+| Relationship removed | 0 | 无。 |
+| Data Lineage added | 71 | purchase inbound/order/requisition、worker distribution、org PDF refresh、biz bill progress 等 procedure 内写入字段血缘。 |
+| Data Lineage removed | 0 | 无。 |
+
+这些新增项来自 MySQL 8.0 full-grammer typed visitor 对 procedure body、CTE/derived projection、DML write mapping 和表达式来源的更强解析，不来自表名/列名特殊过滤。参数、literal、局部变量、JSON path、显式临时表链路仍按 v1 边界过滤。
 
 ### PostgreSQL 版本专属 fixture 差异
 
@@ -902,6 +966,21 @@ ParserConfigRemovalTest
   -> removed parser config rejection
   -> parser.mode CLI/YAML parsing
 ```
+
+当前最近一次文档对齐时的测试资产统计：
+
+| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 全部 correctness | 385 | 317 / 68 | 3212 | 325 | 3 |
+| root token-event baseline（common + MySQL root + PostgreSQL root） | 125 | 103 / 22 | 852 | 76 | 2 |
+| MySQL root token-event | 57 | 46 / 11 | 108 | 24 | 1 |
+| MySQL full-grammer v8_0 | 57 | 46 / 11 | 119 | 95 | 0 |
+| PostgreSQL root token-event | 66 | 55 / 11 | 742 | 52 | 1 |
+| PostgreSQL full-grammer v16 | 66 | 55 / 11 | 745 | 37 | 1 |
+| PostgreSQL full-grammer v17 | 68 | 57 / 11 | 748 | 59 | 0 |
+| PostgreSQL full-grammer v18 | 69 | 56 / 13 | 748 | 58 | 0 |
+
+最新验证摘要：`mvn test` 已通过；targeted correctness / full-grammer parity / CLI E2E 测试也已通过。该摘要是对当前手写设计的实现快照；如果后续 fixture/golden 增减，应同步刷新本表、`docs/test-assets-map.md` 和 `docs/design/design-validation-report.md`。
 
 维护规则：
 

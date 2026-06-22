@@ -141,7 +141,30 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 - `full-grammer` 具体版本实现在 adaptor，例如 `mysql.fullgrammer.v8_0`、`postgres.fullgrammer.v16|v17|v18`。
 - 无方言或无合理版本信息时使用 token-event。
 - PostgreSQL full-grammer 当前有严格版本 profile：`postgresql/16`、`postgresql/17`、`postgresql/18`。三者分别有独立 versioned correctness golden。root `postgres` fixture 目录是历史兼容 baseline，不代表 `v1` 数据库版本。
-- MySQL full-grammer 当前有 `mysql/8.0` profile，但尚未拆出独立 `mysql/v8_0` versioned correctness；它通过 root MySQL golden 和 full-grammer parity 测试保证行为。
+- MySQL full-grammer 当前有 `mysql/8.0` profile，并已有独立 `test-fixtures/correctness/mysql/v8_0` versioned correctness golden。root `mysql` fixture 目录是 token-event baseline，不代表严格 MySQL 8.0 版本证明。
+
+### 当前 golden 与验证结果
+
+结果：通过。
+
+当前 correctness 资产统计如下：
+
+| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 全部 correctness | 385 | 317 / 68 | 3212 | 325 | 3 |
+| root token-event baseline（common + MySQL root + PostgreSQL root） | 125 | 103 / 22 | 852 | 76 | 2 |
+| MySQL root token-event | 57 | 46 / 11 | 108 | 24 | 1 |
+| MySQL full-grammer v8_0 | 57 | 46 / 11 | 119 | 95 | 0 |
+| PostgreSQL root token-event | 66 | 55 / 11 | 742 | 52 | 1 |
+| PostgreSQL full-grammer v16 | 66 | 55 / 11 | 745 | 37 | 1 |
+| PostgreSQL full-grammer v17 | 68 | 57 / 11 | 748 | 59 | 0 |
+| PostgreSQL full-grammer v18 | 69 | 56 / 13 | 748 | 58 | 0 |
+
+最新验证摘要：
+
+- `mvn test` 通过。
+- `CorrectnessFixtureRunnerTest`、`FullGrammerCorrectnessShadowTest`、`FullGrammerDdlCorrectnessShadowTest`、`CliEndToEndGoldenTest` 均通过。
+- 当前无新的 `REVIEW_NEEDED` 项；MySQL v8_0 与 PostgreSQL v16/v17/v18 的新增或缺失均可由版本语法边界、typed visitor 能力和已审核 golden 解释。
 
 ### DDL
 
@@ -165,5 +188,5 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 - SQL relationship 与 Data Lineage parse result 可以复用，减少同一 SQL 双 parse。
 - DDL token-event path 仍有 cursor/helper 层，后续可继续向 typed parse-tree visitor 收敛。
-- full-grammer profile 当前只覆盖 MySQL 8.0 与 PostgreSQL 16；新增大版本需新增 adaptor module、fixture 和 parity test。
+- full-grammer profile 当前覆盖 MySQL 8.0 与 PostgreSQL 16/17/18；新增大版本需新增 adaptor module、fixture 和 parity test。
 - SQL Server / Oracle 仍需要独立 adaptor，而不是回退到 MySQL/PostgreSQL parser。

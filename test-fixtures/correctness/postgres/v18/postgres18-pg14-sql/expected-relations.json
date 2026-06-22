@@ -1,6 +1,4 @@
 {
-  "fingerprints": [
-    "CO_OCCURRENCE:pg14_room_bookings.room_id->pg14_room_bookings.p_room_id:SQL_LOG_COLUMN_CO_OCCURRENCE"
-  ],
+  "fingerprints": [],
   "forbiddenTables": []
 }

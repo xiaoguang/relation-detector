@@ -1,0 +1,12 @@
+id: mysql80-mysql-business-cross-border-reconciliation-procedure-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: mysql/8.0
+databaseVersion: 8.0
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+schema: finance
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,0 +1,12 @@
+id: mysql80-mysql-official-complex-index-ddl
+databaseType: MYSQL
+parserTarget: DDL
+parserMode: full-grammer
+grammarProfile: mysql/8.0
+databaseVersion: 8.0
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: official_mysql
+input: input.ddl.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json
