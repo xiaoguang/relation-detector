@@ -1,6 +1,7 @@
 id: postgres-generated-industrial-complex-sql
 databaseType: POSTGRESQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PLAIN_SQL
 schema: public
 input: ../../../examples/industrial-complex-sql-001-050.sql

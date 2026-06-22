@@ -1,6 +1,7 @@
 id: postgres-basic-correctness-case-01-statements-sql
 databaseType: POSTGRESQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: NATIVE_LOG
 evidenceSourceType: DDL_FILE
 schema: case_01

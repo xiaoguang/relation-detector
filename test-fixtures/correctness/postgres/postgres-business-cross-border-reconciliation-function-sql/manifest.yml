@@ -1,6 +1,7 @@
 id: postgres-business-cross-border-reconciliation-function-sql
 databaseType: POSTGRESQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: FUNCTION
 statementFormat: OBJECT_BLOCKS
 schema: finance

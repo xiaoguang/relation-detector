@@ -1,6 +1,7 @@
 id: postgres-business-user-coupons-delete-exists-sql
 databaseType: POSTGRESQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PLAIN_SQL
 schema: public
 input: input.sql

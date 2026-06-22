@@ -1,6 +1,7 @@
 id: basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PROCEDURE
 statementFormat: OBJECT_BLOCKS
 objectSourceFilter: PROCEDURE:case_01.proc_refresh_org_pdf

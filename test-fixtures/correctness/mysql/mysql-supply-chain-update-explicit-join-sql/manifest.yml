@@ -1,6 +1,7 @@
 id: mysql-supply-chain-update-explicit-join-sql
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PLAIN_SQL
 schema: supply_chain
 input: input.sql

@@ -1,6 +1,7 @@
 id: mysql-official-lateral-derived-edge-sql
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PLAIN_SQL
 schema: official_mysql
 input: input.sql

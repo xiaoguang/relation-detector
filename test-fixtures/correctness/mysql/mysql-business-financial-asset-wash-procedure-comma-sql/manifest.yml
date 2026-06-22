@@ -1,6 +1,7 @@
 id: mysql-business-financial-asset-wash-procedure-comma-sql
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PROCEDURE
 statementFormat: OBJECT_BLOCKS
 schema: finance

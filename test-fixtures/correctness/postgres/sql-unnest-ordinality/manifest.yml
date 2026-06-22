@@ -1,6 +1,7 @@
 id: postgres-sql-unnest-ordinality
 databaseType: POSTGRESQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PLAIN_SQL
 schema: public
 input: input.sql

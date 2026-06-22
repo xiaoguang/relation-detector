@@ -1,6 +1,7 @@
 id: basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PROCEDURE
 statementFormat: OBJECT_BLOCKS
 objectSourceFilter: PROCEDURE:case_01.proc_create_order_mock_retail

@@ -1,6 +1,7 @@
 id: mysql-sql-multi-table-update
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PLAIN_SQL
 schema: shop
 input: input.sql

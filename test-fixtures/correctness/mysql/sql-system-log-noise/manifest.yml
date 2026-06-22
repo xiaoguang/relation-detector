@@ -1,6 +1,7 @@
 id: mysql-sql-system-log-noise
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: NATIVE_LOG
 schema: shop
 input: input.sql

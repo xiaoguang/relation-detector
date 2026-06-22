@@ -1,6 +1,7 @@
 id: mysql-basic-correctness-case-01-ddl
 databaseType: MYSQL
 parserTarget: DDL
+parserMode: token-event
 sourceType: DDL_FILE
 evidenceSourceType: DATABASE_DDL
 schema: case_01

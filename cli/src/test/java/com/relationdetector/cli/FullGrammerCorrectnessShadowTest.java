@@ -53,9 +53,7 @@ class FullGrammerCorrectnessShadowTest {
                     .filter(path -> path.getFileName().toString().equals("manifest.yml"))
                     .filter(path -> fixtureFilter.isBlank() || path.toString().contains(fixtureFilter))
                     .map(this::readFixture)
-                    .filter(fixture -> fixture.parserTarget().equals("SQL"))
-                    .filter(fixture -> !fixture.parserMode().equalsIgnoreCase("token-event"))
-                    .filter(fixture -> fixture.grammarProfile().isBlank())
+                    .filter(this::isFullGrammerShadowFixture)
                     .toList();
         }
 
@@ -65,6 +63,23 @@ class FullGrammerCorrectnessShadowTest {
         assertTrue(!fixtures.isEmpty(), "Expected SQL correctness fixtures");
         assertAll("full-grammer SQL shadow parity",
                 fixtures.stream().map(fixture -> (Executable) () -> assertFixtureParity(fixture)).toList());
+    }
+
+    private boolean isFullGrammerShadowFixture(Fixture fixture) {
+        if (!fixture.parserTarget().equals("SQL") || !fixture.grammarProfile().isBlank()) {
+            return false;
+        }
+        if (!fixture.parserMode().equalsIgnoreCase("token-event")) {
+            return true;
+        }
+        return !isExplicitTokenEventCompatibilityFixture(fixture);
+    }
+
+    private boolean isExplicitTokenEventCompatibilityFixture(Fixture fixture) {
+        String id = fixture.id();
+        return id.matches("postgres-pg\\d+-sql")
+                || id.equals("postgres-edge-cases-sql")
+                || id.startsWith("postgres-extreme-nesting-");
     }
 
     private void assertFixtureParity(Fixture fixture) throws Exception {

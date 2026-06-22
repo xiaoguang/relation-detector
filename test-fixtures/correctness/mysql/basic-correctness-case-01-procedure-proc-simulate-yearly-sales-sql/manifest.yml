@@ -1,6 +1,7 @@
 id: basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PROCEDURE
 statementFormat: OBJECT_BLOCKS
 objectSourceFilter: PROCEDURE:case_01.proc_simulate_yearly_sales

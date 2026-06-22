@@ -1,6 +1,7 @@
 id: basic-correctness-case-01-procedure-internal-flush-buffer-sql
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PROCEDURE
 statementFormat: OBJECT_BLOCKS
 objectSourceFilter: PROCEDURE:case_01._internal_flush_buffer

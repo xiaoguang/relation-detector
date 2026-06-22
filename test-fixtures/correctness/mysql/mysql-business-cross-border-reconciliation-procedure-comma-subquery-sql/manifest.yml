@@ -1,6 +1,7 @@
 id: mysql-business-cross-border-reconciliation-procedure-comma-subquery-sql
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PROCEDURE
 statementFormat: OBJECT_BLOCKS
 schema: finance

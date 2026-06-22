@@ -1,6 +1,7 @@
 id: mysql-ddl-create-table-fk-index
 databaseType: MYSQL
 parserTarget: DDL
+parserMode: token-event
 sourceType: DDL_FILE
 evidenceSourceType: DDL_FILE
 schema: shop

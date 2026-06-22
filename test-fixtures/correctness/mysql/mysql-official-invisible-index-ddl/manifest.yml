@@ -1,6 +1,7 @@
 id: mysql-official-invisible-index-ddl
 databaseType: MYSQL
 parserTarget: DDL
+parserMode: token-event
 sourceType: DDL_FILE
 evidenceSourceType: DDL_FILE
 schema: official_mysql

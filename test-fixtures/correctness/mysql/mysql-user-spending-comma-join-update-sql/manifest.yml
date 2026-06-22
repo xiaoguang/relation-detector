@@ -1,6 +1,7 @@
 id: mysql-user-spending-comma-join-update-sql
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PLAIN_SQL
 schema: commerce
 input: input.sql

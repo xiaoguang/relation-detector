@@ -1,6 +1,7 @@
 id: common-sql-join-using
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PLAIN_SQL
 schema: shop
 input: input.sql

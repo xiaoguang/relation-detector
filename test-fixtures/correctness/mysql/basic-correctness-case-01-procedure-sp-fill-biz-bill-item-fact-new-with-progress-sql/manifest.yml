@@ -1,6 +1,7 @@
 id: basic-correctness-case-01-procedure-sp-fill-biz-bill-item-fact-new-with-progress-sql
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PROCEDURE
 statementFormat: OBJECT_BLOCKS
 objectSourceFilter: PROCEDURE:case_01.sp_fill_biz_bill_item_fact_new_with_progress

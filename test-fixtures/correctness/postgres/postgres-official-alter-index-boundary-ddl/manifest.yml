@@ -1,6 +1,7 @@
 id: postgres-official-alter-index-boundary-ddl
 databaseType: POSTGRESQL
 parserTarget: DDL
+parserMode: token-event
 sourceType: DDL_FILE
 evidenceSourceType: DDL_FILE
 schema: public

@@ -1,6 +1,7 @@
 id: mysql-official-index-options-ddl
 databaseType: MYSQL
 parserTarget: DDL
+parserMode: token-event
 evidenceSourceType: DDL_FILE
 schema: official_mysql
 input: input.ddl.sql

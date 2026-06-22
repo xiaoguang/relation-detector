@@ -1,6 +1,7 @@
 id: basic-correctness-case-01-procedure-sp-sync-retail-out-fact-batch-sql
 databaseType: MYSQL
 parserTarget: SQL
+parserMode: token-event
 sourceType: PROCEDURE
 statementFormat: OBJECT_BLOCKS
 objectSourceFilter: PROCEDURE:case_01.sp_sync_retail_out_fact_batch
