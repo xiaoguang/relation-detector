@@ -192,6 +192,38 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
+    void doesNotCreateRelationsFromLiteralFiltersLikePredicatesOrExpressionInSubqueries() {
+        SqlStatementRecord statement = statement("""
+                SELECT d.id, d.doc_title
+                FROM documents d, revisions r
+                WHERE d.doc_title LIKE 'ARCHIVE%'
+                  AND r.change_summary NOT LIKE '%draft%'
+                  AND d.status = 'ACTIVE'
+                  AND r.is_approved = true
+                  AND d.channel_type IN ('WEB', 'MOBILE_APP')
+                  AND 'VER_' || d.major_version IN (
+                      SELECT 'VER_' || b.minor_version
+                      FROM beta_builds b
+                  )
+                  AND d.id IN (
+                      SELECT SUM(soi.quantity_sold)
+                      FROM sales_order_items soi
+                      WHERE soi.archive_status = 'PENDING'
+                      HAVING SUM(soi.quantity_sold) > 10
+                  )
+                """);
+
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement,
+                        tokenEventRelationOnly(new TokenEventStructuredSqlParser(SqlDialect.POSTGRES).parseSql(statement, null)))
+                .stream()
+                .map(this::relationFingerprint)
+                .sorted()
+                .toList();
+
+        assertEquals(List.of(), fingerprints);
+    }
+
+    @Test
     void emitsNativeRowsetScopeEventsForCteTempTableAndTriggerPseudoRows() {
         SqlStatementRecord statement = statement("""
                 CREATE TRIGGER trg_orders_audit

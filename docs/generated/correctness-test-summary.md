@@ -9218,8 +9218,6 @@ WHERE NOT EXISTS (
 - `CO_OCCURRENCE:supplier_inventory_logs.sku_code->master_skus.sku_ref:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:supplier_inventory_logs.sku_code->sales_order_items.product_sku:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_JOIN`
-- `FK_LIKE:sales_order_items.quantity_sold->supplier_inventory_logs.sku_code:SQL_LOG_SUBQUERY_IN`
-- `FK_LIKE:supplier_inventory_logs.archive_status->sales_order_items.quantity_sold:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:supplier_inventory_logs.warehouse_id->warehouse_facilities.id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
@@ -9269,7 +9267,7 @@ _Preview truncated; see input file for full content._
 
 - `CO_OCCURRENCE:sales_order_items.product_sku->supplier_inventory_logs.sku_code:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:supplier_inventory_logs.sku_code->master_skus.sku_ref:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `FK_LIKE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_EXISTS`
+- `FK_LIKE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_JOIN`
 - `FK_LIKE:supplier_inventory_logs.warehouse_id->warehouse_facilities.id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
@@ -9920,7 +9918,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:coupon_redemptions.coupon_id->coupons.id:SQL_LOG_EXISTS`
 - `FK_LIKE:coupons.merchant_id->merchants.id:SQL_LOG_JOIN`
-- `FK_LIKE:user_coupons.coupon_id->coupons.id:SQL_LOG_EXISTS`
+- `FK_LIKE:user_coupons.coupon_id->coupons.id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -10012,12 +10010,10 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:transit_legs.vessel_id->maritime_vessels.vessel_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:user_role_mappings.user_id->application_users.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:wiki_pages.parent_page_id->wiki_pages.page_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `FK_LIKE:customer_interactions.channel_type->interaction_resolutions.resolution_summary:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:access_audit_logs.action_status->system_return_dictionary.success_code:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:iot_devices.hardware_architecture->firmware_compliance_matrix.arch_type:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:iot_devices.installed_version->firmware_compliance_matrix.patched_version_string:SQL_LOG_SUBQUERY_IN`
-- `FK_LIKE:membership_registry.is_verified->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:membership_registry.member_id->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN`
-- `FK_LIKE:membership_registry.member_id->access_audit_logs.ip_address:SQL_LOG_SUBQUERY_IN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -10088,7 +10084,6 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:base_catalog.status->extension_catalog.is_approved:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:product_variants.product_id->products.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:system_logs.triggered_by->user_preferences.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:user_roles_mapping.role_id->role_permissions.role_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
@@ -10153,13 +10148,11 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN`
 - `FK_LIKE:categories.s_id->sub_labels.id:SQL_LOG_JOIN`
 - `FK_LIKE:departments.manager_id->employees.id:SQL_LOG_JOIN`
-- `FK_LIKE:documents.doc_title->revisions.LIKE:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN`
 - `FK_LIKE:main_catalog.p_id->products.id:SQL_LOG_JOIN`
 - `FK_LIKE:products.c_id->categories.id:SQL_LOG_JOIN`
 - `FK_LIKE:products.dept_id->departments.id:SQL_LOG_JOIN`
 - `FK_LIKE:revisions.doc_id->documents.id:SQL_LOG_SUBQUERY_IN`
-- `FK_LIKE:system_releases.major_version->beta_builds.minor_version:SQL_LOG_SUBQUERY_IN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -11351,8 +11344,6 @@ WHERE NOT EXISTS (
 - `CO_OCCURRENCE:supplier_inventory_logs.sku_code->master_skus.sku_ref:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:supplier_inventory_logs.sku_code->sales_order_items.product_sku:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_JOIN`
-- `FK_LIKE:sales_order_items.quantity_sold->supplier_inventory_logs.sku_code:SQL_LOG_SUBQUERY_IN`
-- `FK_LIKE:supplier_inventory_logs.archive_status->sales_order_items.quantity_sold:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:supplier_inventory_logs.warehouse_id->warehouse_facilities.id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
@@ -11402,7 +11393,7 @@ _Preview truncated; see input file for full content._
 
 - `CO_OCCURRENCE:sales_order_items.product_sku->supplier_inventory_logs.sku_code:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:supplier_inventory_logs.sku_code->master_skus.sku_ref:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `FK_LIKE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_EXISTS`
+- `FK_LIKE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_JOIN`
 - `FK_LIKE:supplier_inventory_logs.warehouse_id->warehouse_facilities.id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
@@ -12053,7 +12044,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:coupon_redemptions.coupon_id->coupons.id:SQL_LOG_EXISTS`
 - `FK_LIKE:coupons.merchant_id->merchants.id:SQL_LOG_JOIN`
-- `FK_LIKE:user_coupons.coupon_id->coupons.id:SQL_LOG_EXISTS`
+- `FK_LIKE:user_coupons.coupon_id->coupons.id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -12145,12 +12136,10 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:transit_legs.vessel_id->maritime_vessels.vessel_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:user_role_mappings.user_id->application_users.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:wiki_pages.parent_page_id->wiki_pages.page_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `FK_LIKE:customer_interactions.channel_type->interaction_resolutions.resolution_summary:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:access_audit_logs.action_status->system_return_dictionary.success_code:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:iot_devices.hardware_architecture->firmware_compliance_matrix.arch_type:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:iot_devices.installed_version->firmware_compliance_matrix.patched_version_string:SQL_LOG_SUBQUERY_IN`
-- `FK_LIKE:membership_registry.is_verified->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:membership_registry.member_id->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN`
-- `FK_LIKE:membership_registry.member_id->access_audit_logs.ip_address:SQL_LOG_SUBQUERY_IN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -12221,7 +12210,6 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:base_catalog.status->extension_catalog.is_approved:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:product_variants.product_id->products.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:system_logs.triggered_by->user_preferences.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:user_roles_mapping.role_id->role_permissions.role_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
@@ -12286,13 +12274,11 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN`
 - `FK_LIKE:categories.s_id->sub_labels.id:SQL_LOG_JOIN`
 - `FK_LIKE:departments.manager_id->employees.id:SQL_LOG_JOIN`
-- `FK_LIKE:documents.doc_title->revisions.LIKE:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN`
 - `FK_LIKE:main_catalog.p_id->products.id:SQL_LOG_JOIN`
 - `FK_LIKE:products.c_id->categories.id:SQL_LOG_JOIN`
 - `FK_LIKE:products.dept_id->departments.id:SQL_LOG_JOIN`
 - `FK_LIKE:revisions.doc_id->documents.id:SQL_LOG_SUBQUERY_IN`
-- `FK_LIKE:system_releases.major_version->beta_builds.minor_version:SQL_LOG_SUBQUERY_IN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -13572,8 +13558,6 @@ WHERE NOT EXISTS (
 - `CO_OCCURRENCE:supplier_inventory_logs.sku_code->master_skus.sku_ref:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:supplier_inventory_logs.sku_code->sales_order_items.product_sku:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_JOIN`
-- `FK_LIKE:sales_order_items.quantity_sold->supplier_inventory_logs.sku_code:SQL_LOG_SUBQUERY_IN`
-- `FK_LIKE:supplier_inventory_logs.archive_status->sales_order_items.quantity_sold:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:supplier_inventory_logs.warehouse_id->warehouse_facilities.id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
@@ -13623,7 +13607,7 @@ _Preview truncated; see input file for full content._
 
 - `CO_OCCURRENCE:sales_order_items.product_sku->supplier_inventory_logs.sku_code:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:supplier_inventory_logs.sku_code->master_skus.sku_ref:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `FK_LIKE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_EXISTS`
+- `FK_LIKE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_JOIN`
 - `FK_LIKE:supplier_inventory_logs.warehouse_id->warehouse_facilities.id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
@@ -14274,7 +14258,7 @@ _Preview truncated; see input file for full content._
 
 - `FK_LIKE:coupon_redemptions.coupon_id->coupons.id:SQL_LOG_EXISTS`
 - `FK_LIKE:coupons.merchant_id->merchants.id:SQL_LOG_JOIN`
-- `FK_LIKE:user_coupons.coupon_id->coupons.id:SQL_LOG_EXISTS`
+- `FK_LIKE:user_coupons.coupon_id->coupons.id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -14366,12 +14350,10 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:transit_legs.vessel_id->maritime_vessels.vessel_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:user_role_mappings.user_id->application_users.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:wiki_pages.parent_page_id->wiki_pages.page_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `FK_LIKE:customer_interactions.channel_type->interaction_resolutions.resolution_summary:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:access_audit_logs.action_status->system_return_dictionary.success_code:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:iot_devices.hardware_architecture->firmware_compliance_matrix.arch_type:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:iot_devices.installed_version->firmware_compliance_matrix.patched_version_string:SQL_LOG_SUBQUERY_IN`
-- `FK_LIKE:membership_registry.is_verified->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:membership_registry.member_id->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN`
-- `FK_LIKE:membership_registry.member_id->access_audit_logs.ip_address:SQL_LOG_SUBQUERY_IN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -14442,7 +14424,6 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:base_catalog.status->extension_catalog.is_approved:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:product_variants.product_id->products.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:system_logs.triggered_by->user_preferences.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:user_roles_mapping.role_id->role_permissions.role_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
@@ -14507,13 +14488,11 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN`
 - `FK_LIKE:categories.s_id->sub_labels.id:SQL_LOG_JOIN`
 - `FK_LIKE:departments.manager_id->employees.id:SQL_LOG_JOIN`
-- `FK_LIKE:documents.doc_title->revisions.LIKE:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN`
 - `FK_LIKE:main_catalog.p_id->products.id:SQL_LOG_JOIN`
 - `FK_LIKE:products.c_id->categories.id:SQL_LOG_JOIN`
 - `FK_LIKE:products.dept_id->departments.id:SQL_LOG_JOIN`
 - `FK_LIKE:revisions.doc_id->documents.id:SQL_LOG_SUBQUERY_IN`
-- `FK_LIKE:system_releases.major_version->beta_builds.minor_version:SQL_LOG_SUBQUERY_IN`
 
 **Expected Data Lineage Fingerprints**
 

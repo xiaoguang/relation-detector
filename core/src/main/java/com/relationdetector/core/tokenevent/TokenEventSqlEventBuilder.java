@@ -934,6 +934,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
                         tokens, operandIndex, defaultOuterRowsetBefore(tokens, index));
                 SubqueryColumnRead inner = readSingleColumnSubquery(tokens, openParen + 1, closeParen);
                 if (outer != null && inner != null) {
+                    attributes.put("verifiedColumnSubquery", true);
                     attributes.put("outerAlias", outer.qualifier);
                     attributes.put("outerColumn", outer.column);
                     String outerTable = outer.qualifier.isBlank() ? defaultOuterRowsetBefore(tokens, index) : "";
@@ -949,6 +950,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
                 TupleRead outer = readTupleBeforeIn(tokens, index);
                 TupleSubqueryRead inner = readTupleSubquery(tokens, openParen + 1, closeParen);
                 if (outer != null && inner != null && outer.columns.size() == inner.columns.size()) {
+                    attributes.put("verifiedColumnSubquery", true);
                     attributes.put("outerAliases", outer.columns.stream().map(ColumnRead::qualifier).toList());
                     attributes.put("outerColumns", outer.columns.stream().map(ColumnRead::column).toList());
                     attributes.put("innerAliases", inner.columns.stream().map(ColumnRead::qualifier).toList());
@@ -957,7 +959,9 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
                     attributes.put("innerTableAlias", inner.alias);
                 }
             }
-            events.add(new StructuredSqlEvent(type, statement.sourceName(), line(statement, tokens.get(index)), attributes));
+            if (Boolean.TRUE.equals(attributes.get("verifiedColumnSubquery"))) {
+                events.add(new StructuredSqlEvent(type, statement.sourceName(), line(statement, tokens.get(index)), attributes));
+            }
         }
         return events;
     }
@@ -1078,7 +1082,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         if (openParen < 0) {
             return null;
         }
-        List<ColumnRead> columns = readColumnList(tokens, openParen + 1, closeParen);
+        List<ColumnRead> columns = readStrictColumnTuple(tokens, openParen + 1, closeParen, "");
         return columns.isEmpty() ? null : new TupleRead(columns);
     }
 
@@ -1102,9 +1106,8 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         if (selectIndex < 0 || fromIndex < 0) {
             return null;
         }
-        List<ColumnRead> columns = readColumnList(tokens, selectIndex + 1, fromIndex);
         IdentifierRead table = readTokenEventQualifiedIdentifier(tokens, fromIndex + 1);
-        if (columns.isEmpty() || table == null) {
+        if (table == null) {
             return null;
         }
         String alias = "";
@@ -1115,7 +1118,44 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         if (aliasIndex < endExclusive && isIdentifierText(cleanIdentifier(tokens.get(aliasIndex).getText()))) {
             alias = cleanIdentifier(tokens.get(aliasIndex).getText());
         }
+        String defaultQualifier = alias.isBlank() ? baseName(table.qualifiedName) : alias;
+        List<ColumnRead> columns = readStrictColumnTuple(tokens, selectIndex + 1, fromIndex, defaultQualifier);
+        if (columns.isEmpty()) {
+            return null;
+        }
         return new TupleSubqueryRead(columns, table.qualifiedName, alias);
+    }
+
+    private List<ColumnRead> readStrictColumnTuple(
+            List<Token> tokens,
+            int startInclusive,
+            int endExclusive,
+            String defaultQualifier
+    ) {
+        List<ColumnRead> columns = new ArrayList<>();
+        int segmentStart = startInclusive;
+        int depth = 0;
+        for (int index = startInclusive; index <= endExclusive; index++) {
+            boolean atEnd = index == endExclusive;
+            String text = atEnd ? "" : tokens.get(index).getText();
+            if (!atEnd) {
+                if (text.equals("(")) {
+                    depth++;
+                } else if (text.equals(")")) {
+                    depth--;
+                }
+            }
+            if (!atEnd && !(depth == 0 && text.equals(","))) {
+                continue;
+            }
+            ColumnRead column = readSimpleSelectedColumn(tokens, segmentStart, index, defaultQualifier);
+            if (column == null) {
+                return List.of();
+            }
+            columns.add(column);
+            segmentStart = index + 1;
+        }
+        return columns;
     }
 
     private List<ColumnRead> readColumnList(List<Token> tokens, int startInclusive, int endExclusive) {

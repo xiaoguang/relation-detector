@@ -108,6 +108,9 @@ public final class TokenEventRelationExtractor {
                             "ANTLR token-event JOIN USING column equality"));
                 }
             } else if (event.type() == StructuredParseEventType.IN_SUBQUERY_PREDICATE) {
+                if (!isVerifiedColumnSubquery(event)) {
+                    continue;
+                }
                 ColumnRef outer = resolveWithFallbackTable(
                         text(event, "outerAlias"),
                         text(event, "outerColumn"),
@@ -127,6 +130,9 @@ public final class TokenEventRelationExtractor {
                     candidates.add(candidate);
                 }
             } else if (event.type() == StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE) {
+                if (!isVerifiedColumnSubquery(event)) {
+                    continue;
+                }
                 List<String> outerAliases = stringList(event.attributes().get("outerAliases"));
                 List<String> outerColumns = stringList(event.attributes().get("outerColumns"));
                 List<String> innerAliases = stringList(event.attributes().get("innerAliases"));
@@ -152,6 +158,10 @@ public final class TokenEventRelationExtractor {
             }
         }
         return deduplicate(removeJoinCandidatesCoveredByExists(candidates));
+    }
+
+    private boolean isVerifiedColumnSubquery(StructuredSqlEvent event) {
+        return Boolean.TRUE.equals(event.attributes().get("verifiedColumnSubquery"));
     }
 
     private List<RelationshipCandidate> removeJoinCandidatesCoveredByExists(List<RelationshipCandidate> candidates) {
