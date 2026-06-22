@@ -4,7 +4,14 @@
 
 实现 PostgreSQL adaptor，使工具能够从 PostgreSQL 12+ 获取关系证据。该 adaptor 与 MySQL adaptor 具备同等能力，但遵循 PostgreSQL 的 catalog、schema、标识符和日志规则。
 
-当前 PostgreSQL adaptor 不只负责采集，也负责 PostgreSQL 方言 parser 实现：token-event parser 位于 `com.relationdetector.postgres.tokenevent`，PostgreSQL 16 full-grammer module 位于 `com.relationdetector.postgres.fullgrammer.v16`。core 只通过 runner 和 `FullGrammerDialectModule` registry 调度，不在 core 里 hard-code PostgreSQL 版本实现。
+当前 PostgreSQL adaptor 不只负责采集，也负责 PostgreSQL 方言 parser 实现：token-event parser 位于 `com.relationdetector.postgres.tokenevent`，PostgreSQL full-grammer 公共抽象位于 `com.relationdetector.postgres.fullgrammer.common`，严格版本 profile 位于 `com.relationdetector.postgres.fullgrammer.v16`、`v17`、`v18`。core 只通过 runner 和 `FullGrammerDialectModule` registry 调度，不在 core 里 hard-code PostgreSQL 版本实现。
+
+PostgreSQL full-grammer 的设计目标是“按大版本严格表达官方语法边界”：
+
+- `postgresql/16` 只证明 PostgreSQL 16.x 语法。
+- `postgresql/17` 只证明 PostgreSQL 17.x 语法。
+- `postgresql/18` 只证明 PostgreSQL 18.x 语法。
+- 低版本不应通过 full-grammer 接受高版本专属语法；token-event 可以作为宽松 fallback 尽量兼容更多版本。
 
 ## 支持范围
 
@@ -104,8 +111,38 @@ PostgreSQL adaptor 负责：
 
 - `postgres.tokenevent.PostgresTokenEventStructuredDdlParser` 暴露 PostgreSQL token-event DDL parser。
 - `PostgresDdlStructuredEventVisitor` 处理 PostgreSQL DDL 方言差异，例如 `ONLY`、`NOT VALID`、`CONCURRENTLY`、`INCLUDE`、partial/expression index、opclass/collation/access method。
-- `postgres.fullgrammer.v16` 注册 PostgreSQL 16 full-grammer DDL parser，用于 `parser.mode=auto|full-grammer` 且 profile 可选中时。
+- `postgres.fullgrammer.v16`、`v17`、`v18` 分别注册 PostgreSQL 16/17/18 full-grammer DDL parser，用于 `parser.mode=auto|full-grammer` 且 profile 可选中时。
 - 两条 DDL parser 链路都只输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 结构事件；最终 relationship 仍由 core 的 `DdlRelationExtractionVisitor` 生成。
+
+## 版本化 full-grammer 结构
+
+`adaptor-postgres` 采用 Template Method + Strategy + Thin Bridge：
+
+- `postgres.fullgrammer.common`
+  - parser 生命周期、syntax error 处理、warning/attributes、SQL event core、DDL event core、expression analyzer 公共逻辑；
+  - 不直接依赖某个版本 generated parser class；
+  - 不按表名/列名做特殊过滤。
+- `postgres.fullgrammer.v16|v17|v18`
+  - 独立 `.g4`、generated lexer/parser package、version binding、dialect module；
+  - typed visitor 只做“从该版本 grammar context 提取结构字段并交给 common core”的薄桥接；
+  - 版本差异通过 version policy/hook 表达，例如 v18 temporal constraint 结构。
+
+full-grammer module 由 `META-INF/services/com.relationdetector.core.fullgrammer.FullGrammerDialectModule` 注册。core 只按 profile 选择 module，不直接 import `v16`、`v17`、`v18` 类。
+
+## PostgreSQL versioned correctness golden
+
+PostgreSQL 目前有四组 correctness 资产：
+
+| 路径 | 角色 | Parser/profile | 说明 |
+| --- | --- | --- | --- |
+| `test-fixtures/correctness/postgres` | root baseline | token-event baseline；full-grammer parity 也会覆盖 | 历史兼容基线，不移动到某个大版本目录。 |
+| `test-fixtures/correctness/postgres/v16` | strict version golden | `parserMode: full-grammer`, `grammarProfile: postgresql/16` | PostgreSQL 16.x 严格语法 golden。 |
+| `test-fixtures/correctness/postgres/v17` | strict version golden | `parserMode: full-grammer`, `grammarProfile: postgresql/17` | 在 v16 语义基础上加入 PostgreSQL 17 专属语法，例如 SQL/JSON、`JSON_TABLE`、MERGE 扩展。 |
+| `test-fixtures/correctness/postgres/v18` | strict version golden | `parserMode: full-grammer`, `grammarProfile: postgresql/18` | 在 v17 语义基础上加入 PostgreSQL 18 专属语法，例如 `RETURNING old/new`、virtual generated columns、temporal constraints。 |
+
+每个版本目录都有自己的 `expected-relations.json` / `expected-lineage.json` / `expected-diagnostics.json`。版本目录不允许 silent fallback 到 token-event；profile 缺失、版本不匹配或 full-grammer hard failure 都应让对应 correctness 测试失败。
+
+版本之间的差异由 `docs/parser-audit/postgres-version-golden-diff.md` 解释。低版本相对高版本缺失的 relation / evidence / lineage 必须被分类为 `EXPECTED_VERSION_GAP`、`GRAMMAR_GAP`、`SEMANTIC_GAP` 或 `REVIEW_NEEDED`。
 
 ## 对象定义采集
 

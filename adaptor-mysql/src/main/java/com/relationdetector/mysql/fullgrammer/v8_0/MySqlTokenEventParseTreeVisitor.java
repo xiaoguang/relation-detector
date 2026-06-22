@@ -16,9 +16,13 @@ import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.Fields
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.FunctionParameterContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.InsertStatementContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.JoinedTableContext;
+import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.PredicateExprInContext;
+import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.PredicateContext;
+import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.PrimaryExprCompareContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.ProcedureParameterContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.QuerySpecificationContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.SelectItemContext;
+import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.SimpleExprSubQueryContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.SingleTableContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.TableFunctionContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.TableReferenceContext;
@@ -182,11 +186,41 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
         String right = lastRowsetAlias();
         if (ctx.expr() != null) {
             sink.predicateEqualities(ctx, ctx.expr(), joinKind(ctx));
+            visit(ctx.expr());
         }
         if (ctx.identifierListWithParentheses() != null && !left.isBlank() && !right.isBlank()) {
             sink.joinUsing(ctx, left, right, sink.identifiers(ctx.identifierListWithParentheses()));
         }
         return null;
+    }
+
+    @Override
+    public Void visitSimpleExprSubQuery(SimpleExprSubQueryContext ctx) {
+        sink.subqueryPredicates(ctx, ctx);
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitPredicateExprIn(PredicateExprInContext ctx) {
+        sink.subqueryPredicates(ctx, ctx);
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitPredicate(PredicateContext ctx) {
+        Void result = visitChildren(ctx);
+        if (ctx.predicateOperations() instanceof PredicateExprInContext in && in.subquery() != null) {
+            sink.inSubqueryPredicate(ctx, ctx.bitExpr(0), in.subquery());
+        }
+        return result;
+    }
+
+    @Override
+    public Void visitPrimaryExprCompare(PrimaryExprCompareContext ctx) {
+        if (ctx.compOp() != null && "=".equals(ctx.compOp().getText())) {
+            sink.predicateEquality(ctx, ctx.boolPri(), ctx.predicate(), "WHERE_OR_UNKNOWN");
+        }
+        return visitChildren(ctx);
     }
 
     @Override

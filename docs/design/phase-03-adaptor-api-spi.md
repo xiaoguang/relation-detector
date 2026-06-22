@@ -15,23 +15,24 @@
 
 ## DatabaseAdaptor 接口
 
-建议接口：
+当前接口：
 
 ```java
 public interface DatabaseAdaptor {
   String id();
   String displayName();
-  Set<String> supportedDatabaseTypes();
+  Set<DatabaseType> supportedDatabaseTypes();
+  Set<AdaptorCapability> capabilities();
   IdentifierRules identifierRules();
   MetadataCollector metadataCollector();
   ObjectDefinitionCollector objectDefinitionCollector();
+  Optional<DatabaseDdlCollector> databaseDdlCollector();
   SqlLogExtractor sqlLogExtractor();
   SqlRelationParser sqlRelationParser();
   Optional<StructuredSqlParser> structuredSqlParser();
   Optional<StructuredDdlParser> structuredDdlParser();
   Optional<DataProfiler> dataProfiler();
   EvidenceWeightAdjuster evidenceWeightAdjuster();
-  AdaptorCapabilities capabilities();
 }
 ```
 
@@ -150,7 +151,7 @@ DDL 不再通过旧 `DdlParser` SPI 暴露。adaptor 通过 `structuredDdlParser
 
 ```java
 public interface SqlRelationParser {
-  List<RelationshipEvidence> parse(SqlStatementRecord statement, ParseContext context);
+  List<RelationshipCandidate> parse(SqlStatementRecord statement, AdaptorContext context);
 }
 ```
 
@@ -197,6 +198,7 @@ default Optional<StructuredDdlParser> structuredDdlParser() {
 - 第三方 adaptor 可以只实现 `structuredSqlParser()` 或只实现 `structuredDdlParser()`，但缺失的一侧不应再由 core simple parser 假装支持；应明确作为 future capability 或返回空/ warning。
 - 新增大版本 full-grammer 支持时，应在对应 adaptor 内新增 version package 和 `FullGrammerDialectModule`，由 core registry 通过 `ServiceLoader` 注入；core 不直接 import 方言实现类。
 - `FullGrammerDialectModule` 不属于 `DatabaseAdaptor` 接口本身；它是同一 adaptor jar 中的版本化 grammar module，通过 `META-INF/services/com.relationdetector.core.fullgrammer.FullGrammerDialectModule` 注册。这样 core 可以做统一 profile selection，而具体 grammar、generated parser、parse-tree visitor 和 expression analyzer 仍归属 MySQL/PostgreSQL adaptor。
+- 版本化 full-grammer module 与 token-event parser 的职责不同：token-event 是 adaptor 暴露的宽松生产 parser / fallback；full-grammer 是 adaptor jar 额外注册的严格版本 grammar profile。parser selection 可以在两者之间选择，但 full-grammer parser 内部不再委托 token-event 生成事件。
 
 ### DatabaseDdlCollector
 

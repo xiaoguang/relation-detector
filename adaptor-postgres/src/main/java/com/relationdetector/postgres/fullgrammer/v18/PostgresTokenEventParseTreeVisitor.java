@@ -1,13 +1,11 @@
 package com.relationdetector.postgres.fullgrammer.v18;
 
 import com.relationdetector.core.fullgrammer.*;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.postgres.fullgrammer.common.PostgresExpressionAnalyzer;
+import com.relationdetector.postgres.fullgrammer.common.PostgresSqlEventVisitorCore;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.Common_table_exprContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.A_exprContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.DeletestmtContext;
@@ -41,14 +39,13 @@ import org.antlr.v4.runtime.tree.RuleNode;
  */
 final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParserBaseVisitor<Void> {
     private final SqlStatementRecord statement;
+    private final PostgresSqlEventVisitorCore core;
     private final FullGrammerTypedSqlEventSink sink;
-    private final List<String> rowsetAliases = new ArrayList<>();
-    private String mergeTarget = "";
-    private String mergeSource = "";
 
     PostgresTokenEventParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
         this.statement = statement;
-        this.sink = new FullGrammerTypedSqlEventSink(statement, new PostgresExpressionAnalyzer());
+        this.core = new PostgresSqlEventVisitorCore(statement);
+        this.sink = core.sink();
     }
 
     /**
@@ -60,7 +57,7 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
         if (tree != null) {
             visit(tree);
         }
-        return FullGrammerEventMerger.merge(sink.events(), List.of(), FullGrammerNativeEventTypes.POSTGRES_NATIVE_EVENTS);
+        return core.mergedEvents();
     }
 
     @Override
@@ -225,7 +222,8 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
 
     @Override
     public Void visitMergestmt(MergestmtContext ctx) {
-        mergeTarget = ctx.qualified_name().isEmpty() ? "" : ctx.qualified_name(0).getText();
+        core.mergeTarget(ctx.qualified_name().isEmpty() ? "" : ctx.qualified_name(0).getText());
+        String mergeTarget = core.mergeTarget();
         String targetAlias = ctx.alias_clause().isEmpty() ? "" : firstAlias(ctx.alias_clause(0));
         if (targetAlias.isBlank()) {
             targetAlias = sink.baseName(mergeTarget);
@@ -235,7 +233,8 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
             rememberRowset(targetAlias);
         }
         if (ctx.select_with_parens() != null) {
-            mergeSource = ctx.alias_clause().size() > 1 ? firstAlias(ctx.alias_clause(1)) : "";
+            core.mergeSource(ctx.alias_clause().size() > 1 ? firstAlias(ctx.alias_clause(1)) : "");
+            String mergeSource = core.mergeSource();
             if (!mergeSource.isBlank()) {
                 sink.ignoredRowset(ctx, mergeSource, "DERIVED_TABLE");
                 sink.rowset(ctx, "USING", mergeSource, mergeSource);
@@ -243,12 +242,13 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
                 sink.withProjectionOwner(mergeSource, () -> visit(ctx.select_with_parens()));
             }
         } else if (ctx.qualified_name().size() > 1) {
-            mergeSource = ctx.qualified_name(1).getText();
+            core.mergeSource(ctx.qualified_name(1).getText());
+            String mergeSource = core.mergeSource();
             String sourceAlias = ctx.alias_clause().size() > 1 ? firstAlias(ctx.alias_clause(1)) : "";
             sink.rowset(ctx, "USING", mergeSource, sourceAlias);
             rememberRowset(sourceAlias.isBlank() ? sink.baseName(mergeSource) : sourceAlias);
         } else {
-            mergeSource = "";
+            core.mergeSource("");
         }
         sink.writeTarget(ctx, mergeTarget, targetAlias.equals(sink.baseName(mergeTarget)) ? "" : targetAlias);
         if (ctx.a_expr() != null) {
@@ -259,7 +259,7 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
 
     @Override
     public Void visitMerge_update_clause(Merge_update_clauseContext ctx) {
-        sink.withWriteTarget(mergeTarget, () -> visitChildren(ctx));
+        sink.withWriteTarget(core.mergeTarget(), () -> visitChildren(ctx));
         return null;
     }
 
@@ -270,35 +270,18 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
             List<ParseTree> values = expressionChildren(ctx.values_clause());
             int count = Math.min(targets.size(), values.size());
             for (int index = 0; index < count; index++) {
-                sink.mergeInsert(ctx, "", mergeTarget, targets.get(index), values.get(index));
+                sink.mergeInsert(ctx, "", core.mergeTarget(), targets.get(index), values.get(index));
             }
         }
         return visitChildren(ctx);
     }
 
     private List<ParseTree> expressionChildren(ParseTree tree) {
-        List<ParseTree> result = new ArrayList<>();
-        collectExpressionChildren(tree, result);
-        return result;
-    }
-
-    private void collectExpressionChildren(ParseTree tree, List<ParseTree> result) {
-        if (tree == null) {
-            return;
-        }
-        String name = tree.getClass().getSimpleName();
-        if (name.equals("A_exprContext") || name.endsWith("A_exprContext")) {
-            result.add(tree);
-            return;
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectExpressionChildren(tree.getChild(index), result);
-        }
+        return core.expressionChildren(tree);
     }
 
     private String firstAlias(ParseTree tree) {
-        List<String> identifiers = sink.identifiers(tree);
-        return identifiers.isEmpty() ? "" : identifiers.get(0);
+        return core.firstAlias(tree);
     }
 
     private String firstFuncAlias(Func_alias_clauseContext ctx) {
@@ -309,38 +292,26 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
     }
 
     private String firstIdentifier(ParseTree tree) {
-        List<String> identifiers = sink.identifiers(tree);
-        return identifiers.isEmpty() ? "" : identifiers.get(0);
+        return core.firstIdentifier(tree);
     }
 
     private String lastIdentifier(ParseTree tree) {
-        List<String> identifiers = sink.identifiers(tree);
-        return identifiers.isEmpty() ? "" : identifiers.get(identifiers.size() - 1);
+        return core.lastIdentifier(tree);
     }
 
     private String projectedColumnName(ParseTree expression) {
-        List<String> identifiers = sink.identifiers(expression);
-        return identifiers.isEmpty() ? "" : identifiers.get(identifiers.size() - 1);
+        return core.projectedColumnName(expression);
     }
 
     private void rememberRowset(String aliasOrTable) {
-        String clean = sink.clean(aliasOrTable);
-        if (!clean.isBlank()) {
-            rowsetAliases.add(clean);
-        }
+        core.rememberRowset(aliasOrTable);
     }
 
     private String lastRowsetAlias() {
-        return rowsetAliases.isEmpty() ? "" : rowsetAliases.get(rowsetAliases.size() - 1);
+        return core.lastRowsetAlias();
     }
 
     private boolean isExpressionContext(ParserRuleContext ctx) {
-        String name = ctx.getClass().getSimpleName();
-        return name.contains("A_expr")
-                || name.contains("B_expr")
-                || name.contains("C_expr")
-                || name.contains("Func_expr")
-                || name.equals("ColumnrefContext")
-                || name.equals("Subquery_OpContext");
+        return core.isExpressionContext(ctx);
     }
 }

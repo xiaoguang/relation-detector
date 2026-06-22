@@ -49,12 +49,10 @@
     "CO_OCCURRENCE:transit_legs.vessel_id->maritime_vessels.vessel_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
     "CO_OCCURRENCE:user_role_mappings.user_id->application_users.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
     "CO_OCCURRENCE:wiki_pages.parent_page_id->wiki_pages.page_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:customer_interactions.channel_type->interaction_resolutions.resolution_summary:SQL_LOG_SUBQUERY_IN",
+    "FK_LIKE:access_audit_logs.action_status->system_return_dictionary.success_code:SQL_LOG_SUBQUERY_IN",
     "FK_LIKE:iot_devices.hardware_architecture->firmware_compliance_matrix.arch_type:SQL_LOG_SUBQUERY_IN",
     "FK_LIKE:iot_devices.installed_version->firmware_compliance_matrix.patched_version_string:SQL_LOG_SUBQUERY_IN",
-    "FK_LIKE:membership_registry.is_verified->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN",
-    "FK_LIKE:membership_registry.member_id->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN",
-    "FK_LIKE:membership_registry.member_id->access_audit_logs.ip_address:SQL_LOG_SUBQUERY_IN"
+    "FK_LIKE:membership_registry.member_id->access_audit_logs.account_id:SQL_LOG_SUBQUERY_IN"
   ],
   "forbiddenTables": [
     "rawledger",

@@ -19,6 +19,9 @@ relation-detector scan \
   --config config.yml \
   --format json \
   --output result.json \
+  --parser-mode auto \
+  --grammar-profile postgresql/18 \
+  --database-version 18.1 \
   --plugin-dir plugins/
 ```
 
@@ -29,7 +32,9 @@ relation-detector scan \
 - `--output`：可选，输出文件；未指定时输出到 stdout。
 - `--plugin-dir`：可选，外部 adaptor jar 目录。
 - `--min-confidence`：可选，覆盖配置中的最小置信度。
-- `--verbose`：可选，输出更多 warning 和诊断信息。
+- `--parser-mode`：可选，`auto`、`full-grammer` 或 `token-event`，覆盖 YAML 中的 `parser.mode`。
+- `--grammar-profile`：可选，显式指定 full-grammer profile，例如 `postgresql/16`、`postgresql/17`、`postgresql/18`、`mysql/8.0`。
+- `--database-version`：可选，显式指定数据库版本，例如 `16.5`、`18.1`；优先级高于 JDBC metadata。
 
 ## YAML 配置
 
@@ -77,6 +82,11 @@ sources:
     timeoutSeconds: 30
     maxCandidatePairs: 1000
 
+parser:
+  mode: auto
+  grammarProfile: mysql/8.0
+  databaseVersion: 8.0.36
+
 output:
   format: json
   minConfidence: 0.30
@@ -91,6 +101,9 @@ output:
 - 启用文件 source 时文件必须存在。
 - `parser.sql.mode`、`parser.sql.fallbackOnFailure`、`parser.ddl.mode`、`parser.ddl.fallbackOnFailure` 已移除；配置中出现这些 key 时应显式报错。MySQL/PostgreSQL SQL/DDL 均通过统一 `parser.mode` 选择 full-grammer 或 token-event，ANTLR 只作为底层 lexer/parser 支撑。
 - 当前统一 parser 配置为 `parser.mode: auto|full-grammer|token-event`。默认 `auto`：能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选择版本化 full-grammer profile 时优先使用 full-grammer；不能选择 profile 或版本不支持时使用 token-event。profile 已选中后的 parse warning / partial result 属于所选 parser，未捕获异常由扫描层记录当前 source/statement 失败。CLI 可通过 `--parser-mode`、`--grammar-profile`、`--database-version` 覆盖 YAML。
+- `parser.grammarProfile` 使用用户可见 profile id；当前内置 profile 包括 `mysql/8.0`、`postgresql/16`、`postgresql/17`、`postgresql/18`。
+- PostgreSQL full-grammer 是严格大版本语法证明：`postgresql/16` 不用于通过 17/18 专属 correctness，`postgresql/17` 不用于通过 18 专属 correctness。token-event 可以作为未知版本或 unsupported version 的宽松 fallback。
+- MySQL `SQL_MODE` 是 MySQL grammar runtime 的方言开关，不是 `parser.mode`。配置、CLI 和输出 diagnostics 中的 parser mode 只使用 `auto|full-grammer|token-event`。
 - SQL Server/Oracle 仍为 future adaptor；没有对应 token-event/full-grammer adaptor 前，不再用 simple parser 作为兼容假象。
 - `sources.ddl.fromDatabase` 默认 `true`。开启时，支持的 adaptor 会读取数据库内表定义；MySQL 当前使用 `SHOW CREATE TABLE`，产生的 evidence source type 为 `DATABASE_DDL`。
 - `sources.logs.filterSystemQueries` 默认 `true`。开启时，native log 中仅访问系统 catalog/schema 的 metadata 查询会被跳过，不记录 parse warning。
@@ -282,6 +295,9 @@ warning 字段：
 - `OBJECT_DEFINITION_COLLECT_FAILED`：数据库对象定义整体收集失败。
 - `MYSQL_ROUTINE_COLLECT_FAILED`、`MYSQL_VIEW_COLLECT_FAILED`、`MYSQL_TRIGGER_COLLECT_FAILED`：MySQL 对象定义部分收集失败。
 - `POSTGRES_FUNCTION_COLLECT_FAILED`、`POSTGRES_VIEW_COLLECT_FAILED`：PostgreSQL 对象定义部分收集失败。
+- `FULL_GRAMMAR_SQL_PARSE_WARNING`：full-grammer SQL parser 产生语法诊断或只返回 partial result。
+- `FULL_GRAMMAR_DDL_PARSE_WARNING`：full-grammer DDL parser 产生语法诊断或只返回 partial result。
+- `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`：严格版本 full-grammer 遇到高版本专属语法，例如 PG16 profile 解析 PG17-only SQL/DDL。普通运行时可以 fallback token-event；versioned correctness fixture 中这类情况应失败。
 
 边界：
 

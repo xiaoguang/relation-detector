@@ -6,7 +6,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.postgres.fullgrammer.common.PostgresDdlEventSink;
+import com.relationdetector.postgres.fullgrammer.common.PostgresDdlEventVisitorCore;
+import com.relationdetector.postgres.fullgrammer.common.PostgresDdlVersionPolicy;
 
 /**
  * PostgreSQL full-grammer DDL event collector。
@@ -19,44 +20,50 @@ import com.relationdetector.postgres.fullgrammer.common.PostgresDdlEventSink;
  * does not call the token-event DDL cursor.
  */
 final class PostgresFullGrammerDdlEventCollector {
+    private final PostgresDdlVersionPolicy policy;
+
+    PostgresFullGrammerDdlEventCollector(PostgresDdlVersionPolicy policy) {
+        this.policy = policy;
+    }
+
     List<StructuredSqlEvent> collect(String sourceName, ParserRuleContext root) {
         if (root == null) {
             return List.of();
         }
-        PostgresDdlVisitor visitor = new PostgresDdlVisitor(sourceName);
+        PostgresDdlVisitor visitor = new PostgresDdlVisitor(sourceName, policy);
         visitor.visit(root);
         return visitor.events();
     }
 
     private static final class PostgresDdlVisitor extends PostgresFullGrammerParserBaseVisitor<Void> {
-        private final PostgresDdlEventSink out;
-        private String currentTable = "";
+        private final PostgresDdlEventVisitorCore core;
+        private final PostgresDdlVersionPolicy policy;
 
-        PostgresDdlVisitor(String sourceName) {
-            this.out = new PostgresDdlEventSink(sourceName);
+        PostgresDdlVisitor(String sourceName, PostgresDdlVersionPolicy policy) {
+            this.core = new PostgresDdlEventVisitorCore(sourceName);
+            this.policy = policy;
         }
 
         List<StructuredSqlEvent> events() {
-            return out.events();
+            return core.events();
         }
 
         @Override
         public Void visitCreatestmt(PostgresFullGrammerParser.CreatestmtContext ctx) {
-            String previous = currentTable;
-            currentTable = ctx.qualified_name().isEmpty() ? "" : out.clean(ctx.qualified_name(0).getText());
-            if (ctx.opttableelementlist() != null) {
-                visit(ctx.opttableelementlist());
-            }
-            currentTable = previous;
+            core.withCurrentTable(ctx.qualified_name().isEmpty() ? "" : core.out().clean(ctx.qualified_name(0).getText()), () -> {
+                if (ctx.opttableelementlist() != null) {
+                    visit(ctx.opttableelementlist());
+                }
+            });
             return null;
         }
 
         @Override
         public Void visitColumnDef(PostgresFullGrammerParser.ColumnDefContext ctx) {
-            if (currentTable.isBlank()) {
+            if (core.currentTable().isBlank()) {
                 return null;
             }
-            String column = out.clean(ctx.colid() == null ? "" : ctx.colid().getText());
+            String column = core.out().clean(ctx.colid() == null ? "" : ctx.colid().getText());
             if (ctx.colquallist() == null) {
                 return null;
             }
@@ -66,13 +73,13 @@ final class PostgresFullGrammerDdlEventCollector {
                     continue;
                 }
                 if (constraint.PRIMARY() != null && constraint.KEY() != null) {
-                    out.addIndex(currentTable, column, "TARGET_UNIQUE", "INLINE_PRIMARY_KEY", ctx.getStart().getLine());
+                    core.out().addIndex(core.currentTable(), column, "TARGET_UNIQUE", "INLINE_PRIMARY_KEY", ctx.getStart().getLine());
                 }
                 if (constraint.UNIQUE() != null) {
-                    out.addIndex(currentTable, column, "TARGET_UNIQUE", "INLINE_UNIQUE", ctx.getStart().getLine());
+                    core.out().addIndex(core.currentTable(), column, "TARGET_UNIQUE", "INLINE_UNIQUE", ctx.getStart().getLine());
                 }
                 if (constraint.REFERENCES() != null && constraint.qualified_name() != null) {
-                    out.addForeignKeyEvents(currentTable, List.of(column), out.clean(constraint.qualified_name().getText()),
+                    core.out().addForeignKeyEvents(core.currentTable(), List.of(column), core.out().clean(constraint.qualified_name().getText()),
                             postgresColumnList(constraint.column_list_(), List.of("id")), ctx.getStart().getLine());
                 }
             }
@@ -84,16 +91,13 @@ final class PostgresFullGrammerDdlEventCollector {
             if (ctx.relation_expr() == null || ctx.alter_table_cmds() == null) {
                 return super.visitAltertablestmt(ctx);
             }
-            String previous = currentTable;
-            currentTable = relationExprTable(ctx.relation_expr());
-            visit(ctx.alter_table_cmds());
-            currentTable = previous;
+            core.withCurrentTable(relationExprTable(ctx.relation_expr()), () -> visit(ctx.alter_table_cmds()));
             return null;
         }
 
         @Override
         public Void visitTableconstraint(PostgresFullGrammerParser.TableconstraintContext ctx) {
-            if (currentTable.isBlank() || ctx.constraintelem() == null) {
+            if (core.currentTable().isBlank() || ctx.constraintelem() == null) {
                 return null;
             }
             PostgresFullGrammerParser.ConstraintelemContext constraint = ctx.constraintelem();
@@ -103,17 +107,17 @@ final class PostgresFullGrammerDdlEventCollector {
                         constraint.getRuleContexts(PostgresFullGrammerParser.ColumnlistContext.class);
                 List<String> sourceColumns = columnLists.isEmpty() ? List.of() : postgresColumns(columnLists.get(0));
                 List<String> targetColumns = postgresColumnList(constraint.column_list_(), List.of("id"));
-                out.addForeignKeyEvents(currentTable, sourceColumns, out.clean(constraint.qualified_name().getText()),
+                core.out().addForeignKeyEvents(core.currentTable(), sourceColumns, core.out().clean(constraint.qualified_name().getText()),
                         targetColumns, line);
                 return null;
             }
             if (constraint.PRIMARY() != null && constraint.KEY() != null) {
                 for (String column : postgresColumnList(constraint, 0, List.of())) {
-                    out.addIndex(currentTable, column, "TARGET_UNIQUE", "PRIMARY_KEY", line);
+                    core.out().addIndex(core.currentTable(), column, "TARGET_UNIQUE", "PRIMARY_KEY", line);
                 }
             } else if (constraint.UNIQUE() != null) {
                 for (String column : postgresColumnList(constraint, 0, List.of())) {
-                    out.addIndex(currentTable, column, "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", line);
+                    core.out().addIndex(core.currentTable(), column, "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", line);
                 }
             }
             return null;
@@ -134,14 +138,14 @@ final class PostgresFullGrammerDdlEventCollector {
                 if (column.isBlank()) {
                     continue;
                 }
-                out.addIndex(table, column, unique ? "TARGET_UNIQUE" : "SOURCE_INDEX",
+                core.out().addIndex(table, column, unique ? "TARGET_UNIQUE" : "SOURCE_INDEX",
                         unique ? "CREATE_UNIQUE_INDEX" : "CREATE_INDEX", ctx.getStart().getLine());
             }
             return null;
         }
 
         private String relationExprTable(PostgresFullGrammerParser.Relation_exprContext ctx) {
-            return ctx == null || ctx.qualified_name() == null ? "" : out.clean(ctx.qualified_name().getText());
+            return ctx == null || ctx.qualified_name() == null ? "" : core.out().clean(ctx.qualified_name().getText());
         }
 
         private List<String> postgresColumnList(
@@ -168,7 +172,7 @@ final class PostgresFullGrammerDdlEventCollector {
         }
 
         private List<String> postgresColumns(PostgresFullGrammerParser.ColumnlistContext ctx) {
-            return out.nonBlank(ctx.getRuleContexts(PostgresFullGrammerParser.ColumnElemContext.class).stream()
+            return core.out().nonBlank(ctx.getRuleContexts(PostgresFullGrammerParser.ColumnElemContext.class).stream()
                     .map(this::postgresColumn)
                     .toList());
         }
@@ -182,7 +186,7 @@ final class PostgresFullGrammerDdlEventCollector {
 
         private String postgresIndexColumn(PostgresFullGrammerParser.Index_elemContext elem) {
             if (elem.colid() != null) {
-                return out.clean(elem.colid().getText());
+                return core.out().clean(elem.colid().getText());
             }
             return "";
         }

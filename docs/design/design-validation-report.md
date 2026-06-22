@@ -56,7 +56,7 @@ core.scan / parser / tokenevent / fullgrammer / relation / lineage / ddl
 core.parse / log / metadata / output / diagnostics / scoring
 cli
 mysql / mysql.tokenevent / mysql.fullgrammer.v8_0
-postgres / postgres.tokenevent / postgres.fullgrammer.v16
+postgres / postgres.tokenevent / postgres.fullgrammer.common / postgres.fullgrammer.v16 / v17 / v18
 ```
 
 逐包审视结论：
@@ -65,7 +65,7 @@ postgres / postgres.tokenevent / postgres.fullgrammer.v16
 - `core.scan` 负责扫描编排；`core.parser` 负责 parser mode/profile 选择；二者没有承载数据库版本实现。
 - `core.tokenevent` 与 `core.fullgrammer` 是事件来源基础设施；relationship / lineage 语义被隔离在 `core.relation` 与 `core.lineage`。
 - `core.ddl` 是 token-event DDL event 支撑；DDL relationship 转换仍在 `core.relation.DdlRelationExtractionVisitor`。
-- `adaptor-mysql` / `adaptor-postgres` 根包只做 adaptor 装配；token-event parser 位于各自 `tokenevent` 子包，版本化 full-grammer 位于 `fullgrammer/v8_0` 或 `fullgrammer/v16`。
+- `adaptor-mysql` / `adaptor-postgres` 根包只做 adaptor 装配；token-event parser 位于各自 `tokenevent` 子包，版本化 full-grammer 位于 `fullgrammer/v8_0` 或 PostgreSQL `fullgrammer/v16|v17|v18`，PostgreSQL 公共抽象位于 `fullgrammer/common`。
 - 没有发现 core 直接 import MySQL/PostgreSQL full-grammer implementation 的职责倒置。
 - 没有发现 adaptor 侧重复实现 relationship / lineage semantic extractor。
 - 没有发现 contracts 反向依赖 core 的设计破坏。
@@ -95,6 +95,7 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 - FK-like 方向归一。
 - 列级 / 表级 `CO_OCCURRENCE` 判断。
 - self-join 结构性列级弱共现。
+- SQL 谓词 relationship 守卫：literal filter、literal `IN`、`LIKE`、表达式 tuple、aggregate/HAVING/filter 字段不生成关系；`IN` / tuple `IN` 必须是已验证的列子查询结构。
 - Data Lineage transform 映射和 confidence。
 - DDL index / FK 事件到 relationship 的转换。
 
@@ -137,8 +138,10 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 - 用户可见模式名是 `full-grammer` 与 `token-event`。
 - Java package 使用 `fullgrammer` / `tokenevent`，因为 Java package 不能包含横线。
-- `full-grammer` 具体版本实现在 adaptor，例如 `mysql.fullgrammer.v8_0`、`postgres.fullgrammer.v16`。
+- `full-grammer` 具体版本实现在 adaptor，例如 `mysql.fullgrammer.v8_0`、`postgres.fullgrammer.v16|v17|v18`。
 - 无方言或无合理版本信息时使用 token-event。
+- PostgreSQL full-grammer 当前有严格版本 profile：`postgresql/16`、`postgresql/17`、`postgresql/18`。三者分别有独立 versioned correctness golden。root `postgres` fixture 目录是历史兼容 baseline，不代表 `v1` 数据库版本。
+- MySQL full-grammer 当前有 `mysql/8.0` profile，但尚未拆出独立 `mysql/v8_0` versioned correctness；它通过 root MySQL golden 和 full-grammer parity 测试保证行为。
 
 ### DDL
 

@@ -90,7 +90,7 @@ relation-detector/
   - PostgreSQL statement log 解析。
   - PostgreSQL 方言规则。
   - PostgreSQL token-event parser。
-  - PostgreSQL 16 full-grammer module。
+  - PostgreSQL 16/17/18 full-grammer modules，公共实现位于 adaptor 内 `fullgrammer/common`。
 
 - `test-fixtures`
   - 样例 schema。
@@ -99,6 +99,29 @@ relation-detector/
   - 集成测试数据。
 
 ## 4. 核心领域模型
+
+### 4.0 Parser 模式与版本化 grammar
+
+当前 parser 用户可见模式只有三种：
+
+```text
+auto | full-grammer | token-event
+```
+
+- `token-event`：宽松兼容链路。它基于 core 的 tolerant grammar、token-event builder 和 Java semantic extractor，适合作为未知版本、无 profile、unsupported version 或 full-grammer failure 的 fallback。
+- `full-grammer`：严格版本链路。它由数据库 adaptor 注册 `FullGrammerDialectModule`，使用对应大版本 vendored grammar 和 typed parse-tree visitor 生成同一组 `StructuredSqlEvent` / DDL events。
+- `auto`：默认模式。能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选中 full-grammer profile 时优先使用 full-grammer，否则使用 token-event。
+
+当前内置 full-grammer profile：
+
+| 数据库 | Profile | 归属 | correctness golden |
+| --- | --- | --- | --- |
+| MySQL | `mysql/8.0` | `adaptor-mysql/fullgrammer/v8_0` | root MySQL golden + full-grammer parity；尚无独立 `mysql/v8_0` 目录。 |
+| PostgreSQL | `postgresql/16` | `adaptor-postgres/fullgrammer/v16` | `test-fixtures/correctness/postgres/v16` |
+| PostgreSQL | `postgresql/17` | `adaptor-postgres/fullgrammer/v17` | `test-fixtures/correctness/postgres/v17` |
+| PostgreSQL | `postgresql/18` | `adaptor-postgres/fullgrammer/v18` | `test-fixtures/correctness/postgres/v18` |
+
+root `test-fixtures/correctness/postgres` 仍是历史兼容 baseline，不代表一个叫 `v1` 的 PostgreSQL 版本。
 
 ### 4.1 表和列
 

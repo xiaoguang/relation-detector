@@ -52,7 +52,8 @@ class PostgresFullGrammerVersionBoundaryTest {
 
     @Test
     void postgres16RejectsPostgres17OnlySqlJsonTable() {
-        var result = new com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerStructuredSqlParser()
+        var result = new com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerDialectModule()
+                .sqlParser()
                 .parseSql(statement("""
                         SELECT *
                         FROM orders o,
@@ -65,7 +66,8 @@ class PostgresFullGrammerVersionBoundaryTest {
 
     @Test
     void postgres16RejectsPostgres17OnlyMergeReturning() {
-        var result = new com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerStructuredSqlParser()
+        var result = new com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerDialectModule()
+                .sqlParser()
                 .parseSql(statement("""
                         MERGE INTO account_balances ab
                         USING staging_account_balances s
@@ -80,7 +82,8 @@ class PostgresFullGrammerVersionBoundaryTest {
 
     @Test
     void postgres17RejectsPostgres18OnlyReturningOldNew() {
-        var result = new com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerStructuredSqlParser()
+        var result = new com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerDialectModule()
+                .sqlParser()
                 .parseSql(statement("""
                         UPDATE account_balances
                         SET balance = balance + 1
@@ -93,7 +96,8 @@ class PostgresFullGrammerVersionBoundaryTest {
 
     @Test
     void postgres17RejectsPostgres18OnlyTemporalDdl() {
-        var result = new com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerStructuredDdlParser()
+        var result = new com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerDialectModule()
+                .structuredDdlParser()
                 .parseDdl("""
                         CREATE TABLE subscriptions (
                             customer_id bigint,
@@ -108,7 +112,8 @@ class PostgresFullGrammerVersionBoundaryTest {
 
     @Test
     void postgres18AcceptsPostgres18OnlyTemporalDdl() {
-        var result = new com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerStructuredDdlParser()
+        var result = new com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerDialectModule()
+                .structuredDdlParser()
                 .parseDdl("""
                         CREATE TABLE subscriptions (
                             customer_id bigint,
@@ -128,17 +133,19 @@ class PostgresFullGrammerVersionBoundaryTest {
     }
 
     @Test
-    void postgres17And18ModulesReturnVersionLocalParsers() {
+    void postgres17And18ModulesReturnSharedParsersWithVersionLocalProfiles() {
         var pg17 = new com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerDialectModule();
         var pg18 = new com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerDialectModule();
 
-        assertEquals("com.relationdetector.postgres.fullgrammer.v17",
+        assertEquals(17, pg17.profile().majorVersion());
+        assertEquals(18, pg18.profile().majorVersion());
+        assertEquals("com.relationdetector.postgres.fullgrammer.common",
                 pg17.sqlParser().getClass().getPackageName());
-        assertEquals("com.relationdetector.postgres.fullgrammer.v17",
+        assertEquals("com.relationdetector.postgres.fullgrammer.common",
                 pg17.structuredDdlParser().getClass().getPackageName());
-        assertEquals("com.relationdetector.postgres.fullgrammer.v18",
+        assertEquals("com.relationdetector.postgres.fullgrammer.common",
                 pg18.sqlParser().getClass().getPackageName());
-        assertEquals("com.relationdetector.postgres.fullgrammer.v18",
+        assertEquals("com.relationdetector.postgres.fullgrammer.common",
                 pg18.structuredDdlParser().getClass().getPackageName());
     }
 

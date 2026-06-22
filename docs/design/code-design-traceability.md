@@ -23,13 +23,14 @@
 | ScanEngine source orchestration | `core.scan.ScanEngine.scan` | `phase-06 ScanEngine 总编排` | `ScanEngineDatabaseDdlSourceTest`, `ScanEngineDiagnosticsTest`, `CliEndToEndGoldenTest` | MATCHED | 文件 DDL、object files、logs、database DDL/object、metadata 分别进入对应 runner；失败转 warning 后继续。 |
 | SQL parser selection | `core.parser.SqlRelationParserRunner` | `phase-06 Parser mode 和 profile 选择` | `SqlRelationParserRunnerTest`, `ParserConfigRemovalTest`, `CliEndToEndGoldenTest` | MATCHED | `auto/full-grammer/token-event` 选择策略与文档一致；unsupported profile fallback 到 token-event。 |
 | token-event SQL parse | `core.tokenevent.TokenEventStructuredSqlParser`, dialect builders | `phase-06 SQL / DML token-event 链路` | `TokenEventRelationEventsTest`, dialect boundary tests, correctness fixtures | MATCHED | token-event 是无 profile / unsupported version / forced token-event 的正式 fallback。 |
-| full-grammer SQL parse | adaptor `fullgrammer/v8_0`、`fullgrammer/v16` parsers | `phase-06 SQL / DML full-grammer 链路` | `FullGrammerCorrectnessShadowTest`, `FullGrammerSqlBehaviorTest` | DOC_UPDATED | 默认测试不再断言 native/delegate/bridge 过程属性，只断言 full-grammer 行为和 parity。 |
-| relationship extraction | `core.relation.TokenEventRelationExtractor` | `phase-06 Relationship 抽取` | `CorrectnessFixtureRunnerTest`, `TokenEventRelationExtractorIndependenceTest`, confidence tests | MATCHED | full-grammer 和 token-event 共用 relationship 语义层；self-join 弱共现基于 alias/列结构，不基于名字。 |
+| full-grammer SQL parse | adaptor `fullgrammer/v8_0`、PostgreSQL `fullgrammer/common` + `v16|v17|v18` parsers | `phase-06 SQL / DML full-grammer 链路`, `phase-04`, `phase-05` | `FullGrammerCorrectnessShadowTest`, `FullGrammerSqlBehaviorTest`, versioned correctness fixtures | DOC_UPDATED | 默认测试不再断言 native/delegate/bridge 过程属性，只断言 full-grammer 行为和 parity；PostgreSQL strict version fixtures 由 `CorrectnessFixtureRunnerTest` 按各自 profile/golden 验收。 |
+| relationship extraction | `core.relation.TokenEventRelationExtractor` | `phase-02 SQL 谓词关系守卫`, `phase-06 Relationship 抽取` | `CorrectnessFixtureRunnerTest`, `TokenEventRelationExtractorIndependenceTest`, confidence tests | DOC_UPDATED | full-grammer 和 token-event 共用 relationship 语义层；self-join 弱共现基于 alias/列结构，不基于名字；literal filter、literal `IN`、`LIKE`、表达式 tuple、aggregate/HAVING/filter 字段不会生成关系。 |
 | Data Lineage extraction | `core.lineage.TokenEventDataLineageExtractor`, `SqlLineageResolver` | `phase-06 Data Lineage v1` | `TokenEventDataLineageExtractorTest`, `DataLineageAuditGeneratorTest`, lineage golden | MATCHED | v1 只输出数据库内部字段血缘，不做 Parameter Binding；显式临时表过滤来自语法 scope。 |
 | DDL parser selection | `core.parser.DdlRelationParserRunner` | `phase-06 DDL token-event / full-grammer DDL 链路` | `DdlRelationParserRunnerTest`, `FullGrammerDdlCorrectnessShadowTest`, `CliEndToEndGoldenTest` | MATCHED | DDL 使用同一 `parser.mode` 策略；DDL hard failure 记录 warning 并继续。 |
 | DDL relationship extraction | `core.relation.DdlRelationExtractionVisitor` | `phase-06 DDL Relationship 抽取` | `PostgresDdlParserTest`, `MySqlDdlParserTest`, DDL correctness fixtures | MATCHED | DDL parser 只产 `DDL_FOREIGN_KEY` / `DDL_INDEX`，relationship 转换集中在 visitor。 |
 | confidence / merger / output | `RelationshipMerger`, `ConfidenceCalculator`, `JsonResultWriter` | `phase-02`, `phase-08` | `ConfidenceScoringExamplesTest`, `RelationshipMergerEvidenceAggregationTest`, `JsonResultWriterEvidenceOutputTest`, `CliEndToEndGoldenTest` | MATCHED | Data Lineage confidence 不参与 relationship confidence；JSON schema 未改变。 |
 | correctness fixture / generated reports | `CorrectnessFixtureRunnerTest`, `CorrectnessSummaryGeneratorTest`, `DataLineageAuditGeneratorTest` | `test-assets-map`, `code-implementation-guide` | 同名测试 | DOC_UPDATED | correctness fixture 是主 golden；generated summary/audit 是 Java 程序生成，不调用大模型。 |
+| PostgreSQL versioned golden | `test-fixtures/correctness/postgres/v16|v17|v18`, PostgreSQL `FullGrammerDialectModule` | `phase-05 PostgreSQL versioned correctness golden`, `phase-06 PostgreSQL 版本化 correctness` | `CorrectnessFixtureRunnerTest` with version filters, `FullGrammerCorrectnessShadowTest` | DOC_UPDATED | root `postgres` 是历史兼容 baseline；`v16`、`v17`、`v18` 是严格 full-grammer version golden，不存在 `postgres/v1` 这个版本。 |
 | 代码结构注释 | `**/package-info.java`, production class/method Javadocs | `phase-06 代码结构注释索引`, `code-implementation-guide` | compile + semantic tests | DOC_UPDATED | 注释用于说明职责边界，不作为结构守卫测试；后续新增包/关键类需同步文档。 |
 
 ## 已知实现事实
@@ -38,6 +39,7 @@
 - `CorrectnessFixtureRunnerTest` 为避免 warning 计数污染，lineage-only structural parse 使用 null context。这是测试实现细节，不影响正式 CLI / ScanEngine 链路。
 - 目录、命名、迁移过程检查已从默认测试入口移除。后续如需审查旧命名残留，按 `docs/test-assets-map.md` 中的可选 `rg` 命令手工执行。
 - `SqlGrammarProfileRegistry` 中的版本字符串解析会使用字符串/正则处理配置值；这不属于 SQL/DDL 结构解析。SQL/DDL relationship 和 lineage 不能依赖特殊表名/列名过滤。
+- MySQL 8.0 full-grammer 当前通过 root MySQL correctness + full-grammer parity 验收，还没有独立 `test-fixtures/correctness/mysql/v8_0` versioned golden。若未来需要 MySQL 严格版本证明，应新增版本目录和独立 golden。
 
 ## 需要后续审视的非行为差异
 
