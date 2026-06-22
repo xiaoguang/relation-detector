@@ -3,6 +3,7 @@ package com.relationdetector.core.tokenevent;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -447,11 +448,15 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         if (update < 0 || set < 0) {
             return events;
         }
+        int merge = firstTopLevelWord(tokens, "merge", 0);
+        if (merge >= 0 && merge < update) {
+            return events;
+        }
         IdentifierRead target = readTokenEventQualifiedIdentifier(tokens, update + 1);
         if (target != null) {
             addWriteTarget(statement, tokens, events, update, target.qualifiedName, aliasAfter(tokens, target.nextIndex), "UPDATE");
         }
-        int end = firstTopLevelWord(tokens, List.of("where", "returning", "order", "limit"), set + 1);
+        int end = firstTopLevelWord(tokens, List.of("from", "where", "returning", "order", "limit"), set + 1);
         if (end < 0) {
             end = tokens.size();
         }
@@ -464,8 +469,9 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             if (targetColumn == null) {
                 continue;
             }
+            String targetTable = targetColumn.qualifier().isBlank() && target != null ? target.qualifiedName() : "";
             addWriteExpressionEvents(statement, tokens, events, StructuredParseEventType.UPDATE_ASSIGNMENT,
-                    assignment.start, targetColumn, "", equals + 1, assignment.end, "UPDATE_SET");
+                    assignment.start, targetColumn, targetTable, equals + 1, assignment.end, "UPDATE_SET");
         }
         return events;
     }
@@ -521,6 +527,27 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
 
     private List<StructuredSqlEvent> extractMergeLineageEvents(SqlStatementRecord statement, List<Token> tokens) {
         List<StructuredSqlEvent> events = new ArrayList<>();
+        Set<Integer> mergeStarts = new LinkedHashSet<>();
+        int merge = firstTopLevelWord(tokens, "merge", 0);
+        if (merge >= 0) {
+            mergeStarts.add(merge);
+        }
+        for (int index = 0; index < tokens.size(); index++) {
+            if (lower(tokens.get(index)).equals("merge")) {
+                mergeStarts.add(index);
+            }
+        }
+        for (Integer mergeStart : mergeStarts) {
+            int end = mergeStatementEnd(tokens, mergeStart);
+            if (end > mergeStart) {
+                events.addAll(extractSingleMergeLineageEvents(statement, tokens.subList(mergeStart, end)));
+            }
+        }
+        return events;
+    }
+
+    private List<StructuredSqlEvent> extractSingleMergeLineageEvents(SqlStatementRecord statement, List<Token> tokens) {
+        List<StructuredSqlEvent> events = new ArrayList<>();
         int merge = firstTopLevelWord(tokens, "merge", 0);
         int into = firstTopLevelWord(tokens, "into", merge < 0 ? 0 : merge);
         if (merge < 0 || into < 0) {
@@ -533,7 +560,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         addWriteTarget(statement, tokens, events, into, target.qualifiedName, aliasAfter(tokens, target.nextIndex), "MERGE");
         int set = firstTopLevelWord(tokens, "set", into);
         if (set >= 0) {
-            int end = firstTopLevelWord(tokens, List.of("when"), set + 1);
+            int end = firstTopLevelWord(tokens, List.of("when", "returning"), set + 1);
             if (end < 0) {
                 end = tokens.size();
             }
@@ -559,19 +586,23 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             if (insertClose > insert && valuesClose > values) {
                 List<String> targetColumns = identifierList(tokens, insert + 2, insertClose);
                 List<Span> expressions = splitTopLevelSpans(tokens, values + 2, valuesClose, ",");
+                Set<String> nonColumnIdentifiers = nonColumnIdentifiers(tokens);
                 for (int index = 0; index < Math.min(targetColumns.size(), expressions.size()); index++) {
                     Span expression = expressions.get(index);
-                    ColumnRead source = firstColumnInSpan(tokens, expression.start, expression.end);
-                    if (source == null) {
+                    List<ColumnRead> sources = readProjectionSourceColumns(tokens, expression.start, expression.end,
+                            "", nonColumnIdentifiers);
+                    if (sources.isEmpty()) {
                         continue;
                     }
+                    String transform = transformType(tokenText(tokens, expression.start, expression.end));
+                    String flowKind = transform.equals("CASE_WHEN") ? "CONTROL" : "VALUE";
                     Map<String, Object> attributes = lineageAttributes(
                             ColumnRead.target("", targetColumns.get(index)),
                             expression.start,
                             expression.end,
-                            List.of(source),
-                            "DIRECT",
-                            "VALUE");
+                            sources,
+                            transform,
+                            flowKind);
                     attributes.put("targetTable", target.qualifiedName);
                     attributes.put("mappingKind", "MERGE_INSERT");
                     events.add(new StructuredSqlEvent(StructuredParseEventType.MERGE_WRITE_MAPPING,
@@ -580,6 +611,34 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             }
         }
         return events;
+    }
+
+    private int mergeStatementEnd(List<Token> tokens, int mergeIndex) {
+        int enclosingClose = enclosingParenClose(tokens, mergeIndex);
+        if (enclosingClose > mergeIndex) {
+            return enclosingClose;
+        }
+        int semicolon = topLevelToken(tokens, mergeIndex, tokens.size(), ";");
+        return semicolon > mergeIndex ? semicolon : tokens.size();
+    }
+
+    private int enclosingParenClose(List<Token> tokens, int tokenIndex) {
+        List<Integer> opens = new ArrayList<>();
+        for (int index = 0; index < tokenIndex; index++) {
+            String text = tokens.get(index).getText();
+            if (text.equals("(")) {
+                opens.add(index);
+            } else if (text.equals(")") && !opens.isEmpty()) {
+                opens.remove(opens.size() - 1);
+            }
+        }
+        for (int index = opens.size() - 1; index >= 0; index--) {
+            int close = matchingParen(tokens, opens.get(index));
+            if (close > tokenIndex) {
+                return close;
+            }
+        }
+        return -1;
     }
 
     private void addWriteTarget(
@@ -615,12 +674,12 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             int expressionEnd,
             String mappingKind
     ) {
-        List<ColumnRead> sources = readColumnList(tokens, expressionStart, expressionEnd);
+        String expression = tokenText(tokens, expressionStart, expressionEnd);
+        String transform = transformType(expression);
+        List<ColumnRead> sources = expressionSources(tokens, expressionStart, expressionEnd, transform);
         if (sources.isEmpty()) {
             return;
         }
-        String expression = tokenText(tokens, expressionStart, expressionEnd);
-        String transform = transformType(expression);
         String flowKind = expression.toLowerCase(Locale.ROOT).contains("case") ? "CONTROL" : "VALUE";
         Map<String, Object> attributes = lineageAttributes(target, expressionStart, expressionEnd, sources, transform, flowKind);
         if (!targetTable.isBlank()) {
@@ -1170,6 +1229,111 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         return columns;
     }
 
+    private List<ColumnRead> expressionSources(
+            List<Token> tokens,
+            int startInclusive,
+            int endExclusive,
+        String transform
+    ) {
+        List<ColumnRead> aggregateSources = aggregateArgumentColumns(tokens, startInclusive, endExclusive);
+        if (!aggregateSources.isEmpty()
+                && (transform.equals("AGGREGATE") || transform.equals("CASE_WHEN"))
+                && !hasValueColumnOutsideAggregateScalarSubquery(tokens, startInclusive, endExclusive)) {
+            return aggregateSources;
+        }
+        return readColumnList(tokens, startInclusive, endExclusive);
+    }
+
+    private List<ColumnRead> aggregateArgumentColumns(List<Token> tokens, int startInclusive, int endExclusive) {
+        Set<ColumnRead> columns = new LinkedHashSet<>();
+        for (int index = startInclusive; index < endExclusive; index++) {
+            String function = cleanIdentifier(tokens.get(index).getText()).toLowerCase(Locale.ROOT);
+            if (!isAggregateFunctionName(function)) {
+                continue;
+            }
+            int open = index + 1;
+            while (open < endExclusive && tokens.get(open).getText().isBlank()) {
+                open++;
+            }
+            if (open >= endExclusive || !tokens.get(open).getText().equals("(")) {
+                continue;
+            }
+            int close = matchingParen(tokens, open);
+            if (close < 0 || close > endExclusive) {
+                continue;
+            }
+            columns.addAll(readColumnList(tokens, open + 1, close));
+        }
+        return List.copyOf(columns);
+    }
+
+    private boolean hasValueColumnOutsideAggregateScalarSubquery(
+            List<Token> tokens,
+            int startInclusive,
+            int endExclusive
+    ) {
+        List<Span> protectedScalarSubqueries = aggregateScalarSubquerySpans(tokens, startInclusive, endExclusive);
+        for (int index = startInclusive; index < endExclusive; index++) {
+            ColumnRead column = readTokenEventColumnForward(tokens, index);
+            if (column == null) {
+                continue;
+            }
+            if (!isInsideAnySpan(index, protectedScalarSubqueries)) {
+                return true;
+            }
+            index += 2;
+        }
+        return false;
+    }
+
+    private boolean isInsideAnySpan(int tokenIndex, List<Span> spans) {
+        for (Span span : spans) {
+            if (tokenIndex >= span.start && tokenIndex < span.end) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<Span> aggregateScalarSubquerySpans(List<Token> tokens, int startInclusive, int endExclusive) {
+        List<Span> spans = new ArrayList<>();
+        for (int index = startInclusive; index < endExclusive; index++) {
+            if (!lower(tokens.get(index)).equals("select")) {
+                continue;
+            }
+            int open = enclosingOpenParen(tokens, startInclusive, index);
+            if (open < 0) {
+                continue;
+            }
+            int close = matchingParen(tokens, open);
+            if (close < 0 || close > endExclusive) {
+                continue;
+            }
+            int from = firstTopLevelWord(tokens, "from", index + 1, close);
+            if (from < 0 || aggregateArgumentColumns(tokens, index + 1, from).isEmpty()) {
+                continue;
+            }
+            spans.add(new Span(open, close + 1));
+        }
+        return spans;
+    }
+
+    private int enclosingOpenParen(List<Token> tokens, int startInclusive, int beforeIndex) {
+        int depth = 0;
+        for (int index = beforeIndex - 1; index >= startInclusive; index--) {
+            String text = tokens.get(index).getText();
+            if (text.equals(")")) {
+                depth++;
+            } else if (text.equals("(")) {
+                if (depth == 0) {
+                    return index;
+                }
+                depth--;
+            }
+        }
+        return -1;
+    }
+
     private List<ColumnRead> readProjectionSourceColumns(
             List<Token> tokens,
             int startInclusive,
@@ -1190,7 +1354,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             String previous = index > startInclusive ? tokens.get(index - 1).getText() : "";
             String next = index + 1 < endExclusive ? tokens.get(index + 1).getText() : "";
             String previousWord = index > startInclusive ? lower(tokens.get(index - 1)) : "";
-            if (previous.equals(".") || next.equals(".") || next.equals("(")) {
+            if (previous.equals(".") || previous.equals(":") || previous.equals("::") || next.equals(".") || next.equals("(")) {
                 continue;
             }
             if (previousWord.equals("as")) {
@@ -1233,7 +1397,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         }
         String previous = index - 1 >= 0 ? tokens.get(index - 1).getText() : "";
         String next = index + 1 < tokens.size() ? tokens.get(index + 1).getText() : "";
-        if (previous.equals(".") || next.equals(".") || next.equals("(")) {
+        if (previous.equals(".") || previous.equals(":") || previous.equals("::") || next.equals(".") || next.equals("(")) {
             return null;
         }
         return new ColumnRead(defaultQualifier, column);
@@ -1264,7 +1428,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             return null;
         }
         String previous = index - 1 >= 0 ? tokens.get(index - 1).getText() : "";
-        if (previous.equals(".")) {
+        if (previous.equals(".") || previous.equals(":") || previous.equals("::")) {
             return null;
         }
         return new ColumnRead(defaultQualifier, column);
@@ -1723,7 +1887,7 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         if (normalized.contains("coalesce")) {
             return "COALESCE";
         }
-        if (normalized.contains("concat") || normalized.contains("format") || normalized.contains("||")) {
+        if (normalized.contains("concat") || normalized.contains("format") || containsConcatOperator(normalized)) {
             return "CONCAT_FORMAT";
         }
         if (normalized.contains("+") || normalized.contains("-") || normalized.contains("*") || normalized.contains("/")) {
@@ -1733,6 +1897,25 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             return "FUNCTION_CALL";
         }
         return "DIRECT";
+    }
+
+    private boolean containsConcatOperator(String normalized) {
+        boolean sawPipe = false;
+        for (int index = 0; index < normalized.length(); index++) {
+            char ch = normalized.charAt(index);
+            if (Character.isWhitespace(ch)) {
+                continue;
+            }
+            if (ch == '|') {
+                if (sawPipe) {
+                    return true;
+                }
+                sawPipe = true;
+            } else {
+                sawPipe = false;
+            }
+        }
+        return false;
     }
 
     private boolean containsFunctionCall(String normalized, String functionName) {
@@ -1753,6 +1936,14 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             index += functionName.length();
         }
         return false;
+    }
+
+    private boolean isAggregateFunctionName(String function) {
+        return function.equals("sum")
+                || function.equals("avg")
+                || function.equals("count")
+                || function.equals("min")
+                || function.equals("max");
     }
 
     private boolean isCumulativeExpression(String normalized) {

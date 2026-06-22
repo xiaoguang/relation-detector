@@ -17,13 +17,13 @@ class CorrectnessSummaryGeneratorTest {
     void generatedSummaryCapturesFixtureCountsAndInputPreview() throws Exception {
         String markdown = CorrectnessSummaryGenerator.generate(WORKSPACE);
 
-        assertTrue(markdown.contains("| Total correctness fixtures | 284 |"));
-        assertTrue(markdown.contains("| SQL fixtures | 227 |"));
+        assertTrue(markdown.contains("| Total correctness fixtures | 328 |"));
+        assertTrue(markdown.contains("| SQL fixtures | 271 |"));
         assertTrue(markdown.contains("| DDL fixtures | 57 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 60 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 84 |"));
         assertTrue(markdown.contains("| MySQL directory fixtures | 57 |"));
         assertTrue(markdown.contains("| MYSQL | 59 | 48 | 11 |"));
-        assertTrue(markdown.contains("| POSTGRESQL | 225 | 179 | 46 |"));
+        assertTrue(markdown.contains("| POSTGRESQL | 269 | 223 | 46 |"));
         assertTrue(markdown.contains("Lightweight index report. Full SQL/DDL is available in each input file."));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-commerce-promotion-update-explicit-join-sql/input.sql"));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/expected-lineage.json"));
@@ -34,8 +34,8 @@ class CorrectnessSummaryGeneratorTest {
         assertTrue(markdown.contains("VALUE:ARITHMETIC:account_balances.max_credit_limit"
                 + "->account_balances.adjusted_limit"));
         assertTrue(markdown.contains(
-                "VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,"
-                        + "dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories"
+                "VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,"
+                        + "user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category"
                         + "->account_balances.compliance_notes"));
         assertTrue(markdown.contains("UPDATE products p"));
         assertTrue(markdown.contains("Preview truncated; see input file for full content."));
@@ -43,6 +43,9 @@ class CorrectnessSummaryGeneratorTest {
         assertTrue(markdown.contains("test-fixtures/correctness/postgres/v16/postgres-business-risk-ledger-update-cte-comma-sql/input.sql"));
         assertTrue(markdown.contains("test-fixtures/correctness/postgres/v17/postgres17-json-table-sql/input.sql"));
         assertTrue(markdown.contains("test-fixtures/correctness/postgres/v18/postgres18-temporal-constraints-ddl/input.sql"));
+        assertTrue(markdown.contains("test-fixtures/correctness/postgres/postgres-extreme-nesting-withrelation-sql/input.sql"));
+        assertTrue(markdown.contains(
+                "test-fixtures/correctness/postgres/v18/postgres18-extreme-nesting-withrelation-withlineage-sql/expected-lineage.json"));
         assertTrue(markdown.contains(
                 "test-fixtures/correctness/mysql/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json"));
         assertTrue(markdown.contains("FK_LIKE:products.shop_id->shops.id:SQL_LOG_JOIN"));

@@ -1,6 +1,5 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:account_balances.balance->staging_account_balances.balance:SQL_LOG_COLUMN_CO_OCCURRENCE",
     "CO_OCCURRENCE:account_balances.user_id->staging_account_balances.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE"
   ],
   "forbiddenTables": []

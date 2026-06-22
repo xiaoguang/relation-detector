@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "FK_LIKE:categories.parent_id->categories.id:SQL_LOG_EXISTS"
+  ],
+  "forbiddenTables": []
+}

@@ -308,6 +308,9 @@ public final class FullGrammerTypedSqlEventSink {
                 || analysis.sourceColumns().size() != 1) {
             return;
         }
+        if (!isLikelyForeignKeyAssignment(targetColumn, analysis.sourceColumns().get(0))) {
+            return;
+        }
         Map<String, Object> attributes = nativeAttributes();
         attributes.put("leftAlias", clean(targetAlias).isBlank() ? currentWriteTarget() : clean(targetAlias));
         attributes.put("leftColumn", targetColumn);
@@ -315,6 +318,12 @@ public final class FullGrammerTypedSqlEventSink {
         attributes.put("rightColumn", clean(analysis.sourceColumns().get(0)));
         attributes.put("joinKind", "WRITE_ASSIGNMENT");
         add(ctx, StructuredParseEventType.PREDICATE_EQUALITY, attributes);
+    }
+
+    private boolean isLikelyForeignKeyAssignment(String targetColumn, String sourceColumn) {
+        String target = clean(targetColumn).toLowerCase(Locale.ROOT);
+        String source = clean(sourceColumn).toLowerCase(Locale.ROOT);
+        return source.equals("id") && target.endsWith("_id");
     }
 
     public void projection(ParserRuleContext ctx, String outputAlias, String outputColumn, ParseTree expression) {
@@ -337,13 +346,7 @@ public final class FullGrammerTypedSqlEventSink {
 
     public void predicateEqualities(ParserRuleContext ctx, ParseTree predicate, String joinKind) {
         for (ColumnPair pair : equalityPairs(predicate)) {
-            Map<String, Object> attributes = nativeAttributes();
-            attributes.put("leftAlias", pair.left().qualifier());
-            attributes.put("leftColumn", pair.left().column());
-            attributes.put("rightAlias", pair.right().qualifier());
-            attributes.put("rightColumn", pair.right().column());
-            attributes.put("joinKind", blankTo(joinKind, "WHERE_OR_UNKNOWN"));
-            add(ctx, StructuredParseEventType.PREDICATE_EQUALITY, attributes);
+            addPredicateEvent(ctx, StructuredParseEventType.PREDICATE_EQUALITY, pair.left(), pair.right(), joinKind);
         }
     }
 
@@ -353,17 +356,38 @@ public final class FullGrammerTypedSqlEventSink {
         if (left.isEmpty() || right.isEmpty()) {
             return;
         }
-        Map<String, Object> attributes = nativeAttributes();
-        attributes.put("leftAlias", left.get().qualifier());
-        attributes.put("leftColumn", left.get().column());
-        attributes.put("rightAlias", right.get().qualifier());
-        attributes.put("rightColumn", right.get().column());
-        attributes.put("joinKind", blankTo(joinKind, "WHERE_OR_UNKNOWN"));
-        add(ctx, StructuredParseEventType.PREDICATE_EQUALITY, attributes);
+        addPredicateEvent(ctx, StructuredParseEventType.PREDICATE_EQUALITY, left.get(), right.get(), joinKind);
     }
 
-    public void subqueryPredicates(ParserRuleContext ctx, ParseTree predicate) {
-        collectSubqueryPredicates(ctx, predicate);
+    public void existsPredicateEqualities(ParserRuleContext ctx, ParseTree predicate) {
+        for (ColumnPair pair : equalityPairs(predicate)) {
+            addPredicateEvent(ctx, StructuredParseEventType.EXISTS_PREDICATE, pair.left(), pair.right(), "EXISTS");
+        }
+    }
+
+    public void existsPredicateEquality(ParserRuleContext ctx, ParseTree leftExpression, ParseTree rightExpression) {
+        Optional<ExpressionColumn> left = singleDirectColumn(leftExpression);
+        Optional<ExpressionColumn> right = singleDirectColumn(rightExpression);
+        if (left.isEmpty() || right.isEmpty()) {
+            return;
+        }
+        addPredicateEvent(ctx, StructuredParseEventType.EXISTS_PREDICATE, left.get(), right.get(), "EXISTS");
+    }
+
+    private void addPredicateEvent(
+            ParserRuleContext ctx,
+            StructuredParseEventType eventType,
+            ExpressionColumn left,
+            ExpressionColumn right,
+            String joinKind
+    ) {
+        Map<String, Object> attributes = nativeAttributes();
+        attributes.put("leftAlias", left.qualifier());
+        attributes.put("leftColumn", left.column());
+        attributes.put("rightAlias", right.qualifier());
+        attributes.put("rightColumn", right.column());
+        attributes.put("joinKind", blankTo(joinKind, "WHERE_OR_UNKNOWN"));
+        add(ctx, eventType, attributes);
     }
 
     public void inSubqueryPredicate(ParserRuleContext ctx, ParseTree outerExpression, ParseTree subquery) {
@@ -372,7 +396,7 @@ public final class FullGrammerTypedSqlEventSink {
         if (inner.isEmpty()) {
             return;
         }
-        addInSubqueryEvent(ctx, outerColumns, inner.get().columns());
+        addInSubqueryEvent(ctx, outerColumns, inner.get());
     }
 
     public void joinUsing(ParserRuleContext ctx, String leftAlias, String rightAlias, List<String> columns) {
@@ -416,13 +440,25 @@ public final class FullGrammerTypedSqlEventSink {
     }
 
     private List<ColumnPair> equalityPairs(ParseTree tree) {
+        return equalityPairs(tree, true);
+    }
+
+    private List<ColumnPair> equalityPairs(ParseTree tree, boolean stopAtNestedQueryBoundary) {
         List<ColumnPair> result = new ArrayList<>();
-        collectEqualityPairs(tree, result);
+        collectEqualityPairs(tree, result, true, stopAtNestedQueryBoundary);
         return result;
     }
 
-    private void collectEqualityPairs(ParseTree tree, List<ColumnPair> result) {
+    private void collectEqualityPairs(
+            ParseTree tree,
+            List<ColumnPair> result,
+            boolean root,
+            boolean stopAtNestedQueryBoundary
+    ) {
         if (tree == null) {
+            return;
+        }
+        if (stopAtNestedQueryBoundary && !root && isNestedQueryBoundary(tree)) {
             return;
         }
         int equalsIndex = directLeafIndex(tree, "=");
@@ -435,42 +471,23 @@ public final class FullGrammerTypedSqlEventSink {
             }
         }
         for (int index = 0; index < tree.getChildCount(); index++) {
-            collectEqualityPairs(tree.getChild(index), result);
+            collectEqualityPairs(tree.getChild(index), result, false, stopAtNestedQueryBoundary);
         }
     }
 
-    private void collectSubqueryPredicates(ParserRuleContext ctx, ParseTree tree) {
-        if (tree == null) {
-            return;
-        }
-        if (directKeywordIndex(tree, "exists") >= 0) {
-            for (ColumnPair pair : equalityPairs(tree)) {
-                Map<String, Object> attributes = nativeAttributes();
-                attributes.put("leftAlias", pair.left().qualifier());
-                attributes.put("leftColumn", pair.left().column());
-                attributes.put("rightAlias", pair.right().qualifier());
-                attributes.put("rightColumn", pair.right().column());
-                add(ctx, StructuredParseEventType.EXISTS_PREDICATE, attributes);
-            }
-        }
-        int inIndex = directKeywordIndex(tree, "in");
-        if (inIndex > 0 && directKeywordIndex(tree, "exists") < 0) {
-            List<ExpressionColumn> outerColumns = outerColumnsBeforeIn(tree, inIndex);
-            Optional<SelectColumns> inner = selectColumnsAfter(tree, inIndex + 1);
-            if (inner.isPresent()) {
-                addInSubqueryEvent(ctx, outerColumns, inner.get().columns());
-            }
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectSubqueryPredicates(ctx, tree.getChild(index));
-        }
+    private boolean isNestedQueryBoundary(ParseTree tree) {
+        String name = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+        return name.contains("select")
+                || name.contains("subquery")
+                || name.contains("preparablestmt");
     }
 
     private void addInSubqueryEvent(
             ParserRuleContext ctx,
             List<ExpressionColumn> outerColumns,
-            List<ExpressionColumn> innerColumns
+            SelectColumns inner
     ) {
+        List<ExpressionColumn> innerColumns = inner.columns();
         if (outerColumns.size() == 1 && innerColumns.size() == 1) {
             Map<String, Object> attributes = nativeAttributes();
             attributes.put("verifiedColumnSubquery", true);
@@ -478,7 +495,7 @@ public final class FullGrammerTypedSqlEventSink {
             attributes.put("outerColumn", outerColumns.get(0).column());
             attributes.put("innerAlias", innerColumns.get(0).qualifier());
             attributes.put("innerColumn", innerColumns.get(0).column());
-            attributes.put("innerTable", tableFor(innerColumns.get(0).qualifier()));
+            attributes.put("innerTable", inner.table().isBlank() ? tableFor(innerColumns.get(0).qualifier()) : inner.table());
             add(ctx, StructuredParseEventType.IN_SUBQUERY_PREDICATE, attributes);
         } else if (outerColumns.size() > 1 && outerColumns.size() == innerColumns.size()) {
             Map<String, Object> attributes = nativeAttributes();
@@ -487,27 +504,9 @@ public final class FullGrammerTypedSqlEventSink {
             attributes.put("outerColumns", outerColumns.stream().map(ExpressionColumn::column).toList());
             attributes.put("innerAliases", innerColumns.stream().map(ExpressionColumn::qualifier).toList());
             attributes.put("innerColumns", innerColumns.stream().map(ExpressionColumn::column).toList());
-            attributes.put("innerTable", tableFor(innerColumns.get(0).qualifier()));
+            attributes.put("innerTable", inner.table().isBlank() ? tableFor(innerColumns.get(0).qualifier()) : inner.table());
             add(ctx, StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE, attributes);
         }
-    }
-
-    private List<ExpressionColumn> outerColumnsBeforeIn(ParseTree tree, int inIndex) {
-        List<ExpressionColumn> outerColumns = directColumnList(tree.getChild(inIndex - 1));
-        if (!outerColumns.isEmpty()) {
-            return outerColumns;
-        }
-        if (inIndex > 1
-                && tree.getChild(inIndex - 1) instanceof TerminalNode terminal
-                && terminal.getText().equalsIgnoreCase("not")) {
-            outerColumns = directColumnList(tree.getChild(inIndex - 2));
-            if (!outerColumns.isEmpty()) {
-                return outerColumns;
-            }
-        }
-        return singleDirectColumnInChildren(tree, 0, inIndex)
-                .map(List::of)
-                .orElse(List.of());
     }
 
     private int directKeywordIndex(ParseTree tree, String keyword) {
@@ -560,23 +559,48 @@ public final class FullGrammerTypedSqlEventSink {
         if (naked.isPresent()) {
             return List.of(naked.get());
         }
-        FullGrammerExpressionAnalysis analysis = expressionAnalyzer.analyze(tree, defaultProjectionQualifier());
-        if (!"DIRECT".equals(analysis.transformType())) {
-            return List.of();
-        }
-        int count = Math.min(analysis.sourceAliases().size(), analysis.sourceColumns().size());
         List<ExpressionColumn> columns = new ArrayList<>();
-        for (int index = 0; index < count; index++) {
-            String alias = clean(analysis.sourceAliases().get(index));
-            String column = clean(analysis.sourceColumns().get(index));
-            if (!alias.isBlank() && !column.isBlank()) {
-                columns.add(new ExpressionColumn(alias, column));
+        if (collectBareColumnList(tree, defaultProjectionQualifier(), columns)) {
+            return columns.stream().distinct().toList();
+        }
+        return directExpressionColumns(tree, defaultProjectionQualifier());
+    }
+
+    private boolean collectBareColumnList(ParseTree tree, String defaultQualifier, List<ExpressionColumn> columns) {
+        if (tree == null) {
+            return false;
+        }
+        Optional<ExpressionColumn> naked = nakedColumnWithDefault(tree, defaultQualifier);
+        if (naked.isPresent()) {
+            columns.add(naked.get());
+            return true;
+        }
+        if (tree instanceof TerminalNode terminal) {
+            String text = terminal.getText();
+            return text.equals(",") || text.equals("(") || text.equals(")");
+        }
+        if (tree.getChildCount() == 0) {
+            return false;
+        }
+        boolean sawColumn = false;
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            List<ExpressionColumn> childColumns = new ArrayList<>();
+            if (!collectBareColumnList(tree.getChild(index), defaultQualifier, childColumns)) {
+                return false;
+            }
+            if (!childColumns.isEmpty()) {
+                sawColumn = true;
+                columns.addAll(childColumns);
             }
         }
-        return columns.stream().distinct().toList();
+        return sawColumn;
     }
 
     private Optional<ExpressionColumn> nakedColumn(ParseTree tree) {
+        return nakedColumnWithDefault(tree, defaultProjectionQualifier());
+    }
+
+    private Optional<ExpressionColumn> nakedColumnWithDefault(ParseTree tree, String defaultQualifier) {
         ParseTree current = unwrapTransparentSingleChild(tree);
         if (current == null) {
             return Optional.empty();
@@ -595,7 +619,6 @@ public final class FullGrammerTypedSqlEventSink {
             return Optional.of(new ExpressionColumn(parts.get(parts.size() - 2), parts.get(parts.size() - 1)));
         }
         if (parts.size() == 1 && isIdentifier(parts.get(0))) {
-            String defaultQualifier = defaultProjectionQualifier();
             if (!defaultQualifier.isBlank()) {
                 return Optional.of(new ExpressionColumn(defaultQualifier, parts.get(0)));
             }
@@ -611,16 +634,6 @@ public final class FullGrammerTypedSqlEventSink {
         return current;
     }
 
-    private Optional<SelectColumns> selectColumnsAfter(ParseTree tree, int startIndex) {
-        for (int index = startIndex; index < tree.getChildCount(); index++) {
-            Optional<SelectColumns> selected = selectColumns(tree.getChild(index));
-            if (selected.isPresent()) {
-                return selected;
-            }
-        }
-        return Optional.empty();
-    }
-
     private Optional<SelectColumns> selectColumns(ParseTree tree) {
         Optional<SelectColumns> fromTargetList = selectColumnsFromTypedSelect(tree);
         if (fromTargetList.isPresent()) {
@@ -629,31 +642,29 @@ public final class FullGrammerTypedSqlEventSink {
         int selectIndex = directKeywordIndex(tree, "select");
         int fromIndex = directKeywordIndex(tree, "from");
         if (selectIndex >= 0 && fromIndex > selectIndex) {
-            String defaultQualifier = defaultQualifierFromDirectFrom(tree, fromIndex + 1);
+            FromBinding binding = bindingFromDirectFrom(tree, fromIndex + 1);
             List<ExpressionColumn> columns = new ArrayList<>();
             for (int index = selectIndex + 1; index < fromIndex; index++) {
                 ParseTree child = tree.getChild(index);
                 if (child instanceof TerminalNode terminal && terminal.getText().equals(",")) {
                     continue;
                 }
-                FullGrammerExpressionAnalysis analysis = expressionAnalyzer.analyze(child, defaultQualifier);
-                if (!analysis.hasSources()) {
-                    continue;
-                }
-                if (!"DIRECT".equals(analysis.transformType())) {
+                List<ExpressionColumn> childColumns = directTargetItemColumns(child, binding.qualifier());
+                if (childColumns.isEmpty()) {
                     return Optional.empty();
                 }
-                int count = Math.min(analysis.sourceAliases().size(), analysis.sourceColumns().size());
-                for (int sourceIndex = 0; sourceIndex < count; sourceIndex++) {
-                    String alias = clean(analysis.sourceAliases().get(sourceIndex));
-                    String column = clean(analysis.sourceColumns().get(sourceIndex));
+                for (ExpressionColumn childColumn : childColumns) {
+                    String alias = clean(childColumn.qualifier());
+                    String column = clean(childColumn.column());
                     if (alias.isBlank() || column.isBlank()) {
                         return Optional.empty();
                     }
                     columns.add(new ExpressionColumn(alias, column));
                 }
             }
-            return columns.isEmpty() ? Optional.empty() : Optional.of(new SelectColumns(columns.stream().distinct().toList()));
+            return columns.isEmpty()
+                    ? Optional.empty()
+                    : Optional.of(new SelectColumns(columns.stream().distinct().toList(), binding.table()));
         }
         for (int index = 0; index < tree.getChildCount(); index++) {
             Optional<SelectColumns> selected = selectColumns(tree.getChild(index));
@@ -679,9 +690,9 @@ public final class FullGrammerTypedSqlEventSink {
         if (targetList == null || fromClause == null) {
             return Optional.empty();
         }
-        String defaultQualifier = defaultQualifierFromFromNode(fromClause);
-        List<ExpressionColumn> columns = targetListColumns(targetList, defaultQualifier);
-        return columns.isEmpty() ? Optional.empty() : Optional.of(new SelectColumns(columns));
+        FromBinding binding = bindingFromFromNode(fromClause);
+        List<ExpressionColumn> columns = targetListColumns(targetList, binding.qualifier());
+        return columns.isEmpty() ? Optional.empty() : Optional.of(new SelectColumns(columns, binding.table()));
     }
 
     private ParseTree directChildWithClassContaining(ParseTree tree, String fragment) {
@@ -694,12 +705,14 @@ public final class FullGrammerTypedSqlEventSink {
         return null;
     }
 
-    private String defaultQualifierFromFromNode(ParseTree fromClause) {
+    private FromBinding bindingFromFromNode(ParseTree fromClause) {
         List<String> identifiers = identifiers(fromClause);
         if (identifiers.isEmpty()) {
-            return "";
+            return new FromBinding("", "");
         }
-        return identifiers.size() >= 2 ? identifiers.get(1) : identifiers.get(0);
+        String table = identifiers.get(0);
+        String qualifier = identifiers.size() >= 2 ? identifiers.get(1) : table;
+        return new FromBinding(qualifier, table);
     }
 
     private List<ExpressionColumn> targetListColumns(ParseTree targetList, String defaultQualifier) {
@@ -707,16 +720,38 @@ public final class FullGrammerTypedSqlEventSink {
         collectTargetListItems(targetList, items);
         List<ExpressionColumn> columns = new ArrayList<>();
         for (ParseTree item : items) {
-            FullGrammerExpressionAnalysis analysis = expressionAnalyzer.analyze(item, defaultQualifier);
-            if (!analysis.hasSources() || !"DIRECT".equals(analysis.transformType())) {
+            List<ExpressionColumn> itemColumns = directTargetItemColumns(item, defaultQualifier);
+            if (itemColumns.size() != 1) {
                 return List.of();
             }
-            int count = Math.min(analysis.sourceAliases().size(), analysis.sourceColumns().size());
-            if (count != 1) {
+            String alias = clean(itemColumns.get(0).qualifier());
+            String column = clean(itemColumns.get(0).column());
+            if (alias.isBlank() || column.isBlank()) {
                 return List.of();
             }
-            String alias = clean(analysis.sourceAliases().get(0));
-            String column = clean(analysis.sourceColumns().get(0));
+            columns.add(new ExpressionColumn(alias, column));
+        }
+        return columns.stream().distinct().toList();
+    }
+
+    private List<ExpressionColumn> directTargetItemColumns(ParseTree item, String defaultQualifier) {
+        List<ExpressionColumn> columns = new ArrayList<>();
+        if (collectBareColumnList(item, defaultQualifier, columns)) {
+            return columns.stream().distinct().toList();
+        }
+        return directExpressionColumns(item, defaultQualifier);
+    }
+
+    private List<ExpressionColumn> directExpressionColumns(ParseTree tree, String defaultQualifier) {
+        FullGrammerExpressionAnalysis analysis = expressionAnalyzer.analyzeRelationColumnExpression(tree, defaultQualifier);
+        if (!"DIRECT".equals(analysis.transformType())) {
+            return List.of();
+        }
+        int count = Math.min(analysis.sourceAliases().size(), analysis.sourceColumns().size());
+        List<ExpressionColumn> columns = new ArrayList<>();
+        for (int index = 0; index < count; index++) {
+            String alias = clean(analysis.sourceAliases().get(index));
+            String column = clean(analysis.sourceColumns().get(index));
             if (alias.isBlank() || column.isBlank()) {
                 return List.of();
             }
@@ -736,7 +771,7 @@ public final class FullGrammerTypedSqlEventSink {
         }
     }
 
-    private String defaultQualifierFromDirectFrom(ParseTree tree, int startIndex) {
+    private FromBinding bindingFromDirectFrom(ParseTree tree, int startIndex) {
         for (int index = startIndex; index < tree.getChildCount(); index++) {
             ParseTree child = tree.getChild(index);
             if (child instanceof TerminalNode terminal
@@ -746,10 +781,12 @@ public final class FullGrammerTypedSqlEventSink {
             }
             List<String> identifiers = identifiers(child);
             if (!identifiers.isEmpty()) {
-                return identifiers.size() >= 2 ? identifiers.get(1) : identifiers.get(0);
+                String table = identifiers.get(0);
+                String qualifier = identifiers.size() >= 2 ? identifiers.get(1) : table;
+                return new FromBinding(qualifier, table);
             }
         }
-        return "";
+        return new FromBinding("", "");
     }
 
     private int directLeafIndex(ParseTree tree, String text) {
@@ -909,6 +946,9 @@ public final class FullGrammerTypedSqlEventSink {
     private record ColumnPair(ExpressionColumn left, ExpressionColumn right) {
     }
 
-    private record SelectColumns(List<ExpressionColumn> columns) {
+    private record FromBinding(String qualifier, String table) {
+    }
+
+    private record SelectColumns(List<ExpressionColumn> columns, String table) {
     }
 }

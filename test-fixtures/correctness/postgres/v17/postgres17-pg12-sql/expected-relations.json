@@ -1,0 +1,8 @@
+{
+  "fingerprints": [
+    "FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_EXISTS",
+    "FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_JOIN",
+    "FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_SUBQUERY_IN"
+  ],
+  "forbiddenTables": []
+}

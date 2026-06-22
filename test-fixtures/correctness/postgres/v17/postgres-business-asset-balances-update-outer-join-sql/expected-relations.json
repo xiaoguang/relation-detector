@@ -1,7 +1,6 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:asset_balances.account_id->ledger_system_a.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:asset_balances.last_checked_by->staff_assignments.operator_name:SQL_LOG_COLUMN_CO_OCCURRENCE",
     "CO_OCCURRENCE:ledger_system_a.account_id->ledger_system_b.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
     "FK_LIKE:account_extensions.assigned_staff_id->staff_assignments.id:SQL_LOG_JOIN",
     "FK_LIKE:ledger_system_a.account_id->account_extensions.id:SQL_LOG_JOIN"

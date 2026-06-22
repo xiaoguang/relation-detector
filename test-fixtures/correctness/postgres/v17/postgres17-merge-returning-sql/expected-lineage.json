@@ -1,6 +1,7 @@
 {
   "fingerprints": [
-    "VALUE:DIRECT:staging_account_balances.balance->account_balances.balance"
+    "VALUE:DIRECT:staging_account_balances.balance->account_balances.balance",
+    "VALUE:DIRECT:staging_account_balances.user_id->account_balances.user_id"
   ],
   "forbiddenSources": [],
   "forbiddenTargets": [],

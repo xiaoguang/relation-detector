@@ -1,5 +1,9 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag",
+    "VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance",
+    "VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by"
+  ],
   "forbiddenSources": [
     "p_input_ledger_json",
     "p_max_limit_cap",

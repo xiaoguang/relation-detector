@@ -8,18 +8,18 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 
 | Metric | Count |
 | --- | ---: |
-| Total correctness fixtures | 284 |
-| SQL fixtures | 227 |
+| Total correctness fixtures | 328 |
+| SQL fixtures | 271 |
 | DDL fixtures | 57 |
-| Fixtures with expected lineage | 60 |
+| Fixtures with expected lineage | 84 |
 | Common directory fixtures | 2 |
 | MySQL directory fixtures | 57 |
-| PostgreSQL directory fixtures | 225 |
+| PostgreSQL directory fixtures | 269 |
 
 | Database type | Total | SQL | DDL |
 | --- | ---: | ---: | ---: |
 | MYSQL | 59 | 48 | 11 |
-| POSTGRESQL | 225 | 179 | 46 |
+| POSTGRESQL | 269 | 223 | 46 |
 
 ## Common Fixtures
 
@@ -1062,8 +1062,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
 
@@ -1548,8 +1548,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 
 **Forbidden Tables**
 
@@ -1601,8 +1601,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 
 **Forbidden Tables**
 
@@ -2026,9 +2026,9 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:orders.order_id->order_audit.order_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:invoices.customer_id->customers.id:SQL_LOG_JOIN`
 - `FK_LIKE:invoices.payment_id->payments.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:orders.order_id->order_audit.order_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
 - `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
 - `FK_LIKE:orders.warehouse_id->warehouses.id:SQL_LOG_JOIN`
@@ -6790,7 +6790,9 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Forbidden Tables**
 
@@ -6837,7 +6839,9 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Forbidden Tables**
 
@@ -6885,7 +6889,9 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
+- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Forbidden Tables**
 
@@ -7204,7 +7210,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Forbidden Tables**
 
@@ -7250,7 +7256,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Forbidden Tables**
 
@@ -7388,7 +7394,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
 **Forbidden Tables**
 
@@ -7432,7 +7439,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
 **Forbidden Tables**
 
@@ -7476,7 +7484,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Forbidden Tables**
 
@@ -7520,7 +7528,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Forbidden Tables**
 
@@ -7563,7 +7571,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Forbidden Tables**
 
@@ -7606,7 +7615,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Forbidden Tables**
 
@@ -7655,7 +7665,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Forbidden Tables**
 
@@ -7707,7 +7718,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Forbidden Tables**
 
@@ -7823,6 +7835,153 @@ WHERE uc.coupon_id = c.id
   AND m.compliance_status = 'SUSPENDED'
   AND (
       c.expire_at < NOW()
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-edge-cases-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/postgres-edge-cases-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-edge-cases-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-edge-cases-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-extreme-nesting-withrelation-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/postgres-extreme-nesting-withrelation-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-extreme-nesting-withrelation-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-extreme-nesting-withrelation-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.sales_rep_id->sales_reps.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS`
+- `FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-extreme-nesting-withrelation-withlineage-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/postgres-extreme-nesting-withrelation-withlineage-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-extreme-nesting-withrelation-withlineage-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-extreme-nesting-withrelation-withlineage-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-extreme-nesting-withrelation-withlineage-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS`
+- `FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
+- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
+- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
 ```
 _Preview truncated; see input file for full content._
 
@@ -8027,11 +8186,11 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN`
 - `FK_LIKE:categories.s_id->sub_labels.id:SQL_LOG_JOIN`
 - `FK_LIKE:departments.manager_id->employees.id:SQL_LOG_JOIN`
-- `FK_LIKE:revisions.doc_id->documents.id:SQL_LOG_SUBQUERY_IN`
 - `FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN`
 - `FK_LIKE:main_catalog.p_id->products.id:SQL_LOG_JOIN`
 - `FK_LIKE:products.c_id->categories.id:SQL_LOG_JOIN`
 - `FK_LIKE:products.dept_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:revisions.doc_id->documents.id:SQL_LOG_SUBQUERY_IN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -8087,7 +8246,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Forbidden Tables**
 
@@ -8468,6 +8627,375 @@ SELECT *
 ```
 _Preview truncated; see input file for full content._
 
+### `postgres-pg10-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg10-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-pg10-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-pg10-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_accounts.account_id->pg10_transactions.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 10 复杂SQL测试用例
+-- 特性: 声明式分区, Identity列, 逻辑复制, 并行查询增强, 哈希索引
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 声明式分区 - 多层分区 + 子分区
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-pg11-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg11-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-pg11-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-pg11-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 11 复杂SQL测试用例
+-- 特性: 存储过程(CREATE PROCEDURE + 事务控制), 分区表增强(PRIMARY KEY,
+--       DEFAULT分区, 自动索引), 哈希分区, 覆盖索引(INCLUDE)
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-pg12-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg12-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-pg12-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-pg12-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_EXISTS`
+- `FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_JOIN`
+- `FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 12 复杂SQL测试用例
+-- 特性: 生成列, JSON_PATH, 物化CTE, 分区性能改进
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 生成列与复杂表定义
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-pg13-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg13-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-pg13-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-pg13-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:categories.parent_id->categories.id:SQL_LOG_EXISTS`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 13 复杂SQL测试用例
+-- 特性: 增量排序, 并行哈希连接, 分区改进, LATERAL增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 增量排序与并行查询 (PG13优化器特性)
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-pg14-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg14-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-pg14-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-pg14-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 14 复杂SQL测试用例
+-- 特性: 多范围类型, JSON下标访问, 存储过程OUT参数, 扩展查询管道
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 多范围类型 (multirange) 复杂操作
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-pg15-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg15-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-pg15-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-pg15-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-pg15-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg15_inventory_target.sku->pg15_inventory_source.sku:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg15_inventory_target.warehouse_id->pg15_inventory_source.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+- `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
+- `VALUE:DIRECT:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 15 复杂SQL测试用例
+-- 特性: MERGE语句, SQL/JSON函数(IS JSON, JSON_SCALAR, JSON_EXISTS等),
+--       CLUSTER并行, 逻辑复制行过滤
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-pg16-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg16-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-pg16-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-pg16-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg16_analytics_events.user_id->pg16_user_profiles.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 16 复杂SQL测试用例
+-- 特性: SQL/JSON构造函数(JSON_OBJECT, JSON_ARRAY, JSON_OBJECTAGG, JSON_ARRAYAGG),
+--       IS JSON增强, 聚合函数增强, 并行哈希全连接
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-pg17-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg17-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-pg17-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-pg17-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-pg17-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg17_product_catalog.sku->pg17_price_updates.sku:SQL_LOG_COLUMN_CO_OCCURRENCE`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
+- `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
+- `VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 17 复杂SQL测试用例
+-- 特性: JSON_TABLE, MERGE增强 (RETURNING, 多动作), 增量JSON解析,
+--       COPY性能改进, 系统信息函数增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres-sql-delete-using-no-alias`
 
 | Field | Value |
@@ -8794,6 +9322,508 @@ FROM users u
 WHERE o.user_id = u.id;
 ```
 
+### `postgres16-edge-cases-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-edge-cases-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-edge-cases-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-edge-cases-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-extreme-nesting-withrelation-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-extreme-nesting-withrelation-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-extreme-nesting-withrelation-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-extreme-nesting-withrelation-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.sales_rep_id->sales_reps.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS`
+- `FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-extreme-nesting-withrelation-withlineage-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-extreme-nesting-withrelation-withlineage-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-extreme-nesting-withrelation-withlineage-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-extreme-nesting-withrelation-withlineage-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-extreme-nesting-withrelation-withlineage-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS`
+- `FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
+- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
+- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-pg10-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg10-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-pg10-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-pg10-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_accounts.account_id->pg10_transactions.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 10 复杂SQL测试用例
+-- 特性: 声明式分区, Identity列, 逻辑复制, 并行查询增强, 哈希索引
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 声明式分区 - 多层分区 + 子分区
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-pg11-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg11-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-pg11-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-pg11-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 11 复杂SQL测试用例
+-- 特性: 存储过程(CREATE PROCEDURE + 事务控制), 分区表增强(PRIMARY KEY,
+--       DEFAULT分区, 自动索引), 哈希分区, 覆盖索引(INCLUDE)
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-pg12-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg12-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-pg12-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-pg12-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_EXISTS`
+- `FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_JOIN`
+- `FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 12 复杂SQL测试用例
+-- 特性: 生成列, JSON_PATH, 物化CTE, 分区性能改进
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 生成列与复杂表定义
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-pg13-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg13-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-pg13-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-pg13-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:categories.parent_id->categories.id:SQL_LOG_EXISTS`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 13 复杂SQL测试用例
+-- 特性: 增量排序, 并行哈希连接, 分区改进, LATERAL增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 增量排序与并行查询 (PG13优化器特性)
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-pg14-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg14-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-pg14-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-pg14-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg14_room_bookings.room_id->pg14_room_bookings.p_room_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 14 复杂SQL测试用例
+-- 特性: 多范围类型, JSON下标访问, 存储过程OUT参数, 扩展查询管道
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 多范围类型 (multirange) 复杂操作
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-pg15-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg15-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-pg15-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-pg15-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-pg15-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg15_inventory_target.sku->pg15_inventory_source.sku:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg15_inventory_target.warehouse_id->pg15_inventory_source.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 15 复杂SQL测试用例
+-- 特性: MERGE语句, SQL/JSON函数(IS JSON, JSON_SCALAR, JSON_EXISTS等),
+--       CLUSTER并行, 逻辑复制行过滤
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-pg16-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg16-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-pg16-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-pg16-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 16 复杂SQL测试用例
+-- 特性: SQL/JSON构造函数(JSON_OBJECT, JSON_ARRAY, JSON_OBJECTAGG, JSON_ARRAYAGG),
+--       IS JSON增强, 聚合函数增强, 并行哈希全连接
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-pg17-version-boundary-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg17-version-boundary-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-pg17-version-boundary-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-pg17-version-boundary-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`: 5
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 17 复杂SQL测试用例
+-- 特性: JSON_TABLE, MERGE增强 (RETURNING, 多动作), 增量JSON解析,
+--       COPY性能改进, 系统信息函数增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres16-postgres-basic-correctness-case-01-objects-sql`
 
 | Field | Value |
@@ -8896,8 +9926,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Forbidden Tables**
 
@@ -8945,8 +9975,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Forbidden Tables**
 
@@ -8988,7 +10018,6 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:asset_balances.account_id->ledger_system_a.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `CO_OCCURRENCE:asset_balances.last_checked_by->staff_assignments.operator_name:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:ledger_system_a.account_id->ledger_system_b.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:account_extensions.assigned_staff_id->staff_assignments.id:SQL_LOG_JOIN`
 - `FK_LIKE:ledger_system_a.account_id->account_extensions.id:SQL_LOG_JOIN`
@@ -9316,7 +10345,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Forbidden Tables**
 
@@ -9362,7 +10391,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Forbidden Tables**
 
@@ -9495,7 +10524,6 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.last_ordered_from->suppliers.supplier_name:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:inventory.supplier_id->suppliers.id:SQL_LOG_JOIN`
 
@@ -9541,7 +10569,6 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.last_ordered_from->suppliers.supplier_name:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:inventory.supplier_id->suppliers.id:SQL_LOG_JOIN`
 
@@ -9723,8 +10750,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Forbidden Tables**
 
@@ -10203,7 +11230,6 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:accounts.user_id->orders.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `CO_OCCURRENCE:orders.customer_id->staging_orders.customer_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:accounts.user_id->users.id:SQL_LOG_JOIN`
 - `FK_LIKE:order_staging.order_id->orders.id:SQL_LOG_JOIN`
 - `FK_LIKE:order_staging.user_id->users.id:SQL_LOG_JOIN`
@@ -10211,7 +11237,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Forbidden Tables**
 
@@ -11022,8 +12048,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Forbidden Tables**
 
@@ -11071,8 +12097,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Forbidden Tables**
 
@@ -11114,7 +12140,6 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:asset_balances.account_id->ledger_system_a.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `CO_OCCURRENCE:asset_balances.last_checked_by->staff_assignments.operator_name:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:ledger_system_a.account_id->ledger_system_b.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:account_extensions.assigned_staff_id->staff_assignments.id:SQL_LOG_JOIN`
 - `FK_LIKE:ledger_system_a.account_id->account_extensions.id:SQL_LOG_JOIN`
@@ -11442,7 +12467,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Forbidden Tables**
 
@@ -11488,7 +12513,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Forbidden Tables**
 
@@ -11621,7 +12646,6 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.last_ordered_from->suppliers.supplier_name:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:inventory.supplier_id->suppliers.id:SQL_LOG_JOIN`
 
@@ -11667,7 +12691,6 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.last_ordered_from->suppliers.supplier_name:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:inventory.supplier_id->suppliers.id:SQL_LOG_JOIN`
 
@@ -11849,8 +12872,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Forbidden Tables**
 
@@ -12069,6 +13092,153 @@ WHERE uc.coupon_id = c.id
   AND m.compliance_status = 'SUSPENDED'
   AND (
       c.expire_at < NOW()
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-edge-cases-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-edge-cases-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-edge-cases-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-edge-cases-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-extreme-nesting-withrelation-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-extreme-nesting-withrelation-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-extreme-nesting-withrelation-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-extreme-nesting-withrelation-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.sales_rep_id->sales_reps.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS`
+- `FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-extreme-nesting-withrelation-withlineage-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-extreme-nesting-withrelation-withlineage-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-extreme-nesting-withrelation-withlineage-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-extreme-nesting-withrelation-withlineage-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-extreme-nesting-withrelation-withlineage-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS`
+- `FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
+- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
+- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
 ```
 _Preview truncated; see input file for full content._
 
@@ -12372,12 +13542,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:account_balances.balance->staging_account_balances.balance:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:account_balances.user_id->staging_account_balances.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:DIRECT:staging_account_balances.balance->account_balances.balance`
+- `VALUE:DIRECT:staging_account_balances.user_id->account_balances.user_id`
 
 **Forbidden Tables**
 
@@ -12417,7 +13587,6 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:accounts.user_id->orders.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `CO_OCCURRENCE:orders.customer_id->staging_orders.customer_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:accounts.user_id->users.id:SQL_LOG_JOIN`
 - `FK_LIKE:order_staging.order_id->orders.id:SQL_LOG_JOIN`
 - `FK_LIKE:order_staging.user_id->users.id:SQL_LOG_JOIN`
@@ -12425,7 +13594,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Forbidden Tables**
 
@@ -12805,6 +13974,380 @@ FROM ((SELECT o.id, o.user_id FROM orders o)) projected_orders
 JOIN users u ON projected_orders.user_id = u.id;
 
 SELECT *
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-pg10-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg10-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-pg10-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-pg10-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_accounts.account_id->pg10_transactions.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 10 复杂SQL测试用例
+-- 特性: 声明式分区, Identity列, 逻辑复制, 并行查询增强, 哈希索引
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 声明式分区 - 多层分区 + 子分区
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-pg11-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg11-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-pg11-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-pg11-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 11 复杂SQL测试用例
+-- 特性: 存储过程(CREATE PROCEDURE + 事务控制), 分区表增强(PRIMARY KEY,
+--       DEFAULT分区, 自动索引), 哈希分区, 覆盖索引(INCLUDE)
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-pg12-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg12-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-pg12-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-pg12-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_EXISTS`
+- `FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_JOIN`
+- `FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 12 复杂SQL测试用例
+-- 特性: 生成列, JSON_PATH, 物化CTE, 分区性能改进
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 生成列与复杂表定义
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-pg13-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg13-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-pg13-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-pg13-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:categories.parent_id->categories.id:SQL_LOG_EXISTS`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 13 复杂SQL测试用例
+-- 特性: 增量排序, 并行哈希连接, 分区改进, LATERAL增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 增量排序与并行查询 (PG13优化器特性)
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-pg14-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg14-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-pg14-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-pg14-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg14_room_bookings.room_id->pg14_room_bookings.p_room_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 14 复杂SQL测试用例
+-- 特性: 多范围类型, JSON下标访问, 存储过程OUT参数, 扩展查询管道
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 多范围类型 (multirange) 复杂操作
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-pg15-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg15-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-pg15-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-pg15-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-pg15-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg15_inventory_target.sku->pg15_inventory_source.sku:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg15_inventory_target.warehouse_id->pg15_inventory_source.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+- `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
+- `VALUE:DIRECT:pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:DIRECT:pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:DIRECT:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics->pg15_inventory_target.metadata`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 15 复杂SQL测试用例
+-- 特性: MERGE语句, SQL/JSON函数(IS JSON, JSON_SCALAR, JSON_EXISTS等),
+--       CLUSTER并行, 逻辑复制行过滤
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-pg16-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg16-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-pg16-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-pg16-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 16 复杂SQL测试用例
+-- 特性: SQL/JSON构造函数(JSON_OBJECT, JSON_ARRAY, JSON_OBJECTAGG, JSON_ARRAYAGG),
+--       IS JSON增强, 聚合函数增强, 并行哈希全连接
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-pg17-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg17-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-pg17-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-pg17-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-pg17-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg17_product_catalog.sku->pg17_price_updates.sku:SQL_LOG_COLUMN_CO_OCCURRENCE`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
+- `VALUE:COALESCE:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:COALESCE:pg17_product_catalog.attributes,pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_product_catalog.stock_level,pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
+- `VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 17 复杂SQL测试用例
+-- 特性: JSON_TABLE, MERGE增强 (RETURNING, 多动作), 增量JSON解析,
+--       COPY性能改进, 系统信息函数增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
 ```
 _Preview truncated; see input file for full content._
 
@@ -13236,8 +14779,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Forbidden Tables**
 
@@ -13285,8 +14828,8 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Forbidden Tables**
 
@@ -13328,7 +14871,6 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:asset_balances.account_id->ledger_system_a.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `CO_OCCURRENCE:asset_balances.last_checked_by->staff_assignments.operator_name:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:ledger_system_a.account_id->ledger_system_b.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:account_extensions.assigned_staff_id->staff_assignments.id:SQL_LOG_JOIN`
 - `FK_LIKE:ledger_system_a.account_id->account_extensions.id:SQL_LOG_JOIN`
@@ -13656,7 +15198,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Forbidden Tables**
 
@@ -13702,7 +15244,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Forbidden Tables**
 
@@ -13835,7 +15377,6 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.last_ordered_from->suppliers.supplier_name:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:inventory.supplier_id->suppliers.id:SQL_LOG_JOIN`
 
@@ -13881,7 +15422,6 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.last_ordered_from->suppliers.supplier_name:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:inventory.supplier_id->suppliers.id:SQL_LOG_JOIN`
 
@@ -14063,8 +15603,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Forbidden Tables**
 
@@ -14283,6 +15823,153 @@ WHERE uc.coupon_id = c.id
   AND m.compliance_status = 'SUSPENDED'
   AND (
       c.expire_at < NOW()
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-edge-cases-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-edge-cases-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-edge-cases-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-edge-cases-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-extreme-nesting-withrelation-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-extreme-nesting-withrelation-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-extreme-nesting-withrelation-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-extreme-nesting-withrelation-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.sales_rep_id->sales_reps.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS`
+- `FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-extreme-nesting-withrelation-withlineage-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-extreme-nesting-withrelation-withlineage-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-extreme-nesting-withrelation-withlineage-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-extreme-nesting-withrelation-withlineage-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-extreme-nesting-withrelation-withlineage-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS`
+- `FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
+- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
+- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
 ```
 _Preview truncated; see input file for full content._
 
@@ -14543,7 +16230,6 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:accounts.user_id->orders.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
-- `CO_OCCURRENCE:orders.customer_id->staging_orders.customer_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:accounts.user_id->users.id:SQL_LOG_JOIN`
 - `FK_LIKE:order_staging.order_id->orders.id:SQL_LOG_JOIN`
 - `FK_LIKE:order_staging.user_id->users.id:SQL_LOG_JOIN`
@@ -14551,7 +16237,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Forbidden Tables**
 
@@ -14931,6 +16617,380 @@ FROM ((SELECT o.id, o.user_id FROM orders o)) projected_orders
 JOIN users u ON projected_orders.user_id = u.id;
 
 SELECT *
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-pg10-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg10-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-pg10-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-pg10-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg10_accounts.account_id->pg10_transactions.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 10 复杂SQL测试用例
+-- 特性: 声明式分区, Identity列, 逻辑复制, 并行查询增强, 哈希索引
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 声明式分区 - 多层分区 + 子分区
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-pg11-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg11-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-pg11-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-pg11-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 11 复杂SQL测试用例
+-- 特性: 存储过程(CREATE PROCEDURE + 事务控制), 分区表增强(PRIMARY KEY,
+--       DEFAULT分区, 自动索引), 哈希分区, 覆盖索引(INCLUDE)
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-pg12-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg12-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-pg12-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-pg12-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_EXISTS`
+- `FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_JOIN`
+- `FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_SUBQUERY_IN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 12 复杂SQL测试用例
+-- 特性: 生成列, JSON_PATH, 物化CTE, 分区性能改进
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 生成列与复杂表定义
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-pg13-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg13-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-pg13-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-pg13-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:categories.parent_id->categories.id:SQL_LOG_EXISTS`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 13 复杂SQL测试用例
+-- 特性: 增量排序, 并行哈希连接, 分区改进, LATERAL增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 增量排序与并行查询 (PG13优化器特性)
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-pg14-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg14-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-pg14-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-pg14-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg14_room_bookings.room_id->pg14_room_bookings.p_room_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 14 复杂SQL测试用例
+-- 特性: 多范围类型, JSON下标访问, 存储过程OUT参数, 扩展查询管道
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 多范围类型 (multirange) 复杂操作
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-pg15-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg15-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-pg15-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-pg15-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-pg15-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg15_inventory_target.sku->pg15_inventory_source.sku:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:pg15_inventory_target.warehouse_id->pg15_inventory_source.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+- `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
+- `VALUE:DIRECT:pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:DIRECT:pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:DIRECT:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics->pg15_inventory_target.metadata`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 15 复杂SQL测试用例
+-- 特性: MERGE语句, SQL/JSON函数(IS JSON, JSON_SCALAR, JSON_EXISTS等),
+--       CLUSTER并行, 逻辑复制行过滤
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-pg16-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg16-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-pg16-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-pg16-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 16 复杂SQL测试用例
+-- 特性: SQL/JSON构造函数(JSON_OBJECT, JSON_ARRAY, JSON_OBJECTAGG, JSON_ARRAYAGG),
+--       IS JSON增强, 聚合函数增强, 并行哈希全连接
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-pg17-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg17-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-pg17-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-pg17-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-pg17-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:pg17_product_catalog.sku->pg17_price_updates.sku:SQL_LOG_COLUMN_CO_OCCURRENCE`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
+- `VALUE:COALESCE:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:COALESCE:pg17_product_catalog.attributes,pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_product_catalog.stock_level,pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
+- `VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 17 复杂SQL测试用例
+-- 特性: JSON_TABLE, MERGE增强 (RETURNING, 多动作), 增量JSON解析,
+--       COPY性能改进, 系统信息函数增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
 ```
 _Preview truncated; see input file for full content._
 

@@ -8,8 +8,11 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.postgres.fullgrammer.common.PostgresSqlEventVisitorCore;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.Common_table_exprContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.A_exprContext;
+import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.A_expr_inContext;
+import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.C_expr_existsContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.DeletestmtContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.Func_alias_clauseContext;
+import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.In_expr_selectContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.Join_qualContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.Merge_insert_clauseContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.Merge_update_clauseContext;
@@ -41,6 +44,7 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
     private final SqlStatementRecord statement;
     private final PostgresSqlEventVisitorCore core;
     private final FullGrammerTypedSqlEventSink sink;
+    private int existsDepth;
 
     PostgresTokenEventParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
         this.statement = statement;
@@ -193,17 +197,41 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
 
     @Override
     public Void visitA_expr(A_exprContext ctx) {
-        sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
-        sink.subqueryPredicates(ctx, ctx);
+        if (existsDepth > 0) {
+            sink.existsPredicateEqualities(ctx, ctx);
+        } else {
+            sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
+        }
         return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitA_expr_in(A_expr_inContext ctx) {
+        if (ctx.IN_P() != null && ctx.in_expr() instanceof In_expr_selectContext select) {
+            sink.inSubqueryPredicate(ctx, ctx.a_expr_unary_not(), select.select_with_parens());
+        }
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitC_expr_exists(C_expr_existsContext ctx) {
+        existsDepth++;
+        try {
+            return visitChildren(ctx);
+        } finally {
+            existsDepth--;
+        }
     }
 
     @Override
     public Void visitChildren(RuleNode node) {
         Void result = super.visitChildren(node);
         if (node instanceof ParserRuleContext ctx && isExpressionContext(ctx)) {
-            sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
-            sink.subqueryPredicates(ctx, ctx);
+            if (existsDepth > 0) {
+                sink.existsPredicateEqualities(ctx, ctx);
+            } else {
+                sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
+            }
         }
         return result;
     }

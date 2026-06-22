@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "VALUE:DIRECT:source_rows.customer_id->orders.customer_id"
+    "VALUE:DIRECT:staging_orders.customer_id->orders.customer_id"
   ],
   "forbiddenSources": [
     "p_input_ledger_json",

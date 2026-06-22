@@ -34,6 +34,9 @@ public abstract class AbstractPostgresFullGrammerStructuredSqlParser implements 
         var unsupportedSyntax = PostgresFullGrammerVersionSyntaxGuard.sqlWarning(
                 majorVersion(), statement.sql(), statement.sourceName(), statement.startLine());
         if (unsupportedSyntax.isPresent()) {
+            if (context != null) {
+                context.warn(unsupportedSyntax.get());
+            }
             return new StructuredParseResult("POSTGRES_FULL_GRAMMER_PARSE_TREE", "POSTGRES", statement.sourceName(),
                     List.of(), List.of(unsupportedSyntax.get()), unsupportedAttributes());
         }

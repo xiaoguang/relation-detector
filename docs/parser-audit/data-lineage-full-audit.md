@@ -8,11 +8,11 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 
 | Classification | Count |
 | --- | ---: |
-| TOTAL | 284 |
-| EXISTING_GOLD | 60 |
+| TOTAL | 328 |
+| EXISTING_GOLD | 84 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 224 |
+| NOT_APPLICABLE | 244 |
 
 ## `mysql-basic-correctness-case-01-ddl`
 
@@ -739,8 +739,8 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
 
@@ -1146,8 +1146,8 @@ CREATE PROCEDURE sp_cross_border_reconciliation_engine(
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 
 **Extractor Candidate Fingerprints**
 
@@ -1183,8 +1183,8 @@ CREATE PROCEDURE sp_financial_asset_wash_update_comma(
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
+- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
 
 **Extractor Candidate Fingerprints**
 
@@ -3513,8 +3513,8 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -3523,11 +3523,15 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Input Preview**
 
@@ -3546,8 +3550,8 @@ WITH user_financial_snapshot AS (
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -3556,11 +3560,15 @@ WITH user_financial_snapshot AS (
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Input Preview**
 
@@ -3579,8 +3587,8 @@ WITH user_financial_snapshot AS (
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -3589,11 +3597,15 @@ WITH user_financial_snapshot AS (
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
+- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
+- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Input Preview**
 
@@ -3807,8 +3819,8 @@ WHERE isc.snapshot_id = i.id
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -3817,11 +3829,11 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Input Preview**
 
@@ -3840,8 +3852,8 @@ fraud_orders AS (
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -3850,11 +3862,11 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Input Preview**
 
@@ -3939,8 +3951,8 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -3949,11 +3961,13 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
 **Input Preview**
 
@@ -3972,8 +3986,8 @@ WHERE i.product_id = oi.product_id
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -3982,11 +3996,13 @@ WHERE i.product_id = oi.product_id
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
 **Input Preview**
 
@@ -4005,8 +4021,8 @@ WHERE i.product_id = oi.product_id
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -4015,11 +4031,11 @@ WHERE i.product_id = oi.product_id
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Input Preview**
 
@@ -4038,8 +4054,8 @@ WHERE p.shop_id = s.id
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -4048,11 +4064,11 @@ WHERE p.shop_id = s.id
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Input Preview**
 
@@ -4071,8 +4087,8 @@ WHERE p.shop_id = s.id
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -4081,11 +4097,13 @@ WHERE p.shop_id = s.id
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -4104,8 +4122,8 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -4114,11 +4132,13 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -4137,8 +4157,8 @@ SET total_spent = COALESCE((
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -4147,11 +4167,13 @@ SET total_spent = COALESCE((
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Input Preview**
 
@@ -4170,8 +4192,8 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -4180,11 +4202,13 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Input Preview**
 
@@ -4263,6 +4287,109 @@ WHERE uc.coupon_id = c.id
   AND m.compliance_status = 'SUSPENDED'
   AND (
       c.expire_at < NOW()
+```
+
+## `postgres-edge-cases-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/postgres-edge-cases-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+
+## `postgres-extreme-nesting-withrelation-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/postgres-extreme-nesting-withrelation-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+
+## `postgres-extreme-nesting-withrelation-withlineage-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/postgres-extreme-nesting-withrelation-withlineage-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-extreme-nesting-withrelation-withlineage-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
+- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
+- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
+- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
+- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
 ```
 
 ## `postgres-generated-comprehensive-query-sql`
@@ -4378,11 +4505,11 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Input Preview**
 
@@ -4626,6 +4753,310 @@ FROM ((SELECT o.id, o.user_id FROM orders o)) projected_orders
 JOIN users u ON projected_orders.user_id = u.id;
 
 SELECT *
+```
+
+## `postgres-pg10-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg10-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 10 复杂SQL测试用例
+-- 特性: 声明式分区, Identity列, 逻辑复制, 并行查询增强, 哈希索引
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 声明式分区 - 多层分区 + 子分区
+```
+
+## `postgres-pg11-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg11-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 11 复杂SQL测试用例
+-- 特性: 存储过程(CREATE PROCEDURE + 事务控制), 分区表增强(PRIMARY KEY,
+--       DEFAULT分区, 自动索引), 哈希分区, 覆盖索引(INCLUDE)
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
+## `postgres-pg12-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg12-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 12 复杂SQL测试用例
+-- 特性: 生成列, JSON_PATH, 物化CTE, 分区性能改进
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 生成列与复杂表定义
+```
+
+## `postgres-pg13-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg13-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 13 复杂SQL测试用例
+-- 特性: 增量排序, 并行哈希连接, 分区改进, LATERAL增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 增量排序与并行查询 (PG13优化器特性)
+```
+
+## `postgres-pg14-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg14-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 14 复杂SQL测试用例
+-- 特性: 多范围类型, JSON下标访问, 存储过程OUT参数, 扩展查询管道
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 多范围类型 (multirange) 复杂操作
+```
+
+## `postgres-pg15-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg15-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-pg15-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+- `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
+- `VALUE:DIRECT:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+- `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
+- `VALUE:DIRECT:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 15 复杂SQL测试用例
+-- 特性: MERGE语句, SQL/JSON函数(IS JSON, JSON_SCALAR, JSON_EXISTS等),
+--       CLUSTER并行, 逻辑复制行过滤
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
+## `postgres-pg16-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg16-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 16 复杂SQL测试用例
+-- 特性: SQL/JSON构造函数(JSON_OBJECT, JSON_ARRAY, JSON_OBJECTAGG, JSON_ARRAYAGG),
+--       IS JSON增强, 聚合函数增强, 并行哈希全连接
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
+## `postgres-pg17-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/postgres-pg17-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-pg17-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
+- `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
+- `VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
+- `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
+- `VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku`
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 17 复杂SQL测试用例
+-- 特性: JSON_TABLE, MERGE增强 (RETURNING, 多动作), 增量JSON解析,
+--       COPY性能改进, 系统信息函数增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
 ```
 
 ## `postgres-sql-delete-using-no-alias`
@@ -4873,6 +5304,399 @@ FROM users u
 WHERE o.user_id = u.id;
 ```
 
+## `postgres16-edge-cases-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-edge-cases-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+
+## `postgres16-extreme-nesting-withrelation-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-extreme-nesting-withrelation-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+
+## `postgres16-extreme-nesting-withrelation-withlineage-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-extreme-nesting-withrelation-withlineage-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-extreme-nesting-withrelation-withlineage-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
+- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
+- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
+- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
+- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+
+## `postgres16-pg10-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg10-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 10 复杂SQL测试用例
+-- 特性: 声明式分区, Identity列, 逻辑复制, 并行查询增强, 哈希索引
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 声明式分区 - 多层分区 + 子分区
+```
+
+## `postgres16-pg11-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg11-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 11 复杂SQL测试用例
+-- 特性: 存储过程(CREATE PROCEDURE + 事务控制), 分区表增强(PRIMARY KEY,
+--       DEFAULT分区, 自动索引), 哈希分区, 覆盖索引(INCLUDE)
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
+## `postgres16-pg12-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg12-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 12 复杂SQL测试用例
+-- 特性: 生成列, JSON_PATH, 物化CTE, 分区性能改进
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 生成列与复杂表定义
+```
+
+## `postgres16-pg13-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg13-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 13 复杂SQL测试用例
+-- 特性: 增量排序, 并行哈希连接, 分区改进, LATERAL增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 增量排序与并行查询 (PG13优化器特性)
+```
+
+## `postgres16-pg14-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg14-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 14 复杂SQL测试用例
+-- 特性: 多范围类型, JSON下标访问, 存储过程OUT参数, 扩展查询管道
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 多范围类型 (multirange) 复杂操作
+```
+
+## `postgres16-pg15-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg15-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-pg15-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+- `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
+- `VALUE:DIRECT:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 15 复杂SQL测试用例
+-- 特性: MERGE语句, SQL/JSON函数(IS JSON, JSON_SCALAR, JSON_EXISTS等),
+--       CLUSTER并行, 逻辑复制行过滤
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
+## `postgres16-pg16-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg16-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 16 复杂SQL测试用例
+-- 特性: SQL/JSON构造函数(JSON_OBJECT, JSON_ARRAY, JSON_OBJECTAGG, JSON_ARRAYAGG),
+--       IS JSON增强, 聚合函数增强, 并行哈希全连接
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
+## `postgres16-pg17-version-boundary-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | negative full-grammer version-boundary fixture; unsupported SQL is not lineage golden |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v16/postgres16-pg17-version-boundary-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
+- `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
+- `VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku`
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 17 复杂SQL测试用例
+-- 特性: JSON_TABLE, MERGE增强 (RETURNING, 多动作), 增量JSON解析,
+--       COPY性能改进, 系统信息函数增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
 ## `postgres16-postgres-basic-correctness-case-01-objects-sql`
 
 | Field | Value |
@@ -4949,12 +5773,14 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Input Preview**
 
@@ -4984,12 +5810,14 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Input Preview**
 
@@ -5024,7 +5852,9 @@ WITH user_financial_snapshot AS (
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
+- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Input Preview**
 
@@ -5248,11 +6078,11 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Input Preview**
 
@@ -5281,11 +6111,11 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Input Preview**
 
@@ -5385,7 +6215,8 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
 **Input Preview**
 
@@ -5419,7 +6250,8 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
 **Input Preview**
 
@@ -5452,7 +6284,7 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Input Preview**
 
@@ -5485,7 +6317,7 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Input Preview**
 
@@ -5519,7 +6351,8 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -5548,12 +6381,13 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -5587,7 +6421,8 @@ SET total_spent = COALESCE((
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Input Preview**
 
@@ -5621,7 +6456,8 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Input Preview**
 
@@ -5815,11 +6651,11 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Input Preview**
 
@@ -6386,12 +7222,14 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Input Preview**
 
@@ -6421,12 +7259,14 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Input Preview**
 
@@ -6461,7 +7301,9 @@ WITH user_financial_snapshot AS (
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
+- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Input Preview**
 
@@ -6685,11 +7527,11 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Input Preview**
 
@@ -6718,11 +7560,11 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Input Preview**
 
@@ -6822,7 +7664,8 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
 **Input Preview**
 
@@ -6856,7 +7699,8 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
 **Input Preview**
 
@@ -6889,7 +7733,7 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Input Preview**
 
@@ -6922,7 +7766,7 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Input Preview**
 
@@ -6956,7 +7800,8 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -6985,12 +7830,13 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -7024,7 +7870,8 @@ SET total_spent = COALESCE((
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Input Preview**
 
@@ -7058,7 +7905,8 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Input Preview**
 
@@ -7137,6 +7985,109 @@ WHERE uc.coupon_id = c.id
   AND m.compliance_status = 'SUSPENDED'
   AND (
       c.expire_at < NOW()
+```
+
+## `postgres17-edge-cases-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-edge-cases-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+
+## `postgres17-extreme-nesting-withrelation-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-extreme-nesting-withrelation-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+
+## `postgres17-extreme-nesting-withrelation-withlineage-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-extreme-nesting-withrelation-withlineage-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-extreme-nesting-withrelation-withlineage-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
+- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
+- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
+- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
+- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
 ```
 
 ## `postgres17-generated-comprehensive-query-sql`
@@ -7286,6 +8237,7 @@ CROSS JOIN JSON_TABLE(
 **Expected Lineage Fingerprints**
 
 - `VALUE:DIRECT:staging_account_balances.balance->account_balances.balance`
+- `VALUE:DIRECT:staging_account_balances.user_id->account_balances.user_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -7319,11 +8271,11 @@ WHEN NOT MATCHED BY SOURCE THEN
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Input Preview**
 
@@ -7567,6 +8519,315 @@ FROM ((SELECT o.id, o.user_id FROM orders o)) projected_orders
 JOIN users u ON projected_orders.user_id = u.id;
 
 SELECT *
+```
+
+## `postgres17-pg10-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg10-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 10 复杂SQL测试用例
+-- 特性: 声明式分区, Identity列, 逻辑复制, 并行查询增强, 哈希索引
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 声明式分区 - 多层分区 + 子分区
+```
+
+## `postgres17-pg11-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg11-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 11 复杂SQL测试用例
+-- 特性: 存储过程(CREATE PROCEDURE + 事务控制), 分区表增强(PRIMARY KEY,
+--       DEFAULT分区, 自动索引), 哈希分区, 覆盖索引(INCLUDE)
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
+## `postgres17-pg12-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg12-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 12 复杂SQL测试用例
+-- 特性: 生成列, JSON_PATH, 物化CTE, 分区性能改进
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 生成列与复杂表定义
+```
+
+## `postgres17-pg13-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg13-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 13 复杂SQL测试用例
+-- 特性: 增量排序, 并行哈希连接, 分区改进, LATERAL增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 增量排序与并行查询 (PG13优化器特性)
+```
+
+## `postgres17-pg14-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg14-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 14 复杂SQL测试用例
+-- 特性: 多范围类型, JSON下标访问, 存储过程OUT参数, 扩展查询管道
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 多范围类型 (multirange) 复杂操作
+```
+
+## `postgres17-pg15-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg15-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-pg15-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+- `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
+- `VALUE:DIRECT:pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:DIRECT:pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:DIRECT:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics->pg15_inventory_target.metadata`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+- `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
+- `VALUE:DIRECT:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 15 复杂SQL测试用例
+-- 特性: MERGE语句, SQL/JSON函数(IS JSON, JSON_SCALAR, JSON_EXISTS等),
+--       CLUSTER并行, 逻辑复制行过滤
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
+## `postgres17-pg16-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg16-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 16 复杂SQL测试用例
+-- 特性: SQL/JSON构造函数(JSON_OBJECT, JSON_ARRAY, JSON_OBJECTAGG, JSON_ARRAYAGG),
+--       IS JSON增强, 聚合函数增强, 并行哈希全连接
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
+## `postgres17-pg17-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v17/postgres17-pg17-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-pg17-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
+- `VALUE:COALESCE:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:COALESCE:pg17_product_catalog.attributes,pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_product_catalog.stock_level,pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
+- `VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
+- `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
+- `VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku`
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 17 复杂SQL测试用例
+-- 特性: JSON_TABLE, MERGE增强 (RETURNING, 多动作), 增量JSON解析,
+--       COPY性能改进, 系统信息函数增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
 ```
 
 ## `postgres17-sql-delete-using-no-alias`
@@ -7890,12 +9151,14 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Input Preview**
 
@@ -7925,12 +9188,14 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Input Preview**
 
@@ -7965,7 +9230,9 @@ WITH user_financial_snapshot AS (
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
+- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Input Preview**
 
@@ -8189,11 +9456,11 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Input Preview**
 
@@ -8222,11 +9489,11 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Input Preview**
 
@@ -8326,7 +9593,8 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
 **Input Preview**
 
@@ -8360,7 +9628,8 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
+- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
 
 **Input Preview**
 
@@ -8393,7 +9662,7 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Input Preview**
 
@@ -8426,7 +9695,7 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
 
 **Input Preview**
 
@@ -8460,7 +9729,8 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -8489,12 +9759,13 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount,orders.user_id,users.id,orders.order_status->users.total_spent`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -8528,7 +9799,8 @@ SET total_spent = COALESCE((
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Input Preview**
 
@@ -8562,7 +9834,8 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Input Preview**
 
@@ -8641,6 +9914,109 @@ WHERE uc.coupon_id = c.id
   AND m.compliance_status = 'SUSPENDED'
   AND (
       c.expire_at < NOW()
+```
+
+## `postgres18-edge-cases-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-edge-cases-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+
+## `postgres18-extreme-nesting-withrelation-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-extreme-nesting-withrelation-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
+```
+
+## `postgres18-extreme-nesting-withrelation-withlineage-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-extreme-nesting-withrelation-withlineage-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-extreme-nesting-withrelation-withlineage-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
+- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
+- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
+- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
+- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- SQL解析器边界测试用例
+-- 目标: 各种tricky语法、边界条件、易混淆模式
+-- 适用: 所有PostgreSQL版本
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 复杂JOIN语法 - 各种JOIN类型混合
 ```
 
 ## `postgres18-generated-comprehensive-query-sql`
@@ -8756,11 +10132,11 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:source_rows.customer_id->orders.customer_id`
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Input Preview**
 
@@ -9006,6 +10382,315 @@ JOIN users u ON projected_orders.user_id = u.id;
 SELECT *
 ```
 
+## `postgres18-pg10-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg10-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 10 复杂SQL测试用例
+-- 特性: 声明式分区, Identity列, 逻辑复制, 并行查询增强, 哈希索引
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 声明式分区 - 多层分区 + 子分区
+```
+
+## `postgres18-pg11-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg11-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 11 复杂SQL测试用例
+-- 特性: 存储过程(CREATE PROCEDURE + 事务控制), 分区表增强(PRIMARY KEY,
+--       DEFAULT分区, 自动索引), 哈希分区, 覆盖索引(INCLUDE)
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
+## `postgres18-pg12-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg12-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 12 复杂SQL测试用例
+-- 特性: 生成列, JSON_PATH, 物化CTE, 分区性能改进
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 生成列与复杂表定义
+```
+
+## `postgres18-pg13-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg13-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 13 复杂SQL测试用例
+-- 特性: 增量排序, 并行哈希连接, 分区改进, LATERAL增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 增量排序与并行查询 (PG13优化器特性)
+```
+
+## `postgres18-pg14-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg14-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 14 复杂SQL测试用例
+-- 特性: 多范围类型, JSON下标访问, 存储过程OUT参数, 扩展查询管道
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+-- Part 1: 多范围类型 (multirange) 复杂操作
+```
+
+## `postgres18-pg15-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg15-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-pg15-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+- `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
+- `VALUE:DIRECT:pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:DIRECT:pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:DIRECT:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics->pg15_inventory_target.metadata`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+- `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
+- `VALUE:DIRECT:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 15 复杂SQL测试用例
+-- 特性: MERGE语句, SQL/JSON函数(IS JSON, JSON_SCALAR, JSON_EXISTS等),
+--       CLUSTER并行, 逻辑复制行过滤
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
+## `postgres18-pg16-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg16-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 16 复杂SQL测试用例
+-- 特性: SQL/JSON构造函数(JSON_OBJECT, JSON_ARRAY, JSON_OBJECTAGG, JSON_ARRAYAGG),
+--       IS JSON增强, 聚合函数增强, 并行哈希全连接
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
+## `postgres18-pg17-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/postgres/v18/postgres18-pg17-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-pg17-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
+- `VALUE:COALESCE:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:COALESCE:pg17_product_catalog.attributes,pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_product_catalog.stock_level,pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
+- `VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version`
+- `VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes`
+- `VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level`
+- `VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name`
+- `VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price`
+- `VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price`
+- `VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku`
+
+**Input Preview**
+
+```sql
+-- ============================================================================
+-- PostgreSQL 17 复杂SQL测试用例
+-- 特性: JSON_TABLE, MERGE增强 (RETURNING, 多动作), 增量JSON解析,
+--       COPY性能改进, 系统信息函数增强
+-- 目标: 最大语法嵌套深度, 最全语法覆盖
+-- ============================================================================
+
+-- ============================================================================
+```
+
 ## `postgres18-returning-old-new-sql`
 
 | Field | Value |
@@ -9024,7 +10709,7 @@ SELECT *
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.balance,transaction_ledgers.amount->account_balances.balance`
 
 **Input Preview**
 

@@ -20,6 +20,8 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 
 ## 当前默认策略
 
+- correctness、CLI E2E 和手工 SQL 分析前，先运行 `mvn clean -pl cli -am -DskipTests test-compile` 与 `scripts/check-no-jls-bad-classes.sh`。后者会拒绝 VS Code Java Language Server / Eclipse 编译器写入的 `Unresolved compilation problems` 占位 class，以及未真实实现 `DatabaseAdaptor` SPI 的坏 adaptor class。
+- 手工 CLI 使用 `scripts/run-cli.sh ...`。该脚本先生成 Maven main jar，再执行坏 class 检查并组装运行 classpath；不要直接拼接未检查的 `*/target/classes`。
 - MySQL/PostgreSQL correctness fixture 默认以方言 token-event 输出作为 fallback gold；full-grammer profile 通过 parity 测试证明不低于该 gold。
 - MySQL/PostgreSQL DDL correctness fixture 默认以方言 token-event DDL pipeline 作为 fallback gold；full-grammer DDL profile 通过 DDL parity 测试证明不低于该 gold。
 - `simple`、`antlr-shadow`、`simple-ddl`、`antlr-ddl-shadow` 以及对应 parser mode/fallback 配置已经移除；配置中出现旧 key 时应报错。
@@ -147,6 +149,13 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 | full-grammer 是否覆盖 PostgreSQL 16/17/18 version fixture | 是 | `CorrectnessFixtureRunnerTest` 扫描 `postgres/v16`、`postgres/v17`、`postgres/v18`，manifest 强制 `parserMode: full-grammer` 和对应 `grammarProfile`，比对独立 version golden |
 
 ## 可选手工结构检查
+
+构建卫生检查：
+
+```bash
+mvn clean -pl cli -am -DskipTests test-compile
+scripts/check-no-jls-bad-classes.sh
+```
 
 默认 `mvn test` 不再运行目录/命名/迁移过程守卫测试。需要人工检查代码结构残留时，使用：
 

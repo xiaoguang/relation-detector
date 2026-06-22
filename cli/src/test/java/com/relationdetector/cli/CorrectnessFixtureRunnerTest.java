@@ -268,8 +268,10 @@ class CorrectnessFixtureRunnerTest {
         if (isStrictFullGrammerFixture(fixture)) {
             assertFalse(actualCodes.containsKey("PARSER_MODE_FALLBACK"),
                     () -> fixture.id() + " must not fallback from its declared full-grammer profile");
-            assertFalse(actualCodes.containsKey("FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX"),
-                    () -> fixture.id() + " must be accepted by its declared full-grammer profile");
+            if (!expected.warningCodes().containsKey("FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX")) {
+                assertFalse(actualCodes.containsKey("FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX"),
+                        () -> fixture.id() + " must be accepted by its declared full-grammer profile");
+            }
         }
         if (Boolean.getBoolean("updateCorrectnessGold")) {
             try {

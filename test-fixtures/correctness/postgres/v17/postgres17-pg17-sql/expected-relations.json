@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:pg17_product_catalog.sku->pg17_price_updates.sku:SQL_LOG_COLUMN_CO_OCCURRENCE"
+  ],
+  "forbiddenTables": []
+}
