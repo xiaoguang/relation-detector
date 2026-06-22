@@ -1,0 +1,12 @@
+id: postgres16-extreme-nesting-withrelation-withlineage-sql
+parserMode: full-grammer
+grammarProfile: postgresql/16
+databaseVersion: 16.5
+databaseType: POSTGRESQL
+parserTarget: SQL
+sourceType: PLAIN_SQL
+schema: public
+input: input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

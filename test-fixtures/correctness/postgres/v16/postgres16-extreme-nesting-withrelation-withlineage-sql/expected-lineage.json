@@ -1,0 +1,10 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount",
+    "VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note",
+    "VALUE:DIRECT:customers.country_code->orders.customer_country"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

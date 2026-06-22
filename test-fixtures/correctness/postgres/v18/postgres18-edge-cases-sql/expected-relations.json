@@ -1,0 +1,9 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "FK_LIKE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_SUBQUERY_IN",
+    "FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN"
+  ],
+  "forbiddenTables": []
+}
