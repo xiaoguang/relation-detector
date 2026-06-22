@@ -6,6 +6,8 @@
 
 当前 MySQL adaptor 不只负责采集，也负责 MySQL 方言 parser 实现：token-event parser 位于 `com.relationdetector.mysql.tokenevent`，MySQL 8.0 full-grammer module 位于 `com.relationdetector.mysql.fullgrammer.v8_0`。core 只通过 runner 和 `FullGrammerDialectModule` registry 调度，不在 core 里 hard-code MySQL 版本实现。
 
+MySQL 目前只有一个严格 full-grammer profile：`mysql/8.0`。它使用 `adaptor-mysql` 内 vendored MySQL 8.0 grammar、typed parse-tree visitor、expression analyzer 和 DDL collector。MySQL 5.7/未知版本仍依赖 token-event 的宽松兼容能力，或者在未来新增独立 `mysql/v5_7` full-grammer profile。
+
 ## 支持范围
 
 - MySQL 5.7。
@@ -137,6 +139,31 @@ MySQL adaptor 负责：
 - `MySqlDdlStructuredEventVisitor` 处理 MySQL DDL 方言差异，例如反引号、inline `KEY/INDEX`、prefix index、functional/JSON index、VISIBLE/INVISIBLE、表选项。
 - `mysql.fullgrammer.v8_0` 注册 MySQL 8.0 full-grammer DDL parser，用于 `parser.mode=auto|full-grammer` 且 profile 可选中时。
 - 两条 DDL parser 链路都只输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 结构事件；最终 relationship 仍由 core 的 `DdlRelationExtractionVisitor` 生成。
+
+## MySQL full-grammer 与 SQL_MODE
+
+MySQL full-grammer runtime 中存在 `MySqlGrammarSqlMode` / `MySqlGrammarSqlModes` helper。它们只表示 MySQL 自身的 `SQL_MODE` 语法开关，例如 `ANSI_QUOTES`、`PIPES_AS_CONCAT`，不是系统运行模式。
+
+系统 parser 运行模式只有：
+
+```text
+parser.mode = auto | full-grammer | token-event
+```
+
+二者不能混用：
+
+- `parser.mode` 决定运行时选择 full-grammer 还是 token-event。
+- MySQL `SQL_MODE` 决定 MySQL 8.0 grammar 内部如何理解某些 token 和操作符。
+- PostgreSQL 没有 MySQL `SQL_MODE` 等价机制，因此不会有对应 helper。
+
+## Correctness 与 golden 状态
+
+当前 MySQL correctness golden 分两类：
+
+- root MySQL correctness：覆盖 MySQL metadata/DDL/log/object/procedure/business SQL，是正式 token-event baseline，也用于 full-grammer parity。
+- MySQL 8.0 full-grammer：通过 `FullGrammerCorrectnessShadowTest`、`FullGrammerDdlCorrectnessShadowTest` 和语义单测证明不低于 token-event baseline；当前没有单独的 `mysql/v8_0` versioned correctness 目录。
+
+如果后续要把 MySQL full-grammer 也做成和 PostgreSQL 一样的独立版本 golden，应新增 `test-fixtures/correctness/mysql/v8_0`，而不是覆盖 root MySQL baseline。
 
 ## 对象定义采集
 

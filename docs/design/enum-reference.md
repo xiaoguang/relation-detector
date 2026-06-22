@@ -453,8 +453,8 @@ public enum StructuredParseEventType {
 | `PREDICATE_EQUALITY` | 明确 `alias.column = alias.column` 谓词，供 `TokenEventRelationExtractor` 判断 FK-like 或列级弱共现。 |
 | `JOIN_USING_COLUMNS` | `JOIN ... USING (...)` 的列列表事件，不把列名当作 rowset。 |
 | `EXISTS_PREDICATE` | correlated `EXISTS` 中可解析的相关等值谓词。 |
-| `IN_SUBQUERY_PREDICATE` | scalar `IN (SELECT ...)` 谓词。 |
-| `TUPLE_IN_SUBQUERY_PREDICATE` | tuple `IN` 谓词，例如 `(a,b) IN (SELECT x,y ...)`。 |
+| `IN_SUBQUERY_PREDICATE` | scalar `IN (SELECT ...)` 谓词；只有外层是裸列、子查询 SELECT list 是裸列、并带 `verifiedColumnSubquery=true` 时才可被 relationship extractor 消费。 |
+| `TUPLE_IN_SUBQUERY_PREDICATE` | tuple `IN` 谓词，例如 `(a,b) IN (SELECT x,y ...)`；左右 tuple 数量必须一致且每一项都是裸列。 |
 | `CTE_DECLARATION` | CTE 名称和输出列声明，用于 ignored rowset 和 projection lineage。 |
 | `IGNORED_ROWSET` | CTE、derived table、function rowset 等不应作为物理表输出的 rowset。 |
 | `LOCAL_TEMP_TABLE_DECLARATION` | SQL 语法明确创建的本地临时表；不能按名字猜测临时表。 |
@@ -473,6 +473,7 @@ public enum StructuredParseEventType {
 维护说明：
 
 - SQL relationship extractor 当前消费 `ROWSET_REFERENCE`、`PREDICATE_EQUALITY`、`JOIN_USING_COLUMNS`、`EXISTS_PREDICATE`、`IN_SUBQUERY_PREDICATE`、`TUPLE_IN_SUBQUERY_PREDICATE`、`PROJECTION_ITEM` 和 scope events。
+- literal filter、literal `IN`、`LIKE`、表达式 tuple、aggregate/HAVING/filter 字段不能通过这些 event 伪造成关系；这类过滤由结构属性和 endpoint 类型决定，不按特殊表名/列名判断。
 - Data Lineage extractor 当前消费写入映射、projection 和 local temp scope events。
 - DDL relationship extractor 只消费 `DDL_FOREIGN_KEY` 和 `DDL_INDEX`。
 

@@ -70,6 +70,29 @@ public final class RelationshipCandidate {
 - 数据画像：若 A 列值域大部分包含于 B，且 B 唯一或接近唯一，则 A 为 source，B 为 target。
 - 明确列等值但无法可靠判断 FK-like 方向时，输出列级 `CO_OCCURRENCE`；只有没有可靠列端点或只有表共同出现时，才退化为表级 `CO_OCCURRENCE`。
 
+### SQL 谓词关系守卫
+
+SQL 关系只来自明确的列-列结构谓词，不来自“同一 predicate 子树里恰好出现了多个字段”。该规则同时约束 token-event 与 full-grammer，因为两者最终都产出同一组 `StructuredSqlEvent` 并交给 `TokenEventRelationExtractor`。
+
+允许产生 relationship event 的结构：
+
+- `JOIN ... ON left_alias.col = right_alias.col`。
+- `WHERE left_alias.col = right_alias.col`，且两侧都能解析成非 ignored 的物理 rowset 字段。
+- `column IN (SELECT column FROM physical_rowset ...)`，并且事件带 `verifiedColumnSubquery=true`。
+- `(col1, col2) IN (SELECT col1, col2 FROM physical_rowset ...)`，左右 tuple 数量一致，且每一项都是裸列。
+- `EXISTS (...)` 子查询内部明确存在 `outer.col = inner.col` 的关联 equality。
+
+不会产生 relationship event 的结构：
+
+- `status = 'ACTIVE'`、`is_approved = true` 等独立 literal filter。
+- `channel_type IN ('WEB', 'MOBILE_APP')` 等 literal list。
+- `doc_title LIKE '%foo%'`、`SIMILAR TO`、`ESCAPE`；keyword 永远不能成为 endpoint。
+- 表达式 tuple，例如 `('VER_' || major_version) IN (SELECT ...)`。
+- `SELECT SUM(quantity)`、`HAVING SUM(...)`、aggregate/filter 字段与外层字段的误配对。
+- 参数、JSON path、局部变量、literal 到字段的绑定；这些属于未来 Parameter Binding，不进入 v1 relationship。
+
+这些守卫不能基于特殊表名或列名实现。合法过滤依据只有语法结构、event type、作用域、rowset 是否 ignored、endpoint 是否是物理表字段，以及数据库关键字。
+
 ### DataLineageCandidate
 
 字段血缘是独立模型，不混入 `RelationshipCandidate`：
