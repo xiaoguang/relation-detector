@@ -1,0 +1,7 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:pg15_inventory_target.sku->pg15_inventory_source.sku:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:pg15_inventory_target.warehouse_id->pg15_inventory_source.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE"
+  ],
+  "forbiddenTables": []
+}

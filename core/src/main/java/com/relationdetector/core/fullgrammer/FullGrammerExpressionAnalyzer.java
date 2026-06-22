@@ -44,14 +44,36 @@ public abstract class FullGrammerExpressionAnalyzer {
      */
     public FullGrammerExpressionAnalysis analyze(ParseTree expression, String defaultQualifier) {
         Set<ExpressionColumn> columns = new LinkedHashSet<>();
-        collectColumns(expression, defaultQualifier, columns);
         String transform = transform(expression);
+        collectExpressionSourceColumns(expression, defaultQualifier, transform, columns);
         String flowKind = transform.equals("CASE_WHEN") ? "CONTROL" : "VALUE";
         return new FullGrammerExpressionAnalysis(
                 columns.stream().map(ExpressionColumn::qualifier).toList(),
                 columns.stream().map(ExpressionColumn::column).toList(),
                 transform,
                 flowKind);
+    }
+
+    /**
+     * 分析关系谓词中的“裸列表达式”。
+     *
+     * <p>CN: JOIN/EXISTS/IN 关系只能从裸列或裸列 tuple 产生。拼接、算术、函数、
+     * 聚合、literal 等表达式仍可参与 lineage，但不能成为 relationship endpoint。
+     *
+     * <p>EN: Analyzes a relation-predicate column expression. JOIN/EXISTS/IN
+     * relationships are emitted only for bare columns or bare-column tuples.
+     * Concatenation, arithmetic, functions, aggregates, and literals may still
+     * feed lineage, but must not become relationship endpoints.
+     */
+    public FullGrammerExpressionAnalysis analyzeRelationColumnExpression(ParseTree expression, String defaultQualifier) {
+        if (hasRelationExpressionDisqualifier(expression)) {
+            return emptyAnalysis();
+        }
+        FullGrammerExpressionAnalysis analysis = analyze(expression, defaultQualifier);
+        if (!"DIRECT".equals(analysis.transformType())) {
+            return emptyAnalysis();
+        }
+        return analysis;
     }
 
     public boolean isTopLevelCaseExpression(ParseTree expression) {
@@ -95,6 +117,120 @@ public abstract class FullGrammerExpressionAnalyzer {
 
     private boolean isCaseContext(ParseTree tree) {
         return tree != null && tree.getClass().getSimpleName().contains("Case");
+    }
+
+    private void collectExpressionSourceColumns(
+            ParseTree expression,
+            String defaultQualifier,
+            String transform,
+            Set<ExpressionColumn> result
+    ) {
+        Set<ExpressionColumn> aggregateColumns = new LinkedHashSet<>();
+        collectAggregateArgumentColumns(expression, defaultQualifier, aggregateColumns);
+        Set<ExpressionColumn> outsideScalarSubqueryColumns = new LinkedHashSet<>();
+        collectColumnsOutsideAggregateScalarSubquery(expression, defaultQualifier, outsideScalarSubqueryColumns);
+        if (preferAggregateArgumentSourcesOnly()
+                && !aggregateColumns.isEmpty()
+                && outsideScalarSubqueryColumns.isEmpty()
+                && (transform.equals("AGGREGATE") || transform.equals("CASE_WHEN"))) {
+            result.addAll(aggregateColumns);
+            return;
+        }
+        collectColumns(expression, defaultQualifier, result);
+    }
+
+    protected boolean preferAggregateArgumentSourcesOnly() {
+        return true;
+    }
+
+    private void collectColumnsOutsideAggregateScalarSubquery(
+            ParseTree tree,
+            String defaultQualifier,
+            Set<ExpressionColumn> result
+    ) {
+        if (tree == null) {
+            return;
+        }
+        if (isAggregateScalarSubqueryContext(tree)) {
+            return;
+        }
+        String contextName = tree.getClass().getSimpleName();
+        if (contextName.equals("ColumnrefContext") || contextName.equals("ColumnRefContext")
+                || contextName.equals("SimpleExprColumnRefContext")) {
+            ExpressionColumn column = expressionColumn(tree.getText(), defaultQualifier);
+            if (column != null) {
+                result.add(column);
+                return;
+            }
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            collectColumnsOutsideAggregateScalarSubquery(tree.getChild(index), defaultQualifier, result);
+        }
+    }
+
+    private boolean isAggregateScalarSubqueryContext(ParseTree tree) {
+        String contextName = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+        if (contextName.contains("subquery") && containsAggregateFunction(tree)) {
+            return true;
+        }
+        return contextName.contains("select")
+                && containsAggregateFunction(tree)
+                && containsTerminal(tree, "from");
+    }
+
+    private boolean containsAggregateFunction(ParseTree tree) {
+        if (tree == null) {
+            return false;
+        }
+        if (isAggregateFunctionContext(tree)) {
+            return true;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            if (containsAggregateFunction(tree.getChild(index))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsTerminal(ParseTree tree, String expectedLowerText) {
+        if (tree == null) {
+            return false;
+        }
+        if (tree instanceof TerminalNode terminal
+                && terminal.getText().equalsIgnoreCase(expectedLowerText)) {
+            return true;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            if (containsTerminal(tree.getChild(index), expectedLowerText)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void collectAggregateArgumentColumns(ParseTree tree, String defaultQualifier, Set<ExpressionColumn> result) {
+        if (tree == null) {
+            return;
+        }
+        if (isAggregateFunctionContext(tree)) {
+            collectColumns(tree, defaultQualifier, result);
+            return;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            collectAggregateArgumentColumns(tree.getChild(index), defaultQualifier, result);
+        }
+    }
+
+    private boolean isAggregateFunctionContext(ParseTree tree) {
+        String contextName = tree.getClass().getSimpleName();
+        if (contextName.contains("Sum")) {
+            return true;
+        }
+        if (!contextName.equals("FunctionCallContext") && !contextName.equals("Func_applicationContext")) {
+            return false;
+        }
+        return isAggregateFunction(firstLeafText(tree).toLowerCase(Locale.ROOT));
     }
 
     private void collectColumns(ParseTree tree, String defaultQualifier, Set<ExpressionColumn> result) {
@@ -201,6 +337,9 @@ public abstract class FullGrammerExpressionAnalyzer {
                     || isConcatOrFormatFunction(lower)) {
                 classifyFunctionName(lower, flags);
             }
+            if (text.equals("||")) {
+                flags.concatFormat = true;
+            }
             if (isArithmeticOperator(text)) {
                 flags.arithmetic = true;
             }
@@ -209,9 +348,6 @@ public abstract class FullGrammerExpressionAnalyzer {
             }
             if (lower.equals("over")) {
                 flags.window = true;
-            }
-            if (text.equals("||")) {
-                flags.concatFormat = true;
             }
         }
         for (int index = 0; index < tree.getChildCount(); index++) {
@@ -271,13 +407,74 @@ public abstract class FullGrammerExpressionAnalyzer {
         return value.equals("concat")
                 || value.equals("format")
                 || value.equals("to_char")
-                || value.equals("group_concat")
-                || value.equals("json_array_append")
-                || value.equals("array_append");
+                || value.equals("group_concat");
     }
 
     private boolean isArithmeticOperator(String value) {
         return value.equals("+") || value.equals("-") || value.equals("*") || value.equals("/");
+    }
+
+    private boolean hasRelationExpressionDisqualifier(ParseTree tree) {
+        if (tree == null) {
+            return false;
+        }
+        if (tree instanceof TerminalNode terminal) {
+            String text = terminal.getText();
+            String clean = cleanIdentifier(text);
+            if (text.startsWith("'") || text.startsWith("$") || isNumericLiteral(text)) {
+                return true;
+            }
+            return isRelationOperator(clean);
+        }
+        String contextName = tree.getClass().getSimpleName();
+        if (contextName.contains("Func")
+                || contextName.contains("Case")
+                || contextName.contains("Sum")
+                || contextName.contains("Window")
+                || contextName.contains("Over_clause")) {
+            return true;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            if (hasRelationExpressionDisqualifier(tree.getChild(index))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isRelationOperator(String value) {
+        return value.equals("||")
+                || value.equals("+")
+                || value.equals("-")
+                || value.equals("*")
+                || value.equals("/")
+                || value.equals("%")
+                || value.equals("?")
+                || value.equals(":")
+                || value.equals("::");
+    }
+
+    private boolean isNumericLiteral(String text) {
+        if (text == null || text.isBlank()) {
+            return false;
+        }
+        boolean sawDigit = false;
+        boolean sawDot = false;
+        for (int index = 0; index < text.length(); index++) {
+            char ch = text.charAt(index);
+            if (Character.isDigit(ch)) {
+                sawDigit = true;
+            } else if (ch == '.' && !sawDot) {
+                sawDot = true;
+            } else {
+                return false;
+            }
+        }
+        return sawDigit;
+    }
+
+    private FullGrammerExpressionAnalysis emptyAnalysis() {
+        return new FullGrammerExpressionAnalysis(List.of(), List.of(), "UNKNOWN_EXPRESSION", "VALUE");
     }
 
     public String cleanIdentifier(String value) {

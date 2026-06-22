@@ -1,0 +1,23 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:pg15_inventory_target.quantity,pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity",
+    "VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved",
+    "VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version",
+    "VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost",
+    "VALUE:COALESCE:pg15_inventory_source.latest_cost->pg15_inventory_target.cost",
+    "VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price",
+    "VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price",
+    "VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata",
+    "VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata",
+    "VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata",
+    "VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated",
+    "VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku",
+    "VALUE:DIRECT:pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity",
+    "VALUE:DIRECT:pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved",
+    "VALUE:DIRECT:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id",
+    "VALUE:FUNCTION_CALL:pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics->pg15_inventory_target.metadata"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

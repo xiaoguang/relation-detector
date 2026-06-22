@@ -49,6 +49,7 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
     private final SqlStatementRecord statement;
     private final FullGrammerTypedSqlEventSink sink;
     private final List<String> rowsetAliases = new ArrayList<>();
+    private int existsDepth;
 
     MySqlTokenEventParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
         this.statement = statement;
@@ -196,13 +197,19 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
 
     @Override
     public Void visitSimpleExprSubQuery(SimpleExprSubQueryContext ctx) {
-        sink.subqueryPredicates(ctx, ctx);
-        return visitChildren(ctx);
+        if (ctx.EXISTS_SYMBOL() == null) {
+            return visitChildren(ctx);
+        }
+        existsDepth++;
+        try {
+            return visitChildren(ctx);
+        } finally {
+            existsDepth--;
+        }
     }
 
     @Override
     public Void visitPredicateExprIn(PredicateExprInContext ctx) {
-        sink.subqueryPredicates(ctx, ctx);
         return visitChildren(ctx);
     }
 
@@ -218,7 +225,11 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
     @Override
     public Void visitPrimaryExprCompare(PrimaryExprCompareContext ctx) {
         if (ctx.compOp() != null && "=".equals(ctx.compOp().getText())) {
-            sink.predicateEquality(ctx, ctx.boolPri(), ctx.predicate(), "WHERE_OR_UNKNOWN");
+            if (existsDepth > 0) {
+                sink.existsPredicateEquality(ctx, ctx.boolPri(), ctx.predicate());
+            } else {
+                sink.predicateEquality(ctx, ctx.boolPri(), ctx.predicate(), "WHERE_OR_UNKNOWN");
+            }
         }
         return visitChildren(ctx);
     }
@@ -227,8 +238,11 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
     public Void visitChildren(RuleNode node) {
         Void result = super.visitChildren(node);
         if (node instanceof ParserRuleContext ctx && isExpressionContext(ctx)) {
-            sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
-            sink.subqueryPredicates(ctx, ctx);
+            if (existsDepth > 0) {
+                sink.existsPredicateEqualities(ctx, ctx);
+            } else {
+                sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
+            }
         }
         return result;
     }

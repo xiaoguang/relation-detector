@@ -43,10 +43,17 @@ class FullGrammerSqlBehaviorTest {
 
         StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
 
-        assertTrue(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY, "leftAlias", "u", "rightAlias", "o"));
+        assertTrue(hasEvent(result, StructuredParseEventType.EXISTS_PREDICATE, "leftAlias", "u", "rightAlias", "o"));
         assertTrue(hasEvent(result, StructuredParseEventType.JOIN_USING_COLUMNS, "leftAlias", "o", "rightAlias", "ot"));
         assertTrue(hasEvent(result, StructuredParseEventType.IN_SUBQUERY_PREDICATE, "outerAlias", "o", "innerTable", "customers"));
         assertTrue(hasEvent(result, StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE, "innerTable", "stores", "tokenEventNative", true));
+
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, result).stream()
+                .map(FullGrammerSqlBehaviorTest::relationFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains("FK_LIKE:orders.user_id->users.id:SQL_LOG_EXISTS"));
     }
 
     @Test
@@ -62,7 +69,7 @@ class FullGrammerSqlBehaviorTest {
 
         StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
 
-        assertTrue(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY, "leftAlias", "u", "rightAlias", "o"));
+        assertTrue(hasEvent(result, StructuredParseEventType.EXISTS_PREDICATE, "leftAlias", "u", "rightAlias", "o"));
         assertTrue(hasEvent(result, StructuredParseEventType.JOIN_USING_COLUMNS, "leftAlias", "o", "rightAlias", "ot"));
         assertTrue(hasEvent(result, StructuredParseEventType.IN_SUBQUERY_PREDICATE, "outerAlias", "o", "innerTable", "customers"));
         assertTrue(hasEvent(result, StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE, "innerTable", "stores", "tokenEventNative", true));
@@ -86,6 +93,82 @@ class FullGrammerSqlBehaviorTest {
 
         assertEquals(List.of(
                 "CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                fingerprints);
+    }
+
+    @Test
+    void postgresqlExistsPredicatesUseExistsEvidenceWithoutDuplicateJoinEvidence() {
+        SqlStatementRecord statement = statement("""
+                SELECT *
+                FROM orders o
+                JOIN customers c ON c.id = o.customer_id
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM payments p
+                    WHERE p.order_id = o.id
+                )
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM refunds r
+                    WHERE r.order_id = o.id
+                )
+                  AND EXISTS (
+                    SELECT 1
+                    FROM LATERAL (
+                        SELECT ae.order_id
+                        FROM audit_events ae
+                        WHERE ae.order_id = o.id
+                    ) audit_probe
+                  )
+                """);
+
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
+
+        assertTrue(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY,
+                "leftAlias", "c", "rightAlias", "o"));
+        assertFalse(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY,
+                "leftAlias", "p", "rightAlias", "o"));
+        assertFalse(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY,
+                "leftAlias", "r", "rightAlias", "o"));
+        assertFalse(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY,
+                "leftAlias", "ae", "rightAlias", "o"));
+
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, result).stream()
+                .map(FullGrammerSqlBehaviorTest::relationFingerprint)
+                .sorted()
+                .toList();
+
+        assertEquals(List.of(
+                "FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_EXISTS",
+                "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
+                "FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS",
+                "FK_LIKE:refunds.order_id->orders.id:SQL_LOG_EXISTS"),
+                fingerprints);
+    }
+
+    @Test
+    void postgresqlExistsAmbiguousEqualityStillProducesColumnCoOccurrence() {
+        SqlStatementRecord statement = statement("""
+                SELECT *
+                FROM pg10_accounts a
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM pg10_ledger l
+                    WHERE l.account_id = a.account_id
+                )
+                """);
+
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
+
+        assertFalse(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY,
+                "leftAlias", "l", "rightAlias", "a"));
+
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, result).stream()
+                .map(FullGrammerSqlBehaviorTest::relationFingerprint)
+                .toList();
+
+        assertEquals(List.of(
+                "CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE"),
                 fingerprints);
     }
 
@@ -170,6 +253,155 @@ class FullGrammerSqlBehaviorTest {
                 .toList();
 
         assertEquals(List.of(), fingerprints);
+    }
+
+    @Test
+    void postgresqlDoesNotTreatProcedureParametersAsPhysicalColumns() {
+        SqlStatementRecord statement = statement("""
+                CREATE OR REPLACE FUNCTION report_room_usage(
+                    p_room_id int,
+                    p_start_date date,
+                    p_end_date date
+                ) RETURNS void
+                LANGUAGE plpgsql
+                AS $$
+                BEGIN
+                    PERFORM count(*)
+                    FROM pg14_room_bookings rb
+                    WHERE rb.room_id = p_room_id
+                      AND rb.booked_during && tsrange(p_start_date::timestamp, p_end_date::timestamp);
+                END;
+                $$;
+                """, StatementSourceType.FUNCTION);
+
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
+
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, result).stream()
+                .map(FullGrammerSqlBehaviorTest::relationFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.stream().noneMatch(fingerprint -> fingerprint.contains("p_room_id")),
+                () -> "Procedure parameters must not be emitted as relationship endpoints: " + fingerprints);
+    }
+
+    @Test
+    void postgresqlCteProjectionRelationResolvesToPhysicalSourceColumn() {
+        SqlStatementRecord statement = statement("""
+                WITH user_aggregation AS (
+                    SELECT ae.user_id, count(*) AS event_count
+                    FROM pg16_analytics_events ae
+                    GROUP BY ae.user_id
+                ),
+                enriched_users AS (
+                    SELECT ua.user_id, up.created_at
+                    FROM user_aggregation ua
+                    JOIN pg16_user_profiles up ON ua.user_id = up.user_id
+                )
+                SELECT * FROM enriched_users;
+                """);
+
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
+
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, result).stream()
+                .map(FullGrammerSqlBehaviorTest::relationFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains(
+                "CO_OCCURRENCE:pg16_analytics_events.user_id->pg16_user_profiles.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                () -> "CTE projection alias ua.user_id must resolve back to pg16_analytics_events.user_id: " + fingerprints);
+    }
+
+    @Test
+    void postgresqlMergeUsingCteResolvesRelationshipAndInsertLineage() {
+        SqlStatementRecord statement = statement("""
+                WITH update_batch AS (
+                    SELECT
+                        pu.sku,
+                        pu.new_price,
+                        pu.stock_adjustment,
+                        pu.attribute_updates,
+                        pu.approver
+                    FROM pg17_price_updates pu
+                    WHERE pu.processed = false
+                )
+                MERGE INTO pg17_product_catalog pc
+                USING update_batch ub
+                ON pc.sku = ub.sku
+                WHEN MATCHED THEN
+                    UPDATE SET
+                        current_price = ub.new_price,
+                        stock_level = pc.stock_level + COALESCE(ub.stock_adjustment, 0),
+                        attributes = pc.attributes || COALESCE(ub.attribute_updates, '{}'::jsonb),
+                        version = pc.version + 1
+                WHEN NOT MATCHED AND ub.approver IS NOT NULL THEN
+                    INSERT (sku, current_price, stock_level, attributes, updated_by)
+                    VALUES (ub.sku, ub.new_price, COALESCE(ub.stock_adjustment, 0),
+                            COALESCE(ub.attribute_updates, '{}'::jsonb), ub.approver)
+                RETURNING pc.sku;
+                """);
+
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "17.5", SqlDialect.POSTGRES, statement);
+
+        List<String> relationships = new TokenEventRelationExtractor().extract(statement, result).stream()
+                .map(FullGrammerSqlBehaviorTest::relationFingerprint)
+                .sorted()
+                .toList();
+        Set<String> lineages = new TokenEventDataLineageExtractor().extract(statement, result).stream()
+                .map(FullGrammerSqlBehaviorTest::lineageFingerprint)
+                .collect(Collectors.toSet());
+
+        assertTrue(relationships.contains(
+                "CO_OCCURRENCE:pg17_product_catalog.sku->pg17_price_updates.sku:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                () -> "MERGE USING CTE should resolve ub.sku back to pg17_price_updates.sku: " + relationships);
+        assertTrue(lineages.contains(
+                "VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku"), () -> lineages.toString());
+        assertTrue(lineages.contains(
+                "VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price"), () -> lineages.toString());
+        assertTrue(lineages.contains(
+                "VALUE:COALESCE:pg17_price_updates.stock_adjustment,pg17_product_catalog.stock_level->pg17_product_catalog.stock_level"),
+                () -> lineages.toString());
+        assertTrue(lineages.contains(
+                "VALUE:COALESCE:pg17_price_updates.attribute_updates,pg17_product_catalog.attributes->pg17_product_catalog.attributes"),
+                () -> lineages.toString());
+        assertTrue(lineages.contains(
+                "VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by"), () -> lineages.toString());
+    }
+
+    @Test
+    void postgresqlDataModifyingMergeCteResolvesRelationship() {
+        SqlStatementRecord statement = statement("""
+                WITH update_batch AS (
+                    SELECT pu.sku, pu.new_price
+                    FROM pg17_price_updates pu
+                    WHERE pu.processed = false
+                ),
+                merge_results AS (
+                    MERGE INTO pg17_product_catalog pc
+                    USING update_batch ub
+                    ON pc.sku = ub.sku
+                    WHEN MATCHED THEN
+                        UPDATE SET current_price = ub.new_price
+                    RETURNING pc.sku
+                )
+                SELECT mr.sku
+                FROM merge_results mr;
+                """);
+
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "17.5", SqlDialect.POSTGRES, statement);
+
+        List<String> relationships = new TokenEventRelationExtractor().extract(statement, result).stream()
+                .map(FullGrammerSqlBehaviorTest::relationFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(relationships.contains(
+                "CO_OCCURRENCE:pg17_product_catalog.sku->pg17_price_updates.sku:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                () -> "MERGE inside data-modifying CTE should resolve ub.sku back to pg17_price_updates.sku: "
+                        + relationships + " events=" + result.events()
+                        + " warnings=" + result.warnings()
+                        + " attributes=" + result.attributes());
     }
 
     @Test

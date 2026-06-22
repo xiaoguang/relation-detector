@@ -117,6 +117,98 @@ class TokenEventDataLineageExtractorTest {
     }
 
     @Test
+    void extractsMergeLineageInsideDataModifyingCte() {
+        String sql = """
+                WITH update_batch AS (
+                    SELECT pu.sku, pu.new_price
+                    FROM pg17_price_updates pu
+                    WHERE pu.processed = false
+                ),
+                merge_results AS (
+                    MERGE INTO pg17_product_catalog pc
+                    USING update_batch ub
+                    ON pc.sku = ub.sku
+                    WHEN MATCHED THEN
+                        UPDATE SET current_price = ub.new_price
+                    RETURNING pc.sku
+                )
+                SELECT mr.sku
+                FROM merge_results mr
+                """;
+
+        List<String> fingerprints = lineageFingerprints(sql, SqlDialect.POSTGRES);
+        assertTrue(fingerprints.contains(
+                "VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price"),
+                () -> fingerprints.toString());
+    }
+
+    @Test
+    void extractsPostgresUpdateFromLineageForUnqualifiedTargets() {
+        String sql = """
+                UPDATE orders o
+                SET customer_country = c.country_code,
+                    total_amount = o.total_amount + oi.extended_amount,
+                    risk_note = concat(c.risk_level, ':', o.status)
+                FROM customers c
+                JOIN order_items oi ON oi.order_id = o.id
+                WHERE o.customer_id = c.id
+                  AND EXISTS (
+                      SELECT 1
+                      FROM payments p
+                      WHERE p.order_id = o.id
+                  )
+                """;
+
+        assertEquals(List.of(
+                        "VALUE:DIRECT:customers.country_code->orders.customer_country",
+                        "VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount",
+                        "VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note"),
+                lineageFingerprints(sql, SqlDialect.POSTGRES));
+    }
+
+    @Test
+    void scalarAggregateSubqueryLineageUsesValueExpressionSourcesOnly() {
+        String sql = """
+                UPDATE users u
+                SET total_spent = COALESCE((
+                        SELECT SUM(o.pay_amount)
+                        FROM orders o
+                        WHERE o.user_id = u.id
+                          AND o.order_status = 'PAID'
+                    ), 0.00),
+                    level = CASE
+                        WHEN COALESCE((
+                            SELECT SUM(o.pay_amount)
+                            FROM orders o
+                            WHERE o.user_id = u.id
+                              AND o.order_status = 'PAID'
+                        ), 0.00) >= 10000 THEN 'VIP'
+                        ELSE 'REGULAR'
+                    END
+                WHERE u.is_active = 1
+                """;
+
+        assertEquals(List.of(
+                        "VALUE:AGGREGATE:orders.pay_amount->users.total_spent",
+                        "CONTROL:CASE_WHEN:orders.pay_amount->users.level"),
+                lineageFingerprints(sql, SqlDialect.POSTGRES));
+    }
+
+    @Test
+    void postgresConcatOperatorProducesConcatFormatLineage() {
+        String sql = """
+                UPDATE order_ledgers l
+                SET remarks = 'User risk level: ' || u.risk_level || ' | Order Rank: ' || fo.rnk
+                FROM fraud_orders fo, users u
+                WHERE l.order_id = fo.order_id
+                  AND fo.user_id = u.id
+                """;
+
+        assertEquals(List.of("VALUE:CONCAT_FORMAT:users.risk_level,fraud_orders.rnk->order_ledgers.remarks"),
+                lineageFingerprints(sql, SqlDialect.POSTGRES));
+    }
+
+    @Test
     void skipsLineageWhoseTargetIsExplicitProcedureLocalTemporaryTable() {
         String sql = """
                 CREATE PROCEDURE rebuild_tmp()

@@ -167,12 +167,16 @@ final class DataLineageAuditGenerator {
             List<String> expectedLineageFingerprints = Files.exists(expectedLineageFile)
                     ? stringArray(Files.readString(expectedLineageFile), "fingerprints")
                     : List.of();
+            boolean versionBoundaryUnsupported = expectedDiagnosticsContains(
+                    root.resolve(values.getOrDefault("expectedDiagnostics", "expected-diagnostics.json")).normalize(),
+                    "FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX");
             DatabaseType databaseType = DatabaseType.valueOf(required(values, "databaseType", manifest));
             List<String> candidates = parserTarget.equals("SQL")
                     ? lineageCandidates(databaseType, input, inputText, sourceType, statementFormat, objectSourceFilter)
                     : List.of();
             Decision decision = classify(parserTarget, sourceType, statementFormat, inputText,
-                    expectedLineageFingerprints, candidates, required(values, "id", manifest));
+                    expectedLineageFingerprints, candidates, required(values, "id", manifest),
+                    versionBoundaryUnsupported);
 
             return new AuditFixture(
                     required(values, "id", manifest),
@@ -197,11 +201,16 @@ final class DataLineageAuditGenerator {
             String inputText,
             List<String> expectedLineage,
             List<String> candidates,
-            String fixtureId
+            String fixtureId,
+            boolean versionBoundaryUnsupported
     ) {
         String lower = inputText.toLowerCase(Locale.ROOT);
         if (!expectedLineage.isEmpty()) {
             return new Decision(Classification.EXISTING_GOLD, "fixture already has expected-lineage.json");
+        }
+        if (versionBoundaryUnsupported) {
+            return new Decision(Classification.NOT_APPLICABLE,
+                    "negative full-grammer version-boundary fixture; unsupported SQL is not lineage golden");
         }
         if (!parserTarget.equals("SQL")) {
             return new Decision(Classification.NOT_APPLICABLE,
@@ -429,6 +438,11 @@ final class DataLineageAuditGenerator {
             values.add(item.group(1).replace("\\\"", "\"").replace("\\\\", "\\"));
         }
         return List.copyOf(values);
+    }
+
+    private static boolean expectedDiagnosticsContains(Path expectedDiagnosticsFile, String warningCode) throws IOException {
+        return Files.exists(expectedDiagnosticsFile)
+                && Files.readString(expectedDiagnosticsFile).contains("\"" + warningCode + "\"");
     }
 
     private static String normalizePath(Path path) {

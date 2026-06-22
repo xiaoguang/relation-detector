@@ -54,6 +54,7 @@ class FullGrammerCorrectnessShadowTest {
                     .filter(path -> fixtureFilter.isBlank() || path.toString().contains(fixtureFilter))
                     .map(this::readFixture)
                     .filter(fixture -> fixture.parserTarget().equals("SQL"))
+                    .filter(fixture -> !fixture.parserMode().equalsIgnoreCase("token-event"))
                     .filter(fixture -> fixture.grammarProfile().isBlank())
                     .toList();
         }
@@ -200,6 +201,7 @@ class FullGrammerCorrectnessShadowTest {
             Path root = manifest.getParent();
             return new Fixture(
                     values.get("id"),
+                    values.getOrDefault("parserMode", ""),
                     DatabaseType.valueOf(values.get("databaseType")),
                     values.get("parserTarget"),
                     StatementSourceType.valueOf(values.getOrDefault("sourceType", "PLAIN_SQL")),
@@ -247,6 +249,7 @@ class FullGrammerCorrectnessShadowTest {
 
     private record Fixture(
             String id,
+            String parserMode,
             DatabaseType databaseType,
             String parserTarget,
             StatementSourceType sourceType,

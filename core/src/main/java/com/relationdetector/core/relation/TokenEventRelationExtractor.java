@@ -90,6 +90,10 @@ public final class TokenEventRelationExtractor {
                         "ANTLR token-event EXISTS predicate");
                 if (candidate != null) {
                     candidates.add(candidate);
+                } else if (shouldEmitColumnCoOccurrence(left, right, text(event, "leftAlias"), text(event, "rightAlias"))) {
+                    candidates.add(columnCoOccurrenceCandidate(statement, left, right,
+                            "EXISTS",
+                            "ANTLR token-event EXISTS ambiguous column equality"));
                 }
             } else if (event.type() == StructuredParseEventType.JOIN_USING_COLUMNS) {
                 String leftAlias = text(event, "leftAlias");

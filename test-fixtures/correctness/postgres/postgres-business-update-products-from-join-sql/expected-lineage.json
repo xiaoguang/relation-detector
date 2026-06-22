@@ -1,5 +1,7 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "VALUE:ARITHMETIC:products.original_price->products.promo_price"
+  ],
   "forbiddenSources": [
     "CURRENT_TIMESTAMP"
   ],

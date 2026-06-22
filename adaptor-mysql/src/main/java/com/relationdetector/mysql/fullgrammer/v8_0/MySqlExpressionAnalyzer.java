@@ -13,4 +13,8 @@ import com.relationdetector.core.fullgrammer.*;
  * for future function or variable semantics.
  */
 final class MySqlExpressionAnalyzer extends FullGrammerExpressionAnalyzer {
+    @Override
+    protected boolean preferAggregateArgumentSourcesOnly() {
+        return false;
+    }
 }

@@ -340,15 +340,31 @@ test-fixtures/examples/file-only-config.yml
 
 ### 4.3 运行 JSON 输出
 
-当前尚未打包 fat jar，直接用模块 classpath 运行：
+当前尚未打包 fat jar。CLI / correctness / 手工 SQL 分析必须先使用 Maven/Javac 产物，
+不能直接信任 IDE 写入的 `target/classes`。VS Code Java Language Server / Eclipse
+编译器在源码红线期间可能生成包含 `Unresolved compilation problems` 的占位 class，
+这类 class 会让 `ServiceLoader` 报 `not a subtype` 或在运行时抛错。
+
+推荐前置检查：
 
 ```bash
-java -cp "cli/target/classes:core/target/classes:contracts/target/classes:adaptor-mysql/target/classes:adaptor-postgres/target/classes" \
-  com.relationdetector.cli.Main \
-  scan \
-  --config test-fixtures/examples/file-only-config.yml \
-  --format json
+mvn clean -pl cli -am -DskipTests test-compile
+scripts/check-no-jls-bad-classes.sh
 ```
+
+如果检查失败，先执行 Maven clean build，并在 VS Code 中运行
+`Java: Clean Java Language Server Workspace`。仓库的 `.vscode/settings.json` 已关闭
+`java.autobuild.enabled`，避免 JLS 自动把坏 class 写入 Maven `target/classes`。
+
+运行时建议使用仓库脚本。脚本会先构建 Maven main jar，执行坏 class 检查，再组装运行
+classpath：
+
+```bash
+scripts/run-cli.sh scan --config test-fixtures/examples/file-only-config.yml --format json
+```
+
+不建议维护者手工拼接 `*/target/classes` 作为 CLI classpath；如果确实要手工运行，
+必须先完成上述 Maven clean/test-compile 和 `scripts/check-no-jls-bad-classes.sh`。
 
 预期输出应包含：
 
@@ -381,11 +397,7 @@ java -cp "cli/target/classes:core/target/classes:contracts/target/classes:adapto
 ### 4.4 运行 table 输出
 
 ```bash
-java -cp "cli/target/classes:core/target/classes:contracts/target/classes:adaptor-mysql/target/classes:adaptor-postgres/target/classes" \
-  com.relationdetector.cli.Main \
-  scan \
-  --config test-fixtures/examples/file-only-config.yml \
-  --format table
+scripts/run-cli.sh scan --config test-fixtures/examples/file-only-config.yml --format table
 ```
 
 预期输出形态：
@@ -401,9 +413,7 @@ Warnings: 0
 ### 4.5 写入输出文件
 
 ```bash
-java -cp "cli/target/classes:core/target/classes:contracts/target/classes:adaptor-mysql/target/classes:adaptor-postgres/target/classes" \
-  com.relationdetector.cli.Main \
-  scan \
+scripts/run-cli.sh scan \
   --config test-fixtures/examples/file-only-config.yml \
   --format json \
   --output target/example-result.json
@@ -514,6 +524,7 @@ sources:
   - 加入 `TARGET_UNIQUE`、`NAMING_MATCH`、`VALUE_CONTAINMENT_HIGH` 后 confidence 与公式一致。
 - correctness fixture：
 - `CorrectnessFixtureRunnerTest` 扫描 `test-fixtures/correctness`，以 `expected-relations.json` 中的当前 parser gold fingerprints 为关系正确性基线；如果 fixture 存在 `expected-lineage.json`，还会比对 Data Lineage fingerprints。默认无 profile/version 的 fixture 走 token-event；full-grammer 由 shadow/parity 测试证明不低于 token-event。
+  - correctness、CLI E2E 和手工 SQL 分析前必须先跑 `mvn clean -pl cli -am -DskipTests test-compile` 与 `scripts/check-no-jls-bad-classes.sh`，确保测试源码可编译且 `target/classes` 没有 JLS/Eclipse 占位坏 class。`package -Dmaven.test.skip=true` 只能作为生成运行 jar/classpath 的临时步骤，不能替代主线验收。
   - `CliEndToEndGoldenTest` 从 YAML/CLI 参数进入 `Main.MainCommand`、adaptor registry、`ScanEngine`、parser runner、merger 和 JSON writer，并复用现有 fixture golden 比对 CLI JSON 中的 relationship / Data Lineage fingerprints。这是完整系统链路的黑盒正确性测试，不另建重复 golden。
   - routine/function fixture 使用 manifest `statementFormat: OBJECT_BLOCKS`，按 `-- relation-detector-fixture-source` / `-- relation-detector-fixture-end` block 读取一个完整对象定义，不能按普通 SQL 分号拆分过程体。
   - `CorrectnessSummaryGeneratorTest` 从同一批 fixture/golden 生成 `docs/generated/correctness-test-summary.md`，报告只展示 SQL/DDL preview、input 文件路径、expected relationship/data-lineage fingerprints、warning codes 和 forbidden tables。完整 SQL/DDL 保留在对应 fixture 的 `input.sql` 或 `input.ddl.sql` 中。普通测试只校验报告是否最新，不自动写文件。
@@ -592,6 +603,7 @@ PostgreSQL：
 
 回归测试策略：
 
+- 构建卫生测试：运行 `mvn clean -pl cli -am -DskipTests test-compile` 后执行 `scripts/check-no-jls-bad-classes.sh`。该脚本会扫描 `target/classes` 中的 JLS/Eclipse 占位错误字符串，并检查 MySQL/PostgreSQL adaptor class 是否真实实现 `DatabaseAdaptor` SPI。
 - JSON snapshot 测试字段兼容性。
 - JSON evidence 输出测试：`rawEvidence` 是未压缩数组，`evidence` 是摘要数组，`attributes.count` 为数字，`attributes.sampleDetails` 为数组。
 - correctness 明细报告同步测试：修改 `test-fixtures/correctness` 后运行 `mvn -pl cli -Dtest=CorrectnessSummaryGeneratorTest -DupdateCorrectnessSummary=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新轻量索引报告 `docs/generated/correctness-test-summary.md`，再用普通 `mvn test` 校验报告没有漂移。

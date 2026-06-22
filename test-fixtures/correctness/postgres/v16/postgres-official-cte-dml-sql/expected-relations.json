@@ -1,7 +1,6 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:accounts.user_id->orders.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:orders.customer_id->staging_orders.customer_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
     "FK_LIKE:accounts.user_id->users.id:SQL_LOG_JOIN",
     "FK_LIKE:order_staging.order_id->orders.id:SQL_LOG_JOIN",
     "FK_LIKE:order_staging.user_id->users.id:SQL_LOG_JOIN",

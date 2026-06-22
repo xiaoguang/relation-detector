@@ -2776,6 +2776,7 @@ preparablestmt
     | insertstmt
     | updatestmt
     | deletestmt
+    | mergestmt
     ;
 
 executestmt
@@ -2842,22 +2843,31 @@ returning_clause
 
 // https://www.postgresql.org/docs/current/sql-merge.html
 mergestmt
-    : with_clause_? MERGE INTO? qualified_name alias_clause? USING (select_with_parens | qualified_name) alias_clause? ON a_expr (
-        merge_insert_clause merge_update_clause?
-        | merge_update_clause merge_insert_clause?
-    ) merge_delete_clause?
+    : with_clause_? MERGE INTO? qualified_name alias_clause? USING (select_with_parens | qualified_name) alias_clause? ON a_expr
+      merge_when_clause+ returning_clause?
+    ;
+
+merge_when_clause
+    : merge_insert_clause
+    | merge_update_clause
+    | merge_delete_clause
+    | merge_do_nothing_clause
     ;
 
 merge_insert_clause
-    : WHEN NOT MATCHED (AND a_expr)? THEN? INSERT (OPEN_PAREN insert_column_list CLOSE_PAREN)? values_clause
+    : WHEN NOT MATCHED (BY TARGET)? (AND a_expr)? THEN? INSERT (OPEN_PAREN insert_column_list CLOSE_PAREN)? values_clause
     ;
 
 merge_update_clause
-    : WHEN MATCHED (AND a_expr)? THEN? UPDATE SET set_clause_list
+    : WHEN (MATCHED | NOT MATCHED BY SOURCE) (AND a_expr)? THEN? UPDATE SET set_clause_list
     ;
 
 merge_delete_clause
-    : WHEN MATCHED THEN? DELETE_P
+    : WHEN (MATCHED | NOT MATCHED BY SOURCE) (AND a_expr)? THEN? DELETE_P
+    ;
+
+merge_do_nothing_clause
+    : WHEN (MATCHED | NOT MATCHED (BY (SOURCE | TARGET))?) (AND a_expr)? THEN? DO NOTHING
     ;
 
 deletestmt

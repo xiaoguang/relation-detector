@@ -5,11 +5,11 @@
     "FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN",
     "FK_LIKE:categories.s_id->sub_labels.id:SQL_LOG_JOIN",
     "FK_LIKE:departments.manager_id->employees.id:SQL_LOG_JOIN",
-    "FK_LIKE:revisions.doc_id->documents.id:SQL_LOG_SUBQUERY_IN",
     "FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN",
     "FK_LIKE:main_catalog.p_id->products.id:SQL_LOG_JOIN",
     "FK_LIKE:products.c_id->categories.id:SQL_LOG_JOIN",
-    "FK_LIKE:products.dept_id->departments.id:SQL_LOG_JOIN"
+    "FK_LIKE:products.dept_id->departments.id:SQL_LOG_JOIN",
+    "FK_LIKE:revisions.doc_id->documents.id:SQL_LOG_SUBQUERY_IN"
   ],
   "forbiddenTables": [
     "org_path",

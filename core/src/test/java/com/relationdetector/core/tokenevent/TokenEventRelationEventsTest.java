@@ -224,6 +224,32 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
+    void doesNotTreatPostgresCastTypeAsRelationshipColumn() {
+        SqlStatementRecord statement = statement("""
+                SELECT *
+                FROM pg13_hash_metrics m
+                LEFT JOIN LATERAL (
+                    SELECT count(*) AS hour_count
+                    FROM pg13_hash_metrics h
+                    WHERE h.tenant_id = m.tenant_id
+                      AND h.metric_name = m.metric_name
+                      AND h.hour_bucket = m.hour_bucket
+                      AND h.recorded_at::date = m.recorded_at::date
+                ) lateral_1 ON true
+                """);
+
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement,
+                        tokenEventRelationOnly(new TokenEventStructuredSqlParser(SqlDialect.POSTGRES).parseSql(statement, null)))
+                .stream()
+                .map(this::relationFingerprint)
+                .sorted()
+                .toList();
+
+        assertFalse(fingerprints.contains(
+                "CO_OCCURRENCE:pg13_hash_metrics.date->pg13_hash_metrics.recorded_at:SQL_LOG_COLUMN_CO_OCCURRENCE"));
+    }
+
+    @Test
     void emitsNativeRowsetScopeEventsForCteTempTableAndTriggerPseudoRows() {
         SqlStatementRecord statement = statement("""
                 CREATE TRIGGER trg_orders_audit
