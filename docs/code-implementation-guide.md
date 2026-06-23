@@ -61,9 +61,9 @@ relation-detector/
 
 设计对应：
 
-- `docs/design/phase-02-core-model-scoring.md`
-- `docs/design/phase-03-adaptor-api-spi.md`
-- `docs/design/enum-reference.md`
+- `docs/design/relation-detector/phase-02-core-model-scoring.md`
+- `docs/design/relation-detector/phase-03-adaptor-api-spi.md`
+- `docs/design/relation-detector/enum-reference.md`
 
 维护注意：
 
@@ -107,16 +107,16 @@ relation-detector/
 结构注释入口：
 
 - 每个生产 package 都有中英双语 `package-info.java`，用于说明该包在当前 parser / relationship / lineage / DDL 架构中的职责边界。
-- `docs/design/phase-06-parser-enhancement.md` 的“代码结构注释索引”和“详细函数级调用结构”是这些 package 注释的设计展开。
+- `docs/design/relation-detector/phase-06-parser-enhancement.md` 的“代码结构注释索引”和“详细函数级调用结构”是这些 package 注释的设计展开。
 - 新增 package 时必须同步新增 `package-info.java`；新增跨包调用路径时必须同步刷新 Phase 6 详细设计。
 - 每个生产类需要类级中英双语 Javadoc，说明文件负责什么、不负责什么、位于哪条链路；关键 public 方法、核心编排方法和复杂 private helper 需要方法级中英双语注释。
 - 不强制给 record accessor、简单 getter、显而易见的小工具方法写注释；避免把注释变成逐行翻译或噪声。
 
 设计对应：
 
-- `docs/design/phase-02-core-model-scoring.md`
-- `docs/design/phase-06-parser-enhancement.md`
-- `docs/design/phase-08-output-ux.md`
+- `docs/design/relation-detector/phase-02-core-model-scoring.md`
+- `docs/design/relation-detector/phase-06-parser-enhancement.md`
+- `docs/design/relation-detector/phase-08-output-ux.md`
 
 维护注意：
 
@@ -139,7 +139,7 @@ relation-detector/
 - `TokenEventRelationExtractor` 从 `ROWSET_REFERENCE` / `PREDICATE_EQUALITY` / `JOIN_USING_COLUMNS` / `EXISTS_PREDICATE` / `IN_SUBQUERY_PREDICATE` / `TUPLE_IN_SUBQUERY_PREDICATE` 等事件独立构造 FK-like/CO_OCCURRENCE 候选，并复用 `SqlLineageResolver` 做保守 CTE/派生表列回溯。公共 extractor 只保留跨方言关系语义；MySQL/PostgreSQL 专属 rowset keyword、rowset modifier、CTE modifier 和多表 DML rowset 识别必须通过 `MySqlTokenEventSqlEventBuilder` / `PostgresTokenEventSqlEventBuilder` 实现。明确列等值但方向不可靠时输出 `SQL_LOG_COLUMN_CO_OCCURRENCE`；同一物理表 self-join 只有在不同 SQL alias 且不同物理列时才输出列级弱共现，同 alias 行内比较不输出。没有列端点时才输出表级 `SQL_LOG_TABLE_CO_OCCURRENCE`。PostgreSQL `ONLY`、`TABLESAMPLE`、`ROWS FROM`、`JOIN USING (...) AS alias` 这类语法必须配套 MySQL 负向测试，防止被 MySQL 当作物理表或共现证据；MySQL `STRAIGHT_JOIN`、ODBC `{ OJ ... }`、optimizer hints、`PARTITION (...)`、`JSON_TABLE(...)`、multi-table `UPDATE/DELETE` 这类语法也必须配套 Postgres 负向测试，防止被 PostgreSQL 误抽为关系。
 - `correlated EXISTS` 是公共 SQL 关系语义，新增或维护这类能力时，公共层只能处理跨方言相关谓词抽取，例如 `WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = o.user_id)` 生成 `SQL_LOG_EXISTS`。EXISTS 子查询内部如果出现 MySQL/PostgreSQL 专属 rowset、function table、hint、`ONLY`、`JSON_TABLE` 等语法，必须下沉到对应方言 visitor，并配套反向负向测试。
 - 同一 correlated EXISTS predicate 不能同时计为 `SQL_LOG_EXISTS` 和普通 `SQL_LOG_JOIN`。`SQL_LOG_EXISTS` 当前分值为 `0.58`，普通 SQL log join 为 `0.55`；当同一 endpoint pair 已由 EXISTS 识别时，移除重复 JOIN candidate 是反重复计分保护，避免单个 SQL 谓词虚高置信度。若未来要把“同一 SQL 中 EXISTS 与外层 JOIN 独立出现”计为两次观察，必须先增加 predicate span/source-location provenance，不能简单取消去重。
-- `TokenEventRelationExtractor` 消费结构事件并负责跨方言关系语义，不应重新承载数据库专属 rowset scanner。新增或修改方言 rowset/DDL 兼容逻辑必须进入对应 token-event event builder 或 DDL event visitor，并同时补 correctness fixture、更新 `docs/design/phase-06-parser-enhancement.md`；未来如果改成完整 parse-tree visitor，也必须同步删除对应过渡说明。
+- `TokenEventRelationExtractor` 消费结构事件并负责跨方言关系语义，不应重新承载数据库专属 rowset scanner。新增或修改方言 rowset/DDL 兼容逻辑必须进入对应 token-event event builder 或 DDL event visitor，并同时补 correctness fixture、更新 `docs/design/relation-detector/phase-06-parser-enhancement.md`；未来如果改成完整 parse-tree visitor，也必须同步删除对应过渡说明。
 - `SqlLogNoiseFilter` 在 `SqlRelationParserRunner` 之前过滤 native log 噪声。默认按数据库类型过滤系统 catalog 查询，并允许 YAML 通过 `sources.logs.filterSystemQueries`、`sources.logs.systemSchemas`、`sources.logs.metadataQueryMarkers` 覆盖。
 - `TokenEventStructuredDdlParser` 现在按 dialect 选择 `DdlStructuredEventVisitor` 子类并输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 事件；`DdlRelationExtractionVisitor` 独立把这些事件转换成 DDL FK-like 关系，并用 source index / target unique evidence 增强关系。DDL 通用文本切分、括号匹配、identifier 读取和 index part 判断属于 `DdlTokenCursor` / `DdlIndexPartParser` / `DdlStatementView`；DDL 方言 regex 属于 `MySqlDdlStructuredEventVisitor` / `PostgresDdlStructuredEventVisitor` 或 adaptor DDL parser，不属于 `DdlRelationExtractionVisitor`。
 - `SqlLineageResolver` 为 relationship extractor 和 Data Lineage extractor 提供保守列来源映射，支持 CTE、派生表、多层嵌套查询、PostgreSQL data-modifying CTE `DELETE ... RETURNING`，以及简单 LATERAL/correlated derived table 中的外层列投影回溯。它消费结构事件，不重新充当 SQL parser。裸列投影（例如 `SELECT user_id FROM orders`）只有在事件作用域和 fixture 覆盖证明安全时才回溯；复杂表达式的完整多源字段血缘由 `TokenEventDataLineageExtractor` 输出。新增类似能力必须先说明方言和 SQL 形态边界，并配 correctness fixture。
@@ -168,9 +168,9 @@ relation-detector/
 
 设计对应：
 
-- `docs/design/phase-01-project-skeleton.md`
-- `docs/design/phase-03-adaptor-api-spi.md`
-- `docs/design/phase-08-output-ux.md`
+- `docs/design/relation-detector/phase-01-project-skeleton.md`
+- `docs/design/relation-detector/phase-03-adaptor-api-spi.md`
+- `docs/design/relation-detector/phase-08-output-ux.md`
 
 维护注意：
 
@@ -195,7 +195,7 @@ relation-detector/
 
 设计对应：
 
-- `docs/design/phase-04-mysql-adaptor.md`
+- `docs/design/relation-detector/phase-04-mysql-adaptor.md`
 
 维护注意：
 
@@ -220,7 +220,7 @@ relation-detector/
 
 设计对应：
 
-- `docs/design/phase-05-postgres-adaptor.md`
+- `docs/design/relation-detector/phase-05-postgres-adaptor.md`
 
 维护注意：
 

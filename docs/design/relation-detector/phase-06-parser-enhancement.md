@@ -980,7 +980,7 @@ ParserConfigRemovalTest
 | PostgreSQL full-grammer v17 | 68 | 57 / 11 | 748 | 59 | 0 |
 | PostgreSQL full-grammer v18 | 69 | 56 / 13 | 748 | 58 | 0 |
 
-最新验证摘要：`mvn test` 已通过；targeted correctness / full-grammer parity / CLI E2E 测试也已通过。该摘要是对当前手写设计的实现快照；如果后续 fixture/golden 增减，应同步刷新本表、`docs/test-assets-map.md` 和 `docs/design/design-validation-report.md`。
+最新验证摘要：`mvn test` 已通过；targeted correctness / full-grammer parity / CLI E2E 测试也已通过。该摘要是对当前手写设计的实现快照；如果后续 fixture/golden 增减，应同步刷新本表、`docs/test-assets-map.md` 和 `docs/design/relation-detector/design-validation-report.md`。
 
 维护规则：
 

@@ -566,7 +566,7 @@ PREPARE stmt FROM @sql;
 - `VALUE_OVERLAP_HIGH`: 0.20
 - `NEGATIVE_VALUE_MISMATCH`: -0.30
 
-详细解释见 [Phase 2：核心模型和评分详细设计](design/phase-02-core-model-scoring.md) 的“置信度计算”章节。该章节逐项说明了每个 EvidenceType 为什么取该分值，并给出 metadata、DDL、日志 JOIN、存储过程、`IN` 子查询、表共现和负向数据画像的完整 SQL 算例。
+详细解释见 [Phase 2：核心模型和评分详细设计](design/relation-detector/phase-02-core-model-scoring.md) 的“置信度计算”章节。该章节逐项说明了每个 EvidenceType 为什么取该分值，并给出 metadata、DDL、日志 JOIN、存储过程、`IN` 子查询、表共现和负向数据画像的完整 SQL 算例。
 
 分数设计的核心原则：
 

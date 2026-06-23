@@ -1,24 +1,28 @@
-# 阶段详细设计文档索引
+# 设计文档索引
 
-本文档目录用于承接 `docs/relation-detector-execution-plan.md` 中的 8 个实施阶段。每个阶段都有独立设计文档，包含目标、输入输出、核心设计、验收标准和测试策略。
+本文档是当前设计入口。顶层保留 Evidence-Grounded Semantic Layer 的整体设计；relation-detector 作为其中的事实采集与证据生成子模块，其详细设计统一收在 `relation-detector/` 子文件夹下。
 
-## 文档列表
+## 总体设计
 
 - [代码实现说明与运维测试指南](../code-implementation-guide.md)
 - [测试资产地图与 Parser 验收矩阵](../test-assets-map.md)
 - [Evidence-Grounded Semantic Layer 整体设计](semantic-layer-overall-design.md)
 - [Evidence-Grounded Semantic Layer 示例附录](semantic-layer-examples.md)
-- [Phase 1：工程骨架](phase-01-project-skeleton.md)
-- [Phase 2：核心模型和评分](phase-02-core-model-scoring.md)
-- [Phase 3：Adaptor API 和 SPI](phase-03-adaptor-api-spi.md)
-- [Phase 4：MySQL adaptor](phase-04-mysql-adaptor.md)
-- [Phase 5：PostgreSQL adaptor](phase-05-postgres-adaptor.md)
-- [Phase 6：SQL/DDL/对象解析增强](phase-06-parser-enhancement.md)
-- [SqlLineageResolver：CTE/派生表列血缘解析](sql-lineage-resolver.md)
-- [Phase 7：可选数据画像](phase-07-data-profiling.md)
-- [Phase 8：输出和用户体验](phase-08-output-ux.md)
-- [ENUM 详细说明](enum-reference.md)
-- [设计一致性检查报告](design-validation-report.md)
+
+## relation-detector 子模块设计
+
+- [relation-detector 子模块设计索引](relation-detector/README.md)
+- [Phase 1：工程骨架](relation-detector/phase-01-project-skeleton.md)
+- [Phase 2：核心模型和评分](relation-detector/phase-02-core-model-scoring.md)
+- [Phase 3：Adaptor API 和 SPI](relation-detector/phase-03-adaptor-api-spi.md)
+- [Phase 4：MySQL adaptor](relation-detector/phase-04-mysql-adaptor.md)
+- [Phase 5：PostgreSQL adaptor](relation-detector/phase-05-postgres-adaptor.md)
+- [Phase 6：SQL/DDL/对象解析增强](relation-detector/phase-06-parser-enhancement.md)
+- [SqlLineageResolver：CTE/派生表列血缘解析](relation-detector/sql-lineage-resolver.md)
+- [Phase 7：可选数据画像](relation-detector/phase-07-data-profiling.md)
+- [Phase 8：输出和用户体验](relation-detector/phase-08-output-ux.md)
+- [ENUM 详细说明](relation-detector/enum-reference.md)
+- [设计一致性检查报告](relation-detector/design-validation-report.md)
 
 ## 全局约束
 
