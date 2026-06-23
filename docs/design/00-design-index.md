@@ -6,6 +6,7 @@
 
 - [Evidence-Grounded Semantic Layer 整体设计](semantic-layer-overall-design.md)
 - [Evidence-Grounded Semantic Layer 示例附录](semantic-layer-examples.md)
+- [Semantic Layer 术语表](semantic-layer/glossary.md)
 
 ## relation-detector 实施与验收入口
 
@@ -31,6 +32,7 @@
 ## Semantic Layer 子系统设计
 
 - [Semantic Layer 子系统设计索引](semantic-layer/README.md)
+- [Semantic Layer 术语表](semantic-layer/glossary.md)
 
 ### 离线构建链路
 

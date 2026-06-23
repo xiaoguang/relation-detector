@@ -1,5 +1,7 @@
 # Evidence-Grounded Semantic Layer 整体设计
 
+术语定义统一维护在 [Semantic Layer 术语表](semantic-layer/glossary.md)。本文首次出现的能力分层、审核状态、事实层和问答术语均以该术语表为准。
+
 ## 1. 背景与目标
 
 当前 relation-detector 已经能够从 metadata、DDL、SQL 日志和对象定义中识别数据库表关系，并输出一定的数据来源关系。它解决的是"数据库里真实存在什么结构证据"的问题，例如：
@@ -34,12 +36,12 @@
 
 | 标签 | 本设计中的含义 | 默认边界 |
 | --- | --- | --- |
-| `Phase 1 Scope` | 第一版应落地的核心能力 | semantic evidence graph、semantic catalog、lexicon/embedding search、question plan、SQL draft validation outline。 |
-| `Phase 2+` | Phase 1 Scope 稳定后可扩展的工程能力 | 更完整的 Review workflow、指标版本管理、离线评测集、用户反馈调权、catalog 增量构建。 |
-| `Future Capability` | 未来版本才考虑的能力 | 跨系统 fuzzy match、方言 SQL 自动改写、SQL 执行频率统计、成本估计、复杂安全审计、自动执行 SQL。 |
-| `Example` | 解释设计用的示例 | 不进入 schema，不作为验收项，不代表系统已实现。 |
+| [`Phase 1 Scope`](semantic-layer/glossary.md#phase-1-scope) | 第一版应落地的核心能力 | semantic evidence graph、semantic catalog、lexicon/embedding search、question plan、SQL draft validation outline。 |
+| [`Phase 2+`](semantic-layer/glossary.md#phase-2) | Phase 1 Scope 稳定后可扩展的工程能力 | 更完整的 Review workflow、指标版本管理、离线评测集、用户反馈调权、catalog 增量构建。 |
+| [`Future Capability`](semantic-layer/glossary.md#future-capability) | 未来版本才考虑的能力 | 跨系统 fuzzy match、方言 SQL 自动改写、SQL 执行频率统计、成本估计、复杂安全审计、自动执行 SQL。 |
+| [`Example`](semantic-layer/glossary.md#example) | 解释设计用的示例 | 不进入 schema，不作为验收项，不代表系统已实现。 |
 
-未标为 `Phase 1 Scope` 的能力不属于第一版实现目标；未标为 `BUSINESS_APPROVED` 的指标或业务口径不能作为正式回答依据。文档中的复杂 SQL、复杂指标、跨系统关联和方言提示如果标为 `Example`，只用于解释设计；如果标为 `Future Capability`，表示未来版本才考虑。它们不代表 relation-detector 已输出业务事实，也不代表语义层会自动执行 SQL。
+未标为 `Phase 1 Scope` 的能力不属于第一版实现目标；未标为 [`BUSINESS_APPROVED`](semantic-layer/glossary.md#business_approved) 的指标或业务口径不能作为正式回答依据。文档中的复杂 SQL、复杂指标、跨系统关联和方言提示如果标为 `Example`，只用于解释设计；如果标为 `Future Capability`，表示未来版本才考虑。它们不代表 relation-detector 已输出业务事实，也不代表语义层会自动执行 SQL。
 
 ## 2. 总体架构
 
@@ -1300,6 +1302,23 @@ Validator 是最后一道防线。它负责拒绝：
 
 ## 10. 问答示例
 
+### 10.0 示例读法：共用离线输入
+
+本章每个问答例子都假设离线语义构建已经完成。离线模块的共用输入输出如下：
+
+| 模块 | 输入 | 输出 | 在问答示例中的作用 |
+| --- | --- | --- | --- |
+| relation-detector 事实层 | metadata、DDL、SQL log、procedure、trigger、object SQL、comments | relationship、Data Lineage、diagnostics、evidence payload | 提供表字段、join evidence、lineage evidence 和 source location。 |
+| Scan Result Reader | relation-detector JSON output | normalized scan bundle | 把不同来源的 facts 归一化，供语义构建读取。 |
+| Semantic Evidence Builder | scan bundle | semantic evidence graph、EvidenceRef、初始 table/column evidence | 把 relationship、lineage、comment、SQL usage 组织成可引用证据。 |
+| LLM Semantic Enricher | evidence bundle、字段名、注释、SQL alias、已有 lexicon | SYSTEM_PROPOSED semantic objects、描述、同义词、review item | 只做解释、归纳、扩展和规划候选，不确认物理事实或 BUSINESS_APPROVED 指标。 |
+| Semantic Catalog Store | semantic objects、edges、evidenceRefs、review decisions | Semantic Catalog | 在线问答时的事实与语义资产中心。 |
+| Lexicon Manager | catalog objects、人工词库、SYSTEM_PROPOSED 同义词 | term -> semantic object mapping | 处理 "客户"、"活跃"、"库存风险" 等业务词精确匹配。 |
+| Embedding Indexer | semantic object texts、字段描述、指标描述、示例问法 | vector index | 处理多问法和模糊召回；召回结果仍需 evidence rerank。 |
+| Review Queue | SYSTEM_PROPOSED metric/entity/synonym、低置信度或冲突项 | review decisions、BUSINESS_APPROVED / REJECTED / NEEDS_MORE_EVIDENCE | 决定哪些指标或业务口径能成为正式默认回答依据。 |
+
+下面每个例子只展开在线问答链路：Question Understanding -> Semantic Search -> Query Planner -> SQL Draft Generator -> SQL Validator -> Answer Composer。
+
 ### 10.1 可直接回答：客户最近 30 天支付金额
 
 问题：
@@ -1307,6 +1326,17 @@ Validator 是最后一道防线。它负责拒绝：
 ```text
 每个客户最近30天的支付金额是多少？
 ```
+
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 用户问题："每个客户最近30天的支付金额是多少？" | 结构化意图：实体 `客户`，指标 `支付金额`，时间窗口 `最近30天`，粒度 `customer`，期望 `generateSql=true`。 |
+| Semantic Search | 结构化意图、Lexicon、Embedding index、Semantic Catalog | 候选对象：`entity:Customer`、`metric:customer_paid_amount`、字段 `customers.id/name`、`payments.amount/paid_at`、候选表 `customers/orders/payments`。 |
+| Query Planner | 候选对象、relationship evidence、metric reviewStatus、grain | AnswerPlan：选择 `customers -> orders -> payments` join path，选择 `SUM(payments.amount)`，过滤 `payments.paid_at >= CURRENT_DATE - INTERVAL '30 days'`，group by customer。 |
+| SQL Draft Generator | AnswerPlan | SQL draft；每个 SELECT、JOIN、WHERE、GROUP BY 元素都带 sourceObjectId 和 evidenceRefs。 |
+| SQL Validator | SQL draft、catalog、join evidence、metric reviewStatus | validation `PASSED` 或 `PASSED_WITH_WARNINGS`；校验表字段存在、join 有 evidence、metric 口径可用于 draft。 |
+| Answer Composer | validation result、SQL draft、AnswerPlan evidence | 返回候选表、字段、join path、SQL draft 和解释；如果 metric 未 BUSINESS_APPROVED，则附 warning。 |
 
 候选表：
 
@@ -1358,6 +1388,17 @@ ORDER BY paid_amount_30d DESC;
 找出活跃客户
 ```
 
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 用户问题："找出活跃客户" | 结构化意图：实体 `客户`，业务词 `活跃`，缺少明确指标/过滤口径。 |
+| Semantic Search | `客户`、`活跃`、lexicon、embedding index | 多组候选口径：`customers.status`、`customers.last_login_at`、`orders.created_at`、`payments.paid_at`。 |
+| Query Planner | 多个候选口径、reviewStatus、evidenceRefs | AnswerPlan 不生成最终 SQL；生成 ambiguity set，标记需要用户确认 "活跃" 的定义。 |
+| SQL Draft Generator | ambiguity set | 不生成 SQL draft；返回 `skipped: clarification_required`。 |
+| SQL Validator | 无 SQL draft；clarification_required plan | 不做 SQL 结构校验；返回 `NOT_RUN`，原因是业务口径不明确。 |
+| Answer Composer | ambiguity set、候选 evidence | 输出反问问题和可选口径列表。 |
+
 候选口径：
 
 - `customers.status = 'ACTIVE'`
@@ -1382,6 +1423,17 @@ ORDER BY paid_amount_30d DESC;
 ```text
 看一下商品库存风险
 ```
+
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 用户问题："看一下商品库存风险" | 结构化意图：实体 `商品`，主题 `库存风险`，缺少明确风险公式、阈值和时间范围。 |
+| Semantic Search | `商品`、`库存`、`风险`、lexicon、embedding index | 候选表字段：`products`、`inventory_snapshots`、`supplier_inventory_logs` 及库存数量、保留数量、供应商可用数量字段。 |
+| Query Planner | 候选表字段、relationship evidence、缺失的 metric definition | 表字段计划：给出可用表、字段、join path；标记 `risk_metric_missing`。 |
+| SQL Draft Generator | 表字段计划，没有正式 metric expression | 不生成完整 SQL；可生成字段探索 draft 或返回 `skipped: metric_definition_required`。 |
+| SQL Validator | 字段探索 draft 或无 SQL draft | 校验候选表字段存在；如果无 SQL draft，则返回 `NOT_RUN` 并说明缺少库存风险口径。 |
+| Answer Composer | 表字段计划、缺失项、候选 evidence | 返回 "可以用哪些表字段回答"，并反问库存风险口径。 |
 
 候选表：
 
@@ -1420,6 +1472,17 @@ supplier_inventory_logs.sku_code -> products.sku_code
 上个月的退款率是多少？
 ```
 
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 用户问题："上个月的退款率是多少？" | 结构化意图：主题 `退款率`，时间窗口 `上个月`，但分子/分母口径未定。 |
+| Semantic Search | `退款率`、`上个月`、lexicon、embedding index、catalog metrics | 候选 metrics：按金额、按笔数、按客户、仅全额退款等。 |
+| Query Planner | 多个 metric candidate、reviewStatus、evidenceRefs | 不选择单一正式 AnswerPlan；生成 metric ambiguity set，列出候选定义和审核状态。 |
+| SQL Draft Generator | metric ambiguity set | 不生成最终 SQL；可为每个候选 metric 生成草稿片段，但默认返回 `skipped: metric_ambiguous`。 |
+| SQL Validator | 候选 SQL fragment 或无 SQL draft | 对候选片段只做 draft-level 检查；未 BUSINESS_APPROVED 的 metric 产生 warning。 |
+| Answer Composer | metric ambiguity set、warning、clarification question | 输出反问："按金额还是按笔数？是否包含部分退款？"。 |
+
 候选口径：
 
 | 口径 | 分子 | 分母 | 来源 | 处理建议 |
@@ -1452,7 +1515,7 @@ supplier_inventory_logs.sku_code -> products.sku_code
 
 ### 10.5 更多场景示例
 
-复杂多表关联、自关联递归、多跳 join path、时间窗口指标、HAVING/RFM、存储过程指标、SQL 日志指标和跨系统关联等长例子已移到 [Semantic Layer 示例附录](semantic-layer-examples.md)。主文档只保留说明架构边界所需的代表性例子。
+复杂多表关联、自关联递归、多跳 join path、时间窗口指标、HAVING/[RFM](semantic-layer/glossary.md#rfm)、存储过程指标、SQL 日志指标和跨系统关联等长例子已移到 [Semantic Layer 示例附录](semantic-layer-examples.md)。主文档只保留说明架构边界所需的代表性例子。
 
 
 ## 11. Review Queue 示例

@@ -1,6 +1,6 @@
 # Semantic Layer 子系统设计索引
 
-本目录包含 Evidence-Grounded Semantic Layer 中除 relation-detector 事实层以外的子系统详细设计。总体边界以 [Evidence-Grounded Semantic Layer 整体设计](../semantic-layer-overall-design.md) 为准。
+本目录包含 Evidence-Grounded Semantic Layer 中除 relation-detector 事实层以外的子系统详细设计。总体边界以 [Evidence-Grounded Semantic Layer 整体设计](../semantic-layer-overall-design.md) 为准；术语口径以 [Semantic Layer 术语表](glossary.md) 为准。
 
 ## 架构概览
 
@@ -35,7 +35,7 @@ Question
 ### 审核链路
 
 ```text
-SYSTEM_PROPOSED semantic objects / conflicts / low confidence items
+[SYSTEM_PROPOSED](glossary.md#system_proposed) semantic objects / conflicts / low confidence items
   -> Review Queue
   -> Human or governance workflow
   -> Semantic Catalog Store
@@ -74,13 +74,13 @@ SYSTEM_PROPOSED semantic objects / conflicts / low confidence items
 ## 全局约束
 
 - 所有语义对象必须携带 `evidenceRefs`，可追溯到 relation-detector 原始输出。
-- LLM 只能生成 SYSTEM_PROPOSED semantic objects、解释、同义词和 query rewrite；不能创造数据库事实。
-- 指标默认 `SYSTEM_PROPOSED`，只有审核后才能成为 `BUSINESS_APPROVED` 正式口径。
-- `EVIDENCE_SUPPORTED` 表示有 evidence 支撑，但不等于业务已确认。
+- LLM 只能生成 [SYSTEM_PROPOSED](glossary.md#system_proposed) semantic objects、解释、同义词和 query rewrite；不能创造数据库事实。
+- 指标默认 `SYSTEM_PROPOSED`，只有审核后才能成为 [BUSINESS_APPROVED](glossary.md#business_approved) 正式口径。
+- [EVIDENCE_SUPPORTED](glossary.md#evidence_supported) 表示有 evidence 支撑，但不等于业务已确认。
 - SQL draft 必须经过 SQL Validator；文档示例不代表自动执行能力。
 - 不确定时优先反问用户，而不是生成看似完整但口径不明的 SQL。
-- Prototype 可用 JSON 文件；production-ready Phase 1 profile 推荐 PostgreSQL + JSONB + pgvector。
-- Phase 2+ / Future Capability 能力不得写成 Phase 1 Scope 已实现能力。
+- Prototype 可用 JSON 文件；production-ready [Phase 1 Scope](glossary.md#phase-1-scope) profile 推荐 PostgreSQL + JSONB + pgvector。
+- [Phase 2+](glossary.md#phase-2) / [Future Capability](glossary.md#future-capability) 能力不得写成 Phase 1 Scope 已实现能力。
 
 ## 与 relation-detector 的关系
 
@@ -96,6 +96,7 @@ Semantic Layer 在这些事实之上构建业务语义，不修改 relation-dete
 ## 相关文档
 
 - [Evidence-Grounded Semantic Layer 整体设计](../semantic-layer-overall-design.md)
+- [Semantic Layer 术语表](glossary.md)
 - [Semantic Layer 示例附录](../semantic-layer-examples.md)
 - [集成设计与端到端数据流](integration-design.md)
 - [技术选型文档](technology-selection.md)

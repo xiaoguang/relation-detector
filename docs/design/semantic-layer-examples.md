@@ -8,6 +8,33 @@
 
 示例中的复杂指标默认是 `SYSTEM_PROPOSED` semantic object；只有明确写出 `BUSINESS_APPROVED` 前置条件，并且 Review Queue 已确认后，才能作为正式回答口径。跨系统 fuzzy match、方言提示、执行频率统计和自动 SQL 改写均为 `Future Capability` 或 `Example`，不进入 Phase 1 schema。
 
+### 1.1 问题类型索引
+
+| 问题类型 | 示例章节 | 系统应做什么 |
+| --- | --- | --- |
+| 明确指标 + 明确 join path | 复杂多表关联、供应商销售额 | 生成 AnswerPlan 和 SQL draft，并由 SQL Validator 校验。 |
+| 自关联 / 递归 | 员工汇报关系 | 使用 self-join evidence，生成递归 SQL draft；递归深度是安全策略。 |
+| 多跳 join path | 供应商、商品、订单行与退款 | 由 Query Planner 选择 evidence-backed 多跳路径，不让 LLM 自行拼 join。 |
+| 时间窗口 / 环比同比 | 时间窗口指标 | 生成 window / lag draft；指标口径默认 SYSTEM_PROPOSED。 |
+| 聚合过滤 / HAVING / 连续窗口 | 连续 3 个月高消费客户 | 输出候选 SQL draft，并标记补零、连续性等审核点。 |
+| 分群 / RFM | RFM 客户分层 | 作为复杂业务规则候选，必须进入 Review Queue。 |
+| procedure / SQL log 暗示指标 | 库存周转率、复购率 | 只生成 SYSTEM_PROPOSED semantic object，不能直接确认 metric。 |
+| 跨系统关联 | CRM 与交易系统客户 | 标为 Future Capability，不进入 Phase 1 relationship。 |
+| SQL Validator 扩展 | Validator 通过、失败、方言提示 | 说明 validator 目标行为；Future Capability 不能写成 Phase 1 schema。 |
+
+### 1.2 模块流转读法
+
+每个例子都按以下在线链路阅读；如果某一步无法安全继续，后续模块应返回 `skipped`、warning 或 clarification，而不是生成看似完整但缺 evidence 的 SQL。
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 用户自然语言问题 | 结构化意图：实体、指标、时间范围、过滤条件、grain、歧义项。 |
+| Semantic Search | 结构化意图、Lexicon、Embedding index、Semantic Catalog | 候选表、字段、指标、实体、join path 和 evidenceRefs。 |
+| Query Planner | 候选对象、relationship evidence、reviewStatus、grain constraints | AnswerPlan、ambiguity set、table-field plan 或 clarification requirement。 |
+| SQL Draft Generator | AnswerPlan | SQL draft 和元素级 sourceObjectId / evidenceRefs；不能让 LLM 自由写 SQL。 |
+| SQL Validator | SQL draft、Semantic Catalog、join evidence、metric reviewStatus | PASSED、PASSED_WITH_WARNINGS、FAILED 或 NOT_RUN。 |
+| Answer Composer | validation result、AnswerPlan、warnings | 最终回答、SQL draft、表字段计划、反问或审核提示。 |
+
 扩展字段约定：
 
 | 字段或类型 | 状态 | 说明 |
@@ -25,6 +52,17 @@
 ```text
 哪些优惠券被领取了但从未使用？按优惠券类型统计领取率和使用率。
 ```
+
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 优惠券领取、未使用、领取率、使用率 | 意图：coupon usage analysis；指标候选 `issued_count`、`used_count`、`usage_rate_pct`；时间范围缺省为近 90 天示例。 |
+| Semantic Search | coupon / issue / order coupon / order 相关术语 | 候选表 `coupons`、`coupon_issues`、`order_coupons`、`orders` 和三段 join evidence。 |
+| Query Planner | 候选表、join evidence、取消订单口径不确定 | AnswerPlan：LEFT JOIN 使用记录；标记 `cancelled_order_usage_policy` 需要审核。 |
+| SQL Draft Generator | AnswerPlan | 生成按 coupon type 聚合的 SQL draft。 |
+| SQL Validator | SQL draft、catalog、join evidence、metric reviewStatus | 表字段和 join evidence 可校验；`usage_rate_pct` 若非 BUSINESS_APPROVED 则 warning。 |
+| Answer Composer | SQL draft、warning、审核点 | 返回 SQL draft，并说明取消订单是否算使用需要业务确认。 |
 
 候选表：`coupons`、`coupon_issues`、`order_coupons`、`orders`。
 
@@ -70,6 +108,17 @@ ORDER BY usage_rate_pct ASC;
 ```text
 列出每个员工及其直属上级，以及向上汇报链的深度。
 ```
+
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 员工、直属上级、汇报链、深度 | 意图：self-referential hierarchy；实体 `Employee`；需要递归路径。 |
+| Semantic Search | employee / manager / reporting chain | 候选表 `employees`；self-join evidence `employees.manager_id -> employees.id`。 |
+| Query Planner | self-join evidence、递归查询需求 | AnswerPlan：递归 CTE；加入 cycle guard 和 depth limit 作为安全策略。 |
+| SQL Draft Generator | AnswerPlan | 生成 `WITH RECURSIVE` SQL draft。 |
+| SQL Validator | SQL draft、self-join evidence、read-only guard | 校验 self-join 有 evidence；递归深度限制不是业务事实，只作为 draft guard。 |
+| Answer Composer | SQL draft、递归说明 | 返回汇报链 SQL draft，并解释自关联 evidence 来源。 |
 
 Join path：
 
@@ -132,6 +181,17 @@ ORDER BY oc.depth, oc.name;
 按供应商统计其供货商品的销售额和退货率，只显示近一年的数据。
 ```
 
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 供应商、供货商品、销售额、退货率、近一年 | 意图：supplier performance；指标候选 `total_sales`、`refund_rate_pct`；时间窗口近一年。 |
+| Semantic Search | supplier / product / order item / refund | 候选表 `suppliers`、`supplier_products`、`products`、`order_items`、`orders`、`refunds`。 |
+| Query Planner | 多跳 relationship evidence、指标口径 | AnswerPlan：供应商 -> 商品 -> 订单行 -> 订单 / 退款；标记销售额是订单行金额，不是支付金额。 |
+| SQL Draft Generator | AnswerPlan | 生成多跳 JOIN、聚合和 HAVING SQL draft。 |
+| SQL Validator | SQL draft、多跳 join evidence、metric reviewStatus | 校验每一段 join evidence；未审核退货率指标产生 warning。 |
+| Answer Composer | SQL draft、口径说明 | 返回 SQL draft，并说明如果要支付金额需改用 payments join path。 |
+
 候选表：`suppliers`、`supplier_products`、`products`、`order_items`、`orders`、`refunds`。
 
 Join path：
@@ -182,6 +242,17 @@ ORDER BY total_sales DESC;
 本月订单金额与上月环比、与去年同月同比。
 ```
 
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 本月、订单金额、环比、同比 | 意图：time-window metric comparison；指标候选 `total_sales`、`mom_sales_change_pct`、`yoy_sales_change_pct`。 |
+| Semantic Search | orders amount / created_at / status | 候选表 `orders`，字段 `actual_amount`、`created_at`、`status`。 |
+| Query Planner | 单表字段 evidence、时间窗口、比较周期 | AnswerPlan：按月聚合，使用 lag 计算上月和去年同月。 |
+| SQL Draft Generator | AnswerPlan | 生成 monthly CTE + window function SQL draft。 |
+| SQL Validator | SQL draft、字段存在性、metric reviewStatus | 单表字段校验；环比/同比为 SYSTEM_PROPOSED metric 时 warning。 |
+| Answer Composer | SQL draft、指标候选说明 | 返回 SQL draft，并提示环比/同比公式需审核后成为正式口径。 |
+
 候选表：`orders`。
 
 SQL draft：
@@ -227,6 +298,17 @@ ORDER BY month DESC;
 找出连续 3 个月每月订单数都超过 100 的客户，并列出他们最近 3 个月的总消费。
 ```
 
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 连续 3 个月、每月订单数超过 100、客户、总消费 | 意图：customer cohort by rolling window；grain `customer`；时间窗口和连续性规则待确认。 |
+| Semantic Search | customer / order / spend | 候选表 `customers`、`orders`；join evidence `orders.customer_id -> customers.id`。 |
+| Query Planner | join evidence、rolling window requirement | AnswerPlan：月度聚合 -> 窗口检查 -> customer join；标记缺月份补零口径需要审核。 |
+| SQL Draft Generator | AnswerPlan | 生成 CTE + window function SQL draft。 |
+| SQL Validator | SQL draft、join evidence、metric reviewStatus | join 可校验；连续窗口指标默认 warning。 |
+| Answer Composer | SQL draft、审核点 | 返回 SQL draft，并提示连续月份和缺月份处理需要确认。 |
+
 候选表：`customers`、`orders`。
 
 Join path：
@@ -271,7 +353,7 @@ ORDER BY cc.total_spent_3m DESC;
 
 风险/审核点："连续 3 个月"需要明确是否允许缺月份补零；该 SQL draft 是候选实现，不是自动 `BUSINESS_APPROVED` metric。
 
-## 7. RFM 客户分层
+## 7. [RFM](semantic-layer/glossary.md#rfm) 客户分层
 
 问题：
 
@@ -279,7 +361,18 @@ ORDER BY cc.total_spent_3m DESC;
 按 RFM 模型给客户分层，展示各层级的客户数和消费贡献。
 ```
 
-指标口径：Recency = 最近一次购买距今天数；Frequency = 购买频次；Monetary = 消费金额。
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | RFM、客户分层、客户数、消费贡献 | 意图：customer segmentation；识别 RFM 为复杂业务模型。 |
+| Semantic Search | customer / order / recency / frequency / monetary | 候选表 `customers`、`orders`；候选字段 `created_at`、`actual_amount`。 |
+| Query Planner | 候选字段、RFM 规则未审核 | 生成 SYSTEM_PROPOSED segmentation plan；要求 Review Queue 审核评分规则。 |
+| SQL Draft Generator | segmentation plan | 生成 RFM draft SQL；不把分层规则写成 BUSINESS_APPROVED metric。 |
+| SQL Validator | SQL draft、字段 evidence、reviewStatus | 表字段校验可通过；RFM metric/entity 未审核时返回 warning。 |
+| Answer Composer | SQL draft、warning、审核要求 | 返回分层草稿，并说明 RFM 规则必须由业务确认。 |
+
+指标口径：Recency = 最近一次购买距今天数；Frequency = 购买频次；Monetary = 消费金额。术语定义见 [RFM](semantic-layer/glossary.md#rfm)。
 
 SQL draft：
 
@@ -327,6 +420,17 @@ ORDER BY total_monetary DESC;
 ```text
 上个月的库存周转率是多少？
 ```
+
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 上个月、库存周转率 | 意图：inventory metric；识别为可能来自 procedure 的复杂指标。 |
+| Semantic Search | inventory turnover / procedure / order item / inventory snapshot | 候选 procedure `sp_inventory_turnover`，候选字段 `order_items.quantity`、`supplier_products.supply_price`、`inventory_snapshots.quantity_on_hand/unit_cost`。 |
+| Query Planner | procedure evidence、source columns、reviewStatus | 生成 SYSTEM_PROPOSED metric plan；标记 procedure evidence 不能直接确认正式指标。 |
+| SQL Draft Generator | metric plan | Phase 1 Scope 默认不从 procedure 自动反编译正式 SQL；可返回 metric explanation 或 draft outline。 |
+| SQL Validator | draft outline、catalog、reviewStatus | 不做完整 SQL 校验；返回 warning：procedure-derived metric requires review。 |
+| Answer Composer | procedure evidence、候选口径、warning | 回答可用哪些字段和 procedure evidence，并要求业务审核库存周转率口径。 |
 
 候选来源：
 
@@ -398,6 +502,17 @@ $$;
 客户的复购率怎么样？
 ```
 
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 客户、复购率 | 意图：customer repeat purchase metric；缺少观察窗口和复购定义。 |
+| Semantic Search | repurchase / orders / SQL log alias | 候选 SQL log 片段、候选字段 `orders.customer_id`、`orders.created_at`、`orders.status`。 |
+| Query Planner | SQL log evidence、window 90d、reviewStatus | 生成 SYSTEM_PROPOSED metric candidate；标记 SQL log frequency 是 Future Capability。 |
+| SQL Draft Generator | SQL log metric candidate | 可生成 draft SQL 或保留原 SQL log 模板；不确认正式 metric。 |
+| SQL Validator | SQL draft、self-join evidence、metric reviewStatus | 表字段和 self-join 可检查；复购率 metric 未审核时 warning。 |
+| Answer Composer | 候选 SQL、warning、缺失口径 | 返回候选复购率定义，并反问窗口、订单状态、退款排除规则。 |
+
 候选来源：
 
 ```sql
@@ -443,6 +558,17 @@ WHERE o1.created_at BETWEEN '2025-01-01' AND '2025-03-31'
 CRM 中的客户标签和交易系统中的消费行为有什么关系？
 ```
 
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | CRM 客户标签、交易系统消费行为 | 意图：cross-system analysis；识别跨系统实体对齐需求。 |
+| Semantic Search | CRM customer / transaction customer / phone / external id | 候选字段 `crm.customers.phone`、`public.customers.phone`，但 evidence 类型是 Future Capability。 |
+| Query Planner | weak matching candidate、privacy/risk flags | 不生成 Phase 1 formal join path；输出 NEEDS_MORE_EVIDENCE 或 Future Capability plan。 |
+| SQL Draft Generator | weak join plan | 默认跳过 SQL draft，除非人工批准跨系统匹配规则。 |
+| SQL Validator | 无正式 SQL draft；weak join evidence | 返回 NOT_RUN 或 warning：cross-system fuzzy match is Future Capability。 |
+| Answer Composer | 候选字段、风险说明 | 说明需要手机号脱敏、匹配规则、置信度和人工审核后才能分析。 |
+
 语义候选：
 
 ```json
@@ -474,6 +600,17 @@ CRM 中的客户标签和交易系统中的消费行为有什么关系？
 
 ### 11.1 校验通过
 
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 已有明确 AnswerPlan 或用户请求校验 SQL draft | 提取校验目标，不重新解释业务口径。 |
+| Semantic Search | SQL draft elements 中的表字段 | 查询 catalog，确认 `customers/orders/payments` 存在。 |
+| Query Planner | 已有 join steps | 不重新选路；只把 join steps 交给 validator。 |
+| SQL Draft Generator | 已有 SQL draft | 不重写 SQL；保留元素级 trace。 |
+| SQL Validator | SQL draft、catalog、join evidence | 返回 PASSED，说明表字段存在且 join 有 evidence。 |
+| Answer Composer | validation result | 输出可读校验报告。 |
+
 ```json
 {
   "sqlDraft": "SELECT c.id, c.name, SUM(p.amount) FROM customers c JOIN orders o ON o.customer_id = c.id JOIN payments p ON p.order_id = o.id WHERE p.paid_at >= DATE '2025-06-01' GROUP BY c.id, c.name",
@@ -503,6 +640,17 @@ CRM 中的客户标签和交易系统中的消费行为有什么关系？
 
 ### 11.2 校验失败
 
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 已有 SQL draft 或 AnswerPlan | 提取校验对象。 |
+| Semantic Search | SQL draft 中的 `reviews` 表字段和 join | catalog 找不到 `reviews.rating`，join path 缺 evidence。 |
+| Query Planner | 已有 join steps | 不补造 join path；把缺 evidence 交给 validator。 |
+| SQL Draft Generator | 已有 SQL draft | 不自动修 SQL。 |
+| SQL Validator | SQL draft、catalog、join evidence | 返回 FAILED；`JOIN_NO_EVIDENCE` 在此示例中是 Future Capability diagnostic。 |
+| Answer Composer | validation errors | 输出失败原因和需要补充的表字段/evidence。 |
+
 ```json
 {
   "status": "Example",
@@ -527,6 +675,17 @@ CRM 中的客户标签和交易系统中的消费行为有什么关系？
 
 ### 11.3 多方言提示
 
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | SQL draft、目标方言 PostgreSQL | 识别校验目标方言。 |
+| Semantic Search | SQL draft 使用的 catalog objects | 返回表字段候选；方言问题不由 search 判断。 |
+| Query Planner | 已有 plan | 不改变计划。 |
+| SQL Draft Generator | 已有 SQL draft | 不自动改写 SQL。 |
+| SQL Validator | SQL draft、targetDialect | Phase 1 Scope 只可做 parser sanity check；方言自动改写建议属于 Future Capability。 |
+| Answer Composer | dialect warning | 输出提示，不替用户自动替换并执行。 |
+
 ```json
 {
   "status": "Example",
@@ -546,3 +705,70 @@ CRM 中的客户标签和交易系统中的消费行为有什么关系？
 ```
 
 风险/审核点：Validator 可以提出修正建议，但不应自动改写 SQL 并直接执行；方言识别和改写属于 Future Capability，不进入 Phase 1 schema。
+
+## 12. 轻量问题类型补充
+
+这些例子不强调复杂 SQL，而是说明系统遇到不同自然语言问题时，应该在哪个模块停下来、返回什么中间结果。
+
+### 12.1 明细查询：最近失败支付记录
+
+问题：
+
+```text
+列出最近 7 天失败的支付记录，带上客户名和订单号。
+```
+
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 最近 7 天、失败支付、客户名、订单号 | 意图：detail query；实体 `payment`、`customer`、`order`；过滤 `payment status failed`。 |
+| Semantic Search | payment / failed / customer / order | 候选表 `payments`、`orders`、`customers`，字段 `payments.status/paid_at`、`orders.order_no`、`customers.name`。 |
+| Query Planner | 候选字段、join evidence | AnswerPlan：`payments -> orders -> customers`；无复杂 metric。 |
+| SQL Draft Generator | AnswerPlan | 生成 SELECT 明细 SQL draft。 |
+| SQL Validator | SQL draft、catalog、join evidence | 校验表字段和 join evidence；read-only guard 通过。 |
+| Answer Composer | SQL draft、字段说明 | 返回 SQL draft 和字段来源说明。 |
+
+风险/审核点：`failed` 与支付状态枚举的映射可能需要 lexicon 或数据字典确认；如果没有枚举 evidence，应返回 warning。
+
+### 12.2 需要反问：高价值客户
+
+问题：
+
+```text
+帮我找高价值客户。
+```
+
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 高价值客户 | 识别业务词 `高价值`，缺少金额阈值、时间窗口和分群规则。 |
+| Semantic Search | customer / value / paid amount / order count / RFM | 候选 metric：累计支付金额、最近 12 月支付金额、RFM 分层、订单频次。 |
+| Query Planner | 多个候选 metric、reviewStatus | 不选择单一 AnswerPlan；返回 ambiguity set。 |
+| SQL Draft Generator | ambiguity set | 不生成正式 SQL draft；返回 `skipped: clarification_required`。 |
+| SQL Validator | 无 SQL draft | 返回 `NOT_RUN`。 |
+| Answer Composer | ambiguity set | 反问：按支付金额、订单频次、RFM，还是人工维护的客户等级判断？ |
+
+风险/审核点："高价值"是业务口径，不是字段名；不能让 LLM 直接拍板。
+
+### 12.3 只回答表字段计划：门店运营健康度
+
+问题：
+
+```text
+看一下门店运营健康度。
+```
+
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 门店、运营健康度 | 识别主题，但缺少具体指标。 |
+| Semantic Search | store / sales / inventory / staff / refund / review | 候选表字段：`stores`、`orders`、`payments`、`inventory_snapshots`、`refunds`、`staff_shifts`。 |
+| Query Planner | 候选对象、多个主题域 | 生成 table-field plan，不生成 SQL；列出可能维度：销售、库存、退款、排班。 |
+| SQL Draft Generator | table-field plan | 跳过 SQL draft。 |
+| SQL Validator | 无 SQL draft | 返回 `NOT_RUN`。 |
+| Answer Composer | table-field plan、缺失口径 | 返回可用表字段和需要确认的问题。 |
+
+风险/审核点："健康度"通常是组合指标，需要业务定义权重和阈值；Phase 1 Scope 只给候选表字段计划。
