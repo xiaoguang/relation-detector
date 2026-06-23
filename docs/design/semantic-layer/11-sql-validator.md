@@ -43,17 +43,39 @@ Phase 1 不提供“任意 raw SQL 完整校验”承诺。若需要校验人工
 
 ## 4. 校验流程
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 flowchart TD
-  A["SqlDraft"] --> B["Read structured draft elements"]
-  B --> C["Optional parser sanity check"]
-  C --> D["Catalog table check"]
-  D --> E["Catalog column check"]
-  E --> F["Join evidence check"]
-  F --> G["Metric review status check"]
-  G --> H["Read-only draft guard"]
-  H --> I["ValidationResult"]
+  A["SQL 草稿"] --> B["读取结构化草稿元素"]
+  B --> C["可选 parser 基础检查"]
+  C --> D["检查 catalog 表存在性"]
+  D --> E["检查 catalog 字段存在性"]
+  E --> F["检查连接证据"]
+  F --> G["检查指标审核状态"]
+  G --> H["只读草稿保护"]
+  H --> I["校验结果"]
 ```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+flowchart TD
+  A["SQL Draft"] --> B["Read structured draft elements"]
+  B --> C["Optional parser sanity check"]
+  C --> D["Check catalog table existence"]
+  D --> E["Check catalog column existence"]
+  E --> F["Check join evidence"]
+  F --> G["Check metric review status"]
+  G --> H["Read-only draft guard"]
+  H --> I["validation result"]
+```
+
+</details>
 
 ## 5. 规则说明
 

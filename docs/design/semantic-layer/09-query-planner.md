@@ -42,6 +42,35 @@ SQL Draft Generator 只消费 `PlanJoinStep`，不自行推断 join 方向。
 
 ## 4. 处理流程
 
+<details open>
+<summary>中文</summary>
+
+```mermaid
+flowchart TD
+  A["问题意图 + 搜索结果"] --> B["解析实体 / 指标 / 维度"]
+  B --> C["确定粒度和所需表"]
+  C --> D{"是否需要多表?"}
+  D -- "否" --> E["不需要连接路径"]
+  D -- "是" --> F["从 catalog 关系构建证据图"]
+  F --> G["搜索候选路径"]
+  G --> H["应用粒度 / 角色 / 审核约束"]
+  H --> I["按置信度和证据类型重排"]
+  I --> J{"是否找到路径?"}
+  J -- "否" --> K["缺失信息: JOIN_PATH"]
+  J -- "是" --> L["定向 PlanJoinStep 列表"]
+  E --> M["校验时间 / 过滤 / 指标完整性"]
+  L --> M
+  K --> M
+  M --> N{"信息是否足够?"}
+  N -- "是" --> O["可回答"]
+  N -- "否" --> P["生成澄清问题"]
+```
+
+</details>
+
+<details>
+<summary>English</summary>
+
 ```mermaid
 flowchart TD
   A["QuestionIntent + SearchResult"] --> B["Resolve entity / metric / dimensions"]
@@ -53,15 +82,17 @@ flowchart TD
   G --> H["Apply grain / role / review constraints"]
   H --> I["Rerank by confidence and evidence type"]
   I --> J{"Path found?"}
-  J -- "no" --> K["MissingInfo: JOIN_PATH"]
+  J -- "no" --> K["Missing info: JOIN_PATH"]
   J -- "yes" --> L["Oriented PlanJoinStep list"]
-  E --> M["Validate time/filter/metric completeness"]
+  E --> M["Validate time / filter / metric completeness"]
   L --> M
   K --> M
   M --> N{"Enough information?"}
   N -- "yes" --> O["answerable=true"]
   N -- "no" --> P["clarification questions"]
 ```
+
+</details>
 
 ## 5. Join Path 选择口径
 

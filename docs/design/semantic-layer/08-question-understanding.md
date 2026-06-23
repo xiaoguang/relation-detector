@@ -65,6 +65,9 @@ public interface QuestionUnderstanding {
 
 ## 4. 处理流程图
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 flowchart TD
     A[用户输入自然语言问题] --> B[文本预处理: 语言检测 + 分词]
@@ -90,20 +93,55 @@ flowchart TD
     R --> S
 ```
 
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+flowchart TD
+    A[User inputs natural language question] --> B[Preprocess text: language detection + tokenization]
+    B --> C[build LLM prompt]
+    C --> D[Call LLM API]
+    D --> E{Valid LLM response format?}
+    E -- no --> F[Retry once]
+    F --> D
+    E -- yes --> G[Parse QuestionIntent JSON]
+    G --> H[Extract entity mentions]
+    H --> I[Extract metric mentions]
+    I --> J[Extract dimension mentions]
+    J --> K[Parse time range]
+    K --> L[Parse filters]
+    L --> M[Infer output intent]
+    M --> N{ambiguous?}
+    N -- yes --> O[Generate ambiguity list]
+    N -- no --> P[Calculate overallConfidence]
+    O --> P
+    P --> Q{overallConfidence < 0.3?}
+    Q -- yes --> R[outputIntent = UNKNOWN]
+    Q -- no --> S[Output QuestionIntent]
+    R --> S
+```
+
+</details>
+
 ## 5. 交互时序图
+
+<details open>
+<summary>中文</summary>
 
 ```mermaid
 sequenceDiagram
     participant User as 用户
-    participant QU as QuestionUnderstanding
+    participant QU as 问题理解器
     participant API as LLM API
-    participant SS as SemanticSearch
+    participant SS as 语义搜索
 
     User->>QU: "每个客户最近30天的支付金额是多少？"
     QU->>QU: 文本预处理（语言检测、分词）
     QU->>QU: 构造 LLM prompt
     QU->>API: 调用 LLM（1 次）
-    API-->>QU: QuestionIntent JSON
+    API-->>QU: 问题意图 JSON
     QU->>QU: 解析 + 校验
     QU->>QU: 检测歧义
     alt 无歧义
@@ -114,6 +152,36 @@ sequenceDiagram
     end
     QU-->>User: QuestionIntent
 ```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant QU as Question Understanding
+    participant API as LLM API
+    participant SS as Semantic Search
+
+    User->>QU: "What is each customer's paid amount in the last 30 days?"
+    QU->>QU: preprocess text: language detection and tokenization
+    QU->>QU: build LLM prompt
+    QU->>API: call LLM once
+    API-->>QU: QuestionIntent JSON
+    QU->>QU: parse and validate
+    QU->>QU: detect ambiguity
+    alt not ambiguous
+        QU->>SS: disambiguation request: entity mentions to candidates
+        SS-->>QU: disambiguation result
+    else ambiguous
+        QU->>QU: Generate ambiguities + clarificationQuestions
+    end
+    QU-->>User: QuestionIntent
+```
+
+</details>
 
 ## 6. 精确输入输出 Schema
 

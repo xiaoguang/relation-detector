@@ -13,6 +13,15 @@
 
 LLM 在本模块中负责语言理解和表达，不负责数据库事实判断。数据库事实来自 relation-detector 输出的 relationship、lineage、metadata、SQL source 和注释。
 
+四类角色示例：
+
+| 角色 | 输入 evidence | LLM 可以输出什么 | 边界 |
+| --- | --- | --- | --- |
+| 解释 | `orders.customer_id -> customers.id`，字段注释为 "下单客户" | "`orders.customer_id` 表示订单所属客户，可用于连接客户主表。" | 只能解释已有 relationship，不能新增 join。 |
+| 归纳 | `customers`、`orders`、`payments` 多个表和 join path | "这些表共同支持客户交易域，`customers` 是客户主体，`orders` 是订单事实，`payments` 是支付事实。" | 归纳的是业务视角，不改变物理表关系。 |
+| 扩展 | 字段名 `customer_id`，注释 "客户编号"，已有术语 "客户" | 同义词候选："用户"、"会员"、"买家"。 | 只能进入词库候选和审核队列，不能直接成为正式业务口径。 |
+| 规划 | 问题："每个客户最近30天支付金额是多少？"；catalog 中有 `customers/orders/payments` | 问题改写、候选指标、候选表字段、需要的 join path 提示。 | 只生成 question plan 候选；SQL 由模板生成并由 Validator 校验。 |
+
 ## 2. 上游与下游
 
 ```text
@@ -165,17 +174,39 @@ LLM 输出进入 catalog 前必须校验：
 
 ## 7. 流程图
 
+<details open>
+<summary>中文</summary>
+
+```mermaid
+flowchart TD
+  A["紧凑证据包"] --> B["构造 LLM Prompt"]
+  B --> C["生成语义对象建议"]
+  C --> D["校验物理引用和证据引用"]
+  D --> E{"证据是否有效?"}
+  E -- "是" --> F["写入 SYSTEM_PROPOSED 语义对象"]
+  E -- "否" --> G["生成警告 / 审核项"]
+  F --> H["语义目录存储"]
+  G --> I["审核队列"]
+```
+
+</details>
+
+<details>
+<summary>English</summary>
+
 ```mermaid
 flowchart TD
   A["CompactEvidenceBundle"] --> B["Build LLM Prompt"]
-  B --> C["LLM Candidate Generation"]
-  C --> D["Validate physical refs and evidenceRefs"]
+  B --> C["Generate semantic object proposals"]
+  C --> D["Validate physical refs and evidence refs"]
   D --> E{"Valid evidence?"}
   E -- "yes" --> F["Write SYSTEM_PROPOSED semantic objects"]
   E -- "no" --> G["Create warning / review item"]
   F --> H["Semantic Catalog Store"]
   G --> I["Review Queue"]
 ```
+
+</details>
 
 ## 8. 测试验收
 

@@ -79,6 +79,9 @@ public interface LexiconManager {
 
 ## 4. 处理流程图
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 flowchart TD
     A[输入: SemanticCatalog] --> B[自动提取词条]
@@ -106,16 +109,53 @@ flowchart TD
     V --> W
 ```
 
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+flowchart TD
+    A[Input: SemanticCatalog] --> B[Automatically extract terms]
+    B --> C[Iterate table names]
+    C --> D[Split snake_case / camelCase]
+    D --> E[Remove common prefixes / suffixes]
+    E --> F[Create term: source=TABLE_NAME]
+    F --> G[Iterate column names]
+    G --> H[Split snake_case / camelCase]
+    H --> I[Remove common suffixes: _id, _at, _date]
+    I --> J[Create term: source=COLUMN_NAME]
+    J --> K[Extract from DDL / SQL comments]
+    K --> L[Chinese + English tokenization]
+    L --> M[Create term: source=DDL_COMMENT / SQL_COMMENT]
+    M --> N[Merge LLM synonym proposals]
+    N --> O[Normalize: lowercase / strip punctuation / tokenize]
+    O --> P[Build LexiconIndex]
+    P --> Q[HashMap: normalizedTerm → entries]
+    Q --> R[Trie: prefix index]
+    R --> S[reverse index: objectId to entries]
+    S --> T[conflict detection]
+    T --> U{Same term maps to multiple objectIds?}
+    U -- yes --> V[Create LexiconConflict]
+    U -- no --> W[Persist semantic-lexicon.json]
+    V --> W
+```
+
+</details>
+
 ## 5. 交互时序图
+
+<details open>
+<summary>中文</summary>
 
 ```mermaid
 sequenceDiagram
-    participant CS as CatalogStore
-    participant LM as LexiconManager
-    participant SS as SemanticSearch
-    participant RQ as ReviewQueue
+    participant CS as 语义目录存储
+    participant LM as 词库管理器
+    participant SS as 语义搜索
+    participant RQ as 审核队列
 
-    CS->>LM: SemanticCatalog
+    CS->>LM: 语义目录
     LM->>LM: 提取表名/列名 → 拆分 → 词条
     LM->>LM: 提取 DDL/SQL 注释 → 词条
     LM->>LM: 接收 LLM Enricher 同义词候选
@@ -124,14 +164,46 @@ sequenceDiagram
     LM->>LM: 冲突检测
     SS->>LM: lookup("客户")
     LM->>LM: HashMap O(1) 查找
-    LM-->>SS: [entity:Customer, confidence 0.95]
+    LM-->>SS: [entity:Customer, 置信度 0.95]
     SS->>LM: search("支付")
     LM->>LM: Trie 前缀匹配
     LM-->>SS: [metric:customer_total_paid_amount, ...]
     LM->>RQ: getConflicts() → 同义词冲突
-    RQ-->>LM: resolveConflict("会员", "entity:MembershipAccount")
+    RQ-->>LM: resolveConflict("member", "entity:MembershipAccount")
     LM->>LM: 更新词条为人工审核通过状态
 ```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+sequenceDiagram
+    participant CS as Semantic Catalog Store
+    participant LM as Lexicon Manager
+    participant SS as Semantic Search
+    participant RQ as Review Queue
+
+    CS->>LM: Semantic Catalog
+    LM->>LM: extract table / column names, split into terms
+    LM->>LM: extract DDL / SQL comments into terms
+    LM->>LM: receive synonym proposals from LLM Enricher
+    LM->>LM: normalize: lowercase, strip punctuation, tokenize
+    LM->>LM: build indexes: HashMap + Trie + reverse index
+    LM->>LM: conflict detection
+    SS->>LM: lookup("customer")
+    LM->>LM: HashMap O(1) lookup
+    LM-->>SS: [entity:Customer, confidence 0.95]
+    SS->>LM: search("payment")
+    LM->>LM: Trie prefix match
+    LM-->>SS: [metric:customer_total_paid_amount, ...]
+    LM->>RQ: getConflicts() → synonym conflict
+    RQ-->>LM: resolveConflict("member", "entity:MembershipAccount")
+    LM->>LM: mark lexicon entry as human-reviewed
+```
+
+</details>
 
 ## 6. 精确输入输出 Schema
 

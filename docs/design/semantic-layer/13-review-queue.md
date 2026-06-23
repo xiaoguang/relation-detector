@@ -67,6 +67,27 @@ public interface ReviewQueue {
 
 ## 6. 状态流转
 
+<details open>
+<summary>中文</summary>
+
+```mermaid
+flowchart TD
+  Start["新的 SYSTEM_PROPOSED 对象"] --> Suggested["SYSTEM_PROPOSED"]
+  Start --> Supported["EVIDENCE_SUPPORTED"]
+  Suggested --> BusinessApproved["BUSINESS_APPROVED"]
+  Suggested --> Rejected["REJECTED"]
+  Suggested --> MoreEvidence["NEEDS_MORE_EVIDENCE"]
+  Supported --> BusinessApproved
+  Supported --> Rejected
+  MoreEvidence --> Suggested
+  Rejected --> Suggested
+```
+
+</details>
+
+<details>
+<summary>English</summary>
+
 ```mermaid
 flowchart TD
   Start["new SYSTEM_PROPOSED object"] --> Suggested["SYSTEM_PROPOSED"]
@@ -79,6 +100,8 @@ flowchart TD
   MoreEvidence --> Suggested
   Rejected --> Suggested
 ```
+
+</details>
 
 ## 7. 优先级排序
 

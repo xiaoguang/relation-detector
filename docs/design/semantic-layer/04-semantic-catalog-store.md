@@ -67,15 +67,35 @@ public interface SemanticCatalogStore {
 
 ## 6. 流程图
 
+<details open>
+<summary>中文</summary>
+
+```mermaid
+flowchart TD
+  A["语义构建任务"] --> B["保存语义对象"]
+  B --> C["保存证据引用"]
+  C --> D["保存对象关系边"]
+  D --> E["保留审核决策"]
+  E --> F["更新词库 / 向量索引输入"]
+  F --> G["结束构建任务"]
+```
+
+</details>
+
+<details>
+<summary>English</summary>
+
 ```mermaid
 flowchart TD
   A["Semantic build run"] --> B["Save semantic objects"]
   B --> C["Save evidence refs"]
   C --> D["Save object edges"]
   D --> E["Preserve review decisions"]
-  E --> F["Update lexicon / embedding inputs"]
+  E --> F["Update lexicon / vector index inputs"]
   F --> G["Finish build run"]
 ```
+
+</details>
 
 ## 7. LLM 决策
 

@@ -219,33 +219,71 @@ LexiconManager 输出:
 
 ### 3.3 全链路时序图
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 sequenceDiagram
-    participant RD as Relation Detector
-    participant SR as ScanResultReader
-    participant EB as EvidenceBuilder
-    participant LLM as LLM Enricher
-    participant CS as CatalogStore
-    participant EI as EmbeddingIndexer
-    participant LM as LexiconManager
+    participant RD as relation-detector
+    participant SR as 扫描结果读取器
+    participant EB as 语义证据构建器
+    participant LLM as LLM 语义增强器
+    participant CS as 语义目录存储
+    participant EI as 向量索引器
+    participant LM as 词库管理器
 
     RD->>SR: scan-result.json
     SR->>SR: 校验 + 归一化 + 索引构建
-    SR->>EB: ScanBundle (5关系, 1lineage, 5表)
+    SR->>EB: 扫描包 (5关系, 1血缘, 5表)
     EB->>EB: BFS join path发现 + 注释提取
     EB->>EB: compact() 紧凑化
-    EB->>LLM: CompactEvidenceBundle (~3000 tokens)
+    EB->>LLM: 紧凑证据包 (~3000 tokens)
     LLM->>LLM: 分批调用 LLM API
-    LLM->>CS: EnrichmentResult (39 语义对象)
+    LLM->>CS: 语义增强结果 (39 语义对象)
     CS->>CS: 持久化 JSON 文件
-    CS->>EI: SemanticCatalog
+    CS->>EI: 语义目录
     EI->>EI: 构造 embedding 文本
     EI->>EI: 调用 Embedding API
     EI->>EI: 持久化 JSONL
-    CS->>LM: SemanticCatalog
+    CS->>LM: 语义目录
     LM->>LM: 提取列名/表名词条
     LM->>LM: 持久化 lexicon JSON
 ```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+sequenceDiagram
+    participant RD as relation-detector
+    participant SR as Scan Result Reader
+    participant EB as Semantic Evidence Builder
+    participant LLM as LLM Semantic Enricher
+    participant CS as Semantic Catalog Store
+    participant EI as Embedding Indexer
+    participant LM as Lexicon Manager
+
+    RD->>SR: scan-result.json
+    SR->>SR: validate + normalize + build indexes
+    SR->>EB: ScanBundle (5 relationships, 1 lineage, 5 tables)
+    EB->>EB: BFS join path discovery + comment extraction
+    EB->>EB: compact()
+    EB->>LLM: CompactEvidenceBundle (~3000 tokens)
+    LLM->>LLM: call LLM API in batches
+    LLM->>CS: EnrichmentResult (39 semantic objects)
+    CS->>CS: persist JSON files
+    CS->>EI: Semantic Catalog
+    EI->>EI: build embedding text
+    EI->>EI: Call Embedding API
+    EI->>EI: persist JSONL
+    CS->>LM: Semantic Catalog
+    LM->>LM: extract column / table terms
+    LM->>LM: persist lexicon JSON
+```
+
+</details>
 
 ## 4. 端到端示例二：在线问答全链路（Happy Path）
 
@@ -440,34 +478,73 @@ Search 结果:
 
 ### 4.4 全链路时序图
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 sequenceDiagram
     participant User as 用户
-    participant QU as QuestionUnderstanding
-    participant SS as SemanticSearch
-    participant LM as LexiconManager
-    participant QP as QueryPlanner
-    participant SG as SqlDraftGenerator
-    participant SV as SqlValidator
-    participant AC as AnswerComposer
+    participant QU as 问题理解器
+    participant SS as 语义搜索
+    participant LM as 词库管理器
+    participant QP as 查询规划器
+    participant SG as SQL 草稿生成器
+    participant SV as SQL 校验器
+    participant AC as 答案组装器
 
     User->>QU: "每个客户最近30天的支付金额是多少？"
     QU->>QU: 调用 LLM 解析意图
-    QU->>SS: QuestionIntent（实体=客户, 指标=支付金额）
+    QU->>SS: 问题意图（实体=客户, 指标=支付金额）
     SS->>LM: lookup("客户")
-    LM->>SS: entity:Customer (score 1.0)
+    LM->>SS: entity:Customer (分数 1.0)
     SS->>SS: search("支付金额", METRIC) + embedding 召回
     SS->>QP: 消歧结果（entity:Customer, metric:customer_total_paid_amount）
-    QP->>QP: evidence graph search + grain/role constraints
+    QP->>QP: 证据图搜索 + 粒度 / 角色约束
     QP->>QP: 完整性检查
-    QP->>SG: AnswerPlan (answerable=true)
+    QP->>SG: 回答计划 (可回答=true)
     SG->>SG: 模板生成 SQL（不使用 LLM）
-    SG->>SV: SqlDraft
+    SG->>SV: SQL 草稿
     SV->>SV: 查 catalog 校验
-    SV->>AC: ValidationResult (PASSED_WITH_WARNINGS)
+    SV->>AC: 校验结果 (PASSED_WITH_WARNINGS)
     AC->>AC: 模板组装响应
     AC->>User: SQL + 解释 + 不确定项
 ```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant QU as Question Understanding
+    participant SS as Semantic Search
+    participant LM as Lexicon Manager
+    participant QP as Query Planner
+    participant SG as SQL Draft Generator
+    participant SV as SQL Validator
+    participant AC as Answer Composer
+
+    User->>QU: "What is each customer's paid amount in the last 30 days?"
+    QU->>QU: call LLM to parse intent
+    QU->>SS: QuestionIntent (entity=customer, metric=paid amount)
+    SS->>LM: lookup("customer")
+    LM->>SS: entity:Customer (score 1.0)
+    SS->>SS: search("paid amount", METRIC) + embedding recall
+    SS->>QP: disambiguation result（entity:Customer, metric:customer_total_paid_amount）
+    QP->>QP: evidence graph search + grain / role constraints
+    QP->>QP: completeness check
+    QP->>SG: Answer Plan (answerable=true=true)
+    SG->>SG: template SQL generation (no LLM)
+    SG->>SV: SQL Draft
+    SV->>SV: validate against catalog
+    SV->>AC: validation result (PASSED_WITH_WARNINGS)
+    AC->>AC: compose response from template
+    AC->>User: SQL + explanation + uncertainties
+```
+
+</details>
 
 ## 5. 端到端示例三：歧义问题（反问）
 
@@ -611,21 +688,47 @@ GROUP BY c.id, c.full_name
 
 ### 7.3 增量更新流程
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 sequenceDiagram
-    participant SR as ScanResultReader
-    participant EB as EvidenceBuilder
-    participant LLM as LLM Enricher
-    participant CS as CatalogStore
+    participant SR as 扫描结果读取器
+    participant EB as 语义证据构建器
+    participant LLM as LLM 语义增强器
+    participant CS as 语义目录存储
 
-    SR->>EB: 第二次 ScanBundle（6表）
+    SR->>EB: 第二次扫描包（6表）
     EB->>EB: 对比第一次 EvidenceGraph
     EB->>EB: 检测变化: 新增 refunds 表 + 1 条关系
     EB->>LLM: 只发送 refunds 表相关 evidence
-    LLM->>CS: 增量 EnrichmentResult（~10 个新对象）
+    LLM->>CS: 增量语义增强结果（~10 个新对象）
     CS->>CS: 合并: 新对象插入，已有对象保留审核状态
     CS->>CS: 旧对象标记 deprecated（不删除）
 ```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+sequenceDiagram
+    participant SR as Scan Result Reader
+    participant EB as Semantic Evidence Builder
+    participant LLM as LLM Semantic Enricher
+    participant CS as Semantic Catalog Store
+
+    SR->>EB: second ScanBundle (6 tables)
+    EB->>EB: compare with first EvidenceGraph
+    EB->>EB: detect changes: add refunds table + 1 relation
+    EB->>LLM: send only refunds-related evidence
+    LLM->>CS: incremental EnrichmentResult (~10 new objects)
+    CS->>CS: merge: insert new objects, preserve review status for existing objects
+    CS->>CS: mark old objects deprecated, do not delete
+```
+
+</details>
 
 验收检查点:
 ```

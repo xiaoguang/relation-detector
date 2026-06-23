@@ -45,9 +45,40 @@
 
 ### 2.1 架构图
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 flowchart TD
-  A["Relation Detector\nrelationships / lineage / metadata / SQL / comments"] --> B["Scan Result Reader"]
+  A["relation-detector\n关系 / 血缘 / 元数据 / SQL / 注释"] --> B["扫描结果读取器"]
+  B --> C["语义证据构建器"]
+  C --> D["LLM 语义增强器"]
+  D --> E["语义目录存储"]
+
+  E --> F["词库管理器"]
+  E --> G["向量索引器"]
+  F --> H["语义搜索"]
+  G --> H
+
+  Q["自然语言问题"] --> I["问题理解"]
+  I --> H
+  H --> J["查询规划器"]
+  J --> K["SQL 草稿生成器"]
+  K --> L["SQL 校验器"]
+  L --> M["答案组装器"]
+
+  D --> N["审核队列"]
+  J --> N
+```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+flowchart TD
+  A["relation-detector\nrelationships / lineage / metadata / SQL / comments"] --> B["Scan Result Reader"]
   B --> C["Semantic Evidence Builder"]
   C --> D["LLM Semantic Enricher"]
   D --> E["Semantic Catalog Store"]
@@ -68,23 +99,53 @@ flowchart TD
   J --> N
 ```
 
+</details>
+
 ### 2.2 两条主链路
 
 离线构建链路负责把数据库事实变成语义资产：
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 sequenceDiagram
-  participant S as Relation Detector
+  participant S as relation-detector
+  participant R as 扫描结果读取器
+  participant E as 语义证据构建器
+  participant L as LLM 语义增强器
+  participant C as 语义目录存储
+  participant V as 向量索引
+  participant Q as 审核队列
+
+  S->>R: 关系 + 血缘 + 元数据 + SQL 来源
+  R->>E: 归一化扫描包
+  E->>E: 构建字段 / 表达式 / 注释证据图
+  E->>L: 证据包
+  L->>C: 语义对象
+  L->>Q: 系统建议项 / 风险项
+  C->>V: 向量化文本
+  V-->>C: 已索引语义对象
+```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+sequenceDiagram
+  participant S as relation-detector
   participant R as Scan Result Reader
   participant E as Semantic Evidence Builder
-  participant L as LLM Enricher
-  participant C as Catalog Store
+  participant L as LLM Semantic Enricher
+  participant C as Semantic Catalog Store
   participant V as Vector Index
   participant Q as Review Queue
 
   S->>R: relationships + lineage + metadata + SQL source
-  R->>E: normalized scan bundle
-  E->>E: build field/expression/comment evidence graph
+  R->>E: normalized ScanBundle
+  E->>E: build field / expression / comment evidence graph
   E->>L: evidence bundle
   L->>C: semantic objects
   L->>Q: system-proposed / risky items
@@ -92,7 +153,42 @@ sequenceDiagram
   V-->>C: indexed semantic objects
 ```
 
+</details>
+
 在线问答链路负责从自然语言问题生成 answer plan、SQL draft 或澄清问题：
+
+<details open>
+<summary>中文</summary>
+
+```mermaid
+sequenceDiagram
+  participant U as 用户
+  participant Q as 问题接口
+  participant S as 语义搜索
+  participant P as 查询规划器
+  participant G as SQL 草稿生成器
+  participant V as SQL 校验器
+  participant A as 答案组装器
+
+  U->>Q: 自然语言问题
+  Q->>S: 问题改写 + 词库 + 向量搜索
+  S-->>P: 候选实体 / 指标 / 字段 / 连接路径
+  P->>P: 构建回答计划
+  alt 信息足够
+    P->>G: 生成 SQL 草稿
+    G->>V: 校验 SQL
+    V-->>A: 校验结果
+    A-->>U: 表 + 字段 + SQL + 解释
+  else 存在歧义
+    P-->>A: 需要澄清
+    A-->>U: 追问用户
+  end
+```
+
+</details>
+
+<details>
+<summary>English</summary>
 
 ```mermaid
 sequenceDiagram
@@ -100,11 +196,11 @@ sequenceDiagram
   participant Q as Question API
   participant S as Semantic Search
   participant P as Query Planner
-  participant G as SQL Generator
+  participant G as SQL Draft Generator
   participant V as SQL Validator
   participant A as Answer Composer
 
-  U->>Q: natural language question
+  U->>Q: Natural Language Question
   Q->>S: query rewrite + lexicon + embedding search
   S-->>P: candidate entities / metrics / fields / join paths
   P->>P: build answer plan
@@ -118,6 +214,8 @@ sequenceDiagram
     A-->>U: ask clarification
   end
 ```
+
+</details>
 
 ## 3. 模块职责总览
 
@@ -167,6 +265,15 @@ sequenceDiagram
 ### 3.3 LLM Semantic Enricher
 
 使用大模型把 evidence graph 转换成语义候选对象。LLM 的角色是解释、归纳、扩展和规划，不是事实裁决者。
+
+四类角色示例：
+
+| 角色 | 输入 evidence | LLM 可以输出什么 | 边界 |
+| --- | --- | --- | --- |
+| 解释 | `orders.customer_id -> customers.id`，字段注释为 "下单客户" | "`orders.customer_id` 表示订单所属客户，可用于连接客户主表。" | 只能解释已有 relationship，不能新增 join。 |
+| 归纳 | `customers`、`orders`、`payments` 多个表和 join path | "这些表共同支持客户交易域，`customers` 是客户主体，`orders` 是订单事实，`payments` 是支付事实。" | 归纳的是业务视角，不改变物理表关系。 |
+| 扩展 | 字段名 `customer_id`，注释 "客户编号"，已有术语 "客户" | 同义词候选："用户"、"会员"、"买家"。 | 只能进入词库候选和审核队列，不能直接成为正式业务口径。 |
+| 规划 | 问题："每个客户最近30天支付金额是多少？"；catalog 中有 `customers/orders/payments` | 问题改写、候选指标、候选表字段、需要的 join path 提示。 | 只生成 question plan 候选；SQL 由模板生成并由 Validator 校验。 |
 
 可生成内容：
 
@@ -1122,22 +1229,49 @@ LLM 将自然语言问题改写成结构化候选意图。
 
 ### 9.1 流程概览
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 flowchart TD
-  A["Question"] --> B["Question Understanding"]
-  B --> C["Lexicon Lookup"]
-  B --> D["Embedding Recall"]
-  C --> E["Candidate Merge"]
+  A["用户问题"] --> B["问题理解"]
+  B --> C["词库精确召回"]
+  B --> D["向量语义召回"]
+  C --> E["候选合并"]
   D --> E
-  E --> F["Evidence Rerank"]
-  F --> G["Query Planner"]
-  G --> H{"Enough evidence?"}
-  H -- "Yes" --> I["SQL Draft Generator"]
-  I --> J["SQL Validator"]
-  J --> K["Answer Composer"]
-  H -- "No" --> L["Clarification Question"]
+  E --> F["证据重排"]
+  F --> G["查询规划器"]
+  G --> H{"证据是否足够?"}
+  H -- "是" --> I["SQL 草稿生成器"]
+  I --> J["SQL 校验器"]
+  J --> K["答案组装器"]
+  H -- "否" --> L["澄清问题"]
   L --> K
 ```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+flowchart TD
+  A["User Question"] --> B["Question Understanding"]
+  B --> C["lexicon exact recall"]
+  B --> D["embedding semantic recall"]
+  C --> E["candidate merge"]
+  D --> E
+  E --> F["evidence rerank"]
+  F --> G["Query Planner"]
+  G --> H{"Enough evidence?"}
+  H -- "yes" --> I["SQL Draft Generator"]
+  I --> J["SQL Validator"]
+  J --> K["Answer Composer"]
+  H -- "no" --> L["Clarification Question"]
+  L --> K
+```
+
+</details>
 
 ### 9.2 Answer Plan
 

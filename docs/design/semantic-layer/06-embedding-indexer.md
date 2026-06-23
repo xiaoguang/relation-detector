@@ -51,6 +51,9 @@ public interface EmbeddingIndexer {
 
 ## 4. 处理流程图
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 flowchart TD
     A[输入: SemanticCatalog] --> B[遍历所有语义对象]
@@ -83,16 +86,58 @@ flowchart TD
     P --> Q[更新 embedding-metadata.json]
 ```
 
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+flowchart TD
+    A[Input: SemanticCatalog] --> B[Iterate all semantic objects]
+    B --> C[Check object type]
+    C -- TABLE --> D1[template: table name + business name + description + domain + grain]
+    C -- COLUMN --> D2[template: column name + business name + description + role + synonyms]
+    C -- ENTITY --> D3[template: entity name + primary table + description]
+    C -- METRIC --> D4[template: metric name + description + expression + grain]
+    C -- JOIN_PATH --> D5[template: path + usage + steps]
+    D1 --> E[Build textForEmbedding]
+    D2 --> E
+    D3 --> E
+    D4 --> E
+    D5 --> E
+    E --> F{text length > 2048?}
+    F -- yes --> G[truncate + record truncated=true]
+    F -- no --> H[keep full text]
+    G --> I[add to batch]
+    H --> I
+    I --> J{batch full at 2048 items?}
+    J -- yes --> K[Call Embedding API]
+    J -- no --> L{More objects?}
+    L -- yes --> B
+    L -- no --> K
+    K --> M{API call succeeded?}
+    M -- no --> N[Retry 3 times]
+    N --> M
+    M -- yes --> O[Assemble EmbeddingRecord]
+    O --> P[persist semantic-embeddings.jsonl]
+    P --> Q[Update embedding-metadata.json]
+```
+
+</details>
+
 ## 5. 交互时序图
+
+<details open>
+<summary>中文</summary>
 
 ```mermaid
 sequenceDiagram
-    participant CS as CatalogStore
-    participant EI as EmbeddingIndexer
+    participant CS as 语义目录存储
+    participant EI as 向量索引器
     participant API as Embedding API
-    participant SS as SemanticSearch
+    participant SS as 语义搜索
 
-    CS->>EI: SemanticCatalog
+    CS->>EI: 语义目录
     EI->>EI: 遍历所有语义对象
     EI->>EI: 构造 embedding 文本（模板化）
     loop 每 2048 条一批
@@ -104,8 +149,37 @@ sequenceDiagram
     end
     EI->>EI: 持久化 semantic-embeddings.jsonl
     SS->>EI: getEmbeddings(allObjectIds)
-    EI-->>SS: 所有 EmbeddingRecord
+    EI-->>SS: 所有向量记录
 ```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+sequenceDiagram
+    participant CS as Semantic Catalog Store
+    participant EI as Embedding Indexer
+    participant API as Embedding API
+    participant SS as Semantic Search
+
+    CS->>EI: Semantic Catalog
+    EI->>EI: Iterate all semantic objects
+    EI->>EI: build embedding text from templates
+    loop batch every 2048 items
+        EI->>API: embed(batch_texts)
+        alt API failed
+            API-->>EI: Retry 3 times with exponential backoff
+        end
+        API-->>EI: batch_embeddings[2048][1536]
+    end
+    EI->>EI: persist semantic-embeddings.jsonl
+    SS->>EI: getEmbeddings(allObjectIds)
+    EI-->>SS: all embedding records
+```
+
+</details>
 
 ## 6. Embedding 文本构造模板
 

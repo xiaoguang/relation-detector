@@ -301,6 +301,9 @@ public interface SemanticEvidenceBuilder {
 
 ## 4. 处理流程图
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 flowchart TD
     A[输入 ScanBundle] --> B[遍历 relationships]
@@ -334,16 +337,59 @@ flowchart TD
     X --> Y[输出]
 ```
 
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+flowchart TD
+    A[Input ScanBundle] --> B[Iterate relationships]
+    B --> C[Create FieldEvidence for source and target columns]
+    C --> D[Iterate dataLineages]
+    D --> E[Create ExpressionEvidence for source and target columns]
+    E --> F[Iterate metadataIndex]
+    F --> G[Enrich type / PK / uniqueness / index information]
+    G --> H[BFS join path discovery]
+    H --> I{From each table}
+    I --> J[Initialize queue: current table + empty path]
+    J --> K{Queue not empty?}
+    K -- no --> I
+    K -- yes --> L[Dequeue and find relationships from current table]
+    L --> M{Target table not visited?}
+    M -- no --> K
+    M -- yes --> N[Create JoinPathEvidence]
+    N --> O{hop count < MAX_HOPS?}
+    O -- yes --> P[enqueue and continue]
+    O -- no --> K
+    P --> K
+    I --> Q[comment extraction]
+    Q --> R[DDL / SQL comment matching]
+    R --> S[Link to physical refs]
+    S --> T[conflict detection]
+    T --> U{Multiple sources for same field?}
+    U -- yes --> V[Create ConflictEvidence]
+    U -- no --> W[Assemble EvidenceGraph]
+    V --> W
+    W --> X[compact into short form]
+    X --> Y[Output]
+```
+
+</details>
+
 ## 5. 交互时序图
+
+<details open>
+<summary>中文</summary>
 
 ```mermaid
 sequenceDiagram
-    participant SR as ScanResultReader
-    participant EB as EvidenceBuilder
-    participant LLM as LLM Enricher
-    participant CS as CatalogStore
+    participant SR as 扫描结果读取器
+    participant EB as 语义证据构建器
+    participant LLM as LLM 语义增强器
+    participant CS as 语义目录存储
 
-    SR->>EB: ScanBundle
+    SR->>EB: 扫描包
     EB->>EB: 遍历 relationships → FieldEvidence
     EB->>EB: 遍历 dataLineages → ExpressionEvidence
     EB->>EB: 遍历 metadata → 补充类型信息
@@ -355,9 +401,39 @@ sequenceDiagram
     EB->>EB: 注释提取（DDL/SQL comment）
     EB->>EB: 冲突检测（同一字段多口径）
     EB->>EB: compact() 紧凑化
-    EB->>LLM: CompactEvidenceBundle
-    EB->>CS: EvidenceGraph（完整版）
+    EB->>LLM: 紧凑证据包
+    EB->>CS: 证据图（完整版）
 ```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+sequenceDiagram
+    participant SR as Scan Result Reader
+    participant EB as Semantic Evidence Builder
+    participant LLM as LLM Semantic Enricher
+    participant CS as Semantic Catalog Store
+
+    SR->>EB: Scan Bundle
+    EB->>EB: Iterate relationships → FieldEvidence
+    EB->>EB: Iterate dataLineages → ExpressionEvidence
+    EB->>EB: walk metadata to enrich type information
+    EB->>EB: BFS join path discovery
+    loop each table
+        EB->>EB: BFS from current table to reachable tables
+        EB->>EB: record path and confidence
+    end
+    EB->>EB: comment extraction（DDL/SQL comment）
+    EB->>EB: detect conflicts: multiple meanings for one field
+    EB->>EB: compact()
+    EB->>LLM: CompactEvidenceBundle
+    EB->>CS: EvidenceGraph (full version)
+```
+
+</details>
 
 ## 6. 核心算法
 

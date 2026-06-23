@@ -30,18 +30,41 @@ public interface SemanticSearch {
 
 ## 4. 搜索流程
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 flowchart TD
-  A["SearchQuery"] --> B["Normalize terms"]
+  A["搜索请求"] --> B["归一化查询词"]
+  B --> C["词库精确 / 同义词召回"]
+  B --> D["向量语义召回"]
+  C --> E["合并候选对象"]
+  D --> E
+  E --> F["加载置信度 / 审核状态 / 证据"]
+  F --> G["可配置证据重排"]
+  G --> H["过滤已拒绝和低分结果"]
+  H --> I["搜索结果"]
+```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+flowchart TD
+  A["Search Query"] --> B["Normalize query terms"]
   B --> C["Lexicon exact / synonym lookup"]
-  B --> D["Embedding recall"]
+  B --> D["embedding semantic recall"]
   C --> E["Merge candidates"]
   D --> E
-  E --> F["Load object confidence / reviewStatus / evidence"]
+  E --> F["Load confidence / review status / evidence"]
   F --> G["Configurable evidence rerank"]
-  G --> H["Filter rejected and below threshold"]
-  H --> I["SearchResult"]
+  G --> H["Filter rejected and low-score results"]
+  H --> I["Search Result"]
 ```
+
+</details>
 
 ## 5. Rerank 口径
 

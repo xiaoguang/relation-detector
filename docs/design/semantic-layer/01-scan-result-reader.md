@@ -164,6 +164,9 @@ public interface ScanResultReader {
 
 ## 4. 处理流程图
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 flowchart TD
     A[读取 JSON 文件] --> B{文件存在?}
@@ -191,13 +194,50 @@ flowchart TD
     R --> S[输出]
 ```
 
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+flowchart TD
+    A[Read JSON file] --> B{File exists?}
+    B -- no --> E1[Throw INPUT_FILE_NOT_FOUND]
+    B -- yes --> C[parse JSON]
+    C --> D{Valid JSON?}
+    D -- no --> E2[Throw INPUT_FORMAT_ERROR]
+    D -- yes --> F[Validate database.type]
+    F --> G{type present?}
+    G -- no --> E3[Throw MISSING_DATABASE_TYPE]
+    G -- yes --> H[Iterate relationships]
+    H --> I{Validate each item}
+    I -- required field missing --> J[record WARNING, skip]
+    I -- confidence out of range --> K[clamp and record WARNING]
+    I -- valid --> L[normalize and create ID]
+    J --> M{More items?}
+    K --> M
+    L --> M
+    M -- yes --> H
+    M -- no --> N[deduplicate: keep highest confidence per key]
+    N --> O[Build RelationshipIndex]
+    O --> P[Build MetadataIndex]
+    P --> Q[Build LineageIndex]
+    Q --> R[Assemble ScanBundle]
+    R --> S[Output]
+```
+
+</details>
+
 ## 5. 交互时序图
+
+<details open>
+<summary>中文</summary>
 
 ```mermaid
 sequenceDiagram
     participant FS as 文件系统
-    participant SR as ScanResultReader
-    participant SB as ScanBundle
+    participant SR as 扫描结果读取器
+    participant SB as 扫描包
 
     FS->>SR: scan-result.json
     SR->>SR: 读取文件
@@ -212,6 +252,33 @@ sequenceDiagram
     SR->>SR: 构建 LineageIndex
     SR->>SB: 组装 ScanBundle
 ```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+sequenceDiagram
+    participant FS as File System
+    participant SR as Scan Result Reader
+    participant SB as Scan Bundle
+
+    FS->>SR: scan-result.json
+    SR->>SR: read file
+    SR->>SR: parse JSON
+    alt parse failed
+        SR-->>FS: ScanResultReadException
+    end
+    SR->>SR: validate relationships one by one
+    SR->>SR: deduplicate: keep highest confidence per key
+    SR->>SR: Build RelationshipIndex
+    SR->>SR: Build MetadataIndex
+    SR->>SR: Build LineageIndex
+    SR->>SB: Assemble ScanBundle
+```
+
+</details>
 
 ## 6. 处理逻辑详解
 

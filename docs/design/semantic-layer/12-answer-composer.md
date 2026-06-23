@@ -36,16 +36,37 @@ public interface AnswerComposer {
 
 ## 5. 流程图
 
+<details open>
+<summary>中文</summary>
+
+```mermaid
+flowchart TD
+  A["回答计划 + 可选 SQL 草稿 + 校验结果"] --> B{"校验是否失败?"}
+  B -- "是" --> C["澄清问题 / 错误说明"]
+  B -- "否" --> D{"是否有 SQL 草稿?"}
+  D -- "是" --> E["SQL 草稿响应"]
+  D -- "否" --> F{"是否有表字段候选?"}
+  F -- "是" --> G["表字段计划响应"]
+  F -- "否" --> C
+```
+
+</details>
+
+<details>
+<summary>English</summary>
+
 ```mermaid
 flowchart TD
   A["AnswerPlan + optional SqlDraft + ValidationResult"] --> B{"validator failed?"}
   B -- "yes" --> C["Clarification / error explanation"]
-  B -- "no" --> D{"has SqlDraft?"}
-  D -- "yes" --> E["SQL_DRAFT response"]
-  D -- "no" --> F{"has table-field candidates?"}
-  F -- "yes" --> G["TABLE_FIELD_PLAN response"]
+  B -- "no" --> D{"Has SQL draft?"}
+  D -- "yes" --> E["SQL draft response"]
+  D -- "no" --> F{"Has table-field candidates?"}
+  F -- "yes" --> G["Table-field plan response"]
   F -- "no" --> C
 ```
+
+</details>
 
 ## 6. LLM 决策
 

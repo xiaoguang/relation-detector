@@ -43,9 +43,31 @@ record SqlDraft(
 
 ## 4. 生成流程
 
+<details open>
+<summary>中文</summary>
+
 ```mermaid
 flowchart TD
-  A["AnswerPlan"] --> B{"answerable?"}
+  A["回答计划"] --> B{"是否可回答?"}
+  B -- "否" --> C["拒绝生成"]
+  B -- "是" --> D["渲染 SELECT 维度 / 指标"]
+  D --> E["渲染 FROM 主表"]
+  E --> F["按定向 PlanJoinStep 渲染 JOIN"]
+  F --> G["渲染 WHERE 过滤和时间范围"]
+  G --> H["需要时渲染 GROUP BY"]
+  H --> I["渲染 ORDER BY / LIMIT"]
+  I --> J["附加 SQL 草稿元素证据"]
+  J --> K["SQL 草稿"]
+```
+
+</details>
+
+<details>
+<summary>English</summary>
+
+```mermaid
+flowchart TD
+  A["Answer Plan"] --> B{"answerable?"}
   B -- "no" --> C["Reject generation"]
   B -- "yes" --> D["Render SELECT dimensions / metrics"]
   D --> E["Render FROM primary table"]
@@ -53,9 +75,11 @@ flowchart TD
   F --> G["Render WHERE filters and time range"]
   G --> H["Render GROUP BY when required"]
   H --> I["Render ORDER BY / LIMIT"]
-  I --> J["Attach SqlDraftElement evidence"]
-  J --> K["SqlDraft"]
+  I --> J["Attach SQL draft element evidence"]
+  J --> K["SQL Draft"]
 ```
+
+</details>
 
 ## 5. Join 渲染规则
 
