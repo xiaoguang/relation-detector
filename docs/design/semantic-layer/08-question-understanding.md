@@ -185,13 +185,86 @@ sequenceDiagram
 
 ## 6. 精确输入输出 Schema
 
-### 4.1 输入
+本节就是 `Question Understanding` 的输入输出样例入口。它定义的是 LLM 调用后的结构化意图，不是最终 SQL、正式指标或 join path。
+
+### 6.1 模块级输入输出契约
+
+输入：
+
+```json
+{
+  "question": "最近消费高的客户有哪些？",
+  "conversationHistory": [],
+  "locale": "zh-CN",
+  "dialect": "postgresql",
+  "schema": "public"
+}
+```
+
+输出：
+
+```json
+{
+  "question": "最近消费高的客户有哪些？",
+  "intentType": "RANKING_QUERY",
+  "entities": [
+    {
+      "mention": "客户",
+      "semanticType": "ENTITY",
+      "candidateTerms": ["客户"],
+      "needsCatalogResolution": true
+    }
+  ],
+  "metrics": [
+    {
+      "mention": "消费高",
+      "candidateMeaning": "支付金额或订单金额较高",
+      "needsClarification": true,
+      "candidateTerms": ["支付金额", "订单金额", "净收入"]
+    }
+  ],
+  "timeRange": {
+    "rawText": "最近",
+    "normalized": null,
+    "needsClarification": true,
+    "candidateOptions": ["最近7天", "最近30天", "最近自然月"]
+  },
+  "requestedOutput": "customer_list",
+  "queryRewrites": [
+    "客户支付金额排行",
+    "客户订单金额排行",
+    "高消费客户列表"
+  ],
+  "ambiguities": [
+    {
+      "term": "消费高",
+      "reason": "metric_definition_ambiguous",
+      "options": ["支付金额", "订单金额", "净收入"]
+    },
+    {
+      "term": "最近",
+      "reason": "time_window_ambiguous",
+      "options": ["最近7天", "最近30天", "最近自然月"]
+    }
+  ],
+  "overallConfidence": 0.58
+}
+```
+
+边界：
+
+- LLM 只输出结构化意图、候选术语、query rewrite 和歧义点。
+- `needsCatalogResolution=true` 表示后续必须交给 Semantic Search / Semantic Catalog 消歧。
+- `needsClarification=true` 表示 Query Planner 不应直接生成正式 AnswerPlan。
+- 输出里不能出现 LLM 自行确认的物理表、物理 join、BUSINESS_APPROVED metric。
+
+### 6.2 简单输入
 
 ```
 "每个客户最近30天的支付金额是多少？"
 ```
 
-### 4.2 LLM Prompt
+### 6.3 LLM Prompt
 
 ```text
 你是一个数据库查询意图分析专家。分析用户问题，提取结构化意图。
@@ -220,7 +293,7 @@ sequenceDiagram
 严格 JSON，不要输出其他内容。
 ```
 
-### 4.3 输出：QuestionIntent
+### 6.4 输出：QuestionIntent
 
 ```pseudo-json
 {
@@ -277,7 +350,7 @@ sequenceDiagram
 }
 ```
 
-### 4.4 歧义场景输出
+### 6.5 歧义场景输出
 
 ```pseudo-json
 // 输入: "找出活跃客户"
@@ -302,11 +375,11 @@ sequenceDiagram
 }
 ```
 
-## 5. LLM 决策
+## 7. LLM 决策
 
 **使用 LLM。** 自然语言理解是 LLM 的核心能力，规则无法覆盖用户问法的多样性。这是在线链路的唯一 LLM 调用点，1 次/问题。
 
-## 6. 测试验收
+## 8. 测试验收
 
 | 测试场景 | 输入 | 预期输出 |
 | --- | --- | --- |

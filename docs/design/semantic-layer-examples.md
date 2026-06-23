@@ -772,3 +772,466 @@ CRM 中的客户标签和交易系统中的消费行为有什么关系？
 | Answer Composer | table-field plan、缺失口径 | 返回可用表字段和需要确认的问题。 |
 
 风险/审核点："健康度"通常是组合指标，需要业务定义权重和阈值；Phase 1 Scope 只给候选表字段计划。
+
+## 13. 主文档问答示例的模块明细
+
+本节展开 [整体设计第 10 章](semantic-layer-overall-design.md#10-问答示例) 的代表性问答示例。每个 JSON block 都是 Example，用来说明模块输入输出，不是当前实现 API contract，也不是 parser correctness golden。
+
+### 13.1 可直接回答：客户最近 30 天支付金额
+
+```json
+{
+  "question": "每个客户最近30天的支付金额是多少？",
+  "capabilityScope": "Example",
+  "moduleTrace": [
+    {
+      "module": "Question Understanding",
+      "input": {
+        "question": "每个客户最近30天的支付金额是多少？",
+        "locale": "zh-CN"
+      },
+      "output": {
+        "intentType": "AGGREGATE_QUERY",
+        "entities": [
+          {
+            "mention": "客户",
+            "needsCatalogResolution": true
+          }
+        ],
+        "metrics": [
+          {
+            "mention": "支付金额",
+            "aggregationHint": "SUM",
+            "needsCatalogResolution": true
+          }
+        ],
+        "timeRange": {
+          "rawText": "最近30天",
+          "type": "RELATIVE",
+          "normalized": "CURRENT_DATE - INTERVAL '30 days'"
+        },
+        "grain": "customer",
+        "requestedOutput": "sql_draft_and_explanation",
+        "ambiguities": []
+      }
+    },
+    {
+      "module": "Semantic Search",
+      "input": {
+        "entities": ["客户"],
+        "metrics": ["支付金额"],
+        "timeFields": ["最近30天"]
+      },
+      "output": {
+        "candidateEntities": [
+          {
+            "objectId": "entity:Customer",
+            "matchedBy": ["lexicon", "embedding"]
+          }
+        ],
+        "candidateFields": [
+          "customers.id",
+          "customers.name",
+          "payments.amount",
+          "payments.paid_at"
+        ],
+        "candidateJoinPaths": [
+          {
+            "path": [
+              "orders.customer_id->customers.id",
+              "payments.order_id->orders.id"
+            ],
+            "evidenceRefs": ["relationship:orders_customers", "relationship:payments_orders"]
+          }
+        ]
+      }
+    },
+    {
+      "module": "Query Planner",
+      "input": {
+        "intent": "AGGREGATE_QUERY",
+        "candidateEntity": "entity:Customer",
+        "candidateMetric": "metric:customer_paid_amount",
+        "candidateJoinPath": "customers<-orders<-payments"
+      },
+      "output": {
+        "answerPlanType": "SQL_DRAFT",
+        "tables": ["customers", "orders", "payments"],
+        "selectFields": ["customers.id", "customers.name"],
+        "metricExpression": "SUM(payments.amount)",
+        "filters": ["payments.paid_at >= CURRENT_DATE - INTERVAL '30 days'"],
+        "groupBy": ["customers.id", "customers.name"],
+        "warnings": []
+      }
+    },
+    {
+      "module": "SQL Draft Generator",
+      "input": {
+        "answerPlanType": "SQL_DRAFT",
+        "tables": ["customers", "orders", "payments"],
+        "metricExpression": "SUM(payments.amount)"
+      },
+      "output": {
+        "sqlDraftId": "draft:customer_paid_amount_30d",
+        "sqlText": "SELECT c.id, c.name, SUM(p.amount) AS paid_amount_30d FROM customers c JOIN orders o ON o.customer_id = c.id JOIN payments p ON p.order_id = o.id WHERE p.paid_at >= CURRENT_DATE - INTERVAL '30 days' GROUP BY c.id, c.name",
+        "traceElements": [
+          {
+            "type": "JOIN",
+            "sqlFragment": "o.customer_id = c.id",
+            "evidenceRef": "relationship:orders_customers"
+          },
+          {
+            "type": "METRIC",
+            "sqlFragment": "SUM(p.amount)",
+            "sourceObjectId": "metric:customer_paid_amount"
+          }
+        ]
+      }
+    },
+    {
+      "module": "SQL Validator",
+      "input": {
+        "sqlDraftId": "draft:customer_paid_amount_30d",
+        "checks": ["table_exists", "column_exists", "join_evidence", "metric_review_status", "read_only_guard"]
+      },
+      "output": {
+        "status": "PASSED_WITH_WARNINGS",
+        "warnings": [
+          {
+            "type": "SYSTEM_PROPOSED_METRIC_USED",
+            "message": "支付金额指标可生成 draft，但正式口径需要 BUSINESS_APPROVED"
+          }
+        ]
+      }
+    },
+    {
+      "module": "Answer Composer",
+      "input": {
+        "answerPlanType": "SQL_DRAFT",
+        "validationStatus": "PASSED_WITH_WARNINGS"
+      },
+      "output": {
+        "answerType": "SQL_DRAFT_WITH_EXPLANATION",
+        "summary": "使用 customers 表表示客户，payments.amount 表示支付金额，通过 orders 连接客户与支付。",
+        "includeSqlDraft": true,
+        "includeWarnings": true
+      }
+    }
+  ]
+}
+```
+
+### 13.2 需要反问：活跃客户
+
+```json
+{
+  "question": "找出活跃客户",
+  "capabilityScope": "Example",
+  "moduleTrace": [
+    {
+      "module": "Question Understanding",
+      "input": {
+        "question": "找出活跃客户"
+      },
+      "output": {
+        "intentType": "FILTERED_ENTITY_QUERY",
+        "entities": [
+          {
+            "mention": "客户",
+            "needsCatalogResolution": true
+          }
+        ],
+        "filters": [
+          {
+            "mention": "活跃",
+            "needsClarification": true
+          }
+        ],
+        "ambiguities": [
+          {
+            "term": "活跃客户",
+            "options": ["状态为 ACTIVE", "最近登录", "最近下单", "最近支付"]
+          }
+        ]
+      }
+    },
+    {
+      "module": "Semantic Search",
+      "input": {
+        "terms": ["客户", "活跃"]
+      },
+      "output": {
+        "candidateEntity": "entity:Customer",
+        "candidateDefinitions": [
+          {
+            "definition": "customers.status = 'ACTIVE'",
+            "evidenceRef": "column:customers.status"
+          },
+          {
+            "definition": "customers.last_login_at in recent period",
+            "evidenceRef": "column:customers.last_login_at"
+          },
+          {
+            "definition": "orders.created_at in recent period",
+            "evidenceRef": "relationship:orders_customers"
+          },
+          {
+            "definition": "payments.paid_at in recent period",
+            "evidenceRef": "relationship:payments_orders"
+          }
+        ]
+      }
+    },
+    {
+      "module": "Query Planner",
+      "input": {
+        "candidateDefinitions": ["status", "login", "order", "payment"],
+        "reviewStatus": "SYSTEM_PROPOSED"
+      },
+      "output": {
+        "answerPlanType": "CLARIFICATION_REQUIRED",
+        "reason": "business_term_ambiguous",
+        "clarificationOptions": ["状态字段为 ACTIVE", "最近登录过", "最近下单过", "最近支付过"]
+      }
+    },
+    {
+      "module": "SQL Draft Generator",
+      "input": {
+        "answerPlanType": "CLARIFICATION_REQUIRED"
+      },
+      "output": {
+        "status": "SKIPPED",
+        "reason": "clarification_required"
+      }
+    },
+    {
+      "module": "SQL Validator",
+      "input": {
+        "sqlDraft": null
+      },
+      "output": {
+        "status": "NOT_RUN",
+        "reason": "no_sql_draft"
+      }
+    },
+    {
+      "module": "Answer Composer",
+      "input": {
+        "clarificationOptions": ["状态字段为 ACTIVE", "最近登录过", "最近下单过", "最近支付过"]
+      },
+      "output": {
+        "answerType": "CLARIFICATION",
+        "message": "活跃客户有多个可能口径。你希望按哪一种判断？"
+      }
+    }
+  ]
+}
+```
+
+### 13.3 只能回答表字段计划：库存风险
+
+```json
+{
+  "question": "看一下商品库存风险",
+  "capabilityScope": "Example",
+  "moduleTrace": [
+    {
+      "module": "Question Understanding",
+      "input": {
+        "question": "看一下商品库存风险"
+      },
+      "output": {
+        "intentType": "EXPLORATORY_ANALYSIS",
+        "entities": [
+          {
+            "mention": "商品",
+            "needsCatalogResolution": true
+          }
+        ],
+        "topics": ["库存风险"],
+        "missingDefinitions": ["risk_formula", "threshold", "time_window"]
+      }
+    },
+    {
+      "module": "Semantic Search",
+      "input": {
+        "terms": ["商品", "库存", "风险"]
+      },
+      "output": {
+        "candidateTables": ["products", "inventory_snapshots", "supplier_inventory_logs"],
+        "candidateFields": [
+          "products.sku_code",
+          "inventory_snapshots.quantity_on_hand",
+          "inventory_snapshots.reserved_quantity",
+          "supplier_inventory_logs.available_quantity"
+        ],
+        "candidateJoinPaths": [
+          "inventory_snapshots.product_id->products.id",
+          "supplier_inventory_logs.sku_code->products.sku_code"
+        ]
+      }
+    },
+    {
+      "module": "Query Planner",
+      "input": {
+        "candidateTables": ["products", "inventory_snapshots", "supplier_inventory_logs"],
+        "missingDefinitions": ["risk_formula", "threshold"]
+      },
+      "output": {
+        "answerPlanType": "TABLE_FIELD_PLAN",
+        "recommendedDimensions": ["product", "warehouse", "supplier"],
+        "recommendedMeasures": ["available_quantity", "reserved_quantity", "quantity_on_hand"],
+        "clarificationNeeded": true
+      }
+    },
+    {
+      "module": "SQL Draft Generator",
+      "input": {
+        "answerPlanType": "TABLE_FIELD_PLAN"
+      },
+      "output": {
+        "status": "SKIPPED",
+        "reason": "metric_definition_required"
+      }
+    },
+    {
+      "module": "SQL Validator",
+      "input": {
+        "tableFieldPlan": true,
+        "sqlDraft": null
+      },
+      "output": {
+        "status": "NOT_RUN",
+        "reason": "no_sql_draft",
+        "catalogChecks": {
+          "products": "FOUND",
+          "inventory_snapshots": "FOUND",
+          "supplier_inventory_logs": "FOUND"
+        }
+      }
+    },
+    {
+      "module": "Answer Composer",
+      "input": {
+        "answerPlanType": "TABLE_FIELD_PLAN",
+        "clarificationNeeded": true
+      },
+      "output": {
+        "answerType": "TABLE_FIELD_PLAN",
+        "message": "可以用 products、inventory_snapshots、supplier_inventory_logs 分析库存风险，但需要确认风险口径。",
+        "clarificationQuestion": "库存风险是指可用库存低于阈值、供应商库存不足，还是保留库存过高？"
+      }
+    }
+  ]
+}
+```
+
+### 13.4 需要反问：退款率口径冲突
+
+```json
+{
+  "question": "上个月的退款率是多少？",
+  "capabilityScope": "Example",
+  "moduleTrace": [
+    {
+      "module": "Question Understanding",
+      "input": {
+        "question": "上个月的退款率是多少？"
+      },
+      "output": {
+        "intentType": "METRIC_QUERY",
+        "metrics": [
+          {
+            "mention": "退款率",
+            "needsClarification": true
+          }
+        ],
+        "timeRange": {
+          "rawText": "上个月",
+          "type": "ABSOLUTE_PREVIOUS_MONTH"
+        },
+        "ambiguities": [
+          {
+            "term": "退款率",
+            "options": ["按金额", "按笔数", "按客户", "仅全额退款"]
+          }
+        ]
+      }
+    },
+    {
+      "module": "Semantic Search",
+      "input": {
+        "terms": ["退款率", "上个月"]
+      },
+      "output": {
+        "candidateMetrics": [
+          {
+            "metricId": "metric:refund_rate_by_amount",
+            "definition": "SUM(refunds.amount) / SUM(orders.actual_amount)",
+            "reviewStatus": "SYSTEM_PROPOSED"
+          },
+          {
+            "metricId": "metric:refund_rate_by_count",
+            "definition": "COUNT(refunds.id) / COUNT(orders.id)",
+            "reviewStatus": "SYSTEM_PROPOSED"
+          },
+          {
+            "metricId": "metric:refund_customer_rate",
+            "definition": "COUNT(DISTINCT refund_customer) / COUNT(DISTINCT order_customer)",
+            "reviewStatus": "SYSTEM_PROPOSED"
+          }
+        ]
+      }
+    },
+    {
+      "module": "Query Planner",
+      "input": {
+        "candidateMetrics": ["metric:refund_rate_by_amount", "metric:refund_rate_by_count", "metric:refund_customer_rate"],
+        "timeRange": "ABSOLUTE_PREVIOUS_MONTH"
+      },
+      "output": {
+        "answerPlanType": "CLARIFICATION_REQUIRED",
+        "reason": "metric_definition_ambiguous",
+        "clarificationQuestion": "退款率按金额还是按笔数计算？是否包含部分退款？"
+      }
+    },
+    {
+      "module": "SQL Draft Generator",
+      "input": {
+        "answerPlanType": "CLARIFICATION_REQUIRED"
+      },
+      "output": {
+        "status": "SKIPPED",
+        "reason": "metric_ambiguous"
+      }
+    },
+    {
+      "module": "SQL Validator",
+      "input": {
+        "candidateMetrics": ["metric:refund_rate_by_amount", "metric:refund_rate_by_count"],
+        "sqlDraft": null
+      },
+      "output": {
+        "status": "NOT_RUN",
+        "warnings": [
+          {
+            "type": "SYSTEM_PROPOSED_METRIC_USED",
+            "message": "候选退款率指标尚未 BUSINESS_APPROVED"
+          }
+        ]
+      }
+    },
+    {
+      "module": "Answer Composer",
+      "input": {
+        "clarificationQuestion": "退款率按金额还是按笔数计算？是否包含部分退款？",
+        "candidateMetrics": ["metric:refund_rate_by_amount", "metric:refund_rate_by_count", "metric:refund_customer_rate"]
+      },
+      "output": {
+        "answerType": "CLARIFICATION",
+        "message": "退款率有多个口径。请确认按金额、按笔数、按客户，或仅统计全额退款。"
+      }
+    }
+  ]
+}
+```

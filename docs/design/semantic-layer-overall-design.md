@@ -1338,6 +1338,8 @@ Validator 是最后一道防线。它负责拒绝：
 | SQL Validator | SQL draft、catalog、join evidence、metric reviewStatus | validation `PASSED` 或 `PASSED_WITH_WARNINGS`；校验表字段存在、join 有 evidence、metric 口径可用于 draft。 |
 | Answer Composer | validation result、SQL draft、AnswerPlan evidence | 返回候选表、字段、join path、SQL draft 和解释；如果 metric 未 BUSINESS_APPROVED，则附 warning。 |
 
+逐模块中间结果明细见 [示例附录 13.1](semantic-layer-examples.md#131-可直接回答客户最近-30-天支付金额)。
+
 候选表：
 
 - `customers`
@@ -1399,6 +1401,8 @@ ORDER BY paid_amount_30d DESC;
 | SQL Validator | 无 SQL draft；clarification_required plan | 不做 SQL 结构校验；返回 `NOT_RUN`，原因是业务口径不明确。 |
 | Answer Composer | ambiguity set、候选 evidence | 输出反问问题和可选口径列表。 |
 
+逐模块中间结果明细见 [示例附录 13.2](semantic-layer-examples.md#132-需要反问活跃客户)。
+
 候选口径：
 
 - `customers.status = 'ACTIVE'`
@@ -1434,6 +1438,8 @@ ORDER BY paid_amount_30d DESC;
 | SQL Draft Generator | 表字段计划，没有正式 metric expression | 不生成完整 SQL；可生成字段探索 draft 或返回 `skipped: metric_definition_required`。 |
 | SQL Validator | 字段探索 draft 或无 SQL draft | 校验候选表字段存在；如果无 SQL draft，则返回 `NOT_RUN` 并说明缺少库存风险口径。 |
 | Answer Composer | 表字段计划、缺失项、候选 evidence | 返回 "可以用哪些表字段回答"，并反问库存风险口径。 |
+
+逐模块中间结果明细见 [示例附录 13.3](semantic-layer-examples.md#133-只能回答表字段计划库存风险)。
 
 候选表：
 
@@ -1482,6 +1488,8 @@ supplier_inventory_logs.sku_code -> products.sku_code
 | SQL Draft Generator | metric ambiguity set | 不生成最终 SQL；可为每个候选 metric 生成草稿片段，但默认返回 `skipped: metric_ambiguous`。 |
 | SQL Validator | 候选 SQL fragment 或无 SQL draft | 对候选片段只做 draft-level 检查；未 BUSINESS_APPROVED 的 metric 产生 warning。 |
 | Answer Composer | metric ambiguity set、warning、clarification question | 输出反问："按金额还是按笔数？是否包含部分退款？"。 |
+
+逐模块中间结果明细见 [示例附录 13.4](semantic-layer-examples.md#134-需要反问退款率口径冲突)。
 
 候选口径：
 
