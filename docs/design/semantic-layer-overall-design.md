@@ -2,7 +2,7 @@
 
 ## 1. 背景与目标
 
-当前 relation-detector 已经能够从 metadata、DDL、SQL 日志、对象定义和 correctness fixture 中识别数据库表关系，并输出一定的数据来源关系。它解决的是"数据库里真实存在什么结构证据"的问题，例如：
+当前 relation-detector 已经能够从 metadata、DDL、SQL 日志和对象定义中识别数据库表关系，并输出一定的数据来源关系。它解决的是"数据库里真实存在什么结构证据"的问题，例如：
 
 - 哪些表和字段存在。
 - 哪些字段可能构成 FK-like relationship。
