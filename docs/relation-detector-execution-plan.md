@@ -6,6 +6,8 @@
 
 v1 优先完整支持 MySQL 和 PostgreSQL。系统架构必须保留数据库 adaptor 扩展接口，后续可以持续新增 SQL Server、Oracle 等数据库适配器。
 
+本工具同时是后续语义层系统的事实采集与证据生成子系统。更上层的 Evidence-Grounded Semantic Layer 负责把 relationship、Data Lineage、metadata、SQL source 和注释组织成可审核的业务语义对象，用于自然语言问答、SQL draft 生成和指标候选审核。整体设计见 [Evidence-Grounded Semantic Layer 整体设计](design/semantic-layer-overall-design.md)。该语义层不替代 relation-detector 的事实判断；LLM 只能基于 evidence 做语义解释、同义词扩展和问题规划，不能创造数据库事实。
+
 工具需要综合分析以下数据来源：
 
 - 数据库元数据：主键、外键、唯一约束、索引、列定义。
@@ -39,6 +41,8 @@ orders -> users
   - JUnit 5。
   - correctness fixture golden、CLI E2E golden、full-grammer parity、confidence/merger/lineage/DDL 语义单测。
   - AssertJ / Testcontainers 是后续增强方向，用于更强断言和真实数据库集成测试。
+
+上层语义层建议使用 PostgreSQL + JSONB + pgvector 保存 SemanticTable、SemanticColumn、SemanticEntity、SemanticMetric、SemanticJoinPath、EvidenceRef、Lexicon、Embedding 和 QuestionTrace。第一版可以先使用 JSON 文件落地 semantic catalog，再逐步迁移到数据库存储。
 
 Java SPI 是 Java 标准库自带的插件发现机制。核心模块只定义接口，例如 `DatabaseAdaptor`；MySQL、PostgreSQL、未来的 Oracle/SQL Server adaptor 各自实现接口，并在 jar 包的 `META-INF/services/...` 文件里声明实现类。CLI 启动时通过 `ServiceLoader` 自动发现 adaptor。这样新增数据库时可以增加一个 adaptor jar，而不必修改 core 代码。
 
@@ -97,6 +101,19 @@ relation-detector/
   - 样例 DDL。
   - 样例 SQL 日志。
   - 集成测试数据。
+
+## 3.1 与语义层的边界
+
+relation-detector 输出事实，语义层消费事实。两者边界如下：
+
+| 层级 | 负责内容 | 不负责内容 |
+| --- | --- | --- |
+| relation-detector | metadata、DDL、SQL/object 解析、relationship、Data Lineage、confidence、evidence、warning | 业务实体命名、同义词扩展、指标口径审核、自然语言问答 |
+| Semantic Evidence Builder | 把 relationship / lineage / metadata / SQL source / comment 组织成 evidence graph | 发明新的物理关系或字段 |
+| LLM Semantic Enricher | 生成语义描述、实体候选、指标候选、同义词候选、join path 解释 | 直接创造数据库事实或把未审核指标当成正式口径 |
+| Query Planner / SQL Draft | 基于 semantic catalog 选择表字段、join path、指标并生成 SQL draft | 绕过 SQL Validator 执行 SQL |
+
+这个边界保证系统可以回答“应该用哪些表字段以及为什么”，并在证据不足时反问，而不是直接让大模型猜数据库结构。
 
 ## 4. 核心领域模型
 
