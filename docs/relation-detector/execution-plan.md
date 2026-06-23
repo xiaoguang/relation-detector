@@ -6,7 +6,7 @@
 
 v1 优先完整支持 MySQL 和 PostgreSQL。系统架构必须保留数据库 adaptor 扩展接口，后续可以持续新增 SQL Server、Oracle 等数据库适配器。
 
-本工具同时是后续语义层系统的事实采集与证据生成子系统。更上层的 Evidence-Grounded Semantic Layer 负责把 relationship、Data Lineage、metadata、SQL source 和注释组织成可审核的业务语义对象，用于自然语言问答、SQL draft 生成和指标候选审核。整体设计见 [Evidence-Grounded Semantic Layer 整体设计](../design/semantic-layer-overall-design.md)。该语义层不替代 relation-detector 的事实判断；LLM 只能基于 evidence 做语义解释、同义词扩展和问题规划，不能创造数据库事实。 当前语义层仍是总体设计；v1 优先落 evidence catalog、semantic search、question plan 和 SQL draft validation outline，不替代 relation-detector 的事实判断，也不自动执行 SQL。
+本工具同时是后续语义层系统的事实采集与证据生成子系统。更上层的 Evidence-Grounded Semantic Layer 负责把 relationship、Data Lineage、metadata、SQL source 和注释组织成可审核的业务语义对象，用于自然语言问答、SQL draft 生成和指标候选审核。整体设计见 [Evidence-Grounded Semantic Layer 整体设计](../design/semantic-layer-overall-design.md)。当前语义层仍是总体设计；v1 优先落 evidence catalog、semantic search、question plan 和 SQL draft validation outline，不替代 relation-detector 的事实判断，也不自动执行 SQL。LLM 只能基于 evidence 做语义解释、同义词扩展和问题规划，不能创造数据库事实。
 
 工具需要综合分析以下数据来源：
 

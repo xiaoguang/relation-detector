@@ -130,12 +130,12 @@ sequenceDiagram
     LM-->>SS: [metric:customer_total_paid_amount, ...]
     LM->>RQ: getConflicts() → 同义词冲突
     RQ-->>LM: resolveConflict("会员", "entity:MembershipAccount")
-    LM->>LM: 更新词条 reviewStatus = ACCEPTED
+    LM->>LM: 更新词条为人工审核通过状态
 ```
 
 ## 6. 精确输入输出 Schema
 
-```json
+```pseudo-json
 // 输入: 自动提取
 // MetadataIndex 中的表名和列名 → 拆分规则 → LexiconEntry 列表
 

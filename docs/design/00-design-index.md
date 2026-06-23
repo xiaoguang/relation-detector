@@ -4,11 +4,14 @@
 
 ## 总体设计
 
+- [Evidence-Grounded Semantic Layer 整体设计](semantic-layer-overall-design.md)
+- [Evidence-Grounded Semantic Layer 示例附录](semantic-layer-examples.md)
+
+## relation-detector 实施与验收入口
+
 - [代码实现说明与运维测试指南](../relation-detector/code-implementation-guide.md)
 - [测试资产地图与 Parser 验收矩阵](../relation-detector/test-assets-map.md)
 - [relation-detector 执行计划](../relation-detector/execution-plan.md)
-- [Evidence-Grounded Semantic Layer 整体设计](semantic-layer-overall-design.md)
-- [Evidence-Grounded Semantic Layer 示例附录](semantic-layer-examples.md)
 
 ## relation-detector 子模块设计
 

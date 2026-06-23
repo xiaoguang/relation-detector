@@ -77,7 +77,7 @@ public interface SemanticEvidenceBuilder {
 
 ### 3.2 精确输入 Schema（来自 ScanBundle）
 
-```json
+```pseudo-json
 {
   "relationships": [
     {
@@ -104,7 +104,7 @@ public interface SemanticEvidenceBuilder {
 
 ### 3.3 精确输出 Schema（EvidenceGraph）
 
-```json
+```pseudo-json
 {
   "fieldEvidences": {
     "orders.customer_id": {
@@ -250,7 +250,7 @@ public interface SemanticEvidenceBuilder {
 
 ### 3.4 紧凑版输出 Schema（CompactEvidenceBundle）
 
-```json
+```pseudo-json
 {
   "fields": [
     {
@@ -520,7 +520,7 @@ String inferBusinessRole(FieldEvidence field) {
 
 **推断结果写入 FieldEvidence.attributes：**
 
-```json
+```pseudo-json
 {
   "physicalRef": "orders.customer_id",
   "attributes": {
@@ -719,7 +719,7 @@ List<CandidateConflict> preFilterConflicts(Map<String, FieldEvidence> fieldEvide
 
 **CompactEvidenceBundle 中传递候选冲突：**
 
-```json
+```pseudo-json
 {
   "fields": [...],
   "expressions": [...],

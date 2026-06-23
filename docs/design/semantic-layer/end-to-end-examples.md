@@ -191,7 +191,7 @@ CompactEvidenceBundle:
 验收检查点:
 [✓] 所有对象有 evidenceRefs
 [✓] 所有指标 reviewStatus = SUGGESTED
-[✓] 所有表/列 reviewStatus = ACCEPTED
+[✓] 所有表/列 reviewStatus = EVIDENCE_SUPPORTED 或 SUGGESTED；不由 LLM 直接写入 ACCEPTED
 [✓] 物理名全部在 evidence 中存在
 ```
 
@@ -458,7 +458,7 @@ sequenceDiagram
     LM->>SS: entity:Customer (score 1.0)
     SS->>SS: search("支付金额", METRIC) + embedding 召回
     SS->>QP: 消歧结果（entity:Customer, metric:customer_total_paid_amount）
-    QP->>QP: join path 选择 (Prim MST)
+    QP->>QP: evidence graph search + grain/role constraints
     QP->>QP: 完整性检查
     QP->>SG: AnswerPlan (answerable=true)
     SG->>SG: 模板生成 SQL（不使用 LLM）

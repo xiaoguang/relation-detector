@@ -535,7 +535,7 @@ Step 7: Answer（最终输出）
 
 1. ScanResultReader → ScanBundle（87 个列的 metadata，24 条关系的索引）
 2. SemanticEvidenceBuilder → EvidenceGraph（87 个 field evidence，8 个 expression evidence，50+ 条 join path）
-3. LLMEnricher → EnrichmentResult（15 个 SemanticTable，87 个 SemanticColumn，8 个 SemanticEntity，8 个 SemanticMetric，24 个 SemanticJoinPath，8 个 ReviewItem）
+3. LLMEnricher → EnrichmentResult（15 个 SemanticTable，87 个 SemanticColumn，8 个 SemanticEntity，8 个 SemanticMetric，24 个 join path explanations，8 个 ReviewItem）
 4. CatalogStore → semantic-catalog/ 目录（7 个 JSON/JSONL 文件）
 5. EmbeddingIndexer → 150+ 条 embedding 记录
 6. LexiconManager → 200+ 条 lexicon 记录
@@ -543,7 +543,7 @@ Step 7: Answer（最终输出）
 **验收标准：**
 - 所有语义对象有 evidenceRefs
 - 所有指标 reviewStatus = SUGGESTED
-- 所有表/列 reviewStatus = ACCEPTED
+- 所有表/列 reviewStatus = EVIDENCE_SUPPORTED 或 SUGGESTED；只有 Review Queue / governance workflow 可以写入 ACCEPTED
 - 冲突字段进入 Review Queue
 - Embedding 记录数与语义对象数一致
 - Lexicon 覆盖所有表和列名

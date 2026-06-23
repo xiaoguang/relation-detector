@@ -2,165 +2,91 @@
 
 ## 1. 目标与定位
 
-**职责：** 语义对象的持久化存储，支持 CRUD、版本化、增量更新和查询。v1 使用 JSON 文件存储，v2 迁移到 PostgreSQL + JSONB + pgvector。
+**职责：** 持久化 semantic object、evidence ref、semantic graph edge、review decision 和 build run，使语义层的每个结论都能追溯到 relation-detector scan result 与审核记录。
 
-**LLM 依赖：** 否。纯存储层，所有操作是确定性 CRUD。不需要 AI。
+**存储分层：**
 
-**为什么不需要 LLM：** 存储层的职责是可靠地保存和检索数据，LLM 会引入不确定性（如错误的合并、不一致的序列化）。
+- Prototype / dev：可以使用 JSON 文件，便于调试和版本化。
+- Production-ready v1 profile：推荐 PostgreSQL + JSONB + pgvector，支持并发、增量查询、审核审计和向量检索。
+- Future：按服务边界拆分或引入消息队列，但不是第一版要求。
+
+Catalog Store 不调用 LLM，也不做语义判断。
 
 ## 2. 上游与下游
 
-```
-上游: LLM Semantic Enricher
-  ↓ 输入: EnrichmentResult {tables, columns, entities, metrics, joinPaths}
-  
-上游: Review Queue
-  ↓ 输入: ReviewDecision (更新审核状态)
-  
-[Semantic Catalog Store]
-  ↓ 持久化: semantic-catalog/ 目录
-
-下游: 所有需要查询语义对象的模块
-  - Semantic Search: listByType, search
-  - Query Planner: getById, findByPhysicalTable, findByEntity
-  - SQL Draft Generator: getById (表/列/指标)
-  - SQL Validator: getById (表/列存在性校验)
-  - Embedding Indexer: getFullCatalog
-  - Lexicon Manager: getFullCatalog
+```text
+LLM Semantic Enricher
+Review Queue
+Semantic Evidence Builder
+  -> Semantic Catalog Store
+  -> Semantic Search / Query Planner / SQL Validator / Embedding Indexer / Lexicon Manager
 ```
 
-## 3. 接口契约
+## 3. 核心数据集
+
+| 数据集 | 作用 |
+| --- | --- |
+| `semantic_build_run` | 记录每次 build 的 scanRunId、detectorVersion、parserMode、grammarProfile、sourceHash、状态和时间。 |
+| `semantic_object` | 保存 table、column、entity、metric、join path explanation 等语义对象。 |
+| `semantic_evidence_ref` | 保存 object 到 relation-detector evidence 的可审计引用和 payload snapshot。 |
+| `semantic_object_edge` | 保存对象间图关系，例如 entity-column、metric-source-column、metric-default-join-path。 |
+| `semantic_review_decision` | 保存人工或治理流程产生的审核决策。 |
+| `semantic_lexicon` | 保存业务词、同义词和对象映射。 |
+| `semantic_embedding` | 保存对象 embedding 和模型版本。 |
+| `semantic_question_trace` | 保存问题、候选、plan、validator 结果和用户反馈，用于调参。 |
+
+JSON prototype 可用同名 JSON/JSONL 文件表达这些数据集，不应只保留一个宽泛 `semantic-objects.json`。
+
+## 4. 接口契约
 
 ```java
 public interface SemanticCatalogStore {
-    // === 写入 ===
-    
-    /**
-     * 全量保存 catalog。覆盖已有数据。
-     * 后置条件：所有对象持久化，metadata 更新。
-     */
-    void saveFull(SemanticCatalog catalog);
+    BuildRunId startBuild(SemanticBuildRun run);
+    void finishBuild(BuildRunId runId, BuildStatus status);
 
-    /**
-     * 增量更新。合并规则：
-     * - 新对象（ID 不存在）→ 直接插入
-     * - 已有对象（ID 存在）→ 合并 evidenceRefs，更新 confidence
-     * - 已有对象的 reviewStatus 为 ACCEPTED/REJECTED → 保留审核状态
-     * - 旧对象（本次 delta 中不存在）→ 标记 deprecated，不删除
-     */
-    void saveIncremental(SemanticCatalog delta, String scanResultRef);
+    void saveObjects(BuildRunId runId, List<SemanticObject> objects);
+    void saveEvidenceRefs(BuildRunId runId, List<EvidenceRef> evidenceRefs);
+    void saveObjectEdges(BuildRunId runId, List<SemanticObjectEdge> edges);
+    void applyReviewDecision(ReviewDecision decision);
 
-    // === 读取 ===
-    
-    /**
-     * 按 ID 精确获取。O(1) 查找。
-     */
     Optional<SemanticObject> getById(String objectId);
-
-    /**
-     * 按类型获取所有对象。
-     */
-    <T extends SemanticObject> List<T> listByType(ObjectType type);
-
-    /**
-     * 按物理表名查找所有相关对象（表本身、列、关联实体、指标）。
-     */
-    List<SemanticObject> findByPhysicalTable(String tableName);
-
-    /**
-     * 按实体查找所有相关对象（列、指标、join path）。
-     */
-    List<SemanticObject> findByEntity(String entityId);
-
-    /**
-     * 获取完整 catalog。
-     */
-    SemanticCatalog getFullCatalog();
-
-    // === 删除 ===
-    void delete(String objectId);
-    void deleteByType(ObjectType type);
-
-    // === 查询 ===
-    List<SemanticObject> search(String keyword);
-    CatalogMetadata getMetadata();
+    List<SemanticObject> listByType(ObjectType type, int limit, int offset);
+    List<SemanticObjectEdge> edgesOf(String objectId);
+    List<EvidenceRef> evidenceOf(String objectId);
+    SemanticCatalogSnapshot snapshot(String buildRunId);
 }
 ```
 
-## 4. 存储流程图
+## 5. 增量更新规则
+
+- 新对象直接插入，初始状态由上游提供，通常是 `SUGGESTED` 或 `EVIDENCE_SUPPORTED`。
+- 已存在对象合并 evidenceRefs，并更新 confidence / payload snapshot。
+- 已有 `ACCEPTED` 或 `REJECTED` 状态不能被 LLM 输出覆盖，只能由新的 review decision 改变。
+- 本次 scan 未出现的对象标记为 `DEPRECATED` 或降低可见性，不直接物理删除。
+- 每次变更都保留 `scanRunId`、`sourceHash` 和 `detectorVersion`。
+
+## 6. 流程图
 
 ```mermaid
 flowchart TD
-    A[输入: EnrichmentResult] --> B{写入模式?}
-    B -- full --> C[全量覆盖]
-    B -- incremental --> D[增量合并]
-    C --> E[序列化所有对象为 JSON]
-    E --> F[写入 semantic-objects.json]
-    F --> G[更新 catalog-metadata.json]
-    D --> H[加载已有 catalog]
-    H --> I[对比新旧对象]
-    I --> J{对象 ID}
-    J -- 新 ID --> K[直接插入]
-    J -- 已有 ID --> L[合并 evidenceRefs]
-    L --> M{已有审核状态?}
-    M -- ACCEPTED/REJECTED --> N[保留审核状态]
-    M -- SUGGESTED --> O[更新 confidence]
-    J -- 旧 ID 不在新数据中 --> P[标记 deprecated]
-    K --> Q[序列化 + 写入]
-    N --> Q
-    O --> Q
-    P --> Q
-    Q --> R[归档旧版本]
-    R --> S[更新 catalog-metadata.json]
+  A["Semantic build run"] --> B["Save semantic objects"]
+  B --> C["Save evidence refs"]
+  C --> D["Save object edges"]
+  D --> E["Preserve review decisions"]
+  E --> F["Update lexicon / embedding inputs"]
+  F --> G["Finish build run"]
 ```
 
-## 5. 交互时序图
+## 7. LLM 决策
 
-```mermaid
-sequenceDiagram
-    participant LLM as LLM Enricher
-    participant CS as CatalogStore
-    participant FS as 文件系统
-    participant EI as EmbeddingIndexer
-    participant LM as LexiconManager
+不使用 LLM。Catalog Store 是确定性持久化和查询层。
 
-    LLM->>CS: saveFull(EnrichmentResult)
-    CS->>CS: 序列化语义对象
-    CS->>FS: 写入 semantic-objects.json
-    CS->>FS: 写入 semantic-evidence-refs.json
-    CS->>FS: 写入 catalog-metadata.json
-    CS->>FS: 归档旧版本到 archive/
-    CS-->>LLM: 保存成功
-    EI->>CS: getFullCatalog()
-    CS-->>EI: SemanticCatalog
-    LM->>CS: getFullCatalog()
-    CS-->>LM: SemanticCatalog
-```
+## 8. 测试验收
 
-## 6. 精确输入输出 Schema
-
-见原设计文档中的完整 JSON schema。此处补充关键约束：
-
-| 字段 | 约束 |
+| 场景 | 预期 |
 | --- | --- |
-| `id` | 全局唯一，格式: `{type}:{name}` |
-| `reviewStatus` | 枚举: ACCEPTED/SUGGESTED/REJECTED/NEEDS_MORE_EVIDENCE |
-| `confidence` | [0.0, 1.0] |
-| `evidenceRefs` | 至少 1 条，可为空数组表示未审核 |
-| `createdAt/updatedAt` | ISO 8601 |
-| `version` | 单调递增整数 |
-
-## 5. LLM 决策
-
-**不使用 LLM。** 纯 CRUD + 文件 I/O，确定性操作。
-
-## 6. 测试验收
-
-| 测试场景 | 预期 |
-| --- | --- |
-| 全量保存后读取 | 读取结果与保存一致 |
-| 增量更新：新对象 | 新对象插入，已有对象不变 |
-| 增量更新：审核状态保留 | ACCEPTED 对象更新后仍为 ACCEPTED |
-| 按 ID 查询不存在 | 返回 Optional.empty() |
-| 按物理表名查询 | 返回表、列、关联实体 |
-| 归档旧版本 | 旧 catalog 移动到 archive/ |
+| 全量 build | 生成 build run、objects、evidence refs、edges |
+| 增量 build | 保留审核状态，合并新 evidence |
+| `ACCEPTED` 对象被 LLM delta 覆盖 | 状态保持 `ACCEPTED` |
+| evidence 查询 | 可回到 scanRunId/sourceHash/payloadSnapshot |
+| JSON prototype | 文件结构和 production-ready 数据集一一对应 |

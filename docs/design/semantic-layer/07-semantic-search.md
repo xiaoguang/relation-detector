@@ -2,35 +2,19 @@
 
 ## 1. 目标与定位
 
-**职责：** 结合 lexicon 精确匹配和 embedding 语义召回，从自然语言查询中找到最相关的语义对象。
+**职责：** 结合 lexicon 精确匹配、embedding 语义召回和 evidence-based rerank，从自然语言查询中找到最相关的语义对象。
 
-**LLM 依赖：** 否。纯数学计算。cosine similarity + 加权求和是确定性公式。
-
-**为什么不需要 LLM：**
-- 两阶段搜索（lexicon + embedding）已覆盖精确匹配和语义召回
-- 评分公式是加权求和，确定性计算
-- 排序是纯数学操作
-- LLM 可能把不存在的对象排到前面，破坏 evidence-based 原则
-- 如果搜索结果不好，问题在 embedding 质量或 lexicon 覆盖，不是缺少 LLM
+**LLM 依赖：** 否。搜索阶段不让 LLM 重排事实对象，避免把不存在或无 evidence 的对象排到前面。LLM query rewrite 属于 `Question Understanding`，其输出仍要进入本模块的确定性检索和 rerank。
 
 ## 2. 上游与下游
 
-```
-上游: Lexicon Manager
-  ↓ 输入: lookup(term) → 精确匹配结果
-  ↓ 输入: search(term) → 模糊匹配结果
-
-上游: Embedding Indexer
-  ↓ 输入: 所有 embedding 向量
-
-上游: Semantic Catalog Store
-  ↓ 输入: 对象详情（用于 Rerank 阶段获取 confidence、reviewStatus）
-
-[Semantic Search]
-  ↓ 输出: SearchResult {hits: [SearchHit]}
-
-下游: Query Planner
-  消费: SearchResult.hits → 候选实体、指标、字段
+```text
+Lexicon Manager
+Embedding Indexer
+Semantic Catalog Store
+  -> Semantic Search
+  -> SearchResult
+  -> Query Planner
 ```
 
 ## 3. 接口契约
@@ -39,116 +23,59 @@
 public interface SemanticSearch {
     SearchResult search(SearchQuery query);
     List<SearchHit> searchByType(String query, ObjectType type, int maxResults);
-    List<SearchHit> searchByTable(String tableName, String query, int maxResults);
     List<SearchHit> searchMetricsForEntity(String entityId, String query, int maxResults);
     List<String> suggest(String prefix, int maxResults);
 }
 ```
 
-## 4. 搜索流程图
+## 4. 搜索流程
 
 ```mermaid
 flowchart TD
-    A[输入 SearchQuery] --> B[查询预处理: 分词 + 归一化]
-    B --> C[Lexicon 精确匹配]
-    C --> D[每个词 → LexiconManager.lookup]
-    D --> E[每个词 → LexiconManager.search 模糊匹配]
-    E --> F[Embedding 语义召回]
-    F --> G[查询文本 → Embedding API → 查询向量]
-    G --> H[查询向量 vs 所有索引向量 → cosine similarity]
-    H --> I[取 top 50]
-    I --> J[候选合并: lexicon ∪ embedding]
-    J --> K[去重: 同 objectId 保留 lexicon 命中]
-    K --> L[按 filterTypes 过滤]
-    L --> M[Evidence Rerank]
-    M --> N[计算综合得分]
-    N --> O[按 score 降序排序]
-    O --> P{score >= minScore?}
-    P -- 否 --> Q[过滤掉]
-    P -- 是 --> R[取 top maxResults]
-    R --> S[输出 SearchResult]
+  A["SearchQuery"] --> B["Normalize terms"]
+  B --> C["Lexicon exact / synonym lookup"]
+  B --> D["Embedding recall"]
+  C --> E["Merge candidates"]
+  D --> E
+  E --> F["Load object confidence / reviewStatus / evidence"]
+  F --> G["Configurable evidence rerank"]
+  G --> H["Filter rejected and below threshold"]
+  H --> I["SearchResult"]
 ```
 
-## 5. 交互时序图
+## 5. Rerank 口径
 
-```mermaid
-sequenceDiagram
-    participant QP as QueryPlanner
-    participant SS as SemanticSearch
-    participant LM as LexiconManager
-    participant EI as EmbeddingIndexer
-    participant API as Embedding API
-    participant CS as CatalogStore
+搜索评分是 **可配置初始 heuristic**，不是已经校准的固定公式。第一版可以从以下信号开始：
 
-    QP->>SS: search(query="客户消费金额")
-    SS->>SS: 分词: ["客户", "消费", "金额"]
-    par Lexicon 精确匹配
-        SS->>LM: lookup("客户")
-        LM-->>SS: entity:Customer (score 1.0)
-        SS->>LM: lookup("消费")
-        LM-->>SS: metric:customer_total_paid_amount
-        SS->>LM: lookup("金额")
-        LM-->>SS: column:payments.amount
-    par Embedding 语义召回
-        SS->>API: embedSingle("客户消费金额")
-        API-->>SS: query_vector[1536]
-        SS->>EI: 获取所有 embedding
-        EI-->>SS: 所有 object vectors
-        SS->>SS: cosine_similarity(query, each) → top 50
-    end
-    SS->>SS: 候选合并 + 去重
-    SS->>CS: 获取候选对象详情（confidence, reviewStatus）
-    CS-->>SS: 对象详情
-    SS->>SS: Evidence Rerank（加权评分）
-    SS->>SS: 排序 + 过滤 + 截断
-    SS-->>QP: SearchResult
-```
+- lexicon exact / synonym match。
+- embedding similarity。
+- semantic object confidence。
+- review status：`ACCEPTED` > `EVIDENCE_SUPPORTED` > `SUGGESTED`。
+- relationship path confidence。
+- lineage support。
+- recent successful question trace。
 
-## 6. 搜索流程与评分公式
+权重必须配置化，并通过以下反馈迭代：
 
-```
-Step 1: Lexicon 精确匹配
-  query "客户消费金额" → 分词 ["客户", "消费", "金额"]
-  lookup("客户") → [{objectId: "entity:Customer", score: 1.0}]
-  lookup("消费") → [{objectId: "metric:customer_total_paid_amount", score: 1.0}]
-  lookup("金额") → [{objectId: "column:payments.amount", score: 1.0}]
+- question trace 中用户选择的对象。
+- Review Queue 的人工决策。
+- 离线 benchmark question set。
+- SQL Validator 成功/失败结果。
 
-Step 2: Embedding 语义召回
-  queryEmbedding = embeddingClient.embedSingle("客户消费金额")
-  for each objectEmbedding in index:
-    similarity = cosineSimilarity(queryEmbedding, objectEmbedding)
-  topK = top 50 by similarity
+文档和实现不应硬编码某一组长期权重。示例权重只能作为默认配置，不是语义正确性的证明。
 
-Step 3: 候选合并
-  candidates = lexiconHits ∪ embeddingHits
-  去重: 同 objectId 保留 lexicon 命中（精确匹配优先）
+## 6. LLM 决策
 
-Step 4: Evidence Rerank
-  for each candidate:
-    score = embedding_similarity * 0.35
-          + semantic_confidence * 0.25
-          + relationship_path_confidence * 0.20
-          + lineage_support * 0.10
-          + reviewed_status_bonus * 0.10
+本模块不使用 LLM。LLM 可以在上游生成 query rewrite，但最终命中对象必须来自 catalog / lexicon / embedding index，并保留 evidence。
 
-Step 5: 排序返回
-  sort by score DESC
-  filter score < minScore
-  limit maxResults
-```
+## 7. 测试验收
 
-## 5. LLM 决策
-
-**不使用 LLM。** 纯数学计算。cosine similarity + 加权求和。如果用 LLM 做排序，会破坏评分可解释性，且 LLM 可能把不存在的对象排到前面。
-
-## 6. 测试验收
-
-| 测试场景 | 输入 | 预期 |
-| --- | --- | --- |
-| 精确术语搜索 | "客户" | entity:Customer 排第一 |
-| 同义词搜索 | "买家" | entity:Customer（通过 lexicon） |
-| 语义搜索 | "买东西最多的人" | entity:Customer + metric:customer_total_paid_amount |
-| ACCEPTED 优先 | 同分 ACCEPTED vs SUGGESTED | ACCEPTED 排前面 |
-| REJECTED 排除 | REJECTED 对象 | score < 0，不在结果中 |
-| embedding API 失败 | API 不可用 | 退化为 lexicon only |
-| 无结果 | 完全无关的查询 | 返回空列表 |
+| 场景 | 预期 |
+| --- | --- |
+| 精确术语搜索 | lexicon 命中优先 |
+| 同义词搜索 | 通过 lexicon synonym 命中 |
+| 语义搜索 | embedding 召回候选，但仍经 evidence rerank |
+| `ACCEPTED` 和 `SUGGESTED` 同分 | `ACCEPTED` 优先 |
+| `REJECTED` 对象 | 不参与默认结果 |
+| embedding API 失败 | 降级为 lexicon-only |
+| 无 evidence candidate | 不进入默认结果，或作为低置信度候选返回 |

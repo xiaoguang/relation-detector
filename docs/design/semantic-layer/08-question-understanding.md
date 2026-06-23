@@ -154,7 +154,7 @@ sequenceDiagram
 
 ### 4.3 输出：QuestionIntent
 
-```json
+```pseudo-json
 {
   "originalQuestion": "每个客户最近30天的支付金额是多少？",
   "normalizedQuestion": "每个客户最近30天的支付金额是多少？",
@@ -211,7 +211,7 @@ sequenceDiagram
 
 ### 4.4 歧义场景输出
 
-```json
+```pseudo-json
 // 输入: "找出活跃客户"
 {
   "originalQuestion": "找出活跃客户",

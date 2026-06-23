@@ -63,7 +63,7 @@ public interface ScanResultReader {
 
 ### 3.2 精确输入 Schema
 
-```json
+```pseudo-json
 {
   "database": {
     "type": "mysql",           // 必填，枚举: mysql|postgresql
@@ -110,7 +110,7 @@ public interface ScanResultReader {
 
 ### 3.3 精确输出 Schema（ScanBundle）
 
-```json
+```pseudo-json
 {
   "database": {"type": "mysql", "schema": "shop", "catalog": null, "version": null},
   "generatedAt": "2026-06-23T00:00:00Z",
