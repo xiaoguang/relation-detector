@@ -4,8 +4,9 @@
 
 ## 总体设计
 
-- [代码实现说明与运维测试指南](../code-implementation-guide.md)
-- [测试资产地图与 Parser 验收矩阵](../test-assets-map.md)
+- [代码实现说明与运维测试指南](../relation-detector/code-implementation-guide.md)
+- [测试资产地图与 Parser 验收矩阵](../relation-detector/test-assets-map.md)
+- [relation-detector 执行计划](../relation-detector/execution-plan.md)
 - [Evidence-Grounded Semantic Layer 整体设计](semantic-layer-overall-design.md)
 - [Evidence-Grounded Semantic Layer 示例附录](semantic-layer-examples.md)
 
@@ -23,6 +24,32 @@
 - [Phase 8：输出和用户体验](relation-detector/phase-08-output-ux.md)
 - [ENUM 详细说明](relation-detector/enum-reference.md)
 - [设计一致性检查报告](relation-detector/design-validation-report.md)
+
+## Semantic Layer 子系统设计
+
+- [Semantic Layer 子系统设计索引](semantic-layer/README.md)
+
+### 离线构建链路
+
+- [01 - Scan Result Reader](semantic-layer/01-scan-result-reader.md)
+- [02 - Semantic Evidence Builder](semantic-layer/02-semantic-evidence-builder.md)
+- [03 - LLM Semantic Enricher](semantic-layer/03-llm-semantic-enricher.md)
+- [04 - Semantic Catalog Store](semantic-layer/04-semantic-catalog-store.md)
+- [05 - Lexicon Manager](semantic-layer/05-lexicon-manager.md)
+- [06 - Embedding Indexer](semantic-layer/06-embedding-indexer.md)
+
+### 在线问答链路
+
+- [07 - Semantic Search](semantic-layer/07-semantic-search.md)
+- [08 - Question Understanding](semantic-layer/08-question-understanding.md)
+- [09 - Query Planner](semantic-layer/09-query-planner.md)
+- [10 - SQL Draft Generator](semantic-layer/10-sql-draft-generator.md)
+- [11 - SQL Validator](semantic-layer/11-sql-validator.md)
+- [12 - Answer Composer](semantic-layer/12-answer-composer.md)
+
+### 治理
+
+- [13 - Review Queue](semantic-layer/13-review-queue.md)
 
 ## 全局约束
 

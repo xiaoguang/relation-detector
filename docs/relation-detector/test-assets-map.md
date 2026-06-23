@@ -2,11 +2,11 @@
 
 本文档是后续判断 SQL/DDL token-event parser 正确性的入口。结论不靠记忆，而看这里列出的测试资产、fixture golden、warning 保护和方言边界矩阵。
 
-逐条 fixture 明细由代码生成，见 [Correctness Test Summary](generated/correctness-test-summary.md)。该报告是轻量索引：展示每个 SQL/DDL 的 preview、input 文件路径、expected relationship/data-lineage fingerprints、warning codes 和 forbidden tables；完整 SQL/DDL 以 fixture 的 `input.sql` 或 `input.ddl.sql` 为准。
+逐条 fixture 明细由代码生成，见 [Correctness Test Summary](../generated/correctness-test-summary.md)。该报告是轻量索引：展示每个 SQL/DDL 的 preview、input 文件路径、expected relationship/data-lineage fingerprints、warning codes 和 forbidden tables；完整 SQL/DDL 以 fixture 的 `input.sql` 或 `input.ddl.sql` 为准。
 
-Data Lineage 的全量审核入口见 [Data Lineage Full Audit](parser-audit/data-lineage-full-audit.md)。它同样由 Java 测试工具从 fixture 和 `TokenEventDataLineageExtractor` 输出生成，不调用大模型；用于回答“哪些 SQL 已经有 lineage golden、哪些可建议加入、哪些需要人工审核、哪些不适用 v1 字段血缘”。
+Data Lineage 的全量审核入口见 [Data Lineage Full Audit](../parser-audit/data-lineage-full-audit.md)。它同样由 Java 测试工具从 fixture 和 `TokenEventDataLineageExtractor` 输出生成，不调用大模型；用于回答“哪些 SQL 已经有 lineage golden、哪些可建议加入、哪些需要人工审核、哪些不适用 v1 字段血缘”。
 
-full-grammer expression transform 的审核记录见 [full-grammer Expression Transform Compatibility Audit](parser-audit/full-grammer-expression-transform-compatibility-audit.md)。它记录 full-grammer shadow 严格表达式分析曾暴露出的 transform 差异，例如疑似过粗的 `AGGREGATE` 判断和 `CASE_WHEN` 的 value/control flow 差异；本轮已按人工审核结论固化到 lineage golden，shadow 测试不再保留 transform allowlist。
+full-grammer expression transform 的审核记录见 [full-grammer Expression Transform Compatibility Audit](../parser-audit/full-grammer-expression-transform-compatibility-audit.md)。它记录 full-grammer shadow 严格表达式分析曾暴露出的 transform 差异，例如疑似过粗的 `AGGREGATE` 判断和 `CASE_WHEN` 的 value/control flow 差异；本轮已按人工审核结论固化到 lineage golden，shadow 测试不再保留 transform allowlist。
 
 历史 parser 迁移对比报告保留在 `docs/parser-audit/archive`，只作为追溯资料；当前验收只看 correctness fixture 的 `expected-relations.json` / `expected-lineage.json` 和本文件列出的测试矩阵。
 
@@ -179,7 +179,7 @@ scripts/check-no-jls-bad-classes.sh
 
 ```bash
 rg -n "TokenEventV2|shadow runner|current ANTLR|SimpleSqlRelationParser|SimpleDdlParser|fullgrammar|full grammar|FullGrammar" \
-  contracts core cli adaptor-mysql adaptor-postgres docs/design docs/code-implementation-guide.md docs/test-assets-map.md
+  contracts core cli adaptor-mysql adaptor-postgres docs/design docs/relation-detector/code-implementation-guide.md docs/relation-detector/test-assets-map.md
 ```
 
 这类检查只辅助 code review，不作为 SQL/DDL correctness 验收入口。

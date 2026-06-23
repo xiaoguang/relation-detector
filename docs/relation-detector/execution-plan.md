@@ -6,7 +6,7 @@
 
 v1 优先完整支持 MySQL 和 PostgreSQL。系统架构必须保留数据库 adaptor 扩展接口，后续可以持续新增 SQL Server、Oracle 等数据库适配器。
 
-本工具同时是后续语义层系统的事实采集与证据生成子系统。更上层的 Evidence-Grounded Semantic Layer 负责把 relationship、Data Lineage、metadata、SQL source 和注释组织成可审核的业务语义对象，用于自然语言问答、SQL draft 生成和指标候选审核。整体设计见 [Evidence-Grounded Semantic Layer 整体设计](design/semantic-layer-overall-design.md)。该语义层不替代 relation-detector 的事实判断；LLM 只能基于 evidence 做语义解释、同义词扩展和问题规划，不能创造数据库事实。
+本工具同时是后续语义层系统的事实采集与证据生成子系统。更上层的 Evidence-Grounded Semantic Layer 负责把 relationship、Data Lineage、metadata、SQL source 和注释组织成可审核的业务语义对象，用于自然语言问答、SQL draft 生成和指标候选审核。整体设计见 [Evidence-Grounded Semantic Layer 整体设计](../design/semantic-layer-overall-design.md)。该语义层不替代 relation-detector 的事实判断；LLM 只能基于 evidence 做语义解释、同义词扩展和问题规划，不能创造数据库事实。 当前语义层仍是总体设计；v1 优先落 evidence catalog、semantic search、question plan 和 SQL draft validation outline，不替代 relation-detector 的事实判断，也不自动执行 SQL。
 
 工具需要综合分析以下数据来源：
 
@@ -566,7 +566,7 @@ PREPARE stmt FROM @sql;
 - `VALUE_OVERLAP_HIGH`: 0.20
 - `NEGATIVE_VALUE_MISMATCH`: -0.30
 
-详细解释见 [Phase 2：核心模型和评分详细设计](design/relation-detector/phase-02-core-model-scoring.md) 的“置信度计算”章节。该章节逐项说明了每个 EvidenceType 为什么取该分值，并给出 metadata、DDL、日志 JOIN、存储过程、`IN` 子查询、表共现和负向数据画像的完整 SQL 算例。
+详细解释见 [Phase 2：核心模型和评分详细设计](../design/relation-detector/phase-02-core-model-scoring.md) 的“置信度计算”章节。该章节逐项说明了每个 EvidenceType 为什么取该分值，并给出 metadata、DDL、日志 JOIN、存储过程、`IN` 子查询、表共现和负向数据画像的完整 SQL 算例。
 
 分数设计的核心原则：
 

@@ -38,7 +38,7 @@
 
 - `ScanEngine.safeParseStatement(...)` 当前会为 Data Lineage 调用 `parseStructured(...)`，再为 relationship 调用 `parse(...)`。这会让同一 SQL 结构化解析两次；这是性能优化点，不是本轮行为缺陷。
 - `CorrectnessFixtureRunnerTest` 为避免 warning 计数污染，lineage-only structural parse 使用 null context。这是测试实现细节，不影响正式 CLI / ScanEngine 链路。
-- 目录、命名、迁移过程检查已从默认测试入口移除。后续如需审查旧命名残留，按 `docs/test-assets-map.md` 中的可选 `rg` 命令手工执行。
+- 目录、命名、迁移过程检查已从默认测试入口移除。后续如需审查旧命名残留，按 `docs/relation-detector/test-assets-map.md` 中的可选 `rg` 命令手工执行。
 - `SqlGrammarProfileRegistry` 中的版本字符串解析会使用字符串/正则处理配置值；这不属于 SQL/DDL 结构解析。SQL/DDL relationship 和 lineage 不能依赖特殊表名/列名过滤。
 - MySQL 8.0 full-grammer 当前已有独立 `test-fixtures/correctness/mysql/v8_0` versioned golden。root MySQL correctness 仍是 token-event baseline；两者都必须保持独立，不能互相覆盖。
 

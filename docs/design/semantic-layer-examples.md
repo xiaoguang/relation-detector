@@ -4,17 +4,19 @@
 
 ## 1. 示例阅读约定
 
-每个示例统一包含：问题、候选表、候选字段、join path、指标口径、SQL draft、风险/审核点。SQL draft 只作为草稿，必须经过 SQL Validator。
+每个示例统一包含：问题、候选表、候选字段、join path、指标口径、SQL draft、风险/审核点。SQL draft 只作为目标行为示例或 semantic draft，不是当前 parser correctness golden，不是自动接受的指标定义，也不能绕过 SQL Validator 直接执行。
+
+示例中的复杂指标默认是 `SUGGESTED` candidate；只有明确写出 `ACCEPTED` 前置条件，并且 Review Queue 已确认后，才能作为正式回答口径。跨系统 fuzzy match、方言提示、执行频率统计和自动 SQL 改写均为 future-only 示例，不进入 v1 schema。
 
 扩展字段约定：
 
 | 字段或类型 | 状态 | 说明 |
 | --- | --- | --- |
-| `FUZZY_MATCH` | `FUTURE` | 跨系统手机号、邮箱、external id 等弱关联 evidence，不能当作当前物理 relationship。 |
-| `DIALECT_MISMATCH` | `FUTURE` | SQL Validator 的方言诊断建议类型。 |
-| `JOIN_NO_EVIDENCE` | `FUTURE` | SQL Validator 的 join path 拒绝原因。 |
-| `executionFrequency` | `FUTURE` | SQL 日志聚合统计能力，不属于当前 scan result schema。 |
-| 方言 SQL 自动改写 | `FUTURE` | 可作为 validator suggestion，不应自动替换用户 SQL。 |
+| `FUZZY_MATCH` | `FUTURE` | 跨系统手机号、邮箱、external id 等弱关联 evidence，不能当作当前物理 relationship，也不进入 v1 schema。 |
+| `DIALECT_MISMATCH` | `FUTURE` | SQL Validator 的方言诊断建议类型，不属于 v1 validator。 |
+| `JOIN_NO_EVIDENCE` | `FUTURE` | SQL Validator 的 join path 拒绝原因示例，不属于当前 relation-detector warning schema。 |
+| `executionFrequency` | `FUTURE` | SQL 日志聚合统计能力，不属于当前 scan result schema，也不进入 v1 schema。 |
+| 方言 SQL 自动改写 | `FUTURE` | 可作为 validator suggestion，不应自动替换用户 SQL，更不能自动执行。 |
 
 ## 2. 复杂多表关联：优惠券使用分析
 
@@ -59,7 +61,7 @@ GROUP BY c.type, c.face_value
 ORDER BY usage_rate_pct ASC;
 ```
 
-风险/审核点：取消订单中的优惠券是否算作已使用，需要业务审核；`usage_rate_pct` 是候选指标，默认 `SUGGESTED`。
+风险/审核点：取消订单中的优惠券是否算作已使用，需要业务审核；`usage_rate_pct` 是候选指标，默认 `SUGGESTED`，只有审核后才可作为 `ACCEPTED` 口径。
 
 ## 3. 自关联递归：员工汇报关系
 
@@ -120,7 +122,7 @@ FROM org_chart oc
 ORDER BY oc.depth, oc.name;
 ```
 
-风险/审核点：递归深度上限是安全策略，不是业务事实；自关联 relationship 仍来自明确 equality 或 DDL FK evidence，不按 `manager_id` 名字特殊判断。
+风险/审核点：递归深度上限是安全策略，不是业务事实；SQL draft 只是示例；自关联 relationship 仍来自明确 equality 或 DDL FK evidence，不按 `manager_id` 名字特殊判断。
 
 ## 4. 多跳关联：供应商、商品、订单行与退款
 
@@ -170,7 +172,7 @@ HAVING SUM(oi.quantity * oi.unit_price) > 0
 ORDER BY total_sales DESC;
 ```
 
-风险/审核点：该示例统计的是订单行销售额，不是支付流水；如果问题明确要求"支付金额"，需要引入 `payments` 表和对应 join path。
+风险/审核点：该示例统计的是订单行销售额，不是支付流水；如果问题明确要求"支付金额"，需要引入 `payments` 表和对应 join path，并重新验证 metric candidate。
 
 ## 5. 时间窗口指标：环比与同比
 
@@ -215,7 +217,7 @@ WHERE month >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '12 months'
 ORDER BY month DESC;
 ```
 
-风险/审核点：环比/同比属于指标表达式候选，不应被 relation-detector 当作物理 relationship。
+风险/审核点：环比/同比属于指标表达式候选，不应被 relation-detector 当作物理 relationship；作为正式指标前必须进入 Review Queue。
 
 ## 6. 聚合过滤与连续窗口
 
@@ -267,7 +269,7 @@ WHERE cc.consecutive_months = 3
 ORDER BY cc.total_spent_3m DESC;
 ```
 
-风险/审核点："连续 3 个月"需要明确是否允许缺月份补零。
+风险/审核点："连续 3 个月"需要明确是否允许缺月份补零；该 SQL draft 是候选实现，不是自动 accepted metric。
 
 ## 7. RFM 客户分层
 
@@ -316,7 +318,7 @@ GROUP BY segment
 ORDER BY total_monetary DESC;
 ```
 
-风险/审核点：RFM 分层规则是业务规则，必须作为 `SUGGESTED` metric/entity candidate 审核。
+风险/审核点：RFM 分层规则是业务规则，必须作为 `SUGGESTED` metric/entity candidate 审核，不能由 LLM 直接提升为 `ACCEPTED`。
 
 ## 8. 存储过程来源的指标：库存周转率
 
@@ -385,7 +387,7 @@ $$;
 }
 ```
 
-风险/审核点：procedure 可以提供 semantic evidence candidate，但不能直接创造已确认 metric。
+风险/审核点：procedure 可以提供 semantic evidence candidate，但不能直接创造已确认 metric；正式口径需要 evidenceRefs 和 review decision。
 
 ## 9. SQL 日志来源的隐式指标：客户复购率
 
@@ -429,7 +431,7 @@ WHERE o1.created_at BETWEEN '2025-01-01' AND '2025-03-31'
 }
 ```
 
-风险/审核点：SQL log 执行频率是未来增强字段；90 天窗口和退款排除规则需要审核。
+风险/审核点：SQL log 执行频率是 future-only 字段；90 天窗口和退款排除规则需要审核。
 
 ## 10. 跨系统关联：CRM 客户与交易系统客户
 
@@ -538,4 +540,4 @@ CRM 中的客户标签和交易系统中的消费行为有什么关系？
 }
 ```
 
-风险/审核点：Validator 可以提出修正建议，但不应自动改写 SQL 并直接执行；方言识别和改写属于 future capability。
+风险/审核点：Validator 可以提出修正建议，但不应自动改写 SQL 并直接执行；方言识别和改写属于 future capability，不进入 v1 schema。
