@@ -2,14 +2,14 @@
 
 ## 1. 背景与目标
 
-当前 relation-detector 已经能够从 metadata、DDL、SQL 日志、对象定义和 correctness fixture 中识别数据库表关系，并输出一定的数据来源关系。它解决的是“数据库里真实存在什么结构证据”的问题，例如：
+当前 relation-detector 已经能够从 metadata、DDL、SQL 日志、对象定义和 correctness fixture 中识别数据库表关系，并输出一定的数据来源关系。它解决的是"数据库里真实存在什么结构证据"的问题，例如：
 
 - 哪些表和字段存在。
 - 哪些字段可能构成 FK-like relationship。
 - 哪些字段写入依赖哪些来源字段。
 - 某条关系或血缘来自 DDL、metadata、SQL、procedure、trigger 还是 Data Lineage extractor。
 
-语义层要解决的是另一层问题：用户不会总用物理表字段名提问，而是会说“客户”“会员”“买家”“最近消费金额”“活跃客户”“库存风险”。这些词和物理 schema 之间需要一个可审计、可搜索、可审核的中间层。
+语义层要解决的是另一层问题：用户不会总用物理表字段名提问，而是会说"客户""会员""买家""最近消费金额""活跃客户""库存风险"。这些词和物理 schema 之间需要一个可审计、可搜索、可审核的中间层。
 
 因此本设计将当前 relation-detector 定位为更大系统中的 **事实层子系统**：
 
@@ -159,8 +159,8 @@ sequenceDiagram
 
 - 表和字段的业务描述。
 - 业务实体候选，例如 Customer、Order、Payment、Product。
-- 同义词候选，例如 “客户 / 用户 / 会员 / 买家”。
-- 指标候选，例如 “客户总支付金额 = SUM(payments.amount)”。
+- 同义词候选，例如 "客户 / 用户 / 会员 / 买家"。
+- 指标候选，例如 "客户总支付金额 = SUM(payments.amount)"。
 - join path 解释。
 - 问题样例。
 
@@ -408,6 +408,187 @@ JOIN payments p ON p.order_id = o.id;
 - `entity:Customer`
 - `column:payments.amount`
 - `joinpath:customers-orders-payments`
+
+
+### 4.5 DDL Comment 证据示例
+
+```sql
+-- 订单表 DDL
+CREATE TABLE orders (
+    id BIGINT PRIMARY KEY,
+    customer_id BIGINT NOT NULL,  -- 关联客户主表
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending/confirmed/shipped/delivered/cancelled
+    total_amount DECIMAL(12,2) NOT NULL,  -- 订单原始金额（不含优惠）
+    discount_amount DECIMAL(12,2) DEFAULT 0,  -- 优惠金额
+    actual_amount DECIMAL(12,2) NOT NULL,  -- 实付金额 = total_amount - discount_amount
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+```
+
+DDL 注释可以增强语义解释，但不能直接创造已确认的物理 lineage。下面的 `candidateDerivedFrom` 只表示注释暗示的 semantic candidate，需要后续 SQL/Data Lineage evidence 或人工审核确认：
+
+- `column:orders.customer_id`：业务描述候选，来自"关联客户主表"。
+- `column:orders.status`：枚举值候选，来自注释中的状态列表。
+- `column:orders.total_amount`：口径候选，来自"不含优惠"。
+- `column:orders.actual_amount`：计算关系候选，来自注释中的 `total_amount - discount_amount`。
+
+```json
+{
+  "physicalRef": "orders.actual_amount",
+  "evidence": [
+    {
+      "type": "DDL_COLUMN",
+      "text": "actual_amount DECIMAL(12,2) NOT NULL"
+    },
+    {
+      "type": "DDL_COMMENT",
+      "text": "实付金额 = total_amount - discount_amount",
+      "candidateDerivedFrom": ["orders.total_amount", "orders.discount_amount"],
+      "reviewStatus": "SUGGESTED"
+    }
+  ]
+}
+```
+
+### 4.6 存储过程证据示例
+
+```sql
+CREATE OR REPLACE PROCEDURE sp_calculate_customer_tier(
+    IN p_customer_id BIGINT,
+    OUT p_tier VARCHAR(20)
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_total_spent DECIMAL(12,2);
+    v_order_count INT;
+BEGIN
+    SELECT COALESCE(SUM(o.actual_amount), 0)
+    INTO v_total_spent
+    FROM orders o
+    WHERE o.customer_id = p_customer_id
+      AND o.created_at >= CURRENT_DATE - INTERVAL '1 year'
+      AND o.status = 'delivered';
+
+    SELECT COUNT(*)
+    INTO v_order_count
+    FROM orders o
+    WHERE o.customer_id = p_customer_id
+      AND o.created_at >= CURRENT_DATE - INTERVAL '1 year';
+
+    IF v_total_spent > 100000 AND v_order_count > 20 THEN
+        p_tier := 'PLATINUM';
+    ELSIF v_total_spent > 50000 THEN
+        p_tier := 'GOLD';
+    ELSE
+        p_tier := 'STANDARD';
+    END IF;
+END;
+$$;
+```
+
+存储过程可以提供 semantic evidence candidate：
+
+- `metric:customer_total_spent_1y` 候选表达式 `SUM(orders.actual_amount)`。
+- `metric:customer_order_count_1y` 候选表达式 `COUNT(*)`。
+- `entity:CustomerTier` 候选枚举值 `PLATINUM/GOLD/STANDARD`。
+
+这些候选必须保留 procedure evidenceRefs，并默认进入 `SUGGESTED` 或 `NEEDS_MORE_EVIDENCE` 状态；它们不是 relation-detector 已确认的正式业务指标。
+
+```json
+{
+  "expressionId": "expr:customer_total_spent_1y",
+  "expression": "SUM(orders.actual_amount)",
+  "filterClause": "orders.status = 'delivered' AND orders.created_at >= CURRENT_DATE - INTERVAL '1 year'",
+  "evidenceRefs": [
+    {
+      "type": "PROCEDURE",
+      "name": "sp_calculate_customer_tier",
+      "role": "semantic_metric_candidate",
+      "confidence": 0.85
+    }
+  ],
+  "reviewStatus": "SUGGESTED"
+}
+```
+
+### 4.7 触发器证据示例
+
+```sql
+CREATE OR REPLACE FUNCTION trg_update_customer_order_summary()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE customer_order_summary cos
+    SET
+        total_orders = cos.total_orders + 1,
+        total_amount = cos.total_amount + NEW.actual_amount,
+        last_order_at = NEW.created_at
+    WHERE cos.customer_id = NEW.customer_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_orders_after_insert
+    AFTER INSERT ON orders
+    FOR EACH ROW EXECUTE FUNCTION trg_update_customer_order_summary();
+```
+
+触发器可以增强 semantic lineage candidate：
+
+- `table:customer_order_summary` 的写入来源候选来自 `orders` 表和触发器函数。
+- `column:customer_order_summary.total_orders` 的候选来源来自 `orders` INSERT 触发。
+- `orders.customer_id -> customer_order_summary.customer_id` 只有在 SQL/DDL/metadata 明确支持时才成为 relationship；触发器注释本身不能单独创造物理关系。
+
+```json
+{
+  "semanticCandidateRef": "customer_order_summary.total_orders",
+  "sourceType": "TRIGGER",
+  "triggerEvent": "AFTER INSERT ON orders",
+  "targetTable": "customer_order_summary",
+  "targetColumn": "total_orders",
+  "transformLogic": "cos.total_orders + 1",
+  "evidenceRefs": [
+    "TRIGGER:trg_orders_after_insert",
+    "FUNCTION:trg_update_customer_order_summary"
+  ],
+  "reviewStatus": "SUGGESTED"
+}
+```
+
+### 4.8 冲突证据示例：同一字段的多口径
+
+同一字段 `payments.amount` 可能在不同上下文中代表不同口径。语义层必须保存冲突来源，并进入审核，而不是默认选择一个口径。
+
+```json
+{
+  "physicalRef": "payments.amount",
+  "conflictingDefinitions": [
+    {
+      "context": "订单支付",
+      "description": "单笔支付金额（原始值）",
+      "source": "DDL:payments.amount + SQL:payment_report",
+      "confidence": 0.95
+    },
+    {
+      "context": "退款计算",
+      "description": "可退款金额（不含已退款部分）",
+      "source": "PROCEDURE:sp_process_refund",
+      "filterLogic": "WHERE refund_status != 'REFUNDED'",
+      "confidence": 0.85
+    },
+    {
+      "context": "佣金计算",
+      "description": "佣金基数（扣除平台手续费后的净额）",
+      "source": "PROCEDURE:sp_calculate_commission",
+      "transformLogic": "payments.amount * (1 - platform_fee_rate)",
+      "confidence": 0.80
+    }
+  ],
+  "reviewStatus": "NEEDS_MORE_EVIDENCE",
+  "reviewNote": "payments.amount 在多个业务场景下有不同口径，需要人工确认各场景的标准定义"
+}
+```
 
 ## 5. 数据结构设计
 
@@ -783,7 +964,7 @@ POST /semantic/review
 
 ### 8.2 Embedding 模糊召回
 
-Embedding 用于召回相似语义对象，例如 “买东西最多的人” 可以召回：
+Embedding 用于召回相似语义对象，例如 "买东西最多的人" 可以召回：
 
 - Customer。
 - Order。
@@ -804,7 +985,7 @@ LLM 将自然语言问题改写成结构化候选意图。
 改写候选：
 1. 最近一段时间按支付金额统计客户排行。
 2. 最近一段时间按订单数量统计客户排行。
-3. 需要确认“最近”是 7 天、30 天还是本月。
+3. 需要确认"最近"是 7 天、30 天还是本月。
 ```
 
 ### 8.4 Evidence-based Rerank
@@ -933,7 +1114,7 @@ ORDER BY paid_amount_30d DESC;
 输出：
 
 ```text
-“活跃客户”有多个可能口径。你希望按哪一种判断？
+"活跃客户"有多个可能口径。你希望按哪一种判断？
 1. 客户状态字段为 ACTIVE。
 2. 最近登录过。
 3. 最近下单过。
@@ -972,12 +1153,172 @@ supplier_inventory_logs.sku_code -> products.sku_code
 
 ```text
 可以用 products、inventory_snapshots、supplier_inventory_logs 分析库存风险。
-但“库存风险”的业务口径还不明确：是可用库存低于阈值、供应商库存不足，还是保留库存过高？
+但"库存风险"的业务口径还不明确：是可用库存低于阈值、供应商库存不足，还是保留库存过高？
 ```
 
-## 11. 治理与边界
 
-### 11.1 LLM 不创造数据库事实
+
+### 10.4 需要反问：退款率口径冲突
+
+问题：
+
+```text
+上个月的退款率是多少？
+```
+
+候选口径：
+
+| 口径 | 分子 | 分母 | 来源 | 处理建议 |
+| --- | --- | --- | --- | --- |
+| 按金额 | `SUM(refunds.amount)` | `SUM(orders.actual_amount)` | finance report / SQL evidence | 可作为候选 metric，需审核 |
+| 按笔数 | `COUNT(refunds.id)` | `COUNT(orders.id)` | ops dashboard / SQL evidence | 可作为候选 metric，需审核 |
+| 按客户 | `COUNT(DISTINCT refund_customer)` | `COUNT(DISTINCT order_customer)` | procedure / semantic evidence | 进入 Review Queue |
+| 仅全额退款 | 全额退款笔数 | 订单笔数 | procedure / semantic evidence | 进入 Review Queue |
+
+```json
+{
+  "question": "上个月的退款率是多少？",
+  "answerable": false,
+  "reason": "refund_rate_multiple_definitions",
+  "candidates": [
+    {
+      "definition": "按金额计算：退款金额 / 订单金额",
+      "metricRef": "metric:refund_rate_by_amount",
+      "reviewStatus": "SUGGESTED"
+    },
+    {
+      "definition": "按笔数计算：退款笔数 / 订单笔数",
+      "metricRef": "metric:refund_rate_by_count",
+      "reviewStatus": "SUGGESTED"
+    }
+  ],
+  "clarificationQuestion": "退款率有多个口径，你希望按金额还是按笔数计算？是否包含部分退款？"
+}
+```
+
+### 10.5 更多场景示例
+
+复杂多表关联、自关联递归、多跳 join path、时间窗口指标、HAVING/RFM、存储过程指标、SQL 日志指标和跨系统关联等长例子已移到 [Semantic Layer 示例附录](semantic-layer-examples.md)。主文档只保留说明架构边界所需的代表性例子。
+
+
+## 11. Review Queue 示例
+
+### 11.1 指标审核：支付金额的多种口径
+
+```json
+[
+  {
+    "reviewId": "review-001",
+    "objectId": "metric:customer_total_paid_amount",
+    "objectType": "METRIC",
+    "status": "SUGGESTED",
+    "conflictingDefinitions": [
+      {
+        "expression": "SUM(payments.amount)",
+        "filter": "payments.status = 'success'",
+        "source": "SQL:bi_dashboard",
+        "support": 0.85
+      },
+      {
+        "expression": "SUM(orders.actual_amount)",
+        "filter": "orders.status = 'delivered'",
+        "source": "PROCEDURE:sp_customer_tier",
+        "support": 0.60
+      }
+    ],
+    "recommendation": "建议统一口径为 SUM(payments.amount) WHERE payments.status = 'success'，并交由数据 owner 审核",
+    "needsDecision": true
+  }
+]
+```
+
+### 11.2 同义词冲突审核
+
+```json
+{
+  "reviewId": "review-002",
+  "objectType": "LEXICON",
+  "term": "会员",
+  "conflictingMappings": [
+    {
+      "mapsTo": "entity:Customer",
+      "source": "LLM:semantic_enricher",
+      "confidence": 0.60,
+      "reviewStatus": "SUGGESTED"
+    },
+    {
+      "mapsTo": "entity:Membership_Account",
+      "source": "TABLE:membership_accounts",
+      "confidence": 0.80,
+      "reviewStatus": "SUGGESTED"
+    }
+  ],
+  "resolution": "会员在不同上下文中可能指代不同对象，需要按场景消歧"
+}
+```
+
+## 12. SQL Validator 示例
+
+### 12.1 校验通过
+
+```json
+{
+  "sqlDraft": "SELECT c.id, c.name, SUM(p.amount) FROM customers c JOIN orders o ON o.customer_id = c.id JOIN payments p ON p.order_id = o.id WHERE p.paid_at >= DATE '2025-06-01' GROUP BY c.id, c.name",
+  "validation": {
+    "status": "PASSED",
+    "checks": {
+      "tableExists": {
+        "customers": true,
+        "orders": true,
+        "payments": true
+      },
+      "joinEvidence": {
+        "orders.customer_id->customers.id": {
+          "evidence": "SQL_LOG_JOIN",
+          "confidence": 0.91
+        },
+        "payments.order_id->orders.id": {
+          "evidence": "DDL_FOREIGN_KEY",
+          "confidence": 0.98
+        }
+      },
+      "aggregationValid": true,
+      "groupByComplete": true
+    },
+    "warnings": []
+  }
+}
+```
+
+### 12.2 校验失败
+
+```json
+{
+  "validation": {
+    "status": "FAILED",
+    "errors": [
+      {
+        "type": "FUTURE:JOIN_NO_EVIDENCE",
+        "status": "FUTURE_EXAMPLE",
+        "message": "reviews.product_id -> orders.id 未找到 relationship evidence",
+        "severity": "ERROR"
+      },
+      {
+        "type": "COLUMN_NOT_FOUND",
+        "message": "reviews.rating 在 catalog 中不存在",
+        "severity": "ERROR"
+      }
+    ]
+  }
+}
+```
+
+`FUTURE:JOIN_NO_EVIDENCE` 是 SQL Validator 的 future diagnostic type，不属于当前 relation-detector 输出 schema。
+
+## 13. 治理与边界
+
+
+### 13.1 LLM 不创造数据库事实
 
 LLM 可以提出：
 
@@ -995,7 +1336,7 @@ LLM 不可以直接创造：
 
 这些事实必须来自 relation-detector、metadata、DDL、SQL 或人工审核。
 
-### 11.2 指标默认需要审核
+### 13.2 指标默认需要审核
 
 指标比表字段描述风险更高。第一版建议：
 
@@ -1003,15 +1344,15 @@ LLM 不可以直接创造：
 - 只有人工确认后才变成 `ACCEPTED`。
 - 未接受指标可以用于草稿，但输出必须标注。
 
-### 11.3 SQL draft 必须校验
+### 13.3 SQL draft 必须校验
 
 SQL draft 不直接执行。必须经过 SQL Validator，并保存 validation result。
 
-### 11.4 不确定优先反问
+### 13.4 不确定优先反问
 
 如果系统无法确定用户意图，应优先反问，而不是生成看似确定但口径错误的 SQL。
 
-### 11.5 所有语义结果可追溯
+### 13.5 所有语义结果可追溯
 
 每个语义对象至少包含：
 
@@ -1023,9 +1364,9 @@ SQL draft 不直接执行。必须经过 SQL Validator，并保存 validation re
 - `createdAt`
 - `updatedAt`
 
-## 12. 第一版落地建议
+## 14. 第一版落地建议
 
-### 12.1 Phase A：Semantic Evidence Builder
+### 14.1 Phase A：Semantic Evidence Builder
 
 先不调用 LLM，把 relation-detector 输出规范化为 evidence graph。
 
@@ -1041,7 +1382,7 @@ SQL draft 不直接执行。必须经过 SQL Validator，并保存 validation re
 - 任意 relationship / lineage 都能追溯到 source。
 - 表字段可以看到相关 DDL、SQL usage、comment。
 
-### 12.2 Phase B：LLM Semantic Enricher
+### 14.2 Phase B：LLM Semantic Enricher
 
 基于 evidence bundle 生成语义对象候选。
 
@@ -1059,7 +1400,7 @@ SQL draft 不直接执行。必须经过 SQL Validator，并保存 validation re
 - 指标候选默认 SUGGESTED。
 - 冲突项进入审核。
 
-### 12.3 Phase C：Semantic Search
+### 14.3 Phase C：Semantic Search
 
 建设 lexicon + embedding search。
 
@@ -1071,10 +1412,10 @@ SQL draft 不直接执行。必须经过 SQL Validator，并保存 validation re
 
 验收：
 
-- “客户 / 用户 / 会员 / 买家”能召回 Customer。
-- “消费金额 / 支付金额”能召回 payments.amount 和相关 metric。
+- "客户 / 用户 / 会员 / 买家"能召回 Customer。
+- "消费金额 / 支付金额"能召回 payments.amount 和相关 metric。
 
-### 12.4 Phase D：Question Planner
+### 14.4 Phase D：Question Planner
 
 实现自然语言问题到 Answer Plan。
 
@@ -1085,11 +1426,11 @@ SQL draft 不直接执行。必须经过 SQL Validator，并保存 validation re
 
 验收：
 
-- 能回答“用哪些表字段”。
+- 能回答"用哪些表字段"。
 - 能生成可验证 SQL draft。
 - 不确定时能反问。
 
-### 12.5 Phase E：SQL Draft + Validator
+### 14.5 Phase E：SQL Draft + Validator
 
 将 Answer Plan 转为 SQL draft，并用 parser/catalog 校验。
 
@@ -1099,7 +1440,7 @@ SQL draft 不直接执行。必须经过 SQL Validator，并保存 validation re
 - Join path 来自 evidence。
 - 未审核指标被标注。
 
-## 13. relation-detector 在整体系统中的位置
+## 15. relation-detector 在整体系统中的位置
 
 当前工具仍然是整体系统的核心事实来源。它后续不需要承担业务语义解释，但要继续提升：
 

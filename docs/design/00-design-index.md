@@ -7,6 +7,7 @@
 - [代码实现说明与运维测试指南](../code-implementation-guide.md)
 - [测试资产地图与 Parser 验收矩阵](../test-assets-map.md)
 - [Evidence-Grounded Semantic Layer 整体设计](semantic-layer-overall-design.md)
+- [Evidence-Grounded Semantic Layer 示例附录](semantic-layer-examples.md)
 - [Phase 1：工程骨架](phase-01-project-skeleton.md)
 - [Phase 2：核心模型和评分](phase-02-core-model-scoring.md)
 - [Phase 3：Adaptor API 和 SPI](phase-03-adaptor-api-spi.md)
