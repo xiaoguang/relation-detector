@@ -115,3 +115,35 @@ Phase 1 Scope 绝对不使用 LLM 生成 SQL。Phase 2+ 可以让 LLM解释 SQL 
 | MySQL 方言 | 使用 MySQL quote 和日期表达式策略 |
 | PostgreSQL 方言 | 使用 PostgreSQL quote 和日期表达式策略 |
 | 非 SELECT 需求 | 拒绝生成 |
+
+---
+
+## 附录 A：行为设计与测试建议
+
+SQL Draft Generator 不让 LLM 直接生成 SQL。它消费 `AnswerPlan` 和已定向的 `PlanJoinStep`，用模板渲染 SQL draft，并为每个关键 SQL 片段保留来源对象或 evidence。
+
+建议覆盖的行为：
+
+- `answerable=false` 时拒绝生成 SQL draft。
+- 输出 SQL 只包含 SELECT draft，不生成写入语句。
+- FROM、JOIN、WHERE、metric expression 来自 `AnswerPlan`，不是重新推断。
+- 每个 join fragment 能回溯到 relationship evidence。
+- `SYSTEM_PROPOSED` metric 出现在 SQL draft 中时，必须附带 warning。
+
+示例：
+
+```pseudo-json
+{
+  "answerPlan": {
+    "tables": ["customers", "orders", "payments"],
+    "joinSteps": ["orders.customer_id = customers.id", "payments.order_id = orders.id"],
+    "metric": "SUM(payments.amount)"
+  },
+  "expectedBehavior": [
+    "渲染 SELECT draft",
+    "保留 TABLE_REF / JOIN_CLAUSE / METRIC_EXPRESSION 元素",
+    "不要求 SQL 文本逐字符一致",
+    "对未审核指标产生 warning"
+  ]
+}
+```

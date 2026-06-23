@@ -234,7 +234,7 @@ public interface SemanticEvidenceBuilder {
         }
       ],
       "triggerReason": "不同 source 有不同过滤逻辑",
-      "status": "CANDIDATE"
+      "reviewStatus": "SYSTEM_PROPOSED"
     }
   ],
   "metadata": {
@@ -607,128 +607,52 @@ String inferBusinessRole(FieldEvidence field) {
 }
 ```
 
-### 4.5 置信度确定性计算（P0：从 LLM 移出）
+### 4.5 置信度 heuristic（P0：从 LLM 移出）
 
-**决策：** `confidence` 不交给 LLM 生成。它由 Evidence Builder 根据 evidence 数量和质量确定性计算。
+**决策：** `confidence` 不交给 LLM 生成。Phase 1 可以使用可配置 heuristic 对 evidence 质量做排序辅助，但不把某一组权重或小数写成不可变 contract。
 
-```java
-// === SemanticTable.confidence ===
-BigDecimal calculateTableConfidence(String tableName, Map<String, FieldEvidence> fields) {
-    // 该表所有列的 evidence 最高 confidence 的平均值
-    BigDecimal avgFieldConfidence = fields.values().stream()
-        .filter(f -> f.tableName().equals(tableName))
-        .map(f -> f.evidenceRefs().stream()
-            .map(EvidenceRef::confidence)
-            .max(BigDecimal::compareTo)
-            .orElse(BigDecimal.ZERO))
-        .reduce(BigDecimal.ZERO, BigDecimal::add)
-        .divide(BigDecimal.valueOf(fields.size()), 4, RoundingMode.HALF_UP);
+可用信号包括：
 
-    // 有注释加分
-    boolean hasComment = commentEvidences.stream()
-        .anyMatch(c -> c.associatedPhysicalRefs().stream().anyMatch(ref -> ref.startsWith(tableName)));
+- relationship / lineage / metadata evidence 的来源类型和原始分数。
+- 字段是否有 DDL / SQL comment 支持。
+- 对象是否能通过 evidence-backed join path 连接到问题所需实体。
+- review status 是否为 `BUSINESS_APPROVED`、`EVIDENCE_SUPPORTED` 或 `SYSTEM_PROPOSED`。
 
-    // 有关联关系加分
-    boolean hasRelationships = joinPathEvidences.stream()
-        .anyMatch(p -> p.fromTable().equals(tableName) || p.toTable().equals(tableName));
-
-    BigDecimal score = avgFieldConfidence.multiply(new BigDecimal("0.7"));
-    if (hasComment) score = score.add(new BigDecimal("0.15"));
-    if (hasRelationships) score = score.add(new BigDecimal("0.15"));
-
-    return score.min(new BigDecimal("0.99")).max(new BigDecimal("0.30"));
-}
-
-// === SemanticColumn.confidence ===
-BigDecimal calculateColumnConfidence(FieldEvidence field) {
-    // 该列所有 evidence 的最高 confidence
-    return field.evidenceRefs().stream()
-        .map(EvidenceRef::confidence)
-        .max(BigDecimal::compareTo)
-        .orElse(new BigDecimal("0.50"));
-}
-
-// === SemanticEntity.confidence ===
-BigDecimal calculateEntityConfidence(String primaryTable, List<JoinPathEvidence> joinPaths) {
-    // 从该表出发的所有 join path 步骤的平均 confidence
-    List<BigDecimal> stepConfidences = joinPaths.stream()
-        .filter(p -> p.fromTable().equals(primaryTable))
-        .flatMap(p -> p.steps().stream())
-        .map(JoinPathStep::confidence)
-        .toList();
-
-    if (stepConfidences.isEmpty()) return new BigDecimal("0.50");
-
-    BigDecimal avgConfidence = stepConfidences.stream()
-        .reduce(BigDecimal.ZERO, BigDecimal::add)
-        .divide(BigDecimal.valueOf(stepConfidences.size()), 4, RoundingMode.HALF_UP);
-
-    return avgConfidence.multiply(new BigDecimal("0.9"))
-        .min(new BigDecimal("0.99")).max(new BigDecimal("0.30"));
-}
-
-// === SemanticMetric.confidence ===
-BigDecimal calculateMetricConfidence(ExpressionEvidence expr, List<JoinPathEvidence> requiredPaths) {
-    BigDecimal lineageScore = expr.evidenceRefs().stream()
-        .filter(e -> e.evidenceType().equals("LINEAGE"))
-        .map(EvidenceRef::confidence)
-        .max(BigDecimal::compareTo)
-        .orElse(new BigDecimal("0.50"));
-
-    BigDecimal commentScore = commentEvidences.stream()
-        .filter(c -> c.associatedPhysicalRefs().stream()
-            .anyMatch(ref -> expr.sourceColumns().contains(ref)))
-        .findFirst()
-        .map(c -> new BigDecimal("0.20"))
-        .orElse(BigDecimal.ZERO);
-
-    BigDecimal pathScore = requiredPaths.stream()
-        .map(JoinPathEvidence::pathConfidence)
-        .reduce(BigDecimal.ONE, BigDecimal::multiply);
-
-    return lineageScore.multiply(new BigDecimal("0.6"))
-        .add(commentScore)
-        .add(pathScore.multiply(new BigDecimal("0.2")))
-        .min(new BigDecimal("0.99")).max(new BigDecimal("0.20"));
-}
-```
-
-**计算结果写入 EvidenceGraph.metadata：**
+计算结果可写入 `EvidenceGraph.metadata`，但只作为排序和解释信号：
 
 ```json
 {
   "metadata": {
-    "computedConfidences": {
-      "table:customers": 0.87,
-      "table:orders": 0.89,
-      "column:orders.customer_id": 0.95,
-      "entity:Customer": 0.88,
-      "metric:customer_total_paid_amount": 0.80
+    "confidenceSignals": {
+      "column:orders.customer_id": ["METADATA_FOREIGN_KEY", "METADATA_TYPE"],
+      "metric:customer_total_paid_amount": ["LINEAGE", "JOIN_PATH"]
     }
   }
 }
 ```
 
-### 4.6 冲突检测改为两阶段：规则初筛 + LLM 确认（方案 C）
+**注意：** confidence 只表示 evidence 支撑强度，不表示业务正确性。业务口径正确性需要 Review Queue；具体权重需要通过 question trace、离线评测和人工审核迭代。
 
-**决策：** 冲突检测分为两个阶段。阶段一在 Evidence Builder 中做规则初筛（保证不遗漏），阶段二在 LLM Enricher 中做语义确认（减少误报）。
+### 4.6 冲突检测改为两阶段：规则初筛 + LLM 解释建议
+
+**决策：** 冲突检测分为两个阶段。阶段一在 Evidence Builder 中做规则初筛，阶段二在 LLM Enricher 中生成冲突解释、影响范围和审核建议。最终是否确认冲突由 Review Queue / governance workflow 决定。
 
 **为什么不能用纯规则：** 规则可能把正常的多角度描述误判为冲突。例如 `payments.amount` 在 DDL 中描述为"支付金额"，在 SQL 注释中描述为"客户消费金额"——这两个描述说的是同一件事，规则可能误判为"两个不同口径"。
 
-**为什么不能用纯 LLM：** LLM 可能漏掉真正的冲突。例如 `payments.amount` 在 procedure 中用作"退款基数（扣除手续费）"，LLM 可能看不出这和"支付金额"是不同口径。
+**为什么不能用纯 LLM：** LLM 可能漏掉真正的冲突，也不能作为最终治理裁决者。例如 `payments.amount` 在 procedure 中用作"退款基数（扣除手续费）"，LLM 可能看不出这和"支付金额"是不同口径。
 
 **两阶段方案：**
 
 ```
 阶段一（Evidence Builder，规则初筛）：
-  目标：召回率 100%，不遗漏任何潜在冲突
+  目标：尽量提高召回率，减少潜在冲突遗漏
   方法：跨 source 集合比较
-  输出：CandidateConflict 列表（候选冲突，非最终判定）
+  输出：candidateConflict 列表（候选冲突，非最终判定）
 
-阶段二（LLM Enricher，语义确认）：
-  目标：精确率提升，减少误报
-  方法：LLM 判断候选冲突是否真的代表不同口径
-  输出：每个候选冲突标记为 CONFIRMED（真冲突）或 FALSE_ALARM（误报）
+阶段二（LLM Enricher，解释建议）：
+  目标：帮助审核人员理解冲突来源和影响范围
+  方法：LLM 生成 conflict label、reasoning、recommendation
+  输出：SYSTEM_PROPOSED review item；不写入最终确认状态
 ```
 
 **阶段一：规则初筛**
@@ -789,7 +713,7 @@ List<CandidateConflict> preFilterConflicts(Map<String, FieldEvidence> fieldEvide
     }
   ],
   "triggerReason": "不同 source 有不同过滤逻辑",
-  "status": "CANDIDATE"
+  "reviewStatus": "SYSTEM_PROPOSED"
 }
 ```
 
@@ -813,7 +737,7 @@ List<CandidateConflict> preFilterConflicts(Map<String, FieldEvidence> fieldEvide
 }
 ```
 
-**阶段二在 LLM Enricher 中完成（见 LLM Enricher 更新）。**
+**阶段二在 LLM Enricher 中生成解释材料；最终确认在 Review Queue / governance workflow 中完成。**
 
 ### 4.7 evidenceFingerprint 统一生成（P1）
 
@@ -863,55 +787,44 @@ String generateFingerprint(EvidenceRef ref) {
 | 紧凑版截断 | 字段有 20 条 evidence | 紧凑版只保留 10 条，truncated=true |
 | 空输入 | 空 relationships | 返回空 EvidenceGraph |
 
-### 5.2 集成测试
+### 5.2 集成测试建议
 
-```java
-@Test
-void endToEndFromScanBundleToEvidenceGraph() {
-    ScanBundle bundle = createSampleBundle(); // 15 tables, 24 relationships, 8 lineages
-    EvidenceGraph graph = builder.build(bundle);
+| 场景 | 期望行为 |
+| --- | --- |
+| 从 ScanBundle 到 EvidenceGraph | relationship、lineage、metadata 和 comment evidence 都能进入 evidence graph。 |
+| join path 枚举 | 只生成 evidence-backed path，且不会因为环路无限扩展。 |
+| compact bundle | 保留关键 evidenceRefs；超出预算时允许截断低优先级 evidence，并显式标记。 |
+| LLM 输入安全 | compact bundle 中每个可引用对象都带有可解析 fingerprint。 |
 
-    // 每个字段都有 FieldEvidence
-    assertEquals(87, graph.fieldEvidences().size());
 
-    // 每个 lineage 都有 ExpressionEvidence
-    assertEquals(8, graph.expressionEvidences().size());
+---
 
-    // join path 覆盖所有可达表对
-    assertTrue(graph.joinPathEvidences().size() >= 24);
+## 附录 A：行为设计与测试建议
 
-    // 无循环路径
-    for (JoinPathEvidence path : graph.joinPathEvidences()) {
-        Set<String> tables = new HashSet<>();
-        for (JoinPathStep step : path.steps()) {
-            assertTrue(tables.add(extractTable(step.source())));
-            assertTrue(tables.add(extractTable(step.target())));
-        }
-    }
-}
+本附录只描述 Phase 1 的行为边界，不定义已实现 Java API，也不把某一组评分权重写成 contract。
 
-@Test
-void compactBundleForLLM() {
-    EvidenceGraph graph = builder.build(scanBundle);
-    CompactEvidenceBundle compact = builder.compact(graph, 10, 5);
+保留的测试意图：
 
-    // Token 预算检查（1 token ≈ 3 chars）
-    String json = objectMapper.writeValueAsString(compact);
-    int estimatedTokens = json.length() / 3;
-    assertTrue(estimatedTokens < 8000,
-        "Compact bundle should fit in LLM token budget, got ~" + estimatedTokens);
+- 从 `ScanBundle` 构建 field、expression、comment evidence，并保留原始 `evidenceRef`。
+- compact bundle 必须保留足够的 `evidenceRefs`，让 LLM 只能引用已有证据。
+- join path 候选必须来自 relationship graph，不能由 LLM 或字段名猜测生成。
+- 冲突项使用 `candidateConflict` 表达，并以 `SYSTEM_PROPOSED` 进入后续审核；它不是正式业务口径。
+- 置信度和 business role 只能作为可配置 heuristic；实现前不得把示例数值写成 contract。
 
-    // 截断标记
-    if (graph.totalEvidenceCount() > 10 * graph.fieldEvidences().size()) {
-        assertTrue(compact.truncated());
-    }
+示例输入输出应保持行为级别：
+
+```pseudo-json
+{
+  "input": {
+    "relationships": ["orders.customer_id -> customers.id"],
+    "lineage": ["payments.amount -> paid_amount_30d"],
+    "metadata": ["orders.customer_id bigint"]
+  },
+  "expectedBehavior": [
+    "为 orders.customer_id 生成 field evidence",
+    "为 payments.amount 生成 expression evidence",
+    "保留所有 evidenceRefs 以支持后续审计",
+    "candidateConflict.reviewStatus 使用 SYSTEM_PROPOSED"
+  ]
 }
 ```
-
-### 5.3 性能测试
-
-| 场景 | 数据量 | 预算 |
-| --- | --- | --- |
-| BFS 全图遍历 | 50 个表, 100 条关系 | < 500ms |
-| 冲突检测 | 200 个字段 | < 100ms |
-| 紧凑版生成 | 完整 EvidenceGraph | < 50ms |

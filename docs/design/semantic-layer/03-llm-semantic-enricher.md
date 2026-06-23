@@ -217,3 +217,33 @@ flowchart TD
 | LLM 返回新 join path step | 拒绝 step，只保留解释性 review item |
 | evidence 完整的 table/column | 写入 `EVIDENCE_SUPPORTED` |
 | 指标候选 | 写入 `SYSTEM_PROPOSED` 并进入 Review Queue |
+
+---
+
+## 附录 A：行为设计与测试建议
+
+本附录保留 LLM Enricher 的测试意图，但不定义已实现接口或固定调用次数。LLM 只能解释、归纳、扩展和规划，不能裁决数据库事实。
+
+建议覆盖的行为：
+
+- LLM 返回不存在的 `physicalRef` 时，该对象被拒绝或进入 `NEEDS_MORE_EVIDENCE`。
+- LLM 返回不存在的 `evidenceFingerprint` 时，该引用无效，不能进入正式 catalog。
+- LLM 返回 `BUSINESS_APPROVED` 时必须降级为 `SYSTEM_PROPOSED`，并记录 warning 或 review item。
+- LLM 生成的 metric、entity、synonym 默认是 `SYSTEM_PROPOSED`，只有治理流程可以提升为 `BUSINESS_APPROVED`。
+- join path explanation 只能引用已有 relationship path，不能新增 path step。
+
+示例：
+
+```pseudo-json
+{
+  "llmOutput": {
+    "metric": "customer_total_paid_amount",
+    "reviewStatus": "BUSINESS_APPROVED",
+    "evidenceRefs": ["VALUE:AGGREGATE:payments.amount->paid_amount_30d"]
+  },
+  "expectedBehavior": {
+    "reviewStatus": "SYSTEM_PROPOSED",
+    "warning": "LLM cannot approve business metrics"
+  }
+}
+```

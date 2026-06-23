@@ -102,3 +102,31 @@ flowchart TD
 | `REJECTED` 对象 | 不参与默认结果 |
 | embedding API 失败 | 降级为 lexicon-only |
 | 无 evidence candidate | 不进入默认结果，或作为低置信度候选返回 |
+
+---
+
+## 附录 A：行为设计与测试建议
+
+Semantic Search 的分数是可配置 heuristic，不是固定公式。测试应验证排序行为和边界，而不是锁死某组小数。
+
+建议覆盖的行为：
+
+- lexicon 精确命中应优先召回对应 semantic object。
+- embedding 召回可以补充同义表达，但结果必须经过 evidence rerank。
+- `REJECTED` 对象不进入默认结果。
+- `BUSINESS_APPROVED` 与 `EVIDENCE_SUPPORTED` 对象在相关性接近时优先级高于 `SYSTEM_PROPOSED`。
+- embedding 服务不可用时，可降级为 lexicon-only，并返回 degraded warning。
+
+示例：
+
+```pseudo-json
+{
+  "query": "客户消费金额",
+  "expectedBehavior": [
+    "召回 customer 相关实体或字段",
+    "召回 payments.amount 或相关指标候选",
+    "过滤 REJECTED 对象",
+    "返回 scoreBreakdown，但不承诺固定权重"
+  ]
+}
+```

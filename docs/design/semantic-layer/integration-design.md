@@ -106,7 +106,7 @@ ScanBundle {
 
         ↓ [Semantic Evidence Builder: 纯算法，无 LLM]
         ↓ [新增: businessRole 确定性推断 + confidence 确定性计算]
-        ↓ [新增: 冲突规则初筛 → CandidateConflict 列表（保证召回率 100%）]
+        ↓ [新增: 冲突规则初筛 → candidateConflict 列表（尽量提高召回率）]
         ↓ [新增: evidenceFingerprint 统一生成]
 
 Step 3: EvidenceGraph（内存对象）

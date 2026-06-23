@@ -100,5 +100,6 @@ Semantic Layer 在这些事实之上构建业务语义，不修改 relation-dete
 - [集成设计与端到端数据流](integration-design.md)
 - [技术选型文档](technology-selection.md)
 - [端到端测试示例](end-to-end-examples.md)
+- [语义层测试设计草案](module-test-specification.md)（行为场景 + 示例输入输出）
 - [relation-detector 子模块设计](../relation-detector/README.md)
 - [设计文档索引](../00-design-index.md)

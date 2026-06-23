@@ -153,3 +153,41 @@ for (SqlDraftElement element : draft.elements()) {
 | metric 未 `BUSINESS_APPROVED` | `METRIC_NOT_BUSINESS_APPROVED` warning |
 | statement kind 非 SELECT | `NON_READ_ONLY_DRAFT` |
 | parser sanity check 失败 | `SYNTAX_ERROR` 或 `DIALECT_MISMATCH` draft diagnostic |
+
+---
+
+## 附录 A：行为设计与测试建议
+
+SQL Validator 的 Phase 1 输入是结构化 `SqlDraft` 和 `SqlDraftElement`。它不通过 regex、关键字 blacklist 或手写 raw SQL parser 来判断 SQL 结构。若需要检查 raw SQL，只能做 parser sanity check，不能替代结构化 draft element 校验。
+
+建议覆盖的行为：
+
+- draft element 引用的表必须存在于 semantic catalog。
+- draft element 引用的字段必须存在于 semantic catalog。
+- JOIN_CLAUSE 必须能回溯到 relationship evidence。
+- metric expression 使用 `SYSTEM_PROPOSED` metric 时返回 warning。
+- 非 SELECT / 非 read-only draft 由结构化 statement kind 或 parser sanity check 拒绝。
+
+Future Capability，不属于 Phase 1 contract：
+
+- 深层 GROUP BY / window / subquery 合法性。
+- 方言自动改写。
+- 成本估算。
+- 权限和数据安全审计。
+- 数据库侧 explain / dry run。
+
+示例：
+
+```pseudo-json
+{
+  "sqlDraftElements": [
+    {"type": "TABLE_REF", "sourceObjectId": "table:customers"},
+    {"type": "JOIN_CLAUSE", "evidenceRef": "REL:orders.customer_id->customers.id"}
+  ],
+  "expectedBehavior": [
+    "校验 table:customers 存在",
+    "校验 JOIN_CLAUSE 有 relationship evidence",
+    "不从 raw SQL 文本重新提取表名或字段名"
+  ]
+}
+```

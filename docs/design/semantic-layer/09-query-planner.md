@@ -150,3 +150,32 @@ Phase 1 不使用 LLM。Phase 2+ 可以让 LLM 解释多个候选 plan 的业务
 | 多条近似路径 | 输出 alternatives 或 clarification |
 | 未审核指标 | 可生成 draft warning，不作为正式口径 |
 | 缺时间列 | `answerable=false`, missing `TIME_COLUMN` |
+
+---
+
+## 附录 A：行为设计与测试建议
+
+Query Planner 的主策略是 bounded graph search + grain/role constraints + evidence rerank，不使用“只覆盖节点的最小生成树”作为默认策略。这类图算法只能作为未来可选实验策略，不能写入 Phase 1 contract。
+
+建议覆盖的行为：
+
+- required table set 来自 primary entity、metric source、dimension source 和 filters。
+- join path 必须来自 catalog relationship evidence，并保留每一步 evidence fingerprint。
+- grain、role、hop count、review status 会影响候选路径重排。
+- 多条路径证据接近且无法判断时，返回 clarification 或 Review Queue，不由 LLM 拍板。
+- 未审核 metric 可进入 draft plan，但必须携带 warning，不作为正式业务口径。
+
+示例：
+
+```pseudo-json
+{
+  "questionIntent": "每个客户最近30天支付金额是多少？",
+  "requiredTables": ["customers", "payments"],
+  "expectedBehavior": [
+    "枚举 customers 到 payments 的 evidence-backed join path",
+    "选择符合 grain 和 role 约束的候选路径",
+    "输出定向 PlanJoinStep",
+    "如果路径语义不确定则生成澄清问题"
+  ]
+}
+```
