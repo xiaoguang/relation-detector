@@ -148,7 +148,7 @@ sequenceDiagram
   "mapsToObjectId": "entity:Customer",
   "relationType": "SYNONYM",
   "confidence": 0.95,
-  "reviewStatus": "ACCEPTED",
+  "reviewStatus": "BUSINESS_APPROVED",
   "source": "HUMAN_REVIEWED",
   "createdAt": "2026-06-23T00:00:00Z"
 }
@@ -162,7 +162,7 @@ sequenceDiagram
   ],
   "recommendedObjectId": "entity:MembershipAccount",
   "reason": "TABLE_NAME source 置信度高于 LLM_SUGGESTION",
-  "reviewStatus": "SUGGESTED"
+  "reviewStatus": "SYSTEM_PROPOSED"
 }
 ```
 

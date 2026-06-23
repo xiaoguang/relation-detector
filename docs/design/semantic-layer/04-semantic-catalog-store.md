@@ -7,8 +7,8 @@
 **存储分层：**
 
 - Prototype / dev：可以使用 JSON 文件，便于调试和版本化。
-- Production-ready v1 profile：推荐 PostgreSQL + JSONB + pgvector，支持并发、增量查询、审核审计和向量检索。
-- Future：按服务边界拆分或引入消息队列，但不是第一版要求。
+- Production-ready Phase 1 profile profile：推荐 PostgreSQL + JSONB + pgvector，支持并发、增量查询、审核审计和向量检索。
+- Future Capability：按服务边界拆分或引入消息队列，但不是第一版要求。
 
 Catalog Store 不调用 LLM，也不做语义判断。
 
@@ -59,9 +59,9 @@ public interface SemanticCatalogStore {
 
 ## 5. 增量更新规则
 
-- 新对象直接插入，初始状态由上游提供，通常是 `SUGGESTED` 或 `EVIDENCE_SUPPORTED`。
+- 新对象直接插入，初始状态由上游提供，通常是 `SYSTEM_PROPOSED` 或 `EVIDENCE_SUPPORTED`。
 - 已存在对象合并 evidenceRefs，并更新 confidence / payload snapshot。
-- 已有 `ACCEPTED` 或 `REJECTED` 状态不能被 LLM 输出覆盖，只能由新的 review decision 改变。
+- 已有 `BUSINESS_APPROVED` 或 `REJECTED` 状态不能被 LLM 输出覆盖，只能由新的 review decision 改变。
 - 本次 scan 未出现的对象标记为 `DEPRECATED` 或降低可见性，不直接物理删除。
 - 每次变更都保留 `scanRunId`、`sourceHash` 和 `detectorVersion`。
 
@@ -87,6 +87,6 @@ flowchart TD
 | --- | --- |
 | 全量 build | 生成 build run、objects、evidence refs、edges |
 | 增量 build | 保留审核状态，合并新 evidence |
-| `ACCEPTED` 对象被 LLM delta 覆盖 | 状态保持 `ACCEPTED` |
+| `BUSINESS_APPROVED` 对象被 LLM delta 覆盖 | 状态保持 `BUSINESS_APPROVED` |
 | evidence 查询 | 可回到 scanRunId/sourceHash/payloadSnapshot |
 | JSON prototype | 文件结构和 production-ready 数据集一一对应 |

@@ -8,7 +8,7 @@
 
 - LLM 不创建正式物理 relationship。
 - LLM 不创建正式 Data Lineage。
-- LLM 不把任何 metric / entity / join path 直接提升为 `ACCEPTED`。
+- LLM 不把任何 metric / entity / join path 直接提升为 `BUSINESS_APPROVED`。
 - LLM 输出必须引用已有 `evidenceRefs`，无法绑定 evidence 的内容只能进入 warning 或 review queue。
 
 LLM 在本模块中负责语言理解和表达，不负责数据库事实判断。数据库事实来自 relation-detector 输出的 relationship、lineage、metadata、SQL source 和注释。
@@ -30,8 +30,8 @@ Semantic Evidence Builder
 | --- | --- | --- |
 | SemanticTable | `EVIDENCE_SUPPORTED` | 可由 metadata / DDL / relationship 支撑，但不是人工确认业务口径。 |
 | SemanticColumn | `EVIDENCE_SUPPORTED` | 可由字段名、注释、metadata、lineage 支撑。 |
-| SemanticEntity | `SUGGESTED` | 业务实体抽象需要审核或后续治理确认。 |
-| SemanticMetric | `SUGGESTED` | 指标口径必须审核后才能作为正式回答口径。 |
+| SemanticEntity | `SYSTEM_PROPOSED` | 业务实体抽象需要审核或后续治理确认。 |
+| SemanticMetric | `SYSTEM_PROPOSED` | 指标口径必须审核后才能作为正式回答口径。 |
 | JoinPath Explanation | `EVIDENCE_SUPPORTED` | 只能解释已存在 relationship path，不能新增 path。 |
 
 ## 3. 接口契约
@@ -51,8 +51,8 @@ public interface LlmSemanticEnricher {
 `EnrichmentResult` 必须满足：
 
 - 每个对象至少保留一个 `EvidenceRef`，除非该对象被标为 `NEEDS_MORE_EVIDENCE`。
-- `reviewStatus` 只能由本模块设为 `SUGGESTED`、`EVIDENCE_SUPPORTED` 或 `NEEDS_MORE_EVIDENCE`。
-- `ACCEPTED` 只能由 Review Queue / governance workflow 写入。
+- `reviewStatus` 只能由本模块设为 `SYSTEM_PROPOSED`、`EVIDENCE_SUPPORTED` 或 `NEEDS_MORE_EVIDENCE`。
+- `BUSINESS_APPROVED` 只能由 Review Queue / governance workflow 写入。
 - LLM 产生的 join path 字段必须命名为 explanation / candidate，不能命名为正式 physical join path。
 
 ## 4. Prompt 输入约束
@@ -104,7 +104,7 @@ public interface LlmSemanticEnricher {
 
 ## 5. LLM 输出约束
 
-LLM 返回 JSON candidate，系统再做 deterministic validation：
+LLM 返回 JSON semantic object proposal，系统再做 deterministic validation：
 
 ```json
 {
@@ -128,7 +128,7 @@ LLM 返回 JSON candidate，系统再做 deterministic validation：
       "description": "客户在指定时间范围内的支付金额合计。",
       "expression": "SUM(payments.amount)",
       "sourceColumns": ["payments.amount"],
-      "reviewStatus": "SUGGESTED",
+      "reviewStatus": "SYSTEM_PROPOSED",
       "evidenceRefs": [
         {
           "evidenceFingerprint": "VALUE:AGGREGATE:payments.amount->paid_amount_30d",
@@ -159,7 +159,7 @@ LLM 输出进入 catalog 前必须校验：
 
 - `physicalName`、`sourceColumns`、`relationship pathId` 必须存在于 evidence bundle。
 - `evidenceRefs` 必须能解析回当前 `scanRunId` 的 evidence。
-- `reviewStatus=ACCEPTED` 一律降级为 `SUGGESTED` 并记录 warning。
+- `reviewStatus=BUSINESS_APPROVED` 一律降级为 `SYSTEM_PROPOSED` 并记录 warning。
 - 无 evidence 的 metric/entity 进入 `NEEDS_MORE_EVIDENCE`，不得参与默认搜索和 SQL draft。
 - join path explanation 只能引用已有 relationship path，不能产生新的 path step。
 
@@ -171,7 +171,7 @@ flowchart TD
   B --> C["LLM Candidate Generation"]
   C --> D["Validate physical refs and evidenceRefs"]
   D --> E{"Valid evidence?"}
-  E -- "yes" --> F["Write semantic candidates"]
+  E -- "yes" --> F["Write SYSTEM_PROPOSED semantic objects"]
   E -- "no" --> G["Create warning / review item"]
   F --> H["Semantic Catalog Store"]
   G --> I["Review Queue"]
@@ -181,8 +181,8 @@ flowchart TD
 
 | 场景 | 预期 |
 | --- | --- |
-| LLM 返回 `ACCEPTED` metric | 被降级为 `SUGGESTED` 并记录 warning |
+| LLM 返回 `BUSINESS_APPROVED` metric | 被降级为 `SYSTEM_PROPOSED` 并记录 warning |
 | LLM 返回不存在字段 | 拒绝该 candidate，进入 `NEEDS_MORE_EVIDENCE` |
 | LLM 返回新 join path step | 拒绝 step，只保留解释性 review item |
 | evidence 完整的 table/column | 写入 `EVIDENCE_SUPPORTED` |
-| 指标候选 | 写入 `SUGGESTED` 并进入 Review Queue |
+| 指标候选 | 写入 `SYSTEM_PROPOSED` 并进入 Review Queue |

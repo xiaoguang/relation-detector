@@ -78,7 +78,7 @@ for (PlanJoinStep step : plan.joinPath().steps()) {
 
 ## 6. LLM 决策
 
-v1 绝对不使用 LLM 生成 SQL。Phase 2+ 可以让 LLM解释 SQL draft，但不能修改 SQL 文本、表字段、join 条件或过滤条件。
+Phase 1 Scope 绝对不使用 LLM 生成 SQL。Phase 2+ 可以让 LLM解释 SQL draft，但不能修改 SQL 文本、表字段、join 条件或过滤条件。
 
 ## 7. 测试验收
 

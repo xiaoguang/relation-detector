@@ -185,13 +185,13 @@ CompactEvidenceBundle:
   - entity:Order（orders）
   - entity:Product（products）
 - SemanticMetric: 1 个
-  - metric:customer_total_paid_amount, reviewStatus=SUGGESTED
+  - metric:customer_total_paid_amount, reviewStatus=SYSTEM_PROPOSED
 - 无 ReviewItem（无冲突）
 
 验收检查点:
 [✓] 所有对象有 evidenceRefs
-[✓] 所有指标 reviewStatus = SUGGESTED
-[✓] 所有表/列 reviewStatus = EVIDENCE_SUPPORTED 或 SUGGESTED；不由 LLM 直接写入 ACCEPTED
+[✓] 所有指标 reviewStatus = SYSTEM_PROPOSED
+[✓] 所有表/列 reviewStatus = EVIDENCE_SUPPORTED 或 SYSTEM_PROPOSED；不由 LLM 直接写入 BUSINESS_APPROVED
 [✓] 物理名全部在 evidence 中存在
 ```
 
@@ -333,7 +333,7 @@ Search 结果:
 {
   "answerable": true,
   "primaryEntity": {"primaryTable": "customers", "keyColumns": ["customers.id"]},
-  "metrics": [{"metricId": "metric:customer_total_paid_amount", "reviewStatus": "SUGGESTED"}],
+  "metrics": [{"metricId": "metric:customer_total_paid_amount", "reviewStatus": "SYSTEM_PROPOSED"}],
   "dimensions": [{"physicalName": "customers.id"}, {"physicalName": "customers.name"}],
   "joinPath": {"pathConfidence": 0.9604, "hopCount": 2},
   "timeRange": {"columnRef": "payments.paid_at"},
@@ -359,9 +359,9 @@ Search 结果:
 
 预期输出: SqlDraft
 {
-  "sql": "-- SUGGESTED METRIC: 客户总支付金额\n-- Expression: SUM(payments.amount)\nSELECT c.id, c.name, SUM(p.amount) AS paid_amount_30d\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nJOIN payments p ON p.order_id = o.id\nWHERE p.paid_at >= CURRENT_DATE - INTERVAL '30 days'\nGROUP BY c.id, c.name\nORDER BY paid_amount_30d DESC\nLIMIT 1000",
+  "sql": "-- SYSTEM_PROPOSED METRIC: 客户总支付金额\n-- Expression: SUM(payments.amount)\nSELECT c.id, c.name, SUM(p.amount) AS paid_amount_30d\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nJOIN payments p ON p.order_id = o.id\nWHERE p.paid_at >= CURRENT_DATE - INTERVAL '30 days'\nGROUP BY c.id, c.name\nORDER BY paid_amount_30d DESC\nLIMIT 1000",
   "dialect": "mysql",
-  "warnings": [{"type": "SUGGESTED_METRIC_USED"}]
+  "warnings": [{"type": "SYSTEM_PROPOSED_METRIC_USED"}]
 }
 
 验收检查点:
@@ -393,7 +393,7 @@ Search 结果:
     "dangerousOperation": false
   },
   "errors": [],
-  "warnings": [{"type": "SUGGESTED_METRIC_USED"}]
+  "warnings": [{"type": "SYSTEM_PROPOSED_METRIC_USED"}]
 }
 
 验收检查点:
@@ -423,7 +423,7 @@ Search 结果:
       {"tableName": "payments", "semanticName": "支付", "role": "指标来源"}
     ],
     "metricsUsed": [
-      {"name": "客户总支付金额", "expression": "SUM(payments.amount)", "reviewStatus": "SUGGESTED"}
+      {"name": "客户总支付金额", "expression": "SUM(payments.amount)", "reviewStatus": "SYSTEM_PROPOSED"}
     ],
     "uncertainties": [
       {"item": "支付金额口径", "reason": "指标尚未审核", "suggestion": "请确认支付金额是否包含退款金额"}

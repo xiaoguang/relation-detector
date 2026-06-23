@@ -2,9 +2,9 @@
 
 ## 1. 目标与定位
 
-**职责：** 校验 SQL draft 是否仍然受 catalog、evidence 和 governance 约束。v1 validator 是 draft guard，不是完整数据库安全审计器。
+**职责：** 校验 SQL draft 是否仍然受 catalog、evidence 和 governance 约束。Phase 1 validator 是 draft guard，不是完整数据库安全审计器。
 
-**v1 承诺：**
+**Phase 1 Scope 承诺：**
 
 - catalog 表存在性。
 - catalog 字段存在性。
@@ -13,7 +13,7 @@
 - read-only / draft guard。
 - 基础 parser 结构校验。
 
-**Future：**
+**Future Capability：**
 
 - 深层 GROUP BY / window / subquery 合法性。
 - 方言自动改写。
@@ -39,7 +39,7 @@ public interface SqlValidator {
 }
 ```
 
-v1 不提供“任意 raw SQL 完整校验”承诺。若需要校验人工 SQL，必须先经过 relation-detector parser 或其他结构化 SQL parser 得到 statement kind、table refs、column refs 和 join predicates。
+Phase 1 不提供“任意 raw SQL 完整校验”承诺。若需要校验人工 SQL，必须先经过 relation-detector parser 或其他结构化 SQL parser 得到 statement kind、table refs、column refs 和 join predicates。
 
 ## 4. 校验流程
 
@@ -93,7 +93,7 @@ for (SqlDraftElement element : draft.elements()) {
 
 ### 5.3 Read-only / Draft Guard
 
-v1 不用关键字黑名单或 `contains` 判断危险操作。只接受 SQL Draft Generator 生成的 read-only draft，并通过结构化 statement kind 校验：
+Phase 1 不用关键字黑名单或 `contains` 判断危险操作。只接受 SQL Draft Generator 生成的 read-only draft，并通过结构化 statement kind 校验：
 
 ```java
 if (draft.statementKind() != StatementKind.SELECT) {
@@ -108,8 +108,8 @@ if (draft.statementKind() != StatementKind.SELECT) {
 ```java
 for (SqlDraftElement element : draft.elements()) {
     if (element.type() == METRIC_EXPRESSION
-        && element.reviewStatus() != ReviewStatus.ACCEPTED) {
-        warnings.add(METRIC_NOT_ACCEPTED);
+        && element.reviewStatus() != ReviewStatus.BUSINESS_APPROVED) {
+        warnings.add(METRIC_NOT_BUSINESS_APPROVED);
     }
 }
 ```
@@ -128,6 +128,6 @@ for (SqlDraftElement element : draft.elements()) {
 | 列不存在 | `COLUMN_NOT_FOUND` |
 | join 无 evidence | `JOIN_NO_EVIDENCE` |
 | join evidence 低置信度 | `LOW_CONFIDENCE_JOIN` warning |
-| metric 未 `ACCEPTED` | `METRIC_NOT_ACCEPTED` warning |
+| metric 未 `BUSINESS_APPROVED` | `METRIC_NOT_BUSINESS_APPROVED` warning |
 | statement kind 非 SELECT | `NON_READ_ONLY_DRAFT` |
 | parser sanity check 失败 | `SYNTAX_ERROR` 或 `DIALECT_MISMATCH` draft diagnostic |

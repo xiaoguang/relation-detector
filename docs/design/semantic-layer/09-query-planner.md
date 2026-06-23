@@ -4,7 +4,7 @@
 
 **职责：** 将结构化问题意图和搜索候选映射为 `AnswerPlan`：选择主实体、grain、指标、字段、过滤条件和 evidence-backed join path，并判断是否能生成 SQL draft 或需要反问。
 
-**LLM 依赖：** v1 不使用 LLM。LLM 可以在 `Question Understanding` 中帮助解析自然语言，但 Query Planner 只能基于 catalog、relationship evidence、review status 和规则做计划。
+**LLM 依赖：** Phase 1 不使用 LLM。LLM 可以在 `Question Understanding` 中帮助解析自然语言，但 Query Planner 只能基于 catalog、relationship evidence、review status 和规则做计划。
 
 ## 2. 上游与下游
 
@@ -72,7 +72,7 @@ flowchart TD
 - fact/dimension 角色合理。
 - 多条路径语义等价。
 
-v1 使用以下确定性流程：
+Phase 1 使用以下确定性流程：
 
 1. 从 relationship catalog 构建表级/列级 evidence graph。
 2. 从 primary entity / metric source / dimension source 生成 required table set。
@@ -103,11 +103,11 @@ List<MissingInfo> checkCompleteness(AnswerPlan plan) {
 }
 ```
 
-未审核指标不是 hard missing，但会在 AnswerPlan 和 SQL Validator 中产生 warning；正式回答口径默认只使用 `ACCEPTED` metric。
+未审核指标不是 hard missing，但会在 AnswerPlan 和 SQL Validator 中产生 warning；正式回答口径默认只使用 `BUSINESS_APPROVED` metric。
 
 ## 7. LLM 决策
 
-v1 不使用 LLM。Phase 2+ 可以让 LLM 解释多个候选 plan 的业务差异，但不能选择无 evidence 的路径，也不能绕过 review status。
+Phase 1 不使用 LLM。Phase 2+ 可以让 LLM 解释多个候选 plan 的业务差异，但不能选择无 evidence 的路径，也不能绕过 review status。
 
 ## 8. 测试验收
 

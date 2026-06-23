@@ -50,7 +50,7 @@ flowchart TD
 - lexicon exact / synonym match。
 - embedding similarity。
 - semantic object confidence。
-- review status：`ACCEPTED` > `EVIDENCE_SUPPORTED` > `SUGGESTED`。
+- review status：`BUSINESS_APPROVED` > `EVIDENCE_SUPPORTED` > `SYSTEM_PROPOSED`。
 - relationship path confidence。
 - lineage support。
 - recent successful question trace。
@@ -75,7 +75,7 @@ flowchart TD
 | 精确术语搜索 | lexicon 命中优先 |
 | 同义词搜索 | 通过 lexicon synonym 命中 |
 | 语义搜索 | embedding 召回候选，但仍经 evidence rerank |
-| `ACCEPTED` 和 `SUGGESTED` 同分 | `ACCEPTED` 优先 |
+| `BUSINESS_APPROVED` 和 `SYSTEM_PROPOSED` 同分 | `BUSINESS_APPROVED` 优先 |
 | `REJECTED` 对象 | 不参与默认结果 |
 | embedding API 失败 | 降级为 lexicon-only |
 | 无 evidence candidate | 不进入默认结果，或作为低置信度候选返回 |

@@ -31,7 +31,7 @@
 | **Embedding Indexer** | 否（但用 Embedding API） | 调用 Embedding API（如 text-embedding-3-small）生成向量。这不是 LLM 调用，不涉及文本生成。文本构造是模板化的 |
 | **Semantic Search** | 否 | 纯数学计算。cosine similarity + 加权求和是确定性公式。不需要 LLM |
 | **Question Understanding** | **是** | 核心 LLM 使用点。用户问题是自由形式的自然语言，必须用 LLM 提取实体、指标、时间范围、过滤条件。规则 NER 无法覆盖业务术语的多样性 |
-| **Query Planner** | 否（可选辅助） | 核心逻辑是图算法（join path 选择）和规则匹配。歧义消解时可选调用 LLM 做语义判断，但 v1 用规则即可 |
+| **Query Planner** | 否（可选辅助） | 核心逻辑是图算法（join path 选择）和规则匹配。歧义消解时可选调用 LLM 做语义判断，但 Phase 1 Scope 用规则即可 |
 | **SQL Draft Generator** | **绝对不能** | 这是最关键的 LLM 禁区。SQL 生成必须使用模板，确保只引用 catalog 中存在的表字段。让 LLM 生成 SQL 会编造不存在的列名和 join 条件 |
 | **SQL Validator** | 否 | 规则校验。表存在性、列存在性、join evidence 都是查 catalog 的确定性操作。可以复用 relation-detector parser |
 | **Answer Composer** | 否 | 模板化响应组装。解释文本来自 catalog 中的描述字段，不需要 LLM 重新生成 |
@@ -173,7 +173,7 @@ Step 4: EnrichmentResult（LLM 输出）
       "grain": "一行表示一个订单",
       "primaryKey": ["orders.id"],
       "evidenceRefs": ["DDL:orders", "REL:orders.customer_id->customers.id"],
-      "reviewStatus": "ACCEPTED",
+      "reviewStatus": "BUSINESS_APPROVED",
       "confidence": 0.95
     }
   ],
@@ -187,7 +187,7 @@ Step 4: EnrichmentResult（LLM 输出）
       "entityRef": "entity:Customer",
       "synonyms": ["客户", "买家", "用户"],
       "evidenceRefs": ["REL:orders.customer_id->customers.id", "DDL_COLUMN:orders.customer_id"],
-      "reviewStatus": "ACCEPTED",
+      "reviewStatus": "BUSINESS_APPROVED",
       "confidence": 0.95
     }
   ],
@@ -211,7 +211,7 @@ Step 4: EnrichmentResult（LLM 输出）
       "defaultGrain": ["customers.id"],
       "defaultTimeColumn": "payments.paid_at",
       "joinPaths": ["joinpath:customers-orders-payments"],
-      "reviewStatus": "SUGGESTED",
+      "reviewStatus": "SYSTEM_PROPOSED",
       "confidence": 0.80
     }
   ],
@@ -220,7 +220,7 @@ Step 4: EnrichmentResult（LLM 输出）
       "reviewId": "review-001",
       "objectId": "metric:customer_total_paid_amount",
       "objectType": "METRIC",
-      "status": "SUGGESTED",
+      "status": "SYSTEM_PROPOSED",
       "priority": "MEDIUM",
       "recommendation": "新指标候选，需要确认支付金额口径"
     }
@@ -307,7 +307,7 @@ Step 4: AnswerPlan
       "expression": "SUM(payments.amount)",
       "sourceColumns": ["payments.amount"],
       "aggregationFunction": "SUM",
-      "reviewStatus": "SUGGESTED",
+      "reviewStatus": "SYSTEM_PROPOSED",
       "confidence": 0.80
     }
   ],
@@ -344,15 +344,15 @@ Step 5: SqlDraft
   "sql": "SELECT c.id, c.name, SUM(p.amount) AS paid_amount_30d\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nJOIN payments p ON p.order_id = o.id\nWHERE p.paid_at >= CURRENT_DATE - INTERVAL '30 days'\nGROUP BY c.id, c.name\nORDER BY paid_amount_30d DESC\nLIMIT 1000",
   "dialect": "mysql",
   "elements": [
-    {"type": "TABLE_REF", "sqlFragment": "customers", "sourceObjectId": "table:customers", "reviewStatus": "ACCEPTED"},
-    {"type": "TABLE_REF", "sqlFragment": "orders", "sourceObjectId": "table:orders", "reviewStatus": "ACCEPTED"},
-    {"type": "TABLE_REF", "sqlFragment": "payments", "sourceObjectId": "table:payments", "reviewStatus": "ACCEPTED"},
+    {"type": "TABLE_REF", "sqlFragment": "customers", "sourceObjectId": "table:customers", "reviewStatus": "BUSINESS_APPROVED"},
+    {"type": "TABLE_REF", "sqlFragment": "orders", "sourceObjectId": "table:orders", "reviewStatus": "BUSINESS_APPROVED"},
+    {"type": "TABLE_REF", "sqlFragment": "payments", "sourceObjectId": "table:payments", "reviewStatus": "BUSINESS_APPROVED"},
     {"type": "JOIN_CLAUSE", "sqlFragment": "JOIN orders o ON o.customer_id = c.id", "sourceObjectId": "REL:orders.customer_id->customers.id", "evidenceRef": "SQL_LOG_JOIN", "confidence": 0.70},
     {"type": "JOIN_CLAUSE", "sqlFragment": "JOIN payments p ON p.order_id = o.id", "sourceObjectId": "REL:payments.order_id->orders.id", "evidenceRef": "DDL_FOREIGN_KEY", "confidence": 0.98},
-    {"type": "METRIC_EXPRESSION", "sqlFragment": "SUM(p.amount)", "sourceObjectId": "metric:customer_total_paid_amount", "reviewStatus": "SUGGESTED"}
+    {"type": "METRIC_EXPRESSION", "sqlFragment": "SUM(p.amount)", "sourceObjectId": "metric:customer_total_paid_amount", "reviewStatus": "SYSTEM_PROPOSED"}
   ],
   "warnings": [
-    {"type": "SUGGESTED_METRIC_USED", "message": "指标 '客户总支付金额' 尚未审核"}
+    {"type": "SYSTEM_PROPOSED_METRIC_USED", "message": "指标 '客户总支付金额' 尚未审核"}
   ]
 }
 
@@ -376,7 +376,7 @@ Step 6: ValidationResult
   },
   "errors": [],
   "warnings": [
-    {"type": "SUGGESTED_METRIC_USED", "message": "指标 metric:customer_total_paid_amount 审核状态为 SUGGESTED"}
+    {"type": "SYSTEM_PROPOSED_METRIC_USED", "message": "指标 metric:customer_total_paid_amount 审核状态为 SYSTEM_PROPOSED"}
   ]
 }
 
@@ -399,7 +399,7 @@ Step 7: Answer（最终输出）
       {"tableName": "payments", "semanticName": "支付", "role": "指标来源", "description": "通过 payments.order_id 关联订单"}
     ],
     "metricsUsed": [
-      {"name": "客户总支付金额", "expression": "SUM(payments.amount)", "reviewStatus": "SUGGESTED", "evidence": "SQL projection: paid_amount_30d"}
+      {"name": "客户总支付金额", "expression": "SUM(payments.amount)", "reviewStatus": "SYSTEM_PROPOSED", "evidence": "SQL projection: paid_amount_30d"}
     ],
     "uncertainties": [
       {"item": "支付金额口径", "reason": "指标 metric:customer_total_paid_amount 尚未审核", "impact": "金额统计口径可能需要确认", "suggestion": "请确认支付金额是否包含退款金额"}
@@ -458,7 +458,7 @@ Step 7: Answer（最终输出）
 | --- | --- |
 | 所有语义对象必须带 evidenceRefs | 如果 LLM Enricher 输出的对象缺少 evidenceRefs，Catalog Store 必须拒绝 |
 | 物理名必须来自 catalog | SQL Generator 只能引用 catalog 中的表名和列名 |
-| 指标默认 SUGGESTED | LLM Enricher 生成的指标 reviewStatus 必须为 SUGGESTED |
+| 指标默认 SYSTEM_PROPOSED | LLM Enricher 生成的指标 reviewStatus 必须为 SYSTEM_PROPOSED |
 | SQL 必须校验 | Answer Composer 不能输出未经 Validator 校验的 SQL |
 
 ## 5. 端到端验收场景
@@ -473,7 +473,7 @@ Step 7: Answer（最终输出）
 2. SemanticSearch → 客户→entity:Customer, 支付金额→metric:customer_total_paid_amount
 3. QueryPlanner → AnswerPlan（answerable=true, 3表join, 需要聚合）
 4. SqlDraftGenerator → 完整 SQL（含 GROUP BY, ORDER BY, LIMIT）
-5. SqlValidator → PASSED_WITH_WARNINGS（指标 SUGGESTED）
+5. SqlValidator → PASSED_WITH_WARNINGS（指标 SYSTEM_PROPOSED）
 6. AnswerComposer → SQL + 解释 + 不确定项
 
 **验收标准：**
@@ -542,8 +542,8 @@ Step 7: Answer（最终输出）
 
 **验收标准：**
 - 所有语义对象有 evidenceRefs
-- 所有指标 reviewStatus = SUGGESTED
-- 所有表/列 reviewStatus = EVIDENCE_SUPPORTED 或 SUGGESTED；只有 Review Queue / governance workflow 可以写入 ACCEPTED
+- 所有指标 reviewStatus = SYSTEM_PROPOSED
+- 所有表/列 reviewStatus = EVIDENCE_SUPPORTED 或 SYSTEM_PROPOSED；只有 Review Queue / governance workflow 可以写入 BUSINESS_APPROVED
 - 冲突字段进入 Review Queue
 - Embedding 记录数与语义对象数一致
 - Lexicon 覆盖所有表和列名

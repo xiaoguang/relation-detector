@@ -203,7 +203,7 @@ sequenceDiagram
   "overallConfidence": 0.88,
   "attributes": {
     "model": "gpt-4.1",
-    "promptVersion": "v1",
+    "promptVersion": "Phase 1 Scope",
     "tokensUsed": 350
   }
 }
