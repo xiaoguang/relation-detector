@@ -1,6 +1,6 @@
 # Evidence-Grounded Semantic Layer 整体设计
 
-术语定义统一维护在 [Semantic Layer 术语表](semantic-layer/glossary.md)。本文首次出现的能力分层、审核状态、事实层和问答术语均以该术语表为准。
+术语定义统一维护在 [Semantic Layer 术语表](semantic-layer/glossary.md)。本文首次出现的能力分层、审核状态、事实层和问答术语均以该术语表为准。外部参考材料与路线对比见 [参考亿问改进分析](semantic-layer/yiyiwen-reference-improvement.md)。
 
 ## 1. 背景与目标
 
