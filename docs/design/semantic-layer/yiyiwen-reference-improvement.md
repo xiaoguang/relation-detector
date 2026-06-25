@@ -111,6 +111,7 @@ Natural Language
 亿问材料反复强调“业务不是围绕指标发生，而是围绕对象和事件发生”。这提醒我们：
 
 - 支付、退款、下单、发货、登录、补货、审批等应作为未来 `SemanticEvent` 建模对象。
+- 事件是 Phase 2+ 的重要建模对象，但不是所有问答和操作的统一入口；字段查询、关系查询和指标口径查询可以直接使用 metadata、relationship、attribute 或 metric。
 - Data Lineage 可以帮助发现某些事件字段来源，但不能直接证明业务事件语义。
 - SQL log、procedure、trigger、comment 可以作为事件候选 evidence，但仍需要 review。
 

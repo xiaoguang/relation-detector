@@ -43,6 +43,35 @@
 
 未标为 `Phase 1 Scope` 的能力不属于第一版实现目标；未标为 [`BUSINESS_APPROVED`](semantic-layer/glossary.md#business_approved) 的指标或业务口径不能作为正式回答依据。文档中的复杂 SQL、复杂指标、跨系统关联和方言提示如果标为 `Example`，只用于解释设计；如果标为 `Future Capability`，表示未来版本才考虑。它们不代表 relation-detector 已输出业务事实，也不代表语义层会自动执行 SQL。
 
+### 1.2 事件的意义与边界
+
+[`Semantic Event`](semantic-layer/glossary.md#semantic-event) 用来表达业务世界里“发生了什么”：谁，在什么时间，对什么对象，发生了什么行为，造成了什么结果。它把物理表字段进一步组织成业务行为语义，例如支付、退款、下单、登录、补货或库存变动。
+
+事件不是所有问题的必经入口，也不是所有系统操作的统一触发点。字段查询、表关系查询、指标口径查询可以直接使用 metadata、relationship、attribute 或 metric；只有当问题涉及行为、时间链路、状态变化、归因解释或复杂指标来源时，事件才会成为有价值的建模单元。
+
+| 语义对象 | 解决的问题 | 例子 | Phase 1 Scope 边界 |
+| --- | --- | --- | --- |
+| Entity | 业务对象是谁 | 客户、订单、商品、门店 | 可作为语义对象候选。 |
+| Attribute | 对象有什么特征 | 客户等级、商品品类、订单状态 | 主要来自 metadata、comment、SQL usage。 |
+| Relationship | 对象或字段如何关联 | `orders.customer_id -> customers.id` | 来自 relation-detector facts。 |
+| Metric | 数怎么算 | 销售额、退款率、复购率 | 需要 reviewStatus，正式口径优先使用 BUSINESS_APPROVED。 |
+| Semantic Event | 发生了什么业务行为 | PaymentEvent、RefundEvent、InventoryChangeEvent | 作为 Phase 2+ 设计对象；Phase 1 不承诺正式事件建模。 |
+| Rule | 业务口径和约束是什么 | 活跃客户定义、高价值客户阈值 | Phase 1 可产生候选和 warning，不自动确认。 |
+| Action | 未来可以触发什么动作 | 发预警、生成报告、创建任务 | Future Capability，不自动执行。 |
+
+relation-detector 输出的 relationship、Data Lineage、metadata 和 diagnostics 是事件建模的 evidence 底座，但不是事件本身。例如：
+
+```text
+payments.order_id -> orders.id
+orders.customer_id -> customers.id
+payments.paid_at
+payments.amount
+```
+
+这些证据可以支撑一个 `PaymentEvent` 候选：参与对象可能是 Order 和 Customer，时间字段可能是 `payments.paid_at`，金额字段可能是 `payments.amount`。但这个候选默认只能是 `SYSTEM_PROPOSED` 或 `EVIDENCE_SUPPORTED`，正式业务事件定义需要 review 或治理流程确认，不能由 LLM 或 relation-detector 直接拍板。
+
+Data Lineage 可以帮助发现事件字段来源，例如支付金额从哪些字段计算而来；SQL log、procedure、trigger、DDL comment 和 SQL comment 也可以成为事件候选 evidence。但这些 evidence 只能说明“可能存在某类业务行为语义”，不能单独证明业务事件定义已经成立。
+
 ## 2. 总体架构
 
 ### 2.1 架构图
