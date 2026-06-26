@@ -1550,7 +1550,82 @@ supplier_inventory_logs.sku_code -> products.sku_code
 }
 ```
 
-### 10.5 更多场景示例
+### 10.5 可直接回答但带口径校验：这个财年华东地区女装销售的情况
+
+问题：
+
+```text
+这个财年华东地区女装销售的情况
+```
+
+这个问题比简单问数更复杂，因为它同时包含财年、区域、商品分类和“销售情况”四类隐含语义。本例假设以下口径已经 `BUSINESS_APPROVED`：公司当前财年、华东销售区域、女装一级类目、销售额/订单数/销量/客单价默认销售概览指标。
+
+模块流转：
+
+| 模块 | 输入 | 输出 |
+| --- | --- | --- |
+| Question Understanding | 用户问题："这个财年华东地区女装销售的情况" | 结构化意图：`BUSINESS_ANALYSIS`；时间 `current_fiscal_year`；区域 `华东`；商品分类 `女装`；主题 `sales_performance`；默认需要概览、趋势和明细分解。 |
+| Semantic Search | 结构化意图、lexicon、embedding index、Semantic Catalog | 候选对象：`sales_fact`、`products/category_dim`、`stores/region_dim`、`fiscal_calendar`；候选指标：销售额、订单数、销量、客单价；可选 `SalesEvent` 仅作为 Phase 2+ 解释对象。 |
+| Query Planner | 候选对象、relationship evidence、metric reviewStatus、business rule reviewStatus | AnswerPlan：选择 grain 为 `fiscal_month + region + product_category`；选择 join path；确认财年、区域、分类和默认指标均可用于 draft。 |
+| SQL Draft Generator | AnswerPlan | 生成只读聚合 SQL draft；每个 SELECT、JOIN、WHERE、GROUP BY 元素都带 sourceObjectId 和 evidenceRefs。 |
+| SQL Validator | SQL draft、catalog、join evidence、metric/business rule reviewStatus | validation `PASSED`；校验表字段存在、join 有 evidence、metric 和业务口径为 BUSINESS_APPROVED、SQL read-only。 |
+| Answer Composer | validation result、SQL draft、AnswerPlan evidence | 返回销售概览 SQL draft、使用的表字段、join path、口径说明和可继续追问的方向。 |
+
+逐模块中间结果明细见 [示例附录 13.5](semantic-layer-examples.md#135-可直接回答但带口径校验财年华东女装销售情况)。
+
+候选表：
+
+- `sales_fact`
+- `products`
+- `category_dim`
+- `stores`
+- `region_dim`
+- `fiscal_calendar`
+
+Join path：
+
+```text
+sales_fact.product_id -> products.id
+products.category_id -> category_dim.id
+sales_fact.store_id -> stores.id
+stores.region_id -> region_dim.id
+sales_fact.sale_date -> fiscal_calendar.date_id
+```
+
+SQL draft：
+
+```sql
+SELECT
+  fc.fiscal_month,
+  r.sales_region,
+  cat.level1_name AS product_category,
+  SUM(sf.sales_amount) AS sales_amount,
+  COUNT(DISTINCT sf.order_id) AS order_count,
+  SUM(sf.quantity_sold) AS quantity_sold,
+  SUM(sf.sales_amount) / NULLIF(COUNT(DISTINCT sf.order_id), 0) AS avg_order_value
+FROM sales_fact sf
+JOIN products p ON p.id = sf.product_id
+JOIN category_dim cat ON cat.id = p.category_id
+JOIN stores s ON s.id = sf.store_id
+JOIN region_dim r ON r.id = s.region_id
+JOIN fiscal_calendar fc ON fc.date_id = sf.sale_date
+WHERE fc.current_fiscal_year = true
+  AND r.sales_region = '华东'
+  AND cat.level1_name = '女装'
+GROUP BY fc.fiscal_month, r.sales_region, cat.level1_name
+ORDER BY fc.fiscal_month;
+```
+
+为什么可以执行成功：
+
+- `sales_fact`、`products`、`category_dim`、`stores`、`region_dim`、`fiscal_calendar` 及使用字段都能在 catalog 中找到。
+- 每条 JOIN 都有 relation-detector relationship evidence 或 BUSINESS_APPROVED semantic join path 支撑。
+- `这个财年`、`华东地区`、`女装` 和默认销售指标都已通过 BUSINESS_APPROVED 口径确认。
+- SQL draft 是只读聚合查询，且每个 SQL 元素都能回溯到 AnswerPlan 和 evidenceRefs。
+
+如果上述任一口径未审核，正确行为不是强行生成正式 SQL，而是在 Query Planner 或 SQL Validator 阶段产生 warning、clarification 或 table-field plan。
+
+### 10.6 更多场景示例
 
 复杂多表关联、自关联递归、多跳 join path、时间窗口指标、HAVING/[RFM](semantic-layer/glossary.md#rfm)、存储过程指标、SQL 日志指标和跨系统关联等长例子已移到 [Semantic Layer 示例附录](semantic-layer-examples.md)。主文档只保留说明架构边界所需的代表性例子。
 

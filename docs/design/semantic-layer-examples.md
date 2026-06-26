@@ -1235,3 +1235,278 @@ CRM 中的客户标签和交易系统中的消费行为有什么关系？
   ]
 }
 ```
+
+### 13.5 可直接回答但带口径校验：财年华东女装销售情况
+
+```json
+{
+  "question": "这个财年华东地区女装销售的情况",
+  "capabilityScope": "Example",
+  "assumptions": [
+    "公司当前财年口径已经 BUSINESS_APPROVED",
+    "华东地区使用销售区域口径，且已经 BUSINESS_APPROVED",
+    "女装使用商品一级类目口径，且已经 BUSINESS_APPROVED",
+    "销售情况默认展开为销售额、订单数、销量、客单价和月度趋势"
+  ],
+  "moduleTrace": [
+    {
+      "module": "Question Understanding",
+      "input": {
+        "question": "这个财年华东地区女装销售的情况",
+        "locale": "zh-CN"
+      },
+      "output": {
+        "intentType": "BUSINESS_ANALYSIS",
+        "topic": "sales_performance",
+        "entities": [
+          {
+            "mention": "销售",
+            "role": "fact_or_event",
+            "needsCatalogResolution": true
+          },
+          {
+            "mention": "华东地区",
+            "role": "region_filter",
+            "needsCatalogResolution": true
+          },
+          {
+            "mention": "女装",
+            "role": "product_category_filter",
+            "needsCatalogResolution": true
+          }
+        ],
+        "timeRange": {
+          "rawText": "这个财年",
+          "type": "BUSINESS_CALENDAR",
+          "semanticMeaning": "current_fiscal_year",
+          "needsCatalogResolution": true
+        },
+        "analysisNeeds": ["summary", "monthly_trend", "breakdown"],
+        "defaultMetricHints": ["sales_amount", "order_count", "quantity_sold", "avg_order_value"],
+        "ambiguities": []
+      }
+    },
+    {
+      "module": "Semantic Search",
+      "input": {
+        "terms": ["销售", "财年", "华东地区", "女装"],
+        "defaultMetricHints": ["sales_amount", "order_count", "quantity_sold", "avg_order_value"]
+      },
+      "output": {
+        "candidateObjects": [
+          {
+            "objectId": "table:sales_fact",
+            "matchedBy": ["lexicon", "embedding", "sql_usage"]
+          },
+          {
+            "objectId": "entity:Product",
+            "matchedBy": ["lexicon", "metadata"]
+          },
+          {
+            "objectId": "semanticEvent:SalesEvent",
+            "matchedBy": ["semantic_candidate"],
+            "capabilityScope": "Phase 2+",
+            "usageInThisExample": "explanation_only"
+          }
+        ],
+        "candidateTables": ["sales_fact", "products", "category_dim", "stores", "region_dim", "fiscal_calendar"],
+        "candidateFields": [
+          "sales_fact.sales_amount",
+          "sales_fact.order_id",
+          "sales_fact.quantity_sold",
+          "sales_fact.sale_date",
+          "products.category_id",
+          "category_dim.level1_name",
+          "stores.region_id",
+          "region_dim.sales_region",
+          "fiscal_calendar.fiscal_month",
+          "fiscal_calendar.current_fiscal_year"
+        ],
+        "candidateMetrics": [
+          {
+            "metricId": "metric:sales_amount",
+            "expression": "SUM(sales_fact.sales_amount)",
+            "reviewStatus": "BUSINESS_APPROVED"
+          },
+          {
+            "metricId": "metric:order_count",
+            "expression": "COUNT(DISTINCT sales_fact.order_id)",
+            "reviewStatus": "BUSINESS_APPROVED"
+          },
+          {
+            "metricId": "metric:quantity_sold",
+            "expression": "SUM(sales_fact.quantity_sold)",
+            "reviewStatus": "BUSINESS_APPROVED"
+          },
+          {
+            "metricId": "metric:avg_order_value",
+            "expression": "SUM(sales_fact.sales_amount) / NULLIF(COUNT(DISTINCT sales_fact.order_id), 0)",
+            "reviewStatus": "BUSINESS_APPROVED"
+          }
+        ],
+        "candidateBusinessRules": [
+          {
+            "ruleId": "rule:current_fiscal_year",
+            "reviewStatus": "BUSINESS_APPROVED"
+          },
+          {
+            "ruleId": "rule:east_china_sales_region",
+            "reviewStatus": "BUSINESS_APPROVED"
+          },
+          {
+            "ruleId": "rule:womenswear_level1_category",
+            "reviewStatus": "BUSINESS_APPROVED"
+          }
+        ]
+      }
+    },
+    {
+      "module": "Query Planner",
+      "input": {
+        "intentType": "BUSINESS_ANALYSIS",
+        "candidateTables": ["sales_fact", "products", "category_dim", "stores", "region_dim", "fiscal_calendar"],
+        "candidateMetrics": ["metric:sales_amount", "metric:order_count", "metric:quantity_sold", "metric:avg_order_value"],
+        "businessRules": ["rule:current_fiscal_year", "rule:east_china_sales_region", "rule:womenswear_level1_category"]
+      },
+      "output": {
+        "answerPlanType": "SQL_DRAFT",
+        "grain": ["fiscal_month", "sales_region", "product_category"],
+        "tables": ["sales_fact", "products", "category_dim", "stores", "region_dim", "fiscal_calendar"],
+        "joinSteps": [
+          {
+            "left": "sales_fact.product_id",
+            "right": "products.id",
+            "evidenceRefs": ["relationship:sales_fact_products"]
+          },
+          {
+            "left": "products.category_id",
+            "right": "category_dim.id",
+            "evidenceRefs": ["relationship:products_category_dim"]
+          },
+          {
+            "left": "sales_fact.store_id",
+            "right": "stores.id",
+            "evidenceRefs": ["relationship:sales_fact_stores"]
+          },
+          {
+            "left": "stores.region_id",
+            "right": "region_dim.id",
+            "evidenceRefs": ["relationship:stores_region_dim"]
+          },
+          {
+            "left": "sales_fact.sale_date",
+            "right": "fiscal_calendar.date_id",
+            "evidenceRefs": ["relationship:sales_fact_fiscal_calendar"]
+          }
+        ],
+        "filters": [
+          {
+            "semanticRule": "rule:current_fiscal_year",
+            "sqlExpression": "fiscal_calendar.current_fiscal_year = true",
+            "reviewStatus": "BUSINESS_APPROVED"
+          },
+          {
+            "semanticRule": "rule:east_china_sales_region",
+            "sqlExpression": "region_dim.sales_region = '华东'",
+            "reviewStatus": "BUSINESS_APPROVED"
+          },
+          {
+            "semanticRule": "rule:womenswear_level1_category",
+            "sqlExpression": "category_dim.level1_name = '女装'",
+            "reviewStatus": "BUSINESS_APPROVED"
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "module": "SQL Draft Generator",
+      "input": {
+        "answerPlanType": "SQL_DRAFT",
+        "grain": ["fiscal_month", "sales_region", "product_category"],
+        "metrics": ["metric:sales_amount", "metric:order_count", "metric:quantity_sold", "metric:avg_order_value"]
+      },
+      "output": {
+        "sqlDraftId": "draft:fiscal_year_east_china_womenswear_sales",
+        "sqlText": "SELECT fc.fiscal_month, r.sales_region, cat.level1_name AS product_category, SUM(sf.sales_amount) AS sales_amount, COUNT(DISTINCT sf.order_id) AS order_count, SUM(sf.quantity_sold) AS quantity_sold, SUM(sf.sales_amount) / NULLIF(COUNT(DISTINCT sf.order_id), 0) AS avg_order_value FROM sales_fact sf JOIN products p ON p.id = sf.product_id JOIN category_dim cat ON cat.id = p.category_id JOIN stores s ON s.id = sf.store_id JOIN region_dim r ON r.id = s.region_id JOIN fiscal_calendar fc ON fc.date_id = sf.sale_date WHERE fc.current_fiscal_year = true AND r.sales_region = '华东' AND cat.level1_name = '女装' GROUP BY fc.fiscal_month, r.sales_region, cat.level1_name ORDER BY fc.fiscal_month",
+        "traceElements": [
+          {
+            "type": "METRIC",
+            "sqlFragment": "SUM(sf.sales_amount)",
+            "sourceObjectId": "metric:sales_amount",
+            "evidenceRefs": ["metric_definition:sales_amount"]
+          },
+          {
+            "type": "JOIN",
+            "sqlFragment": "p.id = sf.product_id",
+            "evidenceRefs": ["relationship:sales_fact_products"]
+          },
+          {
+            "type": "FILTER",
+            "sqlFragment": "fc.current_fiscal_year = true",
+            "sourceObjectId": "rule:current_fiscal_year"
+          },
+          {
+            "type": "FILTER",
+            "sqlFragment": "r.sales_region = '华东'",
+            "sourceObjectId": "rule:east_china_sales_region"
+          },
+          {
+            "type": "FILTER",
+            "sqlFragment": "cat.level1_name = '女装'",
+            "sourceObjectId": "rule:womenswear_level1_category"
+          }
+        ]
+      }
+    },
+    {
+      "module": "SQL Validator",
+      "input": {
+        "sqlDraftId": "draft:fiscal_year_east_china_womenswear_sales",
+        "checks": ["table_exists", "column_exists", "join_evidence", "metric_review_status", "business_rule_review_status", "read_only_guard"]
+      },
+      "output": {
+        "status": "PASSED",
+        "checks": {
+          "table_exists": "PASSED",
+          "column_exists": "PASSED",
+          "join_evidence": "PASSED",
+          "metric_review_status": "PASSED",
+          "business_rule_review_status": "PASSED",
+          "read_only_guard": "PASSED"
+        },
+        "warnings": []
+      }
+    },
+    {
+      "module": "Answer Composer",
+      "input": {
+        "answerPlanType": "SQL_DRAFT",
+        "validationStatus": "PASSED",
+        "question": "这个财年华东地区女装销售的情况"
+      },
+      "output": {
+        "answerType": "SQL_DRAFT_WITH_EXPLANATION",
+        "summary": "可以按财年月度查看华东地区女装销售额、订单数、销量和客单价。该 SQL draft 使用 sales_fact 作为销售事实表，通过商品、门店、区域和财年日历维表完成过滤与聚合。",
+        "whyExecutable": [
+          "所有表字段均在 Semantic Catalog 中存在",
+          "每条 join 都有 relationship evidence",
+          "财年、华东、女装和默认销售指标均为 BUSINESS_APPROVED",
+          "SQL draft 是只读聚合查询"
+        ],
+        "followUpSuggestions": ["按城市拆分", "按品牌拆分", "查看同比或环比", "定位销售额下降月份"]
+      }
+    }
+  ]
+}
+```
+
+如果不能执行成功，应停在以下阶段：
+
+| 缺失或冲突 | 停下的模块 | 输出 |
+| --- | --- | --- |
+| 财年起止日或 current fiscal year 未确认 | Query Planner | `CLARIFICATION_REQUIRED`，询问使用哪个 fiscal calendar。 |
+| 华东地区存在销售大区、收货地址、门店归属等多个口径 | Query Planner | `CLARIFICATION_REQUIRED`，列出口径选项。 |
+| 女装分类无法映射到 BUSINESS_APPROVED 商品分类 | Semantic Search / Query Planner | 返回候选分类或要求确认类目层级。 |
+| 销售情况默认指标未 BUSINESS_APPROVED | SQL Validator | `PASSED_WITH_WARNINGS` 或 `NOT_RUN`，要求确认默认销售概览指标。 |
+| 任一 join path 没有 relationship evidence | SQL Validator | `FAILED`，返回缺失的 join evidence，不生成可用 SQL draft。 |
