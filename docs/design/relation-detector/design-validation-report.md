@@ -80,13 +80,13 @@ postgres / postgres.tokenevent / postgres.fullgrammer.common / postgres.fullgram
 
 当 `parser.mode=auto|full-grammer` 时，如果无法根据 database type / profile / version 选中 full-grammer profile，runner 会使用 adaptor 暴露的 token-event parser，并记录 fallback 诊断。
 
-如果 full-grammer profile 已经选中，full-grammer parser 自己返回 structured events、partial result 和 warning；它不会在 event 层委托 token-event 补齐事件。未捕获异常由 `ScanEngine` 记录当前 statement/source 失败，不会静默混合另一条 parser 链路。
+如果 full-grammer profile 已经选中，full-grammer parser 自己返回 structured events、partial result 和 warning；它不会在 event 层委托 token-event 补齐事件。只有 profile 缺失、版本不支持或 full-grammer hard failure 才 fallback 到 token-event，并输出 parser-mode fallback warning。
 
-### 2. SQL relationship 与 Data Lineage 当前会各 parse 一次
+### 2. SQL relationship 与 Data Lineage 共享 structured result
 
-`ScanEngine.safeParseStatement(...)` 当前先调用 `SqlRelationParserRunner.parseStructured(...)` 给 Data Lineage 使用，再调用 `SqlRelationParserRunner.parse(...)` 生成 relationship。两次都会经过同一 parser selection 逻辑。
+`ScanEngine.safeParseStatement(...)` 当前调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)`，一次结构化解析后同时生成 relationship candidates，并把同一个 `StructuredParseResult` 交给 Data Lineage extractor。
 
-这是实现事实，不是设计分歧；后续可以优化为复用同一个 `StructuredParseResult`，但不应改变输出语义。
+这是当前实现事实，不改变 relationship / Data Lineage JSON schema，也不改变 semantic extractor 的职责边界。
 
 ### 3. full-grammer 与 token-event 共用语义层
 

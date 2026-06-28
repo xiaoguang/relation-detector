@@ -100,7 +100,7 @@ output:
 - 至少启用一种 source。
 - 启用文件 source 时文件必须存在。
 - `parser.sql.mode`、`parser.sql.fallbackOnFailure`、`parser.ddl.mode`、`parser.ddl.fallbackOnFailure` 已移除；配置中出现这些 key 时应显式报错。MySQL/PostgreSQL SQL/DDL 均通过统一 `parser.mode` 选择 full-grammer 或 token-event，ANTLR 只作为底层 lexer/parser 支撑。
-- 当前统一 parser 配置为 `parser.mode: auto|full-grammer|token-event`。默认 `auto`：能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选择版本化 full-grammer profile 时优先使用 full-grammer；不能选择 profile 或版本不支持时使用 token-event。profile 已选中后的 parse warning / partial result 属于所选 parser，未捕获异常由扫描层记录当前 source/statement 失败。CLI 可通过 `--parser-mode`、`--grammar-profile`、`--database-version` 覆盖 YAML。
+- 当前统一 parser 配置为 `parser.mode: auto|full-grammer|token-event`。默认 `auto`：能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选择版本化 full-grammer profile 时优先使用 full-grammer；不能选择 profile、版本不支持或 full-grammer hard failure 时使用 token-event fallback 并记录 warning。profile 已选中后的 syntax warning / partial result 属于所选 parser，不触发 fallback。CLI 可通过 `--parser-mode`、`--grammar-profile`、`--database-version` 覆盖 YAML。
 - `parser.grammarProfile` 使用用户可见 profile id；当前内置 profile 包括 `mysql/8.0`、`postgresql/16`、`postgresql/17`、`postgresql/18`。
 - PostgreSQL full-grammer 是严格大版本语法证明：`postgresql/16` 不用于通过 17/18 专属 correctness，`postgresql/17` 不用于通过 18 专属 correctness。token-event 可以作为未知版本或 unsupported version 的宽松 fallback。
 - MySQL `SQL_MODE` 是 MySQL grammar runtime 的方言开关，不是 `parser.mode`。配置、CLI 和输出 diagnostics 中的 parser mode 只使用 `auto|full-grammer|token-event`。

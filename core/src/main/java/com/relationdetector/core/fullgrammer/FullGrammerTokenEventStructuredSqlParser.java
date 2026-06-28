@@ -73,10 +73,10 @@ public final class FullGrammerTokenEventStructuredSqlParser implements Structure
         if (!profileSelection.diagnostic().isBlank()) {
             attributes.put("grammarProfileDiagnostic", profileSelection.diagnostic());
         }
-        attributes.put("fullGrammerShadow", true);
+        attributes.put("fullGrammerPrimary", true);
         attributes.put("fullGrammerImplementation", implementation);
         return new StructuredParseResult(
-                "FULL_GRAMMAR_TOKEN_EVENT_SHADOW",
+                "FULL_GRAMMAR_TOKEN_EVENT_PRIMARY",
                 result.dialect(),
                 result.sourceName(),
                 result.events(),

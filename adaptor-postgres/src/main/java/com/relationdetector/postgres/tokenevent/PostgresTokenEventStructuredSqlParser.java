@@ -1,14 +1,9 @@
 package com.relationdetector.postgres.tokenevent;
 
-import java.util.List;
-
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.Token;
-
 import com.relationdetector.core.tokenevent.PostgresTokenEventSqlEventBuilder;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.tokenevent.TokenEventStructuredSqlParser;
+import com.relationdetector.core.parse.AntlrSqlParseSupport;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.ParsedSql;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.core.antlr.postgres.PostgresRelationSqlLexer;
@@ -33,24 +28,14 @@ public final class PostgresTokenEventStructuredSqlParser extends TokenEventStruc
 
     @Override
     protected ParsedSql parseAntlr(String sql, SyntaxErrorCounter errors) {
-        PostgresRelationSqlLexer lexer = new PostgresRelationSqlLexer(CharStreams.fromString(sql));
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(errors);
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        PostgresRelationSqlParser parser = new PostgresRelationSqlParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-
-        parser.script();
-        tokens.fill();
-
-        List<Token> visibleTokens = tokens.getTokens().stream()
-                .filter(token -> token.getType() != Token.EOF)
-                .filter(token -> token.getChannel() == Token.DEFAULT_CHANNEL)
-                .toList();
-        return new ParsedSql("PostgresRelationSql",
+        return AntlrSqlParseSupport.parseAntlr(
+                sql,
+                errors,
+                "PostgresRelationSql",
                 PostgresRelationSqlLexer.class.getSimpleName(),
                 PostgresRelationSqlParser.class.getSimpleName(),
-                visibleTokens);
+                PostgresRelationSqlLexer::new,
+                PostgresRelationSqlParser::new,
+                PostgresRelationSqlParser::script);
     }
 }

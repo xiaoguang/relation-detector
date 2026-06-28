@@ -909,7 +909,7 @@ Data Lineage 是独立顶层数组，不混入 relationship，也不改变 relat
 
 - fixture SQL/DDL 覆盖常见 JOIN、子查询、视图、触发器、DML 写入、DDL index/FK。
 - 单条 SQL 失败不影响整体扫描。
-- full-grammer parity 测试证明版本化 profile 不低于当前 token-event correctness gold。
+- full-grammer parity 测试证明版本化 profile 不低于当前 token-event correctness gold；运行时选中 profile 后 full-grammer 是 primary parser，token-event 只做 fallback。
 
 ### Phase 7：可选数据画像
 

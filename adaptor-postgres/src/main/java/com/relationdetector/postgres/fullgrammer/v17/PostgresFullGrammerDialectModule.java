@@ -3,12 +3,8 @@ package com.relationdetector.postgres.fullgrammer.v17;
 import java.util.Set;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
-import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
-import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
-import com.relationdetector.core.fullgrammer.FullGrammerDialectModule;
 import com.relationdetector.core.fullgrammer.SqlGrammarProfile;
-import com.relationdetector.postgres.fullgrammer.common.PostgresFullGrammerStructuredDdlParser;
-import com.relationdetector.postgres.fullgrammer.common.PostgresFullGrammerStructuredSqlParser;
+import com.relationdetector.postgres.fullgrammer.common.AbstractPostgresFullGrammerDialectModule;
 
 /**
  * PostgreSQL 17 full-grammer module 注册入口。
@@ -20,8 +16,7 @@ import com.relationdetector.postgres.fullgrammer.common.PostgresFullGrammerStruc
  * the package/profile; it returns only parsers from the v17 package so 17.x
  * correctness cannot silently reuse the v16 full-grammer implementation.
  */
-public final class PostgresFullGrammerDialectModule implements FullGrammerDialectModule {
-    private final PostgresFullGrammerVersionBinding binding = new PostgresFullGrammerVersionBinding();
+public final class PostgresFullGrammerDialectModule extends AbstractPostgresFullGrammerDialectModule {
     private static final SqlGrammarProfile PROFILE = new SqlGrammarProfile(
             "postgresql-17",
             DatabaseType.POSTGRESQL,
@@ -30,23 +25,11 @@ public final class PostgresFullGrammerDialectModule implements FullGrammerDialec
             Set.of("merge", "merge_returning", "json_table", "sql_json",
                     "materialized_cte", "lateral", "set_returning_functions"));
 
-    @Override
-    public SqlGrammarProfile profile() {
-        return PROFILE;
+    public PostgresFullGrammerDialectModule() {
+        this(new PostgresFullGrammerVersionBinding());
     }
 
-    @Override
-    public String implementationName() {
-        return "POSTGRESQL_17_FULL_GRAMMER_PARSE_TREE_VISITOR";
-    }
-
-    @Override
-    public StructuredSqlParser sqlParser() {
-        return new PostgresFullGrammerStructuredSqlParser(binding);
-    }
-
-    @Override
-    public StructuredDdlParser structuredDdlParser() {
-        return new PostgresFullGrammerStructuredDdlParser(binding);
+    private PostgresFullGrammerDialectModule(PostgresFullGrammerVersionBinding binding) {
+        super(PROFILE, binding, binding);
     }
 }

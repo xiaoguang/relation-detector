@@ -6,7 +6,7 @@
 
 Data Lineage 的全量审核入口见 [Data Lineage Full Audit](../parser-audit/data-lineage-full-audit.md)。它同样由 Java 测试工具从 fixture 和 `TokenEventDataLineageExtractor` 输出生成，不调用大模型；用于回答“哪些 SQL 已经有 lineage golden、哪些可建议加入、哪些需要人工审核、哪些不适用 v1 字段血缘”。
 
-full-grammer expression transform 的审核记录见 [full-grammer Expression Transform Compatibility Audit](../parser-audit/full-grammer-expression-transform-compatibility-audit.md)。它记录 full-grammer shadow 严格表达式分析曾暴露出的 transform 差异，例如疑似过粗的 `AGGREGATE` 判断和 `CASE_WHEN` 的 value/control flow 差异；本轮已按人工审核结论固化到 lineage golden，shadow 测试不再保留 transform allowlist。
+full-grammer expression transform 的审核记录见 [full-grammer Expression Transform Compatibility Audit](../parser-audit/full-grammer-expression-transform-compatibility-audit.md)。它记录 full-grammer parity 阶段严格表达式分析曾暴露出的 transform 差异，例如疑似过粗的 `AGGREGATE` 判断和 `CASE_WHEN` 的 value/control flow 差异；本轮已按人工审核结论固化到 lineage golden，parity 测试不再保留 transform allowlist。
 
 历史 parser 迁移对比报告保留在 `docs/parser-audit/archive`，只作为追溯资料；当前验收只看 correctness fixture 的 `expected-relations.json` / `expected-lineage.json` 和本文件列出的测试矩阵。
 
@@ -37,8 +37,8 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 
 - correctness、CLI E2E 和手工 SQL 分析前，先运行 `mvn clean -pl cli -am -DskipTests test-compile` 与 `scripts/check-no-jls-bad-classes.sh`。后者会拒绝 VS Code Java Language Server / Eclipse 编译器写入的 `Unresolved compilation problems` 占位 class，以及未真实实现 `DatabaseAdaptor` SPI 的坏 adaptor class。
 - 手工 CLI 使用 `scripts/run-cli.sh ...`。该脚本先生成 Maven main jar，再执行坏 class 检查并组装运行 classpath；不要直接拼接未检查的 `*/target/classes`。
-- MySQL/PostgreSQL correctness fixture 默认以方言 token-event 输出作为 fallback gold；full-grammer profile 通过 parity 测试证明不低于该 gold。
-- MySQL/PostgreSQL DDL correctness fixture 默认以方言 token-event DDL pipeline 作为 fallback gold；full-grammer DDL profile 通过 DDL parity 测试证明不低于该 gold。
+- MySQL/PostgreSQL root correctness fixture 显式以方言 token-event 输出作为 baseline gold；versioned fixture 显式以 full-grammer 输出作为对应版本 gold。full-grammer parity 测试继续证明 baseline profile 不低于 token-event baseline。
+- MySQL/PostgreSQL root DDL correctness fixture 显式以方言 token-event DDL pipeline 作为 baseline gold；versioned DDL fixture 显式以 full-grammer DDL 输出作为对应版本 gold。full-grammer DDL parity 测试继续证明 baseline profile 不低于 token-event DDL baseline。
 - `simple`、`antlr-shadow`、`simple-ddl`、`antlr-ddl-shadow` 以及对应 parser mode/fallback 配置已经移除；配置中出现旧 key 时应报错。
 - SQL Server/Oracle 只保留接口和 future fixture，不在本轮 primary 切换范围内。
 
@@ -161,8 +161,8 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 | metadata 增强是否有保护 | 有 | MySQL metadata facts、database DDL collector、metadata evidence enhancer 测试覆盖 |
 | confidence 是否有保护 | 有 | confidence examples、evidence aggregation、dialect parser evidence/confidence 测试覆盖；correlated EXISTS 验证为 `SQL_LOG_EXISTS`，且同 endpoint pair 不应再重复产出普通 `SQL_LOG_JOIN` 造成虚高计分 |
 | noise filter 是否有保护 | 有 | MySQL system log fixture、token-event USING/noise 单元测试覆盖 |
-| full-grammer 是否覆盖 baseline SQL fixture | 是 | `FullGrammerCorrectnessShadowTest` 扫描无版本 manifest 的 SQL correctness fixture；MySQL 8.0 / PostgreSQL 16 full-grammer 与 token-event fallback 保持 parity，后续深化 parse-tree visitor 时不得减少关系或血缘 |
-| full-grammer 是否覆盖 baseline DDL fixture | 是 | `FullGrammerDdlCorrectnessShadowTest` 扫描无版本 manifest 的 DDL correctness fixture；MySQL 8.0 / PostgreSQL 16 full-grammer DDL 与 token-event DDL relationship 保持 parity，不改变 baseline correctness golden |
+| full-grammer 是否覆盖 baseline SQL fixture | 是 | `FullGrammerCorrectnessShadowTest` 扫描 root SQL correctness fixture；MySQL 8.0 / PostgreSQL 16 full-grammer 与 token-event baseline 保持 parity，运行时选中 profile 后 full-grammer 是 primary parser |
+| full-grammer 是否覆盖 baseline DDL fixture | 是 | `FullGrammerDdlCorrectnessShadowTest` 扫描 root DDL correctness fixture；MySQL 8.0 / PostgreSQL 16 full-grammer DDL 与 token-event DDL relationship 保持 parity，运行时选中 profile 后 full-grammer 是 primary parser |
 | full-grammer 是否覆盖 MySQL 8.0 version fixture | 是 | `CorrectnessFixtureRunnerTest` 扫描 `mysql/v8_0`，manifest 强制 `parserMode: full-grammer` 和 `grammarProfile: mysql/8.0`，比对独立 version golden |
 | full-grammer 是否覆盖 PostgreSQL 16/17/18 version fixture | 是 | `CorrectnessFixtureRunnerTest` 扫描 `postgres/v16`、`postgres/v17`、`postgres/v18`，manifest 强制 `parserMode: full-grammer` 和对应 `grammarProfile`，比对独立 version golden |
 

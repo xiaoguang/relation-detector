@@ -3,6 +3,8 @@ package com.relationdetector.core.fullgrammer;
 import java.util.Collection;
 
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
+import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
+import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.Enums.DatabaseType;
 
 /**
@@ -50,15 +52,22 @@ public final class FullGrammerTokenEventParserFactory {
             StructuredSqlParser currentTokenEventParser,
             Collection<FullGrammerDialectModule> modules
     ) {
-        SqlGrammarProfileSelection selection = SqlGrammarProfileRegistry.select(request, modules);
-        StructuredSqlParser parser = SqlGrammarProfileRegistry.moduleFor(selection.profile(), modules)
-                .map(module -> new FullGrammerTokenEventStructuredSqlParser(
-                        selection,
-                        module.sqlParser(),
-                        module.implementationName()))
-                .map(StructuredSqlParser.class::cast)
-                .orElse(currentTokenEventParser);
-        return new CreatedParser(selection, parser);
+        FullGrammerParserBundleFactory.CreatedBundle bundle = FullGrammerParserBundleFactory.create(
+                request,
+                currentTokenEventParser,
+                noopDdlParser(),
+                modules);
+        return new CreatedParser(bundle.selection().profileSelection(), bundle.sqlParser());
+    }
+
+    private static StructuredDdlParser noopDdlParser() {
+        return (ddl, sourceName, context) -> new StructuredParseResult(
+                "NOOP_DDL",
+                "",
+                sourceName,
+                java.util.List.of(),
+                java.util.List.of(),
+                java.util.Map.of());
     }
 
     public record CreatedParser(

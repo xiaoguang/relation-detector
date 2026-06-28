@@ -2,23 +2,15 @@ package com.relationdetector.core.parser;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.relationdetector.contracts.spi.AdaptorContext;
-import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.StructuredParseResult;
-import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
-import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.core.scan.ScanConfig;
-import com.relationdetector.core.fullgrammer.FullGrammerDdlParserFactory;
-import com.relationdetector.core.fullgrammer.FullGrammerProfileRequest;
-import com.relationdetector.core.fullgrammer.SqlGrammarProfileSelection;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 
 /**
@@ -43,6 +35,7 @@ import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
  */
 public final class DdlRelationParserRunner {
     private final DdlRelationExtractionVisitor visitor = new DdlRelationExtractionVisitor();
+    private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
 
     /**
      * 从 DDL 文件解析 relationship 候选。
@@ -56,7 +49,7 @@ public final class DdlRelationParserRunner {
             AdaptorContext context
     ) {
         String ddl = read(file);
-        StructuredParseResult structured = selectedDdlParser(adaptor, config, file.toString(), context)
+        StructuredParseResult structured = parserBundleSelector.select(adaptor, config, context).ddlParser()
                 .parseDdl(ddl, file.toString(), context);
         return visitor.extract(ddl, file.toString(), structured);
     }
@@ -81,7 +74,7 @@ public final class DdlRelationParserRunner {
             EvidenceSourceType sourceType,
             AdaptorContext context
     ) {
-        StructuredParseResult structured = selectedDdlParser(adaptor, config, sourceName, context)
+        StructuredParseResult structured = parserBundleSelector.select(adaptor, config, context).ddlParser()
                 .parseDdl(ddl, sourceName, context);
         return rewriteEvidenceSource(
                 visitor.extract(ddl, sourceName, structured),
@@ -116,79 +109,4 @@ public final class DdlRelationParserRunner {
         }
     }
 
-    private StructuredDdlParser selectedDdlParser(
-            DatabaseAdaptor adaptor,
-            ScanConfig config,
-            String sourceName,
-            AdaptorContext context
-    ) {
-        StructuredDdlParser tokenEvent = adaptor.structuredDdlParser()
-                .orElseThrow(() -> new IllegalStateException(
-                        "No token-event DDL parser for adaptor " + adaptor.id()));
-        String mode = parserMode(config);
-        if ("token-event".equals(mode)) {
-            return wrap(tokenEvent, config, "token-event", "", "CONFIG", "", false);
-        }
-        FullGrammerDdlParserFactory.CreatedParser created =
-                FullGrammerDdlParserFactory.create(profileRequest(config), tokenEvent,
-                        com.relationdetector.core.fullgrammer.SqlGrammarProfileRegistry.modules());
-        SqlGrammarProfileSelection selection = created.profileSelection();
-        if (selection.profile() == null) {
-            if (isExplicitFullGrammer(config)) {
-                warn(context, sourceName, "PARSER_MODE_FALLBACK", selection.diagnostic());
-            }
-            return wrap(tokenEvent, config, "token-event", selection.requestedDatabaseVersion(),
-                    selection.versionSource(), selection.diagnostic(), true);
-        }
-        return wrap(created.parser(), config, "full-grammer", selection.requestedDatabaseVersion(),
-                selection.versionSource(), selection.diagnostic(), selection.usedFallback());
-    }
-
-    private static FullGrammerProfileRequest profileRequest(ScanConfig config) {
-        return FullGrammerProfileRequest.builder()
-                .databaseType(config.databaseType)
-                .configuredProfile(config.grammarProfile)
-                .configuredVersion(config.databaseVersion)
-                .configuredVersionSource(config.databaseVersionSource)
-                .build();
-    }
-
-    private static String parserMode(ScanConfig config) {
-        String mode = config.parserMode == null || config.parserMode.isBlank() ? "auto" : config.parserMode;
-        return mode.trim().toLowerCase(java.util.Locale.ROOT);
-    }
-
-    private static boolean isExplicitFullGrammer(ScanConfig config) {
-        return "full-grammer".equals(parserMode(config));
-    }
-
-    private static StructuredDdlParser wrap(
-            StructuredDdlParser parser,
-            ScanConfig config,
-            String selectedMode,
-            String requestedVersion,
-            String versionSource,
-            String fallbackReason,
-            boolean profileFallback
-    ) {
-        return (ddl, sourceName, context) -> {
-            StructuredParseResult parsed = parser.parseDdl(ddl, sourceName, context);
-            Map<String, Object> attributes = new LinkedHashMap<>(parsed.attributes());
-            attributes.put("parserModeRequested", parserMode(config));
-            attributes.put("parserModeSelected", selectedMode);
-            attributes.put("selectedGrammarProfile", attributes.getOrDefault("grammarProfile", ""));
-            attributes.put("requestedDatabaseVersion", requestedVersion == null ? "" : requestedVersion);
-            attributes.put("versionSource", versionSource == null || versionSource.isBlank() ? "UNKNOWN" : versionSource);
-            attributes.put("parserFallbackReason", fallbackReason == null ? "" : fallbackReason);
-            attributes.put("profileFallback", profileFallback);
-            return new StructuredParseResult(parsed.backend(), parsed.dialect(), parsed.sourceName(),
-                    parsed.events(), parsed.warnings(), attributes);
-        };
-    }
-
-    private static void warn(AdaptorContext context, String sourceName, String code, String message) {
-        if (context != null && message != null && !message.isBlank()) {
-            context.warn(WarningMessage.warn(WarningType.PARSE_WARNING, code, message, sourceName, 0));
-        }
-    }
 }

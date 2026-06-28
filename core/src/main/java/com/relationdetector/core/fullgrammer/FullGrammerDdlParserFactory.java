@@ -3,6 +3,8 @@ package com.relationdetector.core.fullgrammer;
 import java.util.Collection;
 
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
+import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
+import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.Enums.DatabaseType;
 
 /**
@@ -38,11 +40,22 @@ public final class FullGrammerDdlParserFactory {
             StructuredDdlParser currentTokenEventParser,
             Collection<FullGrammerDialectModule> modules
     ) {
-        SqlGrammarProfileSelection selection = SqlGrammarProfileRegistry.select(request, modules);
-        StructuredDdlParser parser = SqlGrammarProfileRegistry.moduleFor(selection.profile(), modules)
-                .map(FullGrammerDialectModule::structuredDdlParser)
-                .orElse(currentTokenEventParser);
-        return new CreatedParser(selection, parser);
+        FullGrammerParserBundleFactory.CreatedBundle bundle = FullGrammerParserBundleFactory.create(
+                request,
+                noopSqlParser(),
+                currentTokenEventParser,
+                modules);
+        return new CreatedParser(bundle.selection().profileSelection(), bundle.ddlParser());
+    }
+
+    private static StructuredSqlParser noopSqlParser() {
+        return (statement, context) -> new StructuredParseResult(
+                "NOOP_SQL",
+                "",
+                statement.sourceName(),
+                java.util.List.of(),
+                java.util.List.of(),
+                java.util.Map.of());
     }
 
     public record CreatedParser(

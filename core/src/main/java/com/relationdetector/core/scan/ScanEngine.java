@@ -227,12 +227,10 @@ public final class ScanEngine {
             Set<TableId> knownPhysicalTables
     ) {
         try {
-            if (!SqlLogNoiseFilter.shouldSkip(config, statement)) {
-                sqlParserRunner.parseStructured(adaptor, config, statement, context).ifPresent(structured -> {
-                    dataLineageCandidates.addAll(dataLineageExtractor.extract(statement, structured, knownPhysicalTables));
-                });
-            }
-            return sqlParserRunner.parse(adaptor, config, statement, context);
+            var parsed = sqlParserRunner.parseStructuredAndRelations(adaptor, config, statement, context);
+            parsed.structured().ifPresent(structured ->
+                    dataLineageCandidates.addAll(dataLineageExtractor.extract(statement, structured, knownPhysicalTables)));
+            return parsed.relationships();
         } catch (Exception ex) {
             result.warnings().add(DiagnosticWarnings.sqlParseFailed(statement, ex));
             return List.of();

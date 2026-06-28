@@ -4,10 +4,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Lexer;
+import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
@@ -34,11 +39,32 @@ public final class AntlrSqlParseSupport {
     }
 
     public ParsedSql parseAntlr(String sql, SyntaxErrorCounter errors) {
-        RelationSqlLexer lexer = new RelationSqlLexer(CharStreams.fromString(sql));
+        return parseAntlr(
+                sql,
+                errors,
+                "RelationSql",
+                RelationSqlLexer.class.getSimpleName(),
+                RelationSqlParser.class.getSimpleName(),
+                RelationSqlLexer::new,
+                RelationSqlParser::new,
+                RelationSqlParser::script);
+    }
+
+    public static <L extends Lexer, P extends Parser> ParsedSql parseAntlr(
+            String sql,
+            SyntaxErrorCounter errors,
+            String grammarName,
+            String lexerName,
+            String parserName,
+            Function<CharStream, L> lexerFactory,
+            Function<CommonTokenStream, P> parserFactory,
+            Consumer<P> entryRule
+    ) {
+        L lexer = lexerFactory.apply(CharStreams.fromString(sql));
         lexer.removeErrorListeners();
         lexer.addErrorListener(errors);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        RelationSqlParser parser = new RelationSqlParser(tokens);
+        P parser = parserFactory.apply(tokens);
         parser.removeErrorListeners();
         parser.addErrorListener(errors);
 
@@ -47,17 +73,14 @@ public final class AntlrSqlParseSupport {
          * but this still collects syntax diagnostics and keeps a stable ANTLR
          * entry point for future richer visitors.
          */
-        parser.script();
+        entryRule.accept(parser);
         tokens.fill();
 
         List<Token> visibleTokens = tokens.getTokens().stream()
                 .filter(token -> token.getType() != Token.EOF)
                 .filter(token -> token.getChannel() == Token.DEFAULT_CHANNEL)
                 .toList();
-        return new ParsedSql("RelationSql",
-                RelationSqlLexer.class.getSimpleName(),
-                RelationSqlParser.class.getSimpleName(),
-                visibleTokens);
+        return new ParsedSql(grammarName, lexerName, parserName, visibleTokens);
     }
 
     public java.util.Optional<WarningMessage> detectDynamicSql(SqlStatementRecord statement) {

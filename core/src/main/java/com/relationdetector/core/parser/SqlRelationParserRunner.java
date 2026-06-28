@@ -3,11 +3,9 @@ package com.relationdetector.core.parser;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
-import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
@@ -16,10 +14,7 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.log.SqlLogNoiseFilter;
-import com.relationdetector.core.fullgrammer.FullGrammerProfileRequest;
-import com.relationdetector.core.fullgrammer.FullGrammerTokenEventParserFactory;
-import com.relationdetector.core.fullgrammer.SqlGrammarProfileSelection;
-import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
 /**
  * SQL parser mode 选择与运行入口。
@@ -33,6 +28,9 @@ import com.relationdetector.core.relation.TokenEventSqlRelationParser;
  * selection, and token-event fallback. It does not extract relationships directly.
  */
 public final class SqlRelationParserRunner {
+    private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
+    private final TokenEventRelationExtractor relationExtractor = new TokenEventRelationExtractor();
+
     /**
      * 解析一条 SQL statement 并返回 relationship 候选。
      *
@@ -44,16 +42,7 @@ public final class SqlRelationParserRunner {
             SqlStatementRecord statement,
             AdaptorContext context
     ) {
-        if (SqlLogNoiseFilter.shouldSkip(config, statement)) {
-            return List.of();
-        }
-        SqlStatementRecord effectiveStatement = withParserPolicyAttributes(config, statement);
-        Optional<StructuredSqlParser> structuredParser = selectedStructuredParser(adaptor, config, effectiveStatement, context);
-        if (structuredParser.isPresent()) {
-            return new TokenEventSqlRelationParser(structuredParser.get()).parse(effectiveStatement, context);
-        }
-        SqlRelationParser parser = adaptor.sqlRelationParser();
-        return parser.parse(effectiveStatement, context);
+        return parseStructuredAndRelations(adaptor, config, statement, context).relationships();
     }
 
     /**
@@ -61,18 +50,36 @@ public final class SqlRelationParserRunner {
      *
      * <p>EN: Returns only the structured parse result, mainly for Data Lineage extraction.
      */
-    public Optional<StructuredParseResult> parseStructured(
+    public java.util.Optional<StructuredParseResult> parseStructured(
+            DatabaseAdaptor adaptor,
+            ScanConfig config,
+            SqlStatementRecord statement,
+            AdaptorContext context
+    ) {
+        return parseStructuredAndRelations(adaptor, config, statement, context).structured();
+    }
+
+    public ParsedSqlRelations parseStructuredAndRelations(
             DatabaseAdaptor adaptor,
             ScanConfig config,
             SqlStatementRecord statement,
             AdaptorContext context
     ) {
         if (SqlLogNoiseFilter.shouldSkip(config, statement)) {
-            return Optional.empty();
+            return ParsedSqlRelations.empty();
         }
         SqlStatementRecord effectiveStatement = withParserPolicyAttributes(config, statement);
-        return selectedStructuredParser(adaptor, config, effectiveStatement, context)
-                .map(parser -> parser.parseSql(effectiveStatement, context));
+        if (adaptor.structuredSqlParser().isEmpty()) {
+            warn(context, statement, "PARSER_MODE_FALLBACK",
+                    "Adaptor has no structured SQL parser; using adaptor SQL relation parser");
+            SqlRelationParser parser = adaptor.sqlRelationParser();
+            return new ParsedSqlRelations(java.util.Optional.empty(), parser.parse(effectiveStatement, context));
+        }
+        ParserBundle bundle = parserBundleSelector.select(adaptor, config, context);
+        StructuredParseResult structured = bundle.sqlParser().parseSql(effectiveStatement, context);
+        return new ParsedSqlRelations(
+                java.util.Optional.of(structured),
+                relationExtractor.extract(effectiveStatement, structured));
     }
 
     private SqlStatementRecord withParserPolicyAttributes(ScanConfig config, SqlStatementRecord statement) {
@@ -82,89 +89,6 @@ public final class SqlRelationParserRunner {
                 statement.startLine(), statement.endLine(), attributes);
     }
 
-    private Optional<StructuredSqlParser> selectedStructuredParser(
-            DatabaseAdaptor adaptor,
-            ScanConfig config,
-            SqlStatementRecord statement,
-            AdaptorContext context
-    ) {
-        Optional<StructuredSqlParser> tokenEvent = adaptor.structuredSqlParser();
-        if (tokenEvent.isEmpty()) {
-            warn(context, statement, "PARSER_MODE_FALLBACK",
-                    "Adaptor has no structured SQL parser; using adaptor SQL relation parser");
-            return Optional.empty();
-        }
-
-        String mode = parserMode(config);
-        if ("token-event".equals(mode)) {
-            return Optional.of(wrap(tokenEvent.get(), config, "token-event", "", "CONFIG", "", false));
-        }
-
-        FullGrammerTokenEventParserFactory.CreatedParser created =
-                FullGrammerTokenEventParserFactory.create(profileRequest(config), tokenEvent.get());
-        SqlGrammarProfileSelection selection = created.profileSelection();
-        if (selection.profile() == null) {
-            if (isExplicitFullGrammer(config)) {
-                warn(context, statement, "PARSER_MODE_FALLBACK", selection.diagnostic());
-            }
-            return Optional.of(wrap(tokenEvent.get(), config, "token-event", selection.requestedDatabaseVersion(),
-                    selection.versionSource(), selection.diagnostic(), true));
-        }
-
-        return Optional.of(wrap(created.parser(), config, "full-grammer", selection.requestedDatabaseVersion(),
-                selection.versionSource(), selection.diagnostic(), selection.usedFallback()));
-    }
-
-    private static StructuredSqlParser wrap(
-            StructuredSqlParser parser,
-            ScanConfig config,
-            String selectedMode,
-            String requestedVersion,
-            String versionSource,
-            String fallbackReason,
-            boolean profileFallback
-    ) {
-        return new AttributeWrappingStructuredSqlParser(parser,
-                parserAttributes(config, selectedMode, requestedVersion, versionSource, fallbackReason, profileFallback));
-    }
-
-    private static FullGrammerProfileRequest profileRequest(ScanConfig config) {
-        return FullGrammerProfileRequest.builder()
-                .databaseType(config.databaseType)
-                .configuredProfile(config.grammarProfile)
-                .configuredVersion(config.databaseVersion)
-                .configuredVersionSource(config.databaseVersionSource)
-                .build();
-    }
-
-    private static String parserMode(ScanConfig config) {
-        String mode = config.parserMode == null || config.parserMode.isBlank() ? "auto" : config.parserMode;
-        return mode.trim().toLowerCase(java.util.Locale.ROOT);
-    }
-
-    private static boolean isExplicitFullGrammer(ScanConfig config) {
-        return "full-grammer".equals(parserMode(config));
-    }
-
-    private static Map<String, Object> parserAttributes(
-            ScanConfig config,
-            String selectedMode,
-            String requestedVersion,
-            String versionSource,
-            String fallbackReason,
-            boolean profileFallback
-    ) {
-        Map<String, Object> attributes = new LinkedHashMap<>();
-        attributes.put("parserModeRequested", parserMode(config));
-        attributes.put("parserModeSelected", selectedMode);
-        attributes.put("selectedGrammarProfile", selectedMode.equals("full-grammer") ? config.grammarProfile : "");
-        attributes.put("requestedDatabaseVersion", requestedVersion == null ? "" : requestedVersion);
-        attributes.put("versionSource", versionSource == null || versionSource.isBlank() ? "UNKNOWN" : versionSource);
-        attributes.put("parserFallbackReason", fallbackReason == null ? "" : fallbackReason);
-        attributes.put("profileFallback", profileFallback);
-        return attributes;
-    }
-
     private static void warn(AdaptorContext context, SqlStatementRecord statement, String code, String message) {
         if (context != null && message != null && !message.isBlank()) {
             context.warn(WarningMessage.warn(WarningType.PARSE_WARNING, code, message,
@@ -172,21 +96,12 @@ public final class SqlRelationParserRunner {
         }
     }
 
-    private record AttributeWrappingStructuredSqlParser(
-            StructuredSqlParser delegate,
-            Map<String, Object> parserAttributes
-    ) implements StructuredSqlParser {
-        @Override
-        public StructuredParseResult parseSql(SqlStatementRecord statement, AdaptorContext context) {
-            StructuredParseResult parsed = delegate.parseSql(statement, context);
-            Map<String, Object> attributes = new LinkedHashMap<>(parsed.attributes());
-            attributes.putAll(parserAttributes);
-            if (attributes.get("selectedGrammarProfile") == null
-                    || String.valueOf(attributes.get("selectedGrammarProfile")).isBlank()) {
-                attributes.put("selectedGrammarProfile", attributes.getOrDefault("grammarProfile", ""));
-            }
-            return new StructuredParseResult(parsed.backend(), parsed.dialect(), parsed.sourceName(),
-                    parsed.events(), parsed.warnings(), attributes);
+    public record ParsedSqlRelations(
+            java.util.Optional<StructuredParseResult> structured,
+            List<RelationshipCandidate> relationships
+    ) {
+        static ParsedSqlRelations empty() {
+            return new ParsedSqlRelations(java.util.Optional.empty(), List.of());
         }
     }
 }
