@@ -340,6 +340,64 @@ class TokenEventRelationEventsTest {
     }
 
     @Test
+    void extractsMysqlUpdateRelationsAcrossDerivedAndCommaRowsets() {
+        SqlStatementRecord statement = procedure("""
+                BEGIN
+                    UPDATE account_balances ab
+                    INNER JOIN (
+                        SELECT user_id, SUM(amount) AS total_amount
+                        FROM transaction_logs
+                        GROUP BY user_id
+                    ) AS drs_engine,
+                    global_compliance_policies gcp
+                    SET ab.risk_score = drs_engine.total_amount
+                    WHERE ab.user_id = drs_engine.user_id
+                      AND ab.region_code = gcp.region_code;
+                END
+                """);
+
+        StructuredParseResult full = new TokenEventStructuredSqlParser(SqlDialect.MYSQL).parseSql(statement, null);
+
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, tokenEventRelationOnly(full))
+                .stream()
+                .map(this::relationFingerprint)
+                .sorted()
+                .toList();
+
+        assertEquals(List.of(
+                "CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_COLUMN_CO_OCCURRENCE",
+                "CO_OCCURRENCE:account_balances.user_id->transaction_logs.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                fingerprints);
+    }
+
+    @Test
+    void extractsMysqlProcedureInsertSelectJoinRelations() {
+        SqlStatementRecord statement = procedure("""
+                BEGIN
+                    INSERT INTO purchase_order_items (material_id, unit_id)
+                    SELECT jdi.material_id, m.unit_id
+                    FROM jsh_depot_item jdi
+                    INNER JOIN jsh_depot_head jdh ON jdi.header_id = jdh.id
+                    INNER JOIN jsh_material m ON jdi.material_id = m.id
+                    INNER JOIN jsh_material_extend jme ON jdi.material_id = jme.material_id;
+                END
+                """);
+
+        StructuredParseResult full = new TokenEventStructuredSqlParser(SqlDialect.MYSQL).parseSql(statement, null);
+
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, tokenEventRelationOnly(full))
+                .stream()
+                .map(this::relationFingerprint)
+                .sorted()
+                .toList();
+
+        assertEquals(List.of(
+                "CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+                "FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:PROCEDURE_JOIN",
+                "FK_LIKE:jsh_depot_item.material_id->jsh_material.id:PROCEDURE_JOIN"), fingerprints);
+    }
+
+    @Test
     void extractsRelationsThroughDerivedProjectionFromTokenEventNativeEvents() {
         SqlStatementRecord statement = statement("""
                 UPDATE users u

@@ -87,6 +87,140 @@ class TokenEventDataLineageExtractorTest {
     }
 
     @Test
+    void extractsEveryInsertSelectStatementInsideObjectBlock() {
+        String sql = """
+                CREATE PROCEDURE rebuild_procurement_snapshots()
+                BEGIN
+                    INSERT INTO purchase_order_items_snapshot (material_id, requested_qty)
+                    SELECT ri.material_id, ri.requested_qty
+                    FROM purchase_requisition_items ri;
+
+                    INSERT INTO inbound_items_snapshot (material_id, actual_qty)
+                    SELECT poi.material_id, poi.requested_qty
+                    FROM purchase_order_items poi;
+                END
+                """;
+
+        assertEquals(List.of(
+                        "VALUE:DIRECT:purchase_requisition_items.material_id"
+                                + "->purchase_order_items_snapshot.material_id",
+                        "VALUE:DIRECT:purchase_requisition_items.requested_qty"
+                                + "->purchase_order_items_snapshot.requested_qty",
+                        "VALUE:DIRECT:purchase_order_items.material_id->inbound_items_snapshot.material_id",
+                        "VALUE:DIRECT:purchase_order_items.requested_qty->inbound_items_snapshot.actual_qty"),
+                lineageFingerprints(sql, SqlDialect.MYSQL));
+    }
+
+    @Test
+    void extractsEveryUpdateStatementInsideObjectBlock() {
+        String sql = """
+                CREATE PROCEDURE refresh_operational_rollups()
+                BEGIN
+                    UPDATE order_headers oh
+                    JOIN customer_accounts ca ON ca.id = oh.customer_id
+                    SET oh.risk_level = ca.risk_level;
+
+                    UPDATE inventory_items ii
+                    JOIN supplier_prices sp ON sp.sku = ii.sku
+                    SET ii.last_cost = sp.unit_cost,
+                        ii.stock_value = ii.quantity * sp.unit_cost;
+                END
+                """;
+
+        assertEquals(List.of(
+                        "VALUE:DIRECT:customer_accounts.risk_level->order_headers.risk_level",
+                        "VALUE:DIRECT:supplier_prices.unit_cost->inventory_items.last_cost",
+                        "VALUE:ARITHMETIC:inventory_items.quantity,supplier_prices.unit_cost"
+                                + "->inventory_items.stock_value"),
+                lineageFingerprints(sql, SqlDialect.MYSQL));
+    }
+
+    @Test
+    void extractsAllPhysicalSourcesFromCaseInsertProjection() {
+        String sql = """
+                INSERT INTO biz_bill_item_fact_new (purchaseApplyLinkNo)
+                SELECT
+                    CASE
+                      WHEN dh.sub_type = '采购订单' THEN dh.link_apply
+                      WHEN dh.sub_type = '采购' THEN po.link_apply
+                      ELSE NULL
+                    END
+                FROM jsh_depot_head dh
+                LEFT JOIN jsh_depot_head po ON po.number = dh.link_number
+                """;
+
+        assertEquals(List.of(
+                        "CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_apply"
+                                + "->biz_bill_item_fact_new.purchaseApplyLinkNo"),
+                lineageFingerprints(sql, SqlDialect.MYSQL));
+    }
+
+    @Test
+    void caseProjectionSourcesDoNotSwallowNonCaseSubqueryColumns() {
+        String sql = """
+                INSERT INTO jsh_temp_org_pdf (weight)
+                SELECT
+                    ROUND(
+                        (CASE WHEN jo.org_no LIKE '%-HD-%' THEN 100 ELSE 50 END)
+                        * (1 + (
+                            SELECT COUNT(*)
+                            FROM jsh_organization sub
+                            WHERE sub.tenant_id = jo.tenant_id
+                              AND sub.id <> jo.id
+                        ))
+                        * (CASE WHEN jo.org_abr LIKE '%旗舰店%' THEN 2.5 ELSE 1.0 END)
+                    )
+                FROM jsh_organization jo
+                """;
+
+        assertEquals(List.of(
+                        "CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight",
+                        "CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight"),
+                lineageFingerprints(sql, SqlDialect.MYSQL));
+    }
+
+    @Test
+    void propagatesCumulativeTransformThroughDerivedInsertProjection() {
+        String sql = """
+                SET @running_h_sum := 0;
+                INSERT INTO jsh_temp_mock_plan (mock_timestamp_str)
+                SELECT rand_tbl.mock_time
+                FROM (
+                    SELECT CONCAT(
+                        LPAD((SELECT h.hour_val
+                              FROM (
+                                  SELECT hour_val, (@running_h_sum := @running_h_sum + weight) AS h_cdf
+                                  FROM jsh_temp_hour_pdf
+                                  ORDER BY hour_val ASC
+                              ) h
+                              WHERE h.h_cdf >= 1
+                              ORDER BY h.h_cdf ASC LIMIT 1), 2, '0')
+                    ) AS mock_time
+                ) rand_tbl
+                """;
+
+        assertEquals(List.of(
+                        "VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight"
+                                + "->jsh_temp_mock_plan.mock_timestamp_str"),
+                lineageFingerprints(sql, SqlDialect.MYSQL));
+    }
+
+    @Test
+    void doesNotTreatOnDuplicateKeyUpdateAsStandaloneUpdateStatement() {
+        String sql = """
+                INSERT INTO customer_risk_snapshot (customer_id, risk_level)
+                SELECT c.id, c.risk_level
+                FROM customers c
+                ON DUPLICATE KEY UPDATE risk_level = VALUES(risk_level)
+                """;
+
+        assertEquals(List.of(
+                        "VALUE:DIRECT:customers.id->customer_risk_snapshot.customer_id",
+                        "VALUE:DIRECT:customers.risk_level->customer_risk_snapshot.risk_level"),
+                lineageFingerprints(sql, SqlDialect.MYSQL));
+    }
+
+    @Test
     void extractsInsertSelectLineageByTargetColumnPosition() {
         String sql = """
                 INSERT INTO user_spending_snapshots (user_id, total_spent)
@@ -100,6 +234,20 @@ class TokenEventDataLineageExtractorTest {
                         "VALUE:DIRECT:users.id->user_spending_snapshots.user_id",
                         "VALUE:AGGREGATE:orders.pay_amount->user_spending_snapshots.total_spent"),
                 lineageFingerprints(sql, SqlDialect.POSTGRES));
+    }
+
+    @Test
+    void extractsAllInsertSelectSourcesFromArithmeticProjection() {
+        String sql = """
+                INSERT INTO inventory_transactions (quantity_change)
+                SELECT sti.counted_quantity - i.quantity
+                FROM stocktake_items sti
+                JOIN inventory i ON i.product_id = sti.product_id
+                """;
+
+        assertEquals(List.of(
+                        "VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change"),
+                lineageFingerprints(sql, SqlDialect.MYSQL));
     }
 
     @Test
@@ -221,6 +369,50 @@ class TokenEventDataLineageExtractorTest {
                 """;
 
         assertTrue(lineageFingerprints(sql, SqlDialect.MYSQL).isEmpty());
+    }
+
+    @Test
+    void skipsLineageWhoseSourceIsExplicitProcedureLocalTemporaryTable() {
+        String sql = """
+                CREATE PROCEDURE flush_tmp()
+                BEGIN
+                    CREATE TEMPORARY TABLE tmp_rollup (order_amount DECIMAL(10,2));
+                    INSERT INTO tmp_rollup (order_amount)
+                    SELECT o.amount
+                    FROM orders o;
+
+                    INSERT INTO order_facts (amount)
+                    SELECT order_amount
+                    FROM tmp_rollup;
+                END
+                """;
+
+        assertTrue(lineageFingerprints(sql, SqlDialect.MYSQL).isEmpty());
+    }
+
+    @Test
+    void skipsLineageWhoseSourceIsKnownProcedureLocalTemporaryTableFromStatementContext() {
+        String sql = """
+                INSERT INTO order_facts (amount)
+                SELECT order_amount
+                FROM tmp_rollup
+                """;
+        SqlStatementRecord statement = new SqlStatementRecord(
+                sql,
+                StatementSourceType.PROCEDURE,
+                "procedure-with-temp-context.sql",
+                1,
+                1,
+                Map.of("localTempTables", List.of("tmp_rollup")));
+
+        List<String> fingerprints = extractor.extract(
+                        statement,
+                        new TokenEventStructuredSqlParser(SqlDialect.MYSQL).parseSql(statement, null))
+                .stream()
+                .map(TokenEventDataLineageExtractorTest::fingerprint)
+                .toList();
+
+        assertTrue(fingerprints.isEmpty(), fingerprints::toString);
     }
 
     private List<String> lineageFingerprints(String sql, SqlDialect dialect) {

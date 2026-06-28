@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -39,12 +43,18 @@ public final class PlainSqlLogExtractor {
     ) {
         try {
             String text = Files.readString(file);
+            List<String> localTempTables = localTempTablesIn(text);
             List<SqlStatementRecord> statements = new ArrayList<>();
             int line = 1;
             for (String part : splitSqlStatements(text)) {
                 String sql = part.trim();
                 if (!sql.isBlank()) {
-                    statements.add(new SqlStatementRecord(sql, sourceType, file.toString(), line, line + countLines(part), java.util.Map.of()));
+                    Map<String, Object> attributes = new LinkedHashMap<>();
+                    if (!localTempTables.isEmpty()) {
+                        attributes.put("localTempTables", localTempTables);
+                    }
+                    statements.add(new SqlStatementRecord(sql, sourceType, file.toString(), line,
+                            line + countLines(part), attributes));
                 }
                 line += countLines(part);
             }
@@ -124,5 +134,115 @@ public final class PlainSqlLogExtractor {
             statements.add(current.toString());
         }
         return statements;
+    }
+
+    public static List<String> localTempTablesIn(String text) {
+        List<String> tokens = lexicalTokens(text);
+        LinkedHashSet<String> tables = new LinkedHashSet<>();
+        for (int index = 0; index < tokens.size(); index++) {
+            if (!isToken(tokens, index, "create")
+                    || !isToken(tokens, index + 1, "temporary")
+                    || !isToken(tokens, index + 2, "table")) {
+                continue;
+            }
+            int tableIndex = index + 3;
+            if (isToken(tokens, tableIndex, "if")
+                    && isToken(tokens, tableIndex + 1, "not")
+                    && isToken(tokens, tableIndex + 2, "exists")) {
+                tableIndex += 3;
+            }
+            if (tableIndex < tokens.size()) {
+                tables.add(tokens.get(tableIndex));
+            }
+        }
+        return List.copyOf(tables);
+    }
+
+    private static boolean isToken(List<String> tokens, int index, String expected) {
+        return index >= 0 && index < tokens.size()
+                && tokens.get(index).equalsIgnoreCase(expected);
+    }
+
+    private static List<String> lexicalTokens(String text) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        char quote = 0;
+        boolean lineComment = false;
+        boolean blockComment = false;
+        for (int index = 0; index < text.length(); index++) {
+            char c = text.charAt(index);
+            if (lineComment) {
+                if (c == '\n' || c == '\r') {
+                    lineComment = false;
+                }
+                continue;
+            }
+            if (blockComment) {
+                if (c == '*' && index + 1 < text.length() && text.charAt(index + 1) == '/') {
+                    index++;
+                    blockComment = false;
+                }
+                continue;
+            }
+            if (quote != 0) {
+                if (c == quote) {
+                    if (quote == '\'' && index + 1 < text.length() && text.charAt(index + 1) == '\'') {
+                        index++;
+                        continue;
+                    }
+                    quote = 0;
+                }
+                continue;
+            }
+            if (c == '-' && index + 1 < text.length() && text.charAt(index + 1) == '-') {
+                flushToken(tokens, current);
+                index++;
+                lineComment = true;
+                continue;
+            }
+            if (c == '/' && index + 1 < text.length() && text.charAt(index + 1) == '*') {
+                flushToken(tokens, current);
+                index++;
+                blockComment = true;
+                continue;
+            }
+            if (c == '\'' || c == '"') {
+                flushToken(tokens, current);
+                quote = c;
+                continue;
+            }
+            if (c == '`') {
+                flushToken(tokens, current);
+                StringBuilder quoted = new StringBuilder();
+                while (++index < text.length()) {
+                    char quotedChar = text.charAt(index);
+                    if (quotedChar == '`') {
+                        break;
+                    }
+                    quoted.append(quotedChar);
+                }
+                if (!quoted.isEmpty()) {
+                    tokens.add(quoted.toString().toLowerCase(Locale.ROOT));
+                }
+                continue;
+            }
+            if (Character.isLetterOrDigit(c) || c == '_' || c == '$' || c == '.') {
+                current.append(c);
+                continue;
+            }
+            flushToken(tokens, current);
+        }
+        flushToken(tokens, current);
+        return tokens.stream()
+                .map(token -> token.toLowerCase(Locale.ROOT))
+                .toList();
+    }
+
+    private static void flushToken(List<String> tokens, StringBuilder current) {
+        if (current.isEmpty()) {
+            return;
+        }
+        tokens.add(current.toString());
+        current.setLength(0);
     }
 }

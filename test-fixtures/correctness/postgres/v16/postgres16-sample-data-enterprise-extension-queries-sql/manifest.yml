@@ -1,0 +1,11 @@
+id: postgres16-sample-data-enterprise-extension-queries-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: postgresql/16
+databaseVersion: 16.5
+sourceType: PLAIN_SQL
+schema: public
+input: ../../../../../sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

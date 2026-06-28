@@ -94,7 +94,8 @@ class CorrectnessFixtureRunnerTest {
         List<SqlStatementRecord> statements = parseObjectBlockStatements(
                 text,
                 StatementSourceType.PROCEDURE,
-                "routine-fixture.sql");
+                "routine-fixture.sql",
+                DatabaseType.MYSQL);
 
         assertEquals(1, statements.size());
         assertTrue(statements.get(0).sql().contains("JOIN users u ON o.user_id = u.id;"));
@@ -123,6 +124,7 @@ class CorrectnessFixtureRunnerTest {
                 text,
                 StatementSourceType.PROCEDURE,
                 "routine-fixture.sql",
+                DatabaseType.MYSQL,
                 "ROUTINE:case_01.keep_me");
 
         assertEquals(1, statements.size());
@@ -142,7 +144,7 @@ class CorrectnessFixtureRunnerTest {
 
         IllegalArgumentException error = org.junit.jupiter.api.Assertions.assertThrows(
                 IllegalArgumentException.class,
-                () -> parseObjectBlockStatements(text, StatementSourceType.PROCEDURE, "routine-fixture.sql"));
+                () -> parseObjectBlockStatements(text, StatementSourceType.PROCEDURE, "routine-fixture.sql", DatabaseType.MYSQL));
 
         assertTrue(error.getMessage().contains("Missing relation-detector-fixture-end"));
     }
@@ -210,6 +212,7 @@ class CorrectnessFixtureRunnerTest {
                     input,
                     fixture.sourceType(),
                     fixture.inputFile().toString(),
+                    fixture.databaseType(),
                     fixture.objectSourceFilter());
         }
         return new PlainSqlLogExtractor()
@@ -435,18 +438,21 @@ class CorrectnessFixtureRunnerTest {
     private static List<SqlStatementRecord> parseObjectBlockStatements(
             String text,
             StatementSourceType sourceType,
-            String sourceFile
+            String sourceFile,
+            DatabaseType databaseType
     ) {
-        return parseObjectBlockStatements(text, sourceType, sourceFile, "");
+        return parseObjectBlockStatements(text, sourceType, sourceFile, databaseType, "");
     }
 
     private static List<SqlStatementRecord> parseObjectBlockStatements(
             String text,
             StatementSourceType sourceType,
             String sourceFile,
+            DatabaseType databaseType,
             String objectSourceFilter
     ) {
         List<SqlStatementRecord> statements = new ArrayList<>();
+        List<String> localTempTables = PlainSqlLogExtractor.localTempTablesIn(text);
         String[] lines = text.split("\\R", -1);
         String currentSource = null;
         StringBuilder currentSql = new StringBuilder();
@@ -472,8 +478,13 @@ class CorrectnessFixtureRunnerTest {
                 }
                 String sql = currentSql.toString().strip();
                 if (!sql.isBlank() && (filter.isBlank() || currentSource.equals(filter))) {
+                    Map<String, Object> attributes = new LinkedHashMap<>();
+                    attributes.put("fixtureObjectSource", currentSource);
+                    if (!localTempTables.isEmpty()) {
+                        attributes.put("localTempTables", localTempTables);
+                    }
                     statements.add(new SqlStatementRecord(sql, sourceType, currentSource,
-                            startLine, index, java.util.Map.of("fixtureObjectSource", currentSource)));
+                            startLine, index, attributes));
                 }
                 currentSource = null;
                 currentSql.setLength(0);

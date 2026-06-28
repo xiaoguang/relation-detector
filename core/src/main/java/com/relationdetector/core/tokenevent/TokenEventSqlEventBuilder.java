@@ -227,9 +227,11 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         if (token.equals("join") && isDialectNonRowsetJoin(tokens, index)) {
             return false;
         }
-        if (token.equals("from") || token.equals("join") || token.equals("straight_join") || token.equals("update")
-                || token.equals("into")) {
+        if (token.equals("from") || token.equals("join") || token.equals("straight_join") || token.equals("update")) {
             return true;
+        }
+        if (token.equals("into")) {
+            return hasKeywordBefore(tokens, index, "merge", 32);
         }
         return token.equals("using") && index > 0
                 && (hasKeywordBefore(tokens, index, "merge", 32) || hasKeywordBefore(tokens, index, "delete", 32));
@@ -443,13 +445,29 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
 
     private List<StructuredSqlEvent> extractUpdateLineageEvents(SqlStatementRecord statement, List<Token> tokens) {
         List<StructuredSqlEvent> events = new ArrayList<>();
+        Set<String> inheritedNonColumnIdentifiers = nonColumnIdentifiers(tokens);
+        for (Integer updateStart : dmlStatementStarts(tokens, "update")) {
+            if (!isStandaloneUpdateStart(tokens, updateStart)) {
+                continue;
+            }
+            int end = dmlStatementEnd(tokens, updateStart);
+            if (end > updateStart) {
+                events.addAll(extractSingleUpdateLineageEvents(
+                        statement, tokens.subList(updateStart, end), inheritedNonColumnIdentifiers));
+            }
+        }
+        return events;
+    }
+
+    private List<StructuredSqlEvent> extractSingleUpdateLineageEvents(
+            SqlStatementRecord statement,
+            List<Token> tokens,
+            Set<String> inheritedNonColumnIdentifiers
+    ) {
+        List<StructuredSqlEvent> events = new ArrayList<>();
         int update = firstTopLevelWord(tokens, "update", 0);
         int set = firstTopLevelWord(tokens, "set", update < 0 ? 0 : update);
         if (update < 0 || set < 0) {
-            return events;
-        }
-        int merge = firstTopLevelWord(tokens, "merge", 0);
-        if (merge >= 0 && merge < update) {
             return events;
         }
         IdentifierRead target = readTokenEventQualifiedIdentifier(tokens, update + 1);
@@ -478,6 +496,26 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
 
     private List<StructuredSqlEvent> extractInsertSelectLineageEvents(SqlStatementRecord statement, List<Token> tokens) {
         List<StructuredSqlEvent> events = new ArrayList<>();
+        Set<String> inheritedNonColumnIdentifiers = nonColumnIdentifiers(tokens);
+        for (Integer insertStart : dmlStatementStarts(tokens, "insert")) {
+            if (!isStandaloneInsertStart(tokens, insertStart)) {
+                continue;
+            }
+            int end = dmlStatementEnd(tokens, insertStart);
+            if (end > insertStart) {
+                events.addAll(extractSingleInsertSelectLineageEvents(
+                        statement, tokens.subList(insertStart, end), inheritedNonColumnIdentifiers));
+            }
+        }
+        return events;
+    }
+
+    private List<StructuredSqlEvent> extractSingleInsertSelectLineageEvents(
+            SqlStatementRecord statement,
+            List<Token> tokens,
+            Set<String> inheritedNonColumnIdentifiers
+    ) {
+        List<StructuredSqlEvent> events = new ArrayList<>();
         int insert = firstTopLevelWord(tokens, "insert", 0);
         int into = firstTopLevelWord(tokens, "into", insert < 0 ? 0 : insert);
         if (insert < 0 || into < 0) {
@@ -500,29 +538,138 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         }
         List<String> targetColumns = identifierList(tokens, target.nextIndex + 1, targetClose);
         List<Span> projections = splitTopLevelSpans(tokens, select + 1, from, ",");
+        String defaultSourceQualifier = defaultProjectionSourceQualifier(tokens, from);
+        Set<String> nonColumnIdentifiers = mergedNonColumnIdentifiers(tokens, inheritedNonColumnIdentifiers);
         for (int index = 0; index < Math.min(targetColumns.size(), projections.size()); index++) {
             Span projection = projections.get(index);
-            ColumnRead source = firstColumnInSpan(tokens, projection.start, projection.end);
-            if (source == null) {
+            String transform = transformType(tokenText(tokens, projection.start, projection.end));
+            List<List<ColumnRead>> sourceGroups = insertSelectProjectionSourceGroups(tokens, projection, transform,
+                    defaultSourceQualifier, nonColumnIdentifiers);
+            if (sourceGroups.isEmpty()) {
                 continue;
             }
-            String transform = transformType(tokenText(tokens, projection.start, projection.end));
-            addProjectionItem(statement, tokens, events, projection.start, "", targetColumns.get(index),
-                    List.of(source), transform);
-            String flowKind = transform.equals("CASE_WHEN") ? "CONTROL" : "VALUE";
-            Map<String, Object> attributes = lineageAttributes(
-                    ColumnRead.target("", targetColumns.get(index)),
-                    projection.start,
-                    projection.end,
-                    List.of(source),
-                    transform,
-                    flowKind);
-            attributes.put("targetTable", target.qualifiedName);
-            attributes.put("mappingKind", "INSERT_SELECT");
-            events.add(new StructuredSqlEvent(StructuredParseEventType.INSERT_SELECT_MAPPING,
-                    statement.sourceName(), line(statement, tokens.get(projection.start)), attributes));
+            for (List<ColumnRead> sources : sourceGroups) {
+                addProjectionItem(statement, tokens, events, projection.start, "", targetColumns.get(index),
+                        sources, transform);
+                String flowKind = transform.equals("CASE_WHEN") ? "CONTROL" : "VALUE";
+                Map<String, Object> attributes = lineageAttributes(
+                        ColumnRead.target("", targetColumns.get(index)),
+                        projection.start,
+                        projection.end,
+                        sources,
+                        transform,
+                        flowKind);
+                attributes.put("targetTable", target.qualifiedName);
+                attributes.put("mappingKind", "INSERT_SELECT");
+                events.add(new StructuredSqlEvent(StructuredParseEventType.INSERT_SELECT_MAPPING,
+                        statement.sourceName(), line(statement, tokens.get(projection.start)), attributes));
+            }
         }
         return events;
+    }
+
+    private Set<String> mergedNonColumnIdentifiers(List<Token> tokens, Set<String> inheritedNonColumnIdentifiers) {
+        Set<String> identifiers = new LinkedHashSet<>(inheritedNonColumnIdentifiers);
+        identifiers.addAll(nonColumnIdentifiers(tokens));
+        return identifiers;
+    }
+
+    private Set<Integer> dmlStatementStarts(List<Token> tokens, String keyword) {
+        Set<Integer> starts = new LinkedHashSet<>();
+        int depth = 0;
+        for (int index = 0; index < tokens.size(); index++) {
+            String text = tokens.get(index).getText();
+            if (text.equals("(")) {
+                depth++;
+                continue;
+            }
+            if (text.equals(")")) {
+                depth--;
+                continue;
+            }
+            if (depth == 0 && lower(tokens.get(index)).equals(keyword)) {
+                starts.add(index);
+            }
+        }
+        return starts;
+    }
+
+    private boolean isStandaloneUpdateStart(List<Token> tokens, int updateIndex) {
+        String previous = previousSignificantWord(tokens, updateIndex);
+        return !Set.of("then", "key", "duplicate", "after", "before", "for").contains(previous);
+    }
+
+    private boolean isStandaloneInsertStart(List<Token> tokens, int insertIndex) {
+        String previous = previousSignificantWord(tokens, insertIndex);
+        return !Set.of("then", "after", "before").contains(previous);
+    }
+
+    private String previousSignificantWord(List<Token> tokens, int index) {
+        for (int cursor = index - 1; cursor >= 0; cursor--) {
+            String text = lower(tokens.get(cursor));
+            if (text.isBlank() || Set.of(";", ",", "(", ")").contains(text)) {
+                continue;
+            }
+            return text;
+        }
+        return "";
+    }
+
+    private int dmlStatementEnd(List<Token> tokens, int dmlIndex) {
+        int enclosingClose = enclosingParenClose(tokens, dmlIndex);
+        if (enclosingClose > dmlIndex) {
+            return enclosingClose;
+        }
+        int semicolon = topLevelToken(tokens, dmlIndex, tokens.size(), ";");
+        return semicolon > dmlIndex ? semicolon : tokens.size();
+    }
+
+    private List<List<ColumnRead>> insertSelectProjectionSourceGroups(List<Token> tokens, Span projection, String transform,
+            String defaultSourceQualifier, Set<String> nonColumnIdentifiers) {
+        if ("CASE_WHEN".equals(transform)) {
+            List<List<ColumnRead>> caseSourceGroups = readCaseSourceColumnGroups(tokens, projection.start, projection.end,
+                    defaultSourceQualifier, nonColumnIdentifiers);
+            if (!caseSourceGroups.isEmpty()) {
+                return caseSourceGroups;
+            }
+        }
+        List<ColumnRead> sources = readProjectionSourceColumns(tokens, projection.start, projection.end,
+                defaultSourceQualifier, nonColumnIdentifiers);
+        return sources.isEmpty() ? List.of() : List.of(sources);
+    }
+
+    private List<List<ColumnRead>> readCaseSourceColumnGroups(
+            List<Token> tokens,
+            int startInclusive,
+            int endExclusive,
+            String defaultSourceQualifier,
+            Set<String> nonColumnIdentifiers
+    ) {
+        List<List<ColumnRead>> sourceGroups = new ArrayList<>();
+        int caseDepth = 0;
+        int caseStart = -1;
+        for (int index = startInclusive; index < endExclusive; index++) {
+            String word = lower(tokens.get(index));
+            if (word.equals("case")) {
+                if (caseDepth == 0) {
+                    caseStart = index;
+                }
+                caseDepth++;
+                continue;
+            }
+            if (word.equals("end") && caseDepth > 0) {
+                caseDepth--;
+                if (caseDepth == 0 && caseStart >= 0) {
+                    List<ColumnRead> columns = readProjectionSourceColumns(tokens, caseStart, index + 1,
+                            defaultSourceQualifier, nonColumnIdentifiers);
+                    if (!columns.isEmpty()) {
+                        sourceGroups.add(columns);
+                    }
+                    caseStart = -1;
+                }
+            }
+        }
+        return sourceGroups;
     }
 
     private List<StructuredSqlEvent> extractMergeLineageEvents(SqlStatementRecord statement, List<Token> tokens) {
@@ -1608,8 +1755,12 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
     }
 
     private boolean isLikelyRowsetComma(List<Token> tokens, int commaIndex) {
+        int commaDepth = depthBefore(tokens, commaIndex);
         int previousBoundary = -1;
         for (int cursor = commaIndex - 1; cursor >= 0; cursor--) {
+            if (depthBefore(tokens, cursor) != commaDepth) {
+                continue;
+            }
             String token = lower(tokens.get(cursor));
             if (token.equals("from") || token.equals("update") || token.equals("using")) {
                 previousBoundary = cursor;
@@ -1632,6 +1783,19 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             }
         }
         return depth == 0;
+    }
+
+    private int depthBefore(List<Token> tokens, int tokenIndex) {
+        int depth = 0;
+        for (int index = 0; index < tokenIndex; index++) {
+            String text = tokens.get(index).getText();
+            if (text.equals("(")) {
+                depth++;
+            } else if (text.equals(")") && depth > 0) {
+                depth--;
+            }
+        }
+        return depth;
     }
 
     private String previousKeyword(List<Token> tokens, int index) {
@@ -1826,8 +1990,18 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
     }
 
     private String projectionOutputColumn(List<Token> tokens, Span projection, String fallback) {
+        int depth = 0;
         for (int index = projection.start; index + 1 < projection.end; index++) {
-            if (lower(tokens.get(index)).equals("as")) {
+            String text = tokens.get(index).getText();
+            if (text.equals("(")) {
+                depth++;
+                continue;
+            }
+            if (text.equals(")")) {
+                depth--;
+                continue;
+            }
+            if (depth == 0 && lower(tokens.get(index)).equals("as")) {
                 String alias = cleanIdentifier(tokens.get(index + 1).getText());
                 if (isIdentifierText(alias) && !isCommonNonTableKeyword(alias)) {
                     return alias;
@@ -1954,6 +2128,10 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
         Set<String> identifiers = new java.util.HashSet<>();
         for (int index = 0; index < tokens.size(); index++) {
             String lower = lower(tokens.get(index));
+            if ((lower.equals("procedure") || lower.equals("function"))
+                    && index > 0 && lower(tokens.get(index - 1)).equals("create")) {
+                collectRoutineParameterIdentifiers(tokens, index + 1, identifiers);
+            }
             if (lower.equals("declare") && index + 1 < tokens.size()) {
                 collectDeclaredIdentifierList(tokens, index + 1, identifiers);
             }
@@ -1973,6 +2151,35 @@ public class TokenEventSqlEventBuilder extends TokenEventSqlTokenSupport {
             }
         }
         return identifiers;
+    }
+
+    private void collectRoutineParameterIdentifiers(List<Token> tokens, int nameStart, Set<String> result) {
+        IdentifierRead routineName = readTokenEventQualifiedIdentifier(tokens, nameStart);
+        if (routineName == null || routineName.nextIndex >= tokens.size()
+                || !tokens.get(routineName.nextIndex).getText().equals("(")) {
+            return;
+        }
+        int close = matchingParen(tokens, routineName.nextIndex);
+        if (close < 0) {
+            return;
+        }
+        for (Span parameter : splitTopLevelSpans(tokens, routineName.nextIndex + 1, close, ",")) {
+            int cursor = parameter.start;
+            if (cursor >= parameter.end) {
+                continue;
+            }
+            String first = cleanIdentifier(tokens.get(cursor).getText()).toLowerCase(Locale.ROOT);
+            if (Set.of("in", "out", "inout").contains(first)) {
+                cursor++;
+            }
+            if (cursor >= parameter.end) {
+                continue;
+            }
+            String identifier = cleanIdentifier(tokens.get(cursor).getText());
+            if (isIdentifierText(identifier) && !isCommonNonTableKeyword(identifier)) {
+                result.add(normalizeIdentifier(identifier));
+            }
+        }
     }
 
     private void collectDeclaredIdentifierList(List<Token> tokens, int start, Set<String> result) {

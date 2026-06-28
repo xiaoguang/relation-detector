@@ -17,13 +17,14 @@ class CorrectnessSummaryGeneratorTest {
     void generatedSummaryCapturesFixtureCountsAndInputPreview() throws Exception {
         String markdown = CorrectnessSummaryGenerator.generate(WORKSPACE);
 
-        assertTrue(markdown.contains("| Total correctness fixtures | 385 |"));
-        assertTrue(markdown.contains("| SQL fixtures | 317 |"));
-        assertTrue(markdown.contains("| DDL fixtures | 68 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 99 |"));
-        assertTrue(markdown.contains("| MySQL directory fixtures | 114 |"));
-        assertTrue(markdown.contains("| MYSQL | 116 | 94 | 22 |"));
-        assertTrue(markdown.contains("| POSTGRESQL | 269 | 223 | 46 |"));
+        assertTrue(markdown.contains("| Total correctness fixtures | 413 |"));
+        assertTrue(markdown.contains("| SQL fixtures | 339 |"));
+        assertTrue(markdown.contains("| DDL fixtures | 74 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 105 |"));
+        assertTrue(markdown.contains("| MySQL directory fixtures | 122 |"));
+        assertTrue(markdown.contains("| PostgreSQL directory fixtures | 289 |"));
+        assertTrue(markdown.contains("| MYSQL | 124 | 100 | 24 |"));
+        assertTrue(markdown.contains("| POSTGRESQL | 289 | 239 | 50 |"));
         assertTrue(markdown.contains("Lightweight index report. Full SQL/DDL is available in each input file."));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-commerce-promotion-update-explicit-join-sql/input.sql"));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/expected-lineage.json"));
@@ -50,6 +51,9 @@ class CorrectnessSummaryGeneratorTest {
                 "test-fixtures/correctness/mysql/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json"));
         assertTrue(markdown.contains(
                 "test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json"));
+        assertTrue(markdown.contains("sample-data/mysql/8.0/04-queries/09-real-world-scenarios.sql"));
+        assertTrue(markdown.contains(
+                "test-fixtures/correctness/postgres/v18/postgres18-sample-data-pg18-specific-sql/expected-relations.json"));
         assertTrue(markdown.contains("FK_LIKE:products.shop_id->shops.id:SQL_LOG_JOIN"));
         assertTrue(markdown.contains("```sql"));
         assertFalse(markdown.contains("SHOW CREATE TABLE `jsh_account_head`;"),

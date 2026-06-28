@@ -8,11 +8,11 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 
 | Classification | Count |
 | --- | ---: |
-| TOTAL | 385 |
-| EXISTING_GOLD | 99 |
+| TOTAL | 413 |
+| EXISTING_GOLD | 105 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 286 |
+| NOT_APPLICABLE | 308 |
 
 ## `mysql-basic-correctness-case-01-ddl`
 
@@ -375,6 +375,39 @@ CREATE TABLE inventory_snapshots (
 -- coverage, but none of them is a relationship on its own.
 
 CREATE TABLE geo_assets (
+```
+
+## `mysql-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/mysql/8.0/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
 ```
 
 ## `mysql80-mysql-basic-correctness-case-01-ddl`
@@ -740,6 +773,39 @@ CREATE TABLE inventory_snapshots (
 CREATE TABLE geo_assets (
 ```
 
+## `mysql80-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/mysql/8.0/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+
 ## `basic-correctness-case-01-functions-sql`
 
 | Field | Value |
@@ -773,7 +839,7 @@ CREATE TABLE geo_assets (
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -805,7 +871,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -837,7 +903,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -869,7 +935,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -901,7 +967,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -964,8 +1030,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -974,11 +1040,59 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
 
 **Input Preview**
 
@@ -996,8 +1110,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -1006,11 +1120,51 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
 
 **Input Preview**
 
@@ -1029,7 +1183,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -1061,7 +1215,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -1102,6 +1256,7 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
 - `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
@@ -1109,6 +1264,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
+- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
 - `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
@@ -1131,7 +1287,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -1162,8 +1318,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -1172,11 +1328,13 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id,jsh_orga_user_rel.delete_flag->jsh_temp_mock_plan.user_id`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id,jsh_orga_user_rel.delete_flag->jsh_temp_mock_plan.user_id`
 
 **Input Preview**
 
@@ -1194,8 +1352,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -1204,11 +1362,53 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_apply->biz_bill_item_fact_new.purchaseApplyLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_number->biz_bill_item_fact_new.purchaseOrderLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.another_depot_id->biz_bill_item_fact_new.inWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.depot_id->biz_bill_item_fact_new.outWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.inventoryDirection`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.salesDirection`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.customerId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.memberId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.supplierId`
+- `VALUE:AGGREGATE:jsh_orga_user_rel.orga_id->biz_bill_item_fact_new.storeId`
+- `VALUE:COALESCE:jsh_depot_item.tax_last_money,jsh_depot_item.all_price->biz_bill_item_fact_new.amount`
+- `VALUE:DIRECT:jsh_depot_head.creator->biz_bill_item_fact_new.creator`
+- `VALUE:DIRECT:jsh_depot_head.id->biz_bill_item_fact_new.sourceOrderId`
+- `VALUE:DIRECT:jsh_depot_head.number->biz_bill_item_fact_new.sourceOrderNo`
+- `VALUE:DIRECT:jsh_depot_head.oper_time->biz_bill_item_fact_new.businessDate`
+- `VALUE:DIRECT:jsh_depot_head.sub_type->biz_bill_item_fact_new.sourceSubType`
+- `VALUE:DIRECT:jsh_depot_head.type->biz_bill_item_fact_new.sourceType`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->biz_bill_item_fact_new.warehouseId`
+- `VALUE:DIRECT:jsh_depot_item.id->biz_bill_item_fact_new.sourceOrderItemId`
+- `VALUE:DIRECT:jsh_depot_item.material_id->biz_bill_item_fact_new.productId`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->biz_bill_item_fact_new.quantity`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->biz_bill_item_fact_new.tenantId`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_apply->biz_bill_item_fact_new.purchaseApplyLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_number->biz_bill_item_fact_new.purchaseOrderLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.another_depot_id->biz_bill_item_fact_new.inWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.depot_id->biz_bill_item_fact_new.outWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.inventoryDirection`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.salesDirection`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.customerId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.memberId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.supplierId`
+- `VALUE:AGGREGATE:jsh_orga_user_rel.orga_id->biz_bill_item_fact_new.storeId`
+- `VALUE:COALESCE:jsh_depot_item.tax_last_money,jsh_depot_item.all_price->biz_bill_item_fact_new.amount`
+- `VALUE:DIRECT:jsh_depot_head.creator->biz_bill_item_fact_new.creator`
+- `VALUE:DIRECT:jsh_depot_head.id->biz_bill_item_fact_new.sourceOrderId`
+- `VALUE:DIRECT:jsh_depot_head.number->biz_bill_item_fact_new.sourceOrderNo`
+- `VALUE:DIRECT:jsh_depot_head.oper_time->biz_bill_item_fact_new.businessDate`
+- `VALUE:DIRECT:jsh_depot_head.sub_type->biz_bill_item_fact_new.sourceSubType`
+- `VALUE:DIRECT:jsh_depot_head.type->biz_bill_item_fact_new.sourceType`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->biz_bill_item_fact_new.warehouseId`
+- `VALUE:DIRECT:jsh_depot_item.id->biz_bill_item_fact_new.sourceOrderItemId`
+- `VALUE:DIRECT:jsh_depot_item.material_id->biz_bill_item_fact_new.productId`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->biz_bill_item_fact_new.quantity`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->biz_bill_item_fact_new.tenantId`
 
 **Input Preview**
 
@@ -1227,7 +1427,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -2027,6 +2227,118 @@ WHERE
     )
 ```
 
+## `mysql-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/8.0/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+
+## `mysql-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/sample-data-enterprise-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT UNSIGNED,
+    IN p_posted_by BIGINT UNSIGNED
+)
+BEGIN
+    DECLARE v_warehouse_id BIGINT UNSIGNED;
+```
+
+## `mysql-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/8.0/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/sample-data-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+
 ## `mysql-sql-cte-lateral`
 
 | Field | Value |
@@ -2327,7 +2639,7 @@ SET
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -2359,7 +2671,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -2391,7 +2703,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -2423,7 +2735,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -2455,7 +2767,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -2556,7 +2868,31 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
 
 **Input Preview**
 
@@ -2608,7 +2944,27 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
 
 **Input Preview**
 
@@ -2627,7 +2983,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -2659,7 +3015,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -2708,6 +3064,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
+- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
 - `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
@@ -2730,7 +3087,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -2771,12 +3128,13 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CUMULATIVE:h.hour_val,h.h_cdf->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
 - `VALUE:DIRECT:jsh_orga_user_rel.user_id,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id,jsh_orga_user_rel.delete_flag->jsh_temp_mock_plan.user_id`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id,jsh_orga_user_rel.delete_flag->jsh_temp_mock_plan.user_id`
 
 **Input Preview**
 
@@ -2829,7 +3187,28 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_apply->biz_bill_item_fact_new.purchaseApplyLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_number->biz_bill_item_fact_new.purchaseOrderLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.another_depot_id->biz_bill_item_fact_new.inWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.depot_id->biz_bill_item_fact_new.outWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.inventoryDirection`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.salesDirection`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.customerId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.memberId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.supplierId`
+- `VALUE:AGGREGATE:jsh_orga_user_rel.orga_id->biz_bill_item_fact_new.storeId`
+- `VALUE:COALESCE:jsh_depot_item.tax_last_money,jsh_depot_item.all_price->biz_bill_item_fact_new.amount`
+- `VALUE:DIRECT:jsh_depot_head.creator->biz_bill_item_fact_new.creator`
+- `VALUE:DIRECT:jsh_depot_head.id->biz_bill_item_fact_new.sourceOrderId`
+- `VALUE:DIRECT:jsh_depot_head.number->biz_bill_item_fact_new.sourceOrderNo`
+- `VALUE:DIRECT:jsh_depot_head.oper_time->biz_bill_item_fact_new.businessDate`
+- `VALUE:DIRECT:jsh_depot_head.sub_type->biz_bill_item_fact_new.sourceSubType`
+- `VALUE:DIRECT:jsh_depot_head.type->biz_bill_item_fact_new.sourceType`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->biz_bill_item_fact_new.warehouseId`
+- `VALUE:DIRECT:jsh_depot_item.id->biz_bill_item_fact_new.sourceOrderItemId`
+- `VALUE:DIRECT:jsh_depot_item.material_id->biz_bill_item_fact_new.productId`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->biz_bill_item_fact_new.quantity`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->biz_bill_item_fact_new.tenantId`
 
 **Input Preview**
 
@@ -2848,7 +3227,7 @@ BEGIN
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -3859,6 +4238,118 @@ LEFT JOIN (
 SET
 ```
 
+## `mysql80-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/8.0/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+
+## `mysql80-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/sample-data-enterprise-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT UNSIGNED,
+    IN p_posted_by BIGINT UNSIGNED
+)
+BEGIN
+    DECLARE v_warehouse_id BIGINT UNSIGNED;
+```
+
+## `mysql80-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/8.0/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/sample-data-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+
 ## `postgres-basic-correctness-case-01-ddl`
 
 | Field | Value |
@@ -4220,6 +4711,39 @@ CREATE TABLE public.users (
   id BIGINT PRIMARY KEY,
   email TEXT
 );
+```
+
+## `postgres-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - PostgreSQL 18
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: PostgreSQL 18
+-- ============================================================
+
+-- ============================================================
 ```
 
 ## `postgres16-postgres-basic-correctness-case-01-ddl`
@@ -4585,6 +5109,39 @@ CREATE TABLE public.users (
 );
 ```
 
+## `postgres16-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - PostgreSQL 18
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: PostgreSQL 18
+-- ============================================================
+
+-- ============================================================
+```
+
 ## `postgres17-basic-correctness-case-01-ddl`
 
 | Field | Value |
@@ -4948,6 +5505,39 @@ CREATE TABLE public.users (
 );
 ```
 
+## `postgres17-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - PostgreSQL 18
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: PostgreSQL 18
+-- ============================================================
+
+-- ============================================================
+```
+
 ## `postgres18-basic-correctness-case-01-ddl`
 
 | Field | Value |
@@ -5309,6 +5899,39 @@ CREATE TABLE public.users (
   id BIGINT PRIMARY KEY,
   email TEXT
 );
+```
+
+## `postgres18-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - PostgreSQL 18
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: PostgreSQL 18
+-- ============================================================
+
+-- ============================================================
 ```
 
 ## `postgres18-temporal-constraints-ddl`
@@ -5814,7 +6437,7 @@ fraud_orders AS (
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `FUNCTION` |
@@ -5847,7 +6470,7 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine_comma(
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `FUNCTION` |
@@ -6987,6 +7610,138 @@ SELECT *
 -- ============================================================================
 ```
 
+## `postgres-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - PostgreSQL 18
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+
+## `postgres-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/postgres/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/sample-data-enterprise-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT,
+    IN p_posted_by BIGINT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+
+## `postgres-sample-data-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- PostgreSQL 18 专属语法样例
+-- 说明:
+--   这些 SQL 用来覆盖 PostgreSQL 18 版本能力，不参与 MySQL 8.0 业务对齐。
+--   可在 PostgreSQL 18 环境中单独执行。
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+```
+
+## `postgres-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/sample-data-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+
 ## `postgres-sql-delete-using-no-alias`
 
 | Field | Value |
@@ -8063,7 +8818,7 @@ fraud_orders AS (
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `FUNCTION` |
@@ -8096,7 +8851,7 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine_comma(
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `FUNCTION` |
@@ -9074,6 +9829,138 @@ FROM users u
 WHERE o.user_id = u.id;
 ```
 
+## `postgres16-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - PostgreSQL 18
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+
+## `postgres16-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/postgres/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-enterprise-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT,
+    IN p_posted_by BIGINT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+
+## `postgres16-sample-data-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | negative full-grammer version-boundary fixture; unsupported SQL is not lineage golden |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- PostgreSQL 18 专属语法样例
+-- 说明:
+--   这些 SQL 用来覆盖 PostgreSQL 18 版本能力，不参与 MySQL 8.0 业务对齐。
+--   可在 PostgreSQL 18 环境中单独执行。
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+```
+
+## `postgres16-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+
 ## `postgres17-basic-correctness-case-01-objects-sql`
 
 | Field | Value |
@@ -9512,7 +10399,7 @@ fraud_orders AS (
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `FUNCTION` |
@@ -9545,7 +10432,7 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine_comma(
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `FUNCTION` |
@@ -10758,6 +11645,138 @@ SELECT *
 -- ============================================================================
 ```
 
+## `postgres17-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - PostgreSQL 18
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+
+## `postgres17-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/postgres/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-enterprise-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT,
+    IN p_posted_by BIGINT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+
+## `postgres17-sample-data-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | negative full-grammer version-boundary fixture; unsupported SQL is not lineage golden |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- PostgreSQL 18 专属语法样例
+-- 说明:
+--   这些 SQL 用来覆盖 PostgreSQL 18 版本能力，不参与 MySQL 8.0 业务对齐。
+--   可在 PostgreSQL 18 环境中单独执行。
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+```
+
+## `postgres17-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+
 ## `postgres17-sql-delete-using-no-alias`
 
 | Field | Value |
@@ -11441,7 +12460,7 @@ fraud_orders AS (
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `FUNCTION` |
@@ -11474,7 +12493,7 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine_comma(
 | Field | Value |
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
-| Reason | requires cross-statement temporary-table lineage beyond Data Lineage v1 |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `FUNCTION` |
@@ -12648,6 +13667,138 @@ SET balance = ab.balance + tx.amount
 FROM transaction_ledgers tx
 WHERE ab.user_id = tx.user_id
 RETURNING old.balance AS previous_balance, new.balance AS updated_balance, tx.amount;
+```
+
+## `postgres18-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - PostgreSQL 18
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+
+## `postgres18-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/postgres/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-enterprise-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT,
+    IN p_posted_by BIGINT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+
+## `postgres18-sample-data-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- PostgreSQL 18 专属语法样例
+-- 说明:
+--   这些 SQL 用来覆盖 PostgreSQL 18 版本能力，不参与 MySQL 8.0 业务对齐。
+--   可在 PostgreSQL 18 环境中单独执行。
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+```
+
+## `postgres18-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
 ```
 
 ## `postgres18-sql-delete-using-no-alias`

@@ -8,18 +8,18 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 
 | Metric | Count |
 | --- | ---: |
-| Total correctness fixtures | 385 |
-| SQL fixtures | 317 |
-| DDL fixtures | 68 |
-| Fixtures with expected lineage | 99 |
+| Total correctness fixtures | 413 |
+| SQL fixtures | 339 |
+| DDL fixtures | 74 |
+| Fixtures with expected lineage | 105 |
 | Common directory fixtures | 2 |
-| MySQL directory fixtures | 114 |
-| PostgreSQL directory fixtures | 269 |
+| MySQL directory fixtures | 122 |
+| PostgreSQL directory fixtures | 289 |
 
 | Database type | Total | SQL | DDL |
 | --- | ---: | ---: | ---: |
-| MYSQL | 116 | 94 | 22 |
-| POSTGRESQL | 269 | 223 | 46 |
+| MYSQL | 124 | 100 | 24 |
+| POSTGRESQL | 289 | 239 | 50 |
 
 ## Common Fixtures
 
@@ -584,6 +584,79 @@ CREATE TABLE geo_assets (
 ```
 _Preview truncated; see input file for full content._
 
+### `mysql-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `erp_system` |
+| Input | `sample-data/mysql/8.0/01-schema/06-enterprise-extension-tables.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/sample-data-enterprise-extension-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/sample-data-enterprise-extension-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ledger_books.tenant_id->tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:payment_receipts.account_id->accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:payment_receipts.handled_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stock_transfers.approved_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+_Preview truncated; see input file for full content._
+
 ### `mysql80-mysql-basic-correctness-case-01-ddl`
 
 | Field | Value |
@@ -1069,6 +1142,79 @@ CREATE TABLE geo_assets (
 ```
 _Preview truncated; see input file for full content._
 
+### `mysql80-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `erp_system` |
+| Input | `sample-data/mysql/8.0/01-schema/06-enterprise-extension-tables.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/sample-data-enterprise-extension-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/sample-data-enterprise-extension-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ledger_books.tenant_id->tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:payment_receipts.account_id->accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:payment_receipts.handled_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stock_transfers.approved_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+_Preview truncated; see input file for full content._
+
 ### `basic-correctness-case-01-functions-sql`
 
 | Field | Value |
@@ -1331,6 +1477,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:jsh_material_current_stock.depot_id->jsh_depot_item.depot_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:jsh_material_current_stock.material_id->jsh_depot_item.material_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `CO_OCCURRENCE:jsh_material_extend.material_id->jsh_material_current_stock.material_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:jsh_material_current_stock.material_id->jsh_material.id:PROCEDURE_JOIN`
 
@@ -1374,11 +1522,39 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:jsh_material_current_stock.depot_id->jsh_depot_item.depot_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:jsh_material_current_stock.material_id->jsh_depot_item.material_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:PROCEDURE_JOIN`
+- `FK_LIKE:jsh_depot_item.material_id->jsh_material.id:PROCEDURE_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
 
 **Forbidden Tables**
 
@@ -1416,11 +1592,32 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:PROCEDURE_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
 
 **Forbidden Tables**
 
@@ -1547,6 +1744,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
 - `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
@@ -1634,7 +1832,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id,jsh_orga_user_rel.delete_flag->jsh_temp_mock_plan.user_id`
 
 **Forbidden Tables**
 
@@ -1682,7 +1881,28 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_apply->biz_bill_item_fact_new.purchaseApplyLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_number->biz_bill_item_fact_new.purchaseOrderLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.another_depot_id->biz_bill_item_fact_new.inWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.depot_id->biz_bill_item_fact_new.outWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.inventoryDirection`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.salesDirection`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.customerId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.memberId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.supplierId`
+- `VALUE:AGGREGATE:jsh_orga_user_rel.orga_id->biz_bill_item_fact_new.storeId`
+- `VALUE:COALESCE:jsh_depot_item.tax_last_money,jsh_depot_item.all_price->biz_bill_item_fact_new.amount`
+- `VALUE:DIRECT:jsh_depot_head.creator->biz_bill_item_fact_new.creator`
+- `VALUE:DIRECT:jsh_depot_head.id->biz_bill_item_fact_new.sourceOrderId`
+- `VALUE:DIRECT:jsh_depot_head.number->biz_bill_item_fact_new.sourceOrderNo`
+- `VALUE:DIRECT:jsh_depot_head.oper_time->biz_bill_item_fact_new.businessDate`
+- `VALUE:DIRECT:jsh_depot_head.sub_type->biz_bill_item_fact_new.sourceSubType`
+- `VALUE:DIRECT:jsh_depot_head.type->biz_bill_item_fact_new.sourceType`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->biz_bill_item_fact_new.warehouseId`
+- `VALUE:DIRECT:jsh_depot_item.id->biz_bill_item_fact_new.sourceOrderItemId`
+- `VALUE:DIRECT:jsh_depot_item.material_id->biz_bill_item_fact_new.productId`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->biz_bill_item_fact_new.quantity`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->biz_bill_item_fact_new.tenantId`
 
 **Forbidden Tables**
 
@@ -2027,6 +2247,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:account_balances.user_id->users.id:PROCEDURE_JOIN`
 - `FK_LIKE:transaction_ledgers.user_id->users.id:PROCEDURE_JOIN`
 
@@ -2080,6 +2301,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_COLUMN_CO_OCCURRENCE`
 - `FK_LIKE:account_balances.user_id->users.id:PROCEDURE_JOIN`
 - `FK_LIKE:transaction_ledgers.user_id->users.id:PROCEDURE_JOIN`
 
@@ -2770,6 +2992,211 @@ WHERE
         FROM products p
         WHERE p.id = pr.product_id
     )
+```
+_Preview truncated; see input file for full content._
+
+### `mysql-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `sample-data/mysql/8.0/04-queries/10-enterprise-extension-queries.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/sample-data-enterprise-extension-queries-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/sample-data-enterprise-extension-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:stock_transfers.requested_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:stocktakes.created_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN`
+- `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_routes.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktake_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/correctness/mysql/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/sample-data-enterprise-procedures-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/sample-data-enterprise-procedures-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/sample-data-enterprise-procedures-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->stocktake_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:inventory.warehouse_id->stocktakes.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:PROCEDURE_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT UNSIGNED,
+    IN p_posted_by BIGINT UNSIGNED
+)
+BEGIN
+    DECLARE v_warehouse_id BIGINT UNSIGNED;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `sample-data/mysql/8.0/04-queries/09-real-world-scenarios.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/sample-data-real-world-scenarios-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/sample-data-real-world-scenarios-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/sample-data-real-world-scenarios-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:promotion_usages.promotion_id->promotion_products.promotion_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_commissions.employee_id->salary_payments.employee_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_commissions.period->salary_payments.salary_month:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_orders.order_date->purchase_orders.order_date:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouses.manager_id->employees.manager_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:cashier_journals.reference_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:cashier_journals.reference_id->sales_orders.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:damage_report_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN`
+- `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory_transactions.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipt_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_requisitions.requester_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->positions.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
 ```
 _Preview truncated; see input file for full content._
 
@@ -3749,7 +4176,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `VALUE:CUMULATIVE:h.hour_val,h.h_cdf->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
 - `VALUE:DIRECT:jsh_orga_user_rel.user_id,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id,jsh_orga_user_rel.delete_flag->jsh_temp_mock_plan.user_id`
 
 **Forbidden Tables**
@@ -5271,6 +5698,211 @@ SET
 ```
 _Preview truncated; see input file for full content._
 
+### `mysql80-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `sample-data/mysql/8.0/04-queries/10-enterprise-extension-queries.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/sample-data-enterprise-extension-queries-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/sample-data-enterprise-extension-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:stock_transfers.requested_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:stocktakes.created_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN`
+- `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_routes.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktake_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/correctness/mysql/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/sample-data-enterprise-procedures-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/sample-data-enterprise-procedures-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/sample-data-enterprise-procedures-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->stocktake_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:inventory.warehouse_id->stocktakes.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:PROCEDURE_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT UNSIGNED,
+    IN p_posted_by BIGINT UNSIGNED
+)
+BEGIN
+    DECLARE v_warehouse_id BIGINT UNSIGNED;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `sample-data/mysql/8.0/04-queries/09-real-world-scenarios.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/sample-data-real-world-scenarios-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/sample-data-real-world-scenarios-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/sample-data-real-world-scenarios-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:promotion_usages.promotion_id->promotion_products.promotion_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_commissions.employee_id->salary_payments.employee_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_commissions.period->salary_payments.salary_month:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_orders.order_date->purchase_orders.order_date:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouses.manager_id->employees.manager_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:cashier_journals.reference_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:cashier_journals.reference_id->sales_orders.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:damage_report_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN`
+- `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory_transactions.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipt_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_requisitions.requester_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->positions.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
+
 ## PostgreSQL Fixtures
 
 ### `postgres-basic-correctness-case-01-ddl`
@@ -6259,6 +6891,79 @@ CREATE TABLE public.users (
   id BIGINT PRIMARY KEY,
   email TEXT
 );
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/sample-data-enterprise-extension-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/sample-data-enterprise-extension-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ledger_books.tenant_id->tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:payment_receipts.account_id->accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:payment_receipts.handled_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stock_transfers.approved_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - PostgreSQL 18
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: PostgreSQL 18
+-- ============================================================
+
+-- ============================================================
 ```
 _Preview truncated; see input file for full content._
 
@@ -7251,6 +7956,79 @@ CREATE TABLE public.users (
 ```
 _Preview truncated; see input file for full content._
 
+### `postgres16-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-enterprise-extension-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-enterprise-extension-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ledger_books.tenant_id->tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:payment_receipts.account_id->accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:payment_receipts.handled_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stock_transfers.approved_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - PostgreSQL 18
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: PostgreSQL 18
+-- ============================================================
+
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres17-basic-correctness-case-01-ddl`
 
 | Field | Value |
@@ -8240,6 +9018,79 @@ CREATE TABLE public.users (
 ```
 _Preview truncated; see input file for full content._
 
+### `postgres17-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-enterprise-extension-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-enterprise-extension-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ledger_books.tenant_id->tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:payment_receipts.account_id->accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:payment_receipts.handled_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stock_transfers.approved_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - PostgreSQL 18
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: PostgreSQL 18
+-- ============================================================
+
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres18-basic-correctness-case-01-ddl`
 
 | Field | Value |
@@ -9226,6 +10077,79 @@ CREATE TABLE public.users (
   id BIGINT PRIMARY KEY,
   email TEXT
 );
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-enterprise-extension-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-enterprise-extension-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:employee_shift_assignments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inventory_reservations.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ledger_books.tenant_id->tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:payment_receipts.account_id->accounts.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:payment_receipts.handled_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_operations.route_id->production_routes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:production_routes.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.batch_id->product_batches.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stock_transfers.approved_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.requested_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktake_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:stocktakes.created_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktakes.reviewed_by->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:supplier_addresses.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - PostgreSQL 18
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: PostgreSQL 18
+-- ============================================================
+
+-- ============================================================
 ```
 _Preview truncated; see input file for full content._
 
@@ -11617,6 +12541,246 @@ _Preview truncated; see input file for full content._
 -- ============================================================================
 
 -- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/sample-data-enterprise-extension-queries-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/sample-data-enterprise-extension-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:stock_transfers.requested_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:stocktakes.created_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN`
+- `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_routes.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktake_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - PostgreSQL 18
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/sample-data-enterprise-procedures-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/sample-data-enterprise-procedures-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/sample-data-enterprise-procedures-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT,
+    IN p_posted_by BIGINT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-sample-data-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/sample-data-pg18-specific-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/sample-data-pg18-specific-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- PostgreSQL 18 专属语法样例
+-- 说明:
+--   这些 SQL 用来覆盖 PostgreSQL 18 版本能力，不参与 MySQL 8.0 业务对齐。
+--   可在 PostgreSQL 18 环境中单独执行。
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/04-queries/09-real-world-scenarios.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/sample-data-real-world-scenarios-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/sample-data-real-world-scenarios-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/sample-data-real-world-scenarios-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:promotion_usages.promotion_id->promotion_products.promotion_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_commissions.employee_id->salary_payments.employee_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_commissions.period->salary_payments.salary_month:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_orders.order_date->purchase_orders.order_date:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouses.manager_id->employees.manager_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:cashier_journals.reference_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:cashier_journals.reference_id->sales_orders.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:damage_report_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN`
+- `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory_transactions.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipt_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_requisitions.requester_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->positions.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
 ```
 _Preview truncated; see input file for full content._
 
@@ -14570,6 +15734,246 @@ FROM users u
 WHERE o.user_id = u.id;
 ```
 
+### `postgres16-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-enterprise-extension-queries-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-enterprise-extension-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:stock_transfers.requested_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:stocktakes.created_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN`
+- `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_routes.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktake_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - PostgreSQL 18
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-enterprise-procedures-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-enterprise-procedures-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-enterprise-procedures-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT,
+    IN p_posted_by BIGINT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-sample-data-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-pg18-specific-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-pg18-specific-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`: 4
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- PostgreSQL 18 专属语法样例
+-- 说明:
+--   这些 SQL 用来覆盖 PostgreSQL 18 版本能力，不参与 MySQL 8.0 业务对齐。
+--   可在 PostgreSQL 18 环境中单独执行。
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/04-queries/09-real-world-scenarios.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-real-world-scenarios-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-real-world-scenarios-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-real-world-scenarios-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:promotion_usages.promotion_id->promotion_products.promotion_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_commissions.employee_id->salary_payments.employee_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_commissions.period->salary_payments.salary_month:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_orders.order_date->purchase_orders.order_date:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouses.manager_id->employees.manager_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:cashier_journals.reference_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:cashier_journals.reference_id->sales_orders.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:damage_report_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN`
+- `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory_transactions.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipt_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_requisitions.requester_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->positions.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres17-basic-correctness-case-01-objects-sql`
 
 | Field | Value |
@@ -16972,6 +18376,246 @@ _Preview truncated; see input file for full content._
 -- ============================================================================
 
 -- ============================================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-enterprise-extension-queries-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-enterprise-extension-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:stock_transfers.requested_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:stocktakes.created_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN`
+- `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_routes.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktake_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - PostgreSQL 18
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-enterprise-procedures-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-enterprise-procedures-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-enterprise-procedures-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT,
+    IN p_posted_by BIGINT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-sample-data-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-pg18-specific-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-pg18-specific-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`: 4
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- PostgreSQL 18 专属语法样例
+-- 说明:
+--   这些 SQL 用来覆盖 PostgreSQL 18 版本能力，不参与 MySQL 8.0 业务对齐。
+--   可在 PostgreSQL 18 环境中单独执行。
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/04-queries/09-real-world-scenarios.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-real-world-scenarios-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-real-world-scenarios-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-real-world-scenarios-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:promotion_usages.promotion_id->promotion_products.promotion_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_commissions.employee_id->salary_payments.employee_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_commissions.period->salary_payments.salary_month:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_orders.order_date->purchase_orders.order_date:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouses.manager_id->employees.manager_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:cashier_journals.reference_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:cashier_journals.reference_id->sales_orders.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:damage_report_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN`
+- `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory_transactions.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipt_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_requisitions.requester_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->positions.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
 ```
 _Preview truncated; see input file for full content._
 
@@ -19658,6 +21302,246 @@ FROM transaction_ledgers tx
 WHERE ab.user_id = tx.user_id
 RETURNING old.balance AS previous_balance, new.balance AS updated_balance, tx.amount;
 ```
+
+### `postgres18-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-enterprise-extension-queries-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-enterprise-extension-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:stock_transfers.requested_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:stocktakes.created_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN`
+- `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN`
+- `FK_LIKE:production_routes.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktake_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - PostgreSQL 18
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/correctness/postgres/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-enterprise-procedures-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-enterprise-procedures-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-enterprise-procedures-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT,
+    IN p_posted_by BIGINT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-sample-data-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-pg18-specific-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-pg18-specific-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- PostgreSQL 18 专属语法样例
+-- 说明:
+--   这些 SQL 用来覆盖 PostgreSQL 18 版本能力，不参与 MySQL 8.0 业务对齐。
+--   可在 PostgreSQL 18 环境中单独执行。
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/04-queries/09-real-world-scenarios.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-real-world-scenarios-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-real-world-scenarios-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-real-world-scenarios-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:promotion_usages.promotion_id->promotion_products.promotion_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_commissions.employee_id->salary_payments.employee_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_commissions.period->salary_payments.salary_month:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:sales_orders.order_date->purchase_orders.order_date:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `CO_OCCURRENCE:warehouses.manager_id->employees.manager_id:SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:cashier_journals.reference_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:cashier_journals.reference_id->sales_orders.id:SQL_LOG_SUBQUERY_IN`
+- `FK_LIKE:damage_report_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN`
+- `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory_transactions.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipt_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN`
+- `FK_LIKE:purchase_requisitions.requester_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->positions.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.batch_id->product_batches.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN`
+- `FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
 
 ### `postgres18-sql-delete-using-no-alias`
 

@@ -1,0 +1,13 @@
+id: postgres18-sample-data-enterprise-procedures-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: postgresql/18
+databaseVersion: 18.1
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+schema: public
+input: ../../sample-data-enterprise-procedures-sql/input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

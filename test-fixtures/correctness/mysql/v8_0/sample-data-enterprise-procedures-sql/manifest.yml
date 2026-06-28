@@ -1,0 +1,13 @@
+id: mysql80-sample-data-enterprise-procedures-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: mysql/8.0
+databaseVersion: 8.0
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+schema: erp_system
+input: ../../sample-data-enterprise-procedures-sql/input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

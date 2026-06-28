@@ -1,0 +1,10 @@
+id: postgres-sample-data-enterprise-extension-ddl
+databaseType: POSTGRESQL
+parserTarget: DDL
+parserMode: token-event
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: public
+input: ../../../../sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

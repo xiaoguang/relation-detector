@@ -1,0 +1,9 @@
+id: mysql-sample-data-enterprise-extension-queries-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: token-event
+sourceType: PLAIN_SQL
+schema: erp_system
+input: ../../../../sample-data/mysql/8.0/04-queries/10-enterprise-extension-queries.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

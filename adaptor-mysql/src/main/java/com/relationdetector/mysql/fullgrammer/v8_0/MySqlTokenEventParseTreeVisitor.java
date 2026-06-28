@@ -87,6 +87,7 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
             sink.withProjectionOwner(alias, () -> {
                 if (ctx.subquery() != null) {
                     visit(ctx.subquery());
+                    emitTopLevelProjectionItems(alias, ctx.subquery());
                 }
             });
             return null;
@@ -215,11 +216,10 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
 
     @Override
     public Void visitPredicate(PredicateContext ctx) {
-        Void result = visitChildren(ctx);
         if (ctx.predicateOperations() instanceof PredicateExprInContext in && in.subquery() != null) {
             sink.inSubqueryPredicate(ctx, ctx.bitExpr(0), in.subquery());
         }
-        return result;
+        return visitChildren(ctx);
     }
 
     @Override
@@ -384,6 +384,38 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
         List<SelectItemContext> result = new ArrayList<>();
         collectSelectItems(tree, result);
         return result;
+    }
+
+    private void emitTopLevelProjectionItems(String alias, ParseTree tree) {
+        QuerySpecificationContext query = firstQuerySpecification(tree);
+        if (query == null || query.selectItemList() == null) {
+            return;
+        }
+        for (SelectItemContext item : query.selectItemList().selectItem()) {
+            if (item.expr() == null) {
+                continue;
+            }
+            String outputColumn = item.selectAlias() == null
+                    ? projectedColumnName(item.expr())
+                    : sink.firstIdentifier(item.selectAlias());
+            sink.projection(item, alias, outputColumn, item.expr());
+        }
+    }
+
+    private QuerySpecificationContext firstQuerySpecification(ParseTree tree) {
+        if (tree == null) {
+            return null;
+        }
+        if (tree instanceof QuerySpecificationContext query) {
+            return query;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            QuerySpecificationContext found = firstQuerySpecification(tree.getChild(index));
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
     }
 
     private void collectSelectItems(ParseTree tree, List<SelectItemContext> result) {

@@ -1,0 +1,9 @@
+id: postgres-sample-data-pg18-specific-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: token-event
+sourceType: PLAIN_SQL
+schema: public
+input: ../../../../sample-data/postgres/18/04-queries/11-pg18-specific.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

@@ -59,6 +59,23 @@ class TokenEventRelationExtractorIndependenceTest {
     }
 
     @Test
+    void statementScopedLocalTemporaryTablesAreNotRelationshipEndpoints() {
+        SqlStatementRecord statement = record(
+                "INSERT INTO order_facts SELECT tr.customer_id FROM tmp_rollup tr JOIN customers c ON tr.customer_id = c.id",
+                Map.of("localTempTables", List.of("tmp_rollup")));
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "tmp_rollup", "tr", 1),
+                table("JOIN", "customers", "c", 1),
+                equality("tr", "customer_id", "c", "id", 1)
+        ));
+
+        List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
+
+        assertTrue(relations.isEmpty(),
+                () -> "Procedure-local temporary tables must not become relationship endpoints: " + relations);
+    }
+
+    @Test
     void tokenEventExtractorDoesNotOwnMysqlOnlyStraightJoinCompatibility() {
         SqlStatementRecord statement = record("SELECT * FROM orders o STRAIGHT_JOIN users u ON o.user_id = u.id");
         StructuredParseResult structured = structured(List.of());
@@ -106,6 +123,10 @@ class TokenEventRelationExtractorIndependenceTest {
 
     private SqlStatementRecord record(String sql) {
         return new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL, "independence.sql", 1, 1, Map.of());
+    }
+
+    private SqlStatementRecord record(String sql, Map<String, Object> attributes) {
+        return new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL, "independence.sql", 1, 1, attributes);
     }
 
     private StructuredParseResult structured(List<StructuredSqlEvent> events) {

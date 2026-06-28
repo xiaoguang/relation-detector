@@ -548,6 +548,35 @@ class FullGrammerSqlBehaviorTest {
     }
 
     @Test
+    void mysqlPropagatesCumulativeDerivedProjectionToPhysicalSources() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO jsh_temp_mock_plan (mock_timestamp_str)
+                SELECT rand_tbl.mock_time
+                FROM (
+                    SELECT CONCAT(
+                        LPAD((SELECT h.hour_val
+                              FROM (
+                                  SELECT hour_val, (@running_h_sum := @running_h_sum + weight) AS h_cdf
+                                  FROM jsh_temp_hour_pdf
+                                  ORDER BY hour_val ASC
+                              ) h
+                              WHERE h.h_cdf >= 1
+                              ORDER BY h.h_cdf ASC LIMIT 1), 2, '0')
+                    ) AS mock_time
+                ) rand_tbl
+                """, StatementSourceType.PROCEDURE);
+
+        StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
+
+        Set<String> lineages = new TokenEventDataLineageExtractor().extract(statement, result).stream()
+                .map(FullGrammerSqlBehaviorTest::lineageFingerprint)
+                .collect(Collectors.toSet());
+
+        assertTrue(lineages.contains("VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight"
+                + "->jsh_temp_mock_plan.mock_timestamp_str"), () -> lineages.toString());
+    }
+
+    @Test
     void mysqlKeepsOnlyAcceptedSingleSourceCaseLineageForOrgPdfWeight() {
         SqlStatementRecord statement = statement("""
                 INSERT INTO jsh_temp_org_pdf (org_id, weight, remark)
@@ -616,6 +645,36 @@ class FullGrammerSqlBehaviorTest {
                 "leftAlias", "target", "rightAlias", "a"));
         assertTrue(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY,
                 "leftColumn", "audit_account_id", "rightColumn", "id"));
+    }
+
+    @Test
+    void mysqlResolvesRelationsAcrossDerivedAndCommaRowsets() {
+        SqlStatementRecord statement = statement("""
+                BEGIN
+                    UPDATE account_balances ab
+                    INNER JOIN (
+                        SELECT user_id, SUM(amount) AS total_amount
+                        FROM transaction_logs
+                        GROUP BY user_id
+                    ) AS drs_engine,
+                    global_compliance_policies gcp
+                    SET ab.risk_score = drs_engine.total_amount
+                    WHERE ab.user_id = drs_engine.user_id
+                      AND ab.region_code = gcp.region_code;
+                END
+                """, StatementSourceType.PROCEDURE);
+
+        StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
+
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, result).stream()
+                .map(FullGrammerSqlBehaviorTest::relationFingerprint)
+                .sorted()
+                .toList();
+
+        assertEquals(List.of(
+                "CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_COLUMN_CO_OCCURRENCE",
+                "CO_OCCURRENCE:account_balances.user_id->transaction_logs.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                fingerprints);
     }
 
     @Test

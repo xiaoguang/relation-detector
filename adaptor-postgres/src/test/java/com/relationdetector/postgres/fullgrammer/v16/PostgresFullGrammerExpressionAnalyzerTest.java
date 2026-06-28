@@ -64,6 +64,28 @@ class PostgresFullGrammerExpressionAnalyzerTest {
     }
 
     @Test
+    void scalarProjectionSubqueryEmitsNestedJoinRelationship() {
+        SqlStatementRecord statement = statement("""
+                SELECT
+                    pb.batch_no,
+                    (SELECT string_agg(DISTINCT CONCAT(w.name, ':', i.quantity), ', ')
+                     FROM inventory i
+                     JOIN warehouses w ON i.warehouse_id = w.id
+                     WHERE i.batch_id = pb.id AND i.quantity > 0) AS current_stock_distribution
+                FROM product_batches pb;
+                """);
+
+        var structured = new PostgresFullGrammerDialectModule().sqlParser().parseSql(statement, null);
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, structured)
+                .stream()
+                .map(PostgresFullGrammerExpressionAnalyzerTest::fingerprint)
+                .toList();
+
+        assertTrue(fingerprints.contains("FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN"),
+                () -> "Missing nested scalar subquery join. Actual=" + fingerprints);
+    }
+
+    @Test
     void analyzerMarksExpressionProjectionAsNonRelationColumnExpression() {
         var result = new PostgresFullGrammerDialectModule()
                 .sqlParser()

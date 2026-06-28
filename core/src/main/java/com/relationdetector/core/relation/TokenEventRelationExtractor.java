@@ -49,7 +49,7 @@ public final class TokenEventRelationExtractor {
     }
 
     private List<RelationshipCandidate> extractNative(SqlStatementRecord statement, StructuredParseResult structured) {
-        Set<String> ignoredRowsets = ignoredRowsets(structured.events());
+        Set<String> ignoredRowsets = ignoredRowsets(statement, structured.events());
         Map<String, TableId> aliases = rowsetAliases(structured.events(), ignoredRowsets);
         Map<ColumnKey, ColumnRef> projections = projectedColumns(structured.events(), aliases, ignoredRowsets);
         List<RelationshipCandidate> candidates = new ArrayList<>();
@@ -332,8 +332,11 @@ public final class TokenEventRelationExtractor {
         return true;
     }
 
-    private Set<String> ignoredRowsets(List<StructuredSqlEvent> events) {
+    private Set<String> ignoredRowsets(SqlStatementRecord statement, List<StructuredSqlEvent> events) {
         Set<String> ignored = new HashSet<>();
+        for (String table : stringList(statement.attributes().get("localTempTables"))) {
+            addIgnored(ignored, table);
+        }
         for (StructuredSqlEvent event : events) {
             if (event.type() == StructuredParseEventType.IGNORED_ROWSET
                     || event.type() == StructuredParseEventType.CTE_DECLARATION

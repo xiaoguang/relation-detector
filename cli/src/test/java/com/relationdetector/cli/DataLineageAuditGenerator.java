@@ -5,10 +5,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -226,11 +228,18 @@ final class DataLineageAuditGenerator {
         }
         if (candidates.isEmpty() && hasExplicitLocalTemporaryTable(lower)) {
             return new Decision(Classification.NOT_APPLICABLE,
-                    "requires cross-statement temporary-table lineage beyond Data Lineage v1");
+                    "local temporary table sources are excluded from Data Lineage v1");
         }
         if (candidates.isEmpty()) {
             return new Decision(Classification.NOT_APPLICABLE,
                     "write statement has no physical table.column source in Data Lineage v1");
+        }
+        Set<String> localTemporaryTables = localTemporaryTables(lower);
+        if (!localTemporaryTables.isEmpty()
+                && allCandidateSourcesAreLocalTemporaryTables(candidates, localTemporaryTables)) {
+            return new Decision(Classification.NOT_APPLICABLE,
+                    "procedure write reads only from local temporary table sources; "
+                            + "local temporary tables are excluded from Data Lineage v1");
         }
         if (requiresManualReview(sourceType, statementFormat, lower, fixtureId, candidates)) {
             return new Decision(Classification.PENDING_REVIEW,
@@ -281,6 +290,61 @@ final class DataLineageAuditGenerator {
         return Pattern.compile("(?is)\\bcreate\\s+(?:temporary|temp)\\s+table\\b").matcher(lower).find();
     }
 
+    private static Set<String> localTemporaryTables(String lower) {
+        Matcher matcher = Pattern.compile(
+                "(?is)\\bcreate\\s+(?:temporary|temp)\\s+table\\s+"
+                        + "(?:if\\s+not\\s+exists\\s+)?[`\"]?([a-zA-Z_][a-zA-Z0-9_]*)")
+                .matcher(lower);
+        Set<String> tables = new HashSet<>();
+        while (matcher.find()) {
+            tables.add(matcher.group(1).toLowerCase(Locale.ROOT));
+        }
+        return tables;
+    }
+
+    private static boolean allCandidateSourcesAreLocalTemporaryTables(
+            List<String> candidates,
+            Set<String> localTemporaryTables
+    ) {
+        if (candidates.isEmpty()) {
+            return false;
+        }
+        for (String candidate : candidates) {
+            String sourcePart = sourcePart(candidate);
+            if (sourcePart.isBlank()) {
+                return false;
+            }
+            for (String source : sourcePart.split(",")) {
+                String table = tableName(source.trim());
+                if (table.isBlank() || !localTemporaryTables.contains(table)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static String sourcePart(String fingerprint) {
+        int firstColon = fingerprint.indexOf(':');
+        int secondColon = firstColon < 0 ? -1 : fingerprint.indexOf(':', firstColon + 1);
+        int arrow = fingerprint.indexOf("->", secondColon + 1);
+        if (secondColon < 0 || arrow < 0 || arrow <= secondColon + 1) {
+            return "";
+        }
+        return fingerprint.substring(secondColon + 1, arrow);
+    }
+
+    private static String tableName(String endpoint) {
+        int columnDot = endpoint.lastIndexOf('.');
+        if (columnDot <= 0) {
+            return "";
+        }
+        String tableOrQualified = endpoint.substring(0, columnDot);
+        int qualifierDot = tableOrQualified.lastIndexOf('.');
+        String table = qualifierDot < 0 ? tableOrQualified : tableOrQualified.substring(qualifierDot + 1);
+        return table.toLowerCase(Locale.ROOT);
+    }
+
     private static List<String> lineageCandidates(
             DatabaseType databaseType,
             Path input,
@@ -290,7 +354,7 @@ final class DataLineageAuditGenerator {
             String objectSourceFilter
     ) {
         List<SqlStatementRecord> statements = statementFormat.equalsIgnoreCase("OBJECT_BLOCKS")
-                ? parseObjectBlockStatements(inputText, sourceType, input.toString(), objectSourceFilter)
+                ? parseObjectBlockStatements(inputText, sourceType, input.toString(), databaseType, objectSourceFilter)
                 : new PlainSqlLogExtractor().extract(input, sourceType, warning -> { }).toList();
         TokenEventDataLineageExtractor extractor = new TokenEventDataLineageExtractor();
         StructuredSqlParser parser = structuredSqlParser(databaseType);
@@ -325,18 +389,21 @@ final class DataLineageAuditGenerator {
     private static List<SqlStatementRecord> parseObjectBlockStatements(
             String text,
             StatementSourceType sourceType,
-            String sourceFile
+            String sourceFile,
+            DatabaseType databaseType
     ) {
-        return parseObjectBlockStatements(text, sourceType, sourceFile, "");
+        return parseObjectBlockStatements(text, sourceType, sourceFile, databaseType, "");
     }
 
     private static List<SqlStatementRecord> parseObjectBlockStatements(
             String text,
             StatementSourceType sourceType,
             String sourceFile,
+            DatabaseType databaseType,
             String objectSourceFilter
     ) {
         List<SqlStatementRecord> statements = new ArrayList<>();
+        List<String> localTempTables = PlainSqlLogExtractor.localTempTablesIn(text);
         String[] lines = text.split("\\R", -1);
         String currentSource = null;
         StringBuilder currentSql = new StringBuilder();
@@ -354,8 +421,13 @@ final class DataLineageAuditGenerator {
             if (trimmed.equals("-- relation-detector-fixture-end")) {
                 if (currentSource != null && !currentSql.toString().isBlank()
                         && (filter.isBlank() || currentSource.equals(filter))) {
+                    Map<String, Object> attributes = new LinkedHashMap<>();
+                    attributes.put("fixtureObjectSource", currentSource);
+                    if (!localTempTables.isEmpty()) {
+                        attributes.put("localTempTables", localTempTables);
+                    }
                     statements.add(new SqlStatementRecord(currentSql.toString().strip(), sourceType, currentSource,
-                            startLine, index, Map.of("fixtureObjectSource", currentSource)));
+                            startLine, index, attributes));
                 }
                 currentSource = null;
                 currentSql.setLength(0);

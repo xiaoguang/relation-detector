@@ -42,7 +42,7 @@ public final class TokenEventDataLineageExtractor {
      * <p>EN: Extracts field lineage from structured SQL events.
      */
     public List<DataLineageCandidate> extract(SqlStatementRecord statement, StructuredParseResult structured) {
-        return extractNative(statement, structured);
+        return extractNative(statement, structured, Set.of());
     }
 
     public List<DataLineageCandidate> extract(
@@ -50,22 +50,16 @@ public final class TokenEventDataLineageExtractor {
             StructuredParseResult structured,
             Set<TableId> knownPhysicalTables
     ) {
-        /*
-         * CN: Data Lineage v1 只过滤 SQL 语法明确声明的本地临时表，即
-         * LOCAL_TEMP_TABLE_DECLARATION events。knownPhysicalTables 保留为未来
-         * metadata-aware lineage 扩展点，但不能重新引入基于 tmp/temp 名字的猜测。
-         *
-         * EN: Data Lineage v1 only filters local temporary tables explicitly
-         * declared through LOCAL_TEMP_TABLE_DECLARATION events. knownPhysicalTables
-         * is a future metadata-aware extension point and must not reintroduce
-         * name-based temp-table guessing.
-         */
-        return extractNative(statement, structured);
+        return extractNative(statement, structured, knownPhysicalTables == null ? Set.of() : knownPhysicalTables);
     }
 
-    private List<DataLineageCandidate> extractNative(SqlStatementRecord statement, StructuredParseResult structured) {
+    private List<DataLineageCandidate> extractNative(
+            SqlStatementRecord statement,
+            StructuredParseResult structured,
+            Set<TableId> knownPhysicalTables
+    ) {
         Map<String, TableId> aliases = aliases(structured.events());
-        Set<String> localTempTables = localTempTables(structured.events());
+        Set<String> localTempTables = localTempTables(statement, structured.events());
         Map<String, Projection> projections = projections(structured.events(), aliases);
         List<DataLineageCandidate> candidates = new ArrayList<>();
         for (StructuredSqlEvent event : structured.events()) {
@@ -76,12 +70,18 @@ public final class TokenEventDataLineageExtractor {
             }
             ColumnRef target = targetColumn(event, aliases);
             SourceResolution sourceResolution = sourceEndpoints(event, aliases, projections);
-            List<Endpoint> sources = sourceResolution.sources().stream().distinct().toList();
-            if (target == null || sources.isEmpty()) {
+            if (target == null
+                    || isLocalTemp(target.table(), localTempTables)
+                    || !isKnownPhysical(target.table(), knownPhysicalTables)) {
                 continue;
             }
-            if (isLocalTemp(target.table(), localTempTables) || sources.stream()
-                    .anyMatch(source -> source.column() != null && isLocalTemp(source.column().table(), localTempTables))) {
+            List<Endpoint> sources = sourceResolution.sources().stream()
+                    .filter(source -> source.column() != null)
+                    .filter(source -> !isLocalTemp(source.column().table(), localTempTables))
+                    .filter(source -> isKnownPhysical(source.column().table(), knownPhysicalTables))
+                    .distinct()
+                    .toList();
+            if (sources.isEmpty()) {
                 continue;
             }
             LineageTransformType transform = effectiveTransform(text(event, "transformType"), sourceResolution.transforms());
@@ -199,7 +199,8 @@ public final class TokenEventDataLineageExtractor {
                             outputColumn,
                             new Projection(
                                     resolved.sources().stream().distinct().toList(),
-                                    effectiveTransform(text(event, "transformType"), resolved.transforms())));
+                                    effectiveTransform(text(event, "transformType"), resolved.transforms())),
+                            ignoredRowsets);
                 }
             }
             changed |= copyIgnoredRowsetAliases(events, ignoredRowsets, projections);
@@ -227,7 +228,7 @@ public final class TokenEventDataLineageExtractor {
             for (Map.Entry<String, Projection> entry : List.copyOf(projections.entrySet())) {
                 ProjectionKey key = parseProjectionKey(entry.getKey());
                 if (key.matches(table) || key.matches(qualified)) {
-                    changed |= putProjection(projections, alias, key.column(), entry.getValue());
+                    changed |= putProjection(projections, alias, key.column(), entry.getValue(), ignoredRowsets);
                 }
             }
         }
@@ -261,21 +262,64 @@ public final class TokenEventDataLineageExtractor {
             Map<String, Projection> projections,
             String alias,
             String column,
-            Projection projection
+            Projection projection,
+            Set<String> ignoredRowsets
     ) {
         String key = projectionKey(alias, column);
         if (parseProjectionKey(key).alias().isBlank()
-                || parseProjectionKey(key).column().isBlank()
-                || projections.containsKey(key)) {
+                || parseProjectionKey(key).column().isBlank()) {
             return false;
         }
-        projections.put(key, projection);
-        projections.putIfAbsent(projectionKey(baseName(alias), column), projection);
-        return true;
+        boolean changed = putProjectionKey(projections, key, projection, ignoredRowsets);
+        String baseKey = projectionKey(baseName(alias), column);
+        if (!baseKey.equals(key)) {
+            changed |= putProjectionKey(projections, baseKey, projection, ignoredRowsets);
+        }
+        return changed;
     }
 
-    private Set<String> localTempTables(List<StructuredSqlEvent> events) {
+    private boolean putProjectionKey(
+            Map<String, Projection> projections,
+            String key,
+            Projection projection,
+            Set<String> ignoredRowsets
+    ) {
+        Projection existing = projections.get(key);
+        if (existing == null || isBetterProjection(projection, existing, ignoredRowsets)) {
+            projections.put(key, projection);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isBetterProjection(Projection candidate, Projection existing, Set<String> ignoredRowsets) {
+        if (candidate.transform() != LineageTransformType.CUMULATIVE) {
+            return false;
+        }
+        if (candidate.transform() != existing.transform()) {
+            return false;
+        }
+        int candidateScore = projectionResolutionScore(candidate, ignoredRowsets);
+        int existingScore = projectionResolutionScore(existing, ignoredRowsets);
+        return candidateScore > existingScore;
+    }
+
+    private int projectionResolutionScore(Projection projection, Set<String> ignoredRowsets) {
+        int score = 0;
+        for (Endpoint source : projection.sources()) {
+            if (source.column() == null) {
+                continue;
+            }
+            score += ignoredRowsets.contains(normalize(source.table().tableName())) ? 1 : 4;
+        }
+        return score;
+    }
+
+    private Set<String> localTempTables(SqlStatementRecord statement, List<StructuredSqlEvent> events) {
         Set<String> result = new java.util.LinkedHashSet<>();
+        for (String table : stringList(statement.attributes().get("localTempTables"))) {
+            addIgnored(result, table);
+        }
         for (StructuredSqlEvent event : events) {
             if (event.type() != StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION) {
                 continue;
@@ -296,6 +340,27 @@ public final class TokenEventDataLineageExtractor {
         return localTempTables.contains(normalize(table.tableName()))
                 || (table.schema() != null
                 && localTempTables.contains(normalize(table.schema() + "." + table.tableName())));
+    }
+
+    private boolean isKnownPhysical(TableId table, Set<TableId> knownPhysicalTables) {
+        if (knownPhysicalTables == null || knownPhysicalTables.isEmpty()) {
+            return true;
+        }
+        for (TableId known : knownPhysicalTables) {
+            if (sameTable(table, known)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean sameTable(TableId left, TableId right) {
+        if (!normalize(left.tableName()).equals(normalize(right.tableName()))) {
+            return false;
+        }
+        String leftSchema = left.schema() == null ? "" : normalize(left.schema());
+        String rightSchema = right.schema() == null ? "" : normalize(right.schema());
+        return leftSchema.isBlank() || rightSchema.isBlank() || leftSchema.equals(rightSchema);
     }
 
     private List<String> stringList(Object value) {
