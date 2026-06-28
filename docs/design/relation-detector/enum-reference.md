@@ -109,10 +109,10 @@ public enum RelationSubType {
 | --- | --- | --- | --- | --- |
 | `DECLARED_FK` | `FK_LIKE` | 数据库元数据中明确存在外键。 | `METADATA_FOREIGN_KEY` | MySQL `information_schema` 显示 `orders.user_id` 引用 `users.id`。 |
 | `DDL_DECLARED_FK` | `FK_LIKE` | DDL 文件中明确声明外键。 | `DDL_FOREIGN_KEY` | `FOREIGN KEY (user_id) REFERENCES users(id)`。 |
-| `INFERRED_JOIN_FK` | `FK_LIKE` | 从 JOIN 条件推断出的类外键关系。 | `SQL_LOG_JOIN`、`VIEW_JOIN`、`PROCEDURE_JOIN` | `JOIN users u ON o.user_id = u.id`。 |
-| `SUBQUERY_INFERRED_FK` | `FK_LIKE` | 从 `IN`、`EXISTS`、相关子查询推断出的类外键关系。 | `SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` | `o.user_id IN (SELECT id FROM users)`。 |
+| `INFERRED_JOIN_FK` | `FK_LIKE` | JOIN / comma join 谓词加上足够方向证据后得到的推断 FK-like。方向证据可以来自 DDL/metadata/data-profile、“SQL 谓词 + 一侧 unique、一侧 non-unique”，或附着在该 SQL 谓词上的唯一 `NAMING_MATCH` 方向提示。 | `SQL_LOG_JOIN` + `TARGET_UNIQUE`、metadata/index facts、`NAMING_MATCH` | `JOIN users u ON o.user_id = u.id`；若 `users.id` unique，或命名提示唯一指向 `orders.user_id -> users.id`，则输出该方向。 |
+| `SUBQUERY_INFERRED_FK` | `FK_LIKE` | `IN` / `EXISTS` 谓词加上足够方向证据后得到的推断 FK-like。谓词 evidence 保留具体语法来源；命名只能作为已有谓词上的方向提示，不能单独创建关系。 | `SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` + unique/profile facts 或 `NAMING_MATCH` | `o.user_id IN (SELECT id FROM users)`；若 `users.id` unique 或命名方向唯一，则可推导 `orders.user_id -> users.id`。 |
 | `PROFILE_SUPPORTED_FK` | `FK_LIKE` | 数据画像强支持的推断关系。 | `VALUE_CONTAINMENT_HIGH`、`TARGET_UNIQUE` | 抽样发现 `orders.user_id` 99.5% 都存在于 `users.id`。 |
-| `NAMING_SUPPORTED_FK` | `FK_LIKE` | 命名规则与其他弱证据共同支持的关系。 | `NAMING_MATCH`、`SOURCE_INDEX`、`TARGET_UNIQUE` | `user_id` 命中 `users.id`，且目标列唯一。 |
+| `NAMING_SUPPORTED_FK` | `FK_LIKE` | 命名方向启发式支持的 FK-like；当前实现通常保留 `INFERRED_JOIN_FK` / `SUBQUERY_INFERRED_FK` subtype，并用 `NAMING_MATCH` evidence 标明方向来源。 | 既有 SQL predicate evidence + `NAMING_MATCH` | `user_id` / `id` 这类名称必须先有 JOIN/EXISTS/IN 等 SQL 谓词候选，才能作为方向提示。 |
 | `COLUMN_CO_OCCURRENCE` | `CO_OCCURRENCE` | SQL 给出明确列等值，但无法可靠判断 FK-like 方向。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` | `warehouse_inventory.product_id = order_items.product_id`。 |
 | `TABLE_CO_OCCURRENCE` | `CO_OCCURRENCE` | 只能证明两个表共现，不能证明列级引用。 | `SQL_LOG_TABLE_CO_OCCURRENCE` | `FROM users, audit_logs` 且没有连接条件。 |
 
@@ -250,13 +250,13 @@ Evidence:
 
 | 值 | 含义 | 默认分 | 何时产生 |
 | --- | --- | ---: | --- |
-| `VIEW_JOIN` | 视图定义中的 JOIN 关系。 | 0.72 | 解析 view SQL。 |
-| `PROCEDURE_JOIN` | 存储过程或函数中的 JOIN 关系。 | 0.70 | 解析 procedure/function body。 |
-| `TRIGGER_REFERENCE` | 触发器中的表/列引用。 | 0.65 | 解析 trigger body 或 trigger function。 |
-| `SQL_LOG_JOIN` | SQL 日志中的 JOIN 关系。 | 0.55 | 解析 native log 或纯 SQL 文件。 |
-| `SQL_LOG_SUBQUERY_IN` | SQL 日志中的 `IN` 子查询关系。 | 0.58 | 外层列出现在 `IN (SELECT ...)`。 |
-| `SQL_LOG_EXISTS` | SQL 日志中的 `EXISTS` 子查询关系。 | 0.58 | `EXISTS` 内部存在关联条件。 |
-| `SQL_LOG_COLUMN_CO_OCCURRENCE` | SQL 日志中的列级弱共现。 | 0.40 | 等值谓词两侧都是物理列，但不能可靠判断 FK-like 方向。 |
+| `VIEW_JOIN` | 视图定义中的列级谓词证据。 | 0.72 | 证据比普通日志稳定，但方向仍由 DDL/metadata/profile/unique 等证据决定。 |
+| `PROCEDURE_JOIN` | 存储过程中的列级谓词证据。 | 0.70 | 证据来自稳定业务逻辑，但不单独证明 FK-like 方向。 |
+| `TRIGGER_REFERENCE` | 触发器中的物理表列引用/谓词证据。 | 0.65 | `NEW/OLD` 只作为 trigger pseudo rowset 过滤，不作为物理 endpoint。 |
+| `SQL_LOG_JOIN` | SQL JOIN / comma join 等值谓词证据。 | 0.55 | 当前 typed SQL parser 生成；没有方向证据时输出 `CO_OCCURRENCE`。 |
+| `SQL_LOG_SUBQUERY_IN` | `IN (SELECT ...)` / tuple IN 谓词证据。 | 0.58 | 当前 typed SQL parser 生成；方向由 unique/profile/DDL/metadata 等证据决定。 |
+| `SQL_LOG_EXISTS` | correlated `EXISTS` / `NOT EXISTS` 谓词证据。 | 0.58 | 当前 typed SQL parser 生成；保留 EXISTS evidence，不泛化成普通 JOIN。 |
+| `SQL_LOG_COLUMN_CO_OCCURRENCE` | 泛化列级弱共现。 | 0.40 | 用于历史/外部导入或无法保留具体谓词语法形态的场景。 |
 | `SQL_LOG_TABLE_CO_OCCURRENCE` | SQL 日志中的表共现。 | 0.25 | 多表同 SQL 出现，但无可靠列关系。 |
 | `REPEATED_OBSERVATION` | 同一关系在同一证据类型/来源下重复出现后的派生加分。 | 0.00-0.10 | `RelationshipMerger` 发现同组 evidence 的 `count > 1`。 |
 
@@ -268,11 +268,12 @@ FROM orders o
 WHERE o.user_id IN (SELECT u.id FROM users u);
 ```
 
-产生：
+当前 typed SQL parser 产生：
 
 ```text
-EvidenceType: SQL_LOG_SUBQUERY_IN
-RelationSubType: SUBQUERY_INFERRED_FK
+EvidenceType: SQL_LOG_COLUMN_CO_OCCURRENCE
+RelationSubType: COLUMN_CO_OCCURRENCE
+attributes.joinKind: IN_SUBQUERY
 ```
 
 维护说明：
@@ -285,14 +286,14 @@ RelationSubType: SUBQUERY_INFERRED_FK
 
 | 值 | 含义 | 默认分 | 何时产生 |
 | --- | --- | ---: | --- |
-| `NAMING_MATCH` | 命名规则匹配。 | 0.20 | `user_id` 匹配 `users.id` 这类模式。 |
+| `NAMING_MATCH` | 命名方向规则匹配。 | 0.20 | 只能附着在已有 SQL predicate candidate 上；attributes 包含 `namingRule`、`suggestedSourceEndpoint`、`suggestedTargetEndpoint`、`matchedColumn`、`matchedTable`、`directionHint=true`。 |
 | `VALUE_CONTAINMENT_HIGH` | source 值域高度包含于 target。 | 0.30 | 抽样包含率高于阈值。 |
 | `VALUE_OVERLAP_HIGH` | source 与 target 值重合率较高。 | 0.20 | 抽样重合率高于阈值。 |
 | `NEGATIVE_VALUE_MISMATCH` | 数据画像显示明显不匹配。 | -0.30 | 大量 source 值不在 target 中，或类型/基数明显不合理。 |
 
 维护说明：
 
-- `NAMING_MATCH` 不能单独生成强关系。
+- `NAMING_MATCH` 不能单独生成关系；它只能给已有 SQL predicate candidate 加分，并在方向唯一时参与 FK-like 方向推导。
 - `VALUE_CONTAINMENT_HIGH` 是强辅助证据，但仍受采样限制，detail 必须写明样本规模。
 - `NEGATIVE_VALUE_MISMATCH` 是负向证据，会降低最终分数，而不是删除关系。
 - EvidenceType 的默认分值、定分理由、合并公式和完整 SQL 算例，以 [Phase 2：核心模型和评分详细设计](phase-02-core-model-scoring.md) 的“置信度计算”章节为准。维护枚举时必须同步检查该章节，避免 enum 文档和评分模型出现两套解释。
@@ -358,18 +359,18 @@ public enum StatementSourceType {
 | 值 | 含义 | 解析后的常见 evidence |
 | --- | --- | --- |
 | `DDL_FILE` | DDL 文件中的语句。 | `DDL_FOREIGN_KEY`、`SOURCE_INDEX`、`TARGET_UNIQUE` |
-| `PROCEDURE` | 存储过程 body。 | `PROCEDURE_JOIN` |
-| `FUNCTION` | 函数 body。 | `PROCEDURE_JOIN` |
-| `VIEW` | 视图定义 SQL。 | `VIEW_JOIN` |
-| `MATERIALIZED_VIEW` | 物化视图定义 SQL。 | `VIEW_JOIN` |
-| `TRIGGER` | 触发器 body 或 trigger function。 | `TRIGGER_REFERENCE` |
-| `EVENT` | MySQL scheduler event body。 | `PROCEDURE_JOIN` |
-| `RULE` | PostgreSQL rewrite rule definition。 | `VIEW_JOIN` |
-| `PACKAGE` | Oracle package specification，后续 adaptor 预留。 | `PROCEDURE_JOIN` |
-| `PACKAGE_BODY` | Oracle package body，后续 adaptor 预留。 | `PROCEDURE_JOIN` |
-| `MIGRATION` | migration 脚本中的 SQL。 | `SQL_LOG_JOIN` |
-| `NATIVE_LOG` | 数据库原生日志提取出的 SQL。 | `SQL_LOG_JOIN`、`SQL_LOG_EXISTS` |
-| `PLAIN_SQL` | 清洗后的纯 SQL 文本。 | `SQL_LOG_JOIN`、`SQL_LOG_TABLE_CO_OCCURRENCE` |
+| `PROCEDURE` | 存储过程 body。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` |
+| `FUNCTION` | 函数 body。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` |
+| `VIEW` | 视图定义 SQL。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` |
+| `MATERIALIZED_VIEW` | 物化视图定义 SQL。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` |
+| `TRIGGER` | 触发器 body 或 trigger function。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` |
+| `EVENT` | MySQL scheduler event body。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` |
+| `RULE` | PostgreSQL rewrite rule definition。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` |
+| `PACKAGE` | Oracle package specification，后续 adaptor 预留。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` |
+| `PACKAGE_BODY` | Oracle package body，后续 adaptor 预留。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` |
+| `MIGRATION` | migration 脚本中的 SQL。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` |
+| `NATIVE_LOG` | 数据库原生日志提取出的 SQL。 | `SQL_LOG_COLUMN_CO_OCCURRENCE`、`SQL_LOG_TABLE_CO_OCCURRENCE` |
+| `PLAIN_SQL` | 清洗后的纯 SQL 文本。 | `SQL_LOG_COLUMN_CO_OCCURRENCE`、`SQL_LOG_TABLE_CO_OCCURRENCE` |
 
 维护说明：
 

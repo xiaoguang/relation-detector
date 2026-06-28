@@ -1,14 +1,14 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:orders.customer_id->invoices.customer_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:orders.user_id->payments.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:products.category_id->orders.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:refunds.user_id->payments.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_SUBQUERY_IN",
-    "FK_LIKE:order_items.product_id->products.id:SQL_LOG_SUBQUERY_IN",
-    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
-    "FK_LIKE:refunds.order_id->orders.id:SQL_LOG_SUBQUERY_IN",
-    "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_EXISTS"
+    "CO_OCCURRENCE:invoices.customer_id->orders.customer_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:orders.category_id->products.category_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:orders.user_id->payments.user_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:payments.user_id->refunds.user_id:SQL_LOG_JOIN",
+    "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH",
+    "FK_LIKE:order_items.product_id->products.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH",
+    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:refunds.order_id->orders.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH",
+    "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_EXISTS,NAMING_MATCH"
   ],
   "forbiddenTables": [
     "projected_orders"

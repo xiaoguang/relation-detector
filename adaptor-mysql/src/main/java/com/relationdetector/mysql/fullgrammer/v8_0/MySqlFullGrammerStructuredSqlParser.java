@@ -70,9 +70,6 @@ final class MySqlFullGrammerStructuredSqlParser implements StructuredSqlParser {
         attributes.put("fullGrammerParseTreeRoot", parse.root() == null ? "" : parse.root().getClass().getSimpleName());
         attributes.put("fullGrammerNativeEventTypes",
                 FullGrammerEventMerger.eventTypeNames(FullGrammerNativeEventTypes.MYSQL_NATIVE_EVENTS));
-        attributes.put("fullGrammerBridgedEventTypes",
-                FullGrammerEventMerger.bridgedEventTypeNames(nativeEvents, FullGrammerNativeEventTypes.MYSQL_BRIDGED_EVENTS));
-        attributes.put("fullGrammerDelegatedEventTypes", List.of());
         return new StructuredParseResult("MYSQL_FULL_GRAMMER_PARSE_TREE", "MYSQL", statement.sourceName(),
                 nativeEvents, warnings, attributes);
     }

@@ -156,7 +156,7 @@ tableElement
     ;
 
 tableForeignKey
-    : constraintName? FOREIGN KEY LPAREN identifierList RPAREN REFERENCES qualifiedName LPAREN identifierList RPAREN referentialAction*
+    : constraintName? FOREIGN KEY LPAREN identifierList RPAREN REFERENCES qualifiedName LPAREN identifierList RPAREN foreignKeyTail*
     ;
 
 primaryKeyConstraint
@@ -230,7 +230,7 @@ columnDefinitionParenToken
 inlineColumnConstraint
     : PRIMARY KEY
     | UNIQUE
-    | REFERENCES qualifiedName LPAREN identifierList RPAREN
+    | REFERENCES qualifiedName LPAREN identifierList RPAREN foreignKeyTail*
     ;
 
 alterTableStatement
@@ -260,6 +260,16 @@ referentialAction
     : ON (DELETE | UPDATE) referentialActionToken+
     ;
 
+foreignKeyTail
+    : referentialAction
+    | identifier
+    | NOT
+    | literal
+    | EQ
+    | LPAREN columnDefinitionParenToken* RPAREN
+    | OTHER
+    ;
+
 referentialActionToken
     : identifier
     | SET
@@ -271,8 +281,26 @@ indexPartList
     ;
 
 indexPart
-    : identifier (LPAREN NUMBER RPAREN)?
-    | LPAREN functionCall RPAREN
+    : identifier (LPAREN NUMBER RPAREN)? indexPartOption*
+    | LPAREN functionCall RPAREN indexPartOption*
+    ;
+
+indexPartOption
+    : identifier
+    | NOT
+    | literal
+    | EQ
+    | DOT
+    | PLUS
+    | MINUS
+    | SLASH
+    | PERCENT
+    | LT
+    | GT
+    | LE
+    | GE
+    | NEQ
+    | OTHER
     ;
 
 predicate

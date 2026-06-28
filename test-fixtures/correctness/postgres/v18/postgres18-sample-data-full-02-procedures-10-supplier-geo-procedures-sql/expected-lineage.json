@@ -1,5 +1,9 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty",
+    "VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count",
+    "VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date"
+  ],
   "forbiddenSources": [],
   "forbiddenTargets": [],
   "warningCodes": {}

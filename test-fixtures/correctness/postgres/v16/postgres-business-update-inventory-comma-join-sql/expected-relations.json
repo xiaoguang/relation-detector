@@ -1,7 +1,7 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:inventory.product_id->order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:inventory.supplier_id->suppliers.id:SQL_LOG_JOIN"
+    "CO_OCCURRENCE:inventory.product_id->order_items.product_id:SQL_LOG_JOIN",
+    "FK_LIKE:inventory.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

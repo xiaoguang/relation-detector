@@ -69,11 +69,13 @@ public final class FullGrammerTypedSqlEventSink {
             visitor.run();
             return;
         }
+        int rowsetMark = rowsetTables.size();
         projectionOwners.push(clean(owner));
-        projectionRowsetBases.push(rowsetTables.size());
+        projectionRowsetBases.push(rowsetMark);
         try {
             visitor.run();
         } finally {
+            restoreRowsetScope(rowsetMark);
             projectionRowsetBases.pop();
             projectionOwners.pop();
         }
@@ -103,10 +105,12 @@ public final class FullGrammerTypedSqlEventSink {
      * <p>EN: Visits a subtree inside a SELECT scope to bound default projection rowsets.
      */
     public void withSelectScope(Runnable visitor) {
-        selectRowsetBases.push(rowsetTables.size());
+        int rowsetMark = rowsetTables.size();
+        selectRowsetBases.push(rowsetMark);
         try {
             visitor.run();
         } finally {
+            restoreRowsetScope(rowsetMark);
             selectRowsetBases.pop();
         }
     }
@@ -275,7 +279,6 @@ public final class FullGrammerTypedSqlEventSink {
             attributes.put("flowKind", analysis.flowKind());
             add(ctx, type, attributes);
         }
-        directAssignmentPredicate(ctx, targetAlias, cleanColumn, analysis);
         expressionSource(ctx, analysis);
     }
 
@@ -308,35 +311,6 @@ public final class FullGrammerTypedSqlEventSink {
             attributes.put("flowKind", analysis.flowKind());
             add(ctx, type, attributes);
         }
-    }
-
-    private void directAssignmentPredicate(
-            ParserRuleContext ctx,
-            String targetAlias,
-            String targetColumn,
-            FullGrammerExpressionAnalysis analysis
-    ) {
-        if (!"DIRECT".equals(analysis.transformType())
-                || analysis.sourceAliases().size() != 1
-                || analysis.sourceColumns().size() != 1) {
-            return;
-        }
-        if (!isLikelyForeignKeyAssignment(targetColumn, analysis.sourceColumns().get(0))) {
-            return;
-        }
-        Map<String, Object> attributes = nativeAttributes();
-        attributes.put("leftAlias", clean(targetAlias).isBlank() ? currentWriteTarget() : clean(targetAlias));
-        attributes.put("leftColumn", targetColumn);
-        attributes.put("rightAlias", clean(analysis.sourceAliases().get(0)));
-        attributes.put("rightColumn", clean(analysis.sourceColumns().get(0)));
-        attributes.put("joinKind", "WRITE_ASSIGNMENT");
-        add(ctx, StructuredParseEventType.PREDICATE_EQUALITY, attributes);
-    }
-
-    private boolean isLikelyForeignKeyAssignment(String targetColumn, String sourceColumn) {
-        String target = clean(targetColumn).toLowerCase(Locale.ROOT);
-        String source = clean(sourceColumn).toLowerCase(Locale.ROOT);
-        return source.equals("id") && target.endsWith("_id");
     }
 
     public void projection(ParserRuleContext ctx, String outputAlias, String outputColumn, ParseTree expression) {

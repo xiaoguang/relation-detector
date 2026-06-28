@@ -79,7 +79,7 @@ class MySqlFullGrammerExpressionAnalyzerTest {
                 .map(this::relationFingerprint)
                 .toList();
 
-        assertEquals(List.of("FK_LIKE:cashier_journals.reference_id->sales_orders.id:SQL_LOG_SUBQUERY_IN"),
+        assertEquals(List.of("CO_OCCURRENCE:cashier_journals.reference_id->sales_orders.id:SQL_LOG_SUBQUERY_IN"),
                 fingerprints);
     }
 
@@ -101,7 +101,7 @@ class MySqlFullGrammerExpressionAnalyzerTest {
                 .map(this::relationFingerprint)
                 .toList();
 
-        assertTrue(fingerprints.contains("FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN"),
+        assertTrue(fingerprints.contains("CO_OCCURRENCE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN"),
                 () -> "Missing nested scalar subquery join. Actual=" + fingerprints);
     }
 
@@ -133,7 +133,7 @@ class MySqlFullGrammerExpressionAnalyzerTest {
                 .map(this::relationFingerprint)
                 .toList();
 
-        assertTrue(fingerprints.contains("FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN"),
+        assertTrue(fingerprints.contains("CO_OCCURRENCE:employees.id->performance_reviews.employee_id:SQL_LOG_JOIN"),
                 () -> "CTE projection should resolve through the nested derived table alias. Actual=" + fingerprints
                         + " events=" + structured.events());
     }

@@ -39,7 +39,7 @@ orders -> users
 - 插件发现：Java SPI / `ServiceLoader`。
 - 测试：
   - JUnit 5。
-  - correctness fixture golden、CLI E2E golden、full-grammer parity、confidence/merger/lineage/DDL 语义单测。
+  - correctness fixture golden、CLI E2E golden、versioned full-grammer golden、confidence/merger/lineage/DDL 语义单测。
   - AssertJ / Testcontainers 是后续增强方向，用于更强断言和真实数据库集成测试。
 
 上层语义层建议使用 PostgreSQL + JSONB + pgvector 保存 SemanticTable、SemanticColumn、SemanticEntity、SemanticMetric、SemanticJoinPath、EvidenceRef、Lexicon、Embedding 和 QuestionTrace。第一版可以先使用 JSON 文件落地 semantic catalog，再逐步迁移到数据库存储。
@@ -909,7 +909,7 @@ Data Lineage 是独立顶层数组，不混入 relationship，也不改变 relat
 
 - fixture SQL/DDL 覆盖常见 JOIN、子查询、视图、触发器、DML 写入、DDL index/FK。
 - 单条 SQL 失败不影响整体扫描。
-- full-grammer parity 测试证明版本化 profile 不低于当前 token-event correctness gold；运行时选中 profile 后 full-grammer 是 primary parser，token-event 只做 fallback。
+- versioned full-grammer golden 直接证明对应 profile 的 SQL/DDL 行为；运行时选中 profile 后 full-grammer 是 primary parser，token-event 只做 fallback。
 
 ### Phase 7：可选数据画像
 

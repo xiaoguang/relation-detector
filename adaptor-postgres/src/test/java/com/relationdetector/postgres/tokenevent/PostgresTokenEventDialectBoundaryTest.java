@@ -60,6 +60,98 @@ class PostgresTokenEventDialectBoundaryTest {
     }
 
     @Test
+    void postgresTokenEventResolvesAggregateProjectionLineageThroughDerivedUpdateFrom() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                UPDATE users u
+                SET total_spent = COALESCE(o_summary.actual_total, 0.00),
+                    level = CASE
+                        WHEN o_summary.actual_total >= 10000 THEN 'VIP'
+                        ELSE 'REGULAR'
+                    END
+                FROM (
+                    SELECT user_id, SUM(pay_amount) AS actual_total
+                    FROM orders
+                    WHERE order_status = 'PAID'
+                    GROUP BY user_id
+                ) o_summary
+                WHERE u.id = o_summary.user_id;
+                """, StatementSourceType.PLAIN_SQL, "postgres-derived-aggregate-update.sql", 1, 1, java.util.Map.of());
+
+        var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
+        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor()
+                .extract(statement, result)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains("VALUE:AGGREGATE:orders.pay_amount->users.total_spent"),
+                () -> "Derived aggregate projection should flow into UPDATE target: " + fingerprints
+                        + " events=" + result.events() + " attrs=" + result.attributes());
+        assertTrue(fingerprints.contains("CONTROL:AGGREGATE:orders.pay_amount->users.level"),
+                () -> "CASE over derived aggregate should control UPDATE target: " + fingerprints
+                        + " events=" + result.events() + " attrs=" + result.attributes());
+    }
+
+    @Test
+    void postgresTokenEventResolvesScalarAggregateSubqueryLineage() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                UPDATE users u
+                SET total_spent = COALESCE((
+                        SELECT SUM(o.pay_amount)
+                        FROM orders o
+                        WHERE o.user_id = u.id
+                    ), 0.00),
+                    level = CASE
+                        WHEN COALESCE((
+                            SELECT SUM(o.pay_amount)
+                            FROM orders o
+                            WHERE o.user_id = u.id
+                        ), 0.00) >= 10000 THEN 'VIP'
+                        ELSE 'REGULAR'
+                    END;
+                """, StatementSourceType.PLAIN_SQL, "postgres-scalar-aggregate-update.sql", 1, 1, java.util.Map.of());
+
+        var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
+        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor()
+                .extract(statement, result)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains("VALUE:AGGREGATE:orders.pay_amount->users.total_spent"),
+                () -> "Scalar aggregate subquery should flow into UPDATE target: " + fingerprints
+                        + " events=" + result.events() + " attrs=" + result.attributes());
+        assertTrue(fingerprints.contains("CONTROL:CASE_WHEN:orders.pay_amount->users.level"),
+                () -> "CASE over scalar aggregate subquery should control UPDATE target: " + fingerprints
+                        + " events=" + result.events() + " attrs=" + result.attributes());
+    }
+
+    @Test
+    void postgresTokenEventExtractsMergeInsertLineage() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                MERGE INTO target_orders AS t
+                USING source_orders AS s
+                ON t.source_order_id = s.id
+                WHEN NOT MATCHED THEN
+                  INSERT (source_order_id) VALUES (s.id);
+                """, StatementSourceType.PLAIN_SQL, "postgres-merge-insert.sql", 1, 1, java.util.Map.of());
+
+        var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
+        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor()
+                .extract(statement, result)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains("VALUE:DIRECT:source_orders.id->target_orders.source_order_id"),
+                () -> "MERGE INSERT value expression should flow into target column: " + fingerprints
+                        + " events=" + result.events() + " attrs=" + result.attributes());
+    }
+
+    @Test
     void adaptorExposesPostgresTokenEventSqlAndDdlParsers() {
         PostgresDatabaseAdaptor adaptor = new PostgresDatabaseAdaptor();
 

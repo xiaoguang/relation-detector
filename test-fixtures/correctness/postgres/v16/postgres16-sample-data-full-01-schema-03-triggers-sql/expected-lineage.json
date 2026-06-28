@@ -1,5 +1,6 @@
 {
   "fingerprints": [
+    "VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty",
     "VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity",
     "VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id",
     "VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id",

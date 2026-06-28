@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
+import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.Enums.EvidenceType;
@@ -48,6 +49,8 @@ public final class RelationshipMerger {
                 existing.relationSubType(dominant(existing.relationSubType(), candidate.relationSubType()));
             }
         }
+        foldColumnCoOccurrencesIntoDirectionalEvidence(merged);
+        merged = normalizeDirectionFromEvidence(merged);
 
         for (RelationshipCandidate candidate : merged.values()) {
             summarizeRepeatedEvidence(candidate);
@@ -66,6 +69,242 @@ public final class RelationshipMerger {
                 .thenComparing(c -> c.source().displayName())
                 .thenComparing(c -> c.target().displayName()));
         return output;
+    }
+
+    /**
+     * Folds SQL-only column co-occurrence into an already directional FK-like
+     * relationship when DDL/metadata/profile evidence has supplied direction.
+     *
+     * <p>CN: SQL 谓词本身只说明两列共现，不能靠列名判断 FK 方向；如果同端点已经有
+     * DDL/metadata/profile 等方向性候选，则把 SQL 共现 evidence 合入该候选并移除弱关系。
+     */
+    private void foldColumnCoOccurrencesIntoDirectionalEvidence(Map<String, RelationshipCandidate> merged) {
+        Map<String, RelationshipCandidate> directionalByEndpoints = new LinkedHashMap<>();
+        for (RelationshipCandidate candidate : merged.values()) {
+            if (isDirectionalColumnRelation(candidate)) {
+                directionalByEndpoints.put(unorderedColumnEndpointKey(candidate), candidate);
+            }
+        }
+        if (directionalByEndpoints.isEmpty()) {
+            return;
+        }
+        var iterator = merged.entrySet().iterator();
+        while (iterator.hasNext()) {
+            RelationshipCandidate candidate = iterator.next().getValue();
+            if (!isColumnCoOccurrence(candidate)) {
+                continue;
+            }
+            RelationshipCandidate directional = directionalByEndpoints.get(unorderedColumnEndpointKey(candidate));
+            if (directional == null) {
+                continue;
+            }
+            directional.evidence().addAll(candidate.evidence());
+            directional.warnings().addAll(candidate.warnings());
+            iterator.remove();
+        }
+    }
+
+    private boolean isDirectionalColumnRelation(RelationshipCandidate candidate) {
+        return candidate.relationType() == RelationType.FK_LIKE
+                && candidate.source().isColumnLevel()
+                && candidate.target().isColumnLevel();
+    }
+
+    private boolean isColumnCoOccurrence(RelationshipCandidate candidate) {
+        return candidate.relationType() == RelationType.CO_OCCURRENCE
+                && candidate.relationSubType() == RelationSubType.COLUMN_CO_OCCURRENCE
+                && candidate.source().isColumnLevel()
+                && candidate.target().isColumnLevel();
+    }
+
+    private Map<String, RelationshipCandidate> normalizeDirectionFromEvidence(Map<String, RelationshipCandidate> merged) {
+        Map<String, RelationshipCandidate> normalized = new LinkedHashMap<>();
+        for (RelationshipCandidate candidate : merged.values()) {
+            RelationshipCandidate next = candidate;
+            if (isColumnCoOccurrence(candidate)) {
+                next = promoteColumnCoOccurrenceWhenDirectionIsKnown(candidate);
+            } else if (candidate.relationType() == RelationType.FK_LIKE && !hasDirectionEvidence(candidate)) {
+                next = copy(candidate, candidate.source(), candidate.target(),
+                        RelationType.CO_OCCURRENCE, RelationSubType.COLUMN_CO_OCCURRENCE);
+            }
+            putOrMerge(normalized, next);
+        }
+        return normalized;
+    }
+
+    private RelationshipCandidate promoteColumnCoOccurrenceWhenDirectionIsKnown(RelationshipCandidate candidate) {
+        if (!hasSqlPredicateEvidence(candidate)) {
+            return candidate;
+        }
+        String uniqueEndpoint = singleUniqueEndpoint(candidate);
+        if (uniqueEndpoint.isBlank()) {
+            DirectionHint naming = singleNamingDirection(candidate);
+            return naming == null
+                    ? candidate
+                    : copy(candidate, naming.source(), naming.target(),
+                            RelationType.FK_LIKE, sqlPredicateSubtype(candidate));
+        }
+        String sourceKey = candidate.source().normalizedKey();
+        String targetKey = candidate.target().normalizedKey();
+        if (sourceKey.equals(targetKey)) {
+            return candidate;
+        }
+        if (uniqueEndpoint.equals(sourceKey)) {
+            return copy(candidate, candidate.target(), candidate.source(),
+                    RelationType.FK_LIKE, sqlPredicateSubtype(candidate));
+        }
+        if (uniqueEndpoint.equals(targetKey)) {
+            return copy(candidate, candidate.source(), candidate.target(),
+                    RelationType.FK_LIKE, sqlPredicateSubtype(candidate));
+        }
+        return candidate;
+    }
+
+    private String singleUniqueEndpoint(RelationshipCandidate candidate) {
+        String unique = "";
+        for (Evidence evidence : candidate.evidence()) {
+            if (evidence.type() != EvidenceType.TARGET_UNIQUE) {
+                continue;
+            }
+            String endpoint = endpointFromUniqueEvidence(candidate, evidence);
+            if (endpoint.isBlank()) {
+                continue;
+            }
+            if (!unique.isBlank() && !unique.equals(endpoint)) {
+                return "";
+            }
+            unique = endpoint;
+        }
+        return unique;
+    }
+
+    private String endpointFromUniqueEvidence(RelationshipCandidate candidate, Evidence evidence) {
+        Object explicit = evidence.attributes().get("uniqueEndpoint");
+        if (explicit != null) {
+            return normalizeEndpoint(String.valueOf(explicit));
+        }
+        return candidate.target().normalizedKey();
+    }
+
+    private String normalizeEndpoint(String raw) {
+        return raw == null ? "" : raw.trim().toLowerCase(java.util.Locale.ROOT);
+    }
+
+    private RelationSubType sqlPredicateSubtype(RelationshipCandidate candidate) {
+        return candidate.evidence().stream().anyMatch(e ->
+                e.type() == EvidenceType.SQL_LOG_SUBQUERY_IN || e.type() == EvidenceType.SQL_LOG_EXISTS)
+                ? RelationSubType.SUBQUERY_INFERRED_FK
+                : RelationSubType.INFERRED_JOIN_FK;
+    }
+
+    private boolean hasDirectionEvidence(RelationshipCandidate candidate) {
+        boolean hasSql = hasSqlPredicateEvidence(candidate);
+        for (Evidence evidence : candidate.evidence()) {
+            if (evidence.type() == EvidenceType.METADATA_FOREIGN_KEY
+                    || evidence.type() == EvidenceType.DDL_FOREIGN_KEY
+                    || evidence.type() == EvidenceType.VALUE_CONTAINMENT_HIGH
+                    || evidence.type() == EvidenceType.VALUE_OVERLAP_HIGH) {
+                return true;
+            }
+            if (evidence.type() == EvidenceType.TARGET_UNIQUE && hasSql) {
+                String endpoint = endpointFromUniqueEvidence(candidate, evidence);
+                if (endpoint.equals(candidate.target().normalizedKey())) {
+                    return true;
+                }
+            }
+            if (evidence.type() == EvidenceType.NAMING_MATCH && hasSql
+                    && namingDirectionMatchesCurrentOrientation(candidate, evidence)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasSqlPredicateEvidence(RelationshipCandidate candidate) {
+        return candidate.evidence().stream().anyMatch(evidence -> switch (evidence.type()) {
+            case SQL_LOG_JOIN, SQL_LOG_SUBQUERY_IN, SQL_LOG_EXISTS,
+                    SQL_LOG_COLUMN_CO_OCCURRENCE, VIEW_JOIN, PROCEDURE_JOIN, TRIGGER_REFERENCE -> true;
+            default -> false;
+        });
+    }
+
+    private DirectionHint singleNamingDirection(RelationshipCandidate candidate) {
+        DirectionHint direction = null;
+        for (Evidence evidence : candidate.evidence()) {
+            if (evidence.type() != EvidenceType.NAMING_MATCH) {
+                continue;
+            }
+            DirectionHint next = namingDirection(candidate, evidence);
+            if (next == null) {
+                continue;
+            }
+            if (direction != null && (!direction.source().normalizedKey().equals(next.source().normalizedKey())
+                    || !direction.target().normalizedKey().equals(next.target().normalizedKey()))) {
+                return null;
+            }
+            direction = next;
+        }
+        return direction;
+    }
+
+    private DirectionHint namingDirection(RelationshipCandidate candidate, Evidence evidence) {
+        Object source = evidence.attributes().get("suggestedSourceEndpoint");
+        Object target = evidence.attributes().get("suggestedTargetEndpoint");
+        if (source == null || target == null || !Boolean.TRUE.equals(evidence.attributes().get("directionHint"))) {
+            return null;
+        }
+        String suggestedSource = normalizeEndpoint(String.valueOf(source));
+        String suggestedTarget = normalizeEndpoint(String.valueOf(target));
+        String currentSource = candidate.source().normalizedKey();
+        String currentTarget = candidate.target().normalizedKey();
+        if (suggestedSource.equals(currentSource) && suggestedTarget.equals(currentTarget)) {
+            return new DirectionHint(candidate.source(), candidate.target());
+        }
+        if (suggestedSource.equals(currentTarget) && suggestedTarget.equals(currentSource)) {
+            return new DirectionHint(candidate.target(), candidate.source());
+        }
+        return null;
+    }
+
+    private boolean namingDirectionMatchesCurrentOrientation(RelationshipCandidate candidate, Evidence evidence) {
+        DirectionHint direction = namingDirection(candidate, evidence);
+        return direction != null
+                && direction.source().normalizedKey().equals(candidate.source().normalizedKey())
+                && direction.target().normalizedKey().equals(candidate.target().normalizedKey());
+    }
+
+    private RelationshipCandidate copy(
+            RelationshipCandidate candidate,
+            com.relationdetector.contracts.model.Endpoint source,
+            com.relationdetector.contracts.model.Endpoint target,
+            RelationType type,
+            RelationSubType subType
+    ) {
+        RelationshipCandidate copy = new RelationshipCandidate(source, target, type, subType);
+        copy.evidence().addAll(candidate.evidence());
+        copy.rawEvidence().addAll(candidate.rawEvidence());
+        copy.warnings().addAll(candidate.warnings());
+        copy.confidence(candidate.confidence());
+        return copy;
+    }
+
+    private void putOrMerge(Map<String, RelationshipCandidate> merged, RelationshipCandidate candidate) {
+        String key = key(candidate);
+        RelationshipCandidate existing = merged.get(key);
+        if (existing == null) {
+            merged.put(key, candidate);
+            return;
+        }
+        existing.evidence().addAll(candidate.evidence());
+        existing.rawEvidence().addAll(candidate.rawEvidence());
+        existing.warnings().addAll(candidate.warnings());
+        existing.relationSubType(dominant(existing.relationSubType(), candidate.relationSubType()));
+    }
+
+    private String unorderedColumnEndpointKey(RelationshipCandidate candidate) {
+        String left = candidate.source().normalizedKey();
+        String right = candidate.target().normalizedKey();
+        return left.compareTo(right) <= 0 ? left + "|" + right : right + "|" + left;
     }
 
     /**
@@ -140,6 +379,11 @@ public final class RelationshipMerger {
     }
 
     private RelationSubType resolveSubtype(RelationshipCandidate candidate) {
+        if (candidate.relationType() == RelationType.CO_OCCURRENCE) {
+            return candidate.source().isColumnLevel() && candidate.target().isColumnLevel()
+                    ? RelationSubType.COLUMN_CO_OCCURRENCE
+                    : RelationSubType.TABLE_CO_OCCURRENCE;
+        }
         RelationSubType current = candidate.relationSubType();
         for (var evidence : candidate.evidence()) {
             current = dominant(current, subtypeFromEvidence(evidence.type()));
@@ -238,5 +482,8 @@ public final class RelationshipMerger {
         int count() {
             return count;
         }
+    }
+
+    private record DirectionHint(Endpoint source, Endpoint target) {
     }
 }

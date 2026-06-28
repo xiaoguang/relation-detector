@@ -20,7 +20,7 @@ class CorrectnessSummaryGeneratorTest {
         assertTrue(markdown.contains("| Total correctness fixtures | 622 |"));
         assertTrue(markdown.contains("| SQL fixtures | 521 |"));
         assertTrue(markdown.contains("| DDL fixtures | 101 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 135 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 142 |"));
         assertTrue(markdown.contains("| MySQL directory fixtures | 186 |"));
         assertTrue(markdown.contains("| PostgreSQL directory fixtures | 405 |"));
         assertTrue(markdown.contains("| MYSQL | 217 | 182 | 35 |"));
@@ -35,8 +35,8 @@ class CorrectnessSummaryGeneratorTest {
         assertTrue(markdown.contains("VALUE:ARITHMETIC:account_balances.max_credit_limit"
                 + "->account_balances.adjusted_limit"));
         assertTrue(markdown.contains(
-                "VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,"
-                        + "user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category"
+                "VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,"
+                        + "transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category"
                         + "->account_balances.compliance_notes"));
         assertTrue(markdown.contains("UPDATE products p"));
         assertTrue(markdown.contains("Preview truncated; see input file for full content."));
@@ -54,7 +54,7 @@ class CorrectnessSummaryGeneratorTest {
         assertTrue(markdown.contains("sample-data/mysql/8.0/04-queries/09-real-world-scenarios.sql"));
         assertTrue(markdown.contains(
                 "test-fixtures/correctness/postgres/v18/postgres18-sample-data-pg18-specific-sql/expected-relations.json"));
-        assertTrue(markdown.contains("FK_LIKE:products.shop_id->shops.id:SQL_LOG_JOIN"));
+        assertTrue(markdown.contains("FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH"));
         assertTrue(markdown.contains("```sql"));
         assertFalse(markdown.contains("SHOW CREATE TABLE `jsh_account_head`;"),
                 "large fixture SQL should not be fully embedded in the lightweight report");

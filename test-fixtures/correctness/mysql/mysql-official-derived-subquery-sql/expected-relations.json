@@ -1,11 +1,12 @@
 {
   "fingerprints": [
-    "FK_LIKE:account_logs.account_id->accounts.id:SQL_LOG_JOIN",
-    "FK_LIKE:log_permissions.log_id->account_logs.id:SQL_LOG_EXISTS",
-    "FK_LIKE:material_places.material_id->materials.id:SQL_LOG_JOIN",
-    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
-    "FK_LIKE:shipments.customer_id->customers.id:SQL_LOG_JOIN",
-    "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_SUBQUERY_IN"
+    "CO_OCCURRENCE:materials.material_code->materials.material_code:SQL_LOG_JOIN",
+    "FK_LIKE:account_logs.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:log_permissions.log_id->account_logs.id:SQL_LOG_EXISTS,NAMING_MATCH",
+    "FK_LIKE:material_places.material_id->materials.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:shipments.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH"
   ],
   "forbiddenTables": [
     "d",

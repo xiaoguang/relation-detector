@@ -33,6 +33,7 @@ import com.relationdetector.core.log.SqlLogNoiseFilter;
 import com.relationdetector.core.metadata.MetadataEvidenceEnhancer;
 import com.relationdetector.core.parser.DdlRelationParserRunner;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
+import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
 import com.relationdetector.core.relation.RelationshipMerger;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
@@ -56,6 +57,7 @@ public final class ScanEngine {
     private final SqlRelationParserRunner sqlParserRunner = new SqlRelationParserRunner();
     private final DdlRelationParserRunner ddlParserRunner = new DdlRelationParserRunner();
     private final MetadataEvidenceEnhancer metadataEvidenceEnhancer = new MetadataEvidenceEnhancer();
+    private final NamingMatchEvidenceEnhancer namingMatchEvidenceEnhancer = new NamingMatchEvidenceEnhancer();
     private final TokenEventDataLineageExtractor dataLineageExtractor = new TokenEventDataLineageExtractor();
     private final DataLineageMerger dataLineageMerger = new DataLineageMerger();
 
@@ -158,6 +160,7 @@ public final class ScanEngine {
         if (metadataSnapshot != null) {
             metadataEvidenceEnhancer.enhance(candidates, metadataSnapshot);
         }
+        namingMatchEvidenceEnhancer.enhance(candidates);
         result.relationships().addAll(merger.merge(candidates, config.minConfidence));
         result.dataLineages().addAll(dataLineageMerger.merge(dataLineageCandidates));
         return result;

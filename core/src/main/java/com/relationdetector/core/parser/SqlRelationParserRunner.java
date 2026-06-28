@@ -14,6 +14,7 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.log.SqlLogNoiseFilter;
+import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
 /**
@@ -30,6 +31,7 @@ import com.relationdetector.core.relation.TokenEventRelationExtractor;
 public final class SqlRelationParserRunner {
     private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
     private final TokenEventRelationExtractor relationExtractor = new TokenEventRelationExtractor();
+    private final NamingMatchEvidenceEnhancer namingMatchEvidenceEnhancer = new NamingMatchEvidenceEnhancer();
 
     /**
      * 解析一条 SQL statement 并返回 relationship 候选。
@@ -77,9 +79,11 @@ public final class SqlRelationParserRunner {
         }
         ParserBundle bundle = parserBundleSelector.select(adaptor, config, context);
         StructuredParseResult structured = bundle.sqlParser().parseSql(effectiveStatement, context);
+        List<RelationshipCandidate> relationships = relationExtractor.extract(effectiveStatement, structured);
+        namingMatchEvidenceEnhancer.enhance(relationships);
         return new ParsedSqlRelations(
                 java.util.Optional.of(structured),
-                relationExtractor.extract(effectiveStatement, structured));
+                relationships);
     }
 
     private SqlStatementRecord withParserPolicyAttributes(ScanConfig config, SqlStatementRecord statement) {

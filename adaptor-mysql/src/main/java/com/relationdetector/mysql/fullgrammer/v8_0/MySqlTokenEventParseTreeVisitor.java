@@ -66,7 +66,7 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
         if (tree != null) {
             visit(tree);
         }
-        return FullGrammerEventMerger.merge(sink.events(), List.of(), FullGrammerNativeEventTypes.MYSQL_NATIVE_EVENTS);
+        return FullGrammerEventMerger.merge(sink.events(), FullGrammerNativeEventTypes.MYSQL_NATIVE_EVENTS);
     }
 
     @Override

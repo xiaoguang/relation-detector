@@ -1,10 +1,11 @@
 {
   "fingerprints": [
-    "FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN",
-    "FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN",
-    "FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN",
-    "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN",
-    "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN"
+    "FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

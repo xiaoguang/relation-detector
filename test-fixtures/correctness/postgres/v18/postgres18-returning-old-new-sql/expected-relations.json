@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:account_balances.user_id->transaction_ledgers.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE"
+    "CO_OCCURRENCE:account_balances.user_id->transaction_ledgers.user_id:SQL_LOG_JOIN"
   ],
   "forbiddenTables": [
     "old",

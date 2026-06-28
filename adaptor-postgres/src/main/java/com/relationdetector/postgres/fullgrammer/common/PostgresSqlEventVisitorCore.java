@@ -47,7 +47,6 @@ public final class PostgresSqlEventVisitorCore {
     public List<StructuredSqlEvent> mergedEvents() {
         return FullGrammerEventMerger.merge(
                 sink.events(),
-                List.of(),
                 FullGrammerNativeEventTypes.POSTGRES_NATIVE_EVENTS);
     }
 

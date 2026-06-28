@@ -60,6 +60,7 @@ public final class TokenEventDataLineageExtractor {
     ) {
         Map<String, TableId> aliases = aliases(structured.events());
         Set<String> localTempTables = localTempTables(statement, structured.events());
+        Set<String> ignoredRowsets = ignoredRowsets(structured.events());
         Map<String, Projection> projections = projections(structured.events(), aliases);
         List<DataLineageCandidate> candidates = new ArrayList<>();
         for (StructuredSqlEvent event : structured.events()) {
@@ -69,7 +70,7 @@ public final class TokenEventDataLineageExtractor {
                 continue;
             }
             ColumnRef target = targetColumn(event, aliases);
-            SourceResolution sourceResolution = sourceEndpoints(event, aliases, projections);
+            SourceResolution sourceResolution = sourceEndpoints(event, aliases, projections, ignoredRowsets);
             if (target == null
                     || isLocalTemp(target.table(), localTempTables)
                     || !isKnownPhysical(target.table(), knownPhysicalTables)) {
@@ -78,6 +79,7 @@ public final class TokenEventDataLineageExtractor {
             List<Endpoint> sources = sourceResolution.sources().stream()
                     .filter(source -> source.column() != null)
                     .filter(source -> !isLocalTemp(source.column().table(), localTempTables))
+                    .filter(source -> !isIgnoredRowsetTable(source.column().table(), ignoredRowsets))
                     .filter(source -> isKnownPhysical(source.column().table(), knownPhysicalTables))
                     .distinct()
                     .toList();
@@ -154,7 +156,8 @@ public final class TokenEventDataLineageExtractor {
     private SourceResolution sourceEndpoints(
             StructuredSqlEvent event,
             Map<String, TableId> aliases,
-            Map<String, Projection> projections
+            Map<String, Projection> projections,
+            Set<String> ignoredRowsets
     ) {
         List<String> sourceAliases = stringList(event.attributes().get("sourceAliases"));
         List<String> sourceColumns = stringList(event.attributes().get("sourceColumns"));
@@ -171,7 +174,7 @@ public final class TokenEventDataLineageExtractor {
                 continue;
             }
             TableId table = aliases.get(normalize(sourceAlias));
-            if (table != null && !sourceColumn.isBlank()) {
+            if (table != null && !sourceColumn.isBlank() && !isIgnoredRowsetTable(table, ignoredRowsets)) {
                 endpoints.add(Endpoint.column(ColumnRef.of(table, sourceColumns.get(index))));
                 transforms.add(LineageTransformType.DIRECT);
             }
@@ -194,7 +197,7 @@ public final class TokenEventDataLineageExtractor {
                 if (outputAlias.isBlank() || outputColumn.isBlank()) {
                     continue;
                 }
-                SourceResolution resolved = sourceEndpoints(event, aliases, projections);
+                SourceResolution resolved = sourceEndpoints(event, aliases, projections, ignoredRowsets);
                 if (!resolved.sources().isEmpty()) {
                     changed |= putProjection(
                             projections,
@@ -296,12 +299,6 @@ public final class TokenEventDataLineageExtractor {
     }
 
     private boolean isBetterProjection(Projection candidate, Projection existing, Set<String> ignoredRowsets) {
-        if (candidate.transform() != LineageTransformType.CUMULATIVE) {
-            return false;
-        }
-        if (candidate.transform() != existing.transform()) {
-            return false;
-        }
         int candidateScore = projectionResolutionScore(candidate, ignoredRowsets);
         int existingScore = projectionResolutionScore(existing, ignoredRowsets);
         return candidateScore > existingScore;
@@ -345,6 +342,12 @@ public final class TokenEventDataLineageExtractor {
                 && localTempTables.contains(normalize(table.schema() + "." + table.tableName())));
     }
 
+    private boolean isIgnoredRowsetTable(TableId table, Set<String> ignoredRowsets) {
+        return ignoredRowsets.contains(normalize(table.tableName()))
+                || (table.schema() != null
+                && ignoredRowsets.contains(normalize(table.schema() + "." + table.tableName())));
+    }
+
     private boolean isKnownPhysical(TableId table, Set<TableId> knownPhysicalTables) {
         if (knownPhysicalTables == null || knownPhysicalTables.isEmpty()) {
             return true;
@@ -383,10 +386,16 @@ public final class TokenEventDataLineageExtractor {
 
     private LineageTransformType effectiveTransform(String eventTransform, List<LineageTransformType> sourceTransforms) {
         LineageTransformType transform = transform(eventTransform);
-        if (sourceTransforms.contains(LineageTransformType.CUMULATIVE)) {
+        if (sourceTransforms.contains(LineageTransformType.CUMULATIVE)
+                && (transform == LineageTransformType.DIRECT || transform == LineageTransformType.UNKNOWN_EXPRESSION)) {
             return LineageTransformType.CUMULATIVE;
         }
-        if (sourceTransforms.contains(LineageTransformType.AGGREGATE)) {
+        if (sourceTransforms.contains(LineageTransformType.AGGREGATE)
+                && (transform == LineageTransformType.DIRECT
+                || transform == LineageTransformType.UNKNOWN_EXPRESSION
+                || transform == LineageTransformType.COALESCE
+                || transform == LineageTransformType.CASE_WHEN
+                || transform == LineageTransformType.ARITHMETIC)) {
             return LineageTransformType.AGGREGATE;
         }
         if (sourceTransforms.contains(LineageTransformType.WINDOW_DERIVED)

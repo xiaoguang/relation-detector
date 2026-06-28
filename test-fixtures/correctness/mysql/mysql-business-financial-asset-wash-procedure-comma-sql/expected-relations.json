@@ -1,8 +1,8 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:account_balances.user_id->users.id:PROCEDURE_JOIN",
-    "FK_LIKE:transaction_ledgers.user_id->users.id:PROCEDURE_JOIN"
+    "CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_JOIN",
+    "FK_LIKE:account_balances.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:transaction_ledgers.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": [
     "memory_input_cargo",

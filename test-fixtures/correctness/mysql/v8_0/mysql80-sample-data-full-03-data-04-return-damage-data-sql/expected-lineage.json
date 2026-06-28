@@ -1,14 +1,7 @@
 {
   "fingerprints": [
-    "VALUE:ARITHMETIC:purchase_orders.total_amount,seq.num->purchase_returns.refund_received",
-    "VALUE:ARITHMETIC:purchase_orders.total_amount,seq.num->purchase_returns.total_amount",
-    "VALUE:ARITHMETIC:seq.num->damage_reports.approved_at",
-    "VALUE:ARITHMETIC:seq.num->damage_reports.approved_by",
-    "VALUE:ARITHMETIC:seq.num->damage_reports.executed_at",
-    "VALUE:ARITHMETIC:seq.num->damage_reports.executed_by",
-    "VALUE:ARITHMETIC:seq.num->purchase_returns.approved_at",
-    "VALUE:CONCAT_FORMAT:seq.num->damage_reports.report_no",
-    "VALUE:CONCAT_FORMAT:seq.num->purchase_returns.return_no",
+    "VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.refund_received",
+    "VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.total_amount",
     "VALUE:DIRECT:damage_reports.id->damage_report_items.report_id",
     "VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id",
     "VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_receipt_id",
@@ -16,12 +9,7 @@
     "VALUE:DIRECT:purchase_returns.id->purchase_return_items.return_id",
     "VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.batch_id",
     "VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.product_id",
-    "VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.unit_price",
-    "VALUE:DIRECT:seq.num->damage_reports.status",
-    "VALUE:DIRECT:seq.num->purchase_returns.approved_by",
-    "VALUE:DIRECT:seq.num->purchase_returns.status",
-    "VALUE:FUNCTION_CALL:seq.num->damage_reports.report_date",
-    "VALUE:FUNCTION_CALL:seq.num->purchase_returns.return_date"
+    "VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.unit_price"
   ],
   "forbiddenSources": [],
   "forbiddenTargets": [],

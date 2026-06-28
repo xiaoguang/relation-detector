@@ -40,7 +40,6 @@ core/src/main/java/com/relationdetector/core/fullgrammer
   FullGrammerTokenEventStructuredSqlParser
   FullGrammerTypedSqlEventSink
   FullGrammerExpressionAnalyzer / FullGrammerExpressionAnalysis
-  FullGrammerTokenEventShadowComparator
 
 core/src/main/java/com/relationdetector/core/relation
   TokenEventSqlRelationParser
@@ -384,7 +383,7 @@ flowchart LR
   bundle --> parser
 ```
 
-core 只知道 `FullGrammerDialectModule` 接口和 profile selection 规则，不直接 import `adaptor-mysql` / `adaptor-postgres` 的版本实现。`ParserBundleSelector` 是唯一运行时选择入口，SQL/DDL runner 都从同一个 bundle 取 parser。新增大版本时应在对应 adaptor 中新增 version package、module registration、fixture/parity test。
+core 只知道 `FullGrammerDialectModule` 接口和 profile selection 规则，不直接 import `adaptor-mysql` / `adaptor-postgres` 的版本实现。`ParserBundleSelector` 是唯一运行时选择入口，SQL/DDL runner 都从同一个 bundle 取 parser。新增大版本时应在对应 adaptor 中新增 version package、module registration 和对应 versioned correctness fixture。
 
 ### correctness / golden 验收链
 
@@ -397,8 +396,6 @@ flowchart TD
   pg17["postgres/v17\nPostgreSQL 17 full-grammer golden"]
   pg18["postgres/v18\nPostgreSQL 18 full-grammer golden"]
   runner["CorrectnessFixtureRunnerTest"]
-  shadowSql["FullGrammerCorrectnessShadowTest"]
-  shadowDdl["FullGrammerDdlCorrectnessShadowTest"]
   cliE2E["CliEndToEndGoldenTest"]
 
   fixtures --> tokenRoot
@@ -413,12 +410,10 @@ flowchart TD
   pg17 --> runner
   pg18 --> runner
 
-  tokenRoot --> shadowSql
-  tokenRoot --> shadowDdl
   tokenRoot --> cliE2E
 ```
 
-root baseline 明确使用 `parserMode: token-event`；versioned 目录明确使用 `parserMode: full-grammer` 和对应 `grammarProfile`。full-grammer parity 测试只证明 baseline profile 不低于 token-event；严格版本语法证明由 `mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18` 的独立 golden 负责。
+root baseline 明确使用 `parserMode: token-event`；versioned 目录明确使用 `parserMode: full-grammer` 和对应 `grammarProfile`。不再用 token-event baseline 保护 full-grammer，也不做跨 parser 补齐验收；每个 parser 必须直接通过自己的 correctness golden。这样 full-grammer 漏识别会在 `mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18` 的独立 golden 中暴露，而不是被 token-event 对比机制掩盖。
 
 ## Parser mode 和 profile 选择
 
@@ -442,7 +437,7 @@ root baseline 明确使用 `parserMode: token-event`；versioned 目录明确使
 - MySQL `8.0.x` 使用 MySQL 8.0 profile。
 - full-grammer 是严格版本 grammar：PG16 不接受 PG17-only 语法，PG17 不接受 PG18-only 语法；低版本命中高版本专属语法时返回 `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`，由 token-event 承担宽松向前兼容。每个 PostgreSQL major 都有独立 `.g4`、parser package 和 version golden；版本间缺失项以 `docs/parser-audit/postgres-version-golden-diff.md` 分类。
 - 如果请求版本只比当前已注册最高 major 高 1 个 major，可临时降级到最高低版本并记录 diagnostic；超过 1 个 major 不自动跨级。
-- 遇到大版本语法差异或老库兼容需求时，在对应 adaptor 下新增 version package 和 `FullGrammerDialectModule`，并补对应 fixture 或 shadow test。
+- 遇到大版本语法差异或老库兼容需求时，在对应 adaptor 下新增 version package 和 `FullGrammerDialectModule`，并补对应 versioned fixture。
 
 PostgreSQL versioned correctness 的命名约定：
 
@@ -548,7 +543,7 @@ postgresql-16 / postgresql-17 / postgresql-18
   -> PostgresExpressionAnalyzer
 ```
 
-full-grammer SQL parser 使用 versioned ANTLR `.g4`。MySQL 8.0 当前来自 vendored grammars-v4；PostgreSQL 16/17/18 以官方 `gram.y` / `scan.l` / keywords 为 source-of-truth，仓库 `.g4` 作为按 major version 约束的 ANTLR projection。它运行真实 parser entry rule，typed parse-tree visitor 直接生成同一套 `StructuredSqlEvent`。当前默认验收只比较关系、血缘、warning 和 JSON 行为；历史迁移期的 native/delegate/bridged 事件来源属性不再作为 correctness 验收入口。
+full-grammer SQL parser 使用 versioned ANTLR `.g4`。MySQL 8.0 当前来自 vendored grammars-v4；PostgreSQL 16/17/18 以官方 `gram.y` / `scan.l` / keywords 为 source-of-truth，仓库 `.g4` 作为按 major version 约束的 ANTLR projection。它运行真实 parser entry rule，typed parse-tree visitor 直接生成同一套 `StructuredSqlEvent`。当前默认验收只比较关系、血缘、warning 和 JSON 行为；历史迁移期的 native/delegate/bridge 事件来源属性不再作为 correctness 验收入口。
 
 full-grammer 仍只替换“语法结构识别”。它不会改变：
 
@@ -560,14 +555,14 @@ full-grammer 仍只替换“语法结构识别”。它不会改变：
 
 这些仍由 `TokenEventRelationExtractor`、`TokenEventDataLineageExtractor`、merger 和 scoring 负责。
 
-`FullGrammerCorrectnessShadowTest` 扫描无版本 manifest 的 SQL correctness fixture，比较 full-grammer 与 token-event 正式输出，要求：
+full-grammer SQL 直接通过对应 versioned golden 验收，不再拿 token-event baseline 做跨 parser 对照：
 
-```text
-missingProductionRelations = []
-missingProductionLineages = []
-```
+- `test-fixtures/correctness/mysql/v8_0`
+- `test-fixtures/correctness/postgres/v16`
+- `test-fixtures/correctness/postgres/v17`
+- `test-fixtures/correctness/postgres/v18`
 
-如果 full-grammer 识别出 extra relation/lineage，不能自动写 golden，必须人工审核。
+如果 full-grammer 漏识别或多识别，`CorrectnessFixtureRunnerTest` 会在对应版本 golden 上直接失败。extra relation/lineage 不能自动写入 golden，仍需按 SQL 语义审核。
 
 ### PostgreSQL full-grammer 与 token-event 当前对比
 
@@ -646,15 +641,16 @@ PREDICATE_EQUALITY
   -> 同一 alias 行内比较不输出 self co-occurrence
 
 EXISTS_PREDICATE
-  -> 输出 SQL_LOG_EXISTS
-  -> 同 endpoint pair 的重复 SQL_LOG_JOIN 会被去掉，避免重复计分
+  -> 输出 SQL_LOG_COLUMN_CO_OCCURRENCE
+  -> attributes.joinKind = EXISTS
 
 JOIN_USING_COLUMNS
   -> 输出列级弱共现
   -> 不直接升级 FK-like
 
 IN_SUBQUERY_PREDICATE / TUPLE_IN_SUBQUERY_PREDICATE
-  -> 输出 SQL_LOG_SUBQUERY_IN
+  -> 输出 SQL_LOG_COLUMN_CO_OCCURRENCE
+  -> attributes.joinKind = IN_SUBQUERY
 ```
 
 self-join 列级弱共现的接受条件是结构性的，不是名字匹配：
@@ -684,7 +680,7 @@ FK-like 方向规则仍优先。无法可靠判断方向时才进入 column co-o
 
 `correlated EXISTS` 是跨方言公共关系语义。公共 extractor 可以处理 EXISTS 外壳和相关谓词；EXISTS 内部如果出现 MySQL/PostgreSQL 专属 rowset/function/hint/`ONLY`/`JSON_TABLE` 等语法，必须由对应方言 event builder 或 full-grammer visitor 负责识别和过滤。
 
-`SQL_LOG_EXISTS` 当前分值高于普通 `SQL_LOG_JOIN`。同一 predicate 已生成 EXISTS evidence 时去掉重复 JOIN，是为了避免单个 SQL predicate 虚高置信度，不是丢证据。
+当前 typed SQL parser 不再把 `EXISTS` / `IN` / 普通 equality 直接定向为 FK-like，但必须保留真实语法 evidence：JOIN / comma join 输出 `SQL_LOG_JOIN`，correlated `EXISTS` 输出 `SQL_LOG_EXISTS`，`IN (SELECT ...)` / tuple IN 输出 `SQL_LOG_SUBQUERY_IN`。这些 evidence 证明“SQL 中存在明确列级谓词”，不单独证明 FK-like 方向。FK-like 方向可以由 DDL、metadata、data-profile、“SQL 谓词 + 一侧 unique、一侧 non-unique”，或“SQL 谓词 + 唯一 `NAMING_MATCH` 方向提示”推出；否则输出 `CO_OCCURRENCE`。`NAMING_MATCH` 不解析 SQL，也不凭表名/列名创建关系，只增强已有 SQL predicate candidate。
 
 ## Data Lineage v1
 
@@ -858,13 +854,7 @@ PostgresFullGrammerStructuredDdlParser
 
 full-grammer DDL collector 不委托 `DdlStructuredEventVisitor.extractEvents(...)`。`DdlRelationExtractionVisitor` 仍复用同一套 DDL semantic layer。
 
-`FullGrammerDdlCorrectnessShadowTest` 扫描无版本 manifest 的 DDL correctness fixture，要求：
-
-```text
-missingCurrentDdlRelations = []
-```
-
-extra DDL relation/index evidence 需要审核，不自动写 golden。
+full-grammer DDL 同样直接通过 versioned golden 验收。DDL correctness 由对应版本 golden 负责；如果某版本 DDL typed collector 漏掉 FK/index evidence，应在该版本 fixture 中直接失败并修 parser，而不是借 token-event 对比兜底。
 
 ## DDL 与 SQL 为什么分开
 
@@ -875,7 +865,7 @@ DDL 描述“数据库声明的结构事实”，主要证据来自 FK、inline 
 二者最终都输出 `RelationshipCandidate`，但 evidence type、置信度语义、失败策略和测试边界不同：
 
 - DDL 使用 `DDL_FOREIGN_KEY`、`SOURCE_INDEX`、`TARGET_UNIQUE`。
-- SQL 使用 `SQL_LOG_JOIN`、`VIEW_JOIN`、`PROCEDURE_JOIN`、`SQL_LOG_EXISTS`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_COLUMN_CO_OCCURRENCE`。
+- SQL typed parser 当前保留具体谓词 evidence：`SQL_LOG_JOIN`、`SQL_LOG_EXISTS`、`SQL_LOG_SUBQUERY_IN`。这些 evidence 可以增强 confidence，也可以与唯一性/metadata/profile 或唯一的 `_id/id` 命名方向提示组合推导方向；如果方向仍不充分，则关系类型保持 `CO_OCCURRENCE`。
 - DDL 不输出 Data Lineage。
 - SQL/DML 可以输出 Data Lineage。
 - DDL parser 失败只影响当前 DDL source；SQL parser 失败只影响当前 statement/object block。
@@ -947,14 +937,14 @@ DataLineageAuditGeneratorTest
   -> docs/parser-audit/data-lineage-full-audit.md
 ```
 
-full-grammer parity：
+full-grammer versioned correctness：
 
 ```text
-FullGrammerCorrectnessShadowTest
-  -> SQL relationship + Data Lineage 不少于 token-event
-
-FullGrammerDdlCorrectnessShadowTest
-  -> DDL relationship 不少于 token-event
+CorrectnessFixtureRunnerTest
+  -> mysql/v8_0 full-grammer golden
+  -> postgres/v16 full-grammer golden
+  -> postgres/v17 full-grammer golden
+  -> postgres/v18 full-grammer golden
 ```
 
 CLI 端到端：
@@ -986,7 +976,7 @@ ParserConfigRemovalTest
 | PostgreSQL full-grammer v17 | 68 | 57 / 11 | 748 | 59 | 0 |
 | PostgreSQL full-grammer v18 | 69 | 56 / 13 | 748 | 58 | 0 |
 
-最新验证摘要：`mvn test` 已通过；targeted correctness / full-grammer parity / CLI E2E 测试也已通过。该摘要是对当前手写设计的实现快照；如果后续 fixture/golden 增减，应同步刷新本表、`docs/relation-detector/test-assets-map.md` 和 `docs/design/relation-detector/design-validation-report.md`。
+最新验证摘要：`mvn test` 已通过；targeted correctness / versioned full-grammer golden / CLI E2E 测试也已通过。该摘要是对当前手写设计的实现快照；如果后续 fixture/golden 增减，应同步刷新本表、`docs/relation-detector/test-assets-map.md` 和 `docs/design/relation-detector/design-validation-report.md`。
 
 维护规则：
 

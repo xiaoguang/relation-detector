@@ -1,8 +1,9 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:commission_rules.product_category_id->products.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:sales_order_items.order_id->sales_orders.id:PROCEDURE_JOIN",
-    "FK_LIKE:sales_order_items.product_id->products.id:PROCEDURE_JOIN"
+    "CO_OCCURRENCE:commission_rules.product_category_id->products.category_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:sales_commissions.employee_id->sales_commissions.employee_id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

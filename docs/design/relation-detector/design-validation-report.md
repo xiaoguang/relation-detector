@@ -37,7 +37,7 @@ full-grammer:
 - core 不直接 import MySQL/PostgreSQL full-grammer 实现；版本化 module 由 adaptor 注册。
 - Relationship 与 Data Lineage 是两个独立输出模型。
 - Simple SQL/DDL parser 和旧 SQL/DDL parser mode 配置不再是当前能力。
-- correctness fixture 以当前 parser golden 为正式基线；full-grammer parity 测试用于保证版本化 grammar 不低于 token-event fallback。
+- correctness fixture 以当前 parser golden 为正式基线；root token-event 与 versioned full-grammer 分别直接比对自己的 golden，不再用 token-event fallback 保护 full-grammer。
 
 ## 本轮代码结构注释审视
 
@@ -163,7 +163,7 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 最新验证摘要：
 
 - `mvn test` 通过。
-- `CorrectnessFixtureRunnerTest`、`FullGrammerCorrectnessShadowTest`、`FullGrammerDdlCorrectnessShadowTest`、`CliEndToEndGoldenTest` 均通过。
+- `CorrectnessFixtureRunnerTest`、`CliEndToEndGoldenTest`、full-grammer 行为测试和版本化 golden 均通过。
 - 当前无新的 `REVIEW_NEEDED` 项；MySQL v8_0 与 PostgreSQL v16/v17/v18 的新增或缺失均可由版本语法边界、typed visitor 能力和已审核 golden 解释。
 
 ### DDL
@@ -181,7 +181,7 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 - `CorrectnessFixtureRunnerTest` 保护当前 parser golden。
 - `CorrectnessSummaryGeneratorTest` 生成轻量索引报告。
 - `DataLineageAuditGeneratorTest` 维护 lineage 审核入口。
-- `FullGrammerCorrectnessShadowTest` 与 `FullGrammerDdlCorrectnessShadowTest` 保护 full-grammer 不低于 token-event。
+- full-grammer 不再通过 token-event cross-parser parity 兜底；版本化 SQL/DDL golden 直接暴露 full-grammer 的 missing / extra。
 - `CliEndToEndGoldenTest` 保护从 CLI YAML/参数到 JSON 输出的完整系统链路，并复用现有 fixture golden。
 
 ## 后续技术债

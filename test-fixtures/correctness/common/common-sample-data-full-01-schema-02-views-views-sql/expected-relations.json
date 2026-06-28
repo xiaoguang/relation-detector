@@ -1,11 +1,10 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:accounts.id->vouchers.id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:departments.id->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:employees.id->departments.id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:inventory.id->products.id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:purchase_orders.id->suppliers.id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:sales_orders.id->customers.id:SQL_LOG_COLUMN_CO_OCCURRENCE"
+    "CO_OCCURRENCE:accounts.id->vouchers.id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:customers.id->sales_orders.id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:departments.id->employees.id:SQL_LOG_JOIN,SQL_LOG_JOIN",
+    "CO_OCCURRENCE:inventory.id->products.id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:purchase_orders.id->suppliers.id:SQL_LOG_JOIN"
   ],
   "forbiddenTables": []
 }

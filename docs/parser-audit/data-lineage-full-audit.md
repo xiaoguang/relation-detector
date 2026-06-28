@@ -9,10 +9,10 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 | Classification | Count |
 | --- | ---: |
 | TOTAL | 622 |
-| EXISTING_GOLD | 135 |
+| EXISTING_GOLD | 142 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 487 |
+| NOT_APPLICABLE | 480 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -3104,13 +3104,13 @@ CREATE PROCEDURE sp_cross_border_reconciliation_engine(
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 
 **Extractor Candidate Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 
 **Input Preview**
 
@@ -4813,13 +4813,13 @@ CREATE PROCEDURE sp_cross_border_reconciliation_engine(
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 
 **Extractor Candidate Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 
 **Input Preview**
 
@@ -4850,7 +4850,7 @@ CREATE PROCEDURE sp_financial_asset_wash_update_comma(
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 
 **Extractor Candidate Fingerprints**
 
@@ -6272,30 +6272,24 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:seq.hour,sales_orders.customer_id->shipping_tracks.location`
-- `CONTROL:CASE_WHEN:seq.hour->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:sales_orders.customer_id->shipping_tracks.location`
 - `VALUE:AGGREGATE:fixed_assets.id->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
-- `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation,m.month->depreciation_log.after_accumulated`
-- `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation,m.month->depreciation_log.before_accumulated`
-- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation,m.month->depreciation_log.after_net_value`
-- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation,m.month->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.before_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation->depreciation_log.before_net_value`
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.shipped_at`
 - `VALUE:ARITHMETIC:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
 - `VALUE:ARITHMETIC:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
-- `VALUE:ARITHMETIC:seq.num->service_tickets.resolved_at`
-- `VALUE:ARITHMETIC:seq.num->service_tickets.satisfaction_score`
-- `VALUE:CONCAT_FORMAT:m.month->depreciation_log.depreciation_date`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->invoices.invoice_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_date,sales_orders.id->shipments.shipment_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_date,sales_orders.id->shipments.tracking_no`
-- `VALUE:CONCAT_FORMAT:seq.num->service_tickets.ticket_no`
-- `VALUE:CONCAT_FORMAT:seq.num->work_orders.order_no`
 - `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
 - `VALUE:DIRECT:boms.id->work_orders.bom_id`
 - `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
@@ -6311,18 +6305,12 @@ BEGIN
 - `VALUE:DIRECT:sales_orders.id->shipments.order_id`
 - `VALUE:DIRECT:sales_orders.status->shipments.status`
 - `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
-- `VALUE:DIRECT:seq.num->service_tickets.resolution`
-- `VALUE:DIRECT:seq.num->service_tickets.status`
-- `VALUE:DIRECT:seq.num->work_orders.status`
 - `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
 - `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
 - `VALUE:DIRECT:work_orders.status->work_order_materials.status`
 - `VALUE:FUNCTION_CALL:purchase_orders.order_date->invoices.due_date`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->shipments.estimated_delivery_date`
-- `VALUE:FUNCTION_CALL:seq.num->work_orders.completed_date`
-- `VALUE:FUNCTION_CALL:seq.num->work_orders.due_date`
-- `VALUE:FUNCTION_CALL:seq.num->work_orders.start_date`
-- `VALUE:FUNCTION_CALL:shipments.shipped_at,seq.hour->shipping_tracks.track_time`
+- `VALUE:FUNCTION_CALL:shipments.shipped_at->shipping_tracks.track_time`
 
 **Extractor Candidate Fingerprints**
 
@@ -6362,16 +6350,14 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:ARITHMETIC:contracts.start_date,seq.num->contract_milestones.planned_date`
-- `VALUE:ARITHMETIC:contracts.total_amount,seq.num->contract_milestones.amount`
+- `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
 - `VALUE:ARITHMETIC:products.retail_price->price_change_logs.old_price`
 - `VALUE:COALESCE:employees.manager_id->performance_reviews.reviewer_id`
 - `VALUE:COALESCE:projects.start_date,projects.actual_end_date->project_costs.cost_date`
 - `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
-- `VALUE:CONCAT_FORMAT:products.sku,seq.num->serial_numbers.serial_no`
+- `VALUE:CONCAT_FORMAT:products.sku->serial_numbers.serial_no`
 - `VALUE:CONCAT_FORMAT:projects.name->project_costs.description`
-- `VALUE:CONCAT_FORMAT:seq.num->contracts.contract_no`
-- `VALUE:CONCAT_FORMAT:seq.num->inspection_reports.report_no`
 - `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
 - `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
 - `VALUE:DIRECT:products.id->price_change_logs.product_id`
@@ -6387,17 +6373,8 @@ USE erp_system;
 - `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
 - `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
-- `VALUE:DIRECT:seq.num->contract_milestones.status`
-- `VALUE:DIRECT:seq.num->contracts.status`
 - `VALUE:FUNCTION_CALL:purchase_orders.order_date->ap_aging_snapshots.due_date`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
-- `VALUE:FUNCTION_CALL:seq.num->contract_milestones.milestone_name`
-- `VALUE:FUNCTION_CALL:seq.num->contract_milestones.milestone_type`
-- `VALUE:FUNCTION_CALL:seq.num->contracts.end_date`
-- `VALUE:FUNCTION_CALL:seq.num->contracts.signed_date`
-- `VALUE:FUNCTION_CALL:seq.num->contracts.start_date`
-- `VALUE:FUNCTION_CALL:seq.num->exchange_rates.rate_date`
-- `VALUE:FUNCTION_CALL:seq.num->inspection_reports.inspection_date`
 
 **Extractor Candidate Fingerprints**
 
@@ -6448,15 +6425,8 @@ INSERT INTO contracts (contract_no, contract_type, party_type, party_id, subject
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:ARITHMETIC:purchase_orders.total_amount,seq.num->purchase_returns.refund_received`
-- `VALUE:ARITHMETIC:purchase_orders.total_amount,seq.num->purchase_returns.total_amount`
-- `VALUE:ARITHMETIC:seq.num->damage_reports.approved_at`
-- `VALUE:ARITHMETIC:seq.num->damage_reports.approved_by`
-- `VALUE:ARITHMETIC:seq.num->damage_reports.executed_at`
-- `VALUE:ARITHMETIC:seq.num->damage_reports.executed_by`
-- `VALUE:ARITHMETIC:seq.num->purchase_returns.approved_at`
-- `VALUE:CONCAT_FORMAT:seq.num->damage_reports.report_no`
-- `VALUE:CONCAT_FORMAT:seq.num->purchase_returns.return_no`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.refund_received`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.total_amount`
 - `VALUE:DIRECT:damage_reports.id->damage_report_items.report_id`
 - `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
 - `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_receipt_id`
@@ -6465,11 +6435,6 @@ INSERT INTO contracts (contract_no, contract_type, party_type, party_id, subject
 - `VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.batch_id`
 - `VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.product_id`
 - `VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.unit_price`
-- `VALUE:DIRECT:seq.num->damage_reports.status`
-- `VALUE:DIRECT:seq.num->purchase_returns.approved_by`
-- `VALUE:DIRECT:seq.num->purchase_returns.status`
-- `VALUE:FUNCTION_CALL:seq.num->damage_reports.report_date`
-- `VALUE:FUNCTION_CALL:seq.num->purchase_returns.return_date`
 
 **Extractor Candidate Fingerprints**
 
@@ -6516,7 +6481,7 @@ INSERT INTO purchase_returns (return_no, purchase_order_id, purchase_receipt_id,
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
 - `VALUE:CONCAT_FORMAT:departments.code->positions.code`
 - `VALUE:CONCAT_FORMAT:departments.name->positions.name`
-- `VALUE:CONCAT_FORMAT:m.month,employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->invoices.invoice_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->tax_invoices.invoice_no`
@@ -6527,8 +6492,6 @@ INSERT INTO purchase_returns (return_no, purchase_order_id, purchase_receipt_id,
 - `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
 - `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
 - `VALUE:DIRECT:suppliers.id->supplier_products.supplier_id`
-- `VALUE:FUNCTION_CALL:m.month->salary_payments.payment_date`
-- `VALUE:FUNCTION_CALL:m.month->salary_payments.salary_month`
 - `VALUE:FUNCTION_CALL:purchase_orders.order_date->invoices.due_date`
 - `VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period`
 
@@ -10736,8 +10699,8 @@ WHERE p.shop_id = s.id
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -10746,11 +10709,13 @@ WHERE p.shop_id = s.id
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -10769,8 +10734,8 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -10779,11 +10744,13 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -11873,8 +11840,8 @@ JOIN users u ON x.user_id = u.id;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -11883,11 +11850,11 @@ JOIN users u ON x.user_id = u.id;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:DIRECT:source_orders.id->target_orders.source_order_id`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:DIRECT:source_orders.id->target_orders.source_order_id`
 
 **Input Preview**
 
@@ -12504,7 +12471,7 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -12539,7 +12506,7 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -13078,7 +13045,8 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -13112,7 +13080,8 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -13703,7 +13672,7 @@ JOIN users u ON x.user_id = u.id;
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:DIRECT:source_orders.id->target_orders.source_order_id`
 
 **Input Preview**
 
@@ -14064,6 +14033,7 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
@@ -14071,6 +14041,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
+- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
@@ -14400,8 +14371,8 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -14410,11 +14381,15 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
+- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
+- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
 
 **Input Preview**
 
@@ -14946,7 +14921,7 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -14981,7 +14956,7 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -15520,7 +15495,8 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -15554,7 +15530,8 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -15959,7 +15936,8 @@ CROSS JOIN JSON_TABLE(
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:DIRECT:staging_account_balances.balance->account_balances.balance`
+- `VALUE:DIRECT:staging_account_balances.user_id->account_balances.user_id`
 
 **Input Preview**
 
@@ -16750,7 +16728,7 @@ JOIN users u ON x.user_id = u.id;
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:DIRECT:source_orders.id->target_orders.source_order_id`
 
 **Input Preview**
 
@@ -16965,6 +16943,7 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
@@ -16972,6 +16951,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
+- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
@@ -17301,8 +17281,8 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -17311,11 +17291,15 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
+- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
+- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
 
 **Input Preview**
 
@@ -17847,7 +17831,7 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -17882,7 +17866,7 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -18421,7 +18405,8 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -18455,7 +18440,8 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Input Preview**
 
@@ -19615,7 +19601,7 @@ JOIN users u ON x.user_id = u.id;
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:DIRECT:source_orders.id->target_orders.source_order_id`
 
 **Input Preview**
 
@@ -19830,6 +19816,7 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
@@ -19837,6 +19824,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
+- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
@@ -20166,8 +20154,8 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -20176,11 +20164,15 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
+- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
+- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
 
 **Input Preview**
 
@@ -20683,6 +20675,7 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
@@ -20690,6 +20683,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
+- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
@@ -21019,8 +21013,8 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -21029,11 +21023,15 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
+- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
+- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
 
 **Input Preview**
 

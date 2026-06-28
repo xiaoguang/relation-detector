@@ -19,7 +19,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 
 class FullGrammerTokenEventParserFactoryTest {
     @Test
-    void createsShadowParserWithSelectedProfileDiagnostic() {
+    void createsSelectedFullGrammerParserWithProfileDiagnostic() {
         FullGrammerTokenEventParserFactory.CreatedParser created =
                 FullGrammerTokenEventParserFactory.create(
                         FullGrammerProfileRequest.builder()

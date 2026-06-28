@@ -72,12 +72,14 @@ class DialectParserEvidenceConfidenceTest {
         RelationshipCandidate procedureRelation = parseAndFind(procedureSql, StatementSourceType.PROCEDURE,
                 "orders", "user_id", "users", "id");
 
-        assertEquals(EvidenceSourceType.DATABASE_OBJECT, evidence(viewRelation, EvidenceType.VIEW_JOIN).sourceType());
-        assertEquals(EvidenceSourceType.DATABASE_OBJECT, evidence(procedureRelation, EvidenceType.PROCEDURE_JOIN).sourceType());
+        assertEquals(EvidenceSourceType.DATABASE_OBJECT,
+                evidence(viewRelation, EvidenceType.SQL_LOG_JOIN).sourceType());
+        assertEquals(EvidenceSourceType.DATABASE_OBJECT,
+                evidence(procedureRelation, EvidenceType.SQL_LOG_JOIN).sourceType());
     }
 
     @Test
-    void subqueryInAndExistsUseDistinctEvidenceTypes() {
+    void subqueryInAndExistsKeepPredicateKindInAttributes() {
         String inSql = """
                 SELECT *
                 FROM orders o
@@ -101,8 +103,12 @@ class DialectParserEvidenceConfidenceTest {
         RelationshipCandidate existsRelation = parseAndFind(existsSql, StatementSourceType.PLAIN_SQL,
                 "orders", "user_id", "users", "id");
 
-        assertEquals(EvidenceSourceType.PLAIN_SQL, evidence(inRelation, EvidenceType.SQL_LOG_SUBQUERY_IN).sourceType());
-        assertEquals(EvidenceSourceType.PLAIN_SQL, evidence(existsRelation, EvidenceType.SQL_LOG_EXISTS).sourceType());
+        Evidence inEvidence = evidence(inRelation, EvidenceType.SQL_LOG_SUBQUERY_IN);
+        Evidence existsEvidence = evidence(existsRelation, EvidenceType.SQL_LOG_EXISTS);
+        assertEquals(EvidenceSourceType.PLAIN_SQL, inEvidence.sourceType());
+        assertEquals(EvidenceSourceType.PLAIN_SQL, existsEvidence.sourceType());
+        assertEquals("IN_SUBQUERY", inEvidence.attributes().get("joinKind"));
+        assertEquals("EXISTS", existsEvidence.attributes().get("joinKind"));
     }
 
     @Test
@@ -190,16 +196,32 @@ class DialectParserEvidenceConfidenceTest {
         RelationshipCandidate relation = candidates.stream()
                 .filter(r -> r.source().isColumnLevel())
                 .filter(r -> r.target().isColumnLevel())
-                .filter(r -> r.source().table().tableName().equals(sourceTable))
-                .filter(r -> r.source().column().columnName().equals(sourceColumn))
-                .filter(r -> r.target().table().tableName().equals(targetTable))
-                .filter(r -> r.target().column().columnName().equals(targetColumn))
+                .filter(r -> matchesEndpoints(r, sourceTable, sourceColumn, targetTable, targetColumn))
                 .findFirst()
                 .orElse(null);
         assertNotNull(relation, () -> "Missing relation "
                 + sourceTable + "." + sourceColumn + " -> "
                 + targetTable + "." + targetColumn + ". Actual: " + describe(candidates));
         return relation;
+    }
+
+    private boolean matchesEndpoints(
+            RelationshipCandidate relation,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn
+    ) {
+        boolean forward = relation.source().table().tableName().equals(sourceTable)
+                && relation.source().column().columnName().equals(sourceColumn)
+                && relation.target().table().tableName().equals(targetTable)
+                && relation.target().column().columnName().equals(targetColumn);
+        boolean reverse = relation.relationType() == com.relationdetector.contracts.Enums.RelationType.CO_OCCURRENCE
+                && relation.source().table().tableName().equals(targetTable)
+                && relation.source().column().columnName().equals(targetColumn)
+                && relation.target().table().tableName().equals(sourceTable)
+                && relation.target().column().columnName().equals(sourceColumn);
+        return forward || reverse;
     }
 
     private Evidence evidence(RelationshipCandidate candidate, EvidenceType type) {

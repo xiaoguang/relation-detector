@@ -1,8 +1,8 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:master_skus.native_currency->currency_exchange_rates.source_currency:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:orders.customer_id->transaction_ledgers.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:orders.customer_id->customer_profiles.id:PROCEDURE_JOIN"
+    "CO_OCCURRENCE:currency_exchange_rates.source_currency->master_skus.native_currency:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:orders.customer_id->transaction_ledgers.user_id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.customer_id->customer_profiles.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": [
     "memory_input_cargo",

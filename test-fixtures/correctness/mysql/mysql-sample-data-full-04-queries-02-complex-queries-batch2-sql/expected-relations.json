@@ -1,12 +1,12 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:inventory_transactions.product_id->inventory.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:inventory_transactions.warehouse_id->inventory.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN",
-    "FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN",
-    "FK_LIKE:purchase_orders.department_id->departments.id:SQL_LOG_JOIN",
-    "FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN",
-    "FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN"
+    "CO_OCCURRENCE:inventory.product_id->inventory_transactions.product_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:inventory.warehouse_id->inventory_transactions.warehouse_id:SQL_LOG_JOIN",
+    "FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:purchase_orders.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

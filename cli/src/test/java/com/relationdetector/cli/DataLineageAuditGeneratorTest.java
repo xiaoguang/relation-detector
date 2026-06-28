@@ -18,10 +18,10 @@ class DataLineageAuditGeneratorTest {
 
         assertTrue(markdown.contains("# Data Lineage Full Audit"));
         assertTrue(markdown.contains("| TOTAL | 622 |"));
-        assertTrue(markdown.contains("| EXISTING_GOLD | 135 |"));
+        assertTrue(markdown.contains("| EXISTING_GOLD | 142 |"));
         assertTrue(markdown.contains("| SUGGESTED_GOLD | 0 |"));
         assertTrue(markdown.contains("| PENDING_REVIEW | 0 |"));
-        assertTrue(markdown.contains("| NOT_APPLICABLE | 487 |"));
+        assertTrue(markdown.contains("| NOT_APPLICABLE | 480 |"));
         assertTrue(markdown.contains("| Classification | `EXISTING_GOLD` |"));
         assertTrue(markdown.contains("| Classification | `NOT_APPLICABLE` |"));
         assertTrue(markdown.contains("mysql-user-spending-left-join-update-sql"));
@@ -33,8 +33,8 @@ class DataLineageAuditGeneratorTest {
         assertTrue(markdown.contains("mysql-business-financial-asset-wash-procedure-sql"));
         assertTrue(markdown.contains("VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit"));
         assertTrue(markdown.contains(
-                "VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,"
-                        + "dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories"
+                "VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,"
+                        + "transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category"
                         + "->account_balances.compliance_notes"));
         assertTrue(markdown.contains("VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags"));
         assertTrue(markdown.contains("VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end"));

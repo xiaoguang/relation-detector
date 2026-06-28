@@ -43,6 +43,8 @@ import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.log.SqlLogNoiseFilter;
 import com.relationdetector.core.parse.SqlDialect;
+import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
+import com.relationdetector.core.relation.RelationshipMerger;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 import com.relationdetector.core.tokenevent.CommonTokenEventStructuredSqlParser;
@@ -229,10 +231,13 @@ class CorrectnessFixtureRunnerTest {
         if (isCommonTokenEventFixture(fixture)) {
             StructuredSqlParser parser = new CommonTokenEventStructuredSqlParser();
             TokenEventRelationExtractor relationExtractor = new TokenEventRelationExtractor();
+            NamingMatchEvidenceEnhancer namingMatchEvidenceEnhancer = new NamingMatchEvidenceEnhancer();
             TokenEventDataLineageExtractor lineageExtractor = new TokenEventDataLineageExtractor();
             for (SqlStatementRecord statement : statements) {
                 StructuredParseResult structured = parser.parseSql(statement, context);
-                relationships.addAll(relationExtractor.extract(statement, structured));
+                List<RelationshipCandidate> extracted = relationExtractor.extract(statement, structured);
+                namingMatchEvidenceEnhancer.enhance(extracted);
+                relationships.addAll(extracted);
                 lineages.addAll(lineageExtractor.extract(statement, structured));
             }
             assertRelations(fixture, expectedRelations, relationships);
@@ -313,7 +318,8 @@ class CorrectnessFixtureRunnerTest {
             ExpectedRelations expected,
             List<RelationshipCandidate> actual
     ) throws Exception {
-        Set<String> actualFingerprints = actual.stream()
+        List<RelationshipCandidate> merged = new RelationshipMerger().merge(actual, 0.0);
+        Set<String> actualFingerprints = merged.stream()
                 .map(this::fingerprint)
                 .collect(Collectors.toCollection(TreeSet::new));
         if (Boolean.getBoolean("updateCorrectnessGold")) {
@@ -325,7 +331,7 @@ class CorrectnessFixtureRunnerTest {
                 () -> fixture.id() + " relation fingerprints");
 
         for (String forbiddenTable : expected.forbiddenTables()) {
-            assertTrue(actual.stream().noneMatch(relation ->
+            assertTrue(merged.stream().noneMatch(relation ->
                             relation.source().table().tableName().equalsIgnoreCase(forbiddenTable)
                                     || relation.target().table().tableName().equalsIgnoreCase(forbiddenTable)),
                     () -> fixture.id() + " emitted forbidden table " + forbiddenTable

@@ -1,10 +1,9 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:customers.external_ref->invoices.customer_ref:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:orders.user_id->users.id:SQL_LOG_EXISTS",
-    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
-    "FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS",
-    "FK_LIKE:users.account_id->accounts.id:SQL_LOG_EXISTS"
+    "CO_OCCURRENCE:customers.external_ref->invoices.customer_ref:SQL_LOG_JOIN",
+    "FK_LIKE:orders.user_id->users.id:SQL_LOG_EXISTS,NAMING_MATCH,SQL_LOG_JOIN",
+    "FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS,NAMING_MATCH",
+    "FK_LIKE:users.account_id->accounts.id:SQL_LOG_EXISTS,NAMING_MATCH"
   ],
   "forbiddenTables": [
     "paid_orders"

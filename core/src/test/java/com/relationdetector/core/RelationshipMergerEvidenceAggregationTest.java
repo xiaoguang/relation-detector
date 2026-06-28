@@ -99,8 +99,122 @@ class RelationshipMergerEvidenceAggregationTest {
         assertEquals(true, evidence(merged, EvidenceType.SQL_LOG_JOIN).attributes().get("sampleTruncated"));
     }
 
+    @Test
+    void foldsSqlColumnCoOccurrenceIntoDeclaredFkDirection() {
+        RelationshipCandidate declaredFk = baseRelation();
+        declaredFk.relationSubType(RelationSubType.DDL_DECLARED_FK);
+        declaredFk.evidence().add(Evidence.of(EvidenceType.DDL_FOREIGN_KEY, DefaultEvidenceScores.DDL_FOREIGN_KEY,
+                EvidenceSourceType.DDL_FILE, "schema.sql", "FOREIGN KEY (user_id) REFERENCES users(id)"));
+        RelationshipCandidate sqlCoOccurrence = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "user_id")),
+                Endpoint.column(ColumnRef.of(TableId.of(null, "users"), "id")),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.COLUMN_CO_OCCURRENCE);
+        sqlCoOccurrence.evidence().add(Evidence.of(EvidenceType.SQL_LOG_JOIN,
+                DefaultEvidenceScores.SQL_LOG_JOIN,
+                EvidenceSourceType.PLAIN_SQL, "query.sql", "o.user_id = u.id"));
+
+        List<RelationshipCandidate> merged = merger.merge(List.of(declaredFk, sqlCoOccurrence), 0.0d);
+
+        assertEquals(1, merged.size(), () -> "SQL co-occurrence should supplement the declared FK, not duplicate it");
+        RelationshipCandidate relation = merged.get(0);
+        assertEquals(RelationType.FK_LIKE, relation.relationType());
+        assertEquals(RelationSubType.DDL_DECLARED_FK, relation.relationSubType());
+        assertTrue(relation.evidence().stream().anyMatch(e -> e.type() == EvidenceType.DDL_FOREIGN_KEY));
+        assertTrue(relation.evidence().stream().anyMatch(e -> e.type() == EvidenceType.SQL_LOG_JOIN));
+    }
+
+    @Test
+    void sqlJoinEvidenceAloneRemainsCoOccurrence() {
+        RelationshipCandidate sqlOnly = sqlLogJoinCoOccurrence("app.log", "line 10: o.user_id = u.id");
+
+        RelationshipCandidate merged = merger.merge(List.of(sqlOnly), 0.0d).get(0);
+
+        assertEquals(RelationType.CO_OCCURRENCE, merged.relationType());
+        assertEquals(RelationSubType.COLUMN_CO_OCCURRENCE, merged.relationSubType());
+        assertTrue(merged.evidence().stream().anyMatch(e -> e.type() == EvidenceType.SQL_LOG_JOIN));
+    }
+
+    @Test
+    void uniqueEndpointAndSqlJoinInferFkDirection() {
+        RelationshipCandidate sql = sqlLogJoinCoOccurrence("app.log", "line 10: o.user_id = u.id");
+        sql.evidence().add(new Evidence(EvidenceType.TARGET_UNIQUE,
+                BigDecimal.valueOf(DefaultEvidenceScores.TARGET_UNIQUE),
+                EvidenceSourceType.METADATA,
+                "metadata",
+                "users.id is primary key",
+                java.util.Map.of("uniqueEndpoint", "users.id", "endpointSide", "target")));
+
+        RelationshipCandidate merged = merger.merge(List.of(sql), 0.0d).get(0);
+
+        assertEquals(RelationType.FK_LIKE, merged.relationType());
+        assertEquals(RelationSubType.INFERRED_JOIN_FK, merged.relationSubType());
+        assertEquals("orders.user_id", merged.source().displayName());
+        assertEquals("users.id", merged.target().displayName());
+        assertTrue(merged.evidence().stream().anyMatch(e -> e.type() == EvidenceType.SQL_LOG_JOIN));
+        assertTrue(merged.evidence().stream().anyMatch(e -> e.type() == EvidenceType.TARGET_UNIQUE));
+    }
+
+    @Test
+    void sqlPredicateAndNamingMatchInferFkDirection() {
+        RelationshipCandidate sql = sqlLogJoinCoOccurrence("app.log", "line 10: o.user_id = u.id");
+        sql.evidence().add(new Evidence(EvidenceType.NAMING_MATCH,
+                BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                EvidenceSourceType.NAMING_HEURISTIC,
+                "naming",
+                "orders.user_id matches users.id",
+                java.util.Map.of(
+                        "namingRule", "TABLE_ID",
+                        "suggestedSourceEndpoint", "orders.user_id",
+                        "suggestedTargetEndpoint", "users.id",
+                        "directionHint", true)));
+
+        RelationshipCandidate merged = merger.merge(List.of(sql), 0.0d).get(0);
+
+        assertEquals(RelationType.FK_LIKE, merged.relationType());
+        assertEquals(RelationSubType.INFERRED_JOIN_FK, merged.relationSubType());
+        assertEquals("orders.user_id", merged.source().displayName());
+        assertEquals("users.id", merged.target().displayName());
+        assertTrue(merged.evidence().stream().anyMatch(e -> e.type() == EvidenceType.NAMING_MATCH));
+    }
+
+    @Test
+    void namingMatchWithoutSqlPredicateDoesNotInferDirection() {
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "user_id")),
+                Endpoint.column(ColumnRef.of(TableId.of(null, "users"), "id")),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.COLUMN_CO_OCCURRENCE);
+        candidate.evidence().add(new Evidence(EvidenceType.NAMING_MATCH,
+                BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                EvidenceSourceType.NAMING_HEURISTIC,
+                "naming",
+                "orders.user_id matches users.id",
+                java.util.Map.of(
+                        "namingRule", "TABLE_ID",
+                        "suggestedSourceEndpoint", "orders.user_id",
+                        "suggestedTargetEndpoint", "users.id",
+                        "directionHint", true)));
+
+        RelationshipCandidate merged = merger.merge(List.of(candidate), 0.0d).get(0);
+
+        assertEquals(RelationType.CO_OCCURRENCE, merged.relationType());
+        assertEquals(RelationSubType.COLUMN_CO_OCCURRENCE, merged.relationSubType());
+    }
+
     private RelationshipCandidate sqlLogJoin(String source, String detail) {
         RelationshipCandidate candidate = baseRelation();
+        candidate.evidence().add(Evidence.of(EvidenceType.SQL_LOG_JOIN, DefaultEvidenceScores.SQL_LOG_JOIN,
+                EvidenceSourceType.NATIVE_LOG, source, detail));
+        return candidate;
+    }
+
+    private RelationshipCandidate sqlLogJoinCoOccurrence(String source, String detail) {
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "user_id")),
+                Endpoint.column(ColumnRef.of(TableId.of(null, "users"), "id")),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.COLUMN_CO_OCCURRENCE);
         candidate.evidence().add(Evidence.of(EvidenceType.SQL_LOG_JOIN, DefaultEvidenceScores.SQL_LOG_JOIN,
                 EvidenceSourceType.NATIVE_LOG, source, detail));
         return candidate;

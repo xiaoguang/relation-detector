@@ -41,6 +41,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     private final Set<String> cteNames = new LinkedHashSet<>();
     private final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
     private final ArrayDeque<String> joinKinds = new ArrayDeque<>();
+    private final ArrayDeque<QueryScope> queryScopes = new ArrayDeque<>();
     private int existsDepth;
 
     public PostgresTokenEventParseTreeVisitor(SqlStatementRecord statement) {
@@ -84,17 +85,22 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
 
     @Override
     public Void visitQuerySpecification(PostgresRelationSqlParser.QuerySpecificationContext ctx) {
-        if (ctx.fromClause() != null) {
-            visit(ctx.fromClause());
-        }
-        if (ctx.whereClause() != null) {
-            visit(ctx.whereClause());
-        }
-        if (ctx.havingClause() != null) {
-            visit(ctx.havingClause());
-        }
-        if (!projectionOwners.isEmpty()) {
-            emitProjectionItems(ctx.selectList(), projectionOwners.peek());
+        queryScopes.push(new QueryScope());
+        try {
+            if (ctx.fromClause() != null) {
+                visit(ctx.fromClause());
+            }
+            if (ctx.whereClause() != null) {
+                visit(ctx.whereClause());
+            }
+            if (ctx.havingClause() != null) {
+                visit(ctx.havingClause());
+            }
+            if (!projectionOwners.isEmpty()) {
+                emitProjectionItems(ctx.selectList(), projectionOwners.peek());
+            }
+        } finally {
+            queryScopes.pop();
         }
         return null;
     }
@@ -112,6 +118,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             attrs.put("alias", alias);
         }
         add(StructuredParseEventType.ROWSET_REFERENCE, ctx, attrs);
+        registerCurrentRowset(alias.isBlank() ? table : alias);
         return null;
     }
 
@@ -150,6 +157,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             attrs.put("table", alias);
             attrs.put("qualifiedTable", alias);
             add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
+            registerCurrentRowset(alias);
             projectionOwners.push(new ProjectionOwner(alias, List.of()));
             visit(ctx.selectStatement());
             projectionOwners.pop();
@@ -167,6 +175,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         attrs.put("qualifiedTable", "ROWS FROM");
         if (ctx.tableAlias() != null) {
             attrs.put("alias", clean(ctx.tableAlias().identifier().getText()));
+            registerCurrentRowset(clean(ctx.tableAlias().identifier().getText()));
         }
         add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
         return null;
@@ -181,6 +190,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         attrs.put("qualifiedTable", qualifiedName(ctx.qualifiedName()));
         if (ctx.tableAlias() != null) {
             attrs.put("alias", clean(ctx.tableAlias().identifier().getText()));
+            registerCurrentRowset(clean(ctx.tableAlias().identifier().getText()));
         }
         add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
         return null;
@@ -337,6 +347,89 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         return null;
     }
 
+    @Override
+    public Void visitMergeStatement(PostgresRelationSqlParser.MergeStatementContext ctx) {
+        PostgresRelationSqlParser.TablePrimaryContext target = ctx.tablePrimary(0);
+        PostgresRelationSqlParser.TablePrimaryContext source = ctx.tablePrimary(1);
+        visit(target);
+        String targetAlias = targetAlias(target);
+        String targetTable = targetTable(target);
+        Map<String, Object> writeTarget = attrs();
+        writeTarget.put("qualifiedTable", targetTable);
+        writeTarget.put("table", baseName(targetTable));
+        if (!targetAlias.isBlank()) {
+            writeTarget.put("alias", targetAlias);
+        }
+        add(StructuredParseEventType.WRITE_TARGET, target, writeTarget);
+        visit(source);
+        joinKinds.push("MERGE_OR_USING");
+        visit(ctx.predicate());
+        joinKinds.pop();
+        for (PostgresRelationSqlParser.MergeWhenClauseContext whenClause : ctx.mergeWhenClause()) {
+            PostgresRelationSqlParser.MergeActionContext action = whenClause.mergeAction();
+            if (action instanceof PostgresRelationSqlParser.MergeUpdateActionContext updateAction) {
+                emitMergeUpdateMappings(updateAction.assignmentList(), targetAlias, targetTable);
+            } else if (action instanceof PostgresRelationSqlParser.MergeInsertActionContext insertAction) {
+                emitMergeInsertMappings(insertAction, targetAlias, targetTable);
+            }
+        }
+        return null;
+    }
+
+    private void emitMergeUpdateMappings(
+            PostgresRelationSqlParser.AssignmentListContext assignments,
+            String targetAlias,
+            String targetTable
+    ) {
+        for (PostgresRelationSqlParser.AssignmentContext assignment : assignments.assignment()) {
+            List<String> targetParts = parts(assignment.qualifiedName());
+            String targetColumn = targetParts.isEmpty() ? "" : targetParts.get(targetParts.size() - 1);
+            String assignmentAlias = targetParts.size() > 1 ? targetParts.get(targetParts.size() - 2) : targetAlias;
+            ExpressionAnalysis source = analyze(assignment.expression());
+            if (source.sources().isEmpty()) {
+                continue;
+            }
+            Map<String, Object> attrs = attrs();
+            attrs.put("targetAlias", assignmentAlias);
+            attrs.put("targetTable", targetTable);
+            attrs.put("targetColumn", targetColumn);
+            attrs.put("sourceAliases", source.aliases());
+            attrs.put("sourceColumns", source.columns());
+            attrs.put("transformType", source.transform().name());
+            attrs.put("flowKind", source.flowKind().name());
+            attrs.put("mappingKind", "MERGE_UPDATE");
+            add(StructuredParseEventType.MERGE_WRITE_MAPPING, assignment, attrs);
+        }
+    }
+
+    private void emitMergeInsertMappings(
+            PostgresRelationSqlParser.MergeInsertActionContext insertAction,
+            String targetAlias,
+            String targetTable
+    ) {
+        List<String> targetColumns = insertAction.identifierList().identifier().stream()
+                .map(identifier -> clean(identifier.getText()))
+                .toList();
+        List<PostgresRelationSqlParser.ExpressionContext> expressions = insertAction.expressionList().expression();
+        int count = Math.min(targetColumns.size(), expressions.size());
+        for (int index = 0; index < count; index++) {
+            ExpressionAnalysis source = analyze(expressions.get(index));
+            if (source.sources().isEmpty()) {
+                continue;
+            }
+            Map<String, Object> attrs = attrs();
+            attrs.put("targetAlias", targetAlias);
+            attrs.put("targetTable", targetTable);
+            attrs.put("targetColumn", targetColumns.get(index));
+            attrs.put("sourceAliases", source.aliases());
+            attrs.put("sourceColumns", source.columns());
+            attrs.put("transformType", source.transform().name());
+            attrs.put("flowKind", source.flowKind().name());
+            attrs.put("mappingKind", "MERGE_INSERT");
+            add(StructuredParseEventType.MERGE_WRITE_MAPPING, insertAction, attrs);
+        }
+    }
+
     private void emitProjectionItems(PostgresRelationSqlParser.SelectListContext ctx, ProjectionOwner owner) {
         List<PostgresRelationSqlParser.SelectItemContext> items = ctx.selectItem();
         for (int index = 0; index < items.size(); index++) {
@@ -396,7 +489,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         if (expression instanceof PostgresRelationSqlParser.ColumnExpressionContext columnExpression) {
             List<String> parts = parts(columnExpression.qualifiedName());
             if (parts.size() == 1) {
-                return new ColumnRead("", parts.get(0));
+                return new ColumnRead(defaultColumnAlias(), parts.get(0));
             }
             return new ColumnRead(parts.get(parts.size() - 2), parts.get(parts.size() - 1));
         }
@@ -468,14 +561,35 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             return new ExpressionAnalysis(combined.sources(), LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL);
         }
         if (expression instanceof PostgresRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
-            visit(scalarSubquery.selectStatement());
-            List<ColumnRead> columns = selectColumns(scalarSubquery.selectStatement());
-            if (columns.isEmpty()) {
-                return ExpressionAnalysis.empty();
-            }
-            return new ExpressionAnalysis(columns, LineageTransformType.DIRECT, LineageFlowKind.VALUE);
+            return analyzeScalarSubquery(scalarSubquery.selectStatement());
         }
         return ExpressionAnalysis.empty();
+    }
+
+    private ExpressionAnalysis analyzeScalarSubquery(PostgresRelationSqlParser.SelectStatementContext select) {
+        if (select.withClause() != null) {
+            visit(select.withClause());
+        }
+        PostgresRelationSqlParser.QuerySpecificationContext query = select.querySpecification();
+        queryScopes.push(new QueryScope());
+        try {
+            if (query.fromClause() != null) {
+                visit(query.fromClause());
+            }
+            if (query.whereClause() != null) {
+                visit(query.whereClause());
+            }
+            if (query.havingClause() != null) {
+                visit(query.havingClause());
+            }
+            List<PostgresRelationSqlParser.SelectItemContext> items = query.selectList().selectItem();
+            if (items.size() != 1 || items.get(0).expression() == null) {
+                return ExpressionAnalysis.empty();
+            }
+            return analyze(items.get(0).expression());
+        } finally {
+            queryScopes.pop();
+        }
     }
 
     private ExpressionAnalysis analyze(PostgresRelationSqlParser.PredicateContext predicate) {
@@ -702,6 +816,27 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             return "CROSS_JOIN";
         }
         return "JOIN";
+    }
+
+    private void registerCurrentRowset(String alias) {
+        if (alias == null || alias.isBlank() || queryScopes.isEmpty()) {
+            return;
+        }
+        queryScopes.peek().rowsetAliases().add(alias);
+    }
+
+    private String defaultColumnAlias() {
+        if (queryScopes.isEmpty()) {
+            return "";
+        }
+        Set<String> aliases = queryScopes.peek().rowsetAliases();
+        return aliases.size() == 1 ? aliases.iterator().next() : "";
+    }
+
+    private record QueryScope(Set<String> rowsetAliases) {
+        QueryScope() {
+            this(new LinkedHashSet<>());
+        }
     }
 
     private record ProjectionOwner(String alias, List<String> columns) {

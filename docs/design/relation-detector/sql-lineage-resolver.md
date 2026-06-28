@@ -324,7 +324,7 @@ core/src/test/java/com/relationdetector/core/lineage/SqlLineageResolverTest.java
 core/src/test/java/com/relationdetector/core/lineage/TokenEventDataLineageExtractorTest.java
 core/src/test/java/com/relationdetector/core/tokenevent/TokenEventRelationEventsTest.java
 cli/src/test/java/com/relationdetector/cli/CorrectnessFixtureRunnerTest.java
-cli/src/test/java/com/relationdetector/cli/FullGrammerCorrectnessShadowTest.java
+cli/src/test/java/com/relationdetector/cli/FullGrammerSqlBehaviorTest.java
 ```
 
 测试关注点：

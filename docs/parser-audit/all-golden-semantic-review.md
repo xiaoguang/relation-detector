@@ -7,42 +7,57 @@ This review covers every correctness fixture manifest under `test-fixtures/corre
 - Fixture manifests reviewed: `622`.
 - SQL/DDL inputs are the fixture `input.sql` files referenced by each manifest.
 - Current review result: no `REVIEW_NEEDED` items are open.
-- Confirmed recent fix: token-event CASE analysis now includes columns from `WHEN` predicates as `CONTROL:CASE_WHEN` lineage sources when they are physical rowset columns.
+- Confirmed recent fix: `NAMING_MATCH` is now generated as a direction hint on existing SQL predicate candidates. It supports `TABLE_ID`, `ID_SUFFIX_TO_ID`, and `SELF_ROLE_ID`; it cannot create a relationship by itself.
+- Confirmed recent lineage fix: token-event CASE analysis now includes columns from `WHEN` predicates as `CONTROL:CASE_WHEN` lineage sources when they are physical rowset columns.
 - Remaining cross-parser differences are categorized as typed visitor coverage gaps or expected version deltas, not as approved scanner-style guessing.
 
 ## Parser Category Totals
 
-| Category | Fixtures | Relations | Lineage | Sample fixtures | Sample relations | Sample lineage |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event | 31 | 552 | 150 | 14 | 536 | 144 |
-| MySQL token-event root | 93 | 301 | 82 | 36 | 248 | 43 |
-| MySQL full-grammer v8_0 | 93 | 661 | 278 | 36 | 542 | 183 |
-| PostgreSQL token-event root | 100 | 757 | 43 | 34 | 177 | 27 |
-| PostgreSQL full-grammer v16 | 100 | 1187 | 64 | 34 | 442 | 27 |
-| PostgreSQL full-grammer v17 | 102 | 1190 | 86 | 34 | 442 | 27 |
-| PostgreSQL full-grammer v18 | 103 | 1190 | 85 | 34 | 442 | 27 |
+| Category | Fixtures | Relations | Lineage | Naming relation fingerprints | Sample fixtures | Sample relations | Sample lineage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| common token-event | 31 | 551 | 150 | 144 | 14 | 535 | 144 |
+| MySQL token-event root | 93 | 408 | 150 | 172 | 36 | 333 | 93 |
+| MySQL full-grammer v8_0 | 93 | 696 | 241 | 372 | 36 | 572 | 146 |
+| PostgreSQL token-event root | 100 | 890 | 52 | 162 | 34 | 227 | 31 |
+| PostgreSQL full-grammer v16 | 100 | 1237 | 68 | 329 | 34 | 472 | 31 |
+| PostgreSQL full-grammer v17 | 102 | 1240 | 90 | 330 | 34 | 472 | 31 |
+| PostgreSQL full-grammer v18 | 103 | 1240 | 89 | 329 | 34 | 472 | 31 |
 
 ## Golden Semantic Shape
+
+### NAMING_MATCH Direction Evidence
+
+`NAMING_MATCH` is a direction evidence enhancer, not a relationship source. The current golden contains it only when all of these are true:
+
+- a typed parser already produced a column-level SQL predicate candidate;
+- the endpoints are physical table columns, not parameters, local variables, temporary tables, literals, `NEW/OLD`, `EXCLUDED`, or pseudo rowsets;
+- exactly one naming rule gives a direction:
+  - `TABLE_ID`: `orders.customer_id -> customers.id`;
+  - `ID_SUFFIX_TO_ID`: one endpoint is `*_id`, the other is `id`;
+  - `SELF_ROLE_ID`: same physical table, different SQL aliases, role column such as `manager_id` points to the role target `id`;
+- ambiguous name matches do not produce `NAMING_MATCH`.
+
+This means the naming heuristic can promote an existing SQL predicate `CO_OCCURRENCE` to `FK_LIKE`, but it never creates a relation from table or column names alone.
 
 ### Relationship Fingerprint Types
 
 | Type | Count |
 | --- | ---: |
-| `FK_LIKE` | 5278 |
-| `CO_OCCURRENCE` | 560 |
+| `FK_LIKE` | 5427 |
+| `CO_OCCURRENCE` | 835 |
 
 ### Lineage Fingerprint Types
 
 | Flow/Transform | Count |
 | --- | ---: |
 | `VALUE:DIRECT` | 472 |
-| `VALUE:ARITHMETIC` | 136 |
-| `VALUE:CONCAT_FORMAT` | 56 |
-| `VALUE:COALESCE` | 47 |
-| `CONTROL:CASE_WHEN` | 36 |
-| `VALUE:AGGREGATE` | 21 |
-| `VALUE:FUNCTION_CALL` | 13 |
-| `CONTROL:AGGREGATE` | 5 |
+| `VALUE:ARITHMETIC` | 144 |
+| `VALUE:CONCAT_FORMAT` | 55 |
+| `VALUE:COALESCE` | 49 |
+| `VALUE:AGGREGATE` | 47 |
+| `CONTROL:CASE_WHEN` | 39 |
+| `VALUE:FUNCTION_CALL` | 24 |
+| `CONTROL:AGGREGATE` | 8 |
 | `VALUE:CUMULATIVE` | 2 |
 
 ## Cross-Parser Difference Classification

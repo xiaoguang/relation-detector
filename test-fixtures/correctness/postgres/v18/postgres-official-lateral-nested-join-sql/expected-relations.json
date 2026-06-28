@@ -1,8 +1,8 @@
 {
   "fingerprints": [
-    "FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_EXISTS",
-    "FK_LIKE:line_items.order_id->orders.id:SQL_LOG_JOIN",
-    "FK_LIKE:line_items.product_id->products.id:SQL_LOG_JOIN"
+    "FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_EXISTS,NAMING_MATCH",
+    "FK_LIKE:line_items.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:line_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": [
     "decoded",

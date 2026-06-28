@@ -1,8 +1,8 @@
 {
   "fingerprints": [
-    "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN",
-    "FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN",
-    "FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN"
+    "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

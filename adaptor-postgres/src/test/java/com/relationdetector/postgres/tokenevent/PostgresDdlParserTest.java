@@ -145,6 +145,34 @@ class PostgresDdlParserTest {
     }
 
     @Test
+    void postgresParserKeepsDeferrableForeignKeyAndSourceIndexEvidence() throws Exception {
+        Path ddl = tempDir.resolve("postgres-deferrable-fk-opclass-index.sql");
+        String ddlText = """
+                CREATE TABLE public.rna (
+                  upi VARCHAR(13) PRIMARY KEY
+                );
+
+                CREATE TABLE public.rfam_hits (
+                  upi VARCHAR(13) NOT NULL,
+                  CONSTRAINT rfam_hits_upi_fk
+                    FOREIGN KEY (upi)
+                    REFERENCES public.rna(upi)
+                    DEFERRABLE INITIALLY DEFERRED
+                );
+
+                CREATE INDEX rfam_hits_upi_like
+                  ON public.rfam_hits USING btree (upi varchar_pattern_ops);
+                """;
+        Files.writeString(ddl, ddlText);
+
+        List<RelationshipCandidate> relations = parseDdl(ddl);
+
+        assertHasEvidence(relations, "public.rfam_hits.upi", "public.rna.upi", EvidenceType.DDL_FOREIGN_KEY);
+        assertHasEvidence(relations, "public.rfam_hits.upi", "public.rna.upi", EvidenceType.SOURCE_INDEX);
+        assertHasEvidence(relations, "public.rfam_hits.upi", "public.rna.upi", EvidenceType.TARGET_UNIQUE);
+    }
+
+    @Test
     void postgresParserKeepsTableEventsWhenEnumTypesPrecedeTables() throws Exception {
         Path ddl = tempDir.resolve("postgres-enum-before-tables.sql");
         String ddlText = """

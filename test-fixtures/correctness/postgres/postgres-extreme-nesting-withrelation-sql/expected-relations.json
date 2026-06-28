@@ -1,9 +1,10 @@
 {
   "fingerprints": [
-    "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN",
-    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
-    "FK_LIKE:orders.sales_rep_id->sales_reps.id:SQL_LOG_SUBQUERY_IN",
-    "FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS"
+    "CO_OCCURRENCE:pg10_transactions.account_id->pg10_transactions.account_id:SQL_LOG_JOIN",
+    "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:orders.sales_rep_id->sales_reps.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH",
+    "FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

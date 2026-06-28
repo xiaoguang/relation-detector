@@ -1,12 +1,12 @@
 # full-grammer Expression Transform Compatibility Audit
 
-This file records expression-transform differences that were exposed by the
-full-grammer shadow parser and resolved by manual review.
+This file records expression-transform differences that were exposed while
+hardening full-grammer output and resolved by manual review.
 
-Production token-event output, full-grammer shadow output, and correctness
-golden now agree on the reviewed labels. `FullGrammerCorrectnessShadowTest`
-does not keep a transform compatibility allowlist; new transform drift must fail
-the shadow parity test and be reviewed explicitly.
+Production token-event output, versioned full-grammer output, and correctness
+golden now agree on the reviewed labels. Cross-parser shadow/parity tests have
+been retired; new transform drift must fail the owning parser's correctness
+golden and be reviewed explicitly.
 
 ## Resolved Items
 

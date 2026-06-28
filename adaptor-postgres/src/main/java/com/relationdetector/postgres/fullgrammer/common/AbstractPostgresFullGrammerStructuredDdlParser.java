@@ -28,7 +28,7 @@ public abstract class AbstractPostgresFullGrammerStructuredDdlParser implements 
     public final StructuredParseResult parseDdl(String ddl, String sourceName, AdaptorContext context) {
         var unsupportedSyntax = PostgresFullGrammerVersionSyntaxGuard.ddlWarning(majorVersion(), ddl, sourceName);
         if (unsupportedSyntax.isPresent()) {
-            return new StructuredParseResult("FULL_GRAMMAR_DDL_SHADOW", SqlDialect.POSTGRES.name(), sourceName,
+            return new StructuredParseResult("FULL_GRAMMAR_DDL", SqlDialect.POSTGRES.name(), sourceName,
                     List.of(), List.of(unsupportedSyntax.get()), unsupportedAttributes());
         }
         FullGrammerDdlParse parse = parseFullGrammer(ddl);
@@ -49,14 +49,14 @@ public abstract class AbstractPostgresFullGrammerStructuredDdlParser implements 
                     parse.syntaxErrors()));
         }
         Map<String, Object> attributes = new LinkedHashMap<>();
-        attributes.put("fullGrammerDdlShadow", true);
+        attributes.put("fullGrammerDdlParserSelected", true);
         attributes.put("fullGrammerDdlLexer", lexerName());
         attributes.put("fullGrammerDdlParser", parserName());
         attributes.put("fullGrammerDdlEntryRule", "root");
         attributes.put("fullGrammerDdlSyntaxErrors", parse.syntaxErrors());
         attributes.put("fullGrammerDdlParseTreeRoot", parse.root() == null ? "" : parse.root().getClass().getSimpleName());
         attributes.put("fullGrammerDdlCollector", collectorName());
-        return new StructuredParseResult("FULL_GRAMMAR_DDL_SHADOW", SqlDialect.POSTGRES.name(), sourceName,
+        return new StructuredParseResult("FULL_GRAMMAR_DDL", SqlDialect.POSTGRES.name(), sourceName,
                 events, warnings, attributes);
     }
 
@@ -74,7 +74,7 @@ public abstract class AbstractPostgresFullGrammerStructuredDdlParser implements 
 
     private Map<String, Object> unsupportedAttributes() {
         Map<String, Object> attributes = new LinkedHashMap<>();
-        attributes.put("fullGrammerDdlShadow", true);
+        attributes.put("fullGrammerDdlParserSelected", true);
         attributes.put("fullGrammerDdlLexer", lexerName());
         attributes.put("fullGrammerDdlParser", parserName());
         attributes.put("fullGrammerDdlEntryRule", "root");

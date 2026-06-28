@@ -48,11 +48,11 @@ class CommonTokenEventStructuredSqlParserTest {
 
         assertEquals("CommonRelationSql", structured.attributes().get("grammar"));
         assertTrue(relations.contains(
-                "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN"));
+                "CO_OCCURRENCE:customers.id->orders.customer_id:SQL_LOG_JOIN"));
         assertTrue(relations.contains(
-                "FK_LIKE:customer_flags.customer_id->customers.id:SQL_LOG_EXISTS"));
+                "CO_OCCURRENCE:customer_flags.customer_id->customers.id:SQL_LOG_EXISTS"));
         assertTrue(relations.contains(
-                "FK_LIKE:orders.sales_rep_id->sales_reps.id:SQL_LOG_SUBQUERY_IN"));
+                "CO_OCCURRENCE:orders.sales_rep_id->sales_reps.id:SQL_LOG_SUBQUERY_IN"));
     }
 
     @Test

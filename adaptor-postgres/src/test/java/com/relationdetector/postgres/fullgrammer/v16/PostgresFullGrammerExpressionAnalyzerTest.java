@@ -58,9 +58,9 @@ class PostgresFullGrammerExpressionAnalyzerTest {
         List<RelationshipCandidate> relationships = new TokenEventRelationExtractor().extract(statement, structured);
 
         assertTrue(relationships.stream().anyMatch(candidate ->
-                fingerprint(candidate).equals("FK_LIKE:pg10_transactions.account_id->pg10_accounts.account_id:SQL_LOG_SUBQUERY_IN")));
+                fingerprint(candidate).equals("CO_OCCURRENCE:pg10_accounts.account_id->pg10_transactions.account_id:SQL_LOG_SUBQUERY_IN")));
         assertFalse(relationships.stream().anyMatch(candidate ->
-                fingerprint(candidate).equals("CO_OCCURRENCE:pg10_transactions.branch_code->pg10_accounts.branch_code:SQL_LOG_COLUMN_CO_OCCURRENCE")));
+                fingerprint(candidate).equals("CO_OCCURRENCE:pg10_transactions.branch_code->pg10_accounts.branch_code:SQL_LOG_JOIN")));
     }
 
     @Test
@@ -81,7 +81,7 @@ class PostgresFullGrammerExpressionAnalyzerTest {
                 .map(PostgresFullGrammerExpressionAnalyzerTest::fingerprint)
                 .toList();
 
-        assertTrue(fingerprints.contains("FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN"),
+        assertTrue(fingerprints.contains("CO_OCCURRENCE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN"),
                 () -> "Missing nested scalar subquery join. Actual=" + fingerprints);
     }
 

@@ -66,7 +66,8 @@ public final class RelationshipCandidate {
 方向规则：
 
 - 显式 FK：子表/引用列是 source，父表/被引用列是 target。
-- JOIN/谓词推断：若一侧是 PK/unique 或命名为 `id`，另一侧命名如 `xxx_id`，则 `xxx_id` 一侧为 source。
+- JOIN/谓词推断：SQL 谓词先证明两列存在结构关系；方向只能由 DDL/metadata/data-profile、unique-vs-nonunique，或附着在该 SQL 谓词候选上的 `NAMING_MATCH` 方向提示推出。
+- 命名方向启发式：`customer_id -> customers.id`、`user_id -> users.id`、`parent_id -> id`、self-join 中 `manager_id -> id` 这类 `_id/id` 规则可以在已有 SQL 谓词候选上追加 `NAMING_MATCH`，并参与 FK-like 方向推导；它不能凭空创建关系。
 - 数据画像：若 A 列值域大部分包含于 B，且 B 唯一或接近唯一，则 A 为 source，B 为 target。
 - 明确列等值但无法可靠判断 FK-like 方向时，输出列级 `CO_OCCURRENCE`；只有没有可靠列端点或只有表共同出现时，才退化为表级 `CO_OCCURRENCE`。
 
@@ -178,9 +179,9 @@ VALUE:AGGREGATE:orders.pay_amount->users.total_spent
 1. `DECLARED_FK`
 2. `DDL_DECLARED_FK`
 3. `PROFILE_SUPPORTED_FK`
-4. `INFERRED_JOIN_FK`
-5. `SUBQUERY_INFERRED_FK`
-6. `NAMING_SUPPORTED_FK`
+4. `INFERRED_JOIN_FK`（历史/外部已定向候选保留；当前 typed SQL parser 不再仅凭 JOIN 产出）
+5. `SUBQUERY_INFERRED_FK`（历史/外部已定向候选保留；当前 typed SQL parser 不再仅凭 IN/EXISTS 产出）
+6. `NAMING_SUPPORTED_FK`（历史/外部已定向候选保留；当前生产 parser 不用列名形态定方向）
 7. `COLUMN_CO_OCCURRENCE`
 8. `TABLE_CO_OCCURRENCE`
 
@@ -206,13 +207,9 @@ public record Evidence(
 
 - `METADATA_FOREIGN_KEY`
 - `DDL_FOREIGN_KEY`
-- `VIEW_JOIN`
-- `PROCEDURE_JOIN`
-- `TRIGGER_REFERENCE`
-- `SQL_LOG_JOIN`
-- `SQL_LOG_SUBQUERY_IN`
-- `SQL_LOG_EXISTS`
-- `SQL_LOG_COLUMN_CO_OCCURRENCE`
+- `VIEW_JOIN` / `PROCEDURE_JOIN` / `TRIGGER_REFERENCE`（对象定义中的谓词/引用证据；不能单独证明 FK-like 方向）
+- `SQL_LOG_JOIN` / `SQL_LOG_SUBQUERY_IN` / `SQL_LOG_EXISTS`（当前 typed SQL parser 对明确 SQL 谓词保留的语法 evidence；不能单独证明 FK-like 方向）
+- `SQL_LOG_COLUMN_CO_OCCURRENCE`（泛化列级共现 evidence；用于历史/外部导入或无法保留具体谓词形态的场景）
 - `SQL_LOG_TABLE_CO_OCCURRENCE`
 - `NAMING_MATCH`
 - `SOURCE_INDEX`
@@ -254,9 +251,9 @@ relationType
 
 置信度不是“SQL 解析器有多自信”，而是“这条候选关系真实存在的概率倾向”。分数设计遵循四条原则：
 
-1. 数据库声明强于静态文本，静态文本强于运行日志，运行日志强于命名猜测。
-2. 能证明方向和列级对应的证据，比只能证明表共现的证据强。
-3. 辅助证据只能加固关系，不能单独把关系抬到高置信。例如索引、唯一性、类型兼容、命名匹配都不能单独证明外键。
+1. 数据库声明强于静态文本，静态文本强于运行日志；运行 SQL 里的列等值只证明共现，不证明 FK 方向。
+2. 能证明方向和列级对应的 DDL/metadata/data-profile 证据，比只能证明 SQL 列共现或表共现的证据强。
+3. 辅助证据只能加固已有候选，不能单独创造关系。例如索引、唯一性、类型兼容、命名匹配都不能凭空证明外键；但“明确 SQL 谓词 + 一侧唯一、一侧非唯一”或“明确 SQL 谓词 + 唯一的 `NAMING_MATCH` 方向提示”可以把方向推导为 source 指向 target。
 4. 数据画像可以增强也可以反证，但默认仍低于显式约束，因为抽样数据可能不完整，历史数据也可能暂时“看起来像”外键。
 
 基础分和设计理由：
@@ -265,15 +262,15 @@ relationType
 | --- | ---: | --- | --- |
 | `METADATA_FOREIGN_KEY` | 0.98 | 数据库 catalog 明确声明外键，是最强证据。仍不设为 1.00，是为了给权限异常、跨环境迁移、已失效历史结构等极少数情况留下解释空间。 | MySQL `information_schema.KEY_COLUMN_USAGE` 或 PostgreSQL `pg_constraint` 读到 `orders.user_id -> users.id`。 |
 | `DDL_FOREIGN_KEY` | 0.90 | DDL 文件声明外键也很强，但文件可能不是当前线上库的真实状态，可能来自历史 migration 或未执行脚本，所以低于 live metadata。 | `ALTER TABLE orders ADD CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(id);` |
-| `VIEW_JOIN` | 0.72 | 视图是稳定数据库对象，JOIN 往往体现业务建模关系；但 view 也可能只是报表拼接，不能等同 FK。 | `CREATE VIEW order_view AS SELECT ... FROM orders o JOIN users u ON o.user_id = u.id;` |
-| `PROCEDURE_JOIN` | 0.70 | 存储过程/函数通常承载稳定业务逻辑，可信度接近 view；但过程可能包含临时过滤、批处理、动态 SQL 和多用途 JOIN，所以略低于 view。 | `CREATE PROCEDURE refresh_order_user() BEGIN SELECT ... FROM orders o JOIN users u ON o.user_id = u.id; END;` |
-| `TRIGGER_REFERENCE` | 0.65 | 触发器说明写入链路中存在引用，但触发器经常做审计、同步、派生写入，方向和业务 FK 含义可能更间接。 | `CREATE TRIGGER ... AFTER INSERT ON orders ... INSERT INTO order_audit SELECT ... FROM users WHERE id = NEW.user_id;` |
-| `SQL_LOG_JOIN` | 0.55 | 运行日志证明真实 SQL 使用过该 JOIN，但单条或少量日志可能只是临时报表、排查语句或 ETL，不一定代表结构关系。 | 慢日志中多次出现 `FROM orders o JOIN users u ON o.user_id = u.id`。 |
-| `SQL_LOG_SUBQUERY_IN` | 0.58 | `IN (SELECT ...)` 通常表达“外层列属于内层集合”，方向比普通 JOIN 更像引用关系，因此略高于普通日志 JOIN。 | `WHERE orders.user_id IN (SELECT users.id FROM users)`。 |
-| `SQL_LOG_EXISTS` | 0.58 | `EXISTS` 相关子查询通常表达存在性校验，和 FK 语义接近；但仍来自运行 SQL，不能超过数据库对象定义。 | `WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = orders.user_id)`。 |
-| `SQL_LOG_COLUMN_CO_OCCURRENCE` | 0.40 | SQL 明确给出两个物理列的等值谓词，信号强于纯表共现；但命名、唯一性或 metadata 不足时不能判断 FK-like 方向，所以低于普通 JOIN FK-like。 | `warehouse_inventory.product_id = order_items.product_id`。 |
+| `VIEW_JOIN` | 0.72 | 视图定义中的列级谓词证据通常比普通日志稳定，但它仍不单独证明 FK-like 方向。 | view body 中的 `orders.user_id = users.id`。 |
+| `PROCEDURE_JOIN` | 0.70 | 存储过程中的列级谓词证据来自稳定业务逻辑，但仍需 DDL/metadata/profile/unique 方向证据才能定向。 | routine body 中的 `UPDATE ... JOIN ...`。 |
+| `TRIGGER_REFERENCE` | 0.65 | 触发器引用能说明写入时的表关联或列引用，但 `NEW/OLD` 不是物理 endpoint，方向仍要靠结构证据。 | trigger body 中的物理表列等值。 |
+| `SQL_LOG_JOIN` | 0.55 | SQL 明确给出 JOIN / comma join 等值谓词；它证明列级谓词关系，但没有方向证据时输出 `CO_OCCURRENCE`。 | `orders.customer_id = customers.id`。 |
+| `SQL_LOG_SUBQUERY_IN` | 0.58 | `IN (SELECT ...)` / tuple IN 明确表达外层列与子查询列的谓词关系；方向仍由唯一性、DDL、metadata 或画像决定。 | `o.customer_id IN (SELECT c.id FROM customers c)`。 |
+| `SQL_LOG_EXISTS` | 0.58 | correlated `EXISTS` 明确表达存在性谓词；evidence 保留 EXISTS 语法来源。EXISTS 自身不定向，但可叠加 unique、metadata、profile 或 `NAMING_MATCH` 方向证据。 | `EXISTS (SELECT 1 FROM payments p WHERE p.order_id = o.id)`。 |
+| `SQL_LOG_COLUMN_CO_OCCURRENCE` | 0.40 | 泛化列级共现 evidence。用于历史/外部导入或无法保留具体谓词语法形态的场景；当前 typed SQL path 优先保留 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN`。 | `warehouse_inventory.product_id = order_items.product_id`。 |
 | `SQL_LOG_TABLE_CO_OCCURRENCE` | 0.25 | 只能证明同一条 SQL 中出现多个表，不能证明列级关系，也不能证明方向。它适合提示人工调查，不适合作为高置信关系。 | `SELECT ... FROM orders, users WHERE orders.status = 'PAID' AND users.active = 1;` |
-| `NAMING_MATCH` | 0.20 | 命名能提供弱提示，但误报很多，例如 `owner_id`、`created_user_id`、`legacy_user_id` 可能指向不同语义。 | `orders.user_id` 与 `users.id` 命名匹配。 |
+| `NAMING_MATCH` | 0.20 | 命名方向启发式；只能附着在已有 SQL 谓词候选上，不能单独创建关系。若 attributes 中的 `suggestedSourceEndpoint` / `suggestedTargetEndpoint` 唯一且匹配当前端点，可参与 FK-like 方向推导。 | `customer_id` 与 `customers.id`、`manager_id` 与 self-join alias 的 `id`。 |
 | `SOURCE_INDEX` | 0.10 | 子表外键列常有索引，但索引也可能只是为了过滤或排序。只能作为辅助证据。 | `CREATE INDEX idx_orders_user_id ON orders(user_id);` |
 | `TARGET_UNIQUE` | 0.18 | 被引用列通常是 PK/unique；这是比普通索引更强的方向证据，但唯一列不代表一定被引用。 | `users.id` 是 primary key。 |
 | `COLUMN_TYPE_COMPATIBLE` | 0.08 | 类型一致是必要条件之一，但大量无关列都可能同类型，所以只能给很小加分。 | `orders.user_id BIGINT` 与 `users.id BIGINT`。 |

@@ -20,33 +20,40 @@ import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 
 /**
- * Documents how newly supported SQL-bearing object sources map into evidence.
+ * Documents how newly supported SQL-bearing object sources map into evidence source categories.
  *
  * <p>The SQL parser still extracts the same predicate shape from every source,
- * but the evidence category matters for scoring and diagnostics. This test
- * protects the source-completeness work for materialized views, rules, events,
- * packages, and migration scripts.
+ * and keeps the concrete SQL predicate evidence type. SQL predicates stay as
+ * column co-occurrence until DDL/metadata/profile evidence supplies direction.
+ * This test protects the source-completeness work
+ * for materialized views, rules, events, packages, and migration scripts.
  */
 class SqlParserAdditionalSourceTypesTest {
     private final TokenEventSqlRelationParser parser = new TokenEventSqlRelationParser(
             new TokenEventStructuredSqlParser(SqlDialect.MYSQL));
 
     @Test
-    void materializedViewsAndRulesUseViewJoinEvidence() {
-        assertEvidence(StatementSourceType.MATERIALIZED_VIEW, EvidenceType.VIEW_JOIN, EvidenceSourceType.DATABASE_OBJECT);
-        assertEvidence(StatementSourceType.RULE, EvidenceType.VIEW_JOIN, EvidenceSourceType.DATABASE_OBJECT);
+    void materializedViewsAndRulesKeepDatabaseObjectSource() {
+        assertEvidence(StatementSourceType.MATERIALIZED_VIEW, EvidenceType.SQL_LOG_JOIN,
+                EvidenceSourceType.DATABASE_OBJECT);
+        assertEvidence(StatementSourceType.RULE, EvidenceType.SQL_LOG_JOIN,
+                EvidenceSourceType.DATABASE_OBJECT);
     }
 
     @Test
-    void eventsAndPackagesUseProcedureJoinEvidence() {
-        assertEvidence(StatementSourceType.EVENT, EvidenceType.PROCEDURE_JOIN, EvidenceSourceType.DATABASE_OBJECT);
-        assertEvidence(StatementSourceType.PACKAGE, EvidenceType.PROCEDURE_JOIN, EvidenceSourceType.DATABASE_OBJECT);
-        assertEvidence(StatementSourceType.PACKAGE_BODY, EvidenceType.PROCEDURE_JOIN, EvidenceSourceType.DATABASE_OBJECT);
+    void eventsAndPackagesKeepDatabaseObjectSource() {
+        assertEvidence(StatementSourceType.EVENT, EvidenceType.SQL_LOG_JOIN,
+                EvidenceSourceType.DATABASE_OBJECT);
+        assertEvidence(StatementSourceType.PACKAGE, EvidenceType.SQL_LOG_JOIN,
+                EvidenceSourceType.DATABASE_OBJECT);
+        assertEvidence(StatementSourceType.PACKAGE_BODY, EvidenceType.SQL_LOG_JOIN,
+                EvidenceSourceType.DATABASE_OBJECT);
     }
 
     @Test
     void migrationScriptsUsePlainSqlEvidenceSource() {
-        assertEvidence(StatementSourceType.MIGRATION, EvidenceType.SQL_LOG_JOIN, EvidenceSourceType.PLAIN_SQL);
+        assertEvidence(StatementSourceType.MIGRATION, EvidenceType.SQL_LOG_JOIN,
+                EvidenceSourceType.PLAIN_SQL);
     }
 
     private void assertEvidence(

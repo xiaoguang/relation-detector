@@ -13,7 +13,7 @@
     "VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax",
     "VALUE:CONCAT_FORMAT:departments.code->positions.code",
     "VALUE:CONCAT_FORMAT:departments.name->positions.name",
-    "VALUE:CONCAT_FORMAT:m.month,employees.id->salary_payments.payment_no",
+    "VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no",
     "VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code",
     "VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->invoices.invoice_no",
     "VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->tax_invoices.invoice_no",
@@ -24,8 +24,6 @@
     "VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id",
     "VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount",
     "VALUE:DIRECT:suppliers.id->supplier_products.supplier_id",
-    "VALUE:FUNCTION_CALL:m.month->salary_payments.payment_date",
-    "VALUE:FUNCTION_CALL:m.month->salary_payments.salary_month",
     "VALUE:FUNCTION_CALL:purchase_orders.order_date->invoices.due_date",
     "VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period"
   ],

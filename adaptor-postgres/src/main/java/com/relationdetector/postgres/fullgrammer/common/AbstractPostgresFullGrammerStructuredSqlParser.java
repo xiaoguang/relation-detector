@@ -64,9 +64,6 @@ public abstract class AbstractPostgresFullGrammerStructuredSqlParser implements 
         attributes.put("fullGrammerParseTreeRoot", parse.root() == null ? "" : parse.root().getClass().getSimpleName());
         attributes.put("fullGrammerNativeEventTypes",
                 FullGrammerEventMerger.eventTypeNames(FullGrammerNativeEventTypes.POSTGRES_NATIVE_EVENTS));
-        attributes.put("fullGrammerBridgedEventTypes",
-                FullGrammerEventMerger.bridgedEventTypeNames(nativeEvents, FullGrammerNativeEventTypes.POSTGRES_BRIDGED_EVENTS));
-        attributes.put("fullGrammerDelegatedEventTypes", List.of());
         return new StructuredParseResult("POSTGRES_FULL_GRAMMER_PARSE_TREE", "POSTGRES", statement.sourceName(),
                 nativeEvents, warnings, attributes);
     }
@@ -92,7 +89,6 @@ public abstract class AbstractPostgresFullGrammerStructuredSqlParser implements 
         attributes.put("fullGrammerEntryRule", "root");
         attributes.put("fullGrammerSyntaxErrors", 1);
         attributes.put("fullGrammerVersionBoundary", majorVersion());
-        attributes.put("fullGrammerDelegatedEventTypes", List.of());
         return attributes;
     }
 

@@ -1,14 +1,14 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:order_items.tenant_id->order_roots.tenant_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:order_items.order_id->order_roots.id:SQL_LOG_JOIN",
-    "FK_LIKE:orders.tenant_id->tenants.id:SQL_LOG_JOIN",
-    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN",
-    "FK_LIKE:payments.invoice_id->invoices.id:SQL_LOG_JOIN",
-    "FK_LIKE:payments.order_id->order_roots.id:SQL_LOG_JOIN",
-    "FK_LIKE:refunds.order_id->order_roots.id:SQL_LOG_JOIN",
-    "FK_LIKE:shipments.order_id->order_roots.id:SQL_LOG_JOIN",
-    "FK_LIKE:users.tenant_id->tenants.id:SQL_LOG_JOIN"
+    "CO_OCCURRENCE:order_items.tenant_id->order_roots.tenant_id:SQL_LOG_JOIN",
+    "FK_LIKE:order_items.order_id->order_roots.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:orders.tenant_id->tenants.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:payments.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:payments.order_id->order_roots.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:refunds.order_id->order_roots.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:shipments.order_id->order_roots.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:users.tenant_id->tenants.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": [
     "pay"

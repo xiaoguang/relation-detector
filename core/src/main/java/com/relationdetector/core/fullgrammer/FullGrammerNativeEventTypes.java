@@ -7,12 +7,11 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 /**
  * Declares which event families a full-grammer profile is expected to provide natively.
  *
- * <p>CN: 这里是 full-grammer profile 的能力声明，供 parser attributes 和 parity 测试使用。
+ * <p>CN: 这里是 full-grammer profile 的能力声明，供 parser attributes 使用。
  * 它不生成事件，也不决定 relationship / lineage 语义。</p>
  *
- * <p>EN: This is a capability map for full-grammer parser attributes and parity
- * checks. It does not emit events and does not decide relationship or lineage
- * semantics.</p>
+ * <p>EN: This is a capability map for full-grammer parser attributes. It does
+ * not emit events and does not decide relationship or lineage semantics.</p>
  */
 public final class FullGrammerNativeEventTypes {
     public static final Set<StructuredParseEventType> COMMON_RELATION_EVENTS = Set.of(
@@ -69,10 +68,6 @@ public final class FullGrammerNativeEventTypes {
     public static final Set<StructuredParseEventType> MYSQL_NATIVE_EVENTS = MYSQL_PROVIDED_EVENTS;
 
     public static final Set<StructuredParseEventType> POSTGRES_NATIVE_EVENTS = POSTGRES_PROVIDED_EVENTS;
-
-    public static final Set<StructuredParseEventType> MYSQL_BRIDGED_EVENTS = Set.of();
-
-    public static final Set<StructuredParseEventType> POSTGRES_BRIDGED_EVENTS = Set.of();
 
     private FullGrammerNativeEventTypes() {
     }

@@ -1,20 +1,20 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:sales_returns.approved_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:voucher_items.voucher_id->sales_returns.refund_voucher_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:inventory_transactions.product_id->products.id:PROCEDURE_JOIN",
-    "FK_LIKE:products.category_id->product_categories.id:PROCEDURE_JOIN",
-    "FK_LIKE:sales_order_items.order_id->sales_orders.id:PROCEDURE_JOIN",
-    "FK_LIKE:sales_order_items.product_id->products.id:PROCEDURE_JOIN",
-    "FK_LIKE:sales_orders.customer_id->customers.id:PROCEDURE_JOIN",
-    "FK_LIKE:sales_orders.warehouse_id->warehouses.id:PROCEDURE_JOIN",
-    "FK_LIKE:sales_return_items.product_id->products.id:PROCEDURE_JOIN",
-    "FK_LIKE:sales_return_items.return_id->sales_returns.id:PROCEDURE_JOIN",
-    "FK_LIKE:sales_returns.customer_id->customers.id:PROCEDURE_JOIN",
-    "FK_LIKE:sales_returns.order_id->sales_orders.id:PROCEDURE_JOIN",
-    "FK_LIKE:sales_returns.refund_voucher_id->vouchers.id:PROCEDURE_JOIN",
-    "FK_LIKE:sales_returns.warehouse_id->warehouses.id:PROCEDURE_JOIN",
-    "FK_LIKE:voucher_items.account_id->accounts.id:PROCEDURE_JOIN"
+    "CO_OCCURRENCE:employees.id->sales_returns.approved_by:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:sales_returns.refund_voucher_id->voucher_items.voucher_id:SQL_LOG_JOIN",
+    "FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN",
+    "FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
+    "FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
+    "FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_returns.refund_voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
+    "FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

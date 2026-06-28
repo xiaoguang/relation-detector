@@ -53,7 +53,7 @@ class FullGrammerSqlBehaviorTest {
                 .sorted()
                 .toList();
 
-        assertTrue(fingerprints.contains("FK_LIKE:orders.user_id->users.id:SQL_LOG_EXISTS"));
+        assertTrue(fingerprints.contains("CO_OCCURRENCE:orders.user_id->users.id:SQL_LOG_EXISTS"));
     }
 
     @Test
@@ -92,7 +92,7 @@ class FullGrammerSqlBehaviorTest {
                 .toList();
 
         assertEquals(List.of(
-                "CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                "CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_JOIN"),
                 fingerprints);
     }
 
@@ -139,10 +139,10 @@ class FullGrammerSqlBehaviorTest {
                 .toList();
 
         assertEquals(List.of(
-                "FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_EXISTS",
-                "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
-                "FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS",
-                "FK_LIKE:refunds.order_id->orders.id:SQL_LOG_EXISTS"),
+                "CO_OCCURRENCE:audit_events.order_id->orders.id:SQL_LOG_EXISTS",
+                "CO_OCCURRENCE:customers.id->orders.customer_id:SQL_LOG_JOIN",
+                "CO_OCCURRENCE:orders.id->payments.order_id:SQL_LOG_EXISTS",
+                "CO_OCCURRENCE:orders.id->refunds.order_id:SQL_LOG_EXISTS"),
                 fingerprints);
     }
 
@@ -168,7 +168,7 @@ class FullGrammerSqlBehaviorTest {
                 .toList();
 
         assertEquals(List.of(
-                "CO_OCCURRENCE:pg10_ledger.account_id->pg10_accounts.account_id:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                "CO_OCCURRENCE:pg10_accounts.account_id->pg10_ledger.account_id:SQL_LOG_EXISTS"),
                 fingerprints);
     }
 
@@ -350,8 +350,40 @@ class FullGrammerSqlBehaviorTest {
                 .toList();
 
         assertTrue(fingerprints.contains(
-                "CO_OCCURRENCE:pg16_analytics_events.user_id->pg16_user_profiles.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                "CO_OCCURRENCE:pg16_analytics_events.user_id->pg16_user_profiles.user_id:SQL_LOG_JOIN"),
                 () -> "CTE projection alias ua.user_id must resolve back to pg16_analytics_events.user_id: " + fingerprints);
+    }
+
+    @Test
+    void postgresqlCteProjectionThroughDerivedTableUsesSingleRowsetDefaultColumnSource() {
+        SqlStatementRecord statement = statement("""
+                WITH latest_performance AS (
+                    SELECT employee_id, total_score
+                    FROM (
+                        SELECT employee_id, total_score,
+                               ROW_NUMBER() OVER (PARTITION BY employee_id ORDER BY review_period DESC) AS rn
+                        FROM performance_reviews
+                        WHERE status = 'confirmed'
+                    ) ranked
+                    WHERE ranked.rn = 1
+                )
+                SELECT e.id, lp.total_score
+                FROM employees e
+                LEFT JOIN latest_performance lp ON e.id = lp.employee_id
+                """);
+
+        StructuredParseResult result = parse(DatabaseType.POSTGRESQL, "16.4", SqlDialect.POSTGRES, statement);
+
+        List<String> relationships = new TokenEventRelationExtractor().extract(statement, result).stream()
+                .map(FullGrammerSqlBehaviorTest::relationFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(relationships.contains(
+                "CO_OCCURRENCE:employees.id->performance_reviews.employee_id:SQL_LOG_JOIN"),
+                () -> "CTE projection through derived table should resolve lp.employee_id back to "
+                        + "performance_reviews.employee_id: relationships=" + relationships
+                        + " events=" + result.events());
     }
 
     @Test
@@ -394,7 +426,7 @@ class FullGrammerSqlBehaviorTest {
                 .collect(Collectors.toSet());
 
         assertTrue(relationships.contains(
-                "CO_OCCURRENCE:pg17_product_catalog.sku->pg17_price_updates.sku:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                "CO_OCCURRENCE:pg17_price_updates.sku->pg17_product_catalog.sku:SQL_LOG_JOIN"),
                 () -> "MERGE USING CTE should resolve ub.sku back to pg17_price_updates.sku: " + relationships);
         assertTrue(lineages.contains(
                 "VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku"), () -> lineages.toString());
@@ -438,7 +470,7 @@ class FullGrammerSqlBehaviorTest {
                 .toList();
 
         assertTrue(relationships.contains(
-                "CO_OCCURRENCE:pg17_product_catalog.sku->pg17_price_updates.sku:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                "CO_OCCURRENCE:pg17_price_updates.sku->pg17_product_catalog.sku:SQL_LOG_JOIN"),
                 () -> "MERGE inside data-modifying CTE should resolve ub.sku back to pg17_price_updates.sku: "
                         + relationships + " events=" + result.events()
                         + " warnings=" + result.warnings()
@@ -615,6 +647,10 @@ class FullGrammerSqlBehaviorTest {
 
         assertTrue(lineages.contains("VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight"
                 + "->jsh_temp_mock_plan.mock_timestamp_str"), () -> lineages.toString());
+        assertFalse(lineages.stream().anyMatch(lineage -> lineage.contains("rand_tbl.")
+                        || lineage.contains("h.")
+                        || lineage.contains("p_target_date")),
+                () -> "Derived aliases and routine parameters must not be physical lineage sources: " + lineages);
     }
 
     @Test
@@ -671,7 +707,7 @@ class FullGrammerSqlBehaviorTest {
     }
 
     @Test
-    void mysqlDirectFkAssignmentProducesNativeRelationPredicate() {
+    void mysqlDirectAssignmentDoesNotBecomeRelationPredicate() {
         SqlStatementRecord statement = statement("""
                 UPDATE orders AS target
                 JOIN accounts AS a ON target.user_id = a.user_id
@@ -684,7 +720,7 @@ class FullGrammerSqlBehaviorTest {
                 "targetColumn", "audit_account_id"));
         assertTrue(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY,
                 "leftAlias", "target", "rightAlias", "a"));
-        assertTrue(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY,
+        assertFalse(hasEvent(result, StructuredParseEventType.PREDICATE_EQUALITY,
                 "leftColumn", "audit_account_id", "rightColumn", "id"));
     }
 
@@ -713,8 +749,8 @@ class FullGrammerSqlBehaviorTest {
                 .toList();
 
         assertEquals(List.of(
-                "CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_COLUMN_CO_OCCURRENCE",
-                "CO_OCCURRENCE:account_balances.user_id->transaction_logs.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE"),
+                "CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_JOIN",
+                "CO_OCCURRENCE:account_balances.user_id->transaction_logs.user_id:SQL_LOG_JOIN"),
                 fingerprints);
     }
 

@@ -1,8 +1,8 @@
 {
   "fingerprints": [
-    "FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN",
-    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_SUBQUERY_IN",
-    "FK_LIKE:orders.region_id->customers.region_id:SQL_LOG_SUBQUERY_IN"
+    "CO_OCCURRENCE:customers.region_id->orders.region_id:SQL_LOG_SUBQUERY_IN",
+    "FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

@@ -11,37 +11,28 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
 /**
- * 合并 full-grammer native events 与历史对比 events 的通用工具。
+ * Deduplicates full-grammer native events before semantic extraction.
  *
- * <p>CN: 这个类只用于测试/诊断层的事件去重和来源统计，不承担 SQL 结构识别，
+ * <p>CN: 这个类只用于 full-grammer 事件去重和来源统计，不承担 SQL 结构识别，
  * 也不参与 relationship 或 Data Lineage 语义判断。</p>
  *
  * <p>EN: This helper only deduplicates and reports event sources for
- * full-grammer parity diagnostics. It does not recognize SQL structure and does
- * not make relationship or lineage decisions.</p>
+ * full-grammer diagnostics. It does not recognize SQL structure and does not
+ * make relationship or lineage decisions.</p>
  */
 public final class FullGrammerEventMerger {
     private FullGrammerEventMerger() {
     }
 
     /**
-     * native events take precedence over delegated events with the same stable key.
-     *
-     * <p>CN: native 事件优先，delegated 事件只补未被 native 覆盖的事件类型。</p>
+     * Native events are deduplicated by a stable event key.
      */
     public static List<StructuredSqlEvent> merge(
             List<StructuredSqlEvent> nativeEvents,
-            List<StructuredSqlEvent> delegatedEvents,
             Set<StructuredParseEventType> nativeEventTypes
     ) {
         Map<String, StructuredSqlEvent> merged = new LinkedHashMap<>();
         for (StructuredSqlEvent event : nativeEvents) {
-            merged.putIfAbsent(key(event), event);
-        }
-        for (StructuredSqlEvent event : delegatedEvents) {
-            if (nativeEventTypes.contains(event.type())) {
-                continue;
-            }
             merged.putIfAbsent(key(event), event);
         }
         return merged.values().stream()
@@ -53,29 +44,6 @@ public final class FullGrammerEventMerger {
 
     public static List<String> eventTypeNames(Set<StructuredParseEventType> eventTypes) {
         return eventTypes.stream().map(Enum::name).sorted().toList();
-    }
-
-    public static List<String> delegatedEventTypeNames(List<StructuredSqlEvent> delegatedEvents, Set<StructuredParseEventType> nativeEventTypes) {
-        return delegatedEvents.stream()
-                .map(StructuredSqlEvent::type)
-                .filter(type -> !nativeEventTypes.contains(type))
-                .map(Enum::name)
-                .distinct()
-                .sorted()
-                .toList();
-    }
-
-    public static List<String> bridgedEventTypeNames(
-            List<StructuredSqlEvent> nativeEvents,
-            Set<StructuredParseEventType> bridgedEventTypes
-    ) {
-        return nativeEvents.stream()
-                .map(StructuredSqlEvent::type)
-                .filter(bridgedEventTypes::contains)
-                .map(Enum::name)
-                .distinct()
-                .sorted()
-                .toList();
     }
 
     private static String key(StructuredSqlEvent event) {

@@ -866,6 +866,7 @@ WITH leave_balance AS (
         COUNT(CASE WHEN lr.leave_type = 'personal' AND lr.status = 'approved' THEN 1 END) AS personal_leave_used,
         15 - COUNT(CASE WHEN lr.leave_type = 'annual' AND lr.status = 'approved' THEN 1 END) AS annual_leave_remaining
     FROM employees e
+    LEFT JOIN departments d ON e.department_id = d.id
     LEFT JOIN leave_records lr ON e.id = lr.employee_id
         AND YEAR(lr.start_date) = YEAR(CURDATE())
     WHERE e.status IN ('active', 'probation')

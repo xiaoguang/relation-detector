@@ -1,11 +1,12 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:salary_payments.employee_id->employees.id:TRIGGER_REFERENCE",
-    "FK_LIKE:sales_order_items.order_id->sales_orders.id:TRIGGER_REFERENCE",
-    "FK_LIKE:voucher_items.voucher_id->vouchers.id:TRIGGER_REFERENCE"
+    "CO_OCCURRENCE:inventory.batch_id->inventory.batch_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN",
+    "FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

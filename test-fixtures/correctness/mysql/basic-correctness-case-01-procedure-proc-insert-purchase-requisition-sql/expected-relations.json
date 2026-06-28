@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:jsh_material.category_id->jsh_temp_category_affinity.source_cat_id:SQL_LOG_COLUMN_CO_OCCURRENCE"
+    "CO_OCCURRENCE:jsh_material.category_id->jsh_temp_category_affinity.source_cat_id:SQL_LOG_JOIN"
   ],
   "forbiddenTables": []
 }

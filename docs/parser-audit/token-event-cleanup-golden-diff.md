@@ -40,7 +40,7 @@
 - PostgreSQL adaptor token-event SQL/DDL tests 通过。
 - common token-event parser / semantic extractor / confidence tests 通过。
 - `CorrectnessFixtureRunnerTest` 在刷新后的 typed token-event baseline 下通过。
-- `FullGrammerCorrectnessShadowTest` 保留，但 complex MySQL routine body parse-warning fixture 被标记为 token-event compatibility baseline。
+- Cross-parser full-grammer shadow/parity tests have been retired. Complex MySQL routine body parse-warning fixtures are validated by their owning token-event or versioned full-grammer golden instead of by token-event comparison.
 
 ## 后续建议
 

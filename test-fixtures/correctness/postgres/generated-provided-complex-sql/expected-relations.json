@@ -1,12 +1,13 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:side_a.id->side_b.id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:categories.s_id->sub_labels.id:SQL_LOG_JOIN",
-    "FK_LIKE:departments.manager_id->employees.id:SQL_LOG_JOIN",
-    "FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN",
-    "FK_LIKE:main_catalog.p_id->products.id:SQL_LOG_JOIN",
-    "FK_LIKE:products.c_id->categories.id:SQL_LOG_JOIN",
-    "FK_LIKE:products.dept_id->departments.id:SQL_LOG_JOIN"
+    "CO_OCCURRENCE:side_a.id->side_b.id:SQL_LOG_JOIN",
+    "FK_LIKE:account_metadata.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:categories.s_id->sub_labels.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:departments.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:main_catalog.p_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:products.c_id->categories.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:products.dept_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": [
     "org_path",

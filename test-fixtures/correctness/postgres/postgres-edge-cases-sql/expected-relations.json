@@ -1,4 +1,6 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "CO_OCCURRENCE:pg10_transactions.account_id->pg10_transactions.account_id:SQL_LOG_JOIN"
+  ],
   "forbiddenTables": []
 }

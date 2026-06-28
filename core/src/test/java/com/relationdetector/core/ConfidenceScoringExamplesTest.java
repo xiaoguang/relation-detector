@@ -70,7 +70,7 @@ class ConfidenceScoringExamplesTest {
     }
 
     @Test
-    void example2DdlForeignKeyAndSqlLogJoinScoreAs09550() {
+    void example2DdlForeignKeyAndSqlJoinScoreAs09550() {
         String ddl = """
                 ALTER TABLE orders
                 ADD CONSTRAINT fk_orders_user
@@ -92,7 +92,7 @@ class ConfidenceScoringExamplesTest {
     }
 
     @Test
-    void example3SqlLogJoinWithUniqueAndNamingScoresAs07048() {
+    void example3SqlJoinWithUniqueAndNamingScoresAs07048() {
         String sql = """
                 SELECT o.id, u.name
                 FROM orders o
@@ -110,7 +110,7 @@ class ConfidenceScoringExamplesTest {
     }
 
     @Test
-    void example4SqlLogJoinWithDataContainmentScoresAs07934() {
+    void example4SqlJoinWithDataContainmentScoresAs07934() {
         String sql = """
                 SELECT o.id
                 FROM orders o
@@ -130,7 +130,7 @@ class ConfidenceScoringExamplesTest {
     }
 
     @Test
-    void example5ProcedureJoinWithAuxiliaryEvidenceScoresAs07963() {
+    void example5ProcedureJoinWithAuxiliaryEvidenceScoresAs06945() {
         String sql = """
                 INSERT INTO user_order_summary(user_id, order_count)
                 SELECT u.id, COUNT(o.id)
@@ -148,11 +148,11 @@ class ConfidenceScoringExamplesTest {
         addEvidence(relation, EvidenceType.COLUMN_TYPE_COMPATIBLE, 0.08d, EvidenceSourceType.METADATA,
                 "orders.user_id and users.id are both BIGINT");
 
-        assertConfidence("0.7963", mergeOne(relation));
+        assertConfidence("0.6945", mergeOne(relation));
     }
 
     @Test
-    void example6InSubqueryWithUniqueAndContainmentScoresAs07589() {
+    void example6InSubqueryColumnCoOccurrenceWithUniqueAndContainmentScoresAs06556() {
         String sql = """
                 SELECT o.id
                 FROM orders o
@@ -165,8 +165,9 @@ class ConfidenceScoringExamplesTest {
 
         RelationshipCandidate relation = parsedRelation(sql, StatementSourceType.NATIVE_LOG,
                 "orders", "user_id", "users", "id");
-        assertTrue(relation.evidence().stream().anyMatch(e -> e.type() == EvidenceType.SQL_LOG_SUBQUERY_IN),
-                () -> "IN example should produce SQL_LOG_SUBQUERY_IN evidence");
+        Evidence sqlEvidence = evidence(relation, EvidenceType.SQL_LOG_SUBQUERY_IN);
+        assertEquals("IN_SUBQUERY", sqlEvidence.attributes().get("joinKind"),
+                () -> "IN example should preserve predicate kind while staying non-directional");
         addEvidence(relation, EvidenceType.TARGET_UNIQUE, 0.18d, EvidenceSourceType.METADATA,
                 "users.id is primary key");
         addEvidence(relation, EvidenceType.VALUE_CONTAINMENT_HIGH, 0.30d, EvidenceSourceType.DATA_PROFILE,
@@ -190,7 +191,7 @@ class ConfidenceScoringExamplesTest {
     }
 
     @Test
-    void example8NegativeValueMismatchReducesScoreTo04934() {
+    void example8NegativeValueMismatchReducesScoreTo04245() {
         String sql = """
                 SELECT o.id, u.email
                 FROM orders o
@@ -210,7 +211,7 @@ class ConfidenceScoringExamplesTest {
     }
 
     @Test
-    void example9ViewJoinWithTargetUniqueScoresAs07704() {
+    void example9ViewJoinWithTargetUniqueScoresAs06310() {
         String sql = """
                 SELECT
                   o.id AS order_id,
@@ -225,11 +226,11 @@ class ConfidenceScoringExamplesTest {
         addEvidence(relation, EvidenceType.TARGET_UNIQUE, 0.18d, EvidenceSourceType.METADATA,
                 "users.id is primary key");
 
-        assertConfidence("0.7704", mergeOne(relation));
+        assertConfidence("0.6310", mergeOne(relation));
     }
 
     @Test
-    void example10TriggerReferenceWithNewRowScoresAs07130() {
+    void example10TriggerJoinWithNewRowScoresAs06310() {
         String sql = """
                 SELECT new_order.id, u.email
                 FROM orders new_order
@@ -238,16 +239,16 @@ class ConfidenceScoringExamplesTest {
 
         RelationshipCandidate relation = parsedRelation(sql, StatementSourceType.TRIGGER,
                 "orders", "user_id", "users", "id");
-        assertTrue(relation.evidence().stream().anyMatch(e -> e.type() == EvidenceType.TRIGGER_REFERENCE),
-                () -> "trigger example should produce TRIGGER_REFERENCE evidence");
+        assertTrue(relation.evidence().stream().anyMatch(e -> e.type() == EvidenceType.SQL_LOG_JOIN),
+                () -> "trigger example should preserve JOIN evidence while direction remains separate");
         addEvidence(relation, EvidenceType.TARGET_UNIQUE, 0.18d, EvidenceSourceType.METADATA,
                 "users.id is primary key");
 
-        assertConfidence("0.7130", mergeOne(relation));
+        assertConfidence("0.6310", mergeOne(relation));
     }
 
     @Test
-    void example11ExistsSubqueryScoresAs07245() {
+    void example11ExistsSubqueryEvidenceScoresAs07245() {
         String sql = """
                 SELECT o.id
                 FROM orders o
@@ -261,8 +262,9 @@ class ConfidenceScoringExamplesTest {
 
         RelationshipCandidate relation = parsedRelation(sql, StatementSourceType.NATIVE_LOG,
                 "orders", "user_id", "users", "id");
-        assertTrue(relation.evidence().stream().anyMatch(e -> e.type() == EvidenceType.SQL_LOG_EXISTS),
-                () -> "EXISTS example should produce SQL_LOG_EXISTS evidence");
+        Evidence sqlEvidence = evidence(relation, EvidenceType.SQL_LOG_EXISTS);
+        assertEquals("EXISTS", sqlEvidence.attributes().get("joinKind"),
+                () -> "EXISTS example should preserve predicate kind while staying non-directional");
         addEvidence(relation, EvidenceType.TARGET_UNIQUE, 0.18d, EvidenceSourceType.METADATA,
                 "users.id is primary key");
         addEvidence(relation, EvidenceType.NAMING_MATCH, 0.20d, EvidenceSourceType.NAMING_HEURISTIC,
@@ -272,7 +274,7 @@ class ConfidenceScoringExamplesTest {
     }
 
     @Test
-    void example12ValueOverlapWithJoinAndTargetUniqueScoresAs07048() {
+    void example12ValueOverlapWithSqlJoinAndTargetUniqueScoresAs07048() {
         String sql = """
                 SELECT i.id, a.name
                 FROM invoices i
@@ -352,16 +354,39 @@ class ConfidenceScoringExamplesTest {
         RelationshipCandidate relation = candidates.stream()
                 .filter(r -> r.source().isColumnLevel())
                 .filter(r -> r.target().isColumnLevel())
-                .filter(r -> r.source().table().tableName().equals(sourceTable))
-                .filter(r -> r.source().column().columnName().equals(sourceColumn))
-                .filter(r -> r.target().table().tableName().equals(targetTable))
-                .filter(r -> r.target().column().columnName().equals(targetColumn))
+                .filter(r -> matchesEndpoints(r, sourceTable, sourceColumn, targetTable, targetColumn))
                 .findFirst()
                 .orElse(null);
         assertNotNull(relation, () -> "Missing relation "
                 + sourceTable + "." + sourceColumn + " -> "
                 + targetTable + "." + targetColumn + ". Actual: " + describe(candidates));
         return relation;
+    }
+
+    private boolean matchesEndpoints(
+            RelationshipCandidate relation,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn
+    ) {
+        boolean forward = relation.source().table().tableName().equals(sourceTable)
+                && relation.source().column().columnName().equals(sourceColumn)
+                && relation.target().table().tableName().equals(targetTable)
+                && relation.target().column().columnName().equals(targetColumn);
+        boolean reverse = relation.relationType() == RelationType.CO_OCCURRENCE
+                && relation.source().table().tableName().equals(targetTable)
+                && relation.source().column().columnName().equals(targetColumn)
+                && relation.target().table().tableName().equals(sourceTable)
+                && relation.target().column().columnName().equals(sourceColumn);
+        return forward || reverse;
+    }
+
+    private Evidence evidence(RelationshipCandidate relation, EvidenceType type) {
+        return relation.evidence().stream()
+                .filter(e -> e.type() == type)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Missing evidence " + type + " in " + describe(List.of(relation))));
     }
 
     private RelationshipCandidate candidate(

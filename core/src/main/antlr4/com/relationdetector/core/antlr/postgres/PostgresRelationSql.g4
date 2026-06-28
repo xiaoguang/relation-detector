@@ -22,6 +22,7 @@ statement
     | selectStatement SEMI?
     | insertSelectStatement SEMI?
     | updateStatement SEMI?
+    | mergeStatement SEMI?
     | deleteStatement SEMI?
     | createTableStatement SEMI?
     | alterTableStatement SEMI?
@@ -203,6 +204,39 @@ assignment
 
 deleteStatement
     : DELETE FROM tablePrimary whereClause?
+    ;
+
+mergeStatement
+    : MERGE INTO tablePrimary USING tablePrimary ON predicate mergeWhenClause+ returningClause?
+    ;
+
+mergeWhenClause
+    : WHEN mergeWhenConditionToken* THEN mergeAction
+    ;
+
+mergeWhenConditionToken
+    : MATCHED
+    | NOT
+    | BY
+    | AND
+    | identifier
+    | literal
+    | comparisonOperator
+    | DOT
+    | COMMA
+    | LPAREN mergeWhenConditionToken* RPAREN
+    | OTHER
+    ;
+
+mergeAction
+    : UPDATE SET assignmentList                    # mergeUpdateAction
+    | INSERT LPAREN identifierList RPAREN VALUES LPAREN expressionList RPAREN # mergeInsertAction
+    | DELETE                                       # mergeDeleteAction
+    | DO NOTHING                                   # mergeDoNothingAction
+    ;
+
+returningClause
+    : RETURNING sqlToken+
     ;
 
 createTableStatement
@@ -441,7 +475,8 @@ sqlToken
     : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
     | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE
     | USING | GROUP | BY | HAVING | ORDER | LIMIT | INSERT | INTO | UPDATE
-    | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
+    | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | DO | NOTHING
+    | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
     | ADD | CONSTRAINT
@@ -483,6 +518,12 @@ INTO: I N T O;
 UPDATE: U P D A T E;
 SET: S E T;
 DELETE: D E L E T E;
+MERGE: M E R G E;
+MATCHED: M A T C H E D;
+VALUES: V A L U E S;
+RETURNING: R E T U R N I N G;
+DO: D O;
+NOTHING: N O T H I N G;
 CREATE: C R E A T E;
 ALTER: A L T E R;
 TABLE: T A B L E;

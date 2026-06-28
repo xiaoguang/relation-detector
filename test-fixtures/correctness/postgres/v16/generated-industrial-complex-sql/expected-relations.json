@@ -1,14 +1,14 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:product_variants.product_id->products.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:system_logs.triggered_by->user_preferences.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:user_roles_mapping.role_id->role_permissions.role_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
-    "FK_LIKE:R_projects.manager_id->employees.id:SQL_LOG_JOIN",
-    "FK_LIKE:infrastructure_nodes.parent_id->infrastructure_nodes.id:SQL_LOG_JOIN",
-    "FK_LIKE:profiles.user_id->users.id:SQL_LOG_JOIN",
-    "FK_LIKE:user_roles.role_id->roles.id:SQL_LOG_JOIN",
-    "FK_LIKE:user_roles.user_id->users.id:SQL_LOG_JOIN"
+    "CO_OCCURRENCE:employees.id->R_projects.manager_id:SQL_LOG_JOIN,NAMING_MATCH",
+    "CO_OCCURRENCE:product_variants.product_id->products.product_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:role_permissions.role_id->user_roles_mapping.role_id:SQL_LOG_EXISTS",
+    "CO_OCCURRENCE:system_logs.triggered_by->user_preferences.user_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_JOIN",
+    "FK_LIKE:infrastructure_nodes.parent_id->infrastructure_nodes.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:profiles.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:user_roles.role_id->roles.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:user_roles.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": [
     "asset_hierarchy",

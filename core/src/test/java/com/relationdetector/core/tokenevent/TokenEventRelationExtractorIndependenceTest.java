@@ -16,6 +16,7 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
@@ -42,10 +43,83 @@ class TokenEventRelationExtractorIndependenceTest {
 
         assertEquals(1, relations.size(), () -> "Expected event-derived relation, got: " + relations);
         RelationshipCandidate relation = relations.get(0);
-        assertEquals(RelationType.FK_LIKE, relation.relationType());
+        assertEquals(RelationType.CO_OCCURRENCE, relation.relationType());
         assertEquals("orders.user_id", relation.source().displayName());
         assertEquals("users.id", relation.target().displayName());
+        assertEquals(EvidenceType.SQL_LOG_JOIN, relation.evidence().get(0).type());
         assertTrue(relation.evidence().get(0).detail().contains("token-event"));
+    }
+
+    @Test
+    void sqlOnlyIdShapeDoesNotInferFkDirection() {
+        SqlStatementRecord statement = record("SELECT * FROM invoices i JOIN accounts a ON i.account_id = a.id");
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "invoices", "i", 1),
+                table("JOIN", "accounts", "a", 1),
+                equality("i", "account_id", "a", "id", 1)
+        ));
+
+        List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
+
+        assertEquals(1, relations.size(), () -> "Expected SQL-only equality to remain as column co-occurrence: " + relations);
+        RelationshipCandidate relation = relations.get(0);
+        assertEquals(RelationType.CO_OCCURRENCE, relation.relationType());
+        assertEquals(EvidenceType.SQL_LOG_JOIN, relation.evidence().get(0).type());
+        assertEquals("accounts.id", relation.source().displayName());
+        assertEquals("invoices.account_id", relation.target().displayName());
+    }
+
+    @Test
+    void sameAliasSameColumnEqualityDoesNotProduceCoOccurrence() {
+        SqlStatementRecord statement = record("SELECT * FROM employees e WHERE e.id = e.id");
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "employees", "e", 1),
+                equality("e", "id", "e", "id", 1)
+        ));
+
+        List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
+
+        assertTrue(relations.isEmpty(), () -> "Same alias self-comparison must not produce a relation: " + relations);
+    }
+
+    @Test
+    void differentAliasSamePhysicalColumnSelfJoinKeepsRoleCoOccurrence() {
+        SqlStatementRecord statement = record("SELECT * FROM employees e JOIN employees manager ON e.id = manager.id");
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "employees", "e", 1),
+                table("JOIN", "employees", "manager", 1),
+                equality("e", "id", "manager", "id", 1)
+        ));
+
+        List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
+
+        assertEquals(1, relations.size(), () -> "Different aliases of the same physical column still express a self-join role: " + relations);
+        RelationshipCandidate relation = relations.get(0);
+        assertEquals(RelationType.CO_OCCURRENCE, relation.relationType());
+        assertEquals("employees.id", relation.source().displayName());
+        assertEquals("employees.id", relation.target().displayName());
+        assertEquals(true, relation.evidence().get(0).attributes().get("selfJoinRole"));
+        assertEquals("e", relation.evidence().get(0).attributes().get("leftAlias"));
+        assertEquals("manager", relation.evidence().get(0).attributes().get("rightAlias"));
+    }
+
+    @Test
+    void differentAliasSamePhysicalColumnInSubqueryKeepsRoleCoOccurrence() {
+        SqlStatementRecord statement = record("SELECT * FROM employees e WHERE e.id IN (SELECT e2.id FROM employees e2)");
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "employees", "e", 1),
+                table("FROM", "employees", "e2", 1),
+                new StructuredSqlEvent(StructuredParseEventType.IN_SUBQUERY_PREDICATE, "independence.sql", 1,
+                        Map.of("outerAlias", "e", "outerColumn", "id",
+                                "innerAlias", "e2", "innerColumn", "id",
+                                "verifiedColumnSubquery", true))
+        ));
+
+        List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
+
+        assertEquals(1, relations.size(), () -> "Different aliases of the same physical column should keep role context through IN: " + relations);
+        assertEquals(EvidenceType.SQL_LOG_SUBQUERY_IN, relations.get(0).evidence().get(0).type());
+        assertEquals(true, relations.get(0).evidence().get(0).attributes().get("selfJoinRole"));
     }
 
     @Test

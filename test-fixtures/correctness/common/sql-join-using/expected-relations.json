@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:orders.order_id->order_tags.order_id:SQL_LOG_COLUMN_CO_OCCURRENCE"
+    "CO_OCCURRENCE:order_tags.order_id->orders.order_id:SQL_LOG_JOIN"
   ],
   "forbiddenTables": [
     "order_id"

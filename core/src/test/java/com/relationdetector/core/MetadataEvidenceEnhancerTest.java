@@ -43,6 +43,20 @@ class MetadataEvidenceEnhancerTest {
     }
 
     @Test
+    void enrichesColumnCoOccurrenceWithEndpointIndexUniqueAndTypeFacts() {
+        MetadataSnapshot metadata = metadataFacts();
+        RelationshipCandidate candidate = coOccurrenceCandidate("orders", "user_id", "users", "id");
+
+        new MetadataEvidenceEnhancer().enhance(List.of(candidate), metadata);
+
+        assertHasEvidence(candidate, EvidenceType.SOURCE_INDEX);
+        Evidence targetUnique = evidence(candidate, EvidenceType.TARGET_UNIQUE);
+        assertEquals("shop.users.id", targetUnique.attributes().get("uniqueEndpoint"));
+        assertEquals("target", targetUnique.attributes().get("endpointSide"));
+        assertHasEvidence(candidate, EvidenceType.COLUMN_TYPE_COMPATIBLE);
+    }
+
+    @Test
     void doesNotCreateRelationshipsFromMetadataFactsAlone() {
         MetadataSnapshot metadata = metadataFacts();
 
@@ -76,8 +90,26 @@ class MetadataEvidenceEnhancerTest {
         return candidate;
     }
 
+    private RelationshipCandidate coOccurrenceCandidate(String sourceTable, String sourceColumn, String targetTable, String targetColumn) {
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(TableId.of("shop", sourceTable), sourceColumn)),
+                Endpoint.column(ColumnRef.of(TableId.of("shop", targetTable), targetColumn)),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.COLUMN_CO_OCCURRENCE);
+        candidate.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN, BigDecimal.valueOf(0.55),
+                EvidenceSourceType.PLAIN_SQL, "unit-test.sql", "orders.user_id = users.id", Map.of()));
+        return candidate;
+    }
+
     private void assertHasEvidence(RelationshipCandidate candidate, EvidenceType type) {
         assertTrue(candidate.evidence().stream().anyMatch(evidence -> evidence.type() == type),
                 () -> "Missing " + type + " in " + candidate.evidence());
+    }
+
+    private Evidence evidence(RelationshipCandidate candidate, EvidenceType type) {
+        return candidate.evidence().stream()
+                .filter(evidence -> evidence.type() == type)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Missing " + type + " in " + candidate.evidence()));
     }
 }

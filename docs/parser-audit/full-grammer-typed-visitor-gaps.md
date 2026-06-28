@@ -1,6 +1,6 @@
 # full-grammer Typed Visitor Gaps
 
-This audit tracks full-grammer shadow areas that cannot yet be represented
+This audit tracks full-grammer areas that cannot yet be represented
 through typed grammar contexts. These gaps are explicit migration debt, not
 production fallback behavior.
 
@@ -61,8 +61,9 @@ Future hardening:
   ALTER TABLE, and CREATE INDEX.
 - The full-grammer DDL path no longer depends on `Pattern` / `Matcher`,
   `DdlStatementView`, or `DdlTokenCursor`.
-- `FullGrammerDdlCorrectnessShadowTest` verifies the typed DDL shadow does not
-  miss current DDL relationship output.
+- Versioned DDL correctness fixtures verify typed DDL output directly. The old
+  DDL shadow/parity test has been retired so missing full-grammer evidence is
+  exposed by the owning version golden.
 
 Typed coverage:
 
@@ -74,8 +75,9 @@ Typed coverage:
 
 ## Current Acceptance Boundary
 
-- full-grammer shadow output must remain no less than token-event production
-  gold while these gaps are closed.
+- full-grammer output must pass its own versioned correctness golden while
+  these gaps are closed; token-event gold is not used as a cross-parser
+  protection layer.
 - Any event category that cannot be migrated to typed context visitor must be
   listed here with the grammar limitation and a concrete SQL/DDL sample before
-  it can remain bridged.
+  it can remain unsupported or future-scoped.

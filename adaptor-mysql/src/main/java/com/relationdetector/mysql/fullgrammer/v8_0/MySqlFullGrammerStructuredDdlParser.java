@@ -53,14 +53,14 @@ final class MySqlFullGrammerStructuredDdlParser implements StructuredDdlParser {
                     parse.syntaxErrors()));
         }
         Map<String, Object> attributes = new LinkedHashMap<>();
-        attributes.put("fullGrammerDdlShadow", true);
+        attributes.put("fullGrammerDdlParserSelected", true);
         attributes.put("fullGrammerDdlLexer", MySqlFullGrammerLexer.class.getSimpleName());
         attributes.put("fullGrammerDdlParser", MySqlFullGrammerParser.class.getSimpleName());
         attributes.put("fullGrammerDdlEntryRule", "queries");
         attributes.put("fullGrammerDdlSyntaxErrors", parse.syntaxErrors());
         attributes.put("fullGrammerDdlParseTreeRoot", parse.root() == null ? "" : parse.root().getClass().getSimpleName());
         attributes.put("fullGrammerDdlCollector", collector.getClass().getSimpleName());
-        return new StructuredParseResult("FULL_GRAMMAR_DDL_SHADOW", SqlDialect.MYSQL.name(), sourceName,
+        return new StructuredParseResult("FULL_GRAMMAR_DDL", SqlDialect.MYSQL.name(), sourceName,
                 events, warnings, attributes);
     }
 
