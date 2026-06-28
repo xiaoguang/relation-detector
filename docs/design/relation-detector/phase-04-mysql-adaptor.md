@@ -136,7 +136,7 @@ MySQL DDL 特点：
 MySQL adaptor 负责：
 
 - `mysql.tokenevent.MySqlTokenEventStructuredDdlParser` 暴露 MySQL token-event DDL parser。
-- `MySqlDdlStructuredEventVisitor` 处理 MySQL DDL 方言差异，例如反引号、inline `KEY/INDEX`、prefix index、functional/JSON index、VISIBLE/INVISIBLE、表选项。
+- `MySqlRelationSql.g4` 与 `MySqlTokenEventParseTreeVisitor` 处理 MySQL DDL 方言差异，例如反引号、inline `KEY/INDEX`、prefix index、functional/JSON index、VISIBLE/INVISIBLE、表选项。
 - `mysql.fullgrammer.v8_0` 注册 MySQL 8.0 full-grammer DDL parser，用于 `parser.mode=auto|full-grammer` 且 profile 可选中时。
 - 两条 DDL parser 链路都只输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 结构事件；最终 relationship 仍由 core 的 `DdlRelationExtractionVisitor` 生成。
 
@@ -160,10 +160,10 @@ parser.mode = auto | full-grammer | token-event
 
 当前 MySQL correctness golden 分两类：
 
-- root MySQL correctness：`test-fixtures/correctness/mysql`，57 个 fixture，覆盖 MySQL metadata/DDL/log/object/procedure/business SQL，是正式 token-event baseline。
-- MySQL 8.0 full-grammer：`test-fixtures/correctness/mysql/v8_0`，57 个 fixture，manifest 强制 `parserMode: full-grammer`、`grammarProfile: mysql/8.0`，是 MySQL 8.0 strict version golden。
+- root MySQL correctness：`test-fixtures/correctness/mysql`，93 个 fixture，SQL/DDL 为 77/16，覆盖 MySQL metadata/DDL/log/object/procedure/business SQL 和 sample-data 切片，是正式 token-event baseline；当前 relation 408、lineage 150、`NAMING_MATCH` 172。
+- MySQL 8.0 full-grammer：`test-fixtures/correctness/mysql/v8_0`，93 个 fixture，SQL/DDL 为 77/16，manifest 强制 `parserMode: full-grammer`、`grammarProfile: mysql/8.0`，是 MySQL 8.0 strict version golden；当前 relation 696、lineage 241、`NAMING_MATCH` 372。
 
-当前 MySQL 8.0 full-grammer 与 root MySQL token-event baseline 逐 fixture 对齐：fixture 数、SQL/DDL 分类一致，full-grammer 相对 token-event 没有删除 relation 或 lineage，只在 8 个 procedure/business fixture 中新增了更完整的物理表关系和字段血缘。新增项来自 full-grammer 对 procedure body、CTE/derived projection、MERGE/INSERT/UPDATE 写入映射和表达式来源的更强解析；参数、literal、局部变量、JSON path 和显式临时表仍不进入 v1 lineage。
+当前 MySQL 8.0 full-grammer 与 root MySQL token-event baseline 逐 fixture 对齐：fixture 数、SQL/DDL 分类一致。full-grammer 相对 token-event 能识别更多 procedure body、复杂 business query、sample-data DDL/SQL、CTE/derived projection、INSERT/UPDATE 写入映射和表达式来源；这些差异记录在 `docs/parser-audit/all-golden-semantic-review.md`，分类为 typed visitor coverage backlog 或 routine/complex query backlog。参数、literal、局部变量、JSON path、动态 SQL 和显式临时表仍不进入 v1 physical lineage。
 
 如果后续要支持 MySQL 5.7 或 MySQL 8.4 的严格 full-grammer，应新增独立 version package 和对应 version golden，例如 `mysql/v5_7` 或 `mysql/v8_4`，而不是修改 `mysql/v8_0` 或 root token-event baseline。
 

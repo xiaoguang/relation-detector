@@ -142,8 +142,8 @@ DDL 不再通过旧 `DdlParser` SPI 暴露。adaptor 通过 `structuredDdlParser
 
 方言拆分规则：
 
-- MySQL/PostgreSQL DDL 均走 token-event DDL pipeline。MySQL 专属写法，例如反引号标识符、`KEY`/`INDEX` 选项、prefix index、invisible index、storage engine/table options、`SHOW CREATE TABLE` 格式，应在 `MySqlDdlStructuredEventVisitor` 或 `mysql.tokenevent.MySqlTokenEventStructuredDdlParser` 中处理。
-- PostgreSQL 专属写法，例如 `ALTER TABLE ONLY`、`NOT VALID`、`CREATE INDEX CONCURRENTLY/IF NOT EXISTS`、`INCLUDE`、partial/expression index、opclass、partition/inheritance，应在 `PostgresDdlStructuredEventVisitor` 或 `postgres.tokenevent.PostgresTokenEventStructuredDdlParser` 中处理。
+- MySQL/PostgreSQL DDL 均走 token-event DDL pipeline。MySQL 专属写法，例如反引号标识符、`KEY`/`INDEX` 选项、prefix index、invisible index、storage engine/table options、`SHOW CREATE TABLE` 格式，应在 `MySqlRelationSql.g4` / `MySqlTokenEventParseTreeVisitor` 或 `mysql.tokenevent.MySqlTokenEventStructuredDdlParser` 中处理。
+- PostgreSQL 专属写法，例如 `ALTER TABLE ONLY`、`NOT VALID`、`CREATE INDEX CONCURRENTLY/IF NOT EXISTS`、`INCLUDE`、partial/expression index、opclass、partition/inheritance，应在 `PostgresRelationSql.g4` / `PostgresTokenEventParseTreeVisitor` 或 `postgres.tokenevent.PostgresTokenEventStructuredDdlParser` 中处理。
 - adaptor parser 的输出仍必须是统一的 `RelationshipCandidate` 和 `Evidence`，不能绕过 core 的合并与置信度计算。
 - 方言 parser 应有自己的单元测试，并包含正向和反向负向用例。这样可以证明某个数据库的语法增强不会悄悄改变其他数据库的解析行为。
 
