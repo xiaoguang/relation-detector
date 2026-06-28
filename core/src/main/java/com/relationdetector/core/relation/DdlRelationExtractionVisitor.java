@@ -2,9 +2,11 @@ package com.relationdetector.core.relation;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import com.relationdetector.contracts.model.ColumnRef;
@@ -75,7 +77,7 @@ public final class DdlRelationExtractionVisitor {
                 java.util.Map.of(
                         "compositePosition", intValue(event, "compositePosition", 1),
                         "compositeSize", intValue(event, "compositeSize", 1))));
-        state.candidates().add(candidate);
+        state.addCandidate(candidate);
     }
 
     private void addIndex(StructuredSqlEvent event, DdlState state) {
@@ -166,9 +168,18 @@ public final class DdlRelationExtractionVisitor {
         }
     }
 
+    private record RelationshipKey(ColumnKey source, ColumnKey target) {
+        static RelationshipKey of(RelationshipCandidate candidate) {
+            return new RelationshipKey(
+                    ColumnKey.of(candidate.source().table(), candidate.source().column().columnName()),
+                    ColumnKey.of(candidate.target().table(), candidate.target().column().columnName()));
+        }
+    }
+
     private static final class DdlState {
         private final String source;
         private final List<RelationshipCandidate> candidates = new ArrayList<>();
+        private final Map<RelationshipKey, RelationshipCandidate> candidatesByEndpoint = new LinkedHashMap<>();
         private final Set<ColumnKey> sourceIndexes = new LinkedHashSet<>();
         private final Set<ColumnKey> targetUnique = new LinkedHashSet<>();
 
@@ -184,6 +195,19 @@ public final class DdlRelationExtractionVisitor {
             return candidates;
         }
 
+        void addCandidate(RelationshipCandidate candidate) {
+            RelationshipKey key = RelationshipKey.of(candidate);
+            RelationshipCandidate existing = candidatesByEndpoint.get(key);
+            if (existing == null) {
+                candidatesByEndpoint.put(key, candidate);
+                candidates.add(candidate);
+                return;
+            }
+            for (Evidence evidence : candidate.evidence()) {
+                addEvidenceIfMissing(existing, evidence);
+            }
+        }
+
         void addSourceIndex(TableId table, String column) {
             sourceIndexes.add(ColumnKey.of(table, column));
         }
@@ -197,13 +221,20 @@ public final class DdlRelationExtractionVisitor {
                 ColumnKey sourceKey = ColumnKey.of(candidate.source().table(), candidate.source().column().columnName());
                 ColumnKey targetKey = ColumnKey.of(candidate.target().table(), candidate.target().column().columnName());
                 if (sourceIndexes.contains(sourceKey)) {
-                    candidate.evidence().add(Evidence.of(EvidenceType.SOURCE_INDEX, DefaultEvidenceScores.SOURCE_INDEX,
+                    addEvidenceIfMissing(candidate, Evidence.of(EvidenceType.SOURCE_INDEX, DefaultEvidenceScores.SOURCE_INDEX,
                             EvidenceSourceType.DDL_FILE, source, "token-event DDL source-side index"));
                 }
                 if (targetUnique.contains(targetKey)) {
-                    candidate.evidence().add(Evidence.of(EvidenceType.TARGET_UNIQUE, DefaultEvidenceScores.TARGET_UNIQUE,
+                    addEvidenceIfMissing(candidate, Evidence.of(EvidenceType.TARGET_UNIQUE, DefaultEvidenceScores.TARGET_UNIQUE,
                             EvidenceSourceType.DDL_FILE, source, "token-event DDL target-side primary/unique key"));
                 }
+            }
+        }
+
+        private void addEvidenceIfMissing(RelationshipCandidate candidate, Evidence evidence) {
+            boolean exists = candidate.evidence().stream().anyMatch(existing -> existing.type() == evidence.type());
+            if (!exists) {
+                candidate.evidence().add(evidence);
             }
         }
     }

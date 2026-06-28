@@ -34,7 +34,7 @@ public final class PostgresFullGrammerVersionSyntaxGuard {
     private static final Pattern WITHOUT_OVERLAPS =
             Pattern.compile("\\bWITHOUT\\s+OVERLAPS\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern PERIOD_FOREIGN_KEY =
-            Pattern.compile("\\bFOREIGN\\s+KEY\\b[\\s\\S]*\\bPERIOD\\b", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("\\bFOREIGN\\s+KEY\\s*\\([^)]*\\bPERIOD\\b[^)]*\\)", Pattern.CASE_INSENSITIVE);
 
     private PostgresFullGrammerVersionSyntaxGuard() {
     }

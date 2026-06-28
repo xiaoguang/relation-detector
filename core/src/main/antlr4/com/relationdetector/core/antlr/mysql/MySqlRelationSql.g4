@@ -1,37 +1,563 @@
 grammar MySqlRelationSql;
 
 /*
- * MySQL structural grammar for the token-event SQL parser.
+ * MySQL token-event structural grammar.
  *
- * This is intentionally still a tolerant grammar, not a full MySQL grammar.
- * The important boundary is architectural: MySQL owns a separate generated
- * lexer/parser class, so later MySQL 8.x grammar rules, sql_mode gates, and
- * server-version switches can evolve without changing PostgreSQL.
- *
- * MySQL-specific choice in this first grammar:
- *   - backtick identifiers are quoted identifiers;
- *   - double quoted strings are not treated as quoted identifiers here because
- *     that depends on ANSI_QUOTES mode and should become an explicit capability
- *     flag later.
+ * This grammar covers the portable token-event subset plus MySQL-specific lexical and structural extensions:
+ * SELECT, CTE, derived tables, JOIN ... ON, comma rowsets, EXISTS, scalar and
+ * tuple IN subqueries, INSERT ... SELECT, simple UPDATE SET ... WHERE, and
+ * DELETE ... WHERE. Full MySQL 8.0 syntax belongs in full-grammer; this grammar is the token-event fallback subset.
  */
+
 script
-    : sqlToken* EOF
+    : statement* EOF
+    ;
+
+statement
+    : routineStartStatement
+    | blockStartStatement SEMI?
+    | blockEndStatement SEMI?
+    | declarationStatement SEMI?
+    | controlStartStatement
+    | selectStatement SEMI?
+    | insertSelectStatement SEMI?
+    | updateStatement SEMI?
+    | deleteStatement SEMI?
+    | createTableStatement SEMI?
+    | alterTableStatement SEMI?
+    | createIndexStatement SEMI?
+    | unknownStatement SEMI?
+    | SEMI
+    ;
+
+unknownStatement
+    : sqlToken+
+    ;
+
+routineStartStatement
+    : CREATE routineHeaderToken* BEGIN
+    ;
+
+routineHeaderToken
+    : ~BEGIN
+    ;
+
+blockStartStatement
+    : BEGIN
+    ;
+
+blockEndStatement
+    : END (IF | LOOP | WHILE | REPEAT)?
+    ;
+
+declarationStatement
+    : DECLARE ~SEMI+
+    ;
+
+controlStartStatement
+    : IF ~THEN* THEN
+    | ELSEIF ~THEN* THEN
+    | ELSE
+    | WHILE ~DO* DO
+    | FOR ~LOOP* LOOP
+    | identifier OTHER LOOP
+    | LOOP
+    | REPEAT
+    ;
+
+selectStatement
+    : withClause? querySpecification
+    ;
+
+withClause
+    : WITH commonTableExpression (COMMA commonTableExpression)*
+    ;
+
+commonTableExpression
+    : identifier (LPAREN identifierList RPAREN)? AS LPAREN selectStatement RPAREN
+    ;
+
+querySpecification
+    : SELECT selectModifier* selectList fromClause? whereClause? groupByClause? havingClause? orderByClause? limitClause?
+    ;
+
+selectModifier
+    : STRAIGHT_JOIN
+    ;
+
+selectList
+    : selectItem (COMMA selectItem)*
+    ;
+
+selectItem
+    : STAR
+    | expression (AS? identifier)?
+    | selectItemFallback (AS? identifier)?
+    ;
+
+selectItemFallback
+    : selectItemFallbackToken+
+    ;
+
+selectItemFallbackToken
+    : LPAREN selectItemFallbackToken* RPAREN
+    | ~(COMMA | FROM | RPAREN | SEMI)
+    ;
+
+fromClause
+    : FROM tableReference (COMMA tableReference)*
+    ;
+
+tableReference
+    : tablePrimary joinClause*
+    ;
+
+tablePrimary
+    : qualifiedName partitionClause? tableAlias? indexHint* # namedTablePrimary
+    | LPAREN selectStatement RPAREN tableAlias?         # derivedTablePrimary
+    | JSON_TABLE LPAREN jsonTableContent* RPAREN tableAlias? # jsonTablePrimary
+    | LBRACE OJ tableReference RBRACE                   # odbcTablePrimary
+    ;
+
+partitionClause
+    : PARTITION LPAREN identifierList RPAREN
+    ;
+
+indexHint
+    : (USE | IGNORE | FORCE) (INDEX | KEY) (FOR JOIN)? LPAREN indexHintNameList RPAREN
+    ;
+
+indexHintNameList
+    : indexHintName (COMMA indexHintName)*
+    ;
+
+indexHintName
+    : identifier
+    | PRIMARY
+    ;
+
+tableAlias
+    : AS? identifier
+    ;
+
+joinClause
+    : joinType? joinOperator tablePrimary (ON predicate | USING LPAREN identifierList RPAREN usingAlias?)
+    ;
+
+joinType
+    : INNER
+    | LEFT OUTER?
+    | RIGHT OUTER?
+    | FULL OUTER?
+    | CROSS
+    ;
+
+joinOperator
+    : JOIN
+    | STRAIGHT_JOIN
+    ;
+
+usingAlias
+    : AS? identifier
+    ;
+
+whereClause
+    : WHERE predicate
+    ;
+
+groupByClause
+    : GROUP BY expressionList
+    ;
+
+havingClause
+    : HAVING predicate
+    ;
+
+orderByClause
+    : ORDER BY expression (COMMA expression)*
+    ;
+
+limitClause
+    : LIMIT NUMBER
+    ;
+
+insertSelectStatement
+    : INSERT INTO qualifiedName LPAREN identifierList RPAREN selectStatement
+    ;
+
+updateStatement
+    : UPDATE tableReference (COMMA tableReference)* SET assignmentList whereClause?
+    ;
+
+assignmentList
+    : assignment (COMMA assignment)*
+    ;
+
+assignment
+    : qualifiedName EQ expression
+    ;
+
+deleteStatement
+    : DELETE FROM deleteTarget USING tableReference whereClause?
+    | DELETE deleteTarget? FROM tableReference whereClause?
+    ;
+
+deleteTarget
+    : identifier
+    ;
+
+jsonTableContent
+    : identifier
+    | literal
+    | qualifiedName
+    | LPAREN jsonTableContent* RPAREN
+    | COMMA
+    | DOT
+    | STAR
+    | EQ
+    | OTHER
+    ;
+
+createTableStatement
+    : CREATE tableModifier* TABLE ifNotExists? qualifiedName LPAREN tableElement (COMMA tableElement)* RPAREN createTableTail*
+    ;
+
+createTableTail
+    : identifier
+    | literal
+    | EQ
+    | COMMA
+    | DOT
+    | LPAREN
+    | RPAREN
+    | OTHER
+    ;
+
+tableModifier
+    : TEMPORARY
+    | UNLOGGED
+    ;
+
+ifNotExists
+    : IF NOT EXISTS
+    ;
+
+tableElement
+    : tableForeignKey
+    | primaryKeyConstraint
+    | uniqueConstraint
+    | tableIndexConstraint
+    | columnDefinition
+    ;
+
+tableForeignKey
+    : constraintName? FOREIGN KEY LPAREN identifierList RPAREN REFERENCES qualifiedName LPAREN identifierList RPAREN referentialAction*
+    ;
+
+primaryKeyConstraint
+    : constraintName? PRIMARY KEY LPAREN identifierList RPAREN (USING identifier)?
+    ;
+
+uniqueConstraint
+    : constraintName? UNIQUE (KEY | INDEX)? identifier? LPAREN identifierList RPAREN
+    ;
+
+tableIndexConstraint
+    : (KEY | INDEX) identifier? LPAREN indexPartList RPAREN (USING identifier)?
+    ;
+
+columnDefinition
+    : identifier columnDefinitionPart*
+    ;
+
+columnDefinitionPart
+    : inlineColumnConstraint
+    | columnDefinitionToken
+    ;
+
+columnDefinitionToken
+    : identifier
+    | NOT
+    | literal
+    | LPAREN columnDefinitionParenToken* RPAREN
+    | STAR
+    | PLUS
+    | MINUS
+    | SLASH
+    | PERCENT
+    | LT
+    | GT
+    | LE
+    | GE
+    | NEQ
+    | AS
+    | BY
+    | ON
+    | UPDATE
+    | DOT
+    | OTHER
+    ;
+
+columnDefinitionParenToken
+    : identifier
+    | NOT
+    | literal
+    | COMMA
+    | DOT
+    | STAR
+    | PLUS
+    | MINUS
+    | SLASH
+    | PERCENT
+    | LT
+    | GT
+    | LE
+    | GE
+    | NEQ
+    | EQ
+    | AS
+    | BY
+    | ON
+    | UPDATE
+    | SET
+    | LPAREN columnDefinitionParenToken* RPAREN
+    | OTHER
+    ;
+
+inlineColumnConstraint
+    : PRIMARY KEY
+    | UNIQUE
+    | REFERENCES qualifiedName LPAREN identifierList RPAREN
+    ;
+
+alterTableStatement
+    : ALTER TABLE (IF EXISTS)? ONLY? qualifiedName ADD? tableForeignKey
+    ;
+
+createIndexStatement
+    : CREATE UNIQUE? INDEX CONCURRENTLY? ifNotExists? identifier (USING identifier)? ON ONLY? qualifiedName (USING identifier)? LPAREN indexPartList RPAREN createIndexTail*
+    ;
+
+createIndexTail
+    : INCLUDE LPAREN indexPartList RPAREN
+    | WHERE predicate
+    | WITH LPAREN sqlToken* RPAREN
+    | TABLESPACE identifier
+    | identifier
+    | literal
+    | EQ
+    | COMMA
+    ;
+
+constraintName
+    : CONSTRAINT identifier
+    ;
+
+referentialAction
+    : ON (DELETE | UPDATE) referentialActionToken+
+    ;
+
+referentialActionToken
+    : identifier
+    | SET
+    | NULL
+    ;
+
+indexPartList
+    : indexPart (COMMA indexPart)*
+    ;
+
+indexPart
+    : identifier (LPAREN NUMBER RPAREN)?
+    | LPAREN functionCall RPAREN
+    ;
+
+predicate
+    : predicate AND predicate                                             # andPredicate
+    | predicate OR predicate                                              # orPredicate
+    | NOT predicate                                                       # notPredicate
+    | EXISTS LPAREN selectStatement RPAREN                                # existsPredicate
+    | expression IN LPAREN selectStatement RPAREN                         # inSubqueryPredicate
+    | LPAREN expressionList RPAREN IN LPAREN selectStatement RPAREN       # tupleInSubqueryPredicate
+    | expression IN LPAREN expressionList RPAREN                          # literalInPredicate
+    | expression likeOperator expression (ESCAPE expression)?             # likePredicate
+    | expression comparisonOperator expression                            # comparisonPredicate
+    | LPAREN predicate RPAREN                                             # parenPredicate
+    | expression                                                          # expressionPredicate
+    ;
+
+likeOperator
+    : LIKE
+    | NOT LIKE
+    ;
+
+comparisonOperator
+    : EQ
+    | NULL_SAFE_EQ
+    | LT
+    | GT
+    | LE
+    | GE
+    | NEQ
+    ;
+
+expression
+    : expression arithmeticOperator expression                            # binaryExpression
+    | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
+    | INTERVAL expression identifier                                      # intervalExpression
+    | functionCall                                                        # functionExpression
+    | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
+    | qualifiedName                                                       # columnExpression
+    | literal                                                             # literalExpression
+    | LPAREN expression RPAREN                                            # parenExpression
+    ;
+
+caseWhenClause
+    : WHEN predicate THEN expression
+    ;
+
+functionCall
+    : qualifiedName LPAREN (DISTINCT? expressionList | STAR)? functionCallOption* RPAREN
+    ;
+
+functionCallOption
+    : ORDER BY functionCallOptionToken+
+    | identifier functionCallOptionToken*
+    ;
+
+functionCallOptionToken
+    : LPAREN functionCallOptionToken* RPAREN
+    | ~RPAREN
+    ;
+
+arithmeticOperator
+    : PLUS
+    | MINUS
+    | STAR
+    | SLASH
+    | PERCENT
+    | CONCAT
+    ;
+
+expressionList
+    : expression (COMMA expression)*
+    ;
+
+identifierList
+    : identifier (COMMA identifier)*
+    ;
+
+qualifiedName
+    : identifier (DOT identifier)*
+    ;
+
+identifier
+    : IDENTIFIER
+    | QUOTED_IDENTIFIER
+    ;
+
+literal
+    : STRING_LITERAL
+    | NUMBER
+    | TRUE
+    | FALSE
+    | NULL
+    | PARAMETER
     ;
 
 sqlToken
-    : IDENTIFIER
-    | QUOTED_IDENTIFIER
-    | STRING_LITERAL
-    | NUMBER
-    | DOT
-    | COMMA
-    | STAR
-    | EQ
-    | LPAREN
-    | RPAREN
-    | SEMI
-    | OTHER
+    : SELECT | WITH | AS | FROM | JOIN | STRAIGHT_JOIN | ON | INNER | LEFT | RIGHT | FULL
+    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE
+    | USING | GROUP | BY | HAVING | ORDER | LIMIT | INSERT | INTO | UPDATE
+    | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
+    | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE | DO
+    | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE
+    | ADD | CONSTRAINT
+    | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
+    | INCLUDE | TABLESPACE | PARTITION | USE | IGNORE | FORCE | FOR | OJ | JSON_TABLE | INTERVAL
+    | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | NUMBER
+    | PARAMETER | DOT | COMMA | STAR | EQ | NULL_SAFE_EQ | LPAREN | RPAREN | PLUS
+    | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | LBRACE | RBRACE | OTHER
     ;
+
+SELECT: S E L E C T;
+WITH: W I T H;
+AS: A S;
+FROM: F R O M;
+JOIN: J O I N;
+STRAIGHT_JOIN: S T R A I G H T '_' J O I N;
+JSON_TABLE: J S O N '_' T A B L E;
+INTERVAL: I N T E R V A L;
+ON: O N;
+USING: U S I N G;
+INNER: I N N E R;
+LEFT: L E F T;
+RIGHT: R I G H T;
+FULL: F U L L;
+OUTER: O U T E R;
+CROSS: C R O S S;
+WHERE: W H E R E;
+AND: A N D;
+OR: O R;
+NOT: N O T;
+EXISTS: E X I S T S;
+IN: I N;
+LIKE: L I K E;
+ESCAPE: E S C A P E;
+GROUP: G R O U P;
+BY: B Y;
+HAVING: H A V I N G;
+ORDER: O R D E R;
+LIMIT: L I M I T;
+INSERT: I N S E R T;
+INTO: I N T O;
+UPDATE: U P D A T E;
+SET: S E T;
+DELETE: D E L E T E;
+CREATE: C R E A T E;
+ALTER: A L T E R;
+TABLE: T A B L E;
+TEMPORARY: T E M P O R A R Y;
+UNLOGGED: U N L O G G E D;
+BEGIN: B E G I N;
+IF: I F;
+ELSEIF: E L S E I F;
+WHILE: W H I L E;
+DO: D O;
+LOOP: L O O P;
+REPEAT: R E P E A T;
+DECLARE: D E C L A R E;
+PROCEDURE: P R O C E D U R E;
+FUNCTION: F U N C T I O N;
+TRIGGER: T R I G G E R;
+REPLACE: R E P L A C E;
+ADD: A D D;
+CONSTRAINT: C O N S T R A I N T;
+FOREIGN: F O R E I G N;
+KEY: K E Y;
+REFERENCES: R E F E R E N C E S;
+PRIMARY: P R I M A R Y;
+UNIQUE: U N I Q U E;
+INDEX: I N D E X;
+CONCURRENTLY: C O N C U R R E N T L Y;
+ONLY: O N L Y;
+INCLUDE: I N C L U D E;
+TABLESPACE: T A B L E S P A C E;
+PARTITION: P A R T I T I O N;
+USE: U S E;
+IGNORE: I G N O R E;
+FORCE: F O R C E;
+FOR: F O R;
+OJ: O J;
+CASE: C A S E;
+WHEN: W H E N;
+THEN: T H E N;
+ELSE: E L S E;
+END: E N D;
+DISTINCT: D I S T I N C T;
+TRUE: T R U E;
+FALSE: F A L S E;
+NULL: N U L L;
 
 DOT: '.';
 COMMA: ',';
@@ -39,7 +565,20 @@ STAR: '*';
 EQ: '=';
 LPAREN: '(';
 RPAREN: ')';
+LBRACE: '{';
+RBRACE: '}';
 SEMI: ';';
+PLUS: '+';
+MINUS: '-';
+SLASH: '/';
+PERCENT: '%';
+CONCAT: '||';
+NULL_SAFE_EQ: '<=>';
+LE: '<=';
+GE: '>=';
+NEQ: '<>' | '!=';
+LT: '<';
+GT: '>';
 
 QUOTED_IDENTIFIER
     : '`' (~'`' | '``')* '`'
@@ -52,6 +591,10 @@ STRING_LITERAL
 
 NUMBER
     : [0-9]+ ('.' [0-9]+)?
+    ;
+
+PARAMETER
+    : '?' | ':' [A-Za-z_] [A-Za-z0-9_]*
     ;
 
 IDENTIFIER
@@ -73,3 +616,30 @@ WS
 OTHER
     : .
     ;
+
+fragment A: [aA];
+fragment B: [bB];
+fragment C: [cC];
+fragment D: [dD];
+fragment E: [eE];
+fragment F: [fF];
+fragment G: [gG];
+fragment H: [hH];
+fragment I: [iI];
+fragment J: [jJ];
+fragment K: [kK];
+fragment L: [lL];
+fragment M: [mM];
+fragment N: [nN];
+fragment O: [oO];
+fragment P: [pP];
+fragment Q: [qQ];
+fragment R: [rR];
+fragment S: [sS];
+fragment T: [tT];
+fragment U: [uU];
+fragment V: [vV];
+fragment W: [wW];
+fragment X: [xX];
+fragment Y: [yY];
+fragment Z: [zZ];

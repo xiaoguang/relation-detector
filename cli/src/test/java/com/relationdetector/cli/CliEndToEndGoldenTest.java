@@ -34,7 +34,7 @@ class CliEndToEndGoldenTest {
     @Test
     void postgresFullGrammerDdlMatchesExistingRelationshipGolden() throws Exception {
         assertCliGolden(
-                fixture("postgres/ddl-alter-table-fk"),
+                fixture("postgres/v16/ddl-alter-table-fk"),
                 "full-grammer",
                 "postgresql/16",
                 "16.5",
@@ -58,7 +58,7 @@ class CliEndToEndGoldenTest {
     @Test
     void postgresFullGrammerSqlMatchesExistingRelationshipAndLineageGolden() throws Exception {
         assertCliGolden(
-                fixture("postgres/sql-merge-using"),
+                fixture("postgres/v16/sql-merge-using"),
                 "full-grammer",
                 "",
                 "16.5",

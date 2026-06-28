@@ -1,0 +1,8 @@
+{
+  "fingerprints": [
+    "FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN",
+    "FK_LIKE:purchase_orders.department_id->departments.id:SQL_LOG_JOIN",
+    "FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": []
+}

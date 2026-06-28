@@ -1,0 +1,7 @@
+{
+  "fingerprints": [
+    "FK_LIKE:inventory.product_id->products.id:PROCEDURE_JOIN",
+    "FK_LIKE:products.category_id->product_categories.id:PROCEDURE_JOIN"
+  ],
+  "forbiddenTables": []
+}

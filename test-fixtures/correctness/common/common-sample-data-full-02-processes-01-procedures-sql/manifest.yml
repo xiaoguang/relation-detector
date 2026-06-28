@@ -1,0 +1,12 @@
+id: commonsample-data-full-02-processes-01-procedures-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: token-event
+structuredParser: common-token-event
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+schema: portable
+input: input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

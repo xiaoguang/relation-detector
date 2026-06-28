@@ -1,0 +1,11 @@
+id: postgressample-data-full-01-schema-02-indexes-and-views-views-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: token-event
+sourceType: VIEW
+statementFormat: OBJECT_BLOCKS
+schema: public
+input: input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

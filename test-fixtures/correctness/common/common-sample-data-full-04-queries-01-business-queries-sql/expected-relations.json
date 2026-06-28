@@ -1,0 +1,21 @@
+{
+  "fingerprints": [
+    "FK_LIKE:employees.department_id->departments.id:SQL_LOG_EXISTS",
+    "FK_LIKE:employees.position_id->positions.id:SQL_LOG_EXISTS",
+    "FK_LIKE:inventory.product_id->products.id:SQL_LOG_EXISTS",
+    "FK_LIKE:invoices.customer_id->customers.id:SQL_LOG_EXISTS",
+    "FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_EXISTS",
+    "FK_LIKE:purchase_receipts.purchase_order_id->purchase_orders.id:SQL_LOG_EXISTS",
+    "FK_LIKE:role_permissions.permission_id->permissions.id:SQL_LOG_EXISTS",
+    "FK_LIKE:sales_order_items.sales_order_id->sales_orders.id:SQL_LOG_EXISTS",
+    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_EXISTS",
+    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_returns.sales_order_id->sales_orders.id:SQL_LOG_EXISTS",
+    "FK_LIKE:shipments.sales_order_id->sales_orders.id:SQL_LOG_EXISTS",
+    "FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_EXISTS",
+    "FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_EXISTS",
+    "FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_EXISTS",
+    "FK_LIKE:work_orders.product_id->products.id:SQL_LOG_EXISTS"
+  ],
+  "forbiddenTables": []
+}

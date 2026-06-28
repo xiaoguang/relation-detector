@@ -1,7 +1,6 @@
 package com.relationdetector.core;
 
 import com.relationdetector.core.metadata.MetadataEvidenceEnhancer;
-import com.relationdetector.core.ddl.*;
 import com.relationdetector.core.lineage.*;
 import com.relationdetector.core.parser.*;
 import com.relationdetector.core.relation.*;

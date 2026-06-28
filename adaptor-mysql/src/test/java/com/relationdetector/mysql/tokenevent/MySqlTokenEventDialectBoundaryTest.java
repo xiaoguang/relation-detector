@@ -1,6 +1,7 @@
 package com.relationdetector.mysql.tokenevent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -27,28 +28,36 @@ class MySqlTokenEventDialectBoundaryTest {
     }
 
     @Test
-    void mysqlTokenEventDdlParserUsesMysqlDdlStructuredEventVisitor() {
+    void mysqlTokenEventDdlParserUsesTypedMysqlDdlVisitor() {
         var result = new MySqlTokenEventStructuredDdlParser().parseDdl(
                 "CREATE TABLE orders(user_id BIGINT REFERENCES users(id));",
                 "mysql-ddl.sql",
                 null);
 
-        assertEquals("MySqlDdlStructuredEventVisitor", result.attributes().get("ddlEventVisitor"));
+        assertEquals("MySqlRelationSql", result.attributes().get("grammar"));
+        assertEquals("MySqlTokenEventParseTreeVisitor", result.attributes().get("eventBuilder"));
+        assertFalse(result.attributes().containsKey("ddlEventVisitor"));
+        assertTrue(result.events().stream().anyMatch(event ->
+                event.type() == StructuredParseEventType.DDL_FOREIGN_KEY
+                        && "orders".equals(event.attributes().get("sourceTable"))
+                        && "user_id".equals(event.attributes().get("sourceColumn"))
+                        && "users".equals(event.attributes().get("targetTable"))
+                        && "id".equals(event.attributes().get("targetColumn"))));
     }
 
     @Test
-    void mysqlTokenEventDdlParserDoesNotTreatPostgresIncludeIndexAsMysqlUniqueEvidence() {
+    void mysqlTokenEventDdlParserEmitsTypedIndexEvidence() {
         var result = new MySqlTokenEventStructuredDdlParser().parseDdl(
-                "CREATE UNIQUE INDEX users_email_uq ON users (email) INCLUDE (id);",
-                "postgres-include-index.sql",
+                "CREATE INDEX users_email_idx ON users (email);",
+                "mysql-index.sql",
                 null);
 
-        assertTrue(result.events().stream().noneMatch(event ->
+        assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.DDL_INDEX
-                        && "TARGET_UNIQUE".equals(event.attributes().get("role"))
+                        && "SOURCE_INDEX".equals(event.attributes().get("role"))
                         && "users".equals(event.attributes().get("table"))
                         && "email".equals(event.attributes().get("column"))),
-                () -> "MySQL DDL visitor must not accept PostgreSQL INCLUDE index as unique evidence: " + result.events());
+                () -> "Typed DDL visitor should emit ordinary index evidence: " + result.events());
     }
 
     @Test
@@ -79,8 +88,26 @@ class MySqlTokenEventDialectBoundaryTest {
         assertEquals("MySqlRelationSql", result.attributes().get("grammar"));
         assertEquals("MySqlRelationSqlLexer", result.attributes().get("lexer"));
         assertEquals("MySqlRelationSqlParser", result.attributes().get("parser"));
-        assertEquals("MySqlTokenEventSqlEventBuilder", result.attributes().get("eventBuilder"));
+        assertEquals("MySqlTokenEventParseTreeVisitor", result.attributes().get("eventBuilder"));
+        assertFalse(result.attributes().containsKey("legacySupplementBuilder"));
         assertEquals(true, result.attributes().get("tokenEventPrimary"));
+    }
+
+    @Test
+    void mysqlTokenEventSqlParserKeepsTypedEventsAfterUnsupportedFragment() {
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "SELECT * FROM (; SELECT * FROM orders o JOIN users u ON o.user_id = u.id",
+                StatementSourceType.PLAIN_SQL,
+                "mysql-partial.sql",
+                1,
+                1,
+                java.util.Map.of());
+
+        java.util.List<RelationshipCandidate> relationships =
+                new TokenEventSqlRelationParser(new MySqlTokenEventStructuredSqlParser()).parse(statement);
+
+        assertHasRelation(relationships, "orders.user_id", "users.id",
+                "Token-event should keep typed parse-tree events that ANTLR recovers after an unsupported fragment");
     }
 
     @Test
@@ -189,6 +216,22 @@ class MySqlTokenEventDialectBoundaryTest {
                 "MySQL token-event builder must own DELETE target FROM compatibility");
         assertHasRelation(deleteUsingRelations, "orders.user_id", "users.id",
                 "MySQL token-event builder must own DELETE FROM target USING compatibility");
+    }
+
+    @Test
+    void mysqlRelationVisitorKeepsJoinsWhenSelectListContainsMysqlAggregateOptions() {
+        java.util.List<RelationshipCandidate> relations = mysqlRelations("""
+                SELECT
+                    GROUP_CONCAT(DISTINCT CONCAT(p.sku, ':', pb.batch_no)
+                        ORDER BY pb.expiry_date SEPARATOR '; ') AS batch_details
+                FROM product_batches pb
+                JOIN products p ON pb.product_id = p.id
+                WHERE pb.status = 'active'
+                GROUP BY p.id
+                """);
+
+        assertHasRelation(relations, "product_batches.product_id", "products.id",
+                "MySQL token-event typed grammar should keep JOIN predicates when select-list expressions are too rich to analyze");
     }
 
     @Test

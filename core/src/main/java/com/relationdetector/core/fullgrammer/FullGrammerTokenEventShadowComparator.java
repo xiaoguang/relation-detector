@@ -39,7 +39,7 @@ public final class FullGrammerTokenEventShadowComparator {
 
         return new Comparison(
                 missingRelations(currentRelations, fullGrammerRelations),
-                missing(currentLineages, fullGrammerLineages),
+                missingLineages(currentLineages, fullGrammerLineages),
                 missing(fullGrammerRelations, currentRelations),
                 missing(fullGrammerLineages, currentLineages),
                 fullGrammer.warnings().stream().map(warning -> warning.code()).sorted().toList());
@@ -61,6 +61,24 @@ public final class FullGrammerTokenEventShadowComparator {
                 .toList();
     }
 
+    private static List<String> missingLineages(Set<String> expected, Set<String> actual) {
+        return expected.stream()
+                .filter(fingerprint -> actual.stream().noneMatch(actualFingerprint ->
+                        lineageCovers(fingerprint, actualFingerprint)))
+                .toList();
+    }
+
+    private static boolean lineageCovers(String expected, String actual) {
+        ParsedLineage expectedLineage = ParsedLineage.parse(expected);
+        ParsedLineage actualLineage = ParsedLineage.parse(actual);
+        if (expectedLineage == null || actualLineage == null) {
+            return expected.equals(actual);
+        }
+        return expectedLineage.flowAndTransform().equals(actualLineage.flowAndTransform())
+                && expectedLineage.target().equals(actualLineage.target())
+                && actualLineage.sources().containsAll(expectedLineage.sources());
+    }
+
     private static String relationCoverageKey(String fingerprint) {
         int lastColon = fingerprint.lastIndexOf(':');
         return lastColon < 0 ? fingerprint : fingerprint.substring(0, lastColon);
@@ -73,5 +91,27 @@ public final class FullGrammerTokenEventShadowComparator {
             List<String> extraFullGrammerLineages,
             List<String> fullGrammerWarningCodes
     ) {
+    }
+
+    private record ParsedLineage(String flowAndTransform, Set<String> sources, String target) {
+        private static ParsedLineage parse(String fingerprint) {
+            int firstColon = fingerprint.indexOf(':');
+            int secondColon = fingerprint.indexOf(':', firstColon + 1);
+            int arrow = fingerprint.indexOf("->", secondColon + 1);
+            if (firstColon < 0 || secondColon < 0 || arrow < 0) {
+                return null;
+            }
+            String flowAndTransform = fingerprint.substring(0, secondColon);
+            Set<String> sources = new TreeSet<>();
+            String sourcePart = fingerprint.substring(secondColon + 1, arrow);
+            if (!sourcePart.isBlank()) {
+                for (String source : sourcePart.split(",")) {
+                    if (!source.isBlank()) {
+                        sources.add(source);
+                    }
+                }
+            }
+            return new ParsedLineage(flowAndTransform, sources, fingerprint.substring(arrow + 2));
+        }
     }
 }

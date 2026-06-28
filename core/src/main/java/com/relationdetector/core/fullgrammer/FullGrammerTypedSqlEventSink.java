@@ -119,6 +119,19 @@ public final class FullGrammerTypedSqlEventSink {
         return writeTargets.isEmpty() ? "" : writeTargets.peek();
     }
 
+    public int rowsetScopeMark() {
+        return rowsetTables.size();
+    }
+
+    public void restoreRowsetScope(int mark) {
+        if (mark < 0 || mark > rowsetTables.size()) {
+            return;
+        }
+        while (rowsetTables.size() > mark) {
+            rowsetTables.remove(rowsetTables.size() - 1);
+        }
+    }
+
     public void rowset(ParserRuleContext ctx, String keyword, String qualifiedTable, String alias) {
         String table = baseName(qualifiedTable);
         if (table.isBlank()) {

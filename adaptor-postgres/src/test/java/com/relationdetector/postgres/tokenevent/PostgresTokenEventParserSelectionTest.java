@@ -14,7 +14,7 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 class PostgresTokenEventParserSelectionTest {
     @Test
-    void postgresTokenEventParserUsesPostgresDialectBuilder() {
+    void postgresTokenEventParserUsesPostgresTypedVisitorOnly() {
         SqlStatementRecord statement = new SqlStatementRecord(
                 "SELECT * FROM \"orders\" o JOIN \"users\" u ON o.user_id = u.id",
                 StatementSourceType.PLAIN_SQL,
@@ -26,7 +26,8 @@ class PostgresTokenEventParserSelectionTest {
         var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
 
         assertEquals("POSTGRES", result.dialect());
-        assertEquals("PostgresTokenEventSqlEventBuilder", result.attributes().get("eventBuilder"));
+        assertEquals("PostgresTokenEventParseTreeVisitor", result.attributes().get("eventBuilder"));
+        assertFalse(result.attributes().containsKey("legacySupplementBuilder"));
         assertEquals(Boolean.TRUE, result.attributes().get("tokenEvent"));
         assertEquals(Boolean.TRUE, result.attributes().get("tokenEventPrimary"));
         assertTrue(result.events().stream().anyMatch(event ->

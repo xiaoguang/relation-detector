@@ -1,7 +1,5 @@
 {
-  "fingerprints": [
-    "VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks"
-  ],
+  "fingerprints": [],
   "forbiddenSources": [
     "p_input_ledger_json",
     "p_max_limit_cap",

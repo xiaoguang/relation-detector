@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "FK_LIKE:inventory.batch_id->product_batches.id:PROCEDURE_JOIN"
+  ],
+  "forbiddenTables": []
+}

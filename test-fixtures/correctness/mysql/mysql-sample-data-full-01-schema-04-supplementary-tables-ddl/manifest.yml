@@ -1,0 +1,10 @@
+id: mysqlsample-data-full-01-schema-04-supplementary-tables-ddl
+databaseType: MYSQL
+parserTarget: DDL
+parserMode: token-event
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: erp_system
+input: ../../../../sample-data/mysql/8.0/01-schema/04-supplementary-tables.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

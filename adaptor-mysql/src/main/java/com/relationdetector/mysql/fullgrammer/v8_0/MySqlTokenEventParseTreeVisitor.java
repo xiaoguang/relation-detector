@@ -10,6 +10,7 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CommonTableExpressionContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CreateTableContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CreateTriggerContext;
+import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.DeleteStatementContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.DerivedTableContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.EscapedTableReferenceContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.FieldsContext;
@@ -84,12 +85,14 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
             sink.ignoredRowset(ctx, alias, "DERIVED_TABLE");
             sink.rowset(ctx, "FROM", alias, alias);
             rememberRowset(alias);
+            int rowsetScopeMark = sink.rowsetScopeMark();
             sink.withProjectionOwner(alias, () -> {
                 if (ctx.subquery() != null) {
                     visit(ctx.subquery());
                     emitTopLevelProjectionItems(alias, ctx.subquery());
                 }
             });
+            sink.restoreRowsetScope(rowsetScopeMark);
             return null;
         }
         return visitChildren(ctx);
@@ -172,6 +175,7 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
         sink.withProjectionOwner(name, () -> {
             if (ctx.subquery() != null) {
                 visit(ctx.subquery());
+                emitTopLevelProjectionItems(name, ctx.subquery());
             }
         });
         return null;
@@ -253,6 +257,21 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
         sink.writeTarget(ctx, target, "");
         sink.withWriteTarget(target, () -> visitChildren(ctx));
         return null;
+    }
+
+    @Override
+    public Void visitDeleteStatement(DeleteStatementContext ctx) {
+        if (ctx.tableRef() != null) {
+            String table = ctx.tableRef().getText();
+            String alias = ctx.tableAlias() == null ? "" : sink.firstIdentifier(ctx.tableAlias());
+            sink.rowset(ctx, "DELETE", table, alias);
+            rememberRowset(alias.isBlank() ? sink.baseName(table) : alias);
+            if (ctx.whereClause() != null) {
+                visit(ctx.whereClause());
+            }
+            return null;
+        }
+        return visitChildren(ctx);
     }
 
     @Override

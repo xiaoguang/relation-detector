@@ -88,6 +88,47 @@ class MySqlDdlParserTest {
     }
 
     @Test
+    void mysqlParserKeepsForeignKeysAfterColumnTypesWithCommaArguments() throws Exception {
+        Path ddl = tempDir.resolve("mysql-column-type-commas.sql");
+        String ddlText = """
+                CREATE TABLE departments (
+                  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  code VARCHAR(20) NOT NULL UNIQUE,
+                  status ENUM('active','inactive') NOT NULL DEFAULT 'active'
+                );
+
+                CREATE TABLE employees (
+                  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  department_id BIGINT UNSIGNED,
+                  manager_id BIGINT UNSIGNED,
+                  salary DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+                  gender ENUM('male','female','other') NOT NULL,
+                  CONSTRAINT fk_emp_dept FOREIGN KEY (department_id) REFERENCES departments(id),
+                  CONSTRAINT fk_emp_manager FOREIGN KEY (manager_id) REFERENCES employees(id) ON DELETE SET NULL
+                );
+                """;
+        Files.writeString(ddl, ddlText);
+
+        List<RelationshipCandidate> relations = parseDdl(ddl);
+
+        assertHasEvidence(relations, "employees.department_id", "departments.id", EvidenceType.DDL_FOREIGN_KEY);
+        assertHasEvidence(relations, "employees.department_id", "departments.id", EvidenceType.TARGET_UNIQUE);
+        assertHasEvidence(relations, "employees.manager_id", "employees.id", EvidenceType.DDL_FOREIGN_KEY);
+        assertHasEvidence(relations, "employees.manager_id", "employees.id", EvidenceType.TARGET_UNIQUE);
+    }
+
+    @Test
+    void mysqlParserAggregatesPrimaryKeyEvidenceInFullSampleSchema() throws Exception {
+        Path ddl = Path.of("..", "sample-data", "mysql", "8.0", "01-schema", "01-tables.sql");
+
+        List<RelationshipCandidate> relations = parseDdl(ddl);
+
+        assertHasEvidence(relations, "accounts.parent_id", "accounts.id", EvidenceType.SOURCE_INDEX);
+        assertHasEvidence(relations, "accounts.parent_id", "accounts.id", EvidenceType.TARGET_UNIQUE);
+        assertHasEvidence(relations, "attendance.employee_id", "employees.id", EvidenceType.TARGET_UNIQUE);
+    }
+
+    @Test
     private void assertHasEvidence(
             List<RelationshipCandidate> relations,
             String source,

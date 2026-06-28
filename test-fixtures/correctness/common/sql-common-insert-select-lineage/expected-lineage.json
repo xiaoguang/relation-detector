@@ -1,0 +1,9 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:orders.customer_id->customer_rollup.customer_id",
+    "VALUE:DIRECT:orders.total_amount->customer_rollup.total_amount"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

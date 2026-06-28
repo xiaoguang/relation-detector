@@ -1,7 +1,5 @@
 {
-  "fingerprints": [
-    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
-  ],
+  "fingerprints": [],
   "forbiddenTables": [
     "x",
     "lateral"

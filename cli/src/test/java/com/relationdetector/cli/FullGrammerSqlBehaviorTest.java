@@ -286,6 +286,47 @@ class FullGrammerSqlBehaviorTest {
     }
 
     @Test
+    void postgresqlFullGrammerExtractsPlpgsqlRoutineBodyLineageForAllSupportedVersions() {
+        SqlStatementRecord statement = statement("""
+                CREATE OR REPLACE PROCEDURE post_stocktake()
+                LANGUAGE plpgsql
+                AS $$
+                BEGIN
+                    INSERT INTO inventory_transactions (product_id, before_qty, after_qty)
+                    SELECT sti.product_id, i.quantity, sti.counted_quantity
+                    FROM stocktake_items sti
+                    JOIN inventory i ON i.product_id = sti.product_id;
+
+                    UPDATE inventory i
+                    SET quantity = sti.counted_quantity,
+                        last_stocktake_date = st.stocktake_date
+                    FROM stocktake_items sti
+                    JOIN stocktakes st ON st.id = sti.stocktake_id
+                    WHERE i.product_id = sti.product_id;
+                END;
+                $$;
+                """, StatementSourceType.PROCEDURE);
+
+        for (String version : List.of("16.4", "17.5", "18.1")) {
+            StructuredParseResult result = parse(DatabaseType.POSTGRESQL, version, SqlDialect.POSTGRES, statement);
+
+            List<String> fingerprints = new TokenEventDataLineageExtractor().extract(statement, result).stream()
+                    .map(FullGrammerSqlBehaviorTest::lineageFingerprint)
+                    .sorted()
+                    .toList();
+
+            assertEquals(List.of(
+                    "VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty",
+                    "VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity",
+                    "VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty",
+                    "VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id",
+                    "VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date"), fingerprints,
+                    () -> "PostgreSQL " + version + " routine body should emit full-grammer lineage: events="
+                            + result.events() + " attrs=" + result.attributes());
+        }
+    }
+
+    @Test
     void postgresqlCteProjectionRelationResolvesToPhysicalSourceColumn() {
         SqlStatementRecord statement = statement("""
                 WITH user_aggregation AS (

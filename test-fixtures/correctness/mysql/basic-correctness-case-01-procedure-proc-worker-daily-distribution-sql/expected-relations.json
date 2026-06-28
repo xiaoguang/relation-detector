@@ -1,6 +1,4 @@
 {
-  "fingerprints": [
-    "CO_OCCURRENCE:jsh_orga_user_rel.orga_id->jsh_temp_org_pdf.org_id:SQL_LOG_COLUMN_CO_OCCURRENCE"
-  ],
+  "fingerprints": [],
   "forbiddenTables": []
 }

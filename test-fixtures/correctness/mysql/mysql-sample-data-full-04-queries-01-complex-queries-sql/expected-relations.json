@@ -1,0 +1,20 @@
+{
+  "fingerprints": [
+    "FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN",
+    "FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN",
+    "FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN",
+    "FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN",
+    "FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN",
+    "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN",
+    "FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN",
+    "FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN",
+    "FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN",
+    "FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN",
+    "FK_LIKE:three_way_matching.product_id->products.id:SQL_LOG_JOIN",
+    "FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:three_way_matching.purchase_receipt_id->purchase_receipts.id:SQL_LOG_JOIN",
+    "FK_LIKE:work_orders.product_id->products.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": []
+}

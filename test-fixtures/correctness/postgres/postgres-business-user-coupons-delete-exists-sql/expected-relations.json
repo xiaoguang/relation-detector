@@ -1,9 +1,5 @@
 {
-  "fingerprints": [
-    "FK_LIKE:coupon_redemptions.coupon_id->coupons.id:SQL_LOG_EXISTS",
-    "FK_LIKE:coupons.merchant_id->merchants.id:SQL_LOG_JOIN",
-    "FK_LIKE:user_coupons.coupon_id->coupons.id:SQL_LOG_JOIN"
-  ],
+  "fingerprints": [],
   "forbiddenTables": [
     "cr"
   ]

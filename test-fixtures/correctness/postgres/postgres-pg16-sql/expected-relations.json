@@ -1,6 +1,4 @@
 {
-  "fingerprints": [
-    "CO_OCCURRENCE:pg16_analytics_events.user_id->pg16_user_profiles.user_id:SQL_LOG_COLUMN_CO_OCCURRENCE"
-  ],
+  "fingerprints": [],
   "forbiddenTables": []
 }

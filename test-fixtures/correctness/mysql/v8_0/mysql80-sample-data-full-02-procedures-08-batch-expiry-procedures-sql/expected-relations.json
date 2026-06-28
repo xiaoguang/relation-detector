@@ -1,0 +1,18 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:category_bestseller.category_id->category_sales.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:category_sales.category_id->category_inventory.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:category_worst_expiry.category_id->category_sales.category_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "FK_LIKE:inventory.batch_id->product_batches.id:PROCEDURE_JOIN",
+    "FK_LIKE:inventory.product_id->products.id:PROCEDURE_JOIN",
+    "FK_LIKE:inventory.warehouse_id->warehouses.id:PROCEDURE_JOIN",
+    "FK_LIKE:product_batches.product_id->products.id:PROCEDURE_JOIN",
+    "FK_LIKE:product_batches.supplier_id->suppliers.id:PROCEDURE_JOIN",
+    "FK_LIKE:products.category_id->product_categories.id:PROCEDURE_JOIN",
+    "FK_LIKE:sales_order_items.batch_id->product_batches.id:PROCEDURE_JOIN",
+    "FK_LIKE:sales_order_items.order_id->sales_orders.id:PROCEDURE_JOIN",
+    "FK_LIKE:sales_order_items.product_id->products.id:PROCEDURE_JOIN",
+    "FK_LIKE:sales_orders.warehouse_id->warehouses.id:PROCEDURE_JOIN"
+  ],
+  "forbiddenTables": []
+}

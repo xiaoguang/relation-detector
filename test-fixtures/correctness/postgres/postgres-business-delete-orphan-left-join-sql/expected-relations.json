@@ -1,7 +1,5 @@
 {
-  "fingerprints": [
-    "FK_LIKE:product_reviews.product_id->products.id:SQL_LOG_JOIN"
-  ],
+  "fingerprints": [],
   "forbiddenTables": [
     "pr",
     "pr_alias",

@@ -1,0 +1,12 @@
+id: postgres17sample-data-full-04-queries-04-store-customer-queries-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: postgresql/17
+databaseVersion: 17.5
+sourceType: PLAIN_SQL
+schema: public
+input: ../../../../../sample-data/postgres/18/04-queries/04-store-customer-queries.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

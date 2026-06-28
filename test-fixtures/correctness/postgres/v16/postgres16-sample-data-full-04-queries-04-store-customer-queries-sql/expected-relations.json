@@ -1,0 +1,13 @@
+{
+  "fingerprints": [
+    "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN",
+    "FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": []
+}

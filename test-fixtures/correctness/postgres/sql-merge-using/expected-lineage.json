@@ -1,7 +1,5 @@
 {
-  "fingerprints": [
-    "VALUE:DIRECT:source_orders.id->target_orders.source_order_id"
-  ],
+  "fingerprints": [],
   "forbiddenSources": [
     "CURRENT_TIMESTAMP"
   ],

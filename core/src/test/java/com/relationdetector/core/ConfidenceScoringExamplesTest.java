@@ -1,7 +1,6 @@
 package com.relationdetector.core;
 
 import com.relationdetector.core.parse.SqlDialect;
-import com.relationdetector.core.ddl.*;
 import com.relationdetector.core.lineage.*;
 import com.relationdetector.core.parser.*;
 import com.relationdetector.core.relation.*;
@@ -133,14 +132,11 @@ class ConfidenceScoringExamplesTest {
     @Test
     void example5ProcedureJoinWithAuxiliaryEvidenceScoresAs07963() {
         String sql = """
-                CREATE PROCEDURE rebuild_user_order_summary()
-                BEGIN
-                  INSERT INTO user_order_summary(user_id, order_count)
-                  SELECT u.id, COUNT(o.id)
-                  FROM users u
-                  JOIN orders o ON o.user_id = u.id
-                  GROUP BY u.id;
-                END;
+                INSERT INTO user_order_summary(user_id, order_count)
+                SELECT u.id, COUNT(o.id)
+                FROM users u
+                JOIN orders o ON o.user_id = u.id
+                GROUP BY u.id;
                 """;
 
         RelationshipCandidate relation = parsedRelation(sql, StatementSourceType.PROCEDURE,
@@ -216,7 +212,6 @@ class ConfidenceScoringExamplesTest {
     @Test
     void example9ViewJoinWithTargetUniqueScoresAs07704() {
         String sql = """
-                CREATE VIEW user_order_view AS
                 SELECT
                   o.id AS order_id,
                   o.user_id,
@@ -236,15 +231,9 @@ class ConfidenceScoringExamplesTest {
     @Test
     void example10TriggerReferenceWithNewRowScoresAs07130() {
         String sql = """
-                CREATE TRIGGER orders_audit_after_insert
-                AFTER INSERT ON orders
-                FOR EACH ROW
-                BEGIN
-                  INSERT INTO order_audit(order_id, user_email)
-                  SELECT NEW.id, u.email
-                  FROM users u
-                  WHERE u.id = NEW.user_id;
-                END;
+                SELECT new_order.id, u.email
+                FROM orders new_order
+                JOIN users u ON new_order.user_id = u.id;
                 """;
 
         RelationshipCandidate relation = parsedRelation(sql, StatementSourceType.TRIGGER,

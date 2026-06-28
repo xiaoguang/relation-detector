@@ -1,6 +1,4 @@
 {
-  "fingerprints": [
-    "FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:PROCEDURE_JOIN"
-  ],
+  "fingerprints": [],
   "forbiddenTables": []
 }

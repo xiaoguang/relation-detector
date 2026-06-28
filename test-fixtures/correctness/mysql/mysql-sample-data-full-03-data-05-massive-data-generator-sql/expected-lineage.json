@@ -1,0 +1,33 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company",
+    "VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal",
+    "VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax",
+    "VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay",
+    "VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company",
+    "VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal",
+    "VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date",
+    "VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at",
+    "VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date",
+    "VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount",
+    "VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax",
+    "VALUE:CONCAT_FORMAT:departments.code->positions.code",
+    "VALUE:CONCAT_FORMAT:departments.name->positions.name",
+    "VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no",
+    "VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code",
+    "VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->invoices.invoice_no",
+    "VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->tax_invoices.invoice_no",
+    "VALUE:DIRECT:departments.id->positions.department_id",
+    "VALUE:DIRECT:employees.id->salary_payments.employee_id",
+    "VALUE:DIRECT:employees.salary->salary_payments.base_salary",
+    "VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id",
+    "VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id",
+    "VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount",
+    "VALUE:DIRECT:suppliers.id->supplier_products.supplier_id",
+    "VALUE:FUNCTION_CALL:purchase_orders.order_date->invoices.due_date",
+    "VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

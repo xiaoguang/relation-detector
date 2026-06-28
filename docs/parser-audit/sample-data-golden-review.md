@@ -1,147 +1,87 @@
 # sample-data Golden 审计记录
 
-本文记录将 `sample-data` ERP 样例 SQL 纳入 relation-detection correctness golden 时的审计结论。目标是验证样例 SQL 的 DDL relationship、SQL relationship 和 Data Lineage，同时避免把不合法方言 SQL 或 parser 误判静默固化进 golden。
+本文记录 `sample-data` ERP 样例 SQL 纳入 relation-detection correctness golden 的覆盖范围、解析结论和剩余差异。目标是让样例库同时承担两件事：
+
+- 作为可读 ERP 业务样例，覆盖 schema、data、query、procedure/function/trigger body。
+- 作为 parser correctness 看门资产，验证 token-event fallback 与 versioned full-grammer 对关系、血缘和 DDL evidence 的抽取。
+
+本轮仍遵守 parser 边界：不恢复 scanner，不使用正则或特殊表名/列名过滤；新增关系/血缘必须来自 typed grammar context、rowset scope、endpoint 类型和共享语义 extractor。
 
 ## 覆盖范围
 
-本轮采用精选业务切片，共 28 个 fixture：
+本轮从对应 `sample-data` 子目录抽取完整 SQL 文件进入 golden：
 
-| 分组 | Fixture 数 | Parser 模式 | 覆盖内容 |
-| --- | ---: | --- | --- |
-| MySQL root | 4 | `token-event` | enterprise extension DDL、企业查询、真实业务场景查询、3 个过程体 |
-| MySQL v8_0 | 4 | `full-grammer`, `mysql/8.0` | 与 MySQL root 同源 SQL 的版本化 full-grammer golden |
-| PostgreSQL root | 5 | `token-event` | enterprise extension DDL、企业查询、真实业务场景查询、3 个过程体、PG18-only 样例 |
-| PostgreSQL v16 | 5 | `full-grammer`, `postgresql/16` | 通用 PostgreSQL SQL 正向；PG18-only 作为版本边界诊断 |
-| PostgreSQL v17 | 5 | `full-grammer`, `postgresql/17` | 通用 PostgreSQL SQL 正向；PG18-only 作为版本边界诊断 |
-| PostgreSQL v18 | 5 | `full-grammer`, `postgresql/18` | 通用 PostgreSQL SQL 正向；PG18-only 正向 |
+| 分组 | Fixture 数 | Parser 模式 | 样例来源 | Relationship | Lineage |
+| --- | ---: | --- | --- | ---: | ---: |
+| Common portable | 14 | `token-event` + `common-token-event` | `sample-data/portable` | 536 | 144 |
+| MySQL root | 36 | `token-event` | `sample-data/mysql/8.0` | 248 | 43 |
+| MySQL v8_0 | 36 | `full-grammer`, `mysql/8.0` | `sample-data/mysql/8.0` | 542 | 183 |
+| PostgreSQL root | 34 | `token-event` | `sample-data/postgres/18` | 177 | 27 |
+| PostgreSQL v16 | 34 | `full-grammer`, `postgresql/16` | PG18 兼容部分 + PG18-only version-boundary | 442 | 27 |
+| PostgreSQL v17 | 34 | `full-grammer`, `postgresql/17` | PG18 兼容部分 + PG18-only version-boundary | 442 | 27 |
+| PostgreSQL v18 | 34 | `full-grammer`, `postgresql/18` | `sample-data/postgres/18` | 442 | 27 |
 
-## 人工语义判断
+当前 sample-data 相关 fixture 合计 222 个。DDL 文件保留原始文件引用；procedure/function/trigger 通过 `OBJECT_BLOCKS` 把对象体作为单个 parser 输入；view 文件同时覆盖 DDL/index 入口和 view query body 入口。
 
-### MySQL enterprise extension DDL
+说明：Common portable 下同时保留了早期 portable smoke fixture 和本轮 full sample-data fixture；上表按当前 tracked golden 文件中的 `expected-relations.json` / `expected-lineage.json` 实际条数统计。
 
-DDL 中的 FK、PK、UNIQUE / INDEX 关系均来自明确 `CREATE TABLE` / `ALTER TABLE` 结构。root token-event 与 MySQL v8_0 full-grammer 均输出 31 条 relationship，结果一致。
-
-### MySQL enterprise extension queries
-
-查询中的关系来自显式 `JOIN ... ON`、派生表 join、CTE/derived projection 回溯。root token-event 与 MySQL v8_0 full-grammer 均输出 17 条 relationship，结果一致。
-
-### MySQL enterprise procedures
-
-`sp_post_stocktake` 中：
-
-```sql
-INSERT INTO inventory_transactions (..., quantity_change, before_qty, after_qty, ...)
-SELECT
-    ...,
-    sti.counted_quantity - i.quantity,
-    i.quantity,
-    sti.counted_quantity,
-    ...
-FROM stocktake_items sti
-JOIN inventory i ON i.product_id = sti.product_id
-...
-```
-
-`quantity_change` 的来源应同时包含 `stocktake_items.counted_quantity` 和 `inventory.quantity`，transform 为 `ARITHMETIC`。此前 token-event 只取了 `INSERT ... SELECT` projection 的第一个 source column，已修复为读取完整 source 集合。
-
-过程参数如 `p_stocktake_id`、`p_posted_by` 不是数据库内部字段来源。token-event 已按 `CREATE PROCEDURE/FUNCTION (...)` 参数声明结构识别 routine parameter，并排除其作为物理列 source；该判断基于语法位置和 `IN/OUT/INOUT` 关键字，不基于 `p_` 名字规则。
-
-修复后 root token-event 与 MySQL v8_0 full-grammer 均输出 3 条 relationship、8 条 lineage，结果一致。
-
-### MySQL real-world scenarios
-
-`Q104` 批号追溯查询中，原 SQL 的多个 `GROUP_CONCAT(DISTINCT CONCAT(...))` 子查询括号不符合 MySQL 8.0 写法。本轮先修正 sample SQL，不修改 parser：
-
-```sql
-SELECT GROUP_CONCAT(DISTINCT CONCAT(...) SEPARATOR ', ')
-FROM ...
-WHERE ...
-```
-
-修正后，批次相关关系来自明确 `JOIN` 和 correlated subquery。另一个明确关系来自：
-
-```sql
-SELECT MAX(journal_date)
-FROM cashier_journals
-WHERE reference_type = 'sales_order'
-  AND reference_id IN (
-      SELECT id
-      FROM sales_orders
-      WHERE customer_id = c.id
-  )
-```
-
-这表示 `cashier_journals.reference_id` 与 `sales_orders.id` 的 `SQL_LOG_SUBQUERY_IN` 关系。MySQL v8_0 full-grammer 之前因先访问 nested subquery rowset，再生成 `IN_SUBQUERY_PREDICATE`，导致外层未限定列 `reference_id` 的默认 rowset 绑定失败。已调整 MySQL typed visitor：在当前 `PredicateContext` 先生成 IN-subquery event，再递归访问子查询。
-
-该修复基于 typed parse-tree context 和作用域时序，不使用正则、表名/列名白名单或特殊名字过滤。
-
-修复后 root token-event 与 MySQL v8_0 full-grammer 均输出 53 条 relationship，结果一致。
-
-`Q113` 门店综合业绩查询中，CTE `store_inventory` 原写法在多表 SELECT 内使用未限定裸列：
-
-```sql
-SELECT warehouse_id, SUM(quantity * p.purchase_price)
-FROM inventory i
-JOIN products p ON i.product_id = p.id
-GROUP BY warehouse_id
-```
-
-该 SQL 对真实数据库可能因 schema 唯一性而可执行，但 relation-detection 不应在没有 metadata 的情况下猜测裸列属于第一个表。本轮将样例 SQL 改为明确限定物理来源：
-
-```sql
-SELECT i.warehouse_id, SUM(i.quantity * p.purchase_price)
-FROM inventory i
-JOIN products p ON i.product_id = p.id
-GROUP BY i.warehouse_id
-```
-
-这不改变业务含义，也不修改 parser 规则；它让 token-event 与 full-grammer 都能基于明确 SQL 结构回溯 `store_inventory.warehouse_id -> inventory.warehouse_id`。
-
-### PostgreSQL 通用样例
-
-PostgreSQL root token-event 与 v16/v17/v18 full-grammer 在以下通用样例上完全一致：
-
-- enterprise extension DDL：31 条 relationship
-- enterprise extension queries：17 条 relationship
-- enterprise procedures：0 条 relationship / 0 条 lineage
-- real-world scenarios：53 条 relationship
-
-未发现 literal、LIKE、参数、关键字、临时变量或 `old/new` pseudo rowset 被误识别为物理表字段关系。
-
-### PostgreSQL 18-only 样例
-
-PG18-only 样例在 root token-event 和 PostgreSQL v18 full-grammer 下均为正向解析，当前不产生 relationship / lineage。
-
-PostgreSQL v16/v17 full-grammer 对同一 PG18-only 样例输出：
-
-```text
-FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX: 4
-```
-
-这是预期版本边界：低版本 full-grammer 不应静默接受 PG18-only 语法。
-
-## 最终对比矩阵
-
-| 对比 | Relationship 差异 | Lineage 差异 | Warning 差异 | 结论 |
-| --- | ---: | ---: | --- | --- |
-| MySQL root vs MySQL v8_0 DDL | 0 | 0 | 无 | 一致 |
-| MySQL root vs MySQL v8_0 enterprise queries | 0 | 0 | 无 | 一致 |
-| MySQL root vs MySQL v8_0 procedures | 0 | 0 | 无 | 一致 |
-| MySQL root vs MySQL v8_0 real-world scenarios | 0 | 0 | 无 | 一致 |
-| PostgreSQL root vs v16/v17/v18 通用样例 | 0 | 0 | 无 | 一致 |
-| PostgreSQL PG18-only root vs v18 | 0 | 0 | 无 | 一致 |
-| PostgreSQL PG18-only root vs v16/v17 | 0 | 0 | v16/v17 有版本不支持诊断 | 预期版本边界 |
-
-## 处理项
+## 本轮已修复的 parser gap
 
 | 类型 | SQL 上下文 | 处理 |
 | --- | --- | --- |
-| 样例 SQL 方言修正 | MySQL Q104 `GROUP_CONCAT(DISTINCT CONCAT(...))` correlated subquery | 修 sample SQL 为 MySQL 8.0 合法括号和 `SEPARATOR` 写法 |
-| 样例 SQL 明确化 | MySQL/PostgreSQL Q113 `store_inventory` CTE 裸列 `warehouse_id` / `quantity` | 改为 `i.warehouse_id` / `i.quantity`，避免无 metadata 时猜测多表 SELECT 裸列来源 |
-| full-grammer 事件生成修复 | MySQL `reference_id IN (SELECT id FROM sales_orders ...)` | 调整 MySQL typed visitor 的 IN-subquery event 生成时序 |
-| token-event lineage 修复 | MySQL `INSERT ... SELECT sti.counted_quantity - i.quantity` | `INSERT_SELECT_MAPPING` 改为读取 projection 完整 source 集合 |
-| token-event 参数边界修复 | MySQL `CREATE PROCEDURE ... IN p_*` 参数出现在 SELECT list | 基于 routine parameter declaration 结构排除参数作为物理 source |
+| Token-event DDL typed grammar gap | MySQL `DECIMAL(18,2)`、`ENUM('a','b')`、PostgreSQL `TIMESTAMP(0)` 这类列类型括号内逗号 | 在 common/MySQL/PostgreSQL token-event structural grammar 中增加 `columnDefinitionParenToken`，括号内逗号不再打断 table element |
+| Token-event DDL referential action gap | `ON DELETE SET NULL` | 将 referential action 扩展为结构化 token 序列，支持 `SET NULL`，不按名字过滤 |
+| PostgreSQL identity column gap | `BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY` | 将 `AS` / `BY` 纳入 column definition token，后续 FK/PK/UNIQUE 结构不再被 identity 写法打断 |
+| MySQL full-grammer DDL ALTER TABLE gap | `ALTER TABLE departments ADD CONSTRAINT fk_dept_manager FOREIGN KEY ...` | 在 MySQL full-grammer DDL typed visitor 中覆盖 `visitAlterTable` / `visitAlterListItem`，复用 table constraint context 生成 FK 事件 |
+| PostgreSQL version guard false positive | 同一 DDL 文件中普通 `FOREIGN KEY` 后出现业务字段 `period` | 收紧 PG18 temporal `PERIOD` FK 检测范围，只把同一个 `FOREIGN KEY (...)` 列表中的 `PERIOD` 作为版本边界 |
+| Token-event expression transform gap | `CONCAT(... COALESCE(...))`、`ROUND(amount * COALESCE(...))` | common/MySQL/PostgreSQL token-event typed expression visitor 按 full-grammer 同一优先级合并子表达式 transform，`COALESCE` 不再被外层普通函数吞掉 |
+| Sample-data full coverage gap | 旧 golden 只覆盖 enterprise/real-world 少量切片 | 为 portable、MySQL 8.0、PostgreSQL 18 及 PostgreSQL v16/v17/v18 versioned full-grammer 增加全量 sample-data fixture |
+| Common DDL fixture routing gap | `structuredParser: common-token-event` 的 DDL fixture 曾经仍按 `databaseType` 走 adaptor DDL parser | `CorrectnessFixtureRunnerTest` 对 common DDL 显式注入 `TokenEventStructuredDdlParser(SqlDialect.GENERIC)`，保证 common SQL 与 common DDL 都独立验证 common typed grammar |
+| MySQL token-event routine lineage gap | `CREATE PROCEDURE ... BEGIN ... INSERT SELECT / UPDATE JOIN ... END` 中前半段 DML 曾被 routine 外壳吞掉；`<=>` null-safe equality 会打断 UPDATE JOIN | MySQL token-event grammar 增加 typed routine/block/control 容器，并把 `<=>` 加入 MySQL comparison operator；内部 DML 继续由 typed visitor 产出 lineage |
+| PostgreSQL routine body lineage gap | PL/pgSQL body 在 `$$...$$` 中，root token-event 与 full-grammer v16/v17/v18 以前没有递归解析 body DML | PostgreSQL token-event 对 dollar body 做二次 typed parse；full-grammer v16/v17/v18 在 `func_as` context 中调用同一 typed body parser，不修改官方版本 grammar |
+
+相关行为测试已补充：
+
+- `MySqlDdlParserTest.mysqlParserKeepsForeignKeysAfterColumnTypesWithCommaArguments`
+- `PostgresDdlParserTest.postgresParserKeepsForeignKeysAfterIdentityColumnDefinition`
+- `PostgresDdlParserTest.postgresParserKeepsTableEventsWhenEnumTypesPrecedeTables`
+- `PostgresDdlParserTest.postgresParserKeepsTableEventsAfterUnsupportedDdlFragment`
+- `CorrectnessFixtureRunnerTest.commonDdlFixtureUsesCommonParserInsteadOfDialectAdaptorParser`
+
+## Root token-event vs full-grammer 差异
+
+root token-event 已经比 scanner cleanup 后明显增强，尤其 DDL 关系恢复较多；但它仍是 fallback typed structural grammar，不等同于版本严格 full-grammer。
+
+| 对比 | 主要剩余差异 | 分类 | 处理结论 |
+| --- | --- | --- | --- |
+| MySQL root vs MySQL v8_0 | MySQL root token-event 能识别明确 routine body DML lineage，但仍少于 v8_0 full-grammer 的完整 MySQL grammar 覆盖 | `TYPED_VISITOR_GAP` | root 继续作为 fallback typed structural grammar；不恢复 scanner，不把 full-grammer 的全部能力硬塞进 root |
+| PostgreSQL root vs PostgreSQL v16/v17/v18 | PostgreSQL root token-event 已补出 PL/pgSQL sample lineage；full-grammer 版本在 relationship 上仍更完整 | `TYPED_VISITOR_GAP` / `VERSION_ONLY_SYNTAX` | root 继续追近高价值结构；版本严格能力仍由 v16/v17/v18 full-grammer golden 承担 |
+| PostgreSQL v16/v17 vs PG18-only 样例 | v16/v17 对 PG18-only 文件输出 `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX` | `VERSION_ONLY_SYNTAX` | 预期版本边界 |
+| PostgreSQL root trigger sample | root token-event 对 PL/pgSQL trigger body 中动态 SQL 记录 `DYNAMIC_SQL_UNRESOLVED` | `EXPECTED_FILTERED_SCOPE` | 动态 SQL 不作为确定关系/血缘 |
+
+## 重要语义边界
+
+- 临时表、中间表、routine 参数、局部变量、literal、`LIKE`、function rowset、`old/new` pseudo rowset 不进入最终物理 relation / lineage。
+- `sample-data/portable` 是 common token-event 的跨方言结构基线；它不承诺能被 MySQL/PostgreSQL 原样执行。
+- PostgreSQL v16/v17 没有独立 sample-data 目录；它们使用 PG18 样例中的兼容部分，并把 PG18-only SQL 作为版本边界诊断 fixture。
+- full-grammer 是明确版本 profile 下的 primary parser；token-event 是 fallback，但 fallback 能力通过 typed grammar 持续追近。
+
+## 当前 warning
+
+| 分组 | Warning | 说明 |
+| --- | --- | --- |
+| PostgreSQL v16 | `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX: 4` | PG18-only sample 在 PG16 profile 下的预期版本边界 |
+| PostgreSQL v17 | `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX: 4` | PG18-only sample 在 PG17 profile 下的预期版本边界 |
+| PostgreSQL root | `DYNAMIC_SQL_UNRESOLVED: 12` | trigger/procedure 中动态 SQL 不固化为确定 relation/lineage |
+
+## 本轮 lineage 变化审计
+
+| 分组 | Fixture | 变化 | SQL 上下文 | 判断 |
+| --- | --- | ---: | --- | --- |
+| PostgreSQL root token-event | `sample-data-enterprise-procedures-sql` | `0 -> 8` | `sp_post_stocktake` 中 `INSERT INTO inventory_transactions ... SELECT ... FROM stocktake_items JOIN stocktakes JOIN inventory` 与 `UPDATE inventory ... FROM stocktake_items JOIN stocktakes` | 合理新增；均为明确物理表字段到目标字段的 lineage |
+| PostgreSQL full-grammer v16/v17/v18 | `postgres16/17/18-sample-data-enterprise-procedures-sql` | `0 -> 8` | 同上，full-grammer 通过 `func_as` typed context 进入 PL/pgSQL body parser | 合理新增；不改变官方版本 grammar 边界 |
+| MySQL root token-event | `sample-data-enterprise-procedures-sql` | 保持 8 条 | `sp_post_stocktake` 中 MySQL `UPDATE inventory i JOIN ... AND (i.batch_id <=> sti.batch_id)` | `<=>` 是 MySQL 8.0 合法 null-safe equality；修 grammar 后恢复此前应有的两条 UPDATE lineage |
 
 ## 需要人工审核的项
 
-当前没有 `REVIEW_NEEDED` 项。
+当前没有 `REVIEW_NEEDED` 项。剩余差异均可归类为 token-event typed visitor 覆盖差距、版本边界或动态 SQL 保守过滤。

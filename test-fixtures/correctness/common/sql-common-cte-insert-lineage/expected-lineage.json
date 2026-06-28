@@ -1,0 +1,9 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:customers.id->customer_region_rollup.customer_id",
+    "VALUE:DIRECT:customers.region_id->customer_region_rollup.region_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

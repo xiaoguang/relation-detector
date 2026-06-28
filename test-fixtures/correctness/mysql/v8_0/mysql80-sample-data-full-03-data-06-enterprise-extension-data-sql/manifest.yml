@@ -1,0 +1,12 @@
+id: mysql80sample-data-full-03-data-06-enterprise-extension-data-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: mysql/8.0
+databaseVersion: 8.0.36
+sourceType: PLAIN_SQL
+schema: erp_system
+input: ../../../../../sample-data/mysql/8.0/03-data/06-enterprise-extension-data.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

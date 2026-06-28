@@ -115,6 +115,38 @@ final class MySqlFullGrammerDdlEventCollector {
         }
 
         @Override
+        public Void visitAlterTable(MySqlFullGrammerParser.AlterTableContext ctx) {
+            String previous = currentTable;
+            currentTable = table(ctx.tableRef());
+            if (ctx.alterTableActions() != null) {
+                visit(ctx.alterTableActions());
+            }
+            currentTable = previous;
+            return null;
+        }
+
+        @Override
+        public Void visitAlterListItem(MySqlFullGrammerParser.AlterListItemContext ctx) {
+            if (currentTable.isBlank()) {
+                return null;
+            }
+            long line = ctx.getStart().getLine();
+            if (ctx.tableConstraintDef() != null) {
+                visit(ctx.tableConstraintDef());
+                return null;
+            }
+            if (ctx.identifier() != null && ctx.checkOrReferences() != null
+                    && ctx.checkOrReferences().references() != null) {
+                MySqlFullGrammerParser.ReferencesContext references = ctx.checkOrReferences().references();
+                out.addForeignKeyEvents(currentTable, List.of(out.clean(ctx.identifier().getText())),
+                        table(references.tableRef()),
+                        identifierList(references.identifierListWithParentheses()), line);
+                return null;
+            }
+            return super.visitAlterListItem(ctx);
+        }
+
+        @Override
         public Void visitColumnDefinition(MySqlFullGrammerParser.ColumnDefinitionContext ctx) {
             if (currentTable.isBlank()) {
                 return null;

@@ -1,0 +1,11 @@
+{
+  "fingerprints": [
+    "FK_LIKE:attendance.employee_id->employees.id:PROCEDURE_JOIN",
+    "FK_LIKE:employees.department_id->departments.id:PROCEDURE_JOIN",
+    "FK_LIKE:employees.position_id->positions.id:PROCEDURE_JOIN",
+    "FK_LIKE:sales_order_items.order_id->sales_orders.id:PROCEDURE_JOIN",
+    "FK_LIKE:sales_order_items.product_id->products.id:PROCEDURE_JOIN",
+    "FK_LIKE:sales_orders.warehouse_id->warehouses.id:PROCEDURE_JOIN"
+  ],
+  "forbiddenTables": []
+}

@@ -1,0 +1,12 @@
+id: mysql80sample-data-full-01-schema-02-indexes-and-views-ddl
+databaseType: MYSQL
+parserTarget: DDL
+parserMode: full-grammer
+grammarProfile: mysql/8.0
+databaseVersion: 8.0.36
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: erp_system
+input: ../../../../../sample-data/mysql/8.0/01-schema/02-indexes-and-views.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE"
+  ],
+  "forbiddenTables": []
+}

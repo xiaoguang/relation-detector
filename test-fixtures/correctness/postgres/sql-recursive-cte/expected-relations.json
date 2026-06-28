@@ -1,7 +1,5 @@
 {
-  "fingerprints": [
-    "FK_LIKE:employees.manager_id->employees.id:SQL_LOG_JOIN"
-  ],
+  "fingerprints": [],
   "forbiddenTables": [
     "employee_paths"
   ]

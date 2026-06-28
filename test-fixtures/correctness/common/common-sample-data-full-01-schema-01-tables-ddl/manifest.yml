@@ -1,0 +1,11 @@
+id: commonsample-data-full-01-schema-01-tables-ddl
+databaseType: MYSQL
+parserTarget: DDL
+parserMode: token-event
+structuredParser: common-token-event
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: portable
+input: ../../../../sample-data/portable/01-schema/01-tables.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

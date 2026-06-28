@@ -1,4 +1,8 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "CO_OCCURRENCE:inventory.product_id->stocktake_items.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:inventory.warehouse_id->stocktakes.warehouse_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:PROCEDURE_JOIN"
+  ],
   "forbiddenTables": []
 }

@@ -1,0 +1,11 @@
+id: mysqlsample-data-full-01-schema-03-triggers-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: token-event
+sourceType: TRIGGER
+statementFormat: OBJECT_BLOCKS
+schema: erp_system
+input: input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

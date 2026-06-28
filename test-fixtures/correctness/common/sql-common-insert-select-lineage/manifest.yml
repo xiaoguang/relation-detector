@@ -1,0 +1,11 @@
+id: common-sql-common-insert-select-lineage
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: token-event
+structuredParser: common-token-event
+sourceType: PLAIN_SQL
+schema: shop
+input: input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,0 +1,12 @@
+id: postgres16sample-data-full-04-queries-07-supplier-analysis-queries-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: postgresql/16
+databaseVersion: 16.5
+sourceType: PLAIN_SQL
+schema: public
+input: ../../../../../sample-data/postgres/18/04-queries/07-supplier-analysis-queries.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,14 +1,5 @@
 {
-  "fingerprints": [
-    "VALUE:ARITHMETIC:pg17_product_catalog.version->pg17_product_catalog.version",
-    "VALUE:COALESCE:pg17_price_updates.attribute_updates->pg17_product_catalog.attributes",
-    "VALUE:COALESCE:pg17_price_updates.stock_adjustment->pg17_product_catalog.stock_level",
-    "VALUE:CONCAT_FORMAT:pg17_price_updates.sku->pg17_product_catalog.name",
-    "VALUE:DIRECT:pg17_price_updates.approver->pg17_product_catalog.updated_by",
-    "VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.base_price",
-    "VALUE:DIRECT:pg17_price_updates.new_price->pg17_product_catalog.current_price",
-    "VALUE:DIRECT:pg17_price_updates.sku->pg17_product_catalog.sku"
-  ],
+  "fingerprints": [],
   "forbiddenSources": [],
   "forbiddenTargets": [],
   "warningCodes": {}

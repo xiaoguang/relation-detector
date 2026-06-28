@@ -1,0 +1,8 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:employees.id->audit_log.id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

@@ -11,6 +11,7 @@ import com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerParser.A
 import com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerParser.A_expr_inContext;
 import com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerParser.C_expr_existsContext;
 import com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerParser.DeletestmtContext;
+import com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerParser.Func_asContext;
 import com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerParser.Func_alias_clauseContext;
 import com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerParser.In_expr_selectContext;
 import com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerParser.Join_qualContext;
@@ -62,6 +63,14 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
             visit(tree);
         }
         return core.mergedEvents();
+    }
+
+    @Override
+    public Void visitFunc_as(Func_asContext ctx) {
+        for (var body : ctx.sconst()) {
+            core.routineBody(ctx, body.getText());
+        }
+        return visitChildren(ctx);
     }
 
     @Override

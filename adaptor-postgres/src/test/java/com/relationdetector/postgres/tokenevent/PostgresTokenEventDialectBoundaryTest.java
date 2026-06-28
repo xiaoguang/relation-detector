@@ -6,12 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
 
@@ -19,6 +21,44 @@ import com.relationdetector.postgres.PostgresDatabaseAdaptor;
  * Verifies that PostgreSQL owns PostgreSQL-flavored token-event parser selection.
  */
 class PostgresTokenEventDialectBoundaryTest {
+    @Test
+    void postgresTokenEventExtractsPlpgsqlRoutineBodyLineage() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                CREATE OR REPLACE PROCEDURE post_stocktake()
+                LANGUAGE plpgsql
+                AS $$
+                BEGIN
+                    INSERT INTO inventory_transactions (product_id, before_qty, after_qty)
+                    SELECT sti.product_id, i.quantity, sti.counted_quantity
+                    FROM stocktake_items sti
+                    JOIN inventory i ON i.product_id = sti.product_id;
+
+                    UPDATE inventory i
+                    SET quantity = sti.counted_quantity,
+                        last_stocktake_date = st.stocktake_date
+                    FROM stocktake_items sti
+                    JOIN stocktakes st ON st.id = sti.stocktake_id
+                    WHERE i.product_id = sti.product_id;
+                END;
+                $$;
+                """, StatementSourceType.PROCEDURE, "PROCEDURE:post_stocktake", 1, 1, java.util.Map.of());
+
+        var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
+        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor().extract(statement, result).stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertEquals(java.util.List.of(
+                "VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty",
+                "VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity",
+                "VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty",
+                "VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id",
+                "VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date"), fingerprints,
+                () -> "PL/pgSQL routine body DML should produce token-event lineage: events="
+                        + result.events() + " attrs=" + result.attributes());
+    }
+
     @Test
     void adaptorExposesPostgresTokenEventSqlAndDdlParsers() {
         PostgresDatabaseAdaptor adaptor = new PostgresDatabaseAdaptor();
@@ -28,13 +68,21 @@ class PostgresTokenEventDialectBoundaryTest {
     }
 
     @Test
-    void postgresTokenEventDdlParserUsesPostgresDdlStructuredEventVisitor() {
+    void postgresTokenEventDdlParserUsesTypedCommonDdlVisitor() {
         var result = new PostgresTokenEventStructuredDdlParser().parseDdl(
                 "CREATE TABLE orders(user_id BIGINT REFERENCES users(id));",
                 "postgres-ddl.sql",
                 null);
 
-        assertEquals("PostgresDdlStructuredEventVisitor", result.attributes().get("ddlEventVisitor"));
+        assertEquals("CommonRelationSql", result.attributes().get("grammar"));
+        assertEquals("CommonTokenEventParseTreeVisitor", result.attributes().get("eventBuilder"));
+        assertFalse(result.attributes().containsKey("ddlEventVisitor"));
+        assertTrue(result.events().stream().anyMatch(event ->
+                event.type() == StructuredParseEventType.DDL_FOREIGN_KEY
+                        && "orders".equals(event.attributes().get("sourceTable"))
+                        && "user_id".equals(event.attributes().get("sourceColumn"))
+                        && "users".equals(event.attributes().get("targetTable"))
+                        && "id".equals(event.attributes().get("targetColumn"))));
     }
 
     @Test
@@ -79,7 +127,8 @@ class PostgresTokenEventDialectBoundaryTest {
         assertEquals("PostgresRelationSql", result.attributes().get("grammar"));
         assertEquals("PostgresRelationSqlLexer", result.attributes().get("lexer"));
         assertEquals("PostgresRelationSqlParser", result.attributes().get("parser"));
-        assertEquals("PostgresTokenEventSqlEventBuilder", result.attributes().get("eventBuilder"));
+        assertEquals("PostgresTokenEventParseTreeVisitor", result.attributes().get("eventBuilder"));
+        assertFalse(result.attributes().containsKey("legacySupplementBuilder"));
         assertEquals(true, result.attributes().get("tokenEventPrimary"));
     }
 
@@ -256,5 +305,14 @@ class PostgresTokenEventDialectBoundaryTest {
                 forbidden.contains(relation.source().table().tableName().toLowerCase(java.util.Locale.ROOT))
                         || forbidden.contains(relation.target().table().tableName().toLowerCase(java.util.Locale.ROOT))),
                 () -> "Forbidden MySQL-only rowsets must not become Postgres physical tables: " + relations);
+    }
+
+    private String lineageFingerprint(DataLineageCandidate lineage) {
+        return lineage.flowKind() + ":"
+                + lineage.transformType() + ":"
+                + lineage.sources().stream()
+                        .map(com.relationdetector.contracts.model.Endpoint::displayName)
+                        .collect(java.util.stream.Collectors.joining(","))
+                + "->" + lineage.target().displayName();
     }
 }

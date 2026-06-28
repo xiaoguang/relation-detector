@@ -1,7 +1,6 @@
 package com.relationdetector.core;
 
 import com.relationdetector.core.parse.SqlDialect;
-import com.relationdetector.core.ddl.*;
 import com.relationdetector.core.lineage.*;
 import com.relationdetector.core.parser.*;
 import com.relationdetector.core.relation.*;
@@ -27,12 +26,14 @@ import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 
 /**
- * Evidence and confidence assertions for complex SQL fixtures.
+ * Evidence and confidence assertions for common token-event SQL fixtures.
  *
- * <p>The syntax matrix proves relationships are found. This class proves the
- * found relationships carry the right explanation surface: evidence type,
- * source type, join-kind attributes, and final merged confidence after adding
- * metadata/profile support signals.
+ * <p>CN: 方言语法由 adaptor 测试覆盖；这里验证共享语义层如何保存 evidence
+ * type、source type、join-kind attributes，以及 metadata/profile 信号加入后的
+ * confidence。
+ *
+ * <p>EN: Dialect syntax is covered in adaptor tests. This class verifies the
+ * shared semantic layer explanation surface and confidence calculation.
  */
 class DialectParserEvidenceConfidenceTest {
     private final TokenEventSqlRelationParser parser = new TokenEventSqlRelationParser(
@@ -60,19 +61,11 @@ class DialectParserEvidenceConfidenceTest {
     @Test
     void viewAndProcedureSourcesKeepObjectSpecificEvidenceTypes() {
         String viewSql = """
-                CREATE VIEW user_orders AS
                 SELECT *
                 FROM orders o
                 JOIN users u ON o.user_id = u.id
                 """;
-        String procedureSql = """
-                CREATE PROCEDURE rebuild_user_orders()
-                BEGIN
-                  SELECT *
-                  FROM orders o
-                  JOIN users u ON o.user_id = u.id;
-                END
-                """;
+        String procedureSql = viewSql;
 
         RelationshipCandidate viewRelation = parseAndFind(viewSql, StatementSourceType.VIEW,
                 "orders", "user_id", "users", "id");

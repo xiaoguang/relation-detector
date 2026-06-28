@@ -20,8 +20,8 @@ import org.antlr.v4.runtime.Token;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.WarningType;
-import com.relationdetector.core.antlr.RelationSqlLexer;
-import com.relationdetector.core.antlr.RelationSqlParser;
+import com.relationdetector.core.antlr.common.CommonRelationSqlLexer;
+import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
 
 /**
  * Low-level ANTLR SQL support for token-event parsers.
@@ -42,12 +42,12 @@ public final class AntlrSqlParseSupport {
         return parseAntlr(
                 sql,
                 errors,
-                "RelationSql",
-                RelationSqlLexer.class.getSimpleName(),
-                RelationSqlParser.class.getSimpleName(),
-                RelationSqlLexer::new,
-                RelationSqlParser::new,
-                RelationSqlParser::script);
+                "CommonRelationSql",
+                CommonRelationSqlLexer.class.getSimpleName(),
+                CommonRelationSqlParser.class.getSimpleName(),
+                CommonRelationSqlLexer::new,
+                CommonRelationSqlParser::new,
+                CommonRelationSqlParser::script);
     }
 
     public static <L extends Lexer, P extends Parser> ParsedSql parseAntlr(

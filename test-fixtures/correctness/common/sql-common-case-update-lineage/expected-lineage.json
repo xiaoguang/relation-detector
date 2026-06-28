@@ -1,0 +1,8 @@
+{
+  "fingerprints": [
+    "CONTROL:CASE_WHEN:customer_scores.score,customer_scores.base_score->customer_scores.score_bucket"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

@@ -105,6 +105,88 @@ class MySqlFullGrammerExpressionAnalyzerTest {
                 () -> "Missing nested scalar subquery join. Actual=" + fingerprints);
     }
 
+    @Test
+    void cteProjectionThroughNestedDerivedTableKeepsOuterDefaultQualifier() {
+        SqlStatementRecord statement = statement("""
+                WITH leave_balance AS (
+                    SELECT e.id AS employee_id
+                    FROM employees e
+                ),
+                latest_performance AS (
+                    SELECT employee_id
+                    FROM (
+                        SELECT employee_id,
+                               ROW_NUMBER() OVER (PARTITION BY employee_id ORDER BY review_period DESC) AS rn
+                        FROM performance_reviews
+                        WHERE status = 'confirmed'
+                    ) t
+                    WHERE rn = 1
+                )
+                SELECT *
+                FROM leave_balance lb
+                JOIN latest_performance lp ON lb.employee_id = lp.employee_id;
+                """);
+
+        var structured = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new TokenEventRelationExtractor().extract(statement, structured)
+                .stream()
+                .map(this::relationFingerprint)
+                .toList();
+
+        assertTrue(fingerprints.contains("FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN"),
+                () -> "CTE projection should resolve through the nested derived table alias. Actual=" + fingerprints
+                        + " events=" + structured.events());
+    }
+
+
+    @Test
+    void updateArithmeticExpressionIncludesScalarSubquerySelectSource() {
+        SqlStatementRecord statement = statement("""
+                UPDATE customer_rollup cr
+                SET total_amount = cr.total_amount + (
+                  SELECT o.total_amount
+                  FROM orders o
+                  WHERE o.customer_id = cr.customer_id
+                );
+                """);
+        var result = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
+
+        Map<String, Object> assignment = result.events().stream()
+                .filter(event -> event.type() == StructuredParseEventType.UPDATE_ASSIGNMENT)
+                .findFirst()
+                .orElseThrow()
+                .attributes();
+
+        assertEquals("ARITHMETIC", assignment.get("transformType"));
+        assertTrue(((List<?>) assignment.get("sourceAliases")).contains("cr"));
+        assertTrue(((List<?>) assignment.get("sourceColumns")).contains("total_amount"));
+        assertTrue(((List<?>) assignment.get("sourceAliases")).contains("o"));
+        assertTrue(((List<?>) assignment.get("sourceColumns")).contains("total_amount"));
+    }
+
+    @Test
+    void dateAddIntervalColumnIsFunctionCallLineageSource() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO ar_aging_snapshots (customer_id, due_date)
+                SELECT so.customer_id,
+                       DATE_ADD(so.order_date, INTERVAL c.credit_days DAY)
+                FROM sales_orders so
+                JOIN customers c ON so.customer_id = c.id;
+                """);
+        var result = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
+
+        Map<String, Object> assignment = result.events().stream()
+                .filter(event -> event.type() == StructuredParseEventType.INSERT_SELECT_MAPPING)
+                .filter(event -> "due_date".equals(event.attributes().get("targetColumn")))
+                .findFirst()
+                .orElseThrow()
+                .attributes();
+
+        assertEquals("FUNCTION_CALL", assignment.get("transformType"));
+        assertEquals(List.of("so", "c"), assignment.get("sourceAliases"));
+        assertEquals(List.of("order_date", "credit_days"), assignment.get("sourceColumns"));
+    }
+
     private static SqlStatementRecord statement(String sql) {
         return new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL, "fixture.sql", 1, 1, Map.of());
     }

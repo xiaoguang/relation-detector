@@ -35,13 +35,13 @@ class TokenEventStructuredSqlParserTest {
         StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.MYSQL)
                 .parseSql(record(sql, StatementSourceType.PLAIN_SQL), null);
 
-        assertEquals("ANTLR_TOKEN_EVENT", result.backend());
+        assertEquals("ANTLR_COMMON_TOKEN_EVENT", result.backend());
         assertTrue(result.events().stream().anyMatch(event ->
-                event.type() == StructuredParseEventType.TABLE_REFERENCE
+                event.type() == StructuredParseEventType.ROWSET_REFERENCE
                         && "orders".equals(event.attributes().get("table"))
                         && "o".equals(event.attributes().get("alias"))));
         assertTrue(result.events().stream().anyMatch(event ->
-                event.type() == StructuredParseEventType.COLUMN_EQUALITY
+                event.type() == StructuredParseEventType.PREDICATE_EQUALITY
                         && "o".equals(event.attributes().get("leftAlias"))
                         && "user_id".equals(event.attributes().get("leftColumn"))
                         && "u".equals(event.attributes().get("rightAlias"))

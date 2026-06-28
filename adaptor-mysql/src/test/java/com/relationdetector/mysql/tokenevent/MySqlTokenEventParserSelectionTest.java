@@ -16,7 +16,7 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 
 class MySqlTokenEventParserSelectionTest {
     @Test
-    void mysqlTokenEventParserUsesMySqlDialectBuilder() {
+    void mysqlTokenEventParserUsesMySqlTypedVisitorOnly() {
         SqlStatementRecord statement = new SqlStatementRecord(
                 "SELECT * FROM `orders` o JOIN `users` u ON o.user_id = u.id",
                 StatementSourceType.PLAIN_SQL,
@@ -28,7 +28,8 @@ class MySqlTokenEventParserSelectionTest {
         var result = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
 
         assertEquals("MYSQL", result.dialect());
-        assertEquals("MySqlTokenEventSqlEventBuilder", result.attributes().get("eventBuilder"));
+        assertEquals("MySqlTokenEventParseTreeVisitor", result.attributes().get("eventBuilder"));
+        assertFalse(result.attributes().containsKey("legacySupplementBuilder"));
         assertEquals(Boolean.TRUE, result.attributes().get("tokenEvent"));
         assertEquals(Boolean.TRUE, result.attributes().get("tokenEventPrimary"));
         assertTrue(result.events().stream().anyMatch(event ->

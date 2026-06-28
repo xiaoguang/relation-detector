@@ -1,0 +1,14 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus",
+    "VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount",
+    "VALUE:COALESCE:sales_order_items.amount->sales_commissions.commission_amount",
+    "VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount",
+    "VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id",
+    "VALUE:DIRECT:sales_orders.id->sales_commissions.order_id",
+    "VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

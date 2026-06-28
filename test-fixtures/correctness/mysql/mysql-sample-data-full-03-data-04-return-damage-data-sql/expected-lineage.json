@@ -1,0 +1,9 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:damage_reports.id->damage_report_items.report_id",
+    "VALUE:DIRECT:purchase_returns.id->purchase_return_items.return_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

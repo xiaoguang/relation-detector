@@ -1,0 +1,13 @@
+{
+  "fingerprints": [
+    "FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN",
+    "FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN",
+    "FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN",
+    "FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN",
+    "FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN",
+    "FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN",
+    "FK_LIKE:project_costs.project_id->projects.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": []
+}

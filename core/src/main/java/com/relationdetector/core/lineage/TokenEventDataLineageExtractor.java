@@ -137,11 +137,14 @@ public final class TokenEventDataLineageExtractor {
         if (targetColumn.isBlank()) {
             return null;
         }
+        TableId table = aliases.get(normalize(text(event, "targetAlias")));
+        if (table != null) {
+            return ColumnRef.of(table, targetColumn);
+        }
         String targetTable = text(event, "targetTable");
         if (!targetTable.isBlank()) {
             return ColumnRef.of(tableId(targetTable), targetColumn);
         }
-        TableId table = aliases.get(normalize(text(event, "targetAlias")));
         if (table == null && aliases.size() == 1) {
             table = aliases.values().iterator().next();
         }

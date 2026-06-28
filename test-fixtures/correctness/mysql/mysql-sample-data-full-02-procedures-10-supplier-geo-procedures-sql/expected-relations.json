@@ -1,0 +1,15 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:inspection_reports.product_id->supplier_products.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:product_batches.supplier_id->supplier_products.supplier_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:purchase_order_items.product_id->supplier_products.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:purchase_orders.supplier_id->supplier_products.supplier_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:purchase_return_items.product_id->supplier_products.product_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:purchase_returns.supplier_id->supplier_products.supplier_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "FK_LIKE:inspection_reports.batch_id->product_batches.id:PROCEDURE_JOIN",
+    "FK_LIKE:purchase_order_items.order_id->purchase_orders.id:PROCEDURE_JOIN",
+    "FK_LIKE:purchase_return_items.return_id->purchase_returns.id:PROCEDURE_JOIN",
+    "FK_LIKE:supplier_products.supplier_id->suppliers.id:PROCEDURE_JOIN"
+  ],
+  "forbiddenTables": []
+}

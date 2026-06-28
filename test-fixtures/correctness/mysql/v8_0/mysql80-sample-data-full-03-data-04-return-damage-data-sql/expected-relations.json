@@ -1,0 +1,7 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:purchase_order_items.order_id->purchase_returns.purchase_order_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": []
+}

@@ -1,0 +1,10 @@
+id: mysqlsample-data-full-04-queries-01-complex-queries-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: token-event
+sourceType: PLAIN_SQL
+schema: erp_system
+input: ../../../../sample-data/mysql/8.0/04-queries/01-complex-queries.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,9 +1,5 @@
 {
-  "fingerprints": [
-    "VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit",
-    "VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags",
-    "VALUE:CONCAT_FORMAT:dormant_risk_scores.country_code,dormant_risk_scores.days_since_last_active,dormant_risk_scores.wealth_tile,user_financial_snapshot.primary_categories->account_balances.compliance_notes"
-  ],
+  "fingerprints": [],
   "forbiddenSources": [
     "p_input_ledger_json",
     "p_max_limit_cap",

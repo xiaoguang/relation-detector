@@ -1,0 +1,15 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.after_accumulated",
+    "VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.before_accumulated",
+    "VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation->depreciation_log.after_net_value",
+    "VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation->depreciation_log.before_net_value",
+    "VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id",
+    "VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount",
+    "VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id",
+    "VALUE:FUNCTION_CALL:shipments.shipped_at->shipping_tracks.track_time"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

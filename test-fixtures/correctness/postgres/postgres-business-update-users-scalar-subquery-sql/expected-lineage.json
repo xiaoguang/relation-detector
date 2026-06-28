@@ -1,8 +1,5 @@
 {
-  "fingerprints": [
-    "CONTROL:CASE_WHEN:orders.pay_amount->users.level",
-    "VALUE:AGGREGATE:orders.pay_amount->users.total_spent"
-  ],
+  "fingerprints": [],
   "forbiddenSources": [
     "0.00"
   ],

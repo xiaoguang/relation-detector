@@ -1,0 +1,12 @@
+id: postgres18sample-data-full-01-schema-05-third-batch-tables-ddl
+databaseType: POSTGRESQL
+parserTarget: DDL
+parserMode: full-grammer
+grammarProfile: postgresql/18
+databaseVersion: 18.1
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: public
+input: ../../../../../sample-data/postgres/18/01-schema/05-third-batch-tables.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

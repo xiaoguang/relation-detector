@@ -1,0 +1,21 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:approval_instances.current_node_level->approval_nodes.node_level:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:approval_instances.submitted_by->employees.id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:approval_instances.workflow_id->approval_nodes.workflow_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "CO_OCCURRENCE:warehouses.manager_id->employees.manager_id:SQL_LOG_COLUMN_CO_OCCURRENCE",
+    "FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN",
+    "FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN",
+    "FK_LIKE:audit_log.employee_id->employees.id:SQL_LOG_JOIN",
+    "FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN",
+    "FK_LIKE:invoices.reference_id->purchase_orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN",
+    "FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN",
+    "FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN",
+    "FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": []
+}

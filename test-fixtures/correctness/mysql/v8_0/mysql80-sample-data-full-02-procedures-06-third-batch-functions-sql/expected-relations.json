@@ -1,0 +1,7 @@
+{
+  "fingerprints": [
+    "FK_LIKE:contract_milestones.contract_id->contracts.id:PROCEDURE_JOIN",
+    "FK_LIKE:sales_orders.customer_id->customers.id:PROCEDURE_JOIN"
+  ],
+  "forbiddenTables": []
+}

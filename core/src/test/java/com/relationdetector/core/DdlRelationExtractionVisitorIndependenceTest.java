@@ -1,6 +1,5 @@
 package com.relationdetector.core;
 
-import com.relationdetector.core.ddl.*;
 import com.relationdetector.core.lineage.*;
 import com.relationdetector.core.parser.*;
 import com.relationdetector.core.relation.*;
@@ -16,6 +15,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.Enums.RelationType;
@@ -60,6 +60,25 @@ class DdlRelationExtractionVisitorIndependenceTest {
                         """, "raw-has-fk.sql", structured);
 
         assertTrue(relations.isEmpty(), () -> "Empty token-event DDL events must not emit relationships: " + relations);
+    }
+
+    @Test
+    void mergesDuplicateForeignKeyEventsAndKeepsIndexEvidenceStable() {
+        StructuredParseResult structured = structured(List.of(
+                fk("orders", "user_id", "users", "id", 1, 1),
+                fk("orders", "user_id", "users", "id", 1, 1),
+                index("orders", "user_id", "SOURCE_INDEX"),
+                index("orders", "user_id", "SOURCE_INDEX"),
+                index("users", "id", "TARGET_UNIQUE"),
+                index("users", "id", "TARGET_UNIQUE")
+        ));
+
+        List<RelationshipCandidate> relations = new DdlRelationExtractionVisitor()
+                .extract("structured events only", "ddl-events.sql", structured);
+
+        assertEquals(1, relations.size());
+        assertEquals(List.of(EvidenceType.DDL_FOREIGN_KEY, EvidenceType.SOURCE_INDEX, EvidenceType.TARGET_UNIQUE),
+                relations.get(0).evidence().stream().map(evidence -> evidence.type()).toList());
     }
 
     private StructuredParseResult structured(List<StructuredSqlEvent> events) {

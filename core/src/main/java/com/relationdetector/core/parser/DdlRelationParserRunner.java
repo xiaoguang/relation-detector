@@ -10,6 +10,7 @@ import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
+import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 
@@ -74,8 +75,25 @@ public final class DdlRelationParserRunner {
             EvidenceSourceType sourceType,
             AdaptorContext context
     ) {
-        StructuredParseResult structured = parserBundleSelector.select(adaptor, config, context).ddlParser()
-                .parseDdl(ddl, sourceName, context);
+        StructuredDdlParser parser = parserBundleSelector.select(adaptor, config, context).ddlParser();
+        return parseText(parser, ddl, sourceName, sourceType, context);
+    }
+
+    /**
+     * 使用调用方已经选定的 DDL parser 解析 DDL 文本。
+     *
+     * <p>EN: Parses DDL text with an explicitly selected DDL parser. Correctness
+     * tests use this for common portable fixtures, where the fixture should run
+     * the common token-event parser instead of the dialect adaptor parser.
+     */
+    public List<RelationshipCandidate> parseText(
+            StructuredDdlParser parser,
+            String ddl,
+            String sourceName,
+            EvidenceSourceType sourceType,
+            AdaptorContext context
+    ) {
+        StructuredParseResult structured = parser.parseDdl(ddl, sourceName, context);
         return rewriteEvidenceSource(
                 visitor.extract(ddl, sourceName, structured),
                 sourceType,

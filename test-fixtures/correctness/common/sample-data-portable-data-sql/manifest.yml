@@ -1,0 +1,10 @@
+id: common-sample-data-portable-data-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: token-event
+structuredParser: common-token-event
+sourceType: PLAIN_SQL
+schema: portable
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

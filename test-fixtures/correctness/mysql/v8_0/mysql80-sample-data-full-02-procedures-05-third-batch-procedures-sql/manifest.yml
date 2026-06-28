@@ -1,0 +1,13 @@
+id: mysql80sample-data-full-02-procedures-05-third-batch-procedures-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: mysql/8.0
+databaseVersion: 8.0.36
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+schema: erp_system
+input: input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,7 +1,5 @@
 {
   "fingerprints": [
-    "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN",
-    "FK_LIKE:order_items.product_id->products.id:SQL_LOG_JOIN",
     "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
     "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN"
   ],

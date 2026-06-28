@@ -1,0 +1,12 @@
+id: commonsample-data-full-01-schema-02-views-views-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: token-event
+structuredParser: common-token-event
+sourceType: VIEW
+statementFormat: OBJECT_BLOCKS
+schema: portable
+input: input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

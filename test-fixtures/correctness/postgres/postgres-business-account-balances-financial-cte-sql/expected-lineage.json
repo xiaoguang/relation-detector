@@ -1,9 +1,5 @@
 {
-  "fingerprints": [
-    "VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit",
-    "VALUE:CONCAT_FORMAT:users.country_code,user_financial_snapshot.last_activity_time,user_financial_snapshot.net_cash_flow,transaction_ledgers.merchant_category->account_balances.compliance_notes",
-    "VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags"
-  ],
+  "fingerprints": [],
   "forbiddenSources": [
     "p_input_ledger_json",
     "p_max_limit_cap",

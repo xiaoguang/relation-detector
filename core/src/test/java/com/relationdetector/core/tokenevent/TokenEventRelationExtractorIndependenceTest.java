@@ -83,7 +83,7 @@ class TokenEventRelationExtractorIndependenceTest {
         List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
 
         assertTrue(relations.isEmpty(),
-                () -> "MySQL-only STRAIGHT_JOIN rowset extraction belongs in MySqlTokenEventSqlEventBuilder: "
+                () -> "MySQL-only STRAIGHT_JOIN rowset extraction belongs in MySQL token-event typed visitor: "
                         + relations);
     }
 
@@ -95,7 +95,7 @@ class TokenEventRelationExtractorIndependenceTest {
         List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
 
         assertTrue(relations.isEmpty(),
-                () -> "PostgreSQL-only ONLY rowset extraction belongs in PostgresTokenEventSqlEventBuilder: "
+                () -> "PostgreSQL-only ONLY rowset extraction belongs in PostgreSQL token-event typed visitor: "
                         + relations);
     }
 
@@ -116,7 +116,7 @@ class TokenEventRelationExtractorIndependenceTest {
             List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(record(sql), structured(List.of()));
 
             assertTrue(relations.isEmpty(),
-                    () -> "MySQL-only rowset extraction belongs in MySqlTokenEventSqlEventBuilder. SQL: " + sql
+                    () -> "MySQL-only rowset extraction belongs in MySQL token-event typed visitor. SQL: " + sql
                             + " Actual: " + relations);
         }
     }

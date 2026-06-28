@@ -42,7 +42,11 @@ import com.relationdetector.core.lineage.DataLineageMerger;
 import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.log.SqlLogNoiseFilter;
+import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
+import com.relationdetector.core.relation.TokenEventRelationExtractor;
+import com.relationdetector.core.tokenevent.CommonTokenEventStructuredSqlParser;
+import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
 
@@ -149,12 +153,54 @@ class CorrectnessFixtureRunnerTest {
         assertTrue(error.getMessage().contains("Missing relation-detector-fixture-end"));
     }
 
+    @Test
+    void commonDdlFixtureUsesCommonParserInsteadOfDialectAdaptorParser() throws Exception {
+        String input = """
+                CREATE TABLE "customers" (
+                    "id" INT PRIMARY KEY
+                );
+                CREATE TABLE "orders" (
+                    "id" INT PRIMARY KEY,
+                    "customer_id" INT,
+                    FOREIGN KEY ("customer_id") REFERENCES "customers" ("id")
+                );
+                """;
+        CorrectnessFixture fixture = new CorrectnessFixture(
+                Path.of("in-memory-common-ddl-fixture.yml"),
+                "in-memory-common-ddl-fixture",
+                DatabaseType.MYSQL,
+                "DDL",
+                StatementSourceType.DDL_FILE,
+                "SEMICOLON",
+                EvidenceSourceType.DDL_FILE,
+                "portable",
+                Path.of("in-memory-common-ddl.sql"),
+                Path.of("expected-relations.json"),
+                Path.of("expected-lineage.json"),
+                Path.of("expected-diagnostics.json"),
+                "",
+                "common-token-event",
+                "token-event",
+                "",
+                "");
+
+        runDdlFixture(
+                fixture,
+                input,
+                new ExpectedRelations(
+                        List.of("FK_LIKE:orders.customer_id->customers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE"),
+                        List.of()),
+                new ExpectedDiagnostics("", Map.of()));
+    }
+
     private void runFixture(CorrectnessFixture fixture) throws Exception {
         String input = Files.readString(fixture.inputFile());
         ExpectedRelations expectedRelations = ExpectedRelations.read(fixture.expectedRelationsFile());
         ExpectedDiagnostics expectedDiagnostics = ExpectedDiagnostics.read(fixture.expectedDiagnosticsFile());
         ExpectedLineage expectedLineage = ExpectedLineage.readIfPresent(fixture.expectedLineageFile());
-        assertEquals(expectedDiagnostics.fixtureSha256(), sha256(input), fixture.id() + " fixture hash");
+        if (!Boolean.getBoolean("updateCorrectnessGold")) {
+            assertEquals(expectedDiagnostics.fixtureSha256(), sha256(input), fixture.id() + " fixture hash");
+        }
 
         if (fixture.parserTarget().equals("SQL")) {
             runSqlFixture(fixture, expectedRelations, expectedDiagnostics, expectedLineage);
@@ -180,6 +226,21 @@ class CorrectnessFixtureRunnerTest {
         List<SqlStatementRecord> statements = sqlStatements(fixture, inputOf(fixture), warnings);
         List<RelationshipCandidate> relationships = new ArrayList<>();
         List<DataLineageCandidate> lineages = new ArrayList<>();
+        if (isCommonTokenEventFixture(fixture)) {
+            StructuredSqlParser parser = new CommonTokenEventStructuredSqlParser();
+            TokenEventRelationExtractor relationExtractor = new TokenEventRelationExtractor();
+            TokenEventDataLineageExtractor lineageExtractor = new TokenEventDataLineageExtractor();
+            for (SqlStatementRecord statement : statements) {
+                StructuredParseResult structured = parser.parseSql(statement, context);
+                relationships.addAll(relationExtractor.extract(statement, structured));
+                lineages.addAll(lineageExtractor.extract(statement, structured));
+            }
+            assertRelations(fixture, expectedRelations, relationships);
+            assertLineage(fixture, expectedLineage,
+                    new DataLineageMerger().merge(lineages).stream().map(this::lineageFingerprint).toList());
+            assertWarningCodes(fixture, expectedDiagnostics, warnings);
+            return;
+        }
         SqlRelationParserRunner runner = new SqlRelationParserRunner();
         TokenEventDataLineageExtractor lineageExtractor = new TokenEventDataLineageExtractor();
         for (SqlStatementRecord statement : statements) {
@@ -230,10 +291,21 @@ class CorrectnessFixtureRunnerTest {
         ScanConfig config = config(fixture);
         List<WarningMessage> warnings = new ArrayList<>();
         AdaptorContext context = context(fixture, warnings);
-        List<RelationshipCandidate> relationships = new DdlRelationParserRunner()
-                .parseText(adaptor, config, input, fixture.id() + ".ddl.sql", fixture.evidenceSourceType(), context);
+        DdlRelationParserRunner runner = new DdlRelationParserRunner();
+        List<RelationshipCandidate> relationships = isCommonTokenEventFixture(fixture)
+                ? runner.parseText(
+                        new TokenEventStructuredDdlParser(SqlDialect.GENERIC),
+                        input,
+                        fixture.id() + ".ddl.sql",
+                        fixture.evidenceSourceType(),
+                        context)
+                : runner.parseText(adaptor, config, input, fixture.id() + ".ddl.sql", fixture.evidenceSourceType(), context);
         assertRelations(fixture, expectedRelations, relationships);
         assertWarningCodes(fixture, expectedDiagnostics, warnings);
+    }
+
+    private boolean isCommonTokenEventFixture(CorrectnessFixture fixture) {
+        return fixture.structuredParser().equals("common-token-event");
     }
 
     private void assertRelations(
@@ -265,7 +337,7 @@ class CorrectnessFixtureRunnerTest {
             CorrectnessFixture fixture,
             ExpectedDiagnostics expected,
             List<WarningMessage> actual
-    ) {
+    ) throws Exception {
         Map<String, Long> actualCodes = actual.stream()
                 .collect(Collectors.groupingBy(WarningMessage::code, LinkedHashMap::new, Collectors.counting()));
         if (isStrictFullGrammerFixture(fixture)) {
@@ -279,7 +351,7 @@ class CorrectnessFixtureRunnerTest {
         if (Boolean.getBoolean("updateCorrectnessGold")) {
             try {
                 Files.writeString(fixture.expectedDiagnosticsFile(),
-                        expectedDiagnosticsJson(expected.fixtureSha256(), actualCodes));
+                        expectedDiagnosticsJson(sha256(inputOf(fixture)), actualCodes));
             } catch (Exception exception) {
                 throw new IllegalStateException("Cannot update diagnostics gold for " + fixture.id(), exception);
             }
@@ -520,6 +592,7 @@ class CorrectnessFixtureRunnerTest {
             Path expectedLineageFile,
             Path expectedDiagnosticsFile,
             String objectSourceFilter,
+            String structuredParser,
             String parserMode,
             String grammarProfile,
             String databaseVersion
@@ -541,6 +614,7 @@ class CorrectnessFixtureRunnerTest {
                     root.resolve(values.getOrDefault("expectedLineage", "expected-lineage.json")).normalize(),
                     root.resolve(required(values, "expectedDiagnostics", manifest)).normalize(),
                     values.getOrDefault("objectSourceFilter", ""),
+                    values.getOrDefault("structuredParser", ""),
                     values.getOrDefault("parserMode", "auto"),
                     values.getOrDefault("grammarProfile", ""),
                     values.getOrDefault("databaseVersion", ""));

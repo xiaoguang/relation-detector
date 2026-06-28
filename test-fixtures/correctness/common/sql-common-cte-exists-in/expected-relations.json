@@ -1,0 +1,8 @@
+{
+  "fingerprints": [
+    "FK_LIKE:customer_flags.customer_id->customers.id:SQL_LOG_EXISTS",
+    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN",
+    "FK_LIKE:orders.sales_rep_id->sales_reps.id:SQL_LOG_SUBQUERY_IN"
+  ],
+  "forbiddenTables": []
+}

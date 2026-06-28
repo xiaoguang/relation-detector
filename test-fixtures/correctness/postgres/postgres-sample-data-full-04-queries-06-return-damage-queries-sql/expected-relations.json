@@ -1,0 +1,7 @@
+{
+  "fingerprints": [
+    "FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN",
+    "FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": []
+}

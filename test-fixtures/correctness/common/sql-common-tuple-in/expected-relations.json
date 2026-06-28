@@ -1,0 +1,7 @@
+{
+  "fingerprints": [
+    "FK_LIKE:orders.customer_id->customer_regions.customer_id:SQL_LOG_SUBQUERY_IN",
+    "FK_LIKE:orders.region_id->customer_regions.region_id:SQL_LOG_SUBQUERY_IN"
+  ],
+  "forbiddenTables": []
+}
