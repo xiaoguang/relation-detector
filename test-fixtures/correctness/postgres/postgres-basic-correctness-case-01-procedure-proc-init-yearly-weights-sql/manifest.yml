@@ -1,0 +1,11 @@
+id: postgres-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: token-event
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+objectSourceFilter: PROCEDURE:case_01.proc_init_yearly_weights
+schema: public
+input: ../../../postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

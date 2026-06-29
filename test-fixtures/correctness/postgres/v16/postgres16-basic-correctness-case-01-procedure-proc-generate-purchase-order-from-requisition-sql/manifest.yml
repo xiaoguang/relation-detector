@@ -1,0 +1,13 @@
+id: postgres16-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: postgresql/16
+databaseVersion: 16.5
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+objectSourceFilter: PROCEDURE:case_01.proc_generate_purchase_order_from_requisition
+schema: public
+input: ../../../../postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

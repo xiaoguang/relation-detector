@@ -152,6 +152,29 @@ class PostgresTokenEventDialectBoundaryTest {
     }
 
     @Test
+    void postgresTokenEventTreatsWindowedSumAsCumulativeLineage() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO jsh_temp_mock_plan (mock_timestamp_str)
+                SELECT hp.hour_val + SUM(hp.weight) OVER (ORDER BY hp.hour_val)
+                FROM jsh_temp_hour_pdf hp;
+                """, StatementSourceType.PLAIN_SQL, "postgres-window-lineage.sql", 1, 1, java.util.Map.of());
+
+        var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
+        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor()
+                .extract(statement, result)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertEquals(java.util.List.of(
+                "VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str"),
+                fingerprints,
+                () -> "PostgreSQL window aggregate should remain a typed cumulative expression: "
+                        + fingerprints + " events=" + result.events() + " attrs=" + result.attributes());
+    }
+
+    @Test
     void adaptorExposesPostgresTokenEventSqlAndDdlParsers() {
         PostgresDatabaseAdaptor adaptor = new PostgresDatabaseAdaptor();
 

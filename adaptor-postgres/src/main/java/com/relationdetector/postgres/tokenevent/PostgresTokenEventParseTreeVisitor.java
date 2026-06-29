@@ -526,8 +526,10 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
                 }
             }
             String functionName = baseName(qualifiedName(function.functionCall().qualifiedName())).toLowerCase(Locale.ROOT);
+            boolean windowed = function.windowClause() != null;
             LineageTransformType transform = switch (functionName) {
-                case "sum", "avg", "count", "min", "max" -> LineageTransformType.AGGREGATE;
+                case "sum" -> windowed ? LineageTransformType.CUMULATIVE : LineageTransformType.AGGREGATE;
+                case "avg", "count", "min", "max" -> LineageTransformType.AGGREGATE;
                 case "coalesce" -> LineageTransformType.COALESCE;
                 case "concat", "format", "string_agg" -> LineageTransformType.CONCAT_FORMAT;
                 default -> LineageTransformType.FUNCTION_CALL;

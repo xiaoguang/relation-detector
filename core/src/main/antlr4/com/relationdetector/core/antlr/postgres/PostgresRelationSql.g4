@@ -144,7 +144,7 @@ looseToken
     | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | IF | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
-    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY
+    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
     | PARAMETER | DOT | COMMA | STAR | EQ | LBRACKET | RBRACKET | PLUS
     | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | OTHER
@@ -411,7 +411,7 @@ comparisonOperator
 expression
     : expression arithmeticOperator expression                            # binaryExpression
     | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
-    | functionCall                                                        # functionExpression
+    | functionCall windowClause?                                          # functionExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
     | qualifiedName                                                       # columnExpression
     | literal                                                             # literalExpression
@@ -424,6 +424,10 @@ caseWhenClause
 
 functionCall
     : qualifiedName LPAREN (DISTINCT? expressionList | STAR)? functionCallOption* RPAREN
+    ;
+
+windowClause
+    : OVER LPAREN functionCallOptionToken* RPAREN
     ;
 
 functionCallOption
@@ -481,7 +485,7 @@ sqlToken
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
-    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY
+    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
     | PARAMETER | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | LBRACKET | RBRACKET | PLUS
     | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | OTHER
@@ -558,6 +562,7 @@ ROWS: R O W S;
 TABLESAMPLE: T A B L E S A M P L E;
 LATERAL: L A T E R A L;
 ORDINALITY: O R D I N A L I T Y;
+OVER: O V E R;
 CASE: C A S E;
 WHEN: W H E N;
 THEN: T H E N;

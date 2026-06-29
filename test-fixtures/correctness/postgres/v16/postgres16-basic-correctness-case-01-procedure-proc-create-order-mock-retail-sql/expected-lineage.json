@@ -1,0 +1,8 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

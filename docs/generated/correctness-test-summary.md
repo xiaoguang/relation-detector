@@ -8,18 +8,18 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 
 | Metric | Count |
 | --- | ---: |
-| Total correctness fixtures | 622 |
-| SQL fixtures | 521 |
-| DDL fixtures | 101 |
-| Fixtures with expected lineage | 142 |
+| Total correctness fixtures | 674 |
+| SQL fixtures | 569 |
+| DDL fixtures | 105 |
+| Fixtures with expected lineage | 162 |
 | Common directory fixtures | 31 |
 | MySQL directory fixtures | 186 |
-| PostgreSQL directory fixtures | 405 |
+| PostgreSQL directory fixtures | 457 |
 
 | Database type | Total | SQL | DDL |
 | --- | ---: | ---: | ---: |
 | MYSQL | 217 | 182 | 35 |
-| POSTGRESQL | 405 | 339 | 66 |
+| POSTGRESQL | 457 | 387 | 70 |
 
 ## Common Fixtures
 
@@ -11850,6 +11850,50 @@ CREATE TABLE case_01.auth_permission (
 ```
 _Preview truncated; see input file for full content._
 
+### `postgres-basic-correctness-case-01-proc-support-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/ddl/mysql-proc-support-tables.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-proc-support-tables-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-proc-support-tables-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:fe_agent_message.sessionid->fe_agent_session.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:graph_checkpoint.thread_id->graph_thread.thread_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL support-table DDL translated from MySQL basic-correctness case_01 SHOW CREATE TABLE.
+-- MySQL storage, charset, collation, AUTO_INCREMENT and COMMENT clauses are converted or omitted.
+-- This file is a parser correctness fixture input, not a production migration script.
+
+-- relation-detector-fixture-table: public.GRAPH_CHECKPOINT
+CREATE TABLE graph_checkpoint (
+  checkpoint_id VARCHAR(36) NOT NULL,
+  thread_id VARCHAR(36) NOT NULL,
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres-ddl-alter-table-fk`
 
 | Field | Value |
@@ -12350,6 +12394,49 @@ _Preview truncated; see input file for full content._
 -- ============================================================
 
 -- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-basic-correctness-case-01-proc-support-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/ddl/mysql-proc-support-tables.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-proc-support-tables-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-proc-support-tables-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL support-table DDL translated from MySQL basic-correctness case_01 SHOW CREATE TABLE.
+-- MySQL storage, charset, collation, AUTO_INCREMENT and COMMENT clauses are converted or omitted.
+-- This file is a parser correctness fixture input, not a production migration script.
+
+-- relation-detector-fixture-table: public.GRAPH_CHECKPOINT
+CREATE TABLE graph_checkpoint (
+  checkpoint_id VARCHAR(36) NOT NULL,
+  thread_id VARCHAR(36) NOT NULL,
 ```
 _Preview truncated; see input file for full content._
 
@@ -14303,6 +14390,49 @@ CREATE TABLE case_01.auth_permission (
 ```
 _Preview truncated; see input file for full content._
 
+### `postgres17-basic-correctness-case-01-proc-support-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/ddl/mysql-proc-support-tables.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-proc-support-tables-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-proc-support-tables-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL support-table DDL translated from MySQL basic-correctness case_01 SHOW CREATE TABLE.
+-- MySQL storage, charset, collation, AUTO_INCREMENT and COMMENT clauses are converted or omitted.
+-- This file is a parser correctness fixture input, not a production migration script.
+
+-- relation-detector-fixture-table: public.GRAPH_CHECKPOINT
+CREATE TABLE graph_checkpoint (
+  checkpoint_id VARCHAR(36) NOT NULL,
+  thread_id VARCHAR(36) NOT NULL,
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres17-ddl-alter-table-fk`
 
 | Field | Value |
@@ -15695,6 +15825,50 @@ CREATE TABLE case_01.auth_permission (
 ```
 _Preview truncated; see input file for full content._
 
+### `postgres18-basic-correctness-case-01-proc-support-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/ddl/mysql-proc-support-tables.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-proc-support-tables-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-proc-support-tables-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:fe_agent_message.sessionid->fe_agent_session.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:graph_checkpoint.thread_id->graph_thread.thread_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL support-table DDL translated from MySQL basic-correctness case_01 SHOW CREATE TABLE.
+-- MySQL storage, charset, collation, AUTO_INCREMENT and COMMENT clauses are converted or omitted.
+-- This file is a parser correctness fixture input, not a production migration script.
+
+-- relation-detector-fixture-table: public.GRAPH_CHECKPOINT
+CREATE TABLE graph_checkpoint (
+  checkpoint_id VARCHAR(36) NOT NULL,
+  thread_id VARCHAR(36) NOT NULL,
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres18-ddl-alter-table-fk`
 
 | Field | Value |
@@ -16905,6 +17079,581 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 -- relation-detector-fixture-end
 
 -- relation-detector-fixture-source: TRIGGER:pg_trigger:rnc_database.rnc_database_audit
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.depot_id->jsh_material_current_stock.depot_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_current_stock.material_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_material_current_stock.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_material_current_stock.material_id->jsh_material.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.depot_id->jsh_material_current_stock.depot_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_current_stock.material_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:jsh_depot_item.material_id->jsh_material.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_material.category_id->jsh_temp_category_affinity.source_cat_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_material_extend.material_id->jsh_material.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.org_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_organization.parent_id->jsh_organization.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
+- `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
+- `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_orga_user_rel.orga_id->jsh_temp_org_pdf.org_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
 ```
 _Preview truncated; see input file for full content._
 
@@ -19271,6 +20020,10 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_requisitions.requester_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 
@@ -19625,6 +20378,581 @@ SET status = 'PAID'
 FROM users u
 WHERE o.user_id = u.id;
 ```
+
+### `postgres16-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.depot_id->jsh_material_current_stock.depot_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_current_stock.material_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_material_current_stock.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_material_current_stock.material_id->jsh_material.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.depot_id->jsh_material_current_stock.depot_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_current_stock.material_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:jsh_depot_item.material_id->jsh_material.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_material.category_id->jsh_temp_category_affinity.source_cat_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_material_extend.material_id->jsh_material.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.org_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_organization.parent_id->jsh_organization.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
+- `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
+- `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_orga_user_rel.orga_id->jsh_temp_org_pdf.org_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
 
 ### `postgres16-edge-cases-sql`
 
@@ -23841,6 +25169,581 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 -- relation-detector-fixture-end
 
 -- relation-detector-fixture-source: TRIGGER:pg_trigger:rnc_database.rnc_database_audit
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.depot_id->jsh_material_current_stock.depot_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_current_stock.material_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_material_current_stock.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_material_current_stock.material_id->jsh_material.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.depot_id->jsh_material_current_stock.depot_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_current_stock.material_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:jsh_depot_item.material_id->jsh_material.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_material.category_id->jsh_temp_category_affinity.source_cat_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_material_extend.material_id->jsh_material.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.org_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_organization.parent_id->jsh_organization.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
+- `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
+- `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_orga_user_rel.orga_id->jsh_temp_org_pdf.org_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
 ```
 _Preview truncated; see input file for full content._
 
@@ -28123,6 +30026,581 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 -- relation-detector-fixture-end
 
 -- relation-detector-fixture-source: TRIGGER:pg_trigger:rnc_database.rnc_database_audit
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-batch-insert-purchase-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-batch-mock-retail-orders-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.depot_id->jsh_material_current_stock.depot_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_current_stock.material_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_material_current_stock.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_material_current_stock.material_id->jsh_material.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.depot_id->jsh_material_current_stock.depot_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_current_stock.material_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:jsh_depot_item.material_id->jsh_material.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_extend.material_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_depot_item.header_id->jsh_depot_head.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-init-yearly-weights-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_material.category_id->jsh_temp_category_affinity.source_cat_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_material_extend.material_id->jsh_material.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.org_id:SQL_LOG_JOIN`
+- `FK_LIKE:jsh_organization.parent_id->jsh_organization.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
+- `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
+- `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-simulate-yearly-sales-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- None
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Schema | `public` |
+| Input | `test-fixtures/postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:jsh_orga_user_rel.orga_id->jsh_temp_org_pdf.org_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- PostgreSQL translations of the MySQL basic-correctness proc_* procedures.
+-- These objects keep the relation/lineage-bearing business DML in PostgreSQL PL/pgSQL form.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+CREATE OR REPLACE PROCEDURE proc_batch_call_generate_po(p_count integer DEFAULT 1, p_login_name text DEFAULT NULL)
+LANGUAGE plpgsql
+AS $$
+DECLARE
 ```
 _Preview truncated; see input file for full content._
 
@@ -33109,10 +35587,10 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -33159,9 +35637,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:purchase_orders.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -33251,7 +35732,11 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -33342,8 +35827,10 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:damage_reports.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -33438,10 +35925,11 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:audit_log.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:invoices.reference_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`

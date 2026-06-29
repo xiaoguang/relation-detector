@@ -1,0 +1,13 @@
+id: postgres16-basic-correctness-case-01-procedure-proc-batch-call-generate-po-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: postgresql/16
+databaseVersion: 16.5
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+objectSourceFilter: PROCEDURE:case_01.proc_batch_call_generate_po
+schema: public
+input: ../../../../postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

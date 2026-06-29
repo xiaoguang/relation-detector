@@ -1,0 +1,13 @@
+id: postgres17-basic-correctness-case-01-procedure-proc-batch-generate-purchase-inbound-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: postgresql/17
+databaseVersion: 17.5
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+objectSourceFilter: PROCEDURE:case_01.proc_batch_generate_purchase_inbound
+schema: public
+input: ../../../../postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

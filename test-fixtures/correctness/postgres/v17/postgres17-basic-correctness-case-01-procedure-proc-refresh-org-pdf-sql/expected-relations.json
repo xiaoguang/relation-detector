@@ -1,0 +1,7 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:jsh_temp_org_pdf.org_id->jsh_temp_org_pdf.org_id:SQL_LOG_JOIN",
+    "FK_LIKE:jsh_organization.parent_id->jsh_organization.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

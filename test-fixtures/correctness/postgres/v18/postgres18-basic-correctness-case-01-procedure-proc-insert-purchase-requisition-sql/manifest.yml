@@ -1,0 +1,13 @@
+id: postgres18-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: postgresql/18
+databaseVersion: 18.1
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+objectSourceFilter: PROCEDURE:case_01.proc_insert_purchase_requisition
+schema: public
+input: ../../../../postgres/basic-correctness/case-01/sql/mysql-proc-translated-procedures.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

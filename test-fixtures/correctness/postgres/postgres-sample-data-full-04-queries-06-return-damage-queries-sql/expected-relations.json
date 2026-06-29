@@ -1,7 +1,9 @@
 {
   "fingerprints": [
-    "FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:damage_reports.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }
