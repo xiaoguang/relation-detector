@@ -2,6 +2,7 @@ package com.relationdetector.mysql.tokenevent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -106,6 +107,103 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
     }
 
     @Test
+    void insertSelectCarriesDerivedAggregateProjectionLineage() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO mrp_run_items (component_product_id, on_hand_qty, suggested_supplier_id)
+                SELECT bom.child_product_id,
+                       COALESCE(inv.on_hand_qty, 0.0000),
+                       pref.supplier_id
+                FROM boms bom
+                LEFT JOIN (
+                    SELECT product_id, SUM(quantity - locked_quantity) AS on_hand_qty
+                    FROM inventory
+                    GROUP BY product_id
+                ) inv ON inv.product_id = bom.child_product_id
+                LEFT JOIN (
+                    SELECT product_id, MIN(supplier_id) AS supplier_id
+                    FROM supplier_products
+                    GROUP BY product_id
+                ) pref ON pref.product_id = bom.child_product_id;
+                """, StatementSourceType.PLAIN_SQL, "mysql-insert-derived-aggregate.sql", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new TokenEventDataLineageExtractor()
+                .extract(statement, structured)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertEquals(List.of(
+                "VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty",
+                "VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id",
+                "VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id"), fingerprints,
+                () -> "INSERT SELECT should resolve derived aggregate projection aliases back to physical sources: "
+                        + structured.events());
+    }
+
+    @Test
+    void insertSelectCarriesDerivedAggregateProjectionThroughNestedFunctions() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO mrp_run_items (net_requirement, suggested_order_qty, suggested_due_date)
+                SELECT
+                    GREATEST(
+                        ROUND(pp.planned_production_qty * bom.quantity * (1 + bom.scrap_rate), 4)
+                        - COALESCE(inv.on_hand_qty, 0.0000)
+                        + COALESCE(res.reserved_qty, 0.0000)
+                        - COALESCE(po.open_receipt_qty, 0.0000),
+                        0.0000
+                    ),
+                    CEILING(GREATEST(
+                        ROUND(pp.planned_production_qty * bom.quantity * (1 + bom.scrap_rate), 4)
+                        - COALESCE(inv.on_hand_qty, 0.0000)
+                        + COALESCE(res.reserved_qty, 0.0000)
+                        - COALESCE(po.open_receipt_qty, 0.0000),
+                        0.0000
+                    )),
+                    DATE_ADD(CURRENT_DATE, INTERVAL COALESCE(pref.lead_time_days, 7) DAY)
+                FROM production_plans pp
+                JOIN boms bom ON bom.parent_product_id = pp.product_id
+                LEFT JOIN (
+                    SELECT product_id, SUM(quantity - locked_quantity) AS on_hand_qty
+                    FROM inventory
+                    GROUP BY product_id
+                ) inv ON inv.product_id = bom.child_product_id
+                LEFT JOIN (
+                    SELECT product_id, SUM(reserved_quantity - released_quantity) AS reserved_qty
+                    FROM inventory_reservations
+                    GROUP BY product_id
+                ) res ON res.product_id = bom.child_product_id
+                LEFT JOIN (
+                    SELECT poi.product_id, SUM(poi.quantity - poi.received_qty) AS open_receipt_qty
+                    FROM purchase_order_items poi
+                    JOIN purchase_orders po ON po.id = poi.order_id
+                    GROUP BY poi.product_id
+                ) po ON po.product_id = bom.child_product_id
+                LEFT JOIN (
+                    SELECT product_id, MIN(lead_time_days) AS lead_time_days
+                    FROM supplier_products
+                    GROUP BY product_id
+                ) pref ON pref.product_id = bom.child_product_id;
+                """, StatementSourceType.PLAIN_SQL, "mysql-insert-derived-nested-functions.sql", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new TokenEventDataLineageExtractor()
+                .extract(statement, structured)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertEquals(List.of(
+                "VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement",
+                "VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty",
+                "VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date"), fingerprints,
+                () -> "Nested functions in INSERT SELECT should keep derived aggregate sources: "
+                        + structured.events());
+    }
+
+    @Test
     void scalarAggregateSubqueryCarriesThroughUpdateExpressionLineage() {
         SqlStatementRecord statement = new SqlStatementRecord("""
                 UPDATE warehouse_inventory wi, order_items oi
@@ -160,6 +258,32 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
     }
 
     @Test
+    void sampleMrpProcedureKeepsDerivedAggregateLineageThroughFullRoutineBlock() throws Exception {
+        String sql = objectBlock(
+                workspaceRoot().resolve("sample-data/mysql/8.0/02-procedures/13-erp-deep-scenario-procedures.sql"),
+                "ROUTINE:erp_system.sp_run_mrp_for_plan");
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:erp_system.sp_run_mrp_for_plan", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new TokenEventDataLineageExtractor()
+                .extract(statement, structured)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains(
+                        "VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty"),
+                () -> "Full routine block should keep derived inventory aggregate lineage: " + fingerprints
+                        + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date"),
+                () -> "Full routine block should keep derived supplier lead time lineage: " + fingerprints
+                        + " events=" + structured.events());
+    }
+
+    @Test
     void extractsProcedureJoinRelationsFromBasicCorrectnessFixture() throws Exception {
         String sql = objectBlock("PROCEDURE:case_01.proc_generate_purchase_inbound_from_order");
         SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
@@ -191,6 +315,10 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
 
     private String objectBlock(String marker) throws Exception {
         Path input = workspaceRoot().resolve("test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql");
+        return objectBlock(input, marker);
+    }
+
+    private String objectBlock(Path input, String marker) throws Exception {
         List<String> lines = Files.readAllLines(input);
         List<String> block = new ArrayList<>();
         boolean inBlock = false;

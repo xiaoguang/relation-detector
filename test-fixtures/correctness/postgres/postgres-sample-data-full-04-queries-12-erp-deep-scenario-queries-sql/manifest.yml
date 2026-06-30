@@ -1,0 +1,10 @@
+id: postgressample-data-full-04-queries-12-erp-deep-scenario-queries-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: token-event
+sourceType: PLAIN_SQL
+schema: public
+input: ../../../../sample-data/postgres/18/04-queries/12-erp-deep-scenario-queries.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

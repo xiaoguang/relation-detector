@@ -380,6 +380,7 @@ predicate
     | expression IN LPAREN selectStatement RPAREN                         # inSubqueryPredicate
     | LPAREN expressionList RPAREN IN LPAREN selectStatement RPAREN       # tupleInSubqueryPredicate
     | expression IN LPAREN expressionList RPAREN                          # literalInPredicate
+    | expression IS NOT? NULL                                             # isNullPredicate
     | expression likeOperator expression (ESCAPE expression)?             # likePredicate
     | expression comparisonOperator expression                            # comparisonPredicate
     | LPAREN predicate RPAREN                                             # parenPredicate
@@ -475,7 +476,7 @@ sqlToken
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | PARTITION | USE | IGNORE | FORCE | FOR | OJ | JSON_TABLE | INTERVAL
-    | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | NUMBER
+    | IS | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | NUMBER
     | PARAMETER | DOT | COMMA | STAR | EQ | NULL_SAFE_EQ | LPAREN | RPAREN | PLUS
     | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | LBRACE | RBRACE | OTHER
     ;
@@ -502,6 +503,7 @@ OR: O R;
 NOT: N O T;
 EXISTS: E X I S T S;
 IN: I N;
+IS: I S;
 LIKE: L I K E;
 ESCAPE: E S C A P E;
 GROUP: G R O U P;

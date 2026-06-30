@@ -4,24 +4,26 @@ This review covers every correctness fixture manifest under `test-fixtures/corre
 
 ## Scope And Status
 
-- Fixture manifests reviewed: `622`.
+- Fixture manifests reviewed: `707`.
 - SQL/DDL inputs are the fixture `input.sql` files referenced by each manifest.
 - Current review result: no `REVIEW_NEEDED` items are open.
 - Confirmed recent fix: `NAMING_MATCH` is now generated as a direction hint on existing SQL predicate candidates. It supports `TABLE_ID`, `ID_SUFFIX_TO_ID`, and `SELF_ROLE_ID`; it cannot create a relationship by itself.
 - Confirmed recent lineage fix: token-event CASE analysis now includes columns from `WHEN` predicates as `CONTROL:CASE_WHEN` lineage sources when they are physical rowset columns.
+- Confirmed recent MySQL token-event grammar fix: `IS NULL` / `IS NOT NULL` predicates are now typed grammar nodes. This lets MySQL token-event parse the rest of JOIN predicates instead of dropping later joined rowsets, which restored semantically valid sample-data procedure/view/trigger relations and derived aggregate lineage.
+- Confirmed recent fixture fix: new ERP deep-scenario procedure files now carry object-block markers, so routine bodies are actually included in correctness parsing.
 - Remaining cross-parser differences are categorized as typed visitor coverage gaps or expected version deltas, not as approved scanner-style guessing.
 
 ## Parser Category Totals
 
 | Category | Fixtures | Relations | Lineage | Naming relation fingerprints | Sample fixtures | Sample relations | Sample lineage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event | 31 | 551 | 150 | 144 | 14 | 535 | 144 |
-| MySQL token-event root | 93 | 408 | 150 | 172 | 36 | 333 | 93 |
-| MySQL full-grammer v8_0 | 93 | 696 | 241 | 372 | 36 | 572 | 146 |
-| PostgreSQL token-event root | 100 | 890 | 52 | 162 | 34 | 227 | 31 |
-| PostgreSQL full-grammer v16 | 100 | 1237 | 68 | 329 | 34 | 472 | 31 |
-| PostgreSQL full-grammer v17 | 102 | 1240 | 90 | 330 | 34 | 472 | 31 |
-| PostgreSQL full-grammer v18 | 103 | 1240 | 89 | 329 | 34 | 472 | 31 |
+| common token-event | 36 | 705 | 189 | 195 | 19 | 689 | 183 |
+| MySQL token-event root | 97 | 597 | 240 | 242 | 40 | 522 | 183 |
+| MySQL full-grammer v8_0 | 97 | 873 | 327 | 434 | 40 | 749 | 232 |
+| PostgreSQL token-event root | 118 | 1090 | 176 | 241 | 39 | 409 | 101 |
+| PostgreSQL full-grammer v16 | 118 | 1422 | 192 | 395 | 39 | 641 | 101 |
+| PostgreSQL full-grammer v17 | 120 | 1425 | 214 | 396 | 39 | 641 | 101 |
+| PostgreSQL full-grammer v18 | 121 | 1427 | 213 | 395 | 39 | 641 | 101 |
 
 ## Golden Semantic Shape
 
@@ -43,22 +45,22 @@ This means the naming heuristic can promote an existing SQL predicate `CO_OCCURR
 
 | Type | Count |
 | --- | ---: |
-| `FK_LIKE` | 5427 |
-| `CO_OCCURRENCE` | 835 |
+| `FK_LIKE` | 6514 |
+| `CO_OCCURRENCE` | 1025 |
 
 ### Lineage Fingerprint Types
 
 | Flow/Transform | Count |
 | --- | ---: |
-| `VALUE:DIRECT` | 472 |
-| `VALUE:ARITHMETIC` | 144 |
-| `VALUE:CONCAT_FORMAT` | 55 |
-| `VALUE:COALESCE` | 49 |
-| `VALUE:AGGREGATE` | 47 |
-| `CONTROL:CASE_WHEN` | 39 |
-| `VALUE:FUNCTION_CALL` | 24 |
+| `VALUE:DIRECT` | 909 |
+| `VALUE:ARITHMETIC` | 198 |
+| `VALUE:AGGREGATE` | 141 |
+| `VALUE:COALESCE` | 94 |
+| `VALUE:CONCAT_FORMAT` | 82 |
+| `CONTROL:CASE_WHEN` | 79 |
+| `VALUE:FUNCTION_CALL` | 30 |
 | `CONTROL:AGGREGATE` | 8 |
-| `VALUE:CUMULATIVE` | 2 |
+| `VALUE:CUMULATIVE` | 10 |
 
 ## Cross-Parser Difference Classification
 
@@ -131,6 +133,12 @@ This means the naming heuristic can promote an existing SQL predicate `CO_OCCURR
 | `postgres-business-asset-balances-update-outer-join-sql` | Added CASE control lineage into `asset_balances.discrepancy_flag`. | `ledger_system_a.balance != ledger_system_b.balance` controls the target flag. |
 | `postgres-business-update-warehouse-comma-subquery-sql` | Added CASE control lineage into `warehouse_inventory.last_audit_status`. | `stock_available - quantity < 10` controls the target status. |
 | `postgres-business-update-warehouse-complex-sql` | Added CASE control lineage into `warehouse_inventory.last_audit_status`. | Same expression as the comma-subquery equivalent fixture. |
+| `mysqlsample-data-full-01-schema-02-indexes-and-views-views-sql` | Added purchase-order view JOIN relations previously skipped after `IS NULL` style predicates in the same grammar path. | The view has explicit column-column joins such as `purchase_orders.supplier_id = suppliers.id`, `purchase_orders.purchaser_id = employees.id`, and `purchase_order_items.order_id = purchase_orders.id`. |
+| `mysqlsample-data-full-01-schema-03-triggers-sql` | Added inventory-to-sales-order-item trigger JOIN co-occurrences. | Trigger body joins `inventory` to `sales_order_items` on physical `product_id` and `batch_id` columns. Direction is not uniquely proven, so they remain co-occurrence. |
+| `mysqlsample-data-full-02-procedures-02-procedures-supplement-sql` | Added `purchase_orders.supplier_id -> suppliers.id`. | The procedure contains an explicit supplier join predicate. |
+| `mysqlsample-data-full-02-procedures-04-procedures-supplement-sql` | Added `commission_rules.product_category_id` / `products.category_id` co-occurrence. | The procedure has a real category join, but neither side is `id`, so direction remains unknown. |
+| `mysqlsample-data-full-02-procedures-09-return-refund-procedures-sql` | Added return/refund procedure joins for sales returns, customers, orders, vouchers, warehouses, and employee approval. | These are explicit column-column SQL JOIN predicates. `employees.id = sales_returns.approved_by` remains co-occurrence because naming evidence does not unambiguously prove direction. |
+| `mysqlsample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql` | Added derived aggregate and function lineage from MRP, costing, repair, and finance procedures. | Procedure body object markers now include the full routine body, and typed `IS NULL` support preserves derived JOINs, so aggregate aliases such as `inv.on_hand_qty` resolve to physical inventory fields. |
 
 ## Fixture Index
 

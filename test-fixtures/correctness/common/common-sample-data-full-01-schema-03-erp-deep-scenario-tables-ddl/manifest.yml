@@ -1,0 +1,11 @@
+id: commonsample-data-full-01-schema-03-erp-deep-scenario-tables-ddl
+databaseType: MYSQL
+parserTarget: DDL
+parserMode: token-event
+structuredParser: common-token-event
+sourceType: DDL_FILE
+schema: portable
+input: ../../../../sample-data/portable/01-schema/03-erp-deep-scenario-tables.sql
+expectedRelations: expected-relations.json
+evidenceSourceType: DDL_FILE
+expectedDiagnostics: expected-diagnostics.json

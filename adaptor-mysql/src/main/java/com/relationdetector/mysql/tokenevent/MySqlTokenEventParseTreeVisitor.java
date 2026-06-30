@@ -629,6 +629,9 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
             }
             return combined;
         }
+        if (predicate instanceof MySqlRelationSqlParser.IsNullPredicateContext isNullPredicate) {
+            return analyze(isNullPredicate.expression());
+        }
         if (predicate instanceof MySqlRelationSqlParser.InSubqueryPredicateContext inSubqueryPredicate) {
             return analyze(inSubqueryPredicate.expression());
         }

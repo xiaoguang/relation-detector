@@ -1,0 +1,26 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:boms.child_product_id->supplier_products.product_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:category_dim.source_category_id->products.category_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_orders.order_date:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:inventory_cost_layers.product_id->sales_order_items.product_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:picking_tasks.sales_order_id->sales_order_items.order_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:region_dim.province->warehouses.province:SQL_LOG_JOIN",
+    "FK_LIKE:material_issue_items.issue_id->material_issues.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:material_issues.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:mrp_runs.plan_id->production_plans.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:repair_order_parts.repair_order_id->repair_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
+    "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
+    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:work_order_operations.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

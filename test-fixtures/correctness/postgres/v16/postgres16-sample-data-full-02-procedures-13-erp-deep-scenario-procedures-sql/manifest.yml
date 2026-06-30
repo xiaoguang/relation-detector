@@ -1,0 +1,13 @@
+id: postgres16sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: postgresql/16
+databaseVersion: 16.5
+sourceType: PROCEDURE
+schema: public
+input: ../../../../../sample-data/postgres/18/02-procedures/13-erp-deep-scenario-procedures.sql
+expectedRelations: expected-relations.json
+statementFormat: OBJECT_BLOCKS
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

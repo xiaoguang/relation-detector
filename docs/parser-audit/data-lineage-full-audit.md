@@ -8,11 +8,11 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 
 | Classification | Count |
 | --- | ---: |
-| TOTAL | 674 |
-| EXISTING_GOLD | 162 |
+| TOTAL | 707 |
+| EXISTING_GOLD | 170 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 512 |
+| NOT_APPLICABLE | 537 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -111,6 +111,39 @@ FROM accounts
 JOIN vouchers ON accounts.id = vouchers.id;
 
 CREATE VIEW v_dept_headcount AS
+```
+
+## `commonsample-data-full-01-schema-03-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/portable/01-schema/03-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Portable ERP deep scenario tables
+-- Covers MRP, shop-floor execution, costing, AR/AP, WMS,
+-- repair service, master-data governance, and sensitive access audit.
+-- Uses a common SQL subset for relation-detector common token-event golden.
+-- ============================================================
+
+CREATE TABLE production_plans (
 ```
 
 ## `mysql-basic-correctness-case-01-ddl`
@@ -1037,6 +1070,38 @@ CREATE INDEX idx_inv_batch_warehouse ON inventory(batch_id, warehouse_id);
 --   tax_invoices: 增值税发票管理，进项税/销项税
 ```
 
+## `mysql80sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/mysql/8.0/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景扩展表
+-- 覆盖: MRP/生产执行、成本核算、总账预算、AR/AP、WMS、售后维修、主数据治理
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+
 ## `mysqlsample-data-full-01-schema-01-tables-ddl`
 
 | Field | Value |
@@ -1167,6 +1232,38 @@ CREATE INDEX idx_inv_batch_warehouse ON inventory(batch_id, warehouse_id);
 --   contracts -> sales_orders/purchase_orders (1:1), 管理合同条款和里程碑
 --   ar_aging / ap_aging: 账龄分析用，按月计算应收账款/应付账款
 --   tax_invoices: 增值税发票管理，进项税/销项税
+```
+
+## `mysqlsample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/mysql/8.0/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景扩展表
+-- 覆盖: MRP/生产执行、成本核算、总账预算、AR/AP、WMS、售后维修、主数据治理
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
 ```
 
 ## `basic-correctness-case-01-functions-sql`
@@ -2835,6 +2932,261 @@ FROM employees;
 INSERT INTO sales_returns (id, order_id)
 ```
 
+## `commonsample-data-full-02-processes-05-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | portable procedure declaration wrapper; parser-ready process bodies are covered by the sibling golden fixture |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/portable/02-processes/05-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-02-processes-05-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:employees.id->audit_log.employee_id`
+- `VALUE:DIRECT:employees.id->audit_log.target_id`
+- `VALUE:DIRECT:employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:mrp_runs.id->mrp_run_items.run_id`
+- `VALUE:DIRECT:payment_receipts.amount->payments.amount`
+- `VALUE:DIRECT:payment_receipts.currency->payments.currency`
+- `VALUE:DIRECT:payment_receipts.id->payments.id`
+- `VALUE:DIRECT:payment_receipts.id->payments.order_id`
+- `VALUE:DIRECT:payment_receipts.id->payments.receipt_id`
+- `VALUE:DIRECT:payment_receipts.party_id->payments.customer_id`
+- `VALUE:DIRECT:payment_receipts.receipt_date->payments.payment_date`
+- `VALUE:DIRECT:payment_receipts.receipt_no->payments.payment_no`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.picking_task_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:DIRECT:warehouses.city->region_dim.city`
+- `VALUE:DIRECT:warehouses.code->region_dim.region_code`
+- `VALUE:DIRECT:warehouses.district->region_dim.district`
+- `VALUE:DIRECT:warehouses.id->region_dim.id`
+- `VALUE:DIRECT:warehouses.name->region_dim.region_name`
+- `VALUE:DIRECT:warehouses.province->region_dim.province`
+
+**Input Preview**
+
+```sql
+-- Portable SQL/PSM-style declarations for the ERP deep scenario extension.
+
+CREATE PROCEDURE sp_run_mrp_for_plan()
+BEGIN ATOMIC
+  INSERT INTO mrp_runs (id, plan_id, created_by)
+  SELECT production_plans.id, production_plans.id, production_plans.planner_id
+  FROM production_plans;
+```
+
+## `commonsample-data-full-02-processes-06-erp-deep-scenario-process-bodies-for-golden-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/portable/02-processes/06-erp-deep-scenario-process-bodies-for-golden.sql` |
+| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-02-processes-06-erp-deep-scenario-process-bodies-for-golden-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:DIRECT:accounts.id->payment_receipts.account_id`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:employees.id->audit_log.employee_id`
+- `VALUE:DIRECT:employees.id->audit_log.target_id`
+- `VALUE:DIRECT:employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:DIRECT:mrp_runs.id->mrp_run_items.run_id`
+- `VALUE:DIRECT:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:DIRECT:operation_reports.machine_minutes->work_order_costs.overhead_cost`
+- `VALUE:DIRECT:payment_receipts.amount->payments.amount`
+- `VALUE:DIRECT:payment_receipts.currency->payments.currency`
+- `VALUE:DIRECT:payment_receipts.id->payments.id`
+- `VALUE:DIRECT:payment_receipts.id->payments.order_id`
+- `VALUE:DIRECT:payment_receipts.id->payments.receipt_id`
+- `VALUE:DIRECT:payment_receipts.party_id->payments.customer_id`
+- `VALUE:DIRECT:payment_receipts.receipt_date->payments.payment_date`
+- `VALUE:DIRECT:payment_receipts.receipt_no->payments.payment_no`
+- `VALUE:DIRECT:payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.picking_task_id`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.id`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
+- `VALUE:DIRECT:production_plans.planner_id->mrp_runs.created_by`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:DIRECT:roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->payment_receipts.party_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->payment_receipts.id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->payment_receipts.receipt_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.order_no->payment_receipts.receipt_no`
+- `VALUE:DIRECT:sales_orders.paid_amount->payment_receipts.amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->payment_receipts.handled_by`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:DIRECT:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:DIRECT:warehouses.city->region_dim.city`
+- `VALUE:DIRECT:warehouses.code->region_dim.region_code`
+- `VALUE:DIRECT:warehouses.district->region_dim.district`
+- `VALUE:DIRECT:warehouses.id->region_dim.id`
+- `VALUE:DIRECT:warehouses.name->region_dim.region_name`
+- `VALUE:DIRECT:warehouses.province->region_dim.province`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:DIRECT:accounts.id->payment_receipts.account_id`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:employees.id->audit_log.employee_id`
+- `VALUE:DIRECT:employees.id->audit_log.target_id`
+- `VALUE:DIRECT:employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:DIRECT:mrp_runs.id->mrp_run_items.run_id`
+- `VALUE:DIRECT:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:DIRECT:operation_reports.machine_minutes->work_order_costs.overhead_cost`
+- `VALUE:DIRECT:payment_receipts.amount->payments.amount`
+- `VALUE:DIRECT:payment_receipts.currency->payments.currency`
+- `VALUE:DIRECT:payment_receipts.id->payments.id`
+- `VALUE:DIRECT:payment_receipts.id->payments.order_id`
+- `VALUE:DIRECT:payment_receipts.id->payments.receipt_id`
+- `VALUE:DIRECT:payment_receipts.party_id->payments.customer_id`
+- `VALUE:DIRECT:payment_receipts.receipt_date->payments.payment_date`
+- `VALUE:DIRECT:payment_receipts.receipt_no->payments.payment_no`
+- `VALUE:DIRECT:payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.picking_task_id`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.id`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
+- `VALUE:DIRECT:production_plans.planner_id->mrp_runs.created_by`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:DIRECT:roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->payment_receipts.party_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->payment_receipts.id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->payment_receipts.receipt_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.order_no->payment_receipts.receipt_no`
+- `VALUE:DIRECT:sales_orders.paid_amount->payment_receipts.amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->payment_receipts.handled_by`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:DIRECT:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:DIRECT:warehouses.city->region_dim.city`
+- `VALUE:DIRECT:warehouses.code->region_dim.region_code`
+- `VALUE:DIRECT:warehouses.district->region_dim.district`
+- `VALUE:DIRECT:warehouses.id->region_dim.id`
+- `VALUE:DIRECT:warehouses.name->region_dim.region_name`
+- `VALUE:DIRECT:warehouses.province->region_dim.province`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Input Preview**
+
+```sql
+-- Parser-ready process bodies for the ERP deep scenario extension.
+
+-- relation-detector-fixture-source: PROCEDURE:portable.sp_run_mrp_for_plan
+INSERT INTO mrp_runs (id, plan_id, created_by)
+SELECT production_plans.id, production_plans.id, production_plans.planner_id
+FROM production_plans;
+
+INSERT INTO mrp_run_items (run_id, parent_product_id, component_product_id, suggested_supplier_id)
+```
+
 ## `commonsample-data-full-03-data-01-master-data-sql`
 
 | Field | Value |
@@ -2865,6 +3217,39 @@ SELECT 1;
 
 INSERT INTO positions (id)
 SELECT 2;
+```
+
+## `commonsample-data-full-03-data-02-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/portable/03-data/02-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-03-data-02-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景验证数据
+-- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+
+-- ============================================================
 ```
 
 ## `commonsample-data-full-04-queries-01-business-queries-sql`
@@ -2902,6 +3287,38 @@ WHERE EXISTS (
   SELECT 1
   FROM departments
   WHERE departments.id = employees.department_id
+```
+
+## `commonsample-data-full-04-queries-02-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/portable/04-queries/02-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-04-queries-02-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- SQL dialect: portable common subset
+-- ============================================================
+
 ```
 
 ## `mysql-basic-correctness-case-01-sql`
@@ -5763,7 +6180,11 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
+- `VALUE:COALESCE:sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
 
 **Input Preview**
 
@@ -5913,7 +6334,9 @@ BEGIN
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
+- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -6223,6 +6646,272 @@ CREATE PROCEDURE sp_post_stocktake(
 )
 BEGIN
     DECLARE v_warehouse_id BIGINT UNSIGNED;
+```
+
+## `mysql80sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/mysql/8.0/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id,product_categories.name->category_dim.level2_name`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:accounting_periods.id->fiscal_calendar.accounting_period_id`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:departments.id->employees.department_id`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
+- `VALUE:DIRECT:positions.base_salary->employees.salary`
+- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
+- `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:product_categories.code->category_dim.category_code`
+- `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
+- `VALUE:DIRECT:product_categories.name->category_dim.is_womenwear`
+- `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.fiscal_month`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
+
+**Extractor Candidate Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:departments.id->employees.department_id`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
+- `VALUE:DIRECT:positions.base_salary->employees.salary`
+- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
+- `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景存储过程
+-- 覆盖: MRP计算、工单成本、完工入库、销售成本、AR/AP开票、
+--       WMS拣货、预算占用、主数据变更和维修备件出库
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
 ```
 
 ## `mysql80sample-data-full-03-data-01-master-data-sql`
@@ -6569,6 +7258,38 @@ BEGIN
 USE erp_system;
 ```
 
+## `mysql80sample-data-full-03-data-07-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/8.0/03-data/07-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-sample-data-full-03-data-07-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景验证数据
+-- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+
 ## `mysql80sample-data-full-04-queries-01-complex-queries-sql`
 
 | Field | Value |
@@ -6827,6 +7548,39 @@ USE erp_system;
 USE erp_system;
 ```
 
+## `mysql80sample-data-full-04-queries-11-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/8.0/04-queries/11-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-sample-data-full-04-queries-11-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+
 ## `mysqlsample-data-full-01-schema-02-indexes-and-views-views-sql`
 
 | Field | Value |
@@ -6864,8 +7618,8 @@ SELECT
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `TRIGGER` |
@@ -6874,11 +7628,19 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
+- `VALUE:COALESCE:sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
 
 **Extractor Candidate Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
+- `VALUE:COALESCE:sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
 
 **Input Preview**
 
@@ -7016,7 +7778,9 @@ BEGIN
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
+- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -7026,7 +7790,9 @@ BEGIN
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
+- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -7338,6 +8104,253 @@ BEGIN
     DECLARE v_warehouse_id BIGINT UNSIGNED;
 ```
 
+## `mysqlsample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/mysql/8.0/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/mysql-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:departments.id->employees.department_id`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
+- `VALUE:DIRECT:positions.base_salary->employees.salary`
+- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
+- `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+
+**Extractor Candidate Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:departments.id->employees.department_id`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
+- `VALUE:DIRECT:positions.base_salary->employees.salary`
+- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
+- `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景存储过程
+-- 覆盖: MRP计算、工单成本、完工入库、销售成本、AR/AP开票、
+--       WMS拣货、预算占用、主数据变更和维修备件出库
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+
 ## `mysqlsample-data-full-03-data-01-master-data-sql`
 
 | Field | Value |
@@ -7637,6 +8650,38 @@ BEGIN
 USE erp_system;
 ```
 
+## `mysqlsample-data-full-03-data-07-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/8.0/03-data/07-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/mysql-sample-data-full-03-data-07-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景验证数据
+-- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+
 ## `mysqlsample-data-full-04-queries-01-complex-queries-sql`
 
 | Field | Value |
@@ -7890,6 +8935,39 @@ USE erp_system;
 -- 常用系统查询 - 模拟真实ERP系统日常使用的SQL
 -- 覆盖: 多表JOIN、员工/门店/商品/客户/订单/库存/财务
 --       日常查询、审批待办、报表导出、数据核对等
+-- ============================================================
+
+USE erp_system;
+```
+
+## `mysqlsample-data-full-04-queries-11-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/8.0/04-queries/11-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/mysql-sample-data-full-04-queries-11-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- 数据库: MySQL 8.0
 -- ============================================================
 
 USE erp_system;
@@ -8884,6 +9962,39 @@ CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
 --   tax_invoices: 增值税发票管理，进项税/销项税
 ```
 
+## `postgres16sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/postgres/18/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario tables - PostgreSQL 16/17/18 compatible
+-- Covers MRP, shop-floor execution, costing, AR/AP, WMS,
+-- repair service, master-data governance, and sensitive access audit.
+-- ============================================================
+
+CREATE TABLE production_plans (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+```
+
 ## `postgres17-basic-correctness-case-01-ddl`
 
 | Field | Value |
@@ -9442,6 +10553,39 @@ CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
 --   contracts -> sales_orders/purchase_orders (1:1), 管理合同条款和里程碑
 --   ar_aging / ap_aging: 账龄分析用，按月计算应收账款/应付账款
 --   tax_invoices: 增值税发票管理，进项税/销项税
+```
+
+## `postgres17sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/postgres/18/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario tables - PostgreSQL 16/17/18 compatible
+-- Covers MRP, shop-floor execution, costing, AR/AP, WMS,
+-- repair service, master-data governance, and sensitive access audit.
+-- ============================================================
+
+CREATE TABLE production_plans (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
 ```
 
 ## `postgres18-basic-correctness-case-01-ddl`
@@ -10069,6 +11213,39 @@ CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
 --   tax_invoices: 增值税发票管理，进项税/销项税
 ```
 
+## `postgres18sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/postgres/18/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario tables - PostgreSQL 16/17/18 compatible
+-- Covers MRP, shop-floor execution, costing, AR/AP, WMS,
+-- repair service, master-data governance, and sensitive access audit.
+-- ============================================================
+
+CREATE TABLE production_plans (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+```
+
 ## `postgressample-data-full-01-schema-01-tables-ddl`
 
 | Field | Value |
@@ -10198,6 +11375,39 @@ CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
 --   contracts -> sales_orders/purchase_orders (1:1), 管理合同条款和里程碑
 --   ar_aging / ap_aging: 账龄分析用，按月计算应收账款/应付账款
 --   tax_invoices: 增值税发票管理，进项税/销项税
+```
+
+## `postgressample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/postgres/18/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario tables - PostgreSQL 16/17/18 compatible
+-- Covers MRP, shop-floor execution, costing, AR/AP, WMS,
+-- repair service, master-data governance, and sensitive access audit.
+-- ============================================================
+
+CREATE TABLE production_plans (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
 ```
 
 ## `postgres-basic-correctness-case-01-objects-sql`
@@ -15604,6 +16814,213 @@ AS $$
 DECLARE
 ```
 
+## `postgres16sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/postgres/18/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
+- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
+- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario procedures - PostgreSQL 16/17/18 compatible
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:public.sp_run_mrp_for_plan
+CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
+    IN p_plan_id BIGINT,
+    IN p_created_by BIGINT
+```
+
 ## `postgres16sample-data-full-03-data-01-master-data-sql`
 
 | Field | Value |
@@ -15701,6 +17118,72 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 
 INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
 (1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+```
+
+## `postgres16sample-data-full-03-data-04-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/03-data/04-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景验证数据
+-- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `postgres16sample-data-full-03-data-05-erp-coverage-gap-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/03-data/05-erp-coverage-gap-data.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP coverage gap seed data - PostgreSQL 16/17/18 compatible
+-- Purpose: align PostgreSQL seed coverage with the MySQL 8.0 ERP sample
+--          for return/damage, logistics, depreciation, review and pricing.
+-- ============================================================
+
+INSERT INTO shipments (
+    id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
 ```
 
 ## `postgres16sample-data-full-04-queries-01-complex-queries-sql`
@@ -15963,6 +17446,38 @@ INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, st
 
 
 -- ============================================================
+```
+
+## `postgres16sample-data-full-04-queries-12-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/12-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- 数据库: PostgreSQL 16/17/18 compatible
+-- ============================================================
+
 ```
 
 ## `postgres17-basic-correctness-case-01-objects-sql`
@@ -19008,6 +20523,213 @@ AS $$
 DECLARE
 ```
 
+## `postgres17sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/postgres/18/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
+- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
+- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario procedures - PostgreSQL 16/17/18 compatible
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:public.sp_run_mrp_for_plan
+CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
+    IN p_plan_id BIGINT,
+    IN p_created_by BIGINT
+```
+
 ## `postgres17sample-data-full-03-data-01-master-data-sql`
 
 | Field | Value |
@@ -19105,6 +20827,72 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 
 INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
 (1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+```
+
+## `postgres17sample-data-full-03-data-04-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/03-data/04-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景验证数据
+-- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `postgres17sample-data-full-03-data-05-erp-coverage-gap-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/03-data/05-erp-coverage-gap-data.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP coverage gap seed data - PostgreSQL 16/17/18 compatible
+-- Purpose: align PostgreSQL seed coverage with the MySQL 8.0 ERP sample
+--          for return/damage, logistics, depreciation, review and pricing.
+-- ============================================================
+
+INSERT INTO shipments (
+    id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
 ```
 
 ## `postgres17sample-data-full-04-queries-01-complex-queries-sql`
@@ -19367,6 +21155,38 @@ INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, st
 
 
 -- ============================================================
+```
+
+## `postgres17sample-data-full-04-queries-12-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/12-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- 数据库: PostgreSQL 16/17/18 compatible
+-- ============================================================
+
 ```
 
 ## `postgres18-basic-correctness-case-01-objects-sql`
@@ -22375,6 +24195,213 @@ AS $$
 DECLARE
 ```
 
+## `postgres18sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/postgres/18/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
+- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
+- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario procedures - PostgreSQL 16/17/18 compatible
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:public.sp_run_mrp_for_plan
+CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
+    IN p_plan_id BIGINT,
+    IN p_created_by BIGINT
+```
+
 ## `postgres18sample-data-full-03-data-01-master-data-sql`
 
 | Field | Value |
@@ -22472,6 +24499,72 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 
 INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
 (1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+```
+
+## `postgres18sample-data-full-03-data-04-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/03-data/04-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景验证数据
+-- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `postgres18sample-data-full-03-data-05-erp-coverage-gap-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/03-data/05-erp-coverage-gap-data.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP coverage gap seed data - PostgreSQL 16/17/18 compatible
+-- Purpose: align PostgreSQL seed coverage with the MySQL 8.0 ERP sample
+--          for return/damage, logistics, depreciation, review and pricing.
+-- ============================================================
+
+INSERT INTO shipments (
+    id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
 ```
 
 ## `postgres18sample-data-full-04-queries-01-complex-queries-sql`
@@ -22734,6 +24827,38 @@ INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, st
 
 
 -- ============================================================
+```
+
+## `postgres18sample-data-full-04-queries-12-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/12-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- 数据库: PostgreSQL 16/17/18 compatible
+-- ============================================================
+
 ```
 
 ## `postgressample-data-full-01-schema-02-indexes-and-views-views-sql`
@@ -23234,6 +25359,213 @@ AS $$
 DECLARE
 ```
 
+## `postgressample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/postgres/18/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
+- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
+- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
+- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario procedures - PostgreSQL 16/17/18 compatible
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:public.sp_run_mrp_for_plan
+CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
+    IN p_plan_id BIGINT,
+    IN p_created_by BIGINT
+```
+
 ## `postgressample-data-full-03-data-01-master-data-sql`
 
 | Field | Value |
@@ -23331,6 +25663,72 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 
 INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
 (1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+```
+
+## `postgressample-data-full-03-data-04-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/03-data/04-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景验证数据
+-- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `postgressample-data-full-03-data-05-erp-coverage-gap-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/03-data/05-erp-coverage-gap-data.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP coverage gap seed data - PostgreSQL 16/17/18 compatible
+-- Purpose: align PostgreSQL seed coverage with the MySQL 8.0 ERP sample
+--          for return/damage, logistics, depreciation, review and pricing.
+-- ============================================================
+
+INSERT INTO shipments (
+    id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
 ```
 
 ## `postgressample-data-full-04-queries-01-complex-queries-sql`
@@ -23593,5 +25991,37 @@ INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, st
 
 
 -- ============================================================
+```
+
+## `postgressample-data-full-04-queries-12-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/04-queries/12-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- 数据库: PostgreSQL 16/17/18 compatible
+-- ============================================================
+
 ```
 

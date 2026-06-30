@@ -1,0 +1,12 @@
+id: postgres18sample-data-full-03-data-05-erp-coverage-gap-data-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: postgresql/18
+databaseVersion: 18.1
+sourceType: PLAIN_SQL
+schema: public
+input: ../../../../../sample-data/postgres/18/03-data/05-erp-coverage-gap-data.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

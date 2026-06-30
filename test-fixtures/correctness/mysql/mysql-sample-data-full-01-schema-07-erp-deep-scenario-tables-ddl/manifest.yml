@@ -1,0 +1,10 @@
+id: mysqlsample-data-full-01-schema-07-erp-deep-scenario-tables-ddl
+databaseType: MYSQL
+parserTarget: DDL
+parserMode: token-event
+sourceType: DDL_FILE
+schema: erp_system
+input: ../../../../sample-data/mysql/8.0/01-schema/07-erp-deep-scenario-tables.sql
+expectedRelations: expected-relations.json
+evidenceSourceType: DDL_FILE
+expectedDiagnostics: expected-diagnostics.json
