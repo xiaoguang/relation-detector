@@ -196,11 +196,27 @@ LLM 帮助把自然语言问题拆解为查询意图。
 
 ## 问答与 SQL 草稿
 
+### Question Standardization
+
+问题标准化。
+
+Question Standardization 是自然语言进入语义规划前的轻量 LLM 步骤。它负责把原始用户问题整理成更完整、更明确、更规范的问题表达，例如补全省略、恢复代词指代、整理口语表达、保留未知业务词并输出 query rewrites。
+
+它不需要全量 schema、指标库、业务口径库或实体值字典，也不能决定表字段、join path、metric reviewStatus 或 SQL。未知词应进入 Semantic Search、Lexicon 或 Review Queue，而不是由标准化步骤直接裁决。
+
 ### Question Plan
 
 自然语言问题的结构化规划结果。
 
 Question Plan 通常包含候选实体、字段、指标、时间范围、过滤条件、join path、grain、不确定项和是否需要反问。
+
+### LogicForm-like Intermediate Representation
+
+类 LogicForm 中间表达。
+
+本项目不照搬亿问材料中的 LogicForm 格式，但吸收其职责：在自然语言和 SQL draft 之间放置一个结构化、可验证、可追溯的中间语义表达。`QuestionPlan / AnswerPlan` 共同承担这个角色。
+
+它应该表达“用户想查什么”，包括业务对象、指标、维度、时间范围、过滤条件、排序、limit、grain、join path、analysis options、warning 和 evidenceRefs。它不是 SQL，也不是业务人员手写格式；它的价值是把 LLM 的自然语言理解结果交给 catalog、planner 和 validator 约束。
 
 ### Answer Plan
 

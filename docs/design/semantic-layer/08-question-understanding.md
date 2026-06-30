@@ -2,14 +2,24 @@
 
 ## 1. 目标与定位
 
-**职责：** 将用户自然语言问题解析为结构化意图（QuestionIntent）。识别实体、指标、维度、时间范围、过滤条件和输出意图。
+**职责：** 将用户自然语言问题先标准化，再解析为结构化意图（QuestionIntent）。识别实体 mention、指标 mention、维度、时间范围、过滤条件、输出意图、未知词和歧义点。
 
-**LLM 依赖：** 是。这是在线链路的**唯一 LLM 调用点**。
+**LLM 依赖：** 是。这是 Phase 1 在线问答链路中建议保留的 LLM 调用点，但调用边界必须窄。LLM 负责问题标准化、上下文补全和结构化候选提取；表字段选择、join path、指标口径确认和 SQL draft 由后续 catalog / planner / validator 约束。
+
+亿问 Alisa / LogicForm 材料给出的启发是：生产级 NL2LogicForm 不应让大模型直接生成最终 LogicForm 或 SQL，而是先由大模型把原始提问整理成更标准、更完整、更明确的问题表达，再由确定性语义引擎做结果空间收敛和 LogicForm 生成。本设计吸收这个职责拆分，但不照搬 Alisa 实现。
+
+Question Understanding 内部分成两个子步骤：
+
+| 子步骤 | 输入 | 输出 | 边界 |
+| --- | --- | --- | --- |
+| 问题标准化 / 上下文补全 | 原始问题、有限会话上下文、locale、当前日期 | `normalizedQuestion`、补全后的上下文、query rewrites、未知词、歧义提示 | 不需要全量 schema、指标库、口径库；不决定表字段；不生成 SQL。 |
+| 结构化意图抽取 | 标准化问题、原始 mention、未知词提示 | `QuestionIntent`：实体 mention、指标 mention、时间、过滤、维度、输出意图 | 只输出候选语义，不确认 BUSINESS_APPROVED metric 或 join path。 |
 
 **为什么必须用 LLM：**
 - 用户问题是自由形式的自然语言，没有固定格式
 - 同一问题有无数种问法："客户消费金额"、"每个客户花了多少钱"、"客户支付排行"、"最近谁买得最多"
-- 实体/指标/时间范围的提取需要理解上下文："最近30天"在不同语境下可能指不同时间窗口
+- 省略、代词和多轮上下文需要语言补全，例如"那上个月呢"、"前十呢"、"核心店看一下"
+- 实体/指标/时间范围的 mention 提取需要理解上下文："最近30天"在不同语境下可能指不同时间窗口
 - 歧义检测需要语义理解："活跃客户"可能指登录、下单、支付等多种口径
 - 规则 NER 无法覆盖业务术语的多样性（"买家"、"会员"、"用户"都可能指客户）
 
@@ -25,7 +35,7 @@
   ↓ 输入: String "每个客户最近30天的支付金额是多少？"
 
 [Question Understanding]
-  ↓ 调用 LLM (1 次)
+  ↓ 调用 LLM: 问题标准化 / 上下文补全 / 结构化候选提取
   ↓ 输出: QuestionIntent
 
 下游: Semantic Search
@@ -71,26 +81,23 @@ public interface QuestionUnderstanding {
 ```mermaid
 flowchart TD
     A[用户输入自然语言问题] --> B[文本预处理: 语言检测 + 分词]
-    B --> C[构造 LLM prompt]
-    C --> D[调用 LLM API]
-    D --> E{LLM 响应格式合法?}
+    B --> C[构造标准化 prompt]
+    C --> D[LLM 标准化和上下文补全]
+    D --> E{响应格式合法?}
     E -- 否 --> F[重试 1 次]
     F --> D
-    E -- 是 --> G[解析 QuestionIntent JSON]
-    G --> H[提取实体 mentions]
-    H --> I[提取指标 mentions]
-    I --> J[提取维度 mentions]
-    J --> K[解析时间范围]
-    K --> L[解析过滤条件]
-    L --> M[判断输出意图]
-    M --> N{存在歧义?}
-    N -- 是 --> O[生成 ambiguities 列表]
-    N -- 否 --> P[overallConfidence 计算]
+    E -- 是 --> G[得到 normalizedQuestion / rewrites / unknownTerms]
+    G --> H[抽取实体 / 指标 / 维度 mention]
+    H --> I[抽取时间范围 / 过滤条件 / 输出意图]
+    I --> J[标记未知词和歧义点]
+    J --> K{存在未知词?}
+    K -- 是 --> L[交给 Semantic Search 召回候选]
+    K -- 否 --> M[计算 overallConfidence]
+    L --> M
+    M --> N{overallConfidence < 0.3?}
+    N -- 是 --> O[outputIntent = UNKNOWN]
+    N -- 否 --> P[输出 QuestionIntent]
     O --> P
-    P --> Q{overallConfidence < 0.3?}
-    Q -- 是 --> R[outputIntent = UNKNOWN]
-    Q -- 否 --> S[输出 QuestionIntent]
-    R --> S
 ```
 
 </details>
@@ -101,26 +108,23 @@ flowchart TD
 ```mermaid
 flowchart TD
     A[User inputs natural language question] --> B[Preprocess text: language detection + tokenization]
-    B --> C[build LLM prompt]
-    C --> D[Call LLM API]
-    D --> E{Valid LLM response format?}
+    B --> C[build normalization prompt]
+    C --> D[LLM standardizes question and completes context]
+    D --> E{Valid response format?}
     E -- no --> F[Retry once]
     F --> D
-    E -- yes --> G[Parse QuestionIntent JSON]
-    G --> H[Extract entity mentions]
-    H --> I[Extract metric mentions]
-    I --> J[Extract dimension mentions]
-    J --> K[Parse time range]
-    K --> L[Parse filters]
-    L --> M[Infer output intent]
-    M --> N{ambiguous?}
-    N -- yes --> O[Generate ambiguity list]
-    N -- no --> P[Calculate overallConfidence]
+    E -- yes --> G[Get normalizedQuestion / rewrites / unknownTerms]
+    G --> H[Extract entity / metric / dimension mentions]
+    H --> I[Extract time range / filters / output intent]
+    I --> J[Mark unknown terms and ambiguities]
+    J --> K{unknown terms?}
+    K -- yes --> L[Send to Semantic Search for candidates]
+    K -- no --> M[Calculate overallConfidence]
+    L --> M
+    M --> N{overallConfidence < 0.3?}
+    N -- yes --> O[outputIntent = UNKNOWN]
+    N -- no --> P[Output QuestionIntent]
     O --> P
-    P --> Q{overallConfidence < 0.3?}
-    Q -- yes --> R[outputIntent = UNKNOWN]
-    Q -- no --> S[Output QuestionIntent]
-    R --> S
 ```
 
 </details>
@@ -139,11 +143,11 @@ sequenceDiagram
 
     User->>QU: "每个客户最近30天的支付金额是多少？"
     QU->>QU: 文本预处理（语言检测、分词）
-    QU->>QU: 构造 LLM prompt
-    QU->>API: 调用 LLM（1 次）
-    API-->>QU: 问题意图 JSON
+    QU->>QU: 构造标准化 prompt
+    QU->>API: 调用 LLM：标准化 + 上下文补全
+    API-->>QU: normalizedQuestion / rewrites / unknownTerms
     QU->>QU: 解析 + 校验
-    QU->>QU: 检测歧义
+    QU->>QU: 抽取 QuestionIntent 候选并检测歧义
     alt 无歧义
         QU->>SS: 消歧请求（entity mentions → 候选对象）
         SS-->>QU: 消歧结果
@@ -167,11 +171,11 @@ sequenceDiagram
 
     User->>QU: "What is each customer's paid amount in the last 30 days?"
     QU->>QU: preprocess text: language detection and tokenization
-    QU->>QU: build LLM prompt
-    QU->>API: call LLM once
-    API-->>QU: QuestionIntent JSON
+    QU->>QU: build normalization prompt
+    QU->>API: call LLM for standardization + context completion
+    API-->>QU: normalizedQuestion / rewrites / unknownTerms
     QU->>QU: parse and validate
-    QU->>QU: detect ambiguity
+    QU->>QU: extract QuestionIntent candidates and detect ambiguity
     alt not ambiguous
         QU->>SS: disambiguation request: entity mentions to candidates
         SS-->>QU: disambiguation result
@@ -194,8 +198,17 @@ sequenceDiagram
 ```json
 {
   "question": "最近消费高的客户有哪些？",
-  "conversationHistory": [],
+  "conversationHistory": [
+    {
+      "role": "user",
+      "question": "最近30天销售情况怎么样？",
+      "resolvedContext": {
+        "timeRange": "最近30天"
+      }
+    }
+  ],
   "locale": "zh-CN",
+  "currentDate": "2026-06-29",
   "dialect": "postgresql",
   "schema": "public"
 }
@@ -206,6 +219,7 @@ sequenceDiagram
 ```json
 {
   "question": "最近消费高的客户有哪些？",
+  "normalizedQuestion": "最近30天消费金额较高的客户有哪些？",
   "intentType": "RANKING_QUERY",
   "entities": [
     {
@@ -223,11 +237,13 @@ sequenceDiagram
       "candidateTerms": ["支付金额", "订单金额", "净收入"]
     }
   ],
+  "unknownTerms": [],
   "timeRange": {
     "rawText": "最近",
-    "normalized": null,
-    "needsClarification": true,
-    "candidateOptions": ["最近7天", "最近30天", "最近自然月"]
+    "normalized": "最近30天",
+    "source": "conversation_context",
+    "needsClarification": false,
+    "candidateOptions": []
   },
   "requestedOutput": "customer_list",
   "queryRewrites": [
@@ -254,6 +270,7 @@ sequenceDiagram
 边界：
 
 - LLM 只输出结构化意图、候选术语、query rewrite 和歧义点。
+- LLM 可以把省略问题补完整，例如从上一轮继承时间范围；但补全内容必须在 `source` 或 attributes 中说明来源。
 - `needsCatalogResolution=true` 表示后续必须交给 Semantic Search / Semantic Catalog 消歧。
 - `needsClarification=true` 表示 Query Planner 不应直接生成正式 AnswerPlan。
 - 输出里不能出现 LLM 自行确认的物理表、物理 join、BUSINESS_APPROVED metric。
@@ -267,15 +284,33 @@ sequenceDiagram
 ### 6.3 LLM Prompt
 
 ```text
-你是一个数据库查询意图分析专家。分析用户问题，提取结构化意图。
+你是一个自然语言问题标准化助手。你的任务是把用户原始问题整理成更完整、更明确、更规范的问题表达，并提取候选 mention。
+
+你不负责选择数据库表、字段或 join path。
+你不负责确认指标口径。
+你不负责生成 SQL。
+如果业务词不确定，只能标记 unknownTerms 或 ambiguities。
+
+## 输入信息
+- 原始问题
+- 有限会话上下文
+- 当前日期
+- 语言和区域设置
+
+## 标准化规则
+- 补全省略和代词指代，例如"那上个月呢"要恢复上一轮主题。
+- 整理口语表达，但保留业务词原文。
+- 不要把业务黑话强行解释成某个表字段。
+- 不要编造不存在的指标或实体。
 
 ## 提取规则
-- entities: 问题中提到的业务实体（客户、订单、商品等）
-- metrics: 问题中提到的指标（金额、数量、比率等），包含聚合提示
-- dimensions: 问题中提到的分组维度（按客户、按地区、按日期等）
+- entities: 问题中提到的业务实体 mention（客户、订单、商品等）
+- metrics: 问题中提到的指标 mention（金额、数量、比率等），包含聚合提示
+- dimensions: 问题中提到的分组维度 mention（按客户、按地区、按日期等）
 - timeRange: 时间范围，需解析为具体表达式
 - filters: 过滤条件（状态、金额范围等）
 - outputIntent: QUERY_DETAIL（明细）/ AGGREGATE_RANK（聚合排行）/ EXPLAIN_SCHEMA（解释）/ COMPARE（对比）
+- unknownTerms: 未知词、黑话、缩写、项目代号
 
 ## 时间范围解析
 - "最近N天" → RELATIVE: CURRENT_DATE - INTERVAL 'N days'
@@ -377,7 +412,14 @@ sequenceDiagram
 
 ## 7. LLM 决策
 
-**使用 LLM。** 自然语言理解是 LLM 的核心能力，规则无法覆盖用户问法的多样性。这是在线链路的唯一 LLM 调用点，1 次/问题。
+**使用 LLM。** 自然语言标准化、上下文补全、歧义提示和候选 mention 抽取是 LLM 的强项，规则无法覆盖用户问法的多样性。
+
+Phase 1 约束：
+
+- 默认每个问题最多 1 次主 LLM 调用，用于标准化和候选意图抽取。
+- 未知词处理可以触发独立的 Semantic Search；必要时才进入大模型二次确认。
+- LLM 不直接生成 SQL、不确认表字段、不决定 join path、不提升 BUSINESS_APPROVED。
+- 如果模型输出无法通过 schema 校验，重试一次；仍失败则返回 `UNKNOWN` 或 clarification。
 
 ## 8. 测试验收
 

@@ -23,7 +23,7 @@
 | --- | --- | --- | --- |
 | `01-1900天跨越“信任缺陷”` | 企业 AI 数据产品的核心瓶颈是信任缺陷，不是对话形式。 | 强化“可信证据链”作为语义层主线。 | 纳入总体叙事：LLM 输出必须可追溯，不可信时应反问或进入 Review Queue。 |
 | `02-亿问DataAgent产品全景` | DataAgent 需要业务语义、数据可信和分析闭环；核心查询采用 NL2LF2SQL。 | 说明自然语言问答不能停在 NL2SQL。 | 将 `QuestionPlan / AnswerPlan` 明确为本项目的 LogicForm 类中间表达。 |
-| `03-NL2SQL的天花板，NL2LF2SQL是怎么突破的？` | SemanticDB 用实体和事件表达业务世界，LogicForm 承接自然语言理解结果。 | 对我们最有启发。 | 补强 `SemanticEntity`、后续 `SemanticEvent`、时间语义和复杂指标拆解。 |
+| `03-NL2SQL的天花板，NL2LF2SQL是怎么突破的？` | SemanticDB 用实体和事件表达业务世界，LogicForm 承接自然语言理解结果。 | 对我们最有启发。 | 补强 [LogicForm-like intermediate representation](glossary.md#logicform-like-intermediate-representation)、`SemanticEntity`、后续 `SemanticEvent`、时间语义和复杂指标拆解。 |
 | `04-5秒内、“无限上下文”...` | 通过语义检索、上下文裁剪和稳定执行控制复杂语义与性能。 | 提醒我们不能把所有 schema 直接塞给模型。 | 保持 Lexicon + Embedding + evidence rerank 的检索架构，避免直接全量 prompt。 |
 | `05-NL2SQL中的本体化语义层和指标语义层` | 指标语义层解决口径统一，本体化语义层表达对象、事件、关系和规则。 | 帮助区分指标层和更大语义层。 | 在文档中把指标层写成重要组成，而不是语义层全部。 |
 | `06-语义层不能只剩指标和维度` | DataAgent 需要指标语义、对象语义、事件语义、规则语义、动作语义。 | 给出语义层能力分层参考。 | Phase 1 保留事实证据和问答规划；事件/规则/动作分阶段推进。 |
@@ -34,7 +34,8 @@
 
 ```text
 自然语言
-  -> 语义理解
+  -> 大模型问题标准化 / 上下文补全
+  -> Alisa 语义理解
   -> LogicForm
   -> SemanticDB 约束和补全
   -> SQL / API / URL / 其他执行路径
@@ -45,11 +46,51 @@
 
 | 层次 | 亿问材料中的职责 | 对我们的映射 |
 | --- | --- | --- |
-| 自然语言理解 | 识别用户问的对象、指标、时间、条件和分析动作。 | `Question Understanding`，可接入 LLM，但只输出结构化意图。 |
+| 大模型问题标准化 | 补全上下文、省略恢复、代词指代、口语表达整理和句式标准化。 | `Question Standardization`，只处理语言层，不决定表字段或业务口径。 |
+| Alisa 语义理解 | 在标准化问题基础上识别对象、指标、时间、条件和分析动作，并生成 LogicForm。 | 本项目用 `Question Understanding + Semantic Search + Query Planner` 分担类似职责。 |
 | LogicForm | 用结构化方式描述业务问题，不直接写 SQL。 | `QuestionPlan / AnswerPlan`，作为本项目的中间语义表达。 |
 | SemanticDB | 约束业务概念、复用口径、推理关系、处理时间和方言差异。 | `Semantic Catalog Store` + `Query Planner` + `SQL Draft Generator` + `SQL Validator`。 |
 | 执行层 | 根据数据源生成 SQL、API、URL 或其他动作。 | Phase 1 只生成 SQL draft；API/URL/动作执行属于 Future Capability。 |
 | 结果解释 | 将原始结果还原成业务可读数据。 | `Answer Composer`，Phase 1 先解释字段、表、join path、SQL draft 和不确定点。 |
+
+### 2.3 官方材料中可直接采信的信息
+
+以下内容来自 `亿问/` 目录中的官方文章材料，可作为设计参考的事实来源：
+
+| 官方材料表达 | 本项目吸收方式 |
+| --- | --- |
+| DataAgent 不直接把自然语言翻译成 SQL，而是走 `自然语言 -> LogicForm -> SQL`。 | 本项目不采用直接 NL2SQL，把 `QuestionPlan / AnswerPlan` 定位为 LogicForm-like 中间表达。 |
+| 自然语言到 LogicForm 由上层理解模块 Alisa 完成。 | 本项目不实现 Alisa，但把 `Question Understanding + Semantic Search + Query Planner` 组合成类似职责边界。 |
+| LogicForm 结构化描述“用户想查什么”，表达业务对象或事件、筛选、指标、分组、排序、限制、同比、环比等。 | `QuestionPlan / AnswerPlan` 必须包含 target objects、metrics、dimensions、filters、timeRange、sort、limit、analysis options 和 evidenceRefs。 |
+| Production 方案先让大模型做问题标准化和上下文补全，再交给 Alisa 做确定性语义推理和 LogicForm 生成。 | Phase 1 中 LLM 只做问题标准化、上下文补全、query rewrite 和候选 mention；确定性规划交给 catalog/search/planner。 |
+| 标准化阶段不需要业务知识，不需要加载全部表、指标、口径和实体值。 | Question Understanding 的 LLM prompt 必须保持小上下文，不能把全量 schema 和指标库塞给模型。 |
+| 未知词需要单独处理，可用向量库搜索或大模型二次确认缩小候选空间。 | `unknownTerms` 进入 Semantic Search / Lexicon / Review Queue；必要时才触发二次确认。 |
+
+### 2.4 官方材料没有展开、需要推测的部分
+
+亿问材料没有公开 Alisa 或 LogicForm 的完整代码、完整 schema、执行算法和评测细节。下面是本项目基于材料做出的工程推测，不能写成亿问官方实现事实：
+
+| 推测点 | 本项目采用的保守设计 |
+| --- | --- |
+| Alisa 的内部算法可能包含语义解析、候选空间约束、规则推理和结果空间搜索。 | 不实现“Alisa 等价物”；只把职责拆成 Question Understanding、Semantic Search、Query Planner 和 Validator。 |
+| LogicForm 的真实字段和语法可能比文章示例复杂。 | 不照搬亿问 JSON；使用本项目自己的 `QuestionPlan / AnswerPlan`，但保留中间语义表达的角色。 |
+| SemanticDB 可能包含实体、事件、指标、规则、权限、执行器和缓存。 | Phase 1 只做 Semantic Catalog、EvidenceRef、Search、QuestionPlan、SQL draft validator；权限、动作和多执行器进入 Future Capability。 |
+| “稳定性 100%”和“毫秒级”是产品材料中的目标表达，缺少可复现实验细节。 | 不写成我们的验收承诺；本项目只承诺 evidence-grounded、可审核、可回放。 |
+
+### 2.5 复杂问题如何落到本项目链路
+
+以“这个财年华东地区女装销售的情况”为例，亿问材料里的 LogicForm 思路会把自然语言拆成业务对象、筛选、指标、维度和分析动作。本项目的对应链路是：
+
+| 阶段 | 示例输入 | 示例输出 |
+| --- | --- | --- |
+| LLM 问题标准化 | “这个财年华东地区女装销售的情况” | `normalizedQuestion`: “查看当前财年华东销售区域女装品类的销售概览、月度趋势和核心销售指标”。 |
+| Question Understanding | 标准化问题 | `QuestionIntent`: 时间=`current_fiscal_year`，区域=`华东`，品类=`女装`，主题=`sales_performance`，指标 mention=`销售情况`。 |
+| Semantic Search | `QuestionIntent` | 候选对象：`sales_fact`、`category_dim`、`region_dim`、`fiscal_calendar`；候选指标：销售额、订单数、销量、客单价。 |
+| Query Planner | 候选对象、reviewStatus、relationship evidence | `AnswerPlan`: grain=`fiscal_month + region + product_category`，join path，metric set，warnings。 |
+| SQL Draft Generator | `AnswerPlan` | 只读聚合 SQL draft。 |
+| SQL Validator | SQL draft、catalog、evidence | 校验表字段、join evidence、metric review status、read-only guard。 |
+
+如果财年、华东、女装或销售情况的默认指标没有 `BUSINESS_APPROVED` 口径，本项目不会假装可直接回答，而是在 Query Planner 或 SQL Validator 阶段返回 clarification 或 warning。这一点是我们相对产品材料必须保持的工程边界。
 
 ## 3. 与我们现有设计对比
 
@@ -58,7 +99,7 @@
 | 维度 | 亿问 DataAgent / SemanticDB 材料 | 我们当前设计 | 判断 |
 | --- | --- | --- | --- |
 | 事实来源 | 强调语义数据库和业务知识图谱，但材料中没有展开底层 SQL evidence extractor。 | relation-detector 已能输出 relationship、Data Lineage、metadata、diagnostics。 | 我们的底层 evidence 更明确，应作为差异化优势。 |
-| 中间表达 | 明确提出 LogicForm。 | 已有 `QuestionPlan / AnswerPlan` 概念，但还可更明确地称为 LogicForm-like intermediate representation。 | 可吸收。 |
+| 中间表达 | 明确提出 LogicForm。 | 已有 `QuestionPlan / AnswerPlan` 概念，并在术语表中明确为 [LogicForm-like intermediate representation](glossary.md#logicform-like-intermediate-representation)。 | 可吸收。 |
 | 建模单位 | 实体、事件、关系、规则、权限、动作。 | 当前以 semantic object、table、column、entity、metric、join path 为主。 | `SemanticEvent` 和规则语义需分阶段补强。 |
 | 指标语义 | 指标是重要组成，但不是全部。 | 已有 metric/review status，但需要避免文档只像指标字典。 | 可吸收。 |
 | LLM 角色 | 模型理解自然语言，不直接生成最终 SQL。 | LLM 解释、归纳、扩展和规划；不能创造数据库事实。 | 高度一致。 |
