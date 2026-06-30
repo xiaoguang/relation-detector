@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:pg16_generated_margin_demo.sku->pg16_generated_margin_demo.sku:SQL_LOG_JOIN"
+  ],
+  "forbiddenTables": []
+}

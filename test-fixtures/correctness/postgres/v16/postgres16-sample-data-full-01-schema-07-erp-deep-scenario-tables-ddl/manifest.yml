@@ -6,7 +6,7 @@ grammarProfile: postgresql/16
 databaseVersion: 16.5
 sourceType: DDL_FILE
 schema: public
-input: ../../../../../sample-data/postgres/18/01-schema/07-erp-deep-scenario-tables.sql
+input: ../../../../../sample-data/postgres/16/01-schema/07-erp-deep-scenario-tables.sql
 expectedRelations: expected-relations.json
 evidenceSourceType: DDL_FILE
 expectedDiagnostics: expected-diagnostics.json

@@ -6,6 +6,6 @@ grammarProfile: postgresql/17
 databaseVersion: 17.5
 sourceType: PLAIN_SQL
 schema: public
-input: ../../../../../sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql
+input: ../../../../../sample-data/postgres/17/04-queries/10-enterprise-extension-queries.sql
 expectedRelations: expected-relations.json
 expectedDiagnostics: expected-diagnostics.json

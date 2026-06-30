@@ -6,7 +6,7 @@ grammarProfile: postgresql/17
 databaseVersion: 17.5
 sourceType: PLAIN_SQL
 schema: public
-input: ../../../../../sample-data/postgres/18/04-queries/06-return-damage-queries.sql
+input: ../../../../../sample-data/postgres/17/04-queries/06-return-damage-queries.sql
 expectedRelations: expected-relations.json
 expectedLineage: expected-lineage.json
 expectedDiagnostics: expected-diagnostics.json

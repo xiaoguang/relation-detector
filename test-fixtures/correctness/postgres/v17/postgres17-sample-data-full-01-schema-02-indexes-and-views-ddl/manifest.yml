@@ -7,6 +7,6 @@ databaseVersion: 17.5
 sourceType: DDL_FILE
 evidenceSourceType: DDL_FILE
 schema: public
-input: ../../../../../sample-data/postgres/18/01-schema/02-indexes-and-views.sql
+input: ../../../../../sample-data/postgres/17/01-schema/02-indexes-and-views.sql
 expectedRelations: expected-relations.json
 expectedDiagnostics: expected-diagnostics.json

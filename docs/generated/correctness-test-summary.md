@@ -11,7 +11,7 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 | Total correctness fixtures | 707 |
 | SQL fixtures | 595 |
 | DDL fixtures | 112 |
-| Fixtures with expected lineage | 170 |
+| Fixtures with expected lineage | 172 |
 | Common directory fixtures | 36 |
 | MySQL directory fixtures | 194 |
 | PostgreSQL directory fixtures | 477 |
@@ -14920,7 +14920,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql` |
+| Input | `sample-data/postgres/16/01-schema/06-enterprise-extension-tables.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-enterprise-extension-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-enterprise-extension-ddl/expected-diagnostics.json` |
@@ -14975,10 +14975,10 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP系统企业级扩展表 - PostgreSQL 18
+-- ERP系统企业级扩展表 - PostgreSQL 16
 -- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
--- 数据库: PostgreSQL 18
+-- 数据库: PostgreSQL 16
 -- ============================================================
 
 -- ============================================================
@@ -14993,7 +14993,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/01-schema/01-tables.sql` |
+| Input | `sample-data/postgres/16/01-schema/01-tables.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-01-schema-01-tables-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-01-schema-01-tables-ddl/expected-diagnostics.json` |
@@ -15111,9 +15111,9 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP系统完整数据库设计 - PostgreSQL 18
+-- ERP系统完整数据库设计 - PostgreSQL 16
 -- 模块: HR, 权限, 货品, 批号, 库存, 采购, 销售, 财务
--- 数据库: PostgreSQL 18
+-- 数据库: PostgreSQL 16
 -- ============================================================
 
 -- ============================================================
@@ -15129,7 +15129,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/01-schema/02-indexes-and-views.sql` |
+| Input | `sample-data/postgres/16/01-schema/02-indexes-and-views.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-01-schema-02-indexes-and-views-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-01-schema-02-indexes-and-views-ddl/expected-diagnostics.json` |
@@ -15171,7 +15171,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/01-schema/04-supplementary-tables.sql` |
+| Input | `sample-data/postgres/16/01-schema/04-supplementary-tables.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-01-schema-04-supplementary-tables-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-01-schema-04-supplementary-tables-ddl/expected-diagnostics.json` |
@@ -15245,7 +15245,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/01-schema/05-third-batch-tables.sql` |
+| Input | `sample-data/postgres/16/01-schema/05-third-batch-tables.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-01-schema-05-third-batch-tables-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-01-schema-05-third-batch-tables-ddl/expected-diagnostics.json` |
@@ -15323,7 +15323,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/01-schema/07-erp-deep-scenario-tables.sql` |
+| Input | `sample-data/postgres/16/01-schema/07-erp-deep-scenario-tables.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl/expected-diagnostics.json` |
@@ -16501,7 +16501,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql` |
+| Input | `sample-data/postgres/17/01-schema/06-enterprise-extension-tables.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-enterprise-extension-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-enterprise-extension-ddl/expected-diagnostics.json` |
@@ -16556,10 +16556,10 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP系统企业级扩展表 - PostgreSQL 18
+-- ERP系统企业级扩展表 - PostgreSQL 17
 -- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
--- 数据库: PostgreSQL 18
+-- 数据库: PostgreSQL 17
 -- ============================================================
 
 -- ============================================================
@@ -16574,7 +16574,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/01-schema/01-tables.sql` |
+| Input | `sample-data/postgres/17/01-schema/01-tables.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-01-schema-01-tables-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-01-schema-01-tables-ddl/expected-diagnostics.json` |
@@ -16692,9 +16692,9 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP系统完整数据库设计 - PostgreSQL 18
+-- ERP系统完整数据库设计 - PostgreSQL 17
 -- 模块: HR, 权限, 货品, 批号, 库存, 采购, 销售, 财务
--- 数据库: PostgreSQL 18
+-- 数据库: PostgreSQL 17
 -- ============================================================
 
 -- ============================================================
@@ -16710,7 +16710,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/01-schema/02-indexes-and-views.sql` |
+| Input | `sample-data/postgres/17/01-schema/02-indexes-and-views.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-01-schema-02-indexes-and-views-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-01-schema-02-indexes-and-views-ddl/expected-diagnostics.json` |
@@ -16752,7 +16752,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/01-schema/04-supplementary-tables.sql` |
+| Input | `sample-data/postgres/17/01-schema/04-supplementary-tables.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-01-schema-04-supplementary-tables-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-01-schema-04-supplementary-tables-ddl/expected-diagnostics.json` |
@@ -16826,7 +16826,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/01-schema/05-third-batch-tables.sql` |
+| Input | `sample-data/postgres/17/01-schema/05-third-batch-tables.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-01-schema-05-third-batch-tables-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-01-schema-05-third-batch-tables-ddl/expected-diagnostics.json` |
@@ -16904,7 +16904,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/01-schema/07-erp-deep-scenario-tables.sql` |
+| Input | `sample-data/postgres/17/01-schema/07-erp-deep-scenario-tables.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl/expected-diagnostics.json` |
@@ -25672,7 +25672,7 @@ WHERE o.user_id = u.id;
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/10-enterprise-extension-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-enterprise-extension-queries-sql/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-enterprise-extension-queries-sql/expected-diagnostics.json` |
@@ -25713,7 +25713,7 @@ WHERE o.user_id = u.id;
 
 ```sql
 -- ============================================================
--- ERP企业级扩展分析查询 - PostgreSQL 18
+-- ERP企业级扩展分析查询 - PostgreSQL 16
 -- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
 --       工艺路线、地址与税率
 -- ============================================================
@@ -25775,7 +25775,7 @@ DECLARE
 ```
 _Preview truncated; see input file for full content._
 
-### `postgres16-sample-data-pg18-specific-sql`
+### `postgres16-sample-data-pg16-compatible-sql`
 
 | Field | Value |
 | --- | --- |
@@ -25783,18 +25783,18 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
-| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-pg18-specific-sql/expected-relations.json` |
-| Expected lineage | None |
-| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-pg18-specific-sql/expected-diagnostics.json` |
+| Input | `sample-data/postgres/16/04-queries/11-pg16-compatible.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-pg16-compatible-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-pg16-compatible-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-pg16-compatible-sql/expected-diagnostics.json` |
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:pg16_generated_margin_demo.sku->pg16_generated_margin_demo.sku:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg16_generated_margin_demo.sales_amount->pg16_generated_margin_demo.sales_amount`
 
 **Forbidden Tables**
 
@@ -25802,19 +25802,19 @@ _Preview truncated; see input file for full content._
 
 **Expected Warning Codes**
 
-- `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`: 4
+- None
 
 **Input Preview**
 
 ```sql
 -- ============================================================
--- PostgreSQL 18 专属语法样例
+-- PostgreSQL 16 兼容语法样例
 -- 说明:
---   这些 SQL 用来覆盖 PostgreSQL 18 版本能力，不参与 MySQL 8.0 业务对齐。
---   可在 PostgreSQL 18 环境中单独执行。
--- ============================================================
-
-CREATE EXTENSION IF NOT EXISTS btree_gist;
+--   这份文件由 PostgreSQL 18 专属语法样例降级而来。
+--   目标是在 PostgreSQL 16 中保留等价业务含义，同时不使用高版本专属语法：
+--   - virtual generated column -> stored generated column
+--   - RETURNING old/new -> CTE 捕获更新前后值
+--   - higher-version temporal constraints -> exclusion constraint + 普通 FK 兼容表达
 ```
 _Preview truncated; see input file for full content._
 
@@ -25826,7 +25826,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/09-real-world-scenarios.sql` |
+| Input | `sample-data/postgres/16/04-queries/09-real-world-scenarios.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-real-world-scenarios-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-real-world-scenarios-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-real-world-scenarios-sql/expected-diagnostics.json` |
@@ -26571,7 +26571,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Input | `sample-data/postgres/16/02-procedures/13-erp-deep-scenario-procedures.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-diagnostics.json` |
@@ -26733,7 +26733,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/03-data/01-master-data.sql` |
+| Input | `sample-data/postgres/16/03-data/01-master-data.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-01-master-data-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-01-master-data-sql/expected-diagnostics.json` |
@@ -26776,7 +26776,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/03-data/02-supplementary-data.sql` |
+| Input | `sample-data/postgres/16/03-data/02-supplementary-data.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-02-supplementary-data-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-02-supplementary-data-sql/expected-diagnostics.json` |
@@ -26801,7 +26801,7 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP系统补充测试数据 - PostgreSQL 18
+-- ERP系统补充测试数据 - PostgreSQL 16
 -- 目的: 对齐 MySQL 8.0 样例中已有但 PostgreSQL 初稿缺失的数据目标表
 -- ============================================================
 
@@ -26819,7 +26819,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/03-data/03-enterprise-extension-data.sql` |
+| Input | `sample-data/postgres/16/03-data/03-enterprise-extension-data.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-diagnostics.json` |
@@ -26844,7 +26844,7 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP企业级扩展测试数据 - PostgreSQL 18
+-- ERP企业级扩展测试数据 - PostgreSQL 16
 -- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
 -- ============================================================
@@ -26862,7 +26862,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/03-data/04-erp-deep-scenario-data.sql` |
+| Input | `sample-data/postgres/16/03-data/04-erp-deep-scenario-data.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-diagnostics.json` |
@@ -26905,7 +26905,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/03-data/05-erp-coverage-gap-data.sql` |
+| Input | `sample-data/postgres/16/03-data/05-erp-coverage-gap-data.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-diagnostics.json` |
@@ -26948,7 +26948,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/01-complex-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/01-complex-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-01-complex-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-01-complex-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-01-complex-queries-sql/expected-diagnostics.json` |
@@ -27014,7 +27014,7 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP系统超复杂SQL查询集合 (PostgreSQL 18)
+-- ERP系统超复杂SQL查询集合 (PostgreSQL 16)
 -- 覆盖: 多表JOIN, CTE(递归/非递归), 窗口函数, 嵌套子查询,
 --       GROUP BY + HAVING, 复杂聚合组合, ROLLUP, UNION,
 --       相关子查询, EXISTS, LATERAL, 条件聚合, 派生表
@@ -27031,7 +27031,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/02-complex-queries-batch2.sql` |
+| Input | `sample-data/postgres/16/04-queries/02-complex-queries-batch2.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-diagnostics.json` |
@@ -27078,7 +27078,7 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP系统超复杂SQL查询集合 - 第二批 (PostgreSQL 18)
+-- ERP系统超复杂SQL查询集合 - 第二批 (PostgreSQL 16)
 -- 覆盖: 递归CTE, LATERAL JOIN, 窗口函数全系列,
 --       GROUPING SETS/CUBE, UNION/INTERSECT/EXCEPT模拟,
 --       相关子查询嵌套, 派生表多层嵌套, 条件聚合嵌套,
@@ -27095,7 +27095,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/03-complex-queries-batch3.sql` |
+| Input | `sample-data/postgres/16/04-queries/03-complex-queries-batch3.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-diagnostics.json` |
@@ -27144,7 +27144,7 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (PostgreSQL 18)
+-- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (PostgreSQL 16)
 -- 重点覆盖客户消费状态全方位分析
 -- ============================================================
 
@@ -27162,7 +27162,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/04-store-customer-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/04-store-customer-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-04-store-customer-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-04-store-customer-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-04-store-customer-queries-sql/expected-diagnostics.json` |
@@ -27217,7 +27217,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/05-batch-expiry-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/05-batch-expiry-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-diagnostics.json` |
@@ -27274,7 +27274,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/06-return-damage-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/06-return-damage-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-06-return-damage-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-06-return-damage-queries-sql/expected-diagnostics.json` |
@@ -27332,7 +27332,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/07-supplier-analysis-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/07-supplier-analysis-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-diagnostics.json` |
@@ -27377,7 +27377,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/08-common-system-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/08-common-system-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-08-common-system-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-08-common-system-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-08-common-system-queries-sql/expected-diagnostics.json` |
@@ -27452,7 +27452,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/12-erp-deep-scenario-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/12-erp-deep-scenario-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-diagnostics.json` |
@@ -30553,7 +30553,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/10-enterprise-extension-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-enterprise-extension-queries-sql/expected-relations.json` |
 | Expected lineage | None |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-enterprise-extension-queries-sql/expected-diagnostics.json` |
@@ -30594,7 +30594,7 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP企业级扩展分析查询 - PostgreSQL 18
+-- ERP企业级扩展分析查询 - PostgreSQL 17
 -- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
 --       工艺路线、地址与税率
 -- ============================================================
@@ -30656,7 +30656,7 @@ DECLARE
 ```
 _Preview truncated; see input file for full content._
 
-### `postgres17-sample-data-pg18-specific-sql`
+### `postgres17-sample-data-pg17-compatible-sql`
 
 | Field | Value |
 | --- | --- |
@@ -30664,18 +30664,18 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
-| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-pg18-specific-sql/expected-relations.json` |
-| Expected lineage | None |
-| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-pg18-specific-sql/expected-diagnostics.json` |
+| Input | `sample-data/postgres/17/04-queries/11-pg17-compatible.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-pg17-compatible-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-pg17-compatible-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-pg17-compatible-sql/expected-diagnostics.json` |
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:pg17_generated_margin_demo.sku->pg17_generated_margin_demo.sku:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg17_generated_margin_demo.sales_amount->pg17_generated_margin_demo.sales_amount`
 
 **Forbidden Tables**
 
@@ -30683,19 +30683,19 @@ _Preview truncated; see input file for full content._
 
 **Expected Warning Codes**
 
-- `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`: 4
+- None
 
 **Input Preview**
 
 ```sql
 -- ============================================================
--- PostgreSQL 18 专属语法样例
+-- PostgreSQL 17 兼容语法样例
 -- 说明:
---   这些 SQL 用来覆盖 PostgreSQL 18 版本能力，不参与 MySQL 8.0 业务对齐。
---   可在 PostgreSQL 18 环境中单独执行。
--- ============================================================
-
-CREATE EXTENSION IF NOT EXISTS btree_gist;
+--   这份文件由 PostgreSQL 18 专属语法样例降级而来。
+--   目标是在 PostgreSQL 17 中保留等价业务含义，同时不使用高版本专属语法：
+--   - virtual generated column -> stored generated column
+--   - RETURNING old/new -> CTE 捕获更新前后值
+--   - higher-version temporal constraints -> exclusion constraint + 普通 FK 兼容表达
 ```
 _Preview truncated; see input file for full content._
 
@@ -30707,7 +30707,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/09-real-world-scenarios.sql` |
+| Input | `sample-data/postgres/17/04-queries/09-real-world-scenarios.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-real-world-scenarios-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-real-world-scenarios-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-real-world-scenarios-sql/expected-diagnostics.json` |
@@ -31778,7 +31778,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Input | `sample-data/postgres/17/02-procedures/13-erp-deep-scenario-procedures.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-diagnostics.json` |
@@ -31940,7 +31940,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/03-data/01-master-data.sql` |
+| Input | `sample-data/postgres/17/03-data/01-master-data.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-01-master-data-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-01-master-data-sql/expected-diagnostics.json` |
@@ -31983,7 +31983,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/03-data/02-supplementary-data.sql` |
+| Input | `sample-data/postgres/17/03-data/02-supplementary-data.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-02-supplementary-data-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-02-supplementary-data-sql/expected-diagnostics.json` |
@@ -32008,7 +32008,7 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP系统补充测试数据 - PostgreSQL 18
+-- ERP系统补充测试数据 - PostgreSQL 17
 -- 目的: 对齐 MySQL 8.0 样例中已有但 PostgreSQL 初稿缺失的数据目标表
 -- ============================================================
 
@@ -32026,7 +32026,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/03-data/03-enterprise-extension-data.sql` |
+| Input | `sample-data/postgres/17/03-data/03-enterprise-extension-data.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-diagnostics.json` |
@@ -32051,7 +32051,7 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP企业级扩展测试数据 - PostgreSQL 18
+-- ERP企业级扩展测试数据 - PostgreSQL 17
 -- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
 -- ============================================================
@@ -32069,7 +32069,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/03-data/04-erp-deep-scenario-data.sql` |
+| Input | `sample-data/postgres/17/03-data/04-erp-deep-scenario-data.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-diagnostics.json` |
@@ -32112,7 +32112,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/03-data/05-erp-coverage-gap-data.sql` |
+| Input | `sample-data/postgres/17/03-data/05-erp-coverage-gap-data.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-diagnostics.json` |
@@ -32155,7 +32155,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/01-complex-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/01-complex-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-01-complex-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-01-complex-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-01-complex-queries-sql/expected-diagnostics.json` |
@@ -32221,7 +32221,7 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP系统超复杂SQL查询集合 (PostgreSQL 18)
+-- ERP系统超复杂SQL查询集合 (PostgreSQL 17)
 -- 覆盖: 多表JOIN, CTE(递归/非递归), 窗口函数, 嵌套子查询,
 --       GROUP BY + HAVING, 复杂聚合组合, ROLLUP, UNION,
 --       相关子查询, EXISTS, LATERAL, 条件聚合, 派生表
@@ -32238,7 +32238,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/02-complex-queries-batch2.sql` |
+| Input | `sample-data/postgres/17/04-queries/02-complex-queries-batch2.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-diagnostics.json` |
@@ -32285,7 +32285,7 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- ERP系统超复杂SQL查询集合 - 第二批 (PostgreSQL 18)
+-- ERP系统超复杂SQL查询集合 - 第二批 (PostgreSQL 17)
 -- 覆盖: 递归CTE, LATERAL JOIN, 窗口函数全系列,
 --       GROUPING SETS/CUBE, UNION/INTERSECT/EXCEPT模拟,
 --       相关子查询嵌套, 派生表多层嵌套, 条件聚合嵌套,
@@ -32302,7 +32302,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/03-complex-queries-batch3.sql` |
+| Input | `sample-data/postgres/17/04-queries/03-complex-queries-batch3.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-diagnostics.json` |
@@ -32351,7 +32351,7 @@ _Preview truncated; see input file for full content._
 
 ```sql
 -- ============================================================
--- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (PostgreSQL 18)
+-- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (PostgreSQL 17)
 -- 重点覆盖客户消费状态全方位分析
 -- ============================================================
 
@@ -32369,7 +32369,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/04-store-customer-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/04-store-customer-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-04-store-customer-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-04-store-customer-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-04-store-customer-queries-sql/expected-diagnostics.json` |
@@ -32424,7 +32424,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/05-batch-expiry-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/05-batch-expiry-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-diagnostics.json` |
@@ -32481,7 +32481,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/06-return-damage-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/06-return-damage-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-06-return-damage-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-06-return-damage-queries-sql/expected-diagnostics.json` |
@@ -32539,7 +32539,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/07-supplier-analysis-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/07-supplier-analysis-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-diagnostics.json` |
@@ -32584,7 +32584,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/08-common-system-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/08-common-system-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-08-common-system-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-08-common-system-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-08-common-system-queries-sql/expected-diagnostics.json` |
@@ -32659,7 +32659,7 @@ _Preview truncated; see input file for full content._
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
 | Schema | `public` |
-| Input | `sample-data/postgres/18/04-queries/12-erp-deep-scenario-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/12-erp-deep-scenario-queries.sql` |
 | Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-relations.json` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
 | Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-diagnostics.json` |

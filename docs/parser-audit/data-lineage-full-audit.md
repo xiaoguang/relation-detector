@@ -9,10 +9,10 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 | Classification | Count |
 | --- | ---: |
 | TOTAL | 707 |
-| EXISTING_GOLD | 170 |
+| EXISTING_GOLD | 172 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 537 |
+| NOT_APPLICABLE | 535 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -9807,7 +9807,7 @@ CREATE TABLE public.users (
 | Database | `POSTGRESQL` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql` |
+| Input | `sample-data/postgres/16/01-schema/06-enterprise-extension-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -9822,10 +9822,10 @@ CREATE TABLE public.users (
 
 ```sql
 -- ============================================================
--- ERP系统企业级扩展表 - PostgreSQL 18
+-- ERP系统企业级扩展表 - PostgreSQL 16
 -- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
--- 数据库: PostgreSQL 18
+-- 数据库: PostgreSQL 16
 -- ============================================================
 
 -- ============================================================
@@ -9840,7 +9840,7 @@ CREATE TABLE public.users (
 | Database | `POSTGRESQL` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/postgres/18/01-schema/01-tables.sql` |
+| Input | `sample-data/postgres/16/01-schema/01-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -9855,9 +9855,9 @@ CREATE TABLE public.users (
 
 ```sql
 -- ============================================================
--- ERP系统完整数据库设计 - PostgreSQL 18
+-- ERP系统完整数据库设计 - PostgreSQL 16
 -- 模块: HR, 权限, 货品, 批号, 库存, 采购, 销售, 财务
--- 数据库: PostgreSQL 18
+-- 数据库: PostgreSQL 16
 -- ============================================================
 
 -- ============================================================
@@ -9873,7 +9873,7 @@ CREATE TABLE public.users (
 | Database | `POSTGRESQL` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/postgres/18/01-schema/02-indexes-and-views.sql` |
+| Input | `sample-data/postgres/16/01-schema/02-indexes-and-views.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -9905,7 +9905,7 @@ CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
 | Database | `POSTGRESQL` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/postgres/18/01-schema/04-supplementary-tables.sql` |
+| Input | `sample-data/postgres/16/01-schema/04-supplementary-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -9938,7 +9938,7 @@ CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
 | Database | `POSTGRESQL` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/postgres/18/01-schema/05-third-batch-tables.sql` |
+| Input | `sample-data/postgres/16/01-schema/05-third-batch-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -9971,7 +9971,7 @@ CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
 | Database | `POSTGRESQL` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/postgres/18/01-schema/07-erp-deep-scenario-tables.sql` |
+| Input | `sample-data/postgres/16/01-schema/07-erp-deep-scenario-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -10400,7 +10400,7 @@ CREATE TABLE public.users (
 | Database | `POSTGRESQL` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/postgres/18/01-schema/06-enterprise-extension-tables.sql` |
+| Input | `sample-data/postgres/17/01-schema/06-enterprise-extension-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -10415,10 +10415,10 @@ CREATE TABLE public.users (
 
 ```sql
 -- ============================================================
--- ERP系统企业级扩展表 - PostgreSQL 18
+-- ERP系统企业级扩展表 - PostgreSQL 17
 -- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
--- 数据库: PostgreSQL 18
+-- 数据库: PostgreSQL 17
 -- ============================================================
 
 -- ============================================================
@@ -10433,7 +10433,7 @@ CREATE TABLE public.users (
 | Database | `POSTGRESQL` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/postgres/18/01-schema/01-tables.sql` |
+| Input | `sample-data/postgres/17/01-schema/01-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -10448,9 +10448,9 @@ CREATE TABLE public.users (
 
 ```sql
 -- ============================================================
--- ERP系统完整数据库设计 - PostgreSQL 18
+-- ERP系统完整数据库设计 - PostgreSQL 17
 -- 模块: HR, 权限, 货品, 批号, 库存, 采购, 销售, 财务
--- 数据库: PostgreSQL 18
+-- 数据库: PostgreSQL 17
 -- ============================================================
 
 -- ============================================================
@@ -10466,7 +10466,7 @@ CREATE TABLE public.users (
 | Database | `POSTGRESQL` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/postgres/18/01-schema/02-indexes-and-views.sql` |
+| Input | `sample-data/postgres/17/01-schema/02-indexes-and-views.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -10498,7 +10498,7 @@ CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
 | Database | `POSTGRESQL` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/postgres/18/01-schema/04-supplementary-tables.sql` |
+| Input | `sample-data/postgres/17/01-schema/04-supplementary-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -10531,7 +10531,7 @@ CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
 | Database | `POSTGRESQL` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/postgres/18/01-schema/05-third-batch-tables.sql` |
+| Input | `sample-data/postgres/17/01-schema/05-third-batch-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -10564,7 +10564,7 @@ CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
 | Database | `POSTGRESQL` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/postgres/18/01-schema/07-erp-deep-scenario-tables.sql` |
+| Input | `sample-data/postgres/17/01-schema/07-erp-deep-scenario-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -16179,7 +16179,7 @@ WHERE o.user_id = u.id;
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/10-enterprise-extension-queries.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -16194,7 +16194,7 @@ WHERE o.user_id = u.id;
 
 ```sql
 -- ============================================================
--- ERP企业级扩展分析查询 - PostgreSQL 18
+-- ERP企业级扩展分析查询 - PostgreSQL 16
 -- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
 --       工艺路线、地址与税率
 -- ============================================================
@@ -16250,21 +16250,21 @@ AS $$
 DECLARE
 ```
 
-## `postgres16-sample-data-pg18-specific-sql`
+## `postgres16-sample-data-pg16-compatible-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | negative full-grammer version-boundary fixture; unsupported SQL is not lineage golden |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
-| Expected lineage | None |
+| Input | `sample-data/postgres/16/04-queries/11-pg16-compatible.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-pg16-compatible-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg16_generated_margin_demo.sales_amount->pg16_generated_margin_demo.sales_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -16274,13 +16274,13 @@ DECLARE
 
 ```sql
 -- ============================================================
--- PostgreSQL 18 专属语法样例
+-- PostgreSQL 16 兼容语法样例
 -- 说明:
---   这些 SQL 用来覆盖 PostgreSQL 18 版本能力，不参与 MySQL 8.0 业务对齐。
---   可在 PostgreSQL 18 环境中单独执行。
--- ============================================================
-
-CREATE EXTENSION IF NOT EXISTS btree_gist;
+--   这份文件由 PostgreSQL 18 专属语法样例降级而来。
+--   目标是在 PostgreSQL 16 中保留等价业务含义，同时不使用高版本专属语法：
+--   - virtual generated column -> stored generated column
+--   - RETURNING old/new -> CTE 捕获更新前后值
+--   - higher-version temporal constraints -> exclusion constraint + 普通 FK 兼容表达
 ```
 
 ## `postgres16-sample-data-real-world-scenarios-sql`
@@ -16292,7 +16292,7 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/09-real-world-scenarios.sql` |
+| Input | `sample-data/postgres/16/04-queries/09-real-world-scenarios.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-real-world-scenarios-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -16823,7 +16823,7 @@ DECLARE
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
-| Input | `sample-data/postgres/18/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Input | `sample-data/postgres/16/02-procedures/13-erp-deep-scenario-procedures.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17030,7 +17030,7 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/03-data/01-master-data.sql` |
+| Input | `sample-data/postgres/16/03-data/01-master-data.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17063,7 +17063,7 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/03-data/02-supplementary-data.sql` |
+| Input | `sample-data/postgres/16/03-data/02-supplementary-data.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17078,7 +17078,7 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 
 ```sql
 -- ============================================================
--- ERP系统补充测试数据 - PostgreSQL 18
+-- ERP系统补充测试数据 - PostgreSQL 16
 -- 目的: 对齐 MySQL 8.0 样例中已有但 PostgreSQL 初稿缺失的数据目标表
 -- ============================================================
 
@@ -17096,7 +17096,7 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/03-data/03-enterprise-extension-data.sql` |
+| Input | `sample-data/postgres/16/03-data/03-enterprise-extension-data.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17111,7 +17111,7 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 
 ```sql
 -- ============================================================
--- ERP企业级扩展测试数据 - PostgreSQL 18
+-- ERP企业级扩展测试数据 - PostgreSQL 16
 -- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
 -- ============================================================
@@ -17129,7 +17129,7 @@ INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, st
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/03-data/04-erp-deep-scenario-data.sql` |
+| Input | `sample-data/postgres/16/03-data/04-erp-deep-scenario-data.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17162,7 +17162,7 @@ INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, st
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/03-data/05-erp-coverage-gap-data.sql` |
+| Input | `sample-data/postgres/16/03-data/05-erp-coverage-gap-data.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17195,7 +17195,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/01-complex-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/01-complex-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-01-complex-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17210,7 +17210,7 @@ INSERT INTO shipments (
 
 ```sql
 -- ============================================================
--- ERP系统超复杂SQL查询集合 (PostgreSQL 18)
+-- ERP系统超复杂SQL查询集合 (PostgreSQL 16)
 -- 覆盖: 多表JOIN, CTE(递归/非递归), 窗口函数, 嵌套子查询,
 --       GROUP BY + HAVING, 复杂聚合组合, ROLLUP, UNION,
 --       相关子查询, EXISTS, LATERAL, 条件聚合, 派生表
@@ -17227,7 +17227,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/02-complex-queries-batch2.sql` |
+| Input | `sample-data/postgres/16/04-queries/02-complex-queries-batch2.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17242,7 +17242,7 @@ INSERT INTO shipments (
 
 ```sql
 -- ============================================================
--- ERP系统超复杂SQL查询集合 - 第二批 (PostgreSQL 18)
+-- ERP系统超复杂SQL查询集合 - 第二批 (PostgreSQL 16)
 -- 覆盖: 递归CTE, LATERAL JOIN, 窗口函数全系列,
 --       GROUPING SETS/CUBE, UNION/INTERSECT/EXCEPT模拟,
 --       相关子查询嵌套, 派生表多层嵌套, 条件聚合嵌套,
@@ -17259,7 +17259,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/03-complex-queries-batch3.sql` |
+| Input | `sample-data/postgres/16/04-queries/03-complex-queries-batch3.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17274,7 +17274,7 @@ INSERT INTO shipments (
 
 ```sql
 -- ============================================================
--- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (PostgreSQL 18)
+-- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (PostgreSQL 16)
 -- 重点覆盖客户消费状态全方位分析
 -- ============================================================
 
@@ -17292,7 +17292,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/04-store-customer-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/04-store-customer-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-04-store-customer-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17325,7 +17325,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/05-batch-expiry-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/05-batch-expiry-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17358,7 +17358,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/06-return-damage-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/06-return-damage-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17391,7 +17391,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/07-supplier-analysis-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/07-supplier-analysis-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17424,7 +17424,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/08-common-system-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/08-common-system-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-08-common-system-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -17457,7 +17457,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/12-erp-deep-scenario-queries.sql` |
+| Input | `sample-data/postgres/16/04-queries/12-erp-deep-scenario-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -19643,7 +19643,7 @@ SELECT *
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/10-enterprise-extension-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/10-enterprise-extension-queries.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -19658,7 +19658,7 @@ SELECT *
 
 ```sql
 -- ============================================================
--- ERP企业级扩展分析查询 - PostgreSQL 18
+-- ERP企业级扩展分析查询 - PostgreSQL 17
 -- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
 --       工艺路线、地址与税率
 -- ============================================================
@@ -19714,21 +19714,21 @@ AS $$
 DECLARE
 ```
 
-## `postgres17-sample-data-pg18-specific-sql`
+## `postgres17-sample-data-pg17-compatible-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | negative full-grammer version-boundary fixture; unsupported SQL is not lineage golden |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/11-pg18-specific.sql` |
-| Expected lineage | None |
+| Input | `sample-data/postgres/17/04-queries/11-pg17-compatible.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-pg17-compatible-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:pg17_generated_margin_demo.sales_amount->pg17_generated_margin_demo.sales_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -19738,13 +19738,13 @@ DECLARE
 
 ```sql
 -- ============================================================
--- PostgreSQL 18 专属语法样例
+-- PostgreSQL 17 兼容语法样例
 -- 说明:
---   这些 SQL 用来覆盖 PostgreSQL 18 版本能力，不参与 MySQL 8.0 业务对齐。
---   可在 PostgreSQL 18 环境中单独执行。
--- ============================================================
-
-CREATE EXTENSION IF NOT EXISTS btree_gist;
+--   这份文件由 PostgreSQL 18 专属语法样例降级而来。
+--   目标是在 PostgreSQL 17 中保留等价业务含义，同时不使用高版本专属语法：
+--   - virtual generated column -> stored generated column
+--   - RETURNING old/new -> CTE 捕获更新前后值
+--   - higher-version temporal constraints -> exclusion constraint + 普通 FK 兼容表达
 ```
 
 ## `postgres17-sample-data-real-world-scenarios-sql`
@@ -19756,7 +19756,7 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/09-real-world-scenarios.sql` |
+| Input | `sample-data/postgres/17/04-queries/09-real-world-scenarios.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-real-world-scenarios-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -20532,7 +20532,7 @@ DECLARE
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
-| Input | `sample-data/postgres/18/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Input | `sample-data/postgres/17/02-procedures/13-erp-deep-scenario-procedures.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -20739,7 +20739,7 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/03-data/01-master-data.sql` |
+| Input | `sample-data/postgres/17/03-data/01-master-data.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -20772,7 +20772,7 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/03-data/02-supplementary-data.sql` |
+| Input | `sample-data/postgres/17/03-data/02-supplementary-data.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -20787,7 +20787,7 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 
 ```sql
 -- ============================================================
--- ERP系统补充测试数据 - PostgreSQL 18
+-- ERP系统补充测试数据 - PostgreSQL 17
 -- 目的: 对齐 MySQL 8.0 样例中已有但 PostgreSQL 初稿缺失的数据目标表
 -- ============================================================
 
@@ -20805,7 +20805,7 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/03-data/03-enterprise-extension-data.sql` |
+| Input | `sample-data/postgres/17/03-data/03-enterprise-extension-data.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -20820,7 +20820,7 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 
 ```sql
 -- ============================================================
--- ERP企业级扩展测试数据 - PostgreSQL 18
+-- ERP企业级扩展测试数据 - PostgreSQL 17
 -- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
 -- ============================================================
@@ -20838,7 +20838,7 @@ INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, st
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/03-data/04-erp-deep-scenario-data.sql` |
+| Input | `sample-data/postgres/17/03-data/04-erp-deep-scenario-data.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -20871,7 +20871,7 @@ INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, st
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/03-data/05-erp-coverage-gap-data.sql` |
+| Input | `sample-data/postgres/17/03-data/05-erp-coverage-gap-data.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -20904,7 +20904,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/01-complex-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/01-complex-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-01-complex-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -20919,7 +20919,7 @@ INSERT INTO shipments (
 
 ```sql
 -- ============================================================
--- ERP系统超复杂SQL查询集合 (PostgreSQL 18)
+-- ERP系统超复杂SQL查询集合 (PostgreSQL 17)
 -- 覆盖: 多表JOIN, CTE(递归/非递归), 窗口函数, 嵌套子查询,
 --       GROUP BY + HAVING, 复杂聚合组合, ROLLUP, UNION,
 --       相关子查询, EXISTS, LATERAL, 条件聚合, 派生表
@@ -20936,7 +20936,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/02-complex-queries-batch2.sql` |
+| Input | `sample-data/postgres/17/04-queries/02-complex-queries-batch2.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -20951,7 +20951,7 @@ INSERT INTO shipments (
 
 ```sql
 -- ============================================================
--- ERP系统超复杂SQL查询集合 - 第二批 (PostgreSQL 18)
+-- ERP系统超复杂SQL查询集合 - 第二批 (PostgreSQL 17)
 -- 覆盖: 递归CTE, LATERAL JOIN, 窗口函数全系列,
 --       GROUPING SETS/CUBE, UNION/INTERSECT/EXCEPT模拟,
 --       相关子查询嵌套, 派生表多层嵌套, 条件聚合嵌套,
@@ -20968,7 +20968,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/03-complex-queries-batch3.sql` |
+| Input | `sample-data/postgres/17/04-queries/03-complex-queries-batch3.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -20983,7 +20983,7 @@ INSERT INTO shipments (
 
 ```sql
 -- ============================================================
--- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (PostgreSQL 18)
+-- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (PostgreSQL 17)
 -- 重点覆盖客户消费状态全方位分析
 -- ============================================================
 
@@ -21001,7 +21001,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/04-store-customer-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/04-store-customer-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-04-store-customer-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -21034,7 +21034,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/05-batch-expiry-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/05-batch-expiry-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -21067,7 +21067,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/06-return-damage-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/06-return-damage-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -21100,7 +21100,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/07-supplier-analysis-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/07-supplier-analysis-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -21133,7 +21133,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/08-common-system-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/08-common-system-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-08-common-system-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**
@@ -21166,7 +21166,7 @@ INSERT INTO shipments (
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
-| Input | `sample-data/postgres/18/04-queries/12-erp-deep-scenario-queries.sql` |
+| Input | `sample-data/postgres/17/04-queries/12-erp-deep-scenario-queries.sql` |
 | Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
 
 **Expected Lineage Fingerprints**

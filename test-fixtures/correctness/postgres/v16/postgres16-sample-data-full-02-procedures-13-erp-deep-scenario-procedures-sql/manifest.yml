@@ -6,7 +6,7 @@ grammarProfile: postgresql/16
 databaseVersion: 16.5
 sourceType: PROCEDURE
 schema: public
-input: ../../../../../sample-data/postgres/18/02-procedures/13-erp-deep-scenario-procedures.sql
+input: ../../../../../sample-data/postgres/16/02-procedures/13-erp-deep-scenario-procedures.sql
 expectedRelations: expected-relations.json
 statementFormat: OBJECT_BLOCKS
 expectedLineage: expected-lineage.json

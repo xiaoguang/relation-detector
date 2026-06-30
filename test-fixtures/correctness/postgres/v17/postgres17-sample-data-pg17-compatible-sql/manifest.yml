@@ -1,4 +1,4 @@
-id: postgres17-sample-data-pg18-specific-sql
+id: postgres17-sample-data-pg17-compatible-sql
 databaseType: POSTGRESQL
 parserTarget: SQL
 parserMode: full-grammer
@@ -6,6 +6,6 @@ grammarProfile: postgresql/17
 databaseVersion: 17.5
 sourceType: PLAIN_SQL
 schema: public
-input: ../../../../../sample-data/postgres/18/04-queries/11-pg18-specific.sql
+input: ../../../../../sample-data/postgres/17/04-queries/11-pg17-compatible.sql
 expectedRelations: expected-relations.json
 expectedDiagnostics: expected-diagnostics.json

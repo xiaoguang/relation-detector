@@ -1,15 +1,17 @@
 # ERP sample data
 
-This directory contains executable ERP sample databases for MySQL 8.0 and PostgreSQL 18. The primary goal is a runnable business sample, not just parser input.
+This directory contains executable ERP sample databases for MySQL 8.0 and PostgreSQL 16/17/18. The primary goal is a runnable business sample, not just parser input.
 
 ## Scope
 
 - `mysql/8.0`: MySQL 8.0 ERP sample with schema, triggers, stored procedures/functions, seed data, and analysis queries.
+- `postgres/16`: PostgreSQL 16 translation of the same ERP business model, with PG18-only examples rewritten to PostgreSQL 16-compatible SQL.
+- `postgres/17`: PostgreSQL 17 translation of the same ERP business model, with PG18-only examples rewritten to PostgreSQL 17-compatible SQL.
 - `postgres/18`: PostgreSQL 18 translation of the same ERP business model, with PostgreSQL-native enum types, PL/pgSQL, `JSONB`, `IDENTITY`, and PostgreSQL 18-specific examples isolated in `04-queries/11-pg18-specific.sql`.
 
 The two versions should converge on the same business model: organization, HR, RBAC, product/category/batch, supplier, customer, inventory, procurement, sales, returns, finance, approval, contract, tax, quality, project, service, production, and enterprise operations.
 
-MySQL 8.0, PostgreSQL 18, and portable SQL now all include the newer deep ERP scenario extension for MRP, shop-floor execution, costing, AR/AP invoices, WMS, repair orders, master-data governance, and sensitive access audit. The PostgreSQL files use syntax compatible with PostgreSQL 16/17/18 unless a file is explicitly marked PG18-specific.
+MySQL 8.0, PostgreSQL 16/17/18, and portable SQL now all include the newer deep ERP scenario extension for MRP, shop-floor execution, costing, AR/AP invoices, WMS, repair orders, master-data governance, and sensitive access audit. The PostgreSQL 16/17 directories are complete source-level translations of the PostgreSQL 18 directory, with version-specific syntax downgraded where needed.
 
 All persistent ERP tables have representative seed rows or generator coverage. MySQL also contains four temporary generator tables used only inside the massive-data procedure; PostgreSQL 18 contains three isolated version-specific demo tables.
 
@@ -42,17 +44,21 @@ for f in sample-data/mysql/8.0/01-schema/*.sql sample-data/mysql/8.0/02-procedur
 done
 ```
 
-### PostgreSQL 18
+### PostgreSQL 16 / 17 / 18
 
 1. Create a database manually, for example `erp_system`.
-2. Run `postgres/18/01-schema/*.sql`
-3. Run `postgres/18/02-procedures/*.sql`
-4. Run `postgres/18/03-data/*.sql`
-5. Run `postgres/18/04-queries/01-*.sql` to `10-*.sql` as business smoke queries
-6. Run `postgres/18/04-queries/12-erp-deep-scenario-queries.sql` as the deep ERP smoke query set
-7. Run `postgres/18/04-queries/11-pg18-specific.sql` only in PostgreSQL 18 when validating version-specific syntax
+2. Pick the target directory: `postgres/16`, `postgres/17`, or `postgres/18`.
+3. Run `<version>/01-schema/*.sql`
+4. Run `<version>/02-procedures/*.sql`
+5. Run `<version>/03-data/*.sql`
+6. Run `<version>/04-queries/01-*.sql` to `10-*.sql` as business smoke queries
+7. Run `<version>/04-queries/12-erp-deep-scenario-queries.sql` as the deep ERP smoke query set
+8. Run the version demo query:
+   - `postgres/16/04-queries/11-pg16-compatible.sql`
+   - `postgres/17/04-queries/11-pg17-compatible.sql`
+   - `postgres/18/04-queries/11-pg18-specific.sql`
 
-The PostgreSQL translation includes the same deep ERP business extension plus a
+Each PostgreSQL translation includes the same deep ERP business extension plus a
 small seed-coverage file for return, damage, shipment, depreciation, review and
 price-change tables:
 
@@ -71,6 +77,15 @@ for f in sample-data/postgres/18/01-schema/*.sql sample-data/postgres/18/02-proc
 done
 ```
 
+For PostgreSQL 16 or 17, replace the Docker image tag and directory:
+
+```bash
+docker run --name erp-postgres16 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=erp_system -p 55416:5432 -d postgres:16
+for f in sample-data/postgres/16/01-schema/*.sql sample-data/postgres/16/02-procedures/*.sql sample-data/postgres/16/03-data/*.sql; do
+  docker exec -i erp-postgres16 psql -U postgres -d erp_system -v ON_ERROR_STOP=1 < "$f"
+done
+```
+
 ## Smoke workflow
 
 After loading schema, procedures, and data, run at least one workflow per database:
@@ -86,8 +101,9 @@ The files under `04-queries` are designed as smoke and analytics queries. A quer
 ## Version boundary
 
 - MySQL files must remain valid MySQL 8.0 SQL. Do not add PostgreSQL-only syntax such as `GROUPING SETS`, `RETURNING`, `JSONB`, or PL/pgSQL.
-- PostgreSQL files must remain valid PostgreSQL 18 SQL. Do not leave MySQL-only syntax such as `AUTO_INCREMENT`, `UNSIGNED`, `ON DUPLICATE KEY`, `LAST_INSERT_ID()`, `DATE_FORMAT()`, or storage engine clauses.
+- PostgreSQL files must remain valid for their directory version. Do not leave MySQL-only syntax such as `AUTO_INCREMENT`, `UNSIGNED`, `ON DUPLICATE KEY`, `LAST_INSERT_ID()`, `DATE_FORMAT()`, or storage engine clauses.
 - PostgreSQL 18-only syntax belongs in `postgres/18/04-queries/11-pg18-specific.sql` unless it is required by the shared business model.
+- PostgreSQL 16/17 compatibility versions of the PG18 demo belong in `postgres/16/04-queries/11-pg16-compatible.sql` and `postgres/17/04-queries/11-pg17-compatible.sql`.
 
 ## Coverage report
 
