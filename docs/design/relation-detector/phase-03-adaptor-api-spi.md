@@ -2,7 +2,7 @@
 
 ## 目标
 
-定义可扩展数据库 adaptor API，并通过 Java SPI 支持内置 adaptor 和外部 jar adaptor。后续新增 SQL Server、Oracle 等数据库时，不需要修改 core 和 CLI 的主要逻辑。
+定义可扩展数据库 adaptor API，并通过 Java SPI 支持内置 adaptor 和外部 jar adaptor。当前内置 MySQL、PostgreSQL 与初始 Oracle adaptor；后续新增 SQL Server 或补强 Oracle 官方严格 grammar 时，不需要修改 core 和 CLI 的主要逻辑。
 
 ## 总体原则
 
@@ -11,7 +11,7 @@
 - adaptor 可以参与全链路扩展，但默认流程由 core 编排。
 - core 统一做候选关系归并、最终评分和输出。
 - adaptor 可以提供 evidence 权重修正，但不能绕过输出 evidence 的要求。
-- core 提供统一 runner、关系归并和评分；SQL/DDL 文本解析由对应数据库 adaptor 暴露的 token-event parser 或版本化 full-grammer module 承担，ANTLR 只作为底层 lexer/parser/token 支撑。明显属于某个数据库方言的 DDL、日志、对象定义差异应进入对应 adaptor。这样 MySQL、PostgreSQL、SQL Server、Oracle 后续可以独立演进，而不把所有语法分支堆进 core。
+- core 提供统一 runner、关系归并和评分；SQL/DDL 文本解析由对应数据库 adaptor 暴露的 token-event parser 或版本化 full-grammer module 承担，ANTLR 只作为底层 lexer/parser/token 支撑。明显属于某个数据库方言的 DDL、日志、对象定义差异应进入对应 adaptor。这样 MySQL、PostgreSQL、Oracle 和后续 SQL Server 可以独立演进，而不把所有语法分支堆进 core。
 
 ## DatabaseAdaptor 接口
 
@@ -193,11 +193,12 @@ default Optional<StructuredDdlParser> structuredDdlParser() {
 
 - MySQL adaptor 根包只保留 `MySqlDatabaseAdaptor` 装配入口；token-event parser 位于 `com.relationdetector.mysql.tokenevent`，暴露 `MySqlTokenEventStructuredSqlParser` / `MySqlTokenEventStructuredDdlParser`。
 - PostgreSQL adaptor 根包只保留 `PostgresDatabaseAdaptor` 装配入口；token-event parser 位于 `com.relationdetector.postgres.tokenevent`，暴露 `PostgresTokenEventStructuredSqlParser` / `PostgresTokenEventStructuredDdlParser`。
+- Oracle adaptor 根包只保留 `OracleDatabaseAdaptor` 装配入口；token-event parser 位于 `com.relationdetector.oracle.tokenevent`，暴露 `OracleTokenEventStructuredSqlParser` / `OracleTokenEventStructuredDdlParser`。当前 Oracle token-event 使用 adaptor-local `OracleRelationSql.g4` typed structural grammar。
 - SQL/DDL parser 由 `ParserBundleSelector` 按 `parser.mode: auto|full-grammer|token-event` 统一选择，并一次性返回同一模式下的 SQL parser 与 DDL parser。profile/version/JDBC metadata 足够时可通过 adaptor 注册的 `FullGrammerDialectModule` 使用 full-grammer；无合理配置、profile 不支持或 full-grammer hard failure 时 fallback 到 adaptor token-event parser 并记录 warning。profile 已选中后的 syntax warning / partial result 属于 full-grammer 结果，不在 event 层委托 token-event 补齐。`parser.sql.mode`、`parser.ddl.mode` 和 simple/shadow fallback 已移除。
 - `SqlRelationParserRunner` 与 `DdlRelationParserRunner` 都从 `ParserBundle` 取 parser，不再分别重复 profile selection。SQL runner 还会复用同一个 `StructuredParseResult` 供 relationship 与 Data Lineage 抽取使用。
 - 第三方 adaptor 可以只实现 `structuredSqlParser()` 或只实现 `structuredDdlParser()`，但缺失的一侧不应再由 core simple parser 假装支持；应明确作为 future capability 或返回空/ warning。
 - 新增大版本 full-grammer 支持时，应在对应 adaptor 内新增 version package 和 `FullGrammerDialectModule`，由 core registry 通过 `ServiceLoader` 注入；core 不直接 import 方言实现类。
-- `FullGrammerDialectModule` 不属于 `DatabaseAdaptor` 接口本身；它是同一 adaptor jar 中的版本化 grammar module，通过 `META-INF/services/com.relationdetector.core.fullgrammer.FullGrammerDialectModule` 注册。这样 core 可以做统一 profile selection，而具体 grammar、generated parser、parse-tree visitor 和 expression analyzer 仍归属 MySQL/PostgreSQL adaptor。
+- `FullGrammerDialectModule` 不属于 `DatabaseAdaptor` 接口本身；它是同一 adaptor jar 中的版本化 grammar module，通过 `META-INF/services/com.relationdetector.core.fullgrammer.FullGrammerDialectModule` 注册。这样 core 可以做统一 profile selection，而具体 grammar、generated parser、parse-tree visitor 和 expression analyzer 仍归属 MySQL/PostgreSQL/Oracle adaptor。
 - 版本化 full-grammer module 与 token-event parser 的职责不同：token-event 是 adaptor 暴露的宽松生产 parser / fallback；full-grammer 是 adaptor jar 额外注册的严格版本 grammar profile。parser selection 可以在两者之间选择，但 full-grammer parser 内部不再委托 token-event 生成事件。
 
 ### DatabaseDdlCollector
@@ -314,7 +315,7 @@ relation-detector scan --config mock.yml --plugin-dir target/mock-plugins
 
 ## 验收标准
 
-- 内置 MySQL/PostgreSQL adaptor 可以通过 Java SPI 被发现。
+- 内置 MySQL/PostgreSQL/Oracle adaptor 可以通过 Java SPI 被发现。
 - 外部 mock adaptor jar 可以通过 `--plugin-dir` 被发现。
 - `database.type` 可以匹配到唯一 adaptor。
 - adaptor id 冲突时 CLI 给出明确错误。

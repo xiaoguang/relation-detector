@@ -10,8 +10,8 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
-import com.relationdetector.core.antlr.mysql.MySqlRelationSqlLexer;
-import com.relationdetector.core.antlr.mysql.MySqlRelationSqlParser;
+import com.relationdetector.mysql.tokenevent.MySqlRelationSqlLexer;
+import com.relationdetector.mysql.tokenevent.MySqlRelationSqlParser;
 import com.relationdetector.core.tokenevent.TypedDialectTokenEventStructuredSqlParser;
 
 /**

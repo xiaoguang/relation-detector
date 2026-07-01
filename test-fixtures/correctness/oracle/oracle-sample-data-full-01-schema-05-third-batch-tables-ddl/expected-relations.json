@@ -1,0 +1,29 @@
+{
+  "fingerprints": [
+    "FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+    "FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY",
+    "FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY",
+    "FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY",
+    "FK_LIKE:approval_records.instance_id->approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:approval_records.node_id->approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE",
+    "FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY",
+    "FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+    "FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY",
+    "FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY",
+    "FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY",
+    "FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY",
+    "FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+    "FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY",
+    "FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+    "FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY",
+    "FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY",
+    "FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+    "FK_LIKE:projects.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+    "FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+    "FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+    "FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY",
+    "FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
+    "FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY"
+  ],
+  "forbiddenTables": []
+}

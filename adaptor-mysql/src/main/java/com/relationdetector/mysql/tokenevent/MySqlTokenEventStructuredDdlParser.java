@@ -15,8 +15,8 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
-import com.relationdetector.core.antlr.mysql.MySqlRelationSqlLexer;
-import com.relationdetector.core.antlr.mysql.MySqlRelationSqlParser;
+import com.relationdetector.mysql.tokenevent.MySqlRelationSqlLexer;
+import com.relationdetector.mysql.tokenevent.MySqlRelationSqlParser;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 import com.relationdetector.core.parse.SqlDialect;
 

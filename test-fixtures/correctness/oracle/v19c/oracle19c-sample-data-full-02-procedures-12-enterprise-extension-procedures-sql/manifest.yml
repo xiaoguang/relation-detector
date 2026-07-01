@@ -1,0 +1,13 @@
+id: oracle19c-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: oracle/19c
+databaseVersion: 19
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+schema: oracle
+input: input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

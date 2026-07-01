@@ -16,8 +16,8 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.core.antlr.mysql.MySqlRelationSqlBaseVisitor;
-import com.relationdetector.core.antlr.mysql.MySqlRelationSqlParser;
+import com.relationdetector.mysql.tokenevent.MySqlRelationSqlBaseVisitor;
+import com.relationdetector.mysql.tokenevent.MySqlRelationSqlParser;
 
 /**
  * Parse-tree visitor for the MySQL token-event structural grammar.

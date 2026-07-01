@@ -1,0 +1,343 @@
+-- ============================================================
+-- ERP系统自定义函数 (UDF) - Oracle 26ai
+-- 调用关系:
+--   fn_employee_full_name: 被报表查询调用，拼接员工完整名称
+--   fn_calculate_income_tax: 被sp_process_salary调用，计算个税
+--   fn_get_product_stock: 被库存查询和补货建议调用
+--   fn_get_customer_credit_available: 被销售流程调用，检查信用额度
+--   fn_get_days_sales_outstanding: 被财务分析调用，计算DSO
+--   fn_get_inventory_turnover_days: 被库存分析调用
+--   fn_get_monthly_sales: 被销售报表调用
+--   fn_get_employee_tenure: 被HR报表调用
+-- ============================================================
+
+-- ============================================================
+-- 获取员工完整名称 (工号 + 姓名)
+-- 调用方: 各种报表查询、审计日志展示
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION fn_employee_full_name(
+p_employee_id NUMBER
+)
+RETURN VARCHAR2
+AS
+v_result VARCHAR2(100);
+BEGIN
+    SELECT employee_no || ' - ' || name INTO v_result
+    FROM employees WHERE id = p_employee_id;
+    RETURN COALESCE(v_result, '未知员工');
+END;
+/
+
+
+-- ============================================================
+-- 个税计算 (累进税率)
+-- 调用方: sp_process_salary (工资发放存储过程)
+-- 计算原理:
+--   应纳税所得额 = 税前收入 - 社保个人 - 公积金个人 - 起征点(5000)
+--   税率表: 0-3000(3%), 3000-12000(10%), 12000-25000(20%),
+--           25000-35000(25%), 35000-55000(30%), 55000-80000(35%), >80000(45%)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION fn_calculate_income_tax(
+p_taxable_income NUMBER
+)
+RETURN NUMBER
+AS
+v_tax NUMBER(12,2) DEFAULT 0.00;
+BEGIN
+    IF p_taxable_income <= 0 THEN
+        v_tax := 0.00;
+    ELSIF p_taxable_income <= 3000 THEN
+        v_tax := ROUND(p_taxable_income * 0.03, 2);
+    ELSIF p_taxable_income <= 12000 THEN
+        v_tax := ROUND(p_taxable_income * 0.10 - 210, 2);
+    ELSIF p_taxable_income <= 25000 THEN
+        v_tax := ROUND(p_taxable_income * 0.20 - 1410, 2);
+    ELSIF p_taxable_income <= 35000 THEN
+        v_tax := ROUND(p_taxable_income * 0.25 - 2660, 2);
+    ELSIF p_taxable_income <= 55000 THEN
+        v_tax := ROUND(p_taxable_income * 0.30 - 4410, 2);
+    ELSIF p_taxable_income <= 80000 THEN
+        v_tax := ROUND(p_taxable_income * 0.35 - 7160, 2);
+    ELSE
+        v_tax := ROUND(p_taxable_income * 0.45 - 15160, 2);
+    END IF;
+
+    RETURN v_tax;
+END;
+/
+
+
+-- ============================================================
+-- 获取货品当前总库存
+-- 调用方: 库存查询、补货建议、缺货分析
+-- 参数: p_product_id - 货品ID, p_warehouse_id - 仓库ID(可选,NULL=所有仓库)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION fn_get_product_stock(
+p_product_id NUMBER,
+    p_warehouse_id NUMBER
+)
+RETURN NUMBER
+AS
+v_stock NUMBER(10);
+BEGIN
+    SELECT COALESCE(SUM(available_quantity), 0) INTO v_stock
+    FROM inventory
+    WHERE product_id = p_product_id
+      AND (p_warehouse_id IS NULL OR warehouse_id = p_warehouse_id);
+
+    RETURN v_stock;
+END;
+/
+
+
+-- ============================================================
+-- 获取客户可用信用额度
+-- 调用方: sp_check_customer_credit, 销售流程
+-- 计算原理: 可用额度 = 信用额度 - 账户余额 - 未结清订单金额
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION fn_get_customer_credit_available(
+p_customer_id NUMBER
+)
+RETURN NUMBER
+AS
+v_credit_limit NUMBER(18,2);
+    v_balance NUMBER(18,2);
+    v_unpaid NUMBER(18,2);
+BEGIN
+    SELECT credit_limit, COALESCE(balance, 0) INTO v_credit_limit, v_balance
+    FROM customers WHERE id = p_customer_id;
+
+    SELECT COALESCE(SUM(total_amount - paid_amount), 0) INTO v_unpaid
+    FROM sales_orders
+    WHERE customer_id = p_customer_id
+      AND status IN ('confirmed', 'delivering', 'delivered');
+
+    RETURN v_credit_limit - v_balance - v_unpaid;
+END;
+/
+
+
+-- ============================================================
+-- 计算DSO (Days Sales Outstanding) - 应收账款周转天数
+-- 调用方: 财务分析报表
+-- 统计原理: DSO = (期末应收账款 / 期间销售额) * 期间天数
+--           DSO越低，说明回款速度越快
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION fn_get_days_sales_outstanding(
+p_start_date DATE,
+    p_end_date DATE
+)
+RETURN NUMBER
+AS
+v_receivables NUMBER(18,2);
+    v_total_sales NUMBER(18,2);
+    v_days NUMBER(10);
+    v_dso NUMBER(10,2);
+BEGIN
+    v_days := (p_end_date - p_start_date) + 1;
+
+    -- 期末应收账款
+    SELECT COALESCE(SUM(so.total_amount - so.paid_amount), 0) INTO v_receivables
+    FROM sales_orders so
+    WHERE so.status IN ('confirmed', 'delivering', 'delivered');
+
+    -- 期间销售额
+    SELECT COALESCE(SUM(total_amount), 0) INTO v_total_sales
+    FROM sales_orders
+    WHERE order_date BETWEEN p_start_date AND p_end_date
+      AND status NOT IN ('draft', 'cancelled');
+
+    IF v_total_sales > 0 THEN
+        v_dso := ROUND((v_receivables / v_total_sales) * v_days, 2);
+    ELSE
+        v_dso := 0;
+    END IF;
+
+    RETURN v_dso;
+END;
+/
+
+
+-- ============================================================
+-- 计算库存周转天数
+-- 调用方: 库存分析报表
+-- 统计原理: 周转天数 = 平均库存 / 日均销售成本
+--           周转天数越短，库存管理效率越高
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION fn_get_inventory_turnover_days(
+p_product_id NUMBER,
+    p_start_date DATE,
+    p_end_date DATE
+)
+RETURN NUMBER
+AS
+v_avg_inventory NUMBER(12,2);
+    v_total_cost NUMBER(18,2);
+    v_days NUMBER(10);
+    v_turnover_days NUMBER(10,2);
+BEGIN
+    v_days := (p_end_date - p_start_date) + 1;
+
+    -- 平均库存: 简化计算，取当前库存
+    SELECT COALESCE(AVG(quantity), 0) INTO v_avg_inventory
+    FROM inventory
+    WHERE product_id = p_product_id;
+
+    -- 期间销售成本
+    SELECT COALESCE(SUM(soi.quantity * p.purchase_price), 0) INTO v_total_cost
+    FROM sales_order_items soi
+    JOIN sales_orders so ON soi.order_id = so.id
+    JOIN products p ON soi.product_id = p.id
+    WHERE soi.product_id = p_product_id
+      AND so.order_date BETWEEN p_start_date AND p_end_date
+      AND so.status NOT IN ('draft', 'cancelled');
+
+    IF v_total_cost > 0 AND v_avg_inventory > 0 THEN
+        v_turnover_days := ROUND(v_avg_inventory / (v_total_cost / v_days), 2);
+    ELSE
+        v_turnover_days := NULL;
+    END IF;
+
+    RETURN v_turnover_days;
+END;
+/
+
+
+-- ============================================================
+-- 获取员工在职年限
+-- 调用方: HR报表、工龄工资计算
+-- 计算原理: 计算从入职到当前日期(或离职日期)的年数
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION fn_get_employee_tenure(
+p_employee_id NUMBER
+)
+RETURN NUMBER
+AS
+v_hire_date DATE;
+    v_resignation_date DATE;
+    v_end_date DATE;
+    v_tenure NUMBER(4,1);
+BEGIN
+    SELECT hire_date, resignation_date
+    INTO v_hire_date, v_resignation_date
+    FROM employees WHERE id = p_employee_id;
+
+    v_end_date := COALESCE(v_resignation_date, CURRENT_DATE);
+    v_tenure := ROUND(
+        (TRUNC(MONTHS_BETWEEN(v_end_date, v_hire_date))) / 12.0,
+        1
+    );
+
+    RETURN v_tenure;
+END;
+/
+
+
+-- ============================================================
+-- 获取月销售额
+-- 调用方: 销售报表、仪表盘
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION fn_get_monthly_sales(
+p_year_month VARCHAR2
+)
+RETURN NUMBER
+AS
+v_start_date DATE;
+    v_end_date DATE;
+    v_total NUMBER(18,2);
+BEGIN
+    v_start_date := (p_year_month || '-01');
+    v_end_date := (TRUNC(v_start_date, 'MM') + INTERVAL '1' MONTH - INTERVAL '1' DAY);
+
+    SELECT COALESCE(SUM(total_amount), 0) INTO v_total
+    FROM sales_orders
+    WHERE order_date BETWEEN v_start_date AND v_end_date
+      AND status NOT IN ('draft', 'cancelled');
+
+    RETURN v_total;
+END;
+/
+
+
+-- ============================================================
+-- 计算毛利率
+-- 调用方: 财务分析
+-- 计算原理: 毛利率 = (销售额 - 成本) / 销售额 * 100%
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION fn_get_gross_margin(
+p_product_id NUMBER,
+    p_start_date DATE,
+    p_end_date DATE
+)
+RETURN NUMBER
+AS
+v_revenue NUMBER(18,2);
+    v_cost NUMBER(18,2);
+    v_margin NUMBER(5,2);
+BEGIN
+    SELECT COALESCE(SUM(soi.amount), 0),
+           COALESCE(SUM(soi.quantity * p.purchase_price), 0)
+    INTO v_revenue, v_cost
+    FROM sales_order_items soi
+    JOIN sales_orders so ON soi.order_id = so.id
+    JOIN products p ON soi.product_id = p.id
+    WHERE soi.product_id = p_product_id
+      AND so.order_date BETWEEN p_start_date AND p_end_date
+      AND so.status NOT IN ('draft', 'cancelled');
+
+    IF v_revenue > 0 THEN
+        v_margin := ROUND((v_revenue - v_cost) / v_revenue * 100, 2);
+    ELSE
+        v_margin := 0;
+    END IF;
+
+    RETURN v_margin;
+END;
+/
+
+
+-- ============================================================
+-- 计算员工出勤率
+-- 调用方: HR报表
+-- 统计原理: 出勤率 = (应出勤天数 - 缺勤天数) / 应出勤天数 * 100%
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION fn_get_attendance_rate(
+p_employee_id NUMBER,
+    p_year_month VARCHAR2
+)
+RETURN NUMBER
+AS
+v_total_workdays NUMBER(10);
+    v_absent_days NUMBER(10);
+    v_rate NUMBER(5,2);
+BEGIN
+    -- 计算当月工作日(简化: 总天数 - 8天周末)
+    v_total_workdays := EXTRACT(DAY FROM (
+        TRUNC((p_year_month || '-01'), 'MM') + INTERVAL '1' MONTH - INTERVAL '1' DAY
+    ))(10) - 8;
+
+    SELECT COUNT(*) INTO v_absent_days
+    FROM attendance
+    WHERE employee_id = p_employee_id
+      AND TO_CHAR(attendance_date, 'YYYY-MM') = p_year_month
+      AND status = 'absent';
+
+    IF v_total_workdays > 0 THEN
+        v_rate := ROUND((v_total_workdays - v_absent_days) / v_total_workdays * 100, 2);
+    ELSE
+        v_rate := 100.00;
+    END IF;
+
+    RETURN v_rate;
+END;
+/

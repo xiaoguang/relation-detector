@@ -1,0 +1,9 @@
+{
+  "fingerprints": [
+    "VALUE:AGGREGATE:orders.amount->sales_summary.total_amount",
+    "VALUE:DIRECT:customers.id->sales_summary.customer_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

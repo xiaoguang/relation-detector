@@ -4,26 +4,32 @@ This review covers every correctness fixture manifest under `test-fixtures/corre
 
 ## Scope And Status
 
-- Fixture manifests reviewed: `707`.
+- Fixture manifests reviewed: `896`.
 - SQL/DDL inputs are the fixture `input.sql` files referenced by each manifest.
 - Current review result: no `REVIEW_NEEDED` items are open.
 - Confirmed recent fix: `NAMING_MATCH` is now generated as a direction hint on existing SQL predicate candidates. It supports `TABLE_ID`, `ID_SUFFIX_TO_ID`, and `SELF_ROLE_ID`; it cannot create a relationship by itself.
 - Confirmed recent lineage fix: token-event CASE analysis now includes columns from `WHEN` predicates as `CONTROL:CASE_WHEN` lineage sources when they are physical rowset columns.
 - Confirmed recent MySQL token-event grammar fix: `IS NULL` / `IS NOT NULL` predicates are now typed grammar nodes. This lets MySQL token-event parse the rest of JOIN predicates instead of dropping later joined rowsets, which restored semantically valid sample-data procedure/view/trigger relations and derived aggregate lineage.
 - Confirmed recent fixture fix: new ERP deep-scenario procedure files now carry object-block markers, so routine bodies are actually included in correctness parsing.
-- Remaining cross-parser differences are categorized as typed visitor coverage gaps or expected version deltas, not as approved scanner-style guessing.
+- Confirmed Oracle correction: Oracle root token-event keeps the sample-data golden, and `oracle/v12c|v19c|v21c|v26ai` full-grammer golden now carries the same sample-data surface plus one profile smoke fixture per version. Oracle full-grammer no longer delegates to token-event; broader Oracle official syntax coverage remains backlog, not a `REVIEW_NEEDED` business decision.
+- Remaining cross-parser differences are categorized as typed visitor coverage gaps, official grammar backlog, runtime-smoke backlog, or expected version deltas, not as approved scanner-style guessing.
 
 ## Parser Category Totals
 
 | Category | Fixtures | Relations | Lineage | Naming relation fingerprints | Sample fixtures | Sample relations | Sample lineage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event | 36 | 705 | 189 | 195 | 19 | 689 | 183 |
-| MySQL token-event root | 97 | 597 | 240 | 242 | 40 | 522 | 183 |
-| MySQL full-grammer v8_0 | 97 | 873 | 327 | 434 | 40 | 749 | 232 |
-| PostgreSQL token-event root | 118 | 1090 | 176 | 241 | 39 | 409 | 101 |
-| PostgreSQL full-grammer v16 | 118 | 1422 | 192 | 395 | 39 | 641 | 101 |
-| PostgreSQL full-grammer v17 | 120 | 1425 | 214 | 396 | 39 | 641 | 101 |
-| PostgreSQL full-grammer v18 | 121 | 1427 | 213 | 395 | 39 | 641 | 101 |
+| common token-event | 36 | 737 | 231 | 207 | 19 | 721 | 225 |
+| MySQL token-event root | 97 | 631 | 265 | 255 | 40 | 556 | 208 |
+| MySQL full-grammer v8_0 | 97 | 908 | 368 | 448 | 40 | 784 | 273 |
+| PostgreSQL token-event root | 118 | 1119 | 194 | 251 | 39 | 438 | 119 |
+| PostgreSQL full-grammer v16 | 118 | 1452 | 211 | 405 | 39 | 671 | 120 |
+| PostgreSQL full-grammer v17 | 120 | 1455 | 233 | 406 | 39 | 671 | 120 |
+| PostgreSQL full-grammer v18 | 121 | 1456 | 231 | 405 | 39 | 670 | 119 |
+| Oracle token-event root | 37 | 300 | 94 | 128 | 37 | 300 | 94 |
+| Oracle full-grammer v12c | 38 | 301 | 96 | 129 | 37 | 300 | 94 |
+| Oracle full-grammer v19c | 39 | 301 | 96 | 129 | 37 | 300 | 94 |
+| Oracle full-grammer v21c | 39 | 301 | 96 | 129 | 37 | 300 | 94 |
+| Oracle full-grammer v26ai | 39 | 301 | 96 | 129 | 37 | 300 | 94 |
 
 ## Golden Semantic Shape
 
@@ -45,20 +51,20 @@ This means the naming heuristic can promote an existing SQL predicate `CO_OCCURR
 
 | Type | Count |
 | --- | ---: |
-| `FK_LIKE` | 6514 |
-| `CO_OCCURRENCE` | 1025 |
+| `FK_LIKE` | 7027 |
+| `CO_OCCURRENCE` | 1082 |
 
 ### Lineage Fingerprint Types
 
 | Flow/Transform | Count |
 | --- | ---: |
-| `VALUE:DIRECT` | 909 |
-| `VALUE:ARITHMETIC` | 198 |
-| `VALUE:AGGREGATE` | 141 |
-| `VALUE:COALESCE` | 94 |
-| `VALUE:CONCAT_FORMAT` | 82 |
-| `CONTROL:CASE_WHEN` | 79 |
-| `VALUE:FUNCTION_CALL` | 30 |
+| `VALUE:DIRECT` | 1086 |
+| `VALUE:ARITHMETIC` | 208 |
+| `VALUE:AGGREGATE` | 149 |
+| `VALUE:COALESCE` | 117 |
+| `CONTROL:CASE_WHEN` | 88 |
+| `VALUE:CONCAT_FORMAT` | 84 |
+| `VALUE:FUNCTION_CALL` | 34 |
 | `CONTROL:AGGREGATE` | 8 |
 | `VALUE:CUMULATIVE` | 10 |
 
@@ -124,6 +130,18 @@ This means the naming heuristic can promote an existing SQL predicate `CO_OCCURR
 | `pg17-sql` | PostgreSQL token-event root -> PostgreSQL full-grammer v17 | `EXPECTED_VERSION_DELTA` | 1 | 11 | Keep as version-specific golden. |
 | `sample-data-full-02-procedures-02-procedures-supplement-sql` | MySQL token-event root -> MySQL full-grammer v8_0 | `PARSER_GAP_ROUTINE_OR_COMPLEX_QUERY` | 11 | 0 | Extend typed visitor/grammar; do not restore scanner. |
 | `sample-data-full-04-queries-05-batch-expiry-queries-sql` | PostgreSQL token-event root -> PostgreSQL full-grammer v18 | `PARSER_GAP_ROUTINE_OR_COMPLEX_QUERY` | 10 | 0 | Extend typed visitor/grammar; do not restore scanner. |
+
+## Oracle Addendum
+
+Oracle fixtures are intentionally summarized here instead of fully expanded in the historical fixture table below. The detailed Oracle migration notes live in [Oracle Sample-Data Migration Review](oracle-sample-data-migration-review.md).
+
+| Oracle group | Fixture | Relations | Lineage | Review status |
+| --- | ---: | ---: | ---: | --- |
+| root token-event | 37 | 300 | 94 | No business `REVIEW_NEEDED`; parser output follows current Oracle typed grammar. |
+| full-grammer v12c | 38 | 301 | 96 | Sample-data versioned golden wired through the v12c generated parser; 更广泛的 Oracle 官方语法 backlog. |
+| full-grammer v19c | 38 | 301 | 96 | Sample-data versioned golden wired through the v19c generated parser; 更广泛的 Oracle 官方语法 backlog. |
+| full-grammer v21c | 38 | 301 | 96 | Sample-data versioned golden wired through the v21c generated parser; 更广泛的 Oracle 官方语法 backlog. |
+| full-grammer v26ai | 38 | 301 | 96 | Sample-data versioned golden wired through the v26ai generated parser; 更广泛的 Oracle 官方语法 backlog. |
 
 ## Confirmed Fixes In Current Review
 

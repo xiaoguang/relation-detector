@@ -1,0 +1,12 @@
+id: oracle26ai-sample-data-full-01-schema-06-enterprise-extension-tables-ddl
+databaseType: ORACLE
+parserTarget: DDL
+parserMode: full-grammer
+grammarProfile: oracle/26ai
+databaseVersion: 26
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: oracle
+input: ../../../../../sample-data/oracle/26ai/01-schema/06-enterprise-extension-tables.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

@@ -8,11 +8,11 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 
 | Classification | Count |
 | --- | ---: |
-| TOTAL | 707 |
-| EXISTING_GOLD | 172 |
+| TOTAL | 899 |
+| EXISTING_GOLD | 196 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 535 |
+| NOT_APPLICABLE | 703 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -1472,7 +1472,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- None
 
 **Input Preview**
 
@@ -1525,28 +1525,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
-- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
-- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
-- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
-- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
-- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+- None
 
 **Input Preview**
 
@@ -1596,25 +1575,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
-- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
-- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- None
 
 **Input Preview**
 
@@ -1904,9 +1865,7 @@ SELECT 2;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:customers.id->invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.id->invoices.id`
-- `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
+- None
 
 **Input Preview**
 
@@ -2005,73 +1964,7 @@ WHERE EXISTS (
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:accounts.id->cashier_journals.account_id`
-- `VALUE:DIRECT:accounts.id->cashier_journals.id`
-- `VALUE:DIRECT:accounts.id->reconciliations.account_id`
-- `VALUE:DIRECT:accounts.id->reconciliations.id`
-- `VALUE:DIRECT:approval_workflows.id->approval_instances.id`
-- `VALUE:DIRECT:approval_workflows.id->approval_instances.workflow_id`
-- `VALUE:DIRECT:customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:customers.id->sales_orders.id`
-- `VALUE:DIRECT:customers.id->service_tickets.customer_id`
-- `VALUE:DIRECT:customers.id->service_tickets.id`
-- `VALUE:DIRECT:departments.id->departments.id`
-- `VALUE:DIRECT:departments.id->departments.parent_id`
-- `VALUE:DIRECT:departments.id->employees.department_id`
-- `VALUE:DIRECT:departments.id->employees.id`
-- `VALUE:DIRECT:departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:departments.id->purchase_requisitions.id`
-- `VALUE:DIRECT:employees.id->attendance.employee_id`
-- `VALUE:DIRECT:employees.id->attendance.id`
-- `VALUE:DIRECT:employees.id->audit_log.id`
-- `VALUE:DIRECT:employees.id->contracts.id`
-- `VALUE:DIRECT:employees.id->contracts.prepared_by`
-- `VALUE:DIRECT:employees.id->customers.id`
-- `VALUE:DIRECT:employees.id->departments.id`
-- `VALUE:DIRECT:employees.id->inventory.id`
-- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
-- `VALUE:DIRECT:employees.id->performance_reviews.id`
-- `VALUE:DIRECT:employees.id->products.id`
-- `VALUE:DIRECT:employees.id->purchase_orders.id`
-- `VALUE:DIRECT:employees.id->sales_orders.id`
-- `VALUE:DIRECT:employees.id->suppliers.id`
-- `VALUE:DIRECT:employees.id->tax_filings.id`
-- `VALUE:DIRECT:employees.id->tax_filings.prepared_by`
-- `VALUE:DIRECT:employees.id->vouchers.id`
-- `VALUE:DIRECT:employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:employees.id->warehouses.id`
-- `VALUE:DIRECT:employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:invoices.id->three_way_matching.id`
-- `VALUE:DIRECT:invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:ledger_books.id->accounting_periods.id`
-- `VALUE:DIRECT:ledger_books.id->accounting_periods.ledger_book_id`
-- `VALUE:DIRECT:product_categories.id->products.category_id`
-- `VALUE:DIRECT:product_categories.id->products.id`
-- `VALUE:DIRECT:products.id->inventory.id`
-- `VALUE:DIRECT:products.id->inventory.product_id`
-- `VALUE:DIRECT:products.id->serial_numbers.id`
-- `VALUE:DIRECT:products.id->serial_numbers.product_id`
-- `VALUE:DIRECT:promotion_products.promotion_id->promotions.id`
-- `VALUE:DIRECT:purchase_orders.id->purchase_returns.id`
-- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:sales_orders.customer_id->customers.id`
-- `VALUE:DIRECT:sales_orders.id->sales_returns.id`
-- `VALUE:DIRECT:sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:sales_orders.id->shipments.id`
-- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:supplier_products.supplier_id->suppliers.id`
-- `VALUE:DIRECT:suppliers.id->purchase_orders.id`
-- `VALUE:DIRECT:suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:vouchers.id->settlements.id`
-- `VALUE:DIRECT:vouchers.id->settlements.voucher_id`
-- `VALUE:DIRECT:warehouses.id->damage_reports.id`
-- `VALUE:DIRECT:warehouses.id->damage_reports.warehouse_id`
-- `VALUE:DIRECT:warehouses.id->stock_transfers.from_warehouse_id`
-- `VALUE:DIRECT:warehouses.id->stock_transfers.id`
-- `VALUE:DIRECT:warehouses.id->stocktakes.id`
-- `VALUE:DIRECT:warehouses.id->stocktakes.warehouse_id`
-- `VALUE:DIRECT:work_orders.id->work_order_materials.id`
-- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+- None
 
 **Input Preview**
 
@@ -2106,9 +1999,7 @@ INSERT INTO sales_returns (id, order_id)
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:customers.id->invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.id->invoices.id`
-- `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
+- None
 
 **Input Preview**
 
@@ -2200,7 +2091,7 @@ WHERE o.total_amount IN (
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_scores.score,customer_scores.base_score->customer_scores.score_bucket`
+- None
 
 **Input Preview**
 
@@ -2292,8 +2183,7 @@ WITH active_customers AS (
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:customers.id->customer_region_rollup.customer_id`
-- `VALUE:DIRECT:customers.region_id->customer_region_rollup.region_id`
+- None
 
 **Input Preview**
 
@@ -2416,8 +2306,7 @@ JOIN users u ON lower(c.email) = u.email;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:orders.customer_id->customer_rollup.customer_id`
-- `VALUE:DIRECT:orders.total_amount->customer_rollup.total_amount`
+- None
 
 **Input Preview**
 
@@ -2594,7 +2483,7 @@ WHERE (o.region_id, o.customer_id) IN (
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:customer_rollup.total_amount,orders.total_amount->customer_rollup.total_amount`
+- None
 
 **Input Preview**
 
@@ -2752,7 +2641,7 @@ BEGIN ATOMIC
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:employees.id->audit_log.id`
+- None
 
 **Input Preview**
 
@@ -2851,73 +2740,7 @@ BEGIN ATOMIC
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:accounts.id->cashier_journals.account_id`
-- `VALUE:DIRECT:accounts.id->cashier_journals.id`
-- `VALUE:DIRECT:accounts.id->reconciliations.account_id`
-- `VALUE:DIRECT:accounts.id->reconciliations.id`
-- `VALUE:DIRECT:approval_workflows.id->approval_instances.id`
-- `VALUE:DIRECT:approval_workflows.id->approval_instances.workflow_id`
-- `VALUE:DIRECT:customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:customers.id->sales_orders.id`
-- `VALUE:DIRECT:customers.id->service_tickets.customer_id`
-- `VALUE:DIRECT:customers.id->service_tickets.id`
-- `VALUE:DIRECT:departments.id->departments.id`
-- `VALUE:DIRECT:departments.id->departments.parent_id`
-- `VALUE:DIRECT:departments.id->employees.department_id`
-- `VALUE:DIRECT:departments.id->employees.id`
-- `VALUE:DIRECT:departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:departments.id->purchase_requisitions.id`
-- `VALUE:DIRECT:employees.id->attendance.employee_id`
-- `VALUE:DIRECT:employees.id->attendance.id`
-- `VALUE:DIRECT:employees.id->audit_log.id`
-- `VALUE:DIRECT:employees.id->contracts.id`
-- `VALUE:DIRECT:employees.id->contracts.prepared_by`
-- `VALUE:DIRECT:employees.id->customers.id`
-- `VALUE:DIRECT:employees.id->departments.id`
-- `VALUE:DIRECT:employees.id->inventory.id`
-- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
-- `VALUE:DIRECT:employees.id->performance_reviews.id`
-- `VALUE:DIRECT:employees.id->products.id`
-- `VALUE:DIRECT:employees.id->purchase_orders.id`
-- `VALUE:DIRECT:employees.id->sales_orders.id`
-- `VALUE:DIRECT:employees.id->suppliers.id`
-- `VALUE:DIRECT:employees.id->tax_filings.id`
-- `VALUE:DIRECT:employees.id->tax_filings.prepared_by`
-- `VALUE:DIRECT:employees.id->vouchers.id`
-- `VALUE:DIRECT:employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:employees.id->warehouses.id`
-- `VALUE:DIRECT:employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:invoices.id->three_way_matching.id`
-- `VALUE:DIRECT:invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:ledger_books.id->accounting_periods.id`
-- `VALUE:DIRECT:ledger_books.id->accounting_periods.ledger_book_id`
-- `VALUE:DIRECT:product_categories.id->products.category_id`
-- `VALUE:DIRECT:product_categories.id->products.id`
-- `VALUE:DIRECT:products.id->inventory.id`
-- `VALUE:DIRECT:products.id->inventory.product_id`
-- `VALUE:DIRECT:products.id->serial_numbers.id`
-- `VALUE:DIRECT:products.id->serial_numbers.product_id`
-- `VALUE:DIRECT:promotion_products.promotion_id->promotions.id`
-- `VALUE:DIRECT:purchase_orders.id->purchase_returns.id`
-- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:sales_orders.customer_id->customers.id`
-- `VALUE:DIRECT:sales_orders.id->sales_returns.id`
-- `VALUE:DIRECT:sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:sales_orders.id->shipments.id`
-- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:supplier_products.supplier_id->suppliers.id`
-- `VALUE:DIRECT:suppliers.id->purchase_orders.id`
-- `VALUE:DIRECT:suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:vouchers.id->settlements.id`
-- `VALUE:DIRECT:vouchers.id->settlements.voucher_id`
-- `VALUE:DIRECT:warehouses.id->damage_reports.id`
-- `VALUE:DIRECT:warehouses.id->damage_reports.warehouse_id`
-- `VALUE:DIRECT:warehouses.id->stock_transfers.from_warehouse_id`
-- `VALUE:DIRECT:warehouses.id->stock_transfers.id`
-- `VALUE:DIRECT:warehouses.id->stocktakes.id`
-- `VALUE:DIRECT:warehouses.id->stocktakes.warehouse_id`
-- `VALUE:DIRECT:work_orders.id->work_order_materials.id`
-- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+- None
 
 **Input Preview**
 
@@ -3092,87 +2915,7 @@ BEGIN ATOMIC
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:sales_order_items.amount,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:ARITHMETIC:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
-- `VALUE:DIRECT:accounts.id->payment_receipts.account_id`
-- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
-- `VALUE:DIRECT:employees.id->audit_log.employee_id`
-- `VALUE:DIRECT:employees.id->audit_log.target_id`
-- `VALUE:DIRECT:employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:DIRECT:material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:DIRECT:mrp_runs.id->mrp_run_items.run_id`
-- `VALUE:DIRECT:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:DIRECT:operation_reports.machine_minutes->work_order_costs.overhead_cost`
-- `VALUE:DIRECT:payment_receipts.amount->payments.amount`
-- `VALUE:DIRECT:payment_receipts.currency->payments.currency`
-- `VALUE:DIRECT:payment_receipts.id->payments.id`
-- `VALUE:DIRECT:payment_receipts.id->payments.order_id`
-- `VALUE:DIRECT:payment_receipts.id->payments.receipt_id`
-- `VALUE:DIRECT:payment_receipts.party_id->payments.customer_id`
-- `VALUE:DIRECT:payment_receipts.receipt_date->payments.payment_date`
-- `VALUE:DIRECT:payment_receipts.receipt_no->payments.payment_no`
-- `VALUE:DIRECT:payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:picking_tasks.id->picking_task_items.picking_task_id`
-- `VALUE:DIRECT:production_plans.id->mrp_runs.id`
-- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
-- `VALUE:DIRECT:production_plans.planner_id->mrp_runs.created_by`
-- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
-- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:repair_order_parts.unit_cost->repair_orders.actual_cost`
-- `VALUE:DIRECT:roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
-- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
-- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
-- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
-- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
-- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->payment_receipts.party_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->payment_receipts.id`
-- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
-- `VALUE:DIRECT:sales_orders.order_date->payment_receipts.receipt_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
-- `VALUE:DIRECT:sales_orders.order_no->payment_receipts.receipt_no`
-- `VALUE:DIRECT:sales_orders.paid_amount->payment_receipts.amount`
-- `VALUE:DIRECT:sales_orders.salesperson_id->payment_receipts.handled_by`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
-- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
-- `VALUE:DIRECT:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:DIRECT:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
-- `VALUE:DIRECT:warehouses.city->region_dim.city`
-- `VALUE:DIRECT:warehouses.code->region_dim.region_code`
-- `VALUE:DIRECT:warehouses.district->region_dim.district`
-- `VALUE:DIRECT:warehouses.id->region_dim.id`
-- `VALUE:DIRECT:warehouses.name->region_dim.region_name`
-- `VALUE:DIRECT:warehouses.province->region_dim.province`
-- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- None
 
 **Input Preview**
 
@@ -3272,9 +3015,7 @@ SELECT 2;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:customers.id->invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.id->invoices.id`
-- `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
+- None
 
 **Input Preview**
 
@@ -3525,9 +3266,7 @@ CREATE PROCEDURE sp_cross_border_reconciliation_engine(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- None
 
 **Input Preview**
 
@@ -3593,7 +3332,7 @@ CREATE PROCEDURE sp_financial_asset_wash_update(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+- None
 
 **Input Preview**
 
@@ -3626,7 +3365,7 @@ WHERE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+- None
 
 **Input Preview**
 
@@ -4092,14 +3831,7 @@ USE erp_system;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
-- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+- None
 
 **Input Preview**
 
@@ -4289,9 +4021,7 @@ JOIN information_schema.TABLE_CONSTRAINTS tc
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
-- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+- None
 
 **Input Preview**
 
@@ -4326,9 +4056,7 @@ UPDATE warehouse_inventory wi,
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
-- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+- None
 
 **Input Preview**
 
@@ -4362,8 +4090,7 @@ INNER JOIN (
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+- None
 
 **Input Preview**
 
@@ -4397,8 +4124,7 @@ SET
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+- None
 
 **Input Preview**
 
@@ -4619,7 +4345,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- None
 
 **Input Preview**
 
@@ -4675,28 +4401,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
-- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
-- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
-- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
-- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
-- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+- None
 
 **Input Preview**
 
@@ -4748,25 +4453,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
-- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
-- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- None
 
 **Input Preview**
 
@@ -5234,9 +4921,7 @@ CREATE PROCEDURE sp_cross_border_reconciliation_engine(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- None
 
 **Input Preview**
 
@@ -5304,7 +4989,7 @@ CREATE PROCEDURE sp_financial_asset_wash_update(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+- None
 
 **Input Preview**
 
@@ -5337,7 +5022,7 @@ WHERE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+- None
 
 **Input Preview**
 
@@ -5888,9 +5573,7 @@ JOIN information_schema.TABLE_CONSTRAINTS tc
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
-- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+- None
 
 **Input Preview**
 
@@ -5925,9 +5608,7 @@ UPDATE warehouse_inventory wi,
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
-- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+- None
 
 **Input Preview**
 
@@ -5961,8 +5642,7 @@ INNER JOIN (
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+- None
 
 **Input Preview**
 
@@ -5996,8 +5676,7 @@ SET
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+- None
 
 **Input Preview**
 
@@ -6070,14 +5749,7 @@ USE erp_system;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
-- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+- None
 
 **Input Preview**
 
@@ -6180,11 +5852,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
-- `VALUE:COALESCE:sales_order_items.quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+- None
 
 **Input Preview**
 
@@ -6221,11 +5889,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
-- `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
-- `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
+- None
 
 **Input Preview**
 
@@ -6332,15 +5996,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
-- `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
-- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
-- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
-- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
-- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
-- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+- None
 
 **Input Preview**
 
@@ -6377,11 +6033,7 @@ CREATE PROCEDURE sp_create_shipment(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
-- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- None
 
 **Input Preview**
 
@@ -6550,11 +6202,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
-- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
-- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
-- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
-- `VALUE:AGGREGATE:purchase_return_items.return_qty,purchase_order_items.received_qty->supplier_products.return_rate`
+- None
 
 **Input Preview**
 
@@ -6627,14 +6275,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
-- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+- None
 
 **Input Preview**
 
@@ -6792,114 +6433,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
-- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
-- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
-- `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
-- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
-- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
-- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
-- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
-- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
-- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
-- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
-- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
-- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
-- `VALUE:DIRECT:departments.id->employees.department_id`
-- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
-- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
-- `VALUE:DIRECT:positions.base_salary->employees.salary`
-- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
-- `VALUE:DIRECT:positions.id->employees.position_id`
-- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
-- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
-- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
-- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
-- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
-- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
-- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
-- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
-- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
-- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
-- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
-- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
-- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
-- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- None
 
 **Input Preview**
 
@@ -7003,14 +6537,7 @@ USE erp_system;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
-- `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.before_accumulated`
-- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
-- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation->depreciation_log.before_net_value`
-- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
-- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
-- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
-- `VALUE:FUNCTION_CALL:shipments.shipped_at->shipping_tracks.track_time`
+- None
 
 **Input Preview**
 
@@ -7067,25 +6594,7 @@ USE erp_system;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.retail_price->price_change_logs.old_price`
-- `VALUE:COALESCE:employees.manager_id->performance_reviews.reviewer_id`
-- `VALUE:COALESCE:projects.start_date,projects.actual_end_date->project_costs.cost_date`
-- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
-- `VALUE:CONCAT_FORMAT:projects.name->project_costs.description`
-- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
-- `VALUE:DIRECT:products.id->price_change_logs.product_id`
-- `VALUE:DIRECT:products.retail_price->price_change_logs.new_price`
-- `VALUE:DIRECT:projects.id->project_costs.project_id`
-- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
-- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
-- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
-- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
-- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
-- `VALUE:FUNCTION_CALL:purchase_orders.order_date->ap_aging_snapshots.due_date`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- None
 
 **Input Preview**
 
@@ -7127,8 +6636,7 @@ INSERT INTO contracts (contract_no, contract_type, party_type, party_id, subject
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:purchase_returns.id->purchase_return_items.return_id`
+- None
 
 **Input Preview**
 
@@ -7186,32 +6694,7 @@ INSERT INTO purchase_returns (return_no, purchase_order_id, purchase_receipt_id,
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
-- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
-- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
-- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
-- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
-- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
-- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
-- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
-- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
-- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
-- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
-- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
-- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
-- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
-- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
-- `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->invoices.invoice_no`
-- `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->tax_invoices.invoice_no`
-- `VALUE:DIRECT:departments.id->positions.department_id`
-- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
-- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
-- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
-- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
-- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
-- `VALUE:DIRECT:suppliers.id->supplier_products.supplier_id`
-- `VALUE:FUNCTION_CALL:purchase_orders.order_date->invoices.due_date`
-- `VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period`
+- None
 
 **Input Preview**
 
@@ -7636,11 +7119,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
-- `VALUE:COALESCE:sales_order_items.quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+- None
 
 **Input Preview**
 
@@ -7677,11 +7156,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
-- `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
-- `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
+- None
 
 **Input Preview**
 
@@ -7788,15 +7263,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
-- `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
-- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
-- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
-- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
-- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
-- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+- None
 
 **Input Preview**
 
@@ -7833,11 +7300,7 @@ CREATE PROCEDURE sp_create_shipment(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
-- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- None
 
 **Input Preview**
 
@@ -8006,11 +7469,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
-- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
-- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
-- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
-- `VALUE:AGGREGATE:purchase_return_items.return_qty,purchase_order_items.received_qty->supplier_products.return_rate`
+- None
 
 **Input Preview**
 
@@ -8083,14 +7542,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
-- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+- None
 
 **Input Preview**
 
@@ -8229,114 +7681,7 @@ BEGIN
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
-- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
-- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
-- `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
-- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
-- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
-- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
-- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
-- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
-- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
-- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
-- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
-- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
-- `VALUE:DIRECT:departments.id->employees.department_id`
-- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
-- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
-- `VALUE:DIRECT:positions.base_salary->employees.salary`
-- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
-- `VALUE:DIRECT:positions.id->employees.position_id`
-- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
-- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
-- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
-- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
-- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
-- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
-- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
-- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
-- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
-- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
-- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
-- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
-- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
-- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- None
 
 **Input Preview**
 
@@ -8409,14 +7754,7 @@ USE erp_system;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
-- `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.before_accumulated`
-- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
-- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation->depreciation_log.before_net_value`
-- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
-- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
-- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
-- `VALUE:FUNCTION_CALL:shipments.shipped_at->shipping_tracks.track_time`
+- None
 
 **Input Preview**
 
@@ -8467,25 +7805,7 @@ USE erp_system;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.retail_price->price_change_logs.old_price`
-- `VALUE:COALESCE:employees.manager_id->performance_reviews.reviewer_id`
-- `VALUE:COALESCE:projects.start_date,projects.actual_end_date->project_costs.cost_date`
-- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
-- `VALUE:CONCAT_FORMAT:projects.name->project_costs.description`
-- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
-- `VALUE:DIRECT:products.id->price_change_logs.product_id`
-- `VALUE:DIRECT:products.retail_price->price_change_logs.new_price`
-- `VALUE:DIRECT:projects.id->project_costs.project_id`
-- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
-- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
-- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
-- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
-- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
-- `VALUE:FUNCTION_CALL:purchase_orders.order_date->ap_aging_snapshots.due_date`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- None
 
 **Input Preview**
 
@@ -8519,8 +7839,7 @@ INSERT INTO contracts (contract_no, contract_type, party_type, party_id, subject
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:purchase_returns.id->purchase_return_items.return_id`
+- None
 
 **Input Preview**
 
@@ -8578,32 +7897,7 @@ INSERT INTO purchase_returns (return_no, purchase_order_id, purchase_receipt_id,
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
-- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
-- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
-- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
-- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
-- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
-- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
-- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
-- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
-- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
-- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
-- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
-- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
-- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
-- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
-- `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->invoices.invoice_no`
-- `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->tax_invoices.invoice_no`
-- `VALUE:DIRECT:departments.id->positions.department_id`
-- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
-- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
-- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
-- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
-- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
-- `VALUE:DIRECT:suppliers.id->supplier_products.supplier_id`
-- `VALUE:FUNCTION_CALL:purchase_orders.order_date->invoices.due_date`
-- `VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period`
+- None
 
 **Input Preview**
 
@@ -8971,6 +8265,6767 @@ USE erp_system;
 -- ============================================================
 
 USE erp_system;
+```
+
+## `oracle12c-sample-data-full-01-schema-01-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/12c/01-schema/01-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统完整数据库设计 - Oracle 12c
+-- 模块: HR, 权限, 货品, 批号, 库存, 采购, 销售, 财务
+-- 数据库: Oracle 12c
+-- ============================================================
+
+-- ============================================================
+-- 0. 自定义ENUM类型
+```
+
+## `oracle12c-sample-data-full-01-schema-02-indexes-and-views-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/12c/01-schema/02-indexes-and-views.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 索引补充 - 覆盖跨表查询常用路径
+-- ============================================================
+
+-- 库存与批号关联查询
+CREATE INDEX idx_inv_batch_warehouse ON inventory(batch_id, warehouse_id);
+CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
+```
+
+## `oracle12c-sample-data-full-01-schema-03-triggers-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/12c/01-schema/03-triggers.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统触发器 (Oracle 12c)
+-- 用途:
+--   trg_audit_*: 自动记录关键表的变更到audit_log
+--   trg_inventory_*: 库存变动时自动更新批号库存和盘点日期
+--   trg_batch_*: 批号耗尽/过期时自动更新状态
+--   trg_sales_*: 销售状态变化时同步客户余额和库存相关状态
+--   trg_purchase_*: 采购收货时同步供应商应付账户
+```
+
+## `oracle12c-sample-data-full-01-schema-04-supplementary-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/12c/01-schema/04-supplementary-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充表: 发货物流、销售提成、促销活动、
+--   三单匹配、固定资产、BOM生产工单、客服工单
+-- 关系说明:
+--   shipments -> sales_orders (1:1), 通过tracking_no追踪物流
+--   sales_commissions -> sales_orders + employees (N:1:1), 按销售额计算提成
+--   promotions -> sales_order_items (N:M), 通过promotion_items关联
+--   invoices -> purchase_orders + purchase_receipts (三单匹配)
+```
+
+## `oracle12c-sample-data-full-01-schema-05-third-batch-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/12c/01-schema/05-third-batch-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统第三批补充表: 合同管理、AR/AP账龄、税务管理、
+--   质检、审批流引擎、现金流预测、项目成本、多币种汇率、
+--   绩效考核、序列号追踪、寄售库存、价格变更历史
+-- 关系说明:
+--   contracts -> sales_orders/purchase_orders (1:1), 管理合同条款和里程碑
+--   ar_aging / ap_aging: 账龄分析用，按月计算应收账款/应付账款
+--   tax_invoices: 增值税发票管理，进项税/销项税
+```
+
+## `oracle12c-sample-data-full-01-schema-06-enterprise-extension-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/12c/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - Oracle 12c
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: Oracle 12c
+-- ============================================================
+
+-- ============================================================
+```
+
+## `oracle12c-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/12c/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario tables - Oracle 16/17/18 compatible
+-- Covers MRP, shop-floor execution, costing, AR/AP, WMS,
+-- repair service, master-data governance, and sensitive access audit.
+-- ============================================================
+
+CREATE TABLE production_plans (
+    id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+```
+
+## `oracle19c-sample-data-full-01-schema-01-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/19c/01-schema/01-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统完整数据库设计 - Oracle 19c
+-- 模块: HR, 权限, 货品, 批号, 库存, 采购, 销售, 财务
+-- 数据库: Oracle 19c
+-- ============================================================
+
+-- ============================================================
+-- 0. 自定义ENUM类型
+```
+
+## `oracle19c-sample-data-full-01-schema-02-indexes-and-views-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/19c/01-schema/02-indexes-and-views.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 索引补充 - 覆盖跨表查询常用路径
+-- ============================================================
+
+-- 库存与批号关联查询
+CREATE INDEX idx_inv_batch_warehouse ON inventory(batch_id, warehouse_id);
+CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
+```
+
+## `oracle19c-sample-data-full-01-schema-03-triggers-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/19c/01-schema/03-triggers.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统触发器 (Oracle 19c)
+-- 用途:
+--   trg_audit_*: 自动记录关键表的变更到audit_log
+--   trg_inventory_*: 库存变动时自动更新批号库存和盘点日期
+--   trg_batch_*: 批号耗尽/过期时自动更新状态
+--   trg_sales_*: 销售状态变化时同步客户余额和库存相关状态
+--   trg_purchase_*: 采购收货时同步供应商应付账户
+```
+
+## `oracle19c-sample-data-full-01-schema-04-supplementary-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/19c/01-schema/04-supplementary-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充表: 发货物流、销售提成、促销活动、
+--   三单匹配、固定资产、BOM生产工单、客服工单
+-- 关系说明:
+--   shipments -> sales_orders (1:1), 通过tracking_no追踪物流
+--   sales_commissions -> sales_orders + employees (N:1:1), 按销售额计算提成
+--   promotions -> sales_order_items (N:M), 通过promotion_items关联
+--   invoices -> purchase_orders + purchase_receipts (三单匹配)
+```
+
+## `oracle19c-sample-data-full-01-schema-05-third-batch-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/19c/01-schema/05-third-batch-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统第三批补充表: 合同管理、AR/AP账龄、税务管理、
+--   质检、审批流引擎、现金流预测、项目成本、多币种汇率、
+--   绩效考核、序列号追踪、寄售库存、价格变更历史
+-- 关系说明:
+--   contracts -> sales_orders/purchase_orders (1:1), 管理合同条款和里程碑
+--   ar_aging / ap_aging: 账龄分析用，按月计算应收账款/应付账款
+--   tax_invoices: 增值税发票管理，进项税/销项税
+```
+
+## `oracle19c-sample-data-full-01-schema-06-enterprise-extension-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/19c/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - Oracle 19c
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: Oracle 19c
+-- ============================================================
+
+-- ============================================================
+```
+
+## `oracle19c-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/19c/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario tables - Oracle 16/17/18 compatible
+-- Covers MRP, shop-floor execution, costing, AR/AP, WMS,
+-- repair service, master-data governance, and sensitive access audit.
+-- ============================================================
+
+CREATE TABLE production_plans (
+    id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+```
+
+## `oracle21c-sample-data-full-01-schema-01-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/21c/01-schema/01-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统完整数据库设计 - Oracle 21c
+-- 模块: HR, 权限, 货品, 批号, 库存, 采购, 销售, 财务
+-- 数据库: Oracle 21c
+-- ============================================================
+
+-- ============================================================
+-- 0. 自定义ENUM类型
+```
+
+## `oracle21c-sample-data-full-01-schema-02-indexes-and-views-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/21c/01-schema/02-indexes-and-views.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 索引补充 - 覆盖跨表查询常用路径
+-- ============================================================
+
+-- 库存与批号关联查询
+CREATE INDEX idx_inv_batch_warehouse ON inventory(batch_id, warehouse_id);
+CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
+```
+
+## `oracle21c-sample-data-full-01-schema-03-triggers-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/21c/01-schema/03-triggers.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统触发器 (Oracle 21c)
+-- 用途:
+--   trg_audit_*: 自动记录关键表的变更到audit_log
+--   trg_inventory_*: 库存变动时自动更新批号库存和盘点日期
+--   trg_batch_*: 批号耗尽/过期时自动更新状态
+--   trg_sales_*: 销售状态变化时同步客户余额和库存相关状态
+--   trg_purchase_*: 采购收货时同步供应商应付账户
+```
+
+## `oracle21c-sample-data-full-01-schema-04-supplementary-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/21c/01-schema/04-supplementary-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充表: 发货物流、销售提成、促销活动、
+--   三单匹配、固定资产、BOM生产工单、客服工单
+-- 关系说明:
+--   shipments -> sales_orders (1:1), 通过tracking_no追踪物流
+--   sales_commissions -> sales_orders + employees (N:1:1), 按销售额计算提成
+--   promotions -> sales_order_items (N:M), 通过promotion_items关联
+--   invoices -> purchase_orders + purchase_receipts (三单匹配)
+```
+
+## `oracle21c-sample-data-full-01-schema-05-third-batch-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/21c/01-schema/05-third-batch-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统第三批补充表: 合同管理、AR/AP账龄、税务管理、
+--   质检、审批流引擎、现金流预测、项目成本、多币种汇率、
+--   绩效考核、序列号追踪、寄售库存、价格变更历史
+-- 关系说明:
+--   contracts -> sales_orders/purchase_orders (1:1), 管理合同条款和里程碑
+--   ar_aging / ap_aging: 账龄分析用，按月计算应收账款/应付账款
+--   tax_invoices: 增值税发票管理，进项税/销项税
+```
+
+## `oracle21c-sample-data-full-01-schema-06-enterprise-extension-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/21c/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - Oracle 21c
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: Oracle 21c
+-- ============================================================
+
+-- ============================================================
+```
+
+## `oracle21c-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/21c/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario tables - Oracle 16/17/18 compatible
+-- Covers MRP, shop-floor execution, costing, AR/AP, WMS,
+-- repair service, master-data governance, and sensitive access audit.
+-- ============================================================
+
+CREATE TABLE production_plans (
+    id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+```
+
+## `oracle26ai-sample-data-full-01-schema-01-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/01-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统完整数据库设计 - Oracle 26ai
+-- 模块: HR, 权限, 货品, 批号, 库存, 采购, 销售, 财务
+-- 数据库: Oracle 26ai
+-- ============================================================
+
+-- ============================================================
+-- 0. 自定义ENUM类型
+```
+
+## `oracle26ai-sample-data-full-01-schema-02-indexes-and-views-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/02-indexes-and-views.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 索引补充 - 覆盖跨表查询常用路径
+-- ============================================================
+
+-- 库存与批号关联查询
+CREATE INDEX idx_inv_batch_warehouse ON inventory(batch_id, warehouse_id);
+CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
+```
+
+## `oracle26ai-sample-data-full-01-schema-03-triggers-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/03-triggers.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统触发器 (Oracle 26ai)
+-- 用途:
+--   trg_audit_*: 自动记录关键表的变更到audit_log
+--   trg_inventory_*: 库存变动时自动更新批号库存和盘点日期
+--   trg_batch_*: 批号耗尽/过期时自动更新状态
+--   trg_sales_*: 销售状态变化时同步客户余额和库存相关状态
+--   trg_purchase_*: 采购收货时同步供应商应付账户
+```
+
+## `oracle26ai-sample-data-full-01-schema-04-supplementary-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/04-supplementary-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充表: 发货物流、销售提成、促销活动、
+--   三单匹配、固定资产、BOM生产工单、客服工单
+-- 关系说明:
+--   shipments -> sales_orders (1:1), 通过tracking_no追踪物流
+--   sales_commissions -> sales_orders + employees (N:1:1), 按销售额计算提成
+--   promotions -> sales_order_items (N:M), 通过promotion_items关联
+--   invoices -> purchase_orders + purchase_receipts (三单匹配)
+```
+
+## `oracle26ai-sample-data-full-01-schema-05-third-batch-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/05-third-batch-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统第三批补充表: 合同管理、AR/AP账龄、税务管理、
+--   质检、审批流引擎、现金流预测、项目成本、多币种汇率、
+--   绩效考核、序列号追踪、寄售库存、价格变更历史
+-- 关系说明:
+--   contracts -> sales_orders/purchase_orders (1:1), 管理合同条款和里程碑
+--   ar_aging / ap_aging: 账龄分析用，按月计算应收账款/应付账款
+--   tax_invoices: 增值税发票管理，进项税/销项税
+```
+
+## `oracle26ai-sample-data-full-01-schema-06-enterprise-extension-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - Oracle 26ai
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: Oracle 26ai
+-- ============================================================
+
+-- ============================================================
+```
+
+## `oracle26ai-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario tables - Oracle 16/17/18 compatible
+-- Covers MRP, shop-floor execution, costing, AR/AP, WMS,
+-- repair service, master-data governance, and sensitive access audit.
+-- ============================================================
+
+CREATE TABLE production_plans (
+    id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+```
+
+## `oraclesample-data-full-01-schema-01-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/01-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统完整数据库设计 - Oracle 26ai
+-- 模块: HR, 权限, 货品, 批号, 库存, 采购, 销售, 财务
+-- 数据库: Oracle 26ai
+-- ============================================================
+
+-- ============================================================
+-- 0. 自定义ENUM类型
+```
+
+## `oraclesample-data-full-01-schema-02-indexes-and-views-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/02-indexes-and-views.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 索引补充 - 覆盖跨表查询常用路径
+-- ============================================================
+
+-- 库存与批号关联查询
+CREATE INDEX idx_inv_batch_warehouse ON inventory(batch_id, warehouse_id);
+CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
+```
+
+## `oraclesample-data-full-01-schema-03-triggers-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/03-triggers.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统触发器 (Oracle 26ai)
+-- 用途:
+--   trg_audit_*: 自动记录关键表的变更到audit_log
+--   trg_inventory_*: 库存变动时自动更新批号库存和盘点日期
+--   trg_batch_*: 批号耗尽/过期时自动更新状态
+--   trg_sales_*: 销售状态变化时同步客户余额和库存相关状态
+--   trg_purchase_*: 采购收货时同步供应商应付账户
+```
+
+## `oraclesample-data-full-01-schema-04-supplementary-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/04-supplementary-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充表: 发货物流、销售提成、促销活动、
+--   三单匹配、固定资产、BOM生产工单、客服工单
+-- 关系说明:
+--   shipments -> sales_orders (1:1), 通过tracking_no追踪物流
+--   sales_commissions -> sales_orders + employees (N:1:1), 按销售额计算提成
+--   promotions -> sales_order_items (N:M), 通过promotion_items关联
+--   invoices -> purchase_orders + purchase_receipts (三单匹配)
+```
+
+## `oraclesample-data-full-01-schema-05-third-batch-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/05-third-batch-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统第三批补充表: 合同管理、AR/AP账龄、税务管理、
+--   质检、审批流引擎、现金流预测、项目成本、多币种汇率、
+--   绩效考核、序列号追踪、寄售库存、价格变更历史
+-- 关系说明:
+--   contracts -> sales_orders/purchase_orders (1:1), 管理合同条款和里程碑
+--   ar_aging / ap_aging: 账龄分析用，按月计算应收账款/应付账款
+--   tax_invoices: 增值税发票管理，进项税/销项税
+```
+
+## `oraclesample-data-full-01-schema-06-enterprise-extension-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表 - Oracle 26ai
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: Oracle 26ai
+-- ============================================================
+
+-- ============================================================
+```
+
+## `oraclesample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/oracle/26ai/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario tables - Oracle 16/17/18 compatible
+-- Covers MRP, shop-floor execution, costing, AR/AP, WMS,
+-- repair service, master-data governance, and sensitive access audit.
+-- ============================================================
+
+CREATE TABLE production_plans (
+    id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+```
+
+## `oracle12c-fullgrammer-smoke-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-fullgrammer-smoke-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-fullgrammer-smoke-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:orders.amount->sales_summary.total_amount`
+- `VALUE:DIRECT:customers.id->sales_summary.customer_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO sales_summary (customer_id, total_amount)
+SELECT c.id, SUM(o.amount)
+FROM customers c
+JOIN orders o ON o.customer_id = c.id
+GROUP BY c.id;
+```
+
+## `oracle12c-sample-data-full-02-procedures-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-01-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
+- `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统存储过程 - Oracle 12c
+-- 包含: 部门管理, 货品管理, 员工管理, 请购, 采购, 进货入库,
+--       销售, 退库, 工资发放, 审计, 对账, 出纳, 结算
+-- ============================================================
+
+-- ============================================================
+-- 辅助函数: 生成随机工号/单号
+```
+
+## `oracle12c-sample-data-full-02-procedures-02-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-02-procedures-supplement-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-02-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充存储过程（Oracle 12c 版本）
+-- 库存调拨、盘点、批号管理、客户信用、供应商评估、
+-- 预算控制、损益计算、销售分析、权限管理
+-- ============================================================
+
+-- ============================================================
+-- 16. 库存调拨
+```
+
+## `oracle12c-sample-data-full-02-procedures-03-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-03-functions-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-03-functions-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统自定义函数 (UDF) - Oracle 12c
+-- 调用关系:
+--   fn_employee_full_name: 被报表查询调用，拼接员工完整名称
+--   fn_calculate_income_tax: 被sp_process_salary调用，计算个税
+--   fn_get_product_stock: 被库存查询和补货建议调用
+--   fn_get_customer_credit_available: 被销售流程调用，检查信用额度
+--   fn_get_days_sales_outstanding: 被财务分析调用，计算DSO
+```
+
+## `oracle12c-sample-data-full-02-procedures-04-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-04-procedures-supplement-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-04-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
+- `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
+- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
+- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
+- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充存储过程（Oracle 12c 版本）
+-- 发货管理、提成计算、促销验证、
+--   三单匹配、固定资产折旧、工单管理、工单发料
+-- ============================================================
+
+-- ============================================================
+-- 29. 创建发货单
+```
+
+## `oracle12c-sample-data-full-02-procedures-05-third-batch-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-05-third-batch-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-05-third-batch-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批存储过程: 合同管理、AR/AP账龄、税务申报、
+--   审批流、质检、现金流预测、项目成本、寄售结算、
+--   序列号追踪、价格变更、绩效考核（Oracle 12c 版本）
+-- 调用关系说明:
+--   sp_generate_ar_aging -> ar_aging_snapshots (被月度结算调用)
+--   sp_submit_approval -> approval_instances -> approval_records (被各业务模块调用)
+--   sp_process_approval -> 审批通过/驳回, 更新业务单据状态
+```
+
+## `oracle12c-sample-data-full-02-procedures-06-third-batch-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-06-third-batch-functions-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-06-third-batch-functions-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批函数: 客户消费分析、汇率换算、项目进度、
+--   合同到期、质检合格率、信用评分（Oracle 12c 版本）
+-- 调用关系:
+--   fn_get_customer_clv: 被客户分析报表调用
+--   fn_convert_currency: 被外币交易处理调用
+--   fn_get_project_completion_pct: 被项目监控调用
+--   fn_get_customer_credit_score: 被信用评估调用
+```
+
+## `oracle12c-sample-data-full-02-procedures-07-store-customer-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-07-store-customer-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-07-store-customer-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第四批: 门店/客户消费分析专用存储过程
+-- 覆盖: 客户门店消费明细、门店畅销品排行、门店对比、
+--        客户门店偏好、门店销售趋势、门店商品关联
+-- 调用关系:
+--   sp_customer_store_purchase_history: 客户在门店的完整消费明细
+--   sp_store_bestsellers: 门店畅销品TOP N(支持日/周/月/季/年)
+--   sp_store_performance_compare: 门店销售业绩对比
+```
+
+## `oracle12c-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批: 批号保质期追踪 + 类别销售/临期分析
+-- 覆盖角色: 店长(看本店), 员工(看自己负责的), 高管(看全局)
+-- Oracle 12c 翻译
+-- ============================================================
+
+CREATE SCHEMA  erp_system;
+ALTER SESSION SET CURRENT_SCHEMA = erp_system;
+```
+
+## `oracle12c-sample-data-full-02-procedures-09-return-refund-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-09-return-refund-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-09-return-refund-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批: 退货退款全流程 + 报损报废 + 财务影响追踪
+-- 流程覆盖:
+--   销售退货: 客户申请 -> 审批 -> 收货验货 -> 退款 -> 财务记账
+--   采购退货: 发现异常 -> 申请 -> 审批 -> 出库退回供应商 -> 供应商退款
+--   报损报废: 发现 -> 申请 -> 审批 -> 执行 -> 财务记账
+-- 财务影响:
+--   销售退货: 借:主营业务收入 贷:应收账款/银行存款 (冲减收入)
+```
+
+## `oracle12c-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 供应商地理位置 + 智能选择体系 (Oracle 12c)
+-- Haversine距离计算 + 供应商综合评分 + 最优供应商选择
+-- 选择逻辑: 综合评分 = 价格(30%) + 距离(25%) + 退货率(20%) + 质量(15%) + 交期(10%)
+-- ============================================================
+
+ALTER SESSION SET CURRENT_SCHEMA = erp_system;
+```
+
+## `oracle12c-sample-data-full-02-procedures-11-common-system-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-11-common-system-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-11-common-system-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 常用系统查询 (Oracle 12c)
+-- 覆盖: 员工出勤率、门店收支审计、员工工资历史、
+--        常用业务JOIN查询、审批待办、系统仪表盘等
+-- 注意: SELECT 型存储过程在 Oracle 中转换为
+--   TABLE-returning 函数，因为 PG 的 PROCEDURE 不支持返回结果集。
+-- 调用方式: SELECT * FROM sp_xxx(...) 代替 CALL sp_xxx(...)
+-- ============================================================
+```
+
+## `oracle12c-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展流程存储过程 - Oracle 12c
+-- 覆盖: 库存盘点过账、库存调拨申请、会计期间关闭
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:oracle.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    p_stocktake_id IN NUMBER,
+```
+
+## `oracle12c-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario procedures - Oracle 16/17/18 compatible
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:oracle.sp_run_mrp_for_plan
+CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
+    p_plan_id IN NUMBER,
+    p_created_by IN NUMBER
+```
+
+## `oracle12c-sample-data-full-03-data-01-master-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/03-data/01-master-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统测试数据生成
+-- 关系说明:
+--   departments -> positions -> employees (1:N:N)
+--   employees.manager_id 自引用形成汇报链
+--   product_categories -> products -> product_batches (1:N:N)
+--   suppliers -> supplier_products -> products (N:M)
+--   warehouses -> inventory (1:N, 通过product_id+batch_id+warehouse_id唯一)
+```
+
+## `oracle12c-sample-data-full-03-data-02-supplementary-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/03-data/02-supplementary-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充测试数据 - Oracle 12c
+-- 目的: 对齐 MySQL 8.0 样例中已有但 Oracle 初稿缺失的数据目标表
+-- ============================================================
+
+-- 促销与提成
+INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amount, commission_rate, bonus, effective_date, status) VALUES
+(1, '标准销售提成', NULL, 0.00, 99999999.99, 0.0300, 0.00, '2026-01-01', 'active');
+```
+
+## `oracle12c-sample-data-full-03-data-03-enterprise-extension-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/03-data/03-enterprise-extension-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展测试数据 - Oracle 12c
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- ============================================================
+
+INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
+(1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+```
+
+## `oracle12c-sample-data-full-03-data-04-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/03-data/04-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景验证数据
+-- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle12c-sample-data-full-03-data-05-erp-coverage-gap-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/03-data/05-erp-coverage-gap-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP coverage gap seed data - Oracle 16/17/18 compatible
+-- Purpose: align Oracle seed coverage with the MySQL 8.0 ERP sample
+--          for return/damage, logistics, depreciation, review and pricing.
+-- ============================================================
+
+INSERT INTO shipments (
+    id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
+```
+
+## `oracle12c-sample-data-full-04-queries-01-complex-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/01-complex-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-01-complex-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统超复杂SQL查询集合 (Oracle 12c)
+-- 覆盖: 多表JOIN, CTE(递归/非递归), 窗口函数, 嵌套子查询,
+--       GROUP BY + HAVING, 复杂聚合组合, ROLLUP, UNION,
+--       相关子查询, EXISTS, LATERAL, 条件聚合, 派生表
+-- ============================================================
+
+```
+
+## `oracle12c-sample-data-full-04-queries-02-complex-queries-batch2-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/02-complex-queries-batch2.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统超复杂SQL查询集合 - 第二批 (Oracle 12c)
+-- 覆盖: 递归CTE, LATERAL JOIN, 窗口函数全系列,
+--       GROUPING SETS/CUBE, UNION/INTERSECT/EXCEPT模拟,
+--       相关子查询嵌套, 派生表多层嵌套, 条件聚合嵌套,
+--       动态分桶, 漏斗分析, 同期群分析, 留存分析
+-- ============================================================
+```
+
+## `oracle12c-sample-data-full-04-queries-03-complex-queries-batch3-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/03-complex-queries-batch3.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (Oracle 12c)
+-- 重点覆盖客户消费状态全方位分析
+-- ============================================================
+
+
+-- ============================================================
+-- Q39: 客户消费分层全景图 - 五维消费画像
+```
+
+## `oracle12c-sample-data-full-04-queries-04-store-customer-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/04-store-customer-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-04-store-customer-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第四批超复杂SQL查询: 门店/客户消费深度分析
+-- 覆盖: 客户门店消费明细、门店畅销品、门店对比、
+--        客户门店偏好、门店商品关联、门店销售预测
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle12c-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle12c-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+
+## `oracle12c-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
+```
+
+## `oracle12c-sample-data-full-04-queries-08-common-system-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/08-common-system-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-08-common-system-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 常用系统查询 - 模拟真实ERP系统日常使用的SQL
+-- 覆盖: 多表JOIN、员工/门店/商品/客户/订单/库存/财务
+--       日常查询、审批待办、报表导出、数据核对等
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle12c-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+
+## `oracle12c-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-10-enterprise-extension-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - Oracle 12c
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+
+## `oracle12c-sample-data-full-04-queries-11-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/11-oracle12c-compatible.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-11-pg18-specific-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Oracle 12c 语法样例
+-- 说明: 覆盖 12c 合法的 identity、row limiting、Oracle PL/SQL 和基础 DML。
+-- ============================================================
+
+CREATE TABLE oracle_12c_identity_demo (
+    id NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    sku VARCHAR2(50) NOT NULL,
+```
+
+## `oracle12c-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/12-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- 数据库: Oracle 16/17/18 compatible
+-- ============================================================
+
+```
+
+## `oracle19c-fullgrammer-smoke-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-fullgrammer-smoke-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-fullgrammer-smoke-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:orders.amount->sales_summary.total_amount`
+- `VALUE:DIRECT:customers.id->sales_summary.customer_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO sales_summary (customer_id, total_amount)
+SELECT c.id, SUM(o.amount)
+FROM customers c
+JOIN orders o ON o.customer_id = c.id
+GROUP BY c.id;
+```
+
+## `oracle19c-sample-data-full-02-procedures-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-01-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
+- `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统存储过程 - Oracle 19c
+-- 包含: 部门管理, 货品管理, 员工管理, 请购, 采购, 进货入库,
+--       销售, 退库, 工资发放, 审计, 对账, 出纳, 结算
+-- ============================================================
+
+-- ============================================================
+-- 辅助函数: 生成随机工号/单号
+```
+
+## `oracle19c-sample-data-full-02-procedures-02-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-02-procedures-supplement-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-02-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充存储过程（Oracle 19c 版本）
+-- 库存调拨、盘点、批号管理、客户信用、供应商评估、
+-- 预算控制、损益计算、销售分析、权限管理
+-- ============================================================
+
+-- ============================================================
+-- 16. 库存调拨
+```
+
+## `oracle19c-sample-data-full-02-procedures-03-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-03-functions-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-03-functions-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统自定义函数 (UDF) - Oracle 19c
+-- 调用关系:
+--   fn_employee_full_name: 被报表查询调用，拼接员工完整名称
+--   fn_calculate_income_tax: 被sp_process_salary调用，计算个税
+--   fn_get_product_stock: 被库存查询和补货建议调用
+--   fn_get_customer_credit_available: 被销售流程调用，检查信用额度
+--   fn_get_days_sales_outstanding: 被财务分析调用，计算DSO
+```
+
+## `oracle19c-sample-data-full-02-procedures-04-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-04-procedures-supplement-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-04-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
+- `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
+- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
+- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
+- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充存储过程（Oracle 19c 版本）
+-- 发货管理、提成计算、促销验证、
+--   三单匹配、固定资产折旧、工单管理、工单发料
+-- ============================================================
+
+-- ============================================================
+-- 29. 创建发货单
+```
+
+## `oracle19c-sample-data-full-02-procedures-05-third-batch-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-05-third-batch-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-05-third-batch-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批存储过程: 合同管理、AR/AP账龄、税务申报、
+--   审批流、质检、现金流预测、项目成本、寄售结算、
+--   序列号追踪、价格变更、绩效考核（Oracle 19c 版本）
+-- 调用关系说明:
+--   sp_generate_ar_aging -> ar_aging_snapshots (被月度结算调用)
+--   sp_submit_approval -> approval_instances -> approval_records (被各业务模块调用)
+--   sp_process_approval -> 审批通过/驳回, 更新业务单据状态
+```
+
+## `oracle19c-sample-data-full-02-procedures-06-third-batch-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-06-third-batch-functions-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-06-third-batch-functions-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批函数: 客户消费分析、汇率换算、项目进度、
+--   合同到期、质检合格率、信用评分（Oracle 19c 版本）
+-- 调用关系:
+--   fn_get_customer_clv: 被客户分析报表调用
+--   fn_convert_currency: 被外币交易处理调用
+--   fn_get_project_completion_pct: 被项目监控调用
+--   fn_get_customer_credit_score: 被信用评估调用
+```
+
+## `oracle19c-sample-data-full-02-procedures-07-store-customer-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-07-store-customer-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-07-store-customer-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第四批: 门店/客户消费分析专用存储过程
+-- 覆盖: 客户门店消费明细、门店畅销品排行、门店对比、
+--        客户门店偏好、门店销售趋势、门店商品关联
+-- 调用关系:
+--   sp_customer_store_purchase_history: 客户在门店的完整消费明细
+--   sp_store_bestsellers: 门店畅销品TOP N(支持日/周/月/季/年)
+--   sp_store_performance_compare: 门店销售业绩对比
+```
+
+## `oracle19c-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批: 批号保质期追踪 + 类别销售/临期分析
+-- 覆盖角色: 店长(看本店), 员工(看自己负责的), 高管(看全局)
+-- Oracle 19c 翻译
+-- ============================================================
+
+CREATE SCHEMA  erp_system;
+ALTER SESSION SET CURRENT_SCHEMA = erp_system;
+```
+
+## `oracle19c-sample-data-full-02-procedures-09-return-refund-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-09-return-refund-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-09-return-refund-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批: 退货退款全流程 + 报损报废 + 财务影响追踪
+-- 流程覆盖:
+--   销售退货: 客户申请 -> 审批 -> 收货验货 -> 退款 -> 财务记账
+--   采购退货: 发现异常 -> 申请 -> 审批 -> 出库退回供应商 -> 供应商退款
+--   报损报废: 发现 -> 申请 -> 审批 -> 执行 -> 财务记账
+-- 财务影响:
+--   销售退货: 借:主营业务收入 贷:应收账款/银行存款 (冲减收入)
+```
+
+## `oracle19c-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 供应商地理位置 + 智能选择体系 (Oracle 19c)
+-- Haversine距离计算 + 供应商综合评分 + 最优供应商选择
+-- 选择逻辑: 综合评分 = 价格(30%) + 距离(25%) + 退货率(20%) + 质量(15%) + 交期(10%)
+-- ============================================================
+
+ALTER SESSION SET CURRENT_SCHEMA = erp_system;
+```
+
+## `oracle19c-sample-data-full-02-procedures-11-common-system-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-11-common-system-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-11-common-system-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 常用系统查询 (Oracle 19c)
+-- 覆盖: 员工出勤率、门店收支审计、员工工资历史、
+--        常用业务JOIN查询、审批待办、系统仪表盘等
+-- 注意: SELECT 型存储过程在 Oracle 中转换为
+--   TABLE-returning 函数，因为 PG 的 PROCEDURE 不支持返回结果集。
+-- 调用方式: SELECT * FROM sp_xxx(...) 代替 CALL sp_xxx(...)
+-- ============================================================
+```
+
+## `oracle19c-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展流程存储过程 - Oracle 19c
+-- 覆盖: 库存盘点过账、库存调拨申请、会计期间关闭
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:oracle.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    p_stocktake_id IN NUMBER,
+```
+
+## `oracle19c-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario procedures - Oracle 16/17/18 compatible
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:oracle.sp_run_mrp_for_plan
+CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
+    p_plan_id IN NUMBER,
+    p_created_by IN NUMBER
+```
+
+## `oracle19c-sample-data-full-03-data-01-master-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/03-data/01-master-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统测试数据生成
+-- 关系说明:
+--   departments -> positions -> employees (1:N:N)
+--   employees.manager_id 自引用形成汇报链
+--   product_categories -> products -> product_batches (1:N:N)
+--   suppliers -> supplier_products -> products (N:M)
+--   warehouses -> inventory (1:N, 通过product_id+batch_id+warehouse_id唯一)
+```
+
+## `oracle19c-sample-data-full-03-data-02-supplementary-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/03-data/02-supplementary-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充测试数据 - Oracle 19c
+-- 目的: 对齐 MySQL 8.0 样例中已有但 Oracle 初稿缺失的数据目标表
+-- ============================================================
+
+-- 促销与提成
+INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amount, commission_rate, bonus, effective_date, status) VALUES
+(1, '标准销售提成', NULL, 0.00, 99999999.99, 0.0300, 0.00, '2026-01-01', 'active');
+```
+
+## `oracle19c-sample-data-full-03-data-03-enterprise-extension-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/03-data/03-enterprise-extension-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展测试数据 - Oracle 19c
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- ============================================================
+
+INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
+(1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+```
+
+## `oracle19c-sample-data-full-03-data-04-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/03-data/04-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景验证数据
+-- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle19c-sample-data-full-03-data-05-erp-coverage-gap-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/03-data/05-erp-coverage-gap-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP coverage gap seed data - Oracle 16/17/18 compatible
+-- Purpose: align Oracle seed coverage with the MySQL 8.0 ERP sample
+--          for return/damage, logistics, depreciation, review and pricing.
+-- ============================================================
+
+INSERT INTO shipments (
+    id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
+```
+
+## `oracle19c-sample-data-full-04-queries-01-complex-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/01-complex-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-01-complex-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统超复杂SQL查询集合 (Oracle 19c)
+-- 覆盖: 多表JOIN, CTE(递归/非递归), 窗口函数, 嵌套子查询,
+--       GROUP BY + HAVING, 复杂聚合组合, ROLLUP, UNION,
+--       相关子查询, EXISTS, LATERAL, 条件聚合, 派生表
+-- ============================================================
+
+```
+
+## `oracle19c-sample-data-full-04-queries-02-complex-queries-batch2-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/02-complex-queries-batch2.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统超复杂SQL查询集合 - 第二批 (Oracle 19c)
+-- 覆盖: 递归CTE, LATERAL JOIN, 窗口函数全系列,
+--       GROUPING SETS/CUBE, UNION/INTERSECT/EXCEPT模拟,
+--       相关子查询嵌套, 派生表多层嵌套, 条件聚合嵌套,
+--       动态分桶, 漏斗分析, 同期群分析, 留存分析
+-- ============================================================
+```
+
+## `oracle19c-sample-data-full-04-queries-03-complex-queries-batch3-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/03-complex-queries-batch3.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (Oracle 19c)
+-- 重点覆盖客户消费状态全方位分析
+-- ============================================================
+
+
+-- ============================================================
+-- Q39: 客户消费分层全景图 - 五维消费画像
+```
+
+## `oracle19c-sample-data-full-04-queries-04-store-customer-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/04-store-customer-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-04-store-customer-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第四批超复杂SQL查询: 门店/客户消费深度分析
+-- 覆盖: 客户门店消费明细、门店畅销品、门店对比、
+--        客户门店偏好、门店商品关联、门店销售预测
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle19c-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle19c-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+
+## `oracle19c-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
+```
+
+## `oracle19c-sample-data-full-04-queries-08-common-system-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/08-common-system-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-08-common-system-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 常用系统查询 - 模拟真实ERP系统日常使用的SQL
+-- 覆盖: 多表JOIN、员工/门店/商品/客户/订单/库存/财务
+--       日常查询、审批待办、报表导出、数据核对等
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle19c-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+
+## `oracle19c-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-10-enterprise-extension-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - Oracle 19c
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+
+## `oracle19c-sample-data-full-04-queries-11-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/11-oracle19c-compatible.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-11-pg18-specific-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Oracle 19c 语法样例
+-- 说明: 覆盖 19c LISTAGG DISTINCT 与 MEMOPTIMIZE FOR READ。
+-- ============================================================
+
+CREATE TABLE oracle_19_memoptimize_demo (
+    id NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    sku VARCHAR2(50) NOT NULL,
+```
+
+## `oracle19c-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/12-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- 数据库: Oracle 16/17/18 compatible
+-- ============================================================
+
+```
+
+## `oracle19c-version-memoptimize-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/oracle/v19c/oracle19c-version-memoptimize-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE fast_lookup (
+    id NUMBER PRIMARY KEY,
+    code VARCHAR2(64)
+) MEMOPTIMIZE FOR READ;
+```
+
+## `oracle21c-fullgrammer-smoke-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-fullgrammer-smoke-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-fullgrammer-smoke-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:orders.amount->sales_summary.total_amount`
+- `VALUE:DIRECT:customers.id->sales_summary.customer_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO sales_summary (customer_id, total_amount)
+SELECT c.id, SUM(o.amount)
+FROM customers c
+JOIN orders o ON o.customer_id = c.id
+GROUP BY c.id;
+```
+
+## `oracle21c-sample-data-full-02-procedures-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-01-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
+- `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统存储过程 - Oracle 21c
+-- 包含: 部门管理, 货品管理, 员工管理, 请购, 采购, 进货入库,
+--       销售, 退库, 工资发放, 审计, 对账, 出纳, 结算
+-- ============================================================
+
+-- ============================================================
+-- 辅助函数: 生成随机工号/单号
+```
+
+## `oracle21c-sample-data-full-02-procedures-02-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-02-procedures-supplement-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-02-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充存储过程（Oracle 21c 版本）
+-- 库存调拨、盘点、批号管理、客户信用、供应商评估、
+-- 预算控制、损益计算、销售分析、权限管理
+-- ============================================================
+
+-- ============================================================
+-- 16. 库存调拨
+```
+
+## `oracle21c-sample-data-full-02-procedures-03-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-03-functions-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-03-functions-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统自定义函数 (UDF) - Oracle 21c
+-- 调用关系:
+--   fn_employee_full_name: 被报表查询调用，拼接员工完整名称
+--   fn_calculate_income_tax: 被sp_process_salary调用，计算个税
+--   fn_get_product_stock: 被库存查询和补货建议调用
+--   fn_get_customer_credit_available: 被销售流程调用，检查信用额度
+--   fn_get_days_sales_outstanding: 被财务分析调用，计算DSO
+```
+
+## `oracle21c-sample-data-full-02-procedures-04-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-04-procedures-supplement-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-04-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
+- `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
+- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
+- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
+- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充存储过程（Oracle 21c 版本）
+-- 发货管理、提成计算、促销验证、
+--   三单匹配、固定资产折旧、工单管理、工单发料
+-- ============================================================
+
+-- ============================================================
+-- 29. 创建发货单
+```
+
+## `oracle21c-sample-data-full-02-procedures-05-third-batch-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-05-third-batch-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-05-third-batch-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批存储过程: 合同管理、AR/AP账龄、税务申报、
+--   审批流、质检、现金流预测、项目成本、寄售结算、
+--   序列号追踪、价格变更、绩效考核（Oracle 21c 版本）
+-- 调用关系说明:
+--   sp_generate_ar_aging -> ar_aging_snapshots (被月度结算调用)
+--   sp_submit_approval -> approval_instances -> approval_records (被各业务模块调用)
+--   sp_process_approval -> 审批通过/驳回, 更新业务单据状态
+```
+
+## `oracle21c-sample-data-full-02-procedures-06-third-batch-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-06-third-batch-functions-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-06-third-batch-functions-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批函数: 客户消费分析、汇率换算、项目进度、
+--   合同到期、质检合格率、信用评分（Oracle 21c 版本）
+-- 调用关系:
+--   fn_get_customer_clv: 被客户分析报表调用
+--   fn_convert_currency: 被外币交易处理调用
+--   fn_get_project_completion_pct: 被项目监控调用
+--   fn_get_customer_credit_score: 被信用评估调用
+```
+
+## `oracle21c-sample-data-full-02-procedures-07-store-customer-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-07-store-customer-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-07-store-customer-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第四批: 门店/客户消费分析专用存储过程
+-- 覆盖: 客户门店消费明细、门店畅销品排行、门店对比、
+--        客户门店偏好、门店销售趋势、门店商品关联
+-- 调用关系:
+--   sp_customer_store_purchase_history: 客户在门店的完整消费明细
+--   sp_store_bestsellers: 门店畅销品TOP N(支持日/周/月/季/年)
+--   sp_store_performance_compare: 门店销售业绩对比
+```
+
+## `oracle21c-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批: 批号保质期追踪 + 类别销售/临期分析
+-- 覆盖角色: 店长(看本店), 员工(看自己负责的), 高管(看全局)
+-- Oracle 21c 翻译
+-- ============================================================
+
+CREATE SCHEMA  erp_system;
+ALTER SESSION SET CURRENT_SCHEMA = erp_system;
+```
+
+## `oracle21c-sample-data-full-02-procedures-09-return-refund-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-09-return-refund-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-09-return-refund-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批: 退货退款全流程 + 报损报废 + 财务影响追踪
+-- 流程覆盖:
+--   销售退货: 客户申请 -> 审批 -> 收货验货 -> 退款 -> 财务记账
+--   采购退货: 发现异常 -> 申请 -> 审批 -> 出库退回供应商 -> 供应商退款
+--   报损报废: 发现 -> 申请 -> 审批 -> 执行 -> 财务记账
+-- 财务影响:
+--   销售退货: 借:主营业务收入 贷:应收账款/银行存款 (冲减收入)
+```
+
+## `oracle21c-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 供应商地理位置 + 智能选择体系 (Oracle 21c)
+-- Haversine距离计算 + 供应商综合评分 + 最优供应商选择
+-- 选择逻辑: 综合评分 = 价格(30%) + 距离(25%) + 退货率(20%) + 质量(15%) + 交期(10%)
+-- ============================================================
+
+ALTER SESSION SET CURRENT_SCHEMA = erp_system;
+```
+
+## `oracle21c-sample-data-full-02-procedures-11-common-system-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-11-common-system-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-11-common-system-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 常用系统查询 (Oracle 21c)
+-- 覆盖: 员工出勤率、门店收支审计、员工工资历史、
+--        常用业务JOIN查询、审批待办、系统仪表盘等
+-- 注意: SELECT 型存储过程在 Oracle 中转换为
+--   TABLE-returning 函数，因为 PG 的 PROCEDURE 不支持返回结果集。
+-- 调用方式: SELECT * FROM sp_xxx(...) 代替 CALL sp_xxx(...)
+-- ============================================================
+```
+
+## `oracle21c-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展流程存储过程 - Oracle 21c
+-- 覆盖: 库存盘点过账、库存调拨申请、会计期间关闭
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:oracle.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    p_stocktake_id IN NUMBER,
+```
+
+## `oracle21c-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario procedures - Oracle 16/17/18 compatible
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:oracle.sp_run_mrp_for_plan
+CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
+    p_plan_id IN NUMBER,
+    p_created_by IN NUMBER
+```
+
+## `oracle21c-sample-data-full-03-data-01-master-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/03-data/01-master-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统测试数据生成
+-- 关系说明:
+--   departments -> positions -> employees (1:N:N)
+--   employees.manager_id 自引用形成汇报链
+--   product_categories -> products -> product_batches (1:N:N)
+--   suppliers -> supplier_products -> products (N:M)
+--   warehouses -> inventory (1:N, 通过product_id+batch_id+warehouse_id唯一)
+```
+
+## `oracle21c-sample-data-full-03-data-02-supplementary-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/03-data/02-supplementary-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充测试数据 - Oracle 21c
+-- 目的: 对齐 MySQL 8.0 样例中已有但 Oracle 初稿缺失的数据目标表
+-- ============================================================
+
+-- 促销与提成
+INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amount, commission_rate, bonus, effective_date, status) VALUES
+(1, '标准销售提成', NULL, 0.00, 99999999.99, 0.0300, 0.00, '2026-01-01', 'active');
+```
+
+## `oracle21c-sample-data-full-03-data-03-enterprise-extension-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/03-data/03-enterprise-extension-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展测试数据 - Oracle 21c
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- ============================================================
+
+INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
+(1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+```
+
+## `oracle21c-sample-data-full-03-data-04-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/03-data/04-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景验证数据
+-- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle21c-sample-data-full-03-data-05-erp-coverage-gap-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/03-data/05-erp-coverage-gap-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP coverage gap seed data - Oracle 16/17/18 compatible
+-- Purpose: align Oracle seed coverage with the MySQL 8.0 ERP sample
+--          for return/damage, logistics, depreciation, review and pricing.
+-- ============================================================
+
+INSERT INTO shipments (
+    id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
+```
+
+## `oracle21c-sample-data-full-04-queries-01-complex-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/01-complex-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-01-complex-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统超复杂SQL查询集合 (Oracle 21c)
+-- 覆盖: 多表JOIN, CTE(递归/非递归), 窗口函数, 嵌套子查询,
+--       GROUP BY + HAVING, 复杂聚合组合, ROLLUP, UNION,
+--       相关子查询, EXISTS, LATERAL, 条件聚合, 派生表
+-- ============================================================
+
+```
+
+## `oracle21c-sample-data-full-04-queries-02-complex-queries-batch2-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/02-complex-queries-batch2.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统超复杂SQL查询集合 - 第二批 (Oracle 21c)
+-- 覆盖: 递归CTE, LATERAL JOIN, 窗口函数全系列,
+--       GROUPING SETS/CUBE, UNION/INTERSECT/EXCEPT模拟,
+--       相关子查询嵌套, 派生表多层嵌套, 条件聚合嵌套,
+--       动态分桶, 漏斗分析, 同期群分析, 留存分析
+-- ============================================================
+```
+
+## `oracle21c-sample-data-full-04-queries-03-complex-queries-batch3-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/03-complex-queries-batch3.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (Oracle 21c)
+-- 重点覆盖客户消费状态全方位分析
+-- ============================================================
+
+
+-- ============================================================
+-- Q39: 客户消费分层全景图 - 五维消费画像
+```
+
+## `oracle21c-sample-data-full-04-queries-04-store-customer-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/04-store-customer-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-04-store-customer-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第四批超复杂SQL查询: 门店/客户消费深度分析
+-- 覆盖: 客户门店消费明细、门店畅销品、门店对比、
+--        客户门店偏好、门店商品关联、门店销售预测
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle21c-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle21c-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+
+## `oracle21c-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
+```
+
+## `oracle21c-sample-data-full-04-queries-08-common-system-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/08-common-system-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-08-common-system-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 常用系统查询 - 模拟真实ERP系统日常使用的SQL
+-- 覆盖: 多表JOIN、员工/门店/商品/客户/订单/库存/财务
+--       日常查询、审批待办、报表导出、数据核对等
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle21c-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+
+## `oracle21c-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-10-enterprise-extension-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - Oracle 21c
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+
+## `oracle21c-sample-data-full-04-queries-11-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/11-oracle21c-specific.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-11-pg18-specific-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Oracle 21c 语法样例
+-- 说明: 覆盖 SQL_MACRO 表达式宏和普通 DML。
+-- ============================================================
+
+CREATE TABLE oracle_21_sales_demo (
+    id NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    sku VARCHAR2(50) NOT NULL,
+```
+
+## `oracle21c-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/12-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- 数据库: Oracle 16/17/18 compatible
+-- ============================================================
+
+```
+
+## `oracle21c-version-sql-macro-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/oracle/v21c/oracle21c-version-sql-macro-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR REPLACE FUNCTION active_customer_filter
+RETURN VARCHAR2 SQL_MACRO(SCALAR)
+IS
+BEGIN
+    RETURN 'status = ''ACTIVE''';
+END;
+```
+
+## `oracle26ai-fullgrammer-smoke-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-fullgrammer-smoke-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-fullgrammer-smoke-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:orders.amount->sales_summary.total_amount`
+- `VALUE:DIRECT:customers.id->sales_summary.customer_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO sales_summary (customer_id, total_amount)
+SELECT c.id, SUM(o.amount)
+FROM customers c
+JOIN orders o ON o.customer_id = c.id
+GROUP BY c.id;
+```
+
+## `oracle26ai-sample-data-full-02-procedures-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-01-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
+- `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统存储过程 - Oracle 26ai
+-- 包含: 部门管理, 货品管理, 员工管理, 请购, 采购, 进货入库,
+--       销售, 退库, 工资发放, 审计, 对账, 出纳, 结算
+-- ============================================================
+
+-- ============================================================
+-- 辅助函数: 生成随机工号/单号
+```
+
+## `oracle26ai-sample-data-full-02-procedures-02-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-02-procedures-supplement-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-02-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充存储过程（Oracle 26ai 版本）
+-- 库存调拨、盘点、批号管理、客户信用、供应商评估、
+-- 预算控制、损益计算、销售分析、权限管理
+-- ============================================================
+
+-- ============================================================
+-- 16. 库存调拨
+```
+
+## `oracle26ai-sample-data-full-02-procedures-03-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-03-functions-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-03-functions-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统自定义函数 (UDF) - Oracle 26ai
+-- 调用关系:
+--   fn_employee_full_name: 被报表查询调用，拼接员工完整名称
+--   fn_calculate_income_tax: 被sp_process_salary调用，计算个税
+--   fn_get_product_stock: 被库存查询和补货建议调用
+--   fn_get_customer_credit_available: 被销售流程调用，检查信用额度
+--   fn_get_days_sales_outstanding: 被财务分析调用，计算DSO
+```
+
+## `oracle26ai-sample-data-full-02-procedures-04-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-04-procedures-supplement-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-04-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
+- `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
+- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
+- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
+- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充存储过程（Oracle 26ai 版本）
+-- 发货管理、提成计算、促销验证、
+--   三单匹配、固定资产折旧、工单管理、工单发料
+-- ============================================================
+
+-- ============================================================
+-- 29. 创建发货单
+```
+
+## `oracle26ai-sample-data-full-02-procedures-05-third-batch-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-05-third-batch-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-05-third-batch-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批存储过程: 合同管理、AR/AP账龄、税务申报、
+--   审批流、质检、现金流预测、项目成本、寄售结算、
+--   序列号追踪、价格变更、绩效考核（Oracle 26ai 版本）
+-- 调用关系说明:
+--   sp_generate_ar_aging -> ar_aging_snapshots (被月度结算调用)
+--   sp_submit_approval -> approval_instances -> approval_records (被各业务模块调用)
+--   sp_process_approval -> 审批通过/驳回, 更新业务单据状态
+```
+
+## `oracle26ai-sample-data-full-02-procedures-06-third-batch-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-06-third-batch-functions-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-06-third-batch-functions-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批函数: 客户消费分析、汇率换算、项目进度、
+--   合同到期、质检合格率、信用评分（Oracle 26ai 版本）
+-- 调用关系:
+--   fn_get_customer_clv: 被客户分析报表调用
+--   fn_convert_currency: 被外币交易处理调用
+--   fn_get_project_completion_pct: 被项目监控调用
+--   fn_get_customer_credit_score: 被信用评估调用
+```
+
+## `oracle26ai-sample-data-full-02-procedures-07-store-customer-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-07-store-customer-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-07-store-customer-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第四批: 门店/客户消费分析专用存储过程
+-- 覆盖: 客户门店消费明细、门店畅销品排行、门店对比、
+--        客户门店偏好、门店销售趋势、门店商品关联
+-- 调用关系:
+--   sp_customer_store_purchase_history: 客户在门店的完整消费明细
+--   sp_store_bestsellers: 门店畅销品TOP N(支持日/周/月/季/年)
+--   sp_store_performance_compare: 门店销售业绩对比
+```
+
+## `oracle26ai-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批: 批号保质期追踪 + 类别销售/临期分析
+-- 覆盖角色: 店长(看本店), 员工(看自己负责的), 高管(看全局)
+-- Oracle 26ai 翻译
+-- ============================================================
+
+CREATE SCHEMA  erp_system;
+ALTER SESSION SET CURRENT_SCHEMA = erp_system;
+```
+
+## `oracle26ai-sample-data-full-02-procedures-09-return-refund-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-09-return-refund-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-09-return-refund-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批: 退货退款全流程 + 报损报废 + 财务影响追踪
+-- 流程覆盖:
+--   销售退货: 客户申请 -> 审批 -> 收货验货 -> 退款 -> 财务记账
+--   采购退货: 发现异常 -> 申请 -> 审批 -> 出库退回供应商 -> 供应商退款
+--   报损报废: 发现 -> 申请 -> 审批 -> 执行 -> 财务记账
+-- 财务影响:
+--   销售退货: 借:主营业务收入 贷:应收账款/银行存款 (冲减收入)
+```
+
+## `oracle26ai-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 供应商地理位置 + 智能选择体系 (Oracle 26ai)
+-- Haversine距离计算 + 供应商综合评分 + 最优供应商选择
+-- 选择逻辑: 综合评分 = 价格(30%) + 距离(25%) + 退货率(20%) + 质量(15%) + 交期(10%)
+-- ============================================================
+
+ALTER SESSION SET CURRENT_SCHEMA = erp_system;
+```
+
+## `oracle26ai-sample-data-full-02-procedures-11-common-system-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-11-common-system-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-11-common-system-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 常用系统查询 (Oracle 26ai)
+-- 覆盖: 员工出勤率、门店收支审计、员工工资历史、
+--        常用业务JOIN查询、审批待办、系统仪表盘等
+-- 注意: SELECT 型存储过程在 Oracle 中转换为
+--   TABLE-returning 函数，因为 PG 的 PROCEDURE 不支持返回结果集。
+-- 调用方式: SELECT * FROM sp_xxx(...) 代替 CALL sp_xxx(...)
+-- ============================================================
+```
+
+## `oracle26ai-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展流程存储过程 - Oracle 26ai
+-- 覆盖: 库存盘点过账、库存调拨申请、会计期间关闭
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:oracle.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    p_stocktake_id IN NUMBER,
+```
+
+## `oracle26ai-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario procedures - Oracle 16/17/18 compatible
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:oracle.sp_run_mrp_for_plan
+CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
+    p_plan_id IN NUMBER,
+    p_created_by IN NUMBER
+```
+
+## `oracle26ai-sample-data-full-03-data-01-master-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/03-data/01-master-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统测试数据生成
+-- 关系说明:
+--   departments -> positions -> employees (1:N:N)
+--   employees.manager_id 自引用形成汇报链
+--   product_categories -> products -> product_batches (1:N:N)
+--   suppliers -> supplier_products -> products (N:M)
+--   warehouses -> inventory (1:N, 通过product_id+batch_id+warehouse_id唯一)
+```
+
+## `oracle26ai-sample-data-full-03-data-02-supplementary-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/03-data/02-supplementary-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充测试数据 - Oracle 26ai
+-- 目的: 对齐 MySQL 8.0 样例中已有但 Oracle 初稿缺失的数据目标表
+-- ============================================================
+
+-- 促销与提成
+INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amount, commission_rate, bonus, effective_date, status) VALUES
+(1, '标准销售提成', NULL, 0.00, 99999999.99, 0.0300, 0.00, '2026-01-01', 'active');
+```
+
+## `oracle26ai-sample-data-full-03-data-03-enterprise-extension-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/03-data/03-enterprise-extension-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展测试数据 - Oracle 26ai
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- ============================================================
+
+INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
+(1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+```
+
+## `oracle26ai-sample-data-full-03-data-04-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/03-data/04-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景验证数据
+-- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle26ai-sample-data-full-03-data-05-erp-coverage-gap-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/03-data/05-erp-coverage-gap-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP coverage gap seed data - Oracle 16/17/18 compatible
+-- Purpose: align Oracle seed coverage with the MySQL 8.0 ERP sample
+--          for return/damage, logistics, depreciation, review and pricing.
+-- ============================================================
+
+INSERT INTO shipments (
+    id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
+```
+
+## `oracle26ai-sample-data-full-04-queries-01-complex-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/01-complex-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-01-complex-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统超复杂SQL查询集合 (Oracle 26ai)
+-- 覆盖: 多表JOIN, CTE(递归/非递归), 窗口函数, 嵌套子查询,
+--       GROUP BY + HAVING, 复杂聚合组合, ROLLUP, UNION,
+--       相关子查询, EXISTS, LATERAL, 条件聚合, 派生表
+-- ============================================================
+
+```
+
+## `oracle26ai-sample-data-full-04-queries-02-complex-queries-batch2-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/02-complex-queries-batch2.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统超复杂SQL查询集合 - 第二批 (Oracle 26ai)
+-- 覆盖: 递归CTE, LATERAL JOIN, 窗口函数全系列,
+--       GROUPING SETS/CUBE, UNION/INTERSECT/EXCEPT模拟,
+--       相关子查询嵌套, 派生表多层嵌套, 条件聚合嵌套,
+--       动态分桶, 漏斗分析, 同期群分析, 留存分析
+-- ============================================================
+```
+
+## `oracle26ai-sample-data-full-04-queries-03-complex-queries-batch3-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/03-complex-queries-batch3.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (Oracle 26ai)
+-- 重点覆盖客户消费状态全方位分析
+-- ============================================================
+
+
+-- ============================================================
+-- Q39: 客户消费分层全景图 - 五维消费画像
+```
+
+## `oracle26ai-sample-data-full-04-queries-04-store-customer-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/04-store-customer-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-04-store-customer-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第四批超复杂SQL查询: 门店/客户消费深度分析
+-- 覆盖: 客户门店消费明细、门店畅销品、门店对比、
+--        客户门店偏好、门店商品关联、门店销售预测
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle26ai-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle26ai-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+
+## `oracle26ai-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
+```
+
+## `oracle26ai-sample-data-full-04-queries-08-common-system-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/08-common-system-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-08-common-system-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 常用系统查询 - 模拟真实ERP系统日常使用的SQL
+-- 覆盖: 多表JOIN、员工/门店/商品/客户/订单/库存/财务
+--       日常查询、审批待办、报表导出、数据核对等
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle26ai-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+
+## `oracle26ai-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-10-enterprise-extension-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - Oracle 26ai
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+
+## `oracle26ai-sample-data-full-04-queries-11-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/11-oracle26ai-specific.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-11-pg18-specific-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Oracle 26ai 语法样例
+-- 说明: 覆盖 VECTOR 数据类型和向量列建表。
+-- ============================================================
+
+CREATE TABLE oracle_26ai_product_vector_demo (
+    id NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    sku VARCHAR2(50) NOT NULL,
+```
+
+## `oracle26ai-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/12-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- 数据库: Oracle 16/17/18 compatible
+-- ============================================================
+
+```
+
+## `oracle26ai-version-vector-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-version-vector-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE product_embeddings (
+    product_id NUMBER PRIMARY KEY,
+    embedding VECTOR(3, FLOAT32)
+);
+```
+
+## `oraclesample-data-full-02-procedures-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-01-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
+- `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统存储过程 - Oracle 26ai
+-- 包含: 部门管理, 货品管理, 员工管理, 请购, 采购, 进货入库,
+--       销售, 退库, 工资发放, 审计, 对账, 出纳, 结算
+-- ============================================================
+
+-- ============================================================
+-- 辅助函数: 生成随机工号/单号
+```
+
+## `oraclesample-data-full-02-procedures-02-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-02-procedures-supplement-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-02-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充存储过程（Oracle 26ai 版本）
+-- 库存调拨、盘点、批号管理、客户信用、供应商评估、
+-- 预算控制、损益计算、销售分析、权限管理
+-- ============================================================
+
+-- ============================================================
+-- 16. 库存调拨
+```
+
+## `oraclesample-data-full-02-procedures-03-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-03-functions-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-03-functions-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统自定义函数 (UDF) - Oracle 26ai
+-- 调用关系:
+--   fn_employee_full_name: 被报表查询调用，拼接员工完整名称
+--   fn_calculate_income_tax: 被sp_process_salary调用，计算个税
+--   fn_get_product_stock: 被库存查询和补货建议调用
+--   fn_get_customer_credit_available: 被销售流程调用，检查信用额度
+--   fn_get_days_sales_outstanding: 被财务分析调用，计算DSO
+```
+
+## `oraclesample-data-full-02-procedures-04-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-04-procedures-supplement-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-04-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
+- `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
+- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
+- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
+- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充存储过程（Oracle 26ai 版本）
+-- 发货管理、提成计算、促销验证、
+--   三单匹配、固定资产折旧、工单管理、工单发料
+-- ============================================================
+
+-- ============================================================
+-- 29. 创建发货单
+```
+
+## `oraclesample-data-full-02-procedures-05-third-batch-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-05-third-batch-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-05-third-batch-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批存储过程: 合同管理、AR/AP账龄、税务申报、
+--   审批流、质检、现金流预测、项目成本、寄售结算、
+--   序列号追踪、价格变更、绩效考核（Oracle 26ai 版本）
+-- 调用关系说明:
+--   sp_generate_ar_aging -> ar_aging_snapshots (被月度结算调用)
+--   sp_submit_approval -> approval_instances -> approval_records (被各业务模块调用)
+--   sp_process_approval -> 审批通过/驳回, 更新业务单据状态
+```
+
+## `oraclesample-data-full-02-procedures-06-third-batch-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-06-third-batch-functions-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-06-third-batch-functions-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批函数: 客户消费分析、汇率换算、项目进度、
+--   合同到期、质检合格率、信用评分（Oracle 26ai 版本）
+-- 调用关系:
+--   fn_get_customer_clv: 被客户分析报表调用
+--   fn_convert_currency: 被外币交易处理调用
+--   fn_get_project_completion_pct: 被项目监控调用
+--   fn_get_customer_credit_score: 被信用评估调用
+```
+
+## `oraclesample-data-full-02-procedures-07-store-customer-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-07-store-customer-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-07-store-customer-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第四批: 门店/客户消费分析专用存储过程
+-- 覆盖: 客户门店消费明细、门店畅销品排行、门店对比、
+--        客户门店偏好、门店销售趋势、门店商品关联
+-- 调用关系:
+--   sp_customer_store_purchase_history: 客户在门店的完整消费明细
+--   sp_store_bestsellers: 门店畅销品TOP N(支持日/周/月/季/年)
+--   sp_store_performance_compare: 门店销售业绩对比
+```
+
+## `oraclesample-data-full-02-procedures-08-batch-expiry-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批: 批号保质期追踪 + 类别销售/临期分析
+-- 覆盖角色: 店长(看本店), 员工(看自己负责的), 高管(看全局)
+-- Oracle 26ai 翻译
+-- ============================================================
+
+CREATE SCHEMA  erp_system;
+ALTER SESSION SET CURRENT_SCHEMA = erp_system;
+```
+
+## `oraclesample-data-full-02-procedures-09-return-refund-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-09-return-refund-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-09-return-refund-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批: 退货退款全流程 + 报损报废 + 财务影响追踪
+-- 流程覆盖:
+--   销售退货: 客户申请 -> 审批 -> 收货验货 -> 退款 -> 财务记账
+--   采购退货: 发现异常 -> 申请 -> 审批 -> 出库退回供应商 -> 供应商退款
+--   报损报废: 发现 -> 申请 -> 审批 -> 执行 -> 财务记账
+-- 财务影响:
+--   销售退货: 借:主营业务收入 贷:应收账款/银行存款 (冲减收入)
+```
+
+## `oraclesample-data-full-02-procedures-10-supplier-geo-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 供应商地理位置 + 智能选择体系 (Oracle 26ai)
+-- Haversine距离计算 + 供应商综合评分 + 最优供应商选择
+-- 选择逻辑: 综合评分 = 价格(30%) + 距离(25%) + 退货率(20%) + 质量(15%) + 交期(10%)
+-- ============================================================
+
+ALTER SESSION SET CURRENT_SCHEMA = erp_system;
+```
+
+## `oraclesample-data-full-02-procedures-11-common-system-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-11-common-system-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-11-common-system-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 常用系统查询 (Oracle 26ai)
+-- 覆盖: 员工出勤率、门店收支审计、员工工资历史、
+--        常用业务JOIN查询、审批待办、系统仪表盘等
+-- 注意: SELECT 型存储过程在 Oracle 中转换为
+--   TABLE-returning 函数，因为 PG 的 PROCEDURE 不支持返回结果集。
+-- 调用方式: SELECT * FROM sp_xxx(...) 代替 CALL sp_xxx(...)
+-- ============================================================
+```
+
+## `oraclesample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展流程存储过程 - Oracle 26ai
+-- 覆盖: 库存盘点过账、库存调拨申请、会计期间关闭
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:oracle.sp_post_stocktake
+CREATE OR REPLACE PROCEDURE sp_post_stocktake(
+    p_stocktake_id IN NUMBER,
+```
+
+## `oraclesample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP deep scenario procedures - Oracle 16/17/18 compatible
+-- ============================================================
+
+-- relation-detector-fixture-source: ROUTINE:oracle.sp_run_mrp_for_plan
+CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
+    p_plan_id IN NUMBER,
+    p_created_by IN NUMBER
+```
+
+## `oraclesample-data-full-03-data-01-master-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/03-data/01-master-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统测试数据生成
+-- 关系说明:
+--   departments -> positions -> employees (1:N:N)
+--   employees.manager_id 自引用形成汇报链
+--   product_categories -> products -> product_batches (1:N:N)
+--   suppliers -> supplier_products -> products (N:M)
+--   warehouses -> inventory (1:N, 通过product_id+batch_id+warehouse_id唯一)
+```
+
+## `oraclesample-data-full-03-data-02-supplementary-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/03-data/02-supplementary-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充测试数据 - Oracle 26ai
+-- 目的: 对齐 MySQL 8.0 样例中已有但 Oracle 初稿缺失的数据目标表
+-- ============================================================
+
+-- 促销与提成
+INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amount, commission_rate, bonus, effective_date, status) VALUES
+(1, '标准销售提成', NULL, 0.00, 99999999.99, 0.0300, 0.00, '2026-01-01', 'active');
+```
+
+## `oraclesample-data-full-03-data-03-enterprise-extension-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/03-data/03-enterprise-extension-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-03-data-03-enterprise-extension-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展测试数据 - Oracle 26ai
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- ============================================================
+
+INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
+(1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+```
+
+## `oraclesample-data-full-03-data-04-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/03-data/04-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-03-data-04-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景验证数据
+-- 目标: 每个新增业务域都有可 join、可聚合、可产生 lineage 的代表性数据
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oraclesample-data-full-03-data-05-erp-coverage-gap-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/03-data/05-erp-coverage-gap-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-03-data-05-erp-coverage-gap-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP coverage gap seed data - Oracle 16/17/18 compatible
+-- Purpose: align Oracle seed coverage with the MySQL 8.0 ERP sample
+--          for return/damage, logistics, depreciation, review and pricing.
+-- ============================================================
+
+INSERT INTO shipments (
+    id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
+```
+
+## `oraclesample-data-full-04-queries-01-complex-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/01-complex-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-04-queries-01-complex-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统超复杂SQL查询集合 (Oracle 26ai)
+-- 覆盖: 多表JOIN, CTE(递归/非递归), 窗口函数, 嵌套子查询,
+--       GROUP BY + HAVING, 复杂聚合组合, ROLLUP, UNION,
+--       相关子查询, EXISTS, LATERAL, 条件聚合, 派生表
+-- ============================================================
+
+```
+
+## `oraclesample-data-full-04-queries-02-complex-queries-batch2-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/02-complex-queries-batch2.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统超复杂SQL查询集合 - 第二批 (Oracle 26ai)
+-- 覆盖: 递归CTE, LATERAL JOIN, 窗口函数全系列,
+--       GROUPING SETS/CUBE, UNION/INTERSECT/EXCEPT模拟,
+--       相关子查询嵌套, 派生表多层嵌套, 条件聚合嵌套,
+--       动态分桶, 漏斗分析, 同期群分析, 留存分析
+-- ============================================================
+```
+
+## `oraclesample-data-full-04-queries-03-complex-queries-batch3-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/03-complex-queries-batch3.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批超复杂SQL查询: 客户消费分析 + 合同/税务/质检/项目/审批 (Oracle 26ai)
+-- 重点覆盖客户消费状态全方位分析
+-- ============================================================
+
+
+-- ============================================================
+-- Q39: 客户消费分层全景图 - 五维消费画像
+```
+
+## `oraclesample-data-full-04-queries-04-store-customer-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/04-store-customer-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-04-queries-04-store-customer-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第四批超复杂SQL查询: 门店/客户消费深度分析
+-- 覆盖: 客户门店消费明细、门店畅销品、门店对比、
+--        客户门店偏好、门店商品关联、门店销售预测
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oraclesample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oraclesample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+
+## `oraclesample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
+```
+
+## `oraclesample-data-full-04-queries-08-common-system-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/08-common-system-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-04-queries-08-common-system-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 常用系统查询 - 模拟真实ERP系统日常使用的SQL
+-- 覆盖: 多表JOIN、员工/门店/商品/客户/订单/库存/财务
+--       日常查询、审批待办、报表导出、数据核对等
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oraclesample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+
+## `oraclesample-data-full-04-queries-10-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-04-queries-10-enterprise-extension-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP企业级扩展分析查询 - Oracle 26ai
+-- 覆盖: 盘点差异、调拨履约、收付款核销、会计期间、
+--       工艺路线、地址与税率
+-- ============================================================
+
+-- Q1: 库存盘点差异分析
+SELECT
+```
+
+## `oraclesample-data-full-04-queries-11-pg18-specific-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/11-oracle26ai-specific.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-04-queries-11-pg18-specific-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Oracle 26ai 语法样例
+-- 说明: 覆盖 VECTOR 数据类型和向量列建表。
+-- ============================================================
+
+CREATE TABLE oracle_26ai_product_vector_demo (
+    id NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    sku VARCHAR2(50) NOT NULL,
+```
+
+## `oraclesample-data-full-04-queries-12-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/12-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-04-queries-12-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- 数据库: Oracle 16/17/18 compatible
+-- ============================================================
+
 ```
 
 ## `postgres-basic-correctness-case-01-ddl`
@@ -11593,7 +17648,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- None
 
 **Input Preview**
 
@@ -11650,31 +17705,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
-- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
-- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
-- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
-- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
-- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
-- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
-- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+- None
 
 **Input Preview**
 
@@ -11727,27 +17758,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
-- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
-- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
-- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- None
 
 **Input Preview**
 
@@ -11850,11 +17861,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
-- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
-- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
-- `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
-- `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
+- None
 
 **Input Preview**
 
@@ -11921,8 +17928,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
-- `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
+- None
 
 **Input Preview**
 
@@ -12051,9 +18057,7 @@ WITH user_financial_snapshot AS (
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
-- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
-- `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
+- None
 
 **Input Preview**
 
@@ -12414,8 +18418,7 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
-- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
+- None
 
 **Input Preview**
 
@@ -12449,8 +18452,7 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
-- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
+- None
 
 **Input Preview**
 
@@ -12483,7 +18485,7 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+- None
 
 **Input Preview**
 
@@ -12516,7 +18518,7 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+- None
 
 **Input Preview**
 
@@ -12550,8 +18552,7 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+- None
 
 **Input Preview**
 
@@ -12585,8 +18586,7 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+- None
 
 **Input Preview**
 
@@ -12620,8 +18620,7 @@ SET total_spent = COALESCE((
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+- None
 
 **Input Preview**
 
@@ -12655,8 +18654,7 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+- None
 
 **Input Preview**
 
@@ -12823,9 +18821,7 @@ WHERE uc.coupon_id = c.id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
-- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
-- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+- None
 
 **Input Preview**
 
@@ -13525,14 +19521,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
-- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+- None
 
 **Input Preview**
 
@@ -13690,7 +19679,7 @@ JOIN users u ON x.user_id = u.id;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:source_orders.id->target_orders.source_order_id`
+- None
 
 **Input Preview**
 
@@ -14008,7 +19997,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- None
 
 **Input Preview**
 
@@ -14065,31 +20054,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
-- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
-- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
-- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
-- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
-- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
-- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
-- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+- None
 
 **Input Preview**
 
@@ -14142,27 +20107,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
-- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
-- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
-- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- None
 
 **Input Preview**
 
@@ -14265,11 +20210,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
-- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
-- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
-- `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
-- `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
+- None
 
 **Input Preview**
 
@@ -14336,8 +20277,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
-- `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
+- None
 
 **Input Preview**
 
@@ -14438,9 +20378,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
-- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
-- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+- None
 
 **Input Preview**
 
@@ -14876,9 +20814,7 @@ WITH user_financial_snapshot AS (
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
-- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
-- `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
+- None
 
 **Input Preview**
 
@@ -15239,8 +21175,7 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
-- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
+- None
 
 **Input Preview**
 
@@ -15274,8 +21209,7 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
-- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
+- None
 
 **Input Preview**
 
@@ -15308,7 +21242,7 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+- None
 
 **Input Preview**
 
@@ -15341,7 +21275,7 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+- None
 
 **Input Preview**
 
@@ -15375,8 +21309,7 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+- None
 
 **Input Preview**
 
@@ -15410,8 +21343,7 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+- None
 
 **Input Preview**
 
@@ -15445,8 +21377,7 @@ SET total_spent = COALESCE((
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+- None
 
 **Input Preview**
 
@@ -15480,8 +21411,7 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+- None
 
 **Input Preview**
 
@@ -16002,7 +21932,7 @@ JOIN users u ON x.user_id = u.id;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:source_orders.id->target_orders.source_order_id`
+- None
 
 **Input Preview**
 
@@ -16228,14 +22158,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
-- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+- None
 
 **Input Preview**
 
@@ -16371,11 +22294,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
-- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
-- `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+- None
 
 **Input Preview**
 
@@ -16512,13 +22431,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
-- `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_commissions.commission_amount`
-- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
-- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
-- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
-- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+- None
 
 **Input Preview**
 
@@ -16717,9 +22630,7 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
-- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
-- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
+- None
 
 **Input Preview**
 
@@ -16792,14 +22703,7 @@ RETURNS TABLE(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
-- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+- None
 
 **Input Preview**
 
@@ -16919,94 +22823,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
-- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
-- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
-- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
-- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
-- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
-- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
-- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
-- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
-- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
-- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
-- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
-- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
-- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
-- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
-- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
-- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
-- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
-- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
-- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
-- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- None
 
 **Input Preview**
 
@@ -17663,7 +23480,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- None
 
 **Input Preview**
 
@@ -17720,31 +23537,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
-- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
-- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
-- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
-- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
-- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
-- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
-- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+- None
 
 **Input Preview**
 
@@ -17797,27 +23590,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
-- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
-- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
-- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- None
 
 **Input Preview**
 
@@ -17920,11 +23693,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
-- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
-- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
-- `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
-- `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
+- None
 
 **Input Preview**
 
@@ -17991,8 +23760,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
-- `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
+- None
 
 **Input Preview**
 
@@ -18125,9 +23893,7 @@ WITH user_financial_snapshot AS (
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
-- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
-- `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
+- None
 
 **Input Preview**
 
@@ -18488,8 +24254,7 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
-- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
+- None
 
 **Input Preview**
 
@@ -18523,8 +24288,7 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
-- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
+- None
 
 **Input Preview**
 
@@ -18557,7 +24321,7 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+- None
 
 **Input Preview**
 
@@ -18590,7 +24354,7 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+- None
 
 **Input Preview**
 
@@ -18624,8 +24388,7 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+- None
 
 **Input Preview**
 
@@ -18659,8 +24422,7 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+- None
 
 **Input Preview**
 
@@ -18694,8 +24456,7 @@ SET total_spent = COALESCE((
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+- None
 
 **Input Preview**
 
@@ -18729,8 +24490,7 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+- None
 
 **Input Preview**
 
@@ -18897,9 +24657,7 @@ WHERE uc.coupon_id = c.id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
-- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
-- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+- None
 
 **Input Preview**
 
@@ -19065,8 +24823,7 @@ CROSS JOIN JSON_TABLE(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:staging_account_balances.balance->account_balances.balance`
-- `VALUE:DIRECT:staging_account_balances.user_id->account_balances.user_id`
+- None
 
 **Input Preview**
 
@@ -19692,14 +25449,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
-- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+- None
 
 **Input Preview**
 
@@ -19857,7 +25607,7 @@ JOIN users u ON x.user_id = u.id;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:source_orders.id->target_orders.source_order_id`
+- None
 
 **Input Preview**
 
@@ -20080,11 +25830,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
-- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
-- `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+- None
 
 **Input Preview**
 
@@ -20221,13 +25967,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
-- `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_commissions.commission_amount`
-- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
-- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
-- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
-- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+- None
 
 **Input Preview**
 
@@ -20426,9 +26166,7 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
-- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
-- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
+- None
 
 **Input Preview**
 
@@ -20501,14 +26239,7 @@ RETURNS TABLE(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
-- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+- None
 
 **Input Preview**
 
@@ -20628,94 +26359,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
-- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
-- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
-- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
-- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
-- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
-- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
-- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
-- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
-- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
-- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
-- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
-- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
-- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
-- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
-- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
-- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
-- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
-- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
-- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
-- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- None
 
 **Input Preview**
 
@@ -21372,7 +27016,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- None
 
 **Input Preview**
 
@@ -21429,31 +27073,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
-- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
-- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
-- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
-- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
-- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
-- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
-- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+- None
 
 **Input Preview**
 
@@ -21506,27 +27126,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
-- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
-- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
-- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
-- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
-- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
-- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
-- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
-- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
-- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
-- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
-- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
-- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
-- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
-- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
-- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
-- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
-- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
-- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- None
 
 **Input Preview**
 
@@ -21629,11 +27229,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
-- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
-- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
-- `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
-- `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
+- None
 
 **Input Preview**
 
@@ -21700,8 +27296,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
-- `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
+- None
 
 **Input Preview**
 
@@ -21834,9 +27429,7 @@ WITH user_financial_snapshot AS (
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
-- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
-- `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
+- None
 
 **Input Preview**
 
@@ -22197,8 +27790,7 @@ CREATE OR REPLACE FUNCTION fn_risk_settlement_engine(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
-- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
+- None
 
 **Input Preview**
 
@@ -22232,8 +27824,7 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:inventory.stock_reserved,order_items.quantity->inventory.stock_reserved`
-- `VALUE:DIRECT:suppliers.supplier_name->inventory.last_ordered_from`
+- None
 
 **Input Preview**
 
@@ -22266,7 +27857,7 @@ WHERE i.product_id = oi.product_id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+- None
 
 **Input Preview**
 
@@ -22299,7 +27890,7 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+- None
 
 **Input Preview**
 
@@ -22333,8 +27924,7 @@ WHERE p.shop_id = s.id
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+- None
 
 **Input Preview**
 
@@ -22368,8 +27958,7 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
-- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+- None
 
 **Input Preview**
 
@@ -22403,8 +27992,7 @@ SET total_spent = COALESCE((
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+- None
 
 **Input Preview**
 
@@ -22438,8 +28026,7 @@ SET stock_reserved = wi.stock_reserved + oi.quantity,
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+- None
 
 **Input Preview**
 
@@ -22606,9 +28193,7 @@ WHERE uc.coupon_id = c.id
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:orders.total_amount,order_items.extended_amount->orders.total_amount`
-- `VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note`
-- `VALUE:DIRECT:customers.country_code->orders.customer_country`
+- None
 
 **Input Preview**
 
@@ -23293,7 +28878,7 @@ SELECT *
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:account_balances.balance,transaction_ledgers.amount->account_balances.balance`
+- None
 
 **Input Preview**
 
@@ -23364,14 +28949,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
-- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+- None
 
 **Input Preview**
 
@@ -23529,7 +29107,7 @@ JOIN users u ON x.user_id = u.id;
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:DIRECT:source_orders.id->target_orders.source_order_id`
+- None
 
 **Input Preview**
 
@@ -23752,11 +29330,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
-- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
-- `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+- None
 
 **Input Preview**
 
@@ -23893,13 +29467,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
-- `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_commissions.commission_amount`
-- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
-- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
-- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
-- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+- None
 
 **Input Preview**
 
@@ -24098,9 +29666,7 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
-- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
-- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
+- None
 
 **Input Preview**
 
@@ -24173,14 +29739,7 @@ RETURNS TABLE(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
-- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+- None
 
 **Input Preview**
 
@@ -24300,94 +29859,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
-- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
-- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
-- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
-- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
-- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
-- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
-- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
-- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
-- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
-- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
-- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
-- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
-- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
-- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
-- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
-- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
-- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
-- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
-- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
-- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- None
 
 **Input Preview**
 
@@ -24916,11 +30388,7 @@ SELECT
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
-- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
-- `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+- None
 
 **Input Preview**
 
@@ -25057,13 +30525,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
-- `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_commissions.commission_amount`
-- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
-- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
-- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
-- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+- None
 
 **Input Preview**
 
@@ -25262,9 +30724,7 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
-- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
-- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
+- None
 
 **Input Preview**
 
@@ -25337,14 +30797,7 @@ RETURNS TABLE(
 
 **Extractor Candidate Fingerprints**
 
-- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
-- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
-- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
-- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+- None
 
 **Input Preview**
 
@@ -25464,94 +30917,7 @@ DECLARE
 
 **Extractor Candidate Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
-- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
-- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
-- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
-- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
-- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
-- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
-- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
-- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
-- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
-- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
-- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
-- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
-- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
-- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
-- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
-- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
-- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
-- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
-- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
-- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
-- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- None
 
 **Input Preview**
 

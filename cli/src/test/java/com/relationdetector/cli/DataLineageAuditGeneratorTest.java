@@ -17,11 +17,11 @@ class DataLineageAuditGeneratorTest {
         String markdown = DataLineageAuditGenerator.generate(WORKSPACE);
 
         assertTrue(markdown.contains("# Data Lineage Full Audit"));
-        assertTrue(markdown.contains("| TOTAL | 707 |"));
-        assertTrue(markdown.contains("| EXISTING_GOLD | 172 |"));
+        assertTrue(markdown.contains("| TOTAL | 899 |"));
+        assertTrue(markdown.contains("| EXISTING_GOLD | 196 |"));
         assertTrue(markdown.contains("| SUGGESTED_GOLD | 0 |"));
         assertTrue(markdown.contains("| PENDING_REVIEW | 0 |"));
-        assertTrue(markdown.contains("| NOT_APPLICABLE | 535 |"));
+        assertTrue(markdown.contains("| NOT_APPLICABLE | 703 |"));
         assertTrue(markdown.contains("| Classification | `EXISTING_GOLD` |"));
         assertTrue(markdown.contains("| Classification | `NOT_APPLICABLE` |"));
         assertTrue(markdown.contains("mysql-user-spending-left-join-update-sql"));
@@ -60,6 +60,9 @@ class DataLineageAuditGeneratorTest {
         assertTrue(markdown.contains("postgres18-returning-old-new-sql"));
         assertTrue(markdown.contains("postgres-extreme-nesting-withrelation-withlineage-sql"));
         assertTrue(markdown.contains("postgres18-extreme-nesting-withrelation-withlineage-sql"));
+        assertTrue(markdown.contains("oracle26ai-sample-data-full-02-procedures-01-procedures-sql"));
+        assertTrue(markdown.contains(
+                "test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json"));
         assertTrue(markdown.contains("VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note"));
         assertTrue(markdown.contains(
                 "VALUE:ARITHMETIC:account_balances.balance,transaction_ledgers.amount->account_balances.balance"));

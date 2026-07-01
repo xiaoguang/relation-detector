@@ -32,9 +32,10 @@ full-grammer:
 
 代码中的主要行为与设计一致：
 
-- MySQL/PostgreSQL 是当前一等支持目标。
-- SQL Server/Oracle 仍是 future adaptor。
-- core 不直接 import MySQL/PostgreSQL full-grammer 实现；版本化 module 由 adaptor 注册。
+- MySQL/PostgreSQL 是当前成熟支持目标。
+- Oracle 是当前初始支持目标：已有 adaptor、Oracle token-event fallback、root correctness golden 和 `INCOMPLETE_VERSIONED` versioned full-grammer，但更广泛的 Oracle 官方语法覆盖仍是 backlog，当前状态为 `INCOMPLETE_VERSIONED`。
+- SQL Server 仍是 future adaptor。
+- core 不直接 import MySQL/PostgreSQL/Oracle full-grammer 实现；版本化 module 由 adaptor 注册。
 - Relationship 与 Data Lineage 是两个独立输出模型。
 - Simple SQL/DDL parser 和旧 SQL/DDL parser mode 配置不再是当前能力。
 - correctness fixture 以当前 parser golden 为正式基线；root token-event 与 versioned full-grammer 分别直接比对自己的 golden，不再用 token-event fallback 保护 full-grammer。
@@ -57,6 +58,7 @@ core.parse / log / metadata / output / diagnostics / scoring
 cli
 mysql / mysql.tokenevent / mysql.fullgrammer.v8_0
 postgres / postgres.tokenevent / postgres.fullgrammer.common / postgres.fullgrammer.v16 / v17 / v18
+oracle / oracle.tokenevent / oracle.fullgrammer.common / oracle.fullgrammer.v12c / v19c / v21c / v26ai
 ```
 
 逐包审视结论：
@@ -65,8 +67,8 @@ postgres / postgres.tokenevent / postgres.fullgrammer.common / postgres.fullgram
 - `core.scan` 负责扫描编排；`core.parser` 负责 parser mode/profile 选择；二者没有承载数据库版本实现。
 - `core.tokenevent` 与 `core.fullgrammer` 是事件来源基础设施；relationship / lineage 语义被隔离在 `core.relation` 与 `core.lineage`。
 - `core.ddl` 是 token-event DDL event 支撑；DDL relationship 转换仍在 `core.relation.DdlRelationExtractionVisitor`。
-- `adaptor-mysql` / `adaptor-postgres` 根包只做 adaptor 装配；token-event parser 位于各自 `tokenevent` 子包，版本化 full-grammer 位于 `fullgrammer/v8_0` 或 PostgreSQL `fullgrammer/v16|v17|v18`，PostgreSQL 公共抽象位于 `fullgrammer/common`。
-- 没有发现 core 直接 import MySQL/PostgreSQL full-grammer implementation 的职责倒置。
+- `adaptor-mysql` / `adaptor-postgres` / `adaptor-oracle` 根包只做 adaptor 装配；token-event parser 位于各自 `tokenevent` 子包，版本化 full-grammer 位于 `fullgrammer/v8_0`、PostgreSQL `fullgrammer/v16|v17|v18` 或 Oracle `fullgrammer/v12c|v19c|v21c|v26ai`，PostgreSQL/Oracle 公共抽象位于 `fullgrammer/common`。
+- 没有发现 core 直接 import MySQL/PostgreSQL/Oracle full-grammer implementation 的职责倒置。
 - 没有发现 adaptor 侧重复实现 relationship / lineage semantic extractor。
 - 没有发现 contracts 反向依赖 core 的设计破坏。
 
@@ -138,10 +140,11 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 - 用户可见模式名是 `full-grammer` 与 `token-event`。
 - Java package 使用 `fullgrammer` / `tokenevent`，因为 Java package 不能包含横线。
-- `full-grammer` 具体版本实现在 adaptor，例如 `mysql.fullgrammer.v8_0`、`postgres.fullgrammer.v16|v17|v18`。
+- `full-grammer` 具体版本实现在 adaptor，例如 `mysql.fullgrammer.v8_0`、`postgres.fullgrammer.v16|v17|v18`、`oracle.fullgrammer.v12c|v19c|v21c|v26ai`。
 - 无方言或无合理版本信息时使用 token-event。
 - PostgreSQL full-grammer 当前有严格版本 profile：`postgresql/16`、`postgresql/17`、`postgresql/18`。三者分别有独立 versioned correctness golden。root `postgres` fixture 目录是历史兼容 baseline，不代表 `v1` 数据库版本。
 - MySQL full-grammer 当前有 `mysql/8.0` profile，并已有独立 `test-fixtures/correctness/mysql/v8_0` versioned correctness golden。root `mysql` fixture 目录是 token-event baseline，不代表严格 MySQL 8.0 版本证明。
+- Oracle full-grammer 当前有 `oracle/12c`、`oracle/19c`、`oracle/21c`、`oracle/26ai` profile，并已有独立 `test-fixtures/correctness/oracle/v12c|v19c|v21c|v26ai` sample-data correctness golden。当前 Oracle full-grammer 使用本版本 generated parser/visitor，但状态是 `INCOMPLETE_VERSIONED`，尚不代表 更广泛的 Oracle 官方语法 已完成。
 
 ### 当前 golden 与验证结果
 
@@ -151,14 +154,19 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 622 | 521 / 101 | 6262 | 840 | 6 | 1838 |
-| common token-event | 31 | 28 / 3 | 551 | 150 | 0 | 144 |
-| MySQL root token-event | 93 | 77 / 16 | 408 | 150 | 1 | 172 |
-| MySQL full-grammer v8_0 | 93 | 77 / 16 | 696 | 241 | 0 | 372 |
-| PostgreSQL root token-event | 100 | 84 / 16 | 890 | 52 | 2 | 162 |
-| PostgreSQL full-grammer v16 | 100 | 84 / 16 | 1237 | 68 | 2 | 329 |
-| PostgreSQL full-grammer v17 | 102 | 86 / 16 | 1240 | 90 | 1 | 330 |
-| PostgreSQL full-grammer v18 | 103 | 85 / 18 | 1240 | 89 | 0 | 329 |
+| 全部 correctness | 896 | 749 / 147 | 9262 | 2211 | 19 | 3021 |
+| common token-event | 36 | 32 / 4 | 737 | 231 | 0 | 207 |
+| MySQL root token-event | 97 | 80 / 17 | 631 | 265 | 1 | 255 |
+| MySQL full-grammer v8_0 | 97 | 80 / 17 | 908 | 368 | 0 | 448 |
+| PostgreSQL root token-event | 118 | 100 / 18 | 1119 | 194 | 2 | 251 |
+| PostgreSQL full-grammer v16 | 118 | 100 / 18 | 1452 | 211 | 1 | 405 |
+| PostgreSQL full-grammer v17 | 120 | 102 / 18 | 1455 | 233 | 0 | 406 |
+| PostgreSQL full-grammer v18 | 121 | 101 / 20 | 1456 | 231 | 0 | 405 |
+| Oracle root token-event | 37 | 30 / 7 | 300 | 94 | 0 | 128 |
+| Oracle full-grammer v12c | 38 | 31 / 7 | 301 | 96 | 0 | 129 |
+| Oracle full-grammer v19c | 39 | 32 / 7 | 301 | 96 | 0 | 129 |
+| Oracle full-grammer v21c | 39 | 32 / 7 | 301 | 96 | 0 | 129 |
+| Oracle full-grammer v26ai | 39 | 32 / 7 | 301 | 96 | 0 | 129 |
 
 最新验证摘要：
 
@@ -187,5 +195,6 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 ## 后续技术债
 
 - root token-event 虽已使用 typed structural grammar/visitor，但复杂 routine、业务查询和部分 DDL evidence coverage 仍弱于对应 full-grammer；后续应继续扩展 typed grammar/visitor，不能恢复 scanner、regex 或名字过滤。
-- full-grammer profile 当前覆盖 MySQL 8.0 与 PostgreSQL 16/17/18；新增大版本需新增 adaptor module、严格 versioned fixture 和版本边界测试。
-- SQL Server / Oracle 仍需要独立 adaptor，而不是回退到 MySQL/PostgreSQL parser。
+- full-grammer profile 当前覆盖 MySQL 8.0、PostgreSQL 16/17/18 与 Oracle 12c/19c/21c/26ai；新增大版本需新增 adaptor module、严格 versioned fixture 和版本边界测试。
+- 更广泛的 Oracle 官方语法覆盖仍需要补齐；当前 versioned sample-data golden 不能替代官方版本边界测试。
+- SQL Server 仍需要独立 adaptor，而不是回退到 MySQL/PostgreSQL/Oracle parser。

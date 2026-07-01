@@ -1,0 +1,11 @@
+id: oracle19c-version-memoptimize-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: oracle/19c
+databaseVersion: 19.22
+sourceType: PLAIN_SQL
+schema: oracle
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,0 +1,12 @@
+id: oracle26ai-sample-data-full-03-data-02-supplementary-data-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: oracle/26ai
+databaseVersion: 26
+sourceType: PLAIN_SQL
+schema: oracle
+input: ../../../../../sample-data/oracle/26ai/03-data/02-supplementary-data.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

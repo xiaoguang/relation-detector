@@ -1,0 +1,13 @@
+id: oracle21c-sample-data-full-02-procedures-07-store-customer-procedures-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: oracle/21c
+databaseVersion: 21
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+schema: oracle
+input: input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

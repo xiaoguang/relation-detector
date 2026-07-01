@@ -126,6 +126,10 @@ PostgreSQL adaptor 负责：
   - 独立 `.g4`、generated lexer/parser package、version binding、dialect module；
   - typed visitor 只做“从该版本 grammar context 提取结构字段并交给 common core”的薄桥接；
   - 版本差异通过 version policy/hook 表达，例如 v18 temporal constraint 结构。
+- `postgres.fullgrammer.routine`
+  - 解析 full-grammer 已确认的 PL/pgSQL dollar-quoted routine body；
+  - 使用 full-grammer 本地 `PostgresFullGrammerRoutineBodySql.g4` 与 typed visitor；
+  - 不 import、不 new、不调用 `postgres.tokenevent` parser，避免 full-grammer 和 token-event 事件来源混用。
 
 full-grammer module 由 `META-INF/services/com.relationdetector.core.fullgrammer.FullGrammerDialectModule` 注册。core 只按 profile 选择 module，不直接 import `v16`、`v17`、`v18` 类。
 

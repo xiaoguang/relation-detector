@@ -50,6 +50,7 @@ import com.relationdetector.core.relation.TokenEventRelationExtractor;
 import com.relationdetector.core.tokenevent.CommonTokenEventStructuredSqlParser;
 import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
+import com.relationdetector.oracle.OracleDatabaseAdaptor;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
 
 /**
@@ -354,7 +355,7 @@ class CorrectnessFixtureRunnerTest {
                         () -> fixture.id() + " must be accepted by its declared full-grammer profile");
             }
         }
-        if (Boolean.getBoolean("updateCorrectnessGold")) {
+        if (Boolean.getBoolean("updateCorrectnessGold") && Files.exists(fixture.inputFile())) {
             try {
                 Files.writeString(fixture.expectedDiagnosticsFile(),
                         expectedDiagnosticsJson(sha256(inputOf(fixture)), actualCodes));
@@ -475,6 +476,7 @@ class CorrectnessFixtureRunnerTest {
         return switch (databaseType) {
             case MYSQL -> new MySqlDatabaseAdaptor();
             case POSTGRESQL -> new PostgresDatabaseAdaptor();
+            case ORACLE -> new OracleDatabaseAdaptor();
             default -> throw new IllegalArgumentException("No correctness adaptor for " + databaseType);
         };
     }

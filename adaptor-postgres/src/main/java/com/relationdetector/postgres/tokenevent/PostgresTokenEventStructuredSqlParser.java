@@ -10,8 +10,8 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
-import com.relationdetector.core.antlr.postgres.PostgresRelationSqlLexer;
-import com.relationdetector.core.antlr.postgres.PostgresRelationSqlParser;
+import com.relationdetector.postgres.tokenevent.PostgresRelationSqlLexer;
+import com.relationdetector.postgres.tokenevent.PostgresRelationSqlParser;
 import com.relationdetector.core.tokenevent.TypedDialectTokenEventStructuredSqlParser;
 
 /**

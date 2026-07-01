@@ -4,5 +4,6 @@ package com.relationdetector.core.parse;
 public enum SqlDialect {
     MYSQL,
     POSTGRES,
+    ORACLE,
     GENERIC
 }

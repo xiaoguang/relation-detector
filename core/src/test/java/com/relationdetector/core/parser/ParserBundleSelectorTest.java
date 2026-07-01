@@ -66,6 +66,21 @@ class ParserBundleSelectorTest {
     }
 
     @Test
+    void autoModeSelectsOracleFullGrammerWhenVersionProfileExists() {
+        ScanConfig config = config(DatabaseType.ORACLE, "auto", "", "26.1");
+        ParserBundle bundle = new ParserBundleSelector(List.of(module("oracle-26ai", DatabaseType.ORACLE, 26, 0,
+                        "oracle26-sql", "oracle26-ddl", new AtomicInteger())))
+                .select(new TestAdaptor(DatabaseType.ORACLE), config, context());
+
+        assertEquals("full-grammer", bundle.selection().selectedMode());
+        assertEquals("oracle-26ai", bundle.selection().selectedGrammarProfile());
+        StructuredParseResult sql = bundle.sqlParser().parseSql(statement(), null);
+        assertEquals("FULL_GRAMMAR_TOKEN_EVENT_PRIMARY", sql.backend());
+        assertEquals("oracle-26ai", sql.attributes().get("selectedGrammarProfile"));
+        assertEquals("oracle26-ddl", bundle.ddlParser().parseDdl("CREATE TABLE t(id number)", "ddl.sql", null).backend());
+    }
+
+    @Test
     void explicitFullGrammerFallsBackToTokenEventWhenProfileIsUnsupported() {
         List<WarningMessage> warnings = new java.util.ArrayList<>();
         ScanConfig config = config(DatabaseType.POSTGRESQL, "full-grammer", "", "20.0");

@@ -1,0 +1,10 @@
+id: oraclesample-data-full-01-schema-04-supplementary-tables-ddl
+databaseType: ORACLE
+parserTarget: DDL
+parserMode: token-event
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: oracle
+input: ../../../../sample-data/oracle/26ai/01-schema/04-supplementary-tables.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

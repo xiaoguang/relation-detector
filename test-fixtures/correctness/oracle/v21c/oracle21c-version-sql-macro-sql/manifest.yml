@@ -1,0 +1,11 @@
+id: oracle21c-version-sql-macro-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: oracle/21c
+databaseVersion: 21.11
+sourceType: PLAIN_SQL
+schema: oracle
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

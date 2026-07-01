@@ -1,0 +1,12 @@
+id: oracle19c-sample-data-full-03-data-03-enterprise-extension-data-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: oracle/19c
+databaseVersion: 19
+sourceType: PLAIN_SQL
+schema: oracle
+input: ../../../../../sample-data/oracle/19c/03-data/03-enterprise-extension-data.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,0 +1,10 @@
+id: oraclesample-data-full-04-queries-03-complex-queries-batch3-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: token-event
+sourceType: PLAIN_SQL
+schema: oracle
+input: ../../../../sample-data/oracle/26ai/04-queries/03-complex-queries-batch3.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,0 +1,6 @@
+CREATE OR REPLACE FUNCTION active_customer_filter
+RETURN VARCHAR2 SQL_MACRO(SCALAR)
+IS
+BEGIN
+    RETURN 'status = ''ACTIVE''';
+END;

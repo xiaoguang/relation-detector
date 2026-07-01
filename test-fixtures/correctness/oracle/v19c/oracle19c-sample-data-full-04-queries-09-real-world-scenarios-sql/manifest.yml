@@ -1,0 +1,12 @@
+id: oracle19c-sample-data-full-04-queries-09-real-world-scenarios-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: oracle/19c
+databaseVersion: 19
+sourceType: PLAIN_SQL
+schema: oracle
+input: ../../../../../sample-data/oracle/19c/04-queries/09-real-world-scenarios.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

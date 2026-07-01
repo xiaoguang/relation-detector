@@ -1,0 +1,11 @@
+id: oraclesample-data-full-02-procedures-03-functions-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: token-event
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+schema: oracle
+input: input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

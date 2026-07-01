@@ -4,7 +4,7 @@
 
 构建一个 Java 17 + Maven 的 CLI 命令行工具，用于自动探测数据库中的表关系，并为每条关系输出置信度、证据来源和解释信息。
 
-v1 优先完整支持 MySQL 和 PostgreSQL。系统架构必须保留数据库 adaptor 扩展接口，后续可以持续新增 SQL Server、Oracle 等数据库适配器。
+v1 成熟支持 MySQL 和 PostgreSQL；Oracle 已接入初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammer。系统架构继续保留数据库 adaptor 扩展接口，后续可以持续补强 Oracle 官方严格 grammar，并新增 SQL Server 等数据库适配器。
 
 本工具同时是后续语义层系统的事实采集与证据生成子系统。更上层的 Evidence-Grounded Semantic Layer 负责把 relationship、Data Lineage、metadata、SQL source 和注释组织成可审核的业务语义对象，用于自然语言问答、SQL draft 生成和指标候选审核。整体设计见 [Evidence-Grounded Semantic Layer 整体设计](../design/semantic-layer-overall-design.md)。当前语义层仍是总体设计；v1 优先落 evidence catalog、semantic search、question plan 和 SQL draft validation outline，不替代 relation-detector 的事实判断，也不自动执行 SQL。LLM 只能基于 evidence 做语义解释、同义词扩展和问题规划，不能创造数据库事实。
 
@@ -35,7 +35,7 @@ orders -> users
 - CLI 框架：当前为轻量手写 CLI；后续可替换为 picocli。
 - 配置文件：当前为轻量 YAML 子集解析；后续可替换为 Jackson YAML。
 - JSON 序列化：当前为手写 JSON writer；后续可替换为 Jackson，但必须保持输出 schema 兼容。
-- SQL/DDL 解析：统一通过 `parser.mode: auto|full-grammer|token-event` 选择。`token-event` 是无版本信息或 profile 不支持时的兜底链路；`full-grammer` 使用 MySQL/PostgreSQL adaptor 注册的大版本 grammar profile。ANTLR 是底层 lexer/parser 技术，不是业务 parser 模式名。
+- SQL/DDL 解析：统一通过 `parser.mode: auto|full-grammer|token-event` 选择。`token-event` 是无版本信息或 profile 不支持时的兜底链路；`full-grammer` 使用 MySQL/PostgreSQL/Oracle adaptor 注册的大版本 grammar profile。ANTLR 是底层 lexer/parser 技术，不是业务 parser 模式名。
 - 插件发现：Java SPI / `ServiceLoader`。
 - 测试：
   - JUnit 5。
@@ -44,7 +44,7 @@ orders -> users
 
 上层语义层建议使用 PostgreSQL + JSONB + pgvector 保存 SemanticTable、SemanticColumn、SemanticEntity、SemanticMetric、SemanticJoinPath、EvidenceRef、Lexicon、Embedding 和 QuestionTrace。第一版可以先使用 JSON 文件落地 semantic catalog，再逐步迁移到数据库存储。
 
-Java SPI 是 Java 标准库自带的插件发现机制。核心模块只定义接口，例如 `DatabaseAdaptor`；MySQL、PostgreSQL、未来的 Oracle/SQL Server adaptor 各自实现接口，并在 jar 包的 `META-INF/services/...` 文件里声明实现类。CLI 启动时通过 `ServiceLoader` 自动发现 adaptor。这样新增数据库时可以增加一个 adaptor jar，而不必修改 core 代码。
+Java SPI 是 Java 标准库自带的插件发现机制。核心模块只定义接口，例如 `DatabaseAdaptor`；MySQL、PostgreSQL、Oracle 和未来的 SQL Server adaptor 各自实现接口，并在 jar 包的 `META-INF/services/...` 文件里声明实现类。CLI 启动时通过 `ServiceLoader` 自动发现 adaptor。这样新增数据库时可以增加一个 adaptor jar，而不必修改 core 代码。
 
 ## 3. Maven 模块结构
 
@@ -58,6 +58,7 @@ relation-detector/
   cli/
   adaptor-mysql/
   adaptor-postgres/
+  adaptor-oracle/
   test-fixtures/
 ```
 
@@ -96,6 +97,12 @@ relation-detector/
   - PostgreSQL token-event parser。
   - PostgreSQL 16/17/18 full-grammer modules，公共实现位于 adaptor 内 `fullgrammer/common`。
 
+- `adaptor-oracle`
+  - Oracle 初始 adaptor。
+  - Oracle token-event fallback，使用 adaptor-local `OracleRelationSql.g4` typed grammar。
+  - Oracle 12c/19c/21c/26ai `INCOMPLETE_VERSIONED` full-grammer profile，当前覆盖对应版本 sample-data golden、profile smoke 和首批 version-only golden，并使用各自 generated parser。
+  - 当前 metadata/object collector 保守返回空；更广泛的 Oracle 官方语法覆盖和真实 Oracle runtime smoke 属于后续补强。
+
 - `test-fixtures`
   - 样例 schema。
   - 样例 DDL。
@@ -125,7 +132,7 @@ relation-detector 输出事实，语义层消费事实。两者边界如下：
 auto | full-grammer | token-event
 ```
 
-- `token-event`：宽松兼容链路。无方言时使用 core portable typed grammar；MySQL/PostgreSQL 使用各自 typed structural grammar。它适合作为未知版本、无 profile、unsupported version 或 full-grammer failure 的 fallback，最终 relationship / lineage / DDL 语义仍由 Java semantic extractor 处理。
+- `token-event`：宽松兼容链路。无方言时使用 core portable typed grammar；MySQL/PostgreSQL/Oracle 使用各自 adaptor-local typed structural grammar。它适合作为未知版本、无 profile、unsupported version 或 full-grammer failure 的 fallback，最终 relationship / lineage / DDL 语义仍由 Java semantic extractor 处理。
 - `full-grammer`：严格版本链路。它由数据库 adaptor 注册 `FullGrammerDialectModule`，使用对应大版本 vendored grammar 和 typed parse-tree visitor 生成同一组 `StructuredSqlEvent` / DDL events。
 - `auto`：默认模式。能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选中 full-grammer profile 时优先使用 full-grammer，否则使用 token-event。
 
@@ -137,8 +144,12 @@ auto | full-grammer | token-event
 | PostgreSQL | `postgresql/16` | `adaptor-postgres/fullgrammer/v16` | `test-fixtures/correctness/postgres/v16` |
 | PostgreSQL | `postgresql/17` | `adaptor-postgres/fullgrammer/v17` | `test-fixtures/correctness/postgres/v17` |
 | PostgreSQL | `postgresql/18` | `adaptor-postgres/fullgrammer/v18` | `test-fixtures/correctness/postgres/v18` |
+| Oracle | `oracle/12c` | `adaptor-oracle/fullgrammer/v12c` | `test-fixtures/correctness/oracle/v12c` |
+| Oracle | `oracle/19c` | `adaptor-oracle/fullgrammer/v19c` | `test-fixtures/correctness/oracle/v19c` |
+| Oracle | `oracle/21c` | `adaptor-oracle/fullgrammer/v21c` | `test-fixtures/correctness/oracle/v21c` |
+| Oracle | `oracle/26ai` | `adaptor-oracle/fullgrammer/v26ai` | `test-fixtures/correctness/oracle/v26ai` |
 
-root `test-fixtures/correctness/mysql` 与 root `test-fixtures/correctness/postgres` 是 token-event baseline，不代表严格数据库版本目录。严格 full-grammer 版本证明分别位于 `mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`。
+root `test-fixtures/correctness/mysql`、root `test-fixtures/correctness/postgres` 与 root `test-fixtures/correctness/oracle` 是 token-event baseline，不代表严格数据库版本目录。严格 full-grammer 版本证明分别位于 `mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`、`oracle/v12c`、`oracle/v19c`、`oracle/v21c`、`oracle/v26ai`。Oracle 当前 versioned golden 是 `INCOMPLETE_VERSIONED` generated parser golden；更广泛的 Oracle 官方语法覆盖仍是后续工作。
 
 ### 4.1 表和列
 
@@ -652,7 +663,7 @@ confidence = 1 - product(1 - evidenceScore)
 - core 负责统一输出模型、候选合并和最终评分。
 - adaptor 可以覆盖或增强采集、解析、证据生成、权重修正。
 
-后续新增数据库时，实现独立 adaptor 模块：
+后续新增或补强数据库时，实现独立 adaptor 模块；Oracle 已有初始模块，SQL Server 仍是 future：
 
 ```text
 adaptor-oracle/
@@ -1001,7 +1012,7 @@ v1 完成时应满足：
 - 可以通过 JDBC 读取元数据。
 - 可以读取 DDL 文件替代 JDBC 结构信息。
 - 可以读取过程、视图、触发器定义。
-- 可以解析 MySQL/PostgreSQL 原生日志和纯 SQL 文本。
+- 可以解析 MySQL/PostgreSQL 原生日志和纯 SQL 文本；Oracle 当前支持 file/object/sample SQL 的 token-event correctness，并通过各版本 sample-data full-grammer golden 验证 generated parser 链路。
 - 可以输出列级 FK-like 关系。
 - 可以输出数据库内部字段 Data Lineage。
 - 无法确定列时可以输出低置信度表级共现关系。
@@ -1013,7 +1024,7 @@ v1 完成时应满足：
 ## 14. 暂不纳入 v1 的范围
 
 - SQL Server 完整实现。
-- Oracle 完整实现。
+- Oracle Oracle official complete full-grammer、真实 Oracle runtime smoke 和元数据/对象采集完整实现。
 - 图形化界面。
 - Graphviz/Mermaid 图输出。
 - 分布式日志采集。

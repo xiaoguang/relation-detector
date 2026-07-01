@@ -27,6 +27,7 @@ import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
 import com.relationdetector.core.lineage.DataLineageMerger;
 import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
+import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParser;
 import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
 
 /**
@@ -169,11 +170,16 @@ final class DataLineageAuditGenerator {
             List<String> expectedLineageFingerprints = Files.exists(expectedLineageFile)
                     ? stringArray(Files.readString(expectedLineageFile), "fingerprints")
                     : List.of();
+            DatabaseType databaseType = DatabaseType.valueOf(required(values, "databaseType", manifest));
             boolean versionBoundaryUnsupported = expectedDiagnosticsContains(
                     root.resolve(values.getOrDefault("expectedDiagnostics", "expected-diagnostics.json")).normalize(),
                     "FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX");
-            DatabaseType databaseType = DatabaseType.valueOf(required(values, "databaseType", manifest));
-            List<String> candidates = parserTarget.equals("SQL")
+            String lower = inputText.toLowerCase(Locale.ROOT);
+            boolean shouldExtractCandidates = expectedLineageFingerprints.isEmpty()
+                    && parserTarget.equals("SQL")
+                    && !versionBoundaryUnsupported
+                    && containsValueWrite(lower);
+            List<String> candidates = shouldExtractCandidates
                     ? lineageCandidates(databaseType, input, inputText, sourceType, statementFormat, objectSourceFilter)
                     : List.of();
             Decision decision = classify(parserTarget, sourceType, statementFormat, inputText,
@@ -377,6 +383,7 @@ final class DataLineageAuditGenerator {
         return switch (databaseType) {
             case MYSQL -> new MySqlTokenEventStructuredSqlParser();
             case POSTGRESQL -> new PostgresTokenEventStructuredSqlParser();
+            case ORACLE -> new OracleTokenEventStructuredSqlParser();
             default -> throw new IllegalArgumentException("No Data Lineage parser for " + databaseType);
         };
     }

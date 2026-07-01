@@ -1,0 +1,12 @@
+id: oracle12c-sample-data-full-01-schema-03-triggers-ddl
+databaseType: ORACLE
+parserTarget: DDL
+parserMode: full-grammer
+grammarProfile: oracle/12c
+databaseVersion: 12
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: oracle
+input: ../../../../../sample-data/oracle/12c/01-schema/03-triggers.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

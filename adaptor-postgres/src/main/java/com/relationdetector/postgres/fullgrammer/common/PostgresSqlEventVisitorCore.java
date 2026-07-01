@@ -3,20 +3,14 @@ package com.relationdetector.postgres.fullgrammer.common;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.core.antlr.postgres.PostgresRelationSqlLexer;
-import com.relationdetector.core.antlr.postgres.PostgresRelationSqlParser;
 import com.relationdetector.core.fullgrammer.FullGrammerEventMerger;
 import com.relationdetector.core.fullgrammer.FullGrammerNativeEventTypes;
 import com.relationdetector.core.fullgrammer.FullGrammerTypedSqlEventSink;
-import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
-import com.relationdetector.postgres.tokenevent.PostgresTokenEventParseTreeVisitor;
 
 /**
  * Shared state and helpers for PostgreSQL SQL typed visitors.
@@ -101,22 +95,9 @@ public final class PostgresSqlEventVisitorCore {
         return result;
     }
 
-    public void routineBody(ParserRuleContext ctx, String quotedBody) {
+    public void routineBody(ParserRuleContext ctx, String quotedBody, RoutineBodyEventExtractor extractor) {
         String body = unquoteRoutineBody(quotedBody);
         if (body.isBlank()) {
-            return;
-        }
-        SyntaxErrorCounter errors = new SyntaxErrorCounter();
-        PostgresRelationSqlLexer lexer = new PostgresRelationSqlLexer(CharStreams.fromString(body));
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(errors);
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        PostgresRelationSqlParser parser = new PostgresRelationSqlParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-        PostgresRelationSqlParser.ScriptContext root = parser.script();
-        tokens.fill();
-        if (errors.count() > 0) {
             return;
         }
         long line = ctx == null || ctx.getStart() == null
@@ -128,7 +109,7 @@ public final class PostgresSqlEventVisitorCore {
                 line,
                 line + body.lines().count(),
                 statement.attributes());
-        sink.events().addAll(new PostgresTokenEventParseTreeVisitor(nested).collect(root));
+        sink.events().addAll(extractor.extract(nested));
     }
 
     public boolean isExpressionContext(ParserRuleContext ctx) {
@@ -175,5 +156,10 @@ public final class PostgresSqlEventVisitorCore {
             return text.substring(1, text.length() - 1).replace("''", "'");
         }
         return "";
+    }
+
+    @FunctionalInterface
+    public interface RoutineBodyEventExtractor {
+        List<StructuredSqlEvent> extract(SqlStatementRecord nestedStatement);
     }
 }

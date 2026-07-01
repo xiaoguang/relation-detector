@@ -44,7 +44,31 @@ class SqlGrammarProfileTest {
                     DatabaseType.POSTGRESQL,
                     18,
                     0,
-                    Set.of("returning_old_new", "virtual_generated_columns", "temporal_constraints"))));
+                    Set.of("returning_old_new", "virtual_generated_columns", "temporal_constraints"))),
+            new FakeModule(new SqlGrammarProfile(
+                    "oracle-12c",
+                    DatabaseType.ORACLE,
+                    12,
+                    2,
+                    Set.of("plsql", "identity_columns", "sql_json"))),
+            new FakeModule(new SqlGrammarProfile(
+                    "oracle-19c",
+                    DatabaseType.ORACLE,
+                    19,
+                    0,
+                    Set.of("plsql", "sql_json", "listagg_distinct"))),
+            new FakeModule(new SqlGrammarProfile(
+                    "oracle-21c",
+                    DatabaseType.ORACLE,
+                    21,
+                    0,
+                    Set.of("plsql", "sql_macros", "native_json"))),
+            new FakeModule(new SqlGrammarProfile(
+                    "oracle-26ai",
+                    DatabaseType.ORACLE,
+                    26,
+                    0,
+                    Set.of("plsql", "vector", "ai"))));
 
     @Test
     void selectsKnownMysqlProfileFromVersionString() {
@@ -132,6 +156,26 @@ class SqlGrammarProfileTest {
         assertEquals("JDBC", selection.versionSource());
         assertTrue(selection.usedFallback());
         assertTrue(selection.diagnostic().contains("token-event"));
+    }
+
+    @Test
+    void oracleProfileCanBeSelectedByConfiguredProfileAndVersionString() {
+        SqlGrammarProfileSelection configured = select(FullGrammerProfileRequest.builder()
+                .databaseType(DatabaseType.ORACLE)
+                .configuredProfile("oracle/12c")
+                .configuredVersion("26.1")
+                .build());
+        SqlGrammarProfileSelection v19 = select(DatabaseType.ORACLE, "19.22.0.0.0");
+        SqlGrammarProfileSelection v21 = select(DatabaseType.ORACLE, "21.11.0.0.0");
+        SqlGrammarProfileSelection v26 = select(DatabaseType.ORACLE, "26.1");
+
+        assertEquals("oracle-12c", configured.profile().id());
+        assertEquals(12, configured.profile().majorVersion());
+        assertEquals(2, configured.profile().minorVersion());
+        assertEquals("CONFIG", configured.versionSource());
+        assertEquals("oracle-19c", v19.profile().id());
+        assertEquals("oracle-21c", v21.profile().id());
+        assertEquals("oracle-26ai", v26.profile().id());
     }
 
     @Test

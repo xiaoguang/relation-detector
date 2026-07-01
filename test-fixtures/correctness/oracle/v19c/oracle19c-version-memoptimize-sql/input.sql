@@ -1,0 +1,4 @@
+CREATE TABLE fast_lookup (
+    id NUMBER PRIMARY KEY,
+    code VARCHAR2(64)
+) MEMOPTIMIZE FOR READ;

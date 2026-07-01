@@ -19,9 +19,9 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.core.antlr.postgres.PostgresRelationSqlBaseVisitor;
-import com.relationdetector.core.antlr.postgres.PostgresRelationSqlLexer;
-import com.relationdetector.core.antlr.postgres.PostgresRelationSqlParser;
+import com.relationdetector.postgres.tokenevent.PostgresRelationSqlBaseVisitor;
+import com.relationdetector.postgres.tokenevent.PostgresRelationSqlLexer;
+import com.relationdetector.postgres.tokenevent.PostgresRelationSqlParser;
 import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 
 /**
