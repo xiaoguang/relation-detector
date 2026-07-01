@@ -74,7 +74,7 @@ class OracleAdaptorParserTest {
     void oracleFullGrammerParsesProcedureInsertSelectLineageEvents() {
         FullGrammerDialectModule module = new OracleFullGrammerDialectModule();
         var result = module.sqlParser().parseSql(statement("""
-                CREATE OR REPLACE PROCEDURE sp_create_reconciliation()
+                CREATE OR REPLACE PROCEDURE sp_create_reconciliation
                 AS
                 BEGIN
                     INSERT INTO reconciliation_items (journal_id, transaction_date, description, debit_amount)

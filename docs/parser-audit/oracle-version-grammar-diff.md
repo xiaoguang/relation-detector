@@ -2,10 +2,12 @@
 
 ## Summary
 
-This document records the first official-doc-derived version boundary for Oracle
-full-grammer profiles. It is intentionally narrower than a full Oracle grammar
-conversion: the repository grammar is an ANTLR projection that now encodes
-confirmed version differences and protects those boundaries with tests.
+This document records the Oracle full-grammer version boundary. The repository
+now vendors `antlr/grammars-v4/sql/plsql` at a fixed commit and then applies
+project-maintained version cuts for `oracle/12c`, `oracle/19c`, `oracle/21c`,
+and `oracle/26ai`. It is still not a complete Oracle manual conversion; it is a
+version-scoped ANTLR projection with explicit provenance, local deltas, and
+tests.
 
 `OracleRelationSql.g4` remains a single broad token-event fallback grammar.
 Version strictness belongs only to `oracle/12c`, `oracle/19c`, `oracle/21c`,
@@ -19,6 +21,67 @@ and `oracle/26ai` full-grammer profiles.
 | 19c | Oracle Database 19c SQL Language Reference and PL/SQL Language Reference: `https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/` | 12c projection plus confirmed 19c grammar additions used by fixtures. |
 | 21c | Oracle Database 21c SQL Language Reference and PL/SQL Language Reference: `https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlrf/` | 19c projection plus confirmed 21c grammar additions used by fixtures. |
 | 26ai | Oracle AI Database 26ai SQL Language Reference and PL/SQL Language Reference: `https://docs.oracle.com/en/database/oracle/oracle-database/26/sqlrf/` | 21c projection plus confirmed 26ai grammar additions used by fixtures. |
+
+## Community Grammar Reference
+
+The closest open-source grammar with MySQL/PostgreSQL-like breadth is
+`antlr/grammars-v4/sql/plsql`. Its `PlSqlParser.g4` is roughly ten thousand
+lines, its `PlSqlLexer.g4` is roughly twenty-six hundred lines, and it contains
+rules for `sql_script`, DDL, DML, `MERGE`, `CREATE TABLE`, `ALTER TABLE`,
+`CREATE PROCEDURE`, `CREATE FUNCTION`, `CREATE TRIGGER`, JSON functions, and
+many Oracle-specific clauses. It is Apache-2.0 licensed and references Oracle
+SQL / PL/SQL documentation, but it is not directly split into Oracle
+`12c/19c/21c/26ai` strict profiles.
+
+Pinned upstream commit:
+
+```text
+antlr/grammars-v4 994628b6d261f5313b72e76039818549352684ce
+```
+
+Vendored files:
+
+```text
+sql/plsql/PlSqlLexer.g4
+sql/plsql/PlSqlParser.g4
+sql/plsql/Java/PlSqlLexerBase.java
+sql/plsql/Java/PlSqlParserBase.java
+```
+
+Local rename:
+
+```text
+PlSqlLexer.g4       -> OracleFullGrammerLexer.g4
+PlSqlParser.g4      -> OracleFullGrammerParser.g4
+PlSqlLexerBase.java -> OracleFullGrammerLexerBase.java
+PlSqlParserBase.java -> OracleFullGrammerParserBase.java
+```
+
+The upstream Apache-2.0 license headers are retained in the vendored grammar
+and base class files. Bytebase remains an engineering reference only; it is not
+used as the source of truth for version boundaries.
+
+The applied full-grammer upgrade path is:
+
+1. Pin an exact `antlr/grammars-v4` commit before vendoring anything into this
+   repository. Do not depend on floating `master`.
+2. Vendor the PL/SQL lexer/parser grammar and the required Java base classes
+   into `adaptor-oracle/fullgrammer/<version>` packages with local names such as
+   `OracleFullGrammerLexer` and `OracleFullGrammerParser`.
+3. Make `oracle/12c` the first generated-parser baseline, then derive
+   `oracle/19c`, `oracle/21c`, and `oracle/26ai` by removing or adding rules
+   according to the official Oracle version documents listed above.
+4. Rebuild typed visitors and DDL collectors against the upstream-style parse
+   tree contexts. Do not bridge through `OracleRelationSql.g4` token-event.
+5. Add version-boundary fixtures before widening golden coverage: a lower
+   version must fail to parse a higher-version-only grammar production by its
+   own grammar, not by Java profile blacklist logic.
+
+The checked-in Oracle full-grammer is therefore stronger than the earlier
+scoped grammar and no longer resembles token-event, but it remains
+`INCOMPLETE_VERSIONED`: it proves grammars-v4-backed generated parser wiring,
+sample-data coverage, DDL/SQL/PLSQL extraction for current fixtures, and the
+first version-boundary examples, not complete Oracle Reference coverage.
 
 ## Implemented Version Boundaries
 
@@ -41,6 +104,16 @@ This prevents high-version syntax from being accepted as a generic identifier.
 | `oracle/19c` | `INCOMPLETE_VERSIONED` projection | Accepts `MEMOPTIMIZE FOR READ`; rejects 21c/26ai feature tokens listed above. |
 | `oracle/21c` | `INCOMPLETE_VERSIONED` projection | Accepts `SQL_MACRO` and inherited 19c feature; rejects 26ai `VECTOR`. |
 | `oracle/26ai` | `INCOMPLETE_VERSIONED` projection | Accepts `VECTOR` and inherited 19c/21c feature syntax. |
+
+Current versioned full-grammer correctness totals after the grammars-v4
+migration:
+
+| Profile | Fixtures | Relationship fingerprints | Lineage fingerprints |
+| --- | ---: | ---: | ---: |
+| `oracle/12c` | 30 | 525 | 75 |
+| `oracle/19c` | 31 | 525 | 75 |
+| `oracle/21c` | 31 | 525 | 75 |
+| `oracle/26ai` | 31 | 525 | 75 |
 
 This is not yet a complete, runtime-validated Oracle grammar for every SQL and
 PL/SQL production in the official manuals. Future work should continue replacing

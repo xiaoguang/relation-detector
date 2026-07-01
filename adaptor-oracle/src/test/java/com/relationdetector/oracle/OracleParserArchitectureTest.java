@@ -97,6 +97,46 @@ class OracleParserArchitectureTest {
     }
 
     @Test
+    void oracleTokenEventProductionCodeDoesNotImportFullGrammerImplementation() throws IOException {
+        Path tokenEventSource = repoRoot().resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle/tokenevent");
+        try (Stream<Path> stream = Files.walk(tokenEventSource)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> contains(path, "com.relationdetector.oracle.fullgrammer"))
+                    .map(repoRoot()::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Oracle token-event must not import full-grammer implementation packages, offenders="
+                            + offenders);
+        }
+    }
+
+    @Test
+    void oracleTokenEventAndFullGrammerVisitorsUseDialectRoutineScope() throws IOException {
+        Path mainSource = repoRoot().resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle");
+        Path routineScope = mainSource.resolve("routine/OracleRoutineScope.java");
+        assertTrue(Files.exists(routineScope), "Oracle routine package must contain a real routine scope helper");
+
+        List<Path> visitors = List.of(
+                mainSource.resolve("tokenevent/OracleTokenEventParseTreeVisitor.java"),
+                mainSource.resolve("fullgrammer/v12c/OracleFullGrammerParseTreeVisitor.java"),
+                mainSource.resolve("fullgrammer/v19c/OracleFullGrammerParseTreeVisitor.java"),
+                mainSource.resolve("fullgrammer/v21c/OracleFullGrammerParseTreeVisitor.java"),
+                mainSource.resolve("fullgrammer/v26ai/OracleFullGrammerParseTreeVisitor.java"));
+
+        List<Path> offenders = visitors.stream()
+                .filter(path -> !contains(path, "com.relationdetector.oracle.routine.OracleRoutineScope")
+                        || !contains(path, "routineScope.enterRoutine()")
+                        || !contains(path, "routineScope.leaveRoutineEnd("))
+                .map(repoRoot()::relativize)
+                .toList();
+        assertTrue(offenders.isEmpty(),
+                "Oracle token-event and full-grammer visitors must use the dialect-level routine scope, offenders="
+                        + offenders);
+    }
+
+    @Test
     void oracleVersionFullGrammarsAreSplitLexerAndParserFiles() throws IOException {
         Path grammarRoot = repoRoot().resolve("adaptor-oracle/src/main/antlr4/com/relationdetector/oracle/fullgrammer");
 
@@ -115,9 +155,9 @@ class OracleParserArchitectureTest {
 
             String lexerText = Files.readString(lexerGrammar);
             String parserText = Files.readString(parserGrammar);
-            assertTrue(lexerText.startsWith("lexer grammar OracleFullGrammerLexer;"),
+            assertTrue(lexerText.contains("lexer grammar OracleFullGrammerLexer;"),
                     version + " lexer grammar must declare OracleFullGrammerLexer");
-            assertTrue(parserText.startsWith("parser grammar OracleFullGrammerParser;"),
+            assertTrue(parserText.contains("parser grammar OracleFullGrammerParser;"),
                     version + " parser grammar must declare OracleFullGrammerParser");
             assertTrue(parserText.contains("tokenVocab = OracleFullGrammerLexer"),
                     version + " parser grammar must consume the version lexer tokens");

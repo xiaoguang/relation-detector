@@ -10,239 +10,326 @@ import java.util.Map;
 import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.oracle.fullgrammer.common.OracleColumnRead;
+import com.relationdetector.oracle.fullgrammer.common.OracleExpressionAnalysis;
+import com.relationdetector.oracle.fullgrammer.common.OracleSqlEventVisitorCore;
+import com.relationdetector.oracle.routine.OracleRoutineScope;
 
 /**
- * Parse-tree visitor for the Oracle v12c scoped full-grammer.
+ * Parse-tree visitor for the Oracle v12c full-grammer generated from the
+ * grammars-v4 PL/SQL grammar base.
  *
- * <p>CN: 本 visitor 只从 {@code OracleFullGrammerParser.g4} 的 typed context 生成
- * SQL 结构事件。它可以读取 identifier 原文和 source location，但不通过 regex、
- * token span scanner 或特殊表/列名判断 SQL 结构。
+ * <p>CN: 本 visitor 只从 Oracle generated parse-tree 的 typed context 生成结构事件。
+ * 它不委托 token-event，不用 regex/token-span scanner 判断 SQL 结构。
  *
- * <p>EN: Parse-tree visitor for the Oracle v12c scoped full-grammer. It emits
- * structural events from typed grammar contexts, using token text only for
- * identifier spelling and source locations.
+ * <p>EN: Emits structured events from Oracle generated parser contexts. It does
+ * not delegate to token-event and does not infer SQL structure through regex or
+ * token-span scanning.
  */
 public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerParserBaseVisitor<Void> {
-    private final SqlStatementRecord statement;
-    private final List<StructuredSqlEvent> events = new ArrayList<>();
-    private final Set<String> cteNames = new LinkedHashSet<>();
+    private final OracleSqlEventVisitorCore core;
+    private final OracleRoutineScope routineScope = new OracleRoutineScope();
     private final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
-    private final ArrayDeque<String> joinKinds = new ArrayDeque<>();
     private final ArrayDeque<String> ddlTables = new ArrayDeque<>();
+    private final ArrayDeque<String> writeTargetTables = new ArrayDeque<>();
+    private final ArrayDeque<String> writeTargetAliases = new ArrayDeque<>();
+    private final ArrayDeque<String> joinKinds = new ArrayDeque<>();
+    private final Set<String> emittedRowsets = new LinkedHashSet<>();
     private int existsDepth;
 
     public OracleFullGrammerParseTreeVisitor(SqlStatementRecord statement) {
-        this.statement = statement;
+        this.core = new OracleSqlEventVisitorCore(statement);
     }
 
-    public List<StructuredSqlEvent> collect(OracleFullGrammerParser.ScriptContext root) {
+    public List<StructuredSqlEvent> collect(OracleFullGrammerParser.Sql_scriptContext root) {
         visit(root);
-        return List.copyOf(events);
+        return core.events();
     }
 
     @Override
-    public Void visitCommonTableExpression(OracleFullGrammerParser.CommonTableExpressionContext ctx) {
-        String name = clean(ctx.identifier().getText());
-        if (!name.isBlank()) {
-            cteNames.add(normalize(name));
-            Map<String, Object> attrs = attrs();
-            attrs.put("name", name);
-            attrs.put("table", name);
-            attrs.put("qualifiedTable", name);
-            add(StructuredParseEventType.CTE_DECLARATION, ctx, attrs);
-            add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
-        }
-        List<String> outputColumns = ctx.identifierList() == null
-                ? List.of()
-                : ctx.identifierList().identifier().stream().map(identifier -> clean(identifier.getText())).toList();
-        projectionOwners.push(new ProjectionOwner(name, outputColumns));
-        visit(ctx.selectStatement());
-        projectionOwners.pop();
+    public Void visitCreate_procedure_body(OracleFullGrammerParser.Create_procedure_bodyContext ctx) {
+        routineScope.enterRoutine();
+        visitChildren(ctx);
+        routineScope.leaveRoutineEnd(false);
         return null;
     }
 
     @Override
-    public Void visitQuerySpecification(OracleFullGrammerParser.QuerySpecificationContext ctx) {
-        if (ctx.fromClause() != null) {
-            visit(ctx.fromClause());
+    public Void visitCreate_function_body(OracleFullGrammerParser.Create_function_bodyContext ctx) {
+        routineScope.enterRoutine();
+        visitChildren(ctx);
+        routineScope.leaveRoutineEnd(false);
+        return null;
+    }
+
+    @Override
+    public Void visitCreate_trigger(OracleFullGrammerParser.Create_triggerContext ctx) {
+        routineScope.enterRoutine();
+        visitChildren(ctx);
+        routineScope.leaveRoutineEnd(false);
+        return null;
+    }
+
+    @Override
+    public Void visitCreate_table(OracleFullGrammerParser.Create_tableContext ctx) {
+        String table = qualifiedTable(ctx.schema_name(), ctx.table_name());
+        ddlTables.push(table);
+        visitChildren(ctx);
+        ddlTables.pop();
+        return null;
+    }
+
+    @Override
+    public Void visitAlter_table(OracleFullGrammerParser.Alter_tableContext ctx) {
+        ddlTables.push(name(ctx.tableview_name()));
+        visitChildren(ctx);
+        ddlTables.pop();
+        return null;
+    }
+
+    @Override
+    public Void visitColumn_definition(OracleFullGrammerParser.Column_definitionContext ctx) {
+        String table = currentDdlTable();
+        String column = name(ctx.column_name());
+        for (OracleFullGrammerParser.Inline_constraintContext constraint : ctx.inline_constraint()) {
+            if (constraint.PRIMARY() != null) {
+                addIndexEvent(table, column, "TARGET_UNIQUE", "INLINE_PRIMARY_KEY", constraint);
+            } else if (constraint.UNIQUE() != null) {
+                addIndexEvent(table, column, "TARGET_UNIQUE", "INLINE_UNIQUE", constraint);
+            } else if (constraint.references_clause() != null) {
+                List<String> targets = referenceColumns(constraint.references_clause());
+                addForeignKeyEvents(table, List.of(column), name(constraint.references_clause().tableview_name()), targets, constraint);
+            }
         }
-        if (ctx.whereClause() != null) {
-            visit(ctx.whereClause());
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitOut_of_line_constraint(OracleFullGrammerParser.Out_of_line_constraintContext ctx) {
+        if (ctx.foreign_key_clause() != null) {
+            emitForeignKey(ctx.foreign_key_clause());
+            return null;
         }
-        if (ctx.havingClause() != null) {
-            visit(ctx.havingClause());
+        if (ctx.PRIMARY() != null || ctx.UNIQUE() != null) {
+            String kind = ctx.PRIMARY() != null ? "PRIMARY_KEY" : "UNIQUE_CONSTRAINT";
+            for (String column : columns(ctx.column_name())) {
+                addIndexEvent(currentDdlTable(), column, "TARGET_UNIQUE", kind, ctx);
+            }
+            return null;
+        }
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitForeign_key_clause(OracleFullGrammerParser.Foreign_key_clauseContext ctx) {
+        emitForeignKey(ctx);
+        return null;
+    }
+
+    @Override
+    public Void visitCreate_index(OracleFullGrammerParser.Create_indexContext ctx) {
+        if (ctx.table_index_clause() == null) {
+            return visitChildren(ctx);
+        }
+        String table = name(ctx.table_index_clause().tableview_name());
+        String role = ctx.UNIQUE() == null ? "SOURCE_INDEX" : "TARGET_UNIQUE";
+        String kind = ctx.UNIQUE() == null ? "CREATE_INDEX" : "CREATE_UNIQUE_INDEX";
+        for (OracleFullGrammerParser.Index_exprContext expr : ctx.table_index_clause().index_expr()) {
+            if (expr.column_name() != null) {
+                addIndexEvent(table, name(expr.column_name()), role, kind, ctx);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitQuery_block(OracleFullGrammerParser.Query_blockContext ctx) {
+        if (ctx.from_clause() != null) {
+            visit(ctx.from_clause());
+        }
+        if (ctx.where_clause() != null) {
+            visit(ctx.where_clause());
+        }
+        for (OracleFullGrammerParser.Hierarchical_query_clauseContext clause : ctx.hierarchical_query_clause()) {
+            visit(clause);
+        }
+        for (OracleFullGrammerParser.Group_by_clauseContext clause : ctx.group_by_clause()) {
+            visit(clause);
+        }
+        if (ctx.model_clause() != null) {
+            visit(ctx.model_clause());
         }
         if (!projectionOwners.isEmpty()) {
-            emitProjectionItems(ctx.selectList(), projectionOwners.peek());
+            emitProjectionItems(ctx.selected_list(), projectionOwners.peek());
         }
         return null;
     }
 
     @Override
-    public Void visitNamedTablePrimary(OracleFullGrammerParser.NamedTablePrimaryContext ctx) {
-        String qualified = qualifiedName(ctx.qualifiedName());
-        String table = baseName(qualified);
-        String alias = ctx.tableAlias() == null ? "" : clean(ctx.tableAlias().identifier().getText());
-        Map<String, Object> attrs = attrs();
-        attrs.put("keyword", "FROM");
-        attrs.put("qualifiedTable", qualified);
-        attrs.put("table", table);
-        if (!alias.isBlank()) {
-            attrs.put("alias", alias);
+    public Void visitTable_ref_aux(OracleFullGrammerParser.Table_ref_auxContext ctx) {
+        String table = tableFrom(ctx.table_ref_aux_internal());
+        String alias = ctx.table_alias() == null ? core.baseName(table) : name(ctx.table_alias());
+        if (!table.isBlank()) {
+            emitRowset(ctx, table, alias);
+            return visitChildren(ctx);
         }
-        add(StructuredParseEventType.ROWSET_REFERENCE, ctx, attrs);
-        return null;
-    }
-
-    @Override
-    public Void visitTableReference(OracleFullGrammerParser.TableReferenceContext ctx) {
-        visit(ctx.tablePrimary());
-        String leftAlias = rowsetAlias(ctx.tablePrimary());
-        for (OracleFullGrammerParser.JoinClauseContext join : ctx.joinClause()) {
-            String rightAlias = rowsetAlias(join.tablePrimary());
-            visit(join.tablePrimary());
-            if (join.identifierList() != null) {
-                Map<String, Object> attrs = attrs();
-                attrs.put("leftAlias", leftAlias);
-                attrs.put("rightAlias", rightAlias);
-                attrs.put("usingColumns", join.identifierList().identifier().stream()
-                        .map(identifier -> clean(identifier.getText()))
-                        .toList());
-                add(StructuredParseEventType.JOIN_USING_COLUMNS, join, attrs);
-            }
-            if (join.predicate() != null) {
-                joinKinds.push(joinKind(join));
-                visit(join.predicate());
-                joinKinds.pop();
-            }
-            leftAlias = rightAlias;
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitDerivedTablePrimary(OracleFullGrammerParser.DerivedTablePrimaryContext ctx) {
-        String alias = ctx.tableAlias() == null ? "" : clean(ctx.tableAlias().identifier().getText());
-        if (!alias.isBlank()) {
-            Map<String, Object> attrs = attrs();
-            attrs.put("name", alias);
-            attrs.put("table", alias);
-            attrs.put("qualifiedTable", alias);
-            add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
+        OracleFullGrammerParser.Select_statementContext select = first(ctx.table_ref_aux_internal(), OracleFullGrammerParser.Select_statementContext.class);
+        if (select != null && !alias.isBlank()) {
+            emitIgnoredRowset(ctx, alias);
             projectionOwners.push(new ProjectionOwner(alias, List.of()));
-            visit(ctx.selectStatement());
+            visit(select);
             projectionOwners.pop();
-        } else {
-            visit(ctx.selectStatement());
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitComparisonPredicate(OracleFullGrammerParser.ComparisonPredicateContext ctx) {
-        if (!"=".equals(ctx.comparisonOperator().getText())) {
-            return visitChildren(ctx);
-        }
-        ColumnRead left = singleColumn(ctx.expression(0));
-        ColumnRead right = singleColumn(ctx.expression(1));
-        if (left == null || right == null) {
-            return visitChildren(ctx);
-        }
-        Map<String, Object> attrs = attrs();
-        attrs.put("leftAlias", left.alias());
-        attrs.put("leftColumn", left.column());
-        attrs.put("rightAlias", right.alias());
-        attrs.put("rightColumn", right.column());
-        attrs.put("joinKind", existsDepth > 0 ? "EXISTS" : currentJoinKind());
-        add(existsDepth > 0 ? StructuredParseEventType.EXISTS_PREDICATE : StructuredParseEventType.PREDICATE_EQUALITY,
-                ctx,
-                attrs);
-        return null;
-    }
-
-    @Override
-    public Void visitExistsPredicate(OracleFullGrammerParser.ExistsPredicateContext ctx) {
-        existsDepth++;
-        visit(ctx.selectStatement());
-        existsDepth--;
-        return null;
-    }
-
-    @Override
-    public Void visitInSubqueryPredicate(OracleFullGrammerParser.InSubqueryPredicateContext ctx) {
-        ColumnRead outer = singleColumn(ctx.expression());
-        ColumnRead inner = singleSelectColumn(ctx.selectStatement());
-        visit(ctx.selectStatement());
-        if (outer == null || inner == null) {
             return null;
         }
-        Map<String, Object> attrs = attrs();
-        attrs.put("outerAlias", outer.alias());
-        attrs.put("outerColumn", outer.column());
-        attrs.put("innerAlias", inner.alias());
-        attrs.put("innerColumn", inner.column());
-        attrs.put("innerTable", "");
-        attrs.put("innerTableAlias", inner.alias());
-        attrs.put("verifiedColumnSubquery", true);
-        add(StructuredParseEventType.IN_SUBQUERY_PREDICATE, ctx, attrs);
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitGeneral_table_ref(OracleFullGrammerParser.General_table_refContext ctx) {
+        String table = tableFrom(ctx.dml_table_expression_clause());
+        String alias = ctx.table_alias() == null ? core.baseName(table) : name(ctx.table_alias());
+        if (!table.isBlank()) {
+            emitRowset(ctx, table, alias);
+        }
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitSelected_tableview(OracleFullGrammerParser.Selected_tableviewContext ctx) {
+        if (ctx.tableview_name() != null) {
+            String table = name(ctx.tableview_name());
+            String alias = ctx.table_alias() == null ? core.baseName(table) : name(ctx.table_alias());
+            emitRowset(ctx, table, alias);
+            return visitChildren(ctx);
+        }
+        if (ctx.select_statement() != null) {
+            String alias = ctx.table_alias() == null ? "" : name(ctx.table_alias());
+            if (!alias.isBlank()) {
+                emitIgnoredRowset(ctx, alias);
+                projectionOwners.push(new ProjectionOwner(alias, List.of()));
+                visit(ctx.select_statement());
+                projectionOwners.pop();
+                return null;
+            }
+        }
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitJoin_clause(OracleFullGrammerParser.Join_clauseContext ctx) {
+        joinKinds.push(joinKind(ctx));
+        visitChildren(ctx);
+        joinKinds.pop();
         return null;
     }
 
     @Override
-    public Void visitTupleInSubqueryPredicate(OracleFullGrammerParser.TupleInSubqueryPredicateContext ctx) {
-        List<ColumnRead> outer = ctx.expressionList().expression().stream().map(this::singleColumn).toList();
-        List<ColumnRead> inner = selectColumns(ctx.selectStatement());
-        visit(ctx.selectStatement());
-        if (outer.isEmpty() || outer.size() != inner.size() || outer.stream().anyMatch(java.util.Objects::isNull)) {
+    public Void visitJoin_using_part(OracleFullGrammerParser.Join_using_partContext ctx) {
+        Map<String, Object> attrs = core.attrs();
+        attrs.put("usingColumns", columns(ctx.paren_column_list().column_list().column_name()));
+        core.add(StructuredParseEventType.JOIN_USING_COLUMNS, ctx, attrs);
+        return null;
+    }
+
+    @Override
+    public Void visitRelational_expression(OracleFullGrammerParser.Relational_expressionContext ctx) {
+        if (ctx.relational_operator() != null && "=".equals(ctx.relational_operator().getText())) {
+            List<OracleFullGrammerParser.Relational_expressionContext> parts = ctx.relational_expression();
+            if (parts.size() == 2) {
+                OracleColumnRead left = singleColumn(parts.get(0));
+                OracleColumnRead right = singleColumn(parts.get(1));
+                if (left != null && right != null) {
+                    Map<String, Object> attrs = core.attrs();
+                    attrs.put("leftAlias", left.alias());
+                    attrs.put("leftColumn", left.column());
+                    attrs.put("rightAlias", right.alias());
+                    attrs.put("rightColumn", right.column());
+                    attrs.put("joinKind", existsDepth > 0 ? "EXISTS" : currentJoinKind());
+                    core.add(existsDepth > 0 ? StructuredParseEventType.EXISTS_PREDICATE : StructuredParseEventType.PREDICATE_EQUALITY, ctx, attrs);
+                }
+            }
+        } else if (ctx.IN() != null && ctx.NOT() == null && ctx.in_elements() != null) {
+            List<OracleFullGrammerParser.Relational_expressionContext> parts = ctx.relational_expression();
+            if (parts.size() == 1 && ctx.in_elements().subquery() != null) {
+                OracleColumnRead outer = singleColumn(parts.get(0));
+                OracleColumnRead inner = singleSelectColumn(ctx.in_elements().subquery());
+                if (outer != null && inner != null) {
+                    Map<String, Object> attrs = core.attrs();
+                    attrs.put("outerAlias", outer.alias());
+                    attrs.put("outerColumn", outer.column());
+                    attrs.put("innerAlias", inner.alias());
+                    attrs.put("innerColumn", inner.column());
+                    attrs.put("innerTable", "");
+                    attrs.put("innerTableAlias", inner.alias());
+                    attrs.put("verifiedColumnSubquery", true);
+                    core.add(StructuredParseEventType.IN_SUBQUERY_PREDICATE, ctx, attrs);
+                }
+            }
+        }
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitQuantified_expression(OracleFullGrammerParser.Quantified_expressionContext ctx) {
+        if (ctx.EXISTS() != null && ctx.select_only_statement() != null) {
+            existsDepth++;
+            visit(ctx.select_only_statement());
+            existsDepth--;
             return null;
         }
-        Map<String, Object> attrs = attrs();
-        attrs.put("outerAliases", outer.stream().map(ColumnRead::alias).toList());
-        attrs.put("outerColumns", outer.stream().map(ColumnRead::column).toList());
-        attrs.put("innerAliases", inner.stream().map(ColumnRead::alias).toList());
-        attrs.put("innerColumns", inner.stream().map(ColumnRead::column).toList());
-        attrs.put("innerTable", "");
-        attrs.put("verifiedColumnSubquery", true);
-        add(StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE, ctx, attrs);
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Void visitUpdate_statement(OracleFullGrammerParser.Update_statementContext ctx) {
+        String table = tableFrom(ctx.general_table_ref().dml_table_expression_clause());
+        String alias = ctx.general_table_ref().table_alias() == null ? core.baseName(table) : name(ctx.general_table_ref().table_alias());
+        writeTargetTables.push(table);
+        writeTargetAliases.push(alias);
+        emitWriteTarget(ctx.general_table_ref(), alias, table);
+        visitChildren(ctx);
+        writeTargetAliases.pop();
+        writeTargetTables.pop();
         return null;
     }
 
     @Override
-    public Void visitLiteralInPredicate(OracleFullGrammerParser.LiteralInPredicateContext ctx) {
-        return null;
+    public Void visitColumn_based_update_set_clause(OracleFullGrammerParser.Column_based_update_set_clauseContext ctx) {
+        if (ctx.column_name() != null && ctx.expression() != null && !writeTargetTables.isEmpty()) {
+            emitAssignment(ctx, name(ctx.column_name()), ctx.expression(), StructuredParseEventType.UPDATE_ASSIGNMENT, "UPDATE_SET");
+            return visit(ctx.expression());
+        }
+        return visitChildren(ctx);
     }
 
     @Override
-    public Void visitLikePredicate(OracleFullGrammerParser.LikePredicateContext ctx) {
-        return null;
-    }
-
-    @Override
-    public Void visitInsertSelectStatement(OracleFullGrammerParser.InsertSelectStatementContext ctx) {
-        String targetTable = qualifiedName(ctx.qualifiedName());
-        List<String> targetColumns = ctx.identifierList().identifier().stream()
-                .map(identifier -> clean(identifier.getText()))
-                .toList();
-        visit(ctx.selectStatement());
-        List<OracleFullGrammerParser.SelectItemContext> selectItems =
-                ctx.selectStatement().querySpecification().selectList().selectItem();
+    public Void visitSingle_table_insert(OracleFullGrammerParser.Single_table_insertContext ctx) {
+        if (ctx.select_statement() == null || ctx.insert_into_clause() == null || ctx.insert_into_clause().paren_column_list() == null) {
+            return visitChildren(ctx);
+        }
+        String targetTable = tableFrom(ctx.insert_into_clause().general_table_ref().dml_table_expression_clause());
+        List<String> targetColumns = columns(ctx.insert_into_clause().paren_column_list().column_list().column_name());
+        visit(ctx.select_statement());
+        List<OracleFullGrammerParser.Select_list_elementsContext> selectItems = selectItems(ctx.select_statement());
         int count = Math.min(targetColumns.size(), selectItems.size());
         for (int index = 0; index < count; index++) {
-            OracleFullGrammerParser.SelectItemContext item = selectItems.get(index);
-            if (item.expression() == null) {
+            OracleFullGrammerParser.ExpressionContext expression = selectItems.get(index).expression();
+            if (expression == null) {
                 continue;
             }
-            ExpressionAnalysis source = analyze(item.expression());
+            OracleExpressionAnalysis source = analyze(expression);
             if (source.sources().isEmpty()) {
                 continue;
             }
-            Map<String, Object> attrs = attrs();
+            Map<String, Object> attrs = core.attrs();
             attrs.put("targetTable", targetTable);
             attrs.put("targetColumn", targetColumns.get(index));
             attrs.put("sourceAliases", source.aliases());
@@ -250,144 +337,68 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
             attrs.put("transformType", source.transform().name());
             attrs.put("flowKind", source.flowKind().name());
             attrs.put("mappingKind", "INSERT_SELECT");
-            add(StructuredParseEventType.INSERT_SELECT_MAPPING, item, attrs);
+            core.add(StructuredParseEventType.INSERT_SELECT_MAPPING, selectItems.get(index), attrs);
         }
         return null;
     }
 
     @Override
-    public Void visitUpdateStatement(OracleFullGrammerParser.UpdateStatementContext ctx) {
-        visit(ctx.tablePrimary());
-        String targetAlias = targetAlias(ctx.tablePrimary());
-        String targetTable = targetTable(ctx.tablePrimary());
-        emitWriteTarget(ctx.tablePrimary(), targetAlias, targetTable);
-        for (OracleFullGrammerParser.AssignmentContext assignment : ctx.assignmentList().assignment()) {
-            emitAssignmentMapping(assignment, targetAlias, targetTable,
-                    StructuredParseEventType.UPDATE_ASSIGNMENT, "UPDATE_SET");
+    public Void visitMerge_statement(OracleFullGrammerParser.Merge_statementContext ctx) {
+        String targetTable = tableFrom(ctx.selected_tableview(0));
+        String targetAlias = aliasFrom(ctx.selected_tableview(0), targetTable);
+        writeTargetTables.push(targetTable);
+        writeTargetAliases.push(targetAlias);
+        emitWriteTarget(ctx.selected_tableview(0), targetAlias, targetTable);
+        visit(ctx.selected_tableview(0));
+        visit(ctx.selected_tableview(1));
+        if (ctx.condition() != null) {
+            visit(ctx.condition());
         }
-        if (ctx.whereClause() != null) {
-            visit(ctx.whereClause());
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitMergeStatement(OracleFullGrammerParser.MergeStatementContext ctx) {
-        OracleFullGrammerParser.TablePrimaryContext target = ctx.tablePrimary(0);
-        OracleFullGrammerParser.TablePrimaryContext source = ctx.tablePrimary(1);
-        visit(target);
-        visit(source);
-        String targetAlias = targetAlias(target);
-        String targetTable = targetTable(target);
-        emitWriteTarget(target, targetAlias, targetTable);
-        visit(ctx.predicate());
-        for (OracleFullGrammerParser.MergeWhenClauseContext clause : ctx.mergeWhenClause()) {
-            if (clause.mergeAction() instanceof OracleFullGrammerParser.MergeUpdateActionContext updateAction) {
-                for (OracleFullGrammerParser.AssignmentContext assignment
-                        : updateAction.assignmentList().assignment()) {
-                    emitAssignmentMapping(assignment, targetAlias, targetTable,
-                            StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_UPDATE_SET");
-                }
+        OracleFullGrammerParser.Merge_update_clauseContext update = ctx.merge_update_clause();
+        if (update != null) {
+            for (OracleFullGrammerParser.Merge_elementContext element : update.merge_element()) {
+                emitAssignment(element, name(element.column_name()), element.expression(), StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_UPDATE_SET");
             }
         }
+        writeTargetAliases.pop();
+        writeTargetTables.pop();
         return null;
     }
 
-    @Override
-    public Void visitCreateTableStatement(OracleFullGrammerParser.CreateTableStatementContext ctx) {
-        ddlTables.push(qualifiedName(ctx.qualifiedName()));
-        for (OracleFullGrammerParser.TableElementContext element : ctx.tableElement()) {
-            visit(element);
+    private void emitForeignKey(OracleFullGrammerParser.Foreign_key_clauseContext ctx) {
+        List<String> sourceColumns = columns(ctx.paren_column_list().column_list().column_name());
+        OracleFullGrammerParser.References_clauseContext ref = ctx.references_clause();
+        addForeignKeyEvents(currentDdlTable(), sourceColumns, name(ref.tableview_name()), referenceColumns(ref), ctx);
+    }
+
+    private void emitAssignment(ParserRuleContext ctx, String targetColumn, OracleFullGrammerParser.ExpressionContext expression, StructuredParseEventType type, String mappingKind) {
+        OracleExpressionAnalysis source = analyze(expression);
+        if (source.sources().isEmpty()) {
+            return;
         }
-        ddlTables.pop();
-        return null;
+        Map<String, Object> attrs = core.attrs();
+        attrs.put("targetAlias", writeTargetAliases.peek());
+        attrs.put("targetTable", writeTargetTables.peek());
+        attrs.put("targetColumn", lastPart(targetColumn));
+        attrs.put("sourceAliases", source.aliases());
+        attrs.put("sourceColumns", source.columns());
+        attrs.put("transformType", source.transform().name());
+        attrs.put("flowKind", source.flowKind().name());
+        attrs.put("mappingKind", mappingKind);
+        core.add(type, ctx, attrs);
     }
 
-    @Override
-    public Void visitAlterTableStatement(OracleFullGrammerParser.AlterTableStatementContext ctx) {
-        ddlTables.push(qualifiedName(ctx.qualifiedName()));
-        visit(ctx.tableForeignKey());
-        ddlTables.pop();
-        return null;
-    }
-
-    @Override
-    public Void visitTableForeignKey(OracleFullGrammerParser.TableForeignKeyContext ctx) {
-        String sourceTable = currentDdlTable();
-        List<String> sourceColumns = identifiers(ctx.identifierList(0));
-        String targetTable = qualifiedName(ctx.qualifiedName());
-        List<String> targetColumns = identifiers(ctx.identifierList(1));
-        addForeignKeyEvents(sourceTable, sourceColumns, targetTable, targetColumns, ctx);
-        return null;
-    }
-
-    @Override
-    public Void visitPrimaryKeyConstraint(OracleFullGrammerParser.PrimaryKeyConstraintContext ctx) {
-        for (String column : identifiers(ctx.identifierList())) {
-            addIndexEvent(currentDdlTable(), column, "TARGET_UNIQUE", "PRIMARY_KEY", ctx);
+    private void emitProjectionItems(OracleFullGrammerParser.Selected_listContext ctx, ProjectionOwner owner) {
+        if (ctx == null) {
+            return;
         }
-        return null;
-    }
-
-    @Override
-    public Void visitUniqueConstraint(OracleFullGrammerParser.UniqueConstraintContext ctx) {
-        for (String column : identifiers(ctx.identifierList())) {
-            addIndexEvent(currentDdlTable(), column, "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", ctx);
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitTableIndexConstraint(OracleFullGrammerParser.TableIndexConstraintContext ctx) {
-        for (String column : safeIndexColumns(ctx.indexPartList())) {
-            addIndexEvent(currentDdlTable(), column, "SOURCE_INDEX", "CREATE_TABLE_INDEX", ctx);
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitColumnDefinition(OracleFullGrammerParser.ColumnDefinitionContext ctx) {
-        String table = currentDdlTable();
-        String column = clean(ctx.identifier().getText());
-        for (OracleFullGrammerParser.ColumnDefinitionPartContext part : ctx.columnDefinitionPart()) {
-            OracleFullGrammerParser.InlineColumnConstraintContext constraint = part.inlineColumnConstraint();
-            if (constraint == null) {
-                continue;
-            }
-            if (constraint.PRIMARY() != null) {
-                addIndexEvent(table, column, "TARGET_UNIQUE", "INLINE_PRIMARY_KEY", constraint);
-            } else if (constraint.UNIQUE() != null) {
-                addIndexEvent(table, column, "TARGET_UNIQUE", "INLINE_UNIQUE", constraint);
-            } else if (constraint.REFERENCES() != null) {
-                addForeignKeyEvents(table,
-                        List.of(column),
-                        qualifiedName(constraint.qualifiedName()),
-                        identifiers(constraint.identifierList()),
-                        constraint);
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitCreateIndexStatement(OracleFullGrammerParser.CreateIndexStatementContext ctx) {
-        String table = qualifiedName(ctx.qualifiedName());
-        String role = ctx.UNIQUE() == null ? "SOURCE_INDEX" : "TARGET_UNIQUE";
-        String kind = ctx.UNIQUE() == null ? "CREATE_INDEX" : "CREATE_UNIQUE_INDEX";
-        for (String column : safeIndexColumns(ctx.indexPartList())) {
-            addIndexEvent(table, column, role, kind, ctx);
-        }
-        return null;
-    }
-
-    private void emitProjectionItems(OracleFullGrammerParser.SelectListContext ctx, ProjectionOwner owner) {
-        List<OracleFullGrammerParser.SelectItemContext> items = ctx.selectItem();
+        List<OracleFullGrammerParser.Select_list_elementsContext> items = ctx.select_list_elements();
         for (int index = 0; index < items.size(); index++) {
-            OracleFullGrammerParser.SelectItemContext item = items.get(index);
+            OracleFullGrammerParser.Select_list_elementsContext item = items.get(index);
             if (item.expression() == null) {
                 continue;
             }
-            ExpressionAnalysis source = analyze(item.expression());
+            OracleExpressionAnalysis source = analyze(item.expression());
             if (source.sources().isEmpty()) {
                 continue;
             }
@@ -395,34 +406,36 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
             if (outputColumn.isBlank()) {
                 continue;
             }
-            Map<String, Object> attrs = attrs();
+            Map<String, Object> attrs = core.attrs();
             attrs.put("outputAlias", owner.alias());
             attrs.put("outputColumn", outputColumn);
             attrs.put("sourceAliases", source.aliases());
             attrs.put("sourceColumns", source.columns());
             attrs.put("transformType", source.transform().name());
             attrs.put("flowKind", source.flowKind().name());
-            add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
+            core.add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
         }
     }
 
-    private void addForeignKeyEvents(
-            String sourceTable,
-            List<String> sourceColumns,
-            String targetTable,
-            List<String> targetColumns,
-            ParserRuleContext ctx
-    ) {
+    private String outputColumn(OracleFullGrammerParser.Select_list_elementsContext item) {
+        if (item.column_alias() != null) {
+            return lastPart(name(item.column_alias()));
+        }
+        OracleColumnRead single = singleColumn(item.expression());
+        return single == null ? "" : single.column();
+    }
+
+    private void addForeignKeyEvents(String sourceTable, List<String> sourceColumns, String targetTable, List<String> targetColumns, ParserRuleContext ctx) {
         int count = Math.min(sourceColumns.size(), targetColumns.size());
         for (int index = 0; index < count; index++) {
-            Map<String, Object> attrs = attrs();
+            Map<String, Object> attrs = core.attrs();
             attrs.put("sourceTable", sourceTable);
             attrs.put("sourceColumn", sourceColumns.get(index));
             attrs.put("targetTable", targetTable);
             attrs.put("targetColumn", targetColumns.get(index));
             attrs.put("compositePosition", index + 1);
             attrs.put("compositeSize", count);
-            add(StructuredParseEventType.DDL_FOREIGN_KEY, ctx, attrs);
+            core.add(StructuredParseEventType.DDL_FOREIGN_KEY, ctx, attrs);
         }
     }
 
@@ -430,350 +443,236 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
         if (table.isBlank() || column.isBlank()) {
             return;
         }
-        Map<String, Object> attrs = attrs();
+        Map<String, Object> attrs = core.attrs();
         attrs.put("table", table);
-        attrs.put("column", column);
+        attrs.put("column", lastPart(column));
         attrs.put("role", role);
         attrs.put("kind", kind);
-        add(StructuredParseEventType.DDL_INDEX, ctx, attrs);
+        core.add(StructuredParseEventType.DDL_INDEX, ctx, attrs);
     }
 
-    private void emitWriteTarget(
-            OracleFullGrammerParser.TablePrimaryContext target,
-            String targetAlias,
-            String targetTable
-    ) {
-        Map<String, Object> writeTarget = attrs();
-        writeTarget.put("qualifiedTable", targetTable);
-        writeTarget.put("table", baseName(targetTable));
-        if (!targetAlias.isBlank()) {
-            writeTarget.put("alias", targetAlias);
-        }
-        add(StructuredParseEventType.WRITE_TARGET, target, writeTarget);
-    }
-
-    private void emitAssignmentMapping(
-            OracleFullGrammerParser.AssignmentContext assignment,
-            String targetAlias,
-            String targetTable,
-            StructuredParseEventType eventType,
-            String mappingKind
-    ) {
-        List<String> targetParts = parts(assignment.qualifiedName());
-        String targetColumn = targetParts.isEmpty() ? "" : targetParts.get(targetParts.size() - 1);
-        String assignmentAlias = targetParts.size() > 1 ? targetParts.get(targetParts.size() - 2) : targetAlias;
-        ExpressionAnalysis source = analyze(assignment.expression());
-        if (source.sources().isEmpty()) {
+    private void emitWriteTarget(ParserRuleContext ctx, String alias, String table) {
+        if (table.isBlank()) {
             return;
         }
-        Map<String, Object> attrs = attrs();
-        attrs.put("targetAlias", assignmentAlias);
-        attrs.put("targetTable", targetTable);
-        attrs.put("targetColumn", targetColumn);
-        attrs.put("sourceAliases", source.aliases());
-        attrs.put("sourceColumns", source.columns());
-        attrs.put("transformType", source.transform().name());
-        attrs.put("flowKind", source.flowKind().name());
-        attrs.put("mappingKind", mappingKind);
-        add(eventType, assignment, attrs);
+        Map<String, Object> attrs = core.attrs();
+        attrs.put("qualifiedTable", table);
+        attrs.put("table", core.baseName(table));
+        if (!alias.isBlank()) {
+            attrs.put("alias", alias);
+        }
+        core.add(StructuredParseEventType.WRITE_TARGET, ctx, attrs);
+    }
+
+    private void emitIgnoredRowset(ParserRuleContext ctx, String alias) {
+        Map<String, Object> attrs = core.attrs();
+        attrs.put("name", alias);
+        attrs.put("table", alias);
+        attrs.put("qualifiedTable", alias);
+        core.add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
+    }
+
+    private void emitRowset(ParserRuleContext ctx, String table, String alias) {
+        if (table.isBlank()) {
+            return;
+        }
+        String key = table + "|" + alias + "|" + core.line(ctx);
+        if (!emittedRowsets.add(key)) {
+            return;
+        }
+        Map<String, Object> attrs = core.attrs();
+        attrs.put("keyword", "FROM");
+        attrs.put("qualifiedTable", table);
+        attrs.put("table", core.baseName(table));
+        if (!alias.isBlank()) {
+            attrs.put("alias", alias);
+        }
+        core.add(StructuredParseEventType.ROWSET_REFERENCE, ctx, attrs);
     }
 
     private String currentDdlTable() {
         return ddlTables.isEmpty() ? "" : ddlTables.peek();
     }
 
-    private List<String> identifiers(OracleFullGrammerParser.IdentifierListContext ctx) {
-        if (ctx == null) {
+    private List<String> referenceColumns(OracleFullGrammerParser.References_clauseContext ref) {
+        if (ref == null || ref.paren_column_list() == null) {
             return List.of();
         }
-        return ctx.identifier().stream().map(identifier -> clean(identifier.getText())).toList();
+        return columns(ref.paren_column_list().column_list().column_name());
     }
 
-    private List<String> safeIndexColumns(OracleFullGrammerParser.IndexPartListContext ctx) {
-        if (ctx == null) {
+    private List<String> columns(List<OracleFullGrammerParser.Column_nameContext> contexts) {
+        return contexts.stream().map(this::name).map(this::lastPart).filter(s -> !s.isBlank()).toList();
+    }
+
+    private String tableFrom(OracleFullGrammerParser.Table_ref_aux_internalContext ctx) {
+        if (ctx instanceof OracleFullGrammerParser.Table_ref_aux_internal_oneContext one) {
+            return tableFrom(one.dml_table_expression_clause());
+        }
+        if (ctx instanceof OracleFullGrammerParser.Table_ref_aux_internal_threContext only) {
+            return tableFrom(only.dml_table_expression_clause());
+        }
+        return "";
+    }
+
+    private String tableFrom(OracleFullGrammerParser.Dml_table_expression_clauseContext ctx) {
+        if (ctx == null || ctx.tableview_name() == null) {
+            return "";
+        }
+        return name(ctx.tableview_name());
+    }
+
+    private String tableFrom(OracleFullGrammerParser.Selected_tableviewContext ctx) {
+        if (ctx == null || ctx.tableview_name() == null) {
+            return "";
+        }
+        return name(ctx.tableview_name());
+    }
+
+    private String aliasFrom(OracleFullGrammerParser.Selected_tableviewContext ctx, String table) {
+        if (ctx == null || ctx.table_alias() == null) {
+            return core.baseName(table);
+        }
+        return name(ctx.table_alias());
+    }
+
+    private String qualifiedTable(OracleFullGrammerParser.Schema_nameContext schema, OracleFullGrammerParser.Table_nameContext table) {
+        String tableName = name(table);
+        if (schema == null) {
+            return tableName;
+        }
+        return name(schema) + "." + tableName;
+    }
+
+    private String name(ParserRuleContext ctx) {
+        return ctx == null ? "" : core.clean(ctx.getText());
+    }
+
+    private String lastPart(String value) {
+        String cleaned = core.clean(value);
+        int dot = cleaned.lastIndexOf('.');
+        return dot < 0 ? cleaned : cleaned.substring(dot + 1);
+    }
+
+    private OracleColumnRead singleSelectColumn(OracleFullGrammerParser.SubqueryContext subquery) {
+        List<OracleFullGrammerParser.Select_list_elementsContext> items = selectItems(subquery);
+        if (items.size() != 1 || items.get(0).expression() == null) {
+            return null;
+        }
+        return singleColumn(items.get(0).expression());
+    }
+
+    private List<OracleFullGrammerParser.Select_list_elementsContext> selectItems(ParserRuleContext ctx) {
+        OracleFullGrammerParser.Query_blockContext query = first(ctx, OracleFullGrammerParser.Query_blockContext.class);
+        if (query == null || query.selected_list() == null) {
             return List.of();
         }
-        List<String> columns = new ArrayList<>();
-        for (OracleFullGrammerParser.IndexPartContext part : ctx.indexPart()) {
-            if (part.identifier() != null) {
-                columns.add(clean(part.identifier().getText()));
-            }
-        }
-        return columns;
+        return query.selected_list().select_list_elements();
     }
 
-    private String outputColumn(OracleFullGrammerParser.SelectItemContext item) {
-        if (item.identifier() != null) {
-            return clean(item.identifier().getText());
-        }
-        ColumnRead column = singleColumn(item.expression());
-        return column == null ? "" : column.column();
-    }
-
-    private ColumnRead singleSelectColumn(OracleFullGrammerParser.SelectStatementContext select) {
-        List<ColumnRead> columns = selectColumns(select);
+    private OracleColumnRead singleColumn(ParserRuleContext ctx) {
+        List<OracleColumnRead> columns = columnReads(ctx);
         return columns.size() == 1 ? columns.get(0) : null;
     }
 
-    private List<ColumnRead> selectColumns(OracleFullGrammerParser.SelectStatementContext select) {
-        List<OracleFullGrammerParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
-        List<ColumnRead> columns = new ArrayList<>();
-        for (OracleFullGrammerParser.SelectItemContext item : items) {
-            if (item.expression() == null) {
-                return List.of();
-            }
-            ColumnRead column = singleColumn(item.expression());
-            if (column == null) {
-                return List.of();
-            }
-            columns.add(column);
+    private OracleExpressionAnalysis analyze(ParserRuleContext ctx) {
+        List<OracleColumnRead> columns = columnReads(ctx);
+        if (columns.isEmpty()) {
+            return OracleExpressionAnalysis.empty();
         }
-        return columns;
+        LineageTransformType transform = transformFor(ctx);
+        LineageFlowKind flow = transform == LineageTransformType.CASE_WHEN ? LineageFlowKind.CONTROL : LineageFlowKind.VALUE;
+        return new OracleExpressionAnalysis(columns, transform, flow);
     }
 
-    private ColumnRead singleColumn(OracleFullGrammerParser.ExpressionContext expression) {
-        if (expression instanceof OracleFullGrammerParser.ColumnExpressionContext columnExpression) {
-            List<String> parts = parts(columnExpression.qualifiedName());
-            if (parts.size() == 1) {
-                return new ColumnRead("", parts.get(0));
-            }
-            return new ColumnRead(parts.get(parts.size() - 2), parts.get(parts.size() - 1));
+    private LineageTransformType transformFor(ParseTree tree) {
+        String type = tree.getClass().getSimpleName();
+        String text = tree.getText().toLowerCase(Locale.ROOT);
+        if (type.contains("Case") || text.startsWith("case")) {
+            return LineageTransformType.CASE_WHEN;
         }
-        if (expression instanceof OracleFullGrammerParser.ParenExpressionContext paren) {
-            return singleColumn(paren.expression());
+        if (text.contains("||") || text.startsWith("concat") || text.startsWith("listagg")) {
+            return LineageTransformType.CONCAT_FORMAT;
+        }
+        if (text.startsWith("sum(") || text.startsWith("avg(") || text.startsWith("count(") || text.startsWith("min(") || text.startsWith("max(")) {
+            return LineageTransformType.AGGREGATE;
+        }
+        if (text.startsWith("coalesce(") || text.startsWith("nvl(")) {
+            return LineageTransformType.COALESCE;
+        }
+        if (text.contains("+") || text.contains("-") || text.contains("*") || text.contains("/")) {
+            return LineageTransformType.ARITHMETIC;
+        }
+        return LineageTransformType.DIRECT;
+    }
+
+    private List<OracleColumnRead> columnReads(ParseTree tree) {
+        Map<String, OracleColumnRead> reads = new LinkedHashMap<>();
+        collectColumnReads(tree, reads);
+        return new ArrayList<>(reads.values());
+    }
+
+    private void collectColumnReads(ParseTree tree, Map<String, OracleColumnRead> reads) {
+        if (tree == null) {
+            return;
+        }
+        if (tree instanceof OracleFullGrammerParser.Column_nameContext column) {
+            addColumnRead(name(column), reads);
+            return;
+        }
+        if (tree instanceof OracleFullGrammerParser.Table_elementContext element) {
+            addColumnRead(name(element), reads);
+            return;
+        }
+        if (tree instanceof OracleFullGrammerParser.General_elementContext element) {
+            String text = name(element);
+            if (!text.contains("(") && text.contains(".")) {
+                addColumnRead(text, reads);
+                return;
+            }
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            collectColumnReads(tree.getChild(index), reads);
+        }
+    }
+
+    private void addColumnRead(String raw, Map<String, OracleColumnRead> reads) {
+        String value = core.clean(raw);
+        int dot = value.lastIndexOf('.');
+        if (dot <= 0 || dot == value.length() - 1) {
+            return;
+        }
+        String alias = core.clean(value.substring(0, dot));
+        String column = core.clean(value.substring(dot + 1));
+        if (alias.isBlank() || column.isBlank()) {
+            return;
+        }
+        String key = alias + "." + column;
+        reads.putIfAbsent(key, new OracleColumnRead(alias, column));
+    }
+
+    private <T extends ParserRuleContext> T first(ParseTree tree, Class<T> type) {
+        if (type.isInstance(tree)) {
+            return type.cast(tree);
+        }
+        if (tree == null) {
+            return null;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            T found = first(tree.getChild(index), type);
+            if (found != null) {
+                return found;
+            }
         }
         return null;
-    }
-
-    private ExpressionAnalysis analyze(OracleFullGrammerParser.ExpressionContext expression) {
-        if (expression instanceof OracleFullGrammerParser.ColumnExpressionContext columnExpression) {
-            ColumnRead column = singleColumn(columnExpression);
-            if (column == null) {
-                return ExpressionAnalysis.empty();
-            }
-            return ExpressionAnalysis.of(column, LineageTransformType.DIRECT, LineageFlowKind.VALUE);
-        }
-        if (expression instanceof OracleFullGrammerParser.ParenExpressionContext paren) {
-            return analyze(paren.expression());
-        }
-        if (expression instanceof OracleFullGrammerParser.BinaryExpressionContext binary) {
-            ExpressionAnalysis left = analyze(binary.expression(0));
-            ExpressionAnalysis right = analyze(binary.expression(1));
-            LineageTransformType transform = "||".equals(binary.arithmeticOperator().getText())
-                    ? LineageTransformType.CONCAT_FORMAT
-                    : LineageTransformType.ARITHMETIC;
-            return ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE, left, right);
-        }
-        if (expression instanceof OracleFullGrammerParser.FunctionExpressionContext function) {
-            ExpressionAnalysis args = ExpressionAnalysis.empty();
-            if (function.functionCall().expressionList() != null) {
-                for (OracleFullGrammerParser.ExpressionContext argument : function.functionCall().expressionList().expression()) {
-                    args = ExpressionAnalysis.combine(args.transform(), args.flowKind(), args, analyze(argument));
-                }
-            }
-            String functionName = baseName(qualifiedName(function.functionCall().qualifiedName())).toLowerCase(Locale.ROOT);
-            LineageTransformType transform = switch (functionName) {
-                case "sum", "avg", "count", "min", "max" -> LineageTransformType.AGGREGATE;
-                case "coalesce" -> LineageTransformType.COALESCE;
-                case "concat", "format", "string_agg" -> LineageTransformType.CONCAT_FORMAT;
-                default -> LineageTransformType.FUNCTION_CALL;
-            };
-            LineageTransformType dominant = ExpressionAnalysis.dominant(transform, args.transform());
-            LineageFlowKind flowKind = dominant == LineageTransformType.CASE_WHEN
-                    ? LineageFlowKind.CONTROL
-                    : LineageFlowKind.VALUE;
-            return new ExpressionAnalysis(args.sources(), dominant, flowKind);
-        }
-        if (expression instanceof OracleFullGrammerParser.CaseExpressionContext caseExpression) {
-            ExpressionAnalysis combined = ExpressionAnalysis.empty();
-            for (OracleFullGrammerParser.CaseWhenClauseContext whenClause : caseExpression.caseWhenClause()) {
-                combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL,
-                        combined,
-                        analyze(whenClause.predicate()));
-                combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL,
-                        combined,
-                        analyze(whenClause.expression()));
-            }
-            if (caseExpression.expression().size() > 0) {
-                for (OracleFullGrammerParser.ExpressionContext part : caseExpression.expression()) {
-                    combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                            LineageFlowKind.CONTROL,
-                            combined,
-                            analyze(part));
-                }
-            }
-            return new ExpressionAnalysis(combined.sources(), LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL);
-        }
-        if (expression instanceof OracleFullGrammerParser.ScalarSubqueryExpressionContext scalarSubquery) {
-            visit(scalarSubquery.selectStatement());
-            List<ColumnRead> columns = selectColumns(scalarSubquery.selectStatement());
-            if (columns.isEmpty()) {
-                return ExpressionAnalysis.empty();
-            }
-            return new ExpressionAnalysis(columns, LineageTransformType.DIRECT, LineageFlowKind.VALUE);
-        }
-        return ExpressionAnalysis.empty();
-    }
-
-    private ExpressionAnalysis analyze(OracleFullGrammerParser.PredicateContext predicate) {
-        if (predicate instanceof OracleFullGrammerParser.AndPredicateContext andPredicate) {
-            return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL,
-                    analyze(andPredicate.predicate(0)),
-                    analyze(andPredicate.predicate(1)));
-        }
-        if (predicate instanceof OracleFullGrammerParser.OrPredicateContext orPredicate) {
-            return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL,
-                    analyze(orPredicate.predicate(0)),
-                    analyze(orPredicate.predicate(1)));
-        }
-        if (predicate instanceof OracleFullGrammerParser.NotPredicateContext notPredicate) {
-            return analyze(notPredicate.predicate());
-        }
-        if (predicate instanceof OracleFullGrammerParser.ParenPredicateContext parenPredicate) {
-            return analyze(parenPredicate.predicate());
-        }
-        if (predicate instanceof OracleFullGrammerParser.ComparisonPredicateContext comparisonPredicate) {
-            return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL,
-                    analyze(comparisonPredicate.expression(0)),
-                    analyze(comparisonPredicate.expression(1)));
-        }
-        if (predicate instanceof OracleFullGrammerParser.LikePredicateContext likePredicate) {
-            ExpressionAnalysis combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL,
-                    analyze(likePredicate.expression(0)),
-                    analyze(likePredicate.expression(1)));
-            if (likePredicate.expression().size() > 2) {
-                combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL,
-                        combined,
-                        analyze(likePredicate.expression(2)));
-            }
-            return combined;
-        }
-        if (predicate instanceof OracleFullGrammerParser.LiteralInPredicateContext literalInPredicate) {
-            ExpressionAnalysis combined = analyze(literalInPredicate.expression());
-            for (OracleFullGrammerParser.ExpressionContext item : literalInPredicate.expressionList().expression()) {
-                combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL,
-                        combined,
-                        analyze(item));
-            }
-            return combined;
-        }
-        if (predicate instanceof OracleFullGrammerParser.InSubqueryPredicateContext inSubqueryPredicate) {
-            return analyze(inSubqueryPredicate.expression());
-        }
-        if (predicate instanceof OracleFullGrammerParser.TupleInSubqueryPredicateContext tupleInPredicate) {
-            ExpressionAnalysis combined = ExpressionAnalysis.empty();
-            for (OracleFullGrammerParser.ExpressionContext item : tupleInPredicate.expressionList().expression()) {
-                combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL,
-                        combined,
-                        analyze(item));
-            }
-            return combined;
-        }
-        if (predicate instanceof OracleFullGrammerParser.ExpressionPredicateContext expressionPredicate) {
-            return analyze(expressionPredicate.expression());
-        }
-        return ExpressionAnalysis.empty();
-    }
-
-    private Map<String, Object> attrs() {
-        Map<String, Object> attrs = new LinkedHashMap<>();
-        attrs.put("tokenEventNative", true);
-        return attrs;
-    }
-
-    private void add(StructuredParseEventType type, ParserRuleContext ctx, Map<String, Object> attrs) {
-        events.add(new StructuredSqlEvent(type, statement.sourceName(), line(ctx), attrs));
-    }
-
-    private long line(ParserRuleContext ctx) {
-        if (ctx == null || ctx.getStart() == null) {
-            return statement.startLine();
-        }
-        return statement.startLine() + Math.max(0, ctx.getStart().getLine() - 1);
-    }
-
-    private String targetAlias(OracleFullGrammerParser.TablePrimaryContext primary) {
-        if (primary instanceof OracleFullGrammerParser.NamedTablePrimaryContext named && named.tableAlias() != null) {
-            return clean(named.tableAlias().identifier().getText());
-        }
-        return targetTable(primary);
-    }
-
-    private String rowsetAlias(OracleFullGrammerParser.TablePrimaryContext primary) {
-        if (primary instanceof OracleFullGrammerParser.NamedTablePrimaryContext named) {
-            if (named.tableAlias() != null) {
-                return clean(named.tableAlias().identifier().getText());
-            }
-            return baseName(qualifiedName(named.qualifiedName()));
-        }
-        if (primary instanceof OracleFullGrammerParser.DerivedTablePrimaryContext derived && derived.tableAlias() != null) {
-            return clean(derived.tableAlias().identifier().getText());
-        }
-        return "";
-    }
-
-    private String targetTable(OracleFullGrammerParser.TablePrimaryContext primary) {
-        if (primary instanceof OracleFullGrammerParser.NamedTablePrimaryContext named) {
-            return qualifiedName(named.qualifiedName());
-        }
-        if (primary instanceof OracleFullGrammerParser.DerivedTablePrimaryContext derived && derived.tableAlias() != null) {
-            return clean(derived.tableAlias().identifier().getText());
-        }
-        return "";
-    }
-
-    private String qualifiedName(OracleFullGrammerParser.QualifiedNameContext ctx) {
-        return String.join(".", parts(ctx));
-    }
-
-    private List<String> parts(OracleFullGrammerParser.QualifiedNameContext ctx) {
-        return ctx.identifier().stream().map(identifier -> clean(identifier.getText())).toList();
-    }
-
-    private String clean(String raw) {
-        if (raw == null) {
-            return "";
-        }
-        String trimmed = raw.trim();
-        if (trimmed.length() >= 2
-                && ((trimmed.startsWith("\"") && trimmed.endsWith("\""))
-                || (trimmed.startsWith("`") && trimmed.endsWith("`")))) {
-            return trimmed.substring(1, trimmed.length() - 1).replace(trimmed.substring(0, 1) + trimmed.substring(0, 1),
-                    trimmed.substring(0, 1));
-        }
-        return trimmed;
-    }
-
-    private String normalize(String value) {
-        return clean(value).toLowerCase(Locale.ROOT);
-    }
-
-    private String baseName(String qualified) {
-        if (qualified == null) {
-            return "";
-        }
-        int dot = qualified.lastIndexOf('.');
-        return dot < 0 ? qualified : qualified.substring(dot + 1);
     }
 
     private String currentJoinKind() {
         return joinKinds.isEmpty() ? "WHERE_OR_UNKNOWN" : joinKinds.peek();
     }
 
-    private String joinKind(OracleFullGrammerParser.JoinClauseContext join) {
-        if (join.joinType() == null) {
-            return "JOIN";
-        }
-        String text = join.joinType().getText().toUpperCase(Locale.ROOT);
+    private String joinKind(OracleFullGrammerParser.Join_clauseContext ctx) {
+        String text = ctx.getText().toUpperCase(Locale.ROOT);
         if (text.startsWith("LEFT")) {
             return "LEFT_JOIN";
         }
@@ -790,67 +689,5 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
     }
 
     private record ProjectionOwner(String alias, List<String> columns) {
-    }
-
-    private record ColumnRead(String alias, String column) {
-    }
-
-    private record ExpressionAnalysis(
-            List<ColumnRead> sources,
-            LineageTransformType transform,
-            LineageFlowKind flowKind
-    ) {
-        static ExpressionAnalysis empty() {
-            return new ExpressionAnalysis(List.of(), LineageTransformType.DIRECT, LineageFlowKind.VALUE);
-        }
-
-        static ExpressionAnalysis of(ColumnRead column, LineageTransformType transform, LineageFlowKind flowKind) {
-            return new ExpressionAnalysis(List.of(column), transform, flowKind);
-        }
-
-        static ExpressionAnalysis combine(
-                LineageTransformType transform,
-                LineageFlowKind flowKind,
-                ExpressionAnalysis left,
-                ExpressionAnalysis right
-        ) {
-            List<ColumnRead> sources = new ArrayList<>();
-            sources.addAll(left.sources());
-            sources.addAll(right.sources());
-            return new ExpressionAnalysis(sources.stream().distinct().toList(),
-                    dominant(transform, left.transform(), right.transform()), flowKind);
-        }
-
-        static LineageTransformType dominant(LineageTransformType... transforms) {
-            LineageTransformType dominant = LineageTransformType.DIRECT;
-            for (LineageTransformType transform : transforms) {
-                if (priority(transform) > priority(dominant)) {
-                    dominant = transform;
-                }
-            }
-            return dominant;
-        }
-
-        private static int priority(LineageTransformType transform) {
-            return switch (transform) {
-                case CASE_WHEN -> 8;
-                case CUMULATIVE -> 7;
-                case AGGREGATE -> 6;
-                case WINDOW_DERIVED -> 5;
-                case COALESCE -> 4;
-                case CONCAT_FORMAT -> 3;
-                case ARITHMETIC -> 2;
-                case FUNCTION_CALL -> 1;
-                default -> 0;
-            };
-        }
-
-        List<String> aliases() {
-            return sources.stream().map(ColumnRead::alias).toList();
-        }
-
-        List<String> columns() {
-            return sources.stream().map(ColumnRead::column).toList();
-        }
     }
 }

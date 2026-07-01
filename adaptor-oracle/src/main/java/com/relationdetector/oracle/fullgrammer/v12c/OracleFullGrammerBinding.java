@@ -39,7 +39,7 @@ final class OracleFullGrammerBinding implements OracleFullGrammerSqlBinding, Ora
         return OracleFullGrammerParseSupport.parse(statement,
                 OracleFullGrammerLexer::new,
                 OracleFullGrammerParser::new,
-                OracleFullGrammerParser::script,
+                OracleFullGrammerParser::sql_script,
                 root -> new OracleFullGrammerParseTreeVisitor(statement).collect(root),
                 collectWithSyntaxErrors);
     }

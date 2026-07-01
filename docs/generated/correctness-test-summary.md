@@ -35505,12 +35505,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_records.instance_id->approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.node_id->approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -35524,6 +35528,8 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:project_costs.project_id->projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -36091,12 +36097,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_records.instance_id->approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.node_id->approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -36110,6 +36120,8 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:project_costs.project_id->projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -36677,12 +36689,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_records.instance_id->approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.node_id->approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -36696,6 +36712,8 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:project_costs.project_id->projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -37263,12 +37281,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_records.instance_id->approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.node_id->approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -37282,6 +37304,8 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:project_costs.project_id->projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -38086,7 +38110,7 @@ GROUP BY c.id;
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -38178,9 +38202,9 @@ _Preview truncated; see input file for full content._
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -38491,71 +38515,45 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:account_subjects.subject_code->accounts.code:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:budget_items.period_code->vouchers.voucher_date:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:category_dim.source_category_id->products.category_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.batch_id->inventory.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.product_id->inventory.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.warehouse_id->inventory.warehouse_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.work_order_id->work_order_costs.work_order_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_orders.order_date:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:inventory.batch_id->repair_order_parts.batch_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:inventory.product_id->repair_order_parts.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:inventory.warehouse_id->repair_order_parts.issued_from_warehouse_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:region_dim.city->warehouses.city:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:region_dim.province->warehouses.province:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:standard_costs.product_id->work_orders.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:work_orders.id->work_orders.id:SQL_LOG_JOIN`
-- `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_EXISTS,NAMING_MATCH`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_requests.master_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:material_issue_items.issue_id->material_issues.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:material_issues.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:repair_order_parts.repair_order_id->repair_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_return_items.order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
-- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
@@ -38573,31 +38571,20 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
 - `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
 - `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
 - `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 
 **Forbidden Tables**
@@ -38809,7 +38796,54 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:baseline_sales.promotion_id->promo_orders.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:bom_explosion.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:cost.dept_name->revenue.dept_name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:cost.period->revenue.period:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:current_month.product_id->last_month.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:current_month.product_id->same_month_last_year.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dept_staffing.dept_id->dept_workload.dept_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->service_tickets.assigned_to:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:monthly_headcount.department_id->monthly_turnover.department_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:monthly_headcount.month->monthly_turnover.resign_month:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:order_products.order_id->order_products.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_a:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_b:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_pairs.product_a->products.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_pairs.product_b->products.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:revenue.dept_name->salary_cost.dept_name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:revenue.period->salary_cost.period:SQL_LOG_JOIN`
+- `FK_LIKE:bom_explosion.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:bom_explosion.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:boms.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:boms.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:commissions.employee_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:current_month.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_profit.salesperson_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_delivery_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_price_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_quality_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.purchase_receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -38851,9 +38885,32 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:balance_sheet.fiscal_year->income_statement.fiscal_year:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:cohort_size.cohort_month->monthly_active.cohort_month:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->monthly_attendance.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->inventory_transactions.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.warehouse_id->inventory_transactions.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:pending_orders.product_id->stock_available.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:cumulative_allocation.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:demand_stats.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:wh_accuracy.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:wh_shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:wh_throughput.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -38895,7 +38952,20 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:attendance_summary.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:customer_category_spend.customer_id->customer_total.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:latest_performance.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
+- `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:customer_repurchase_stats.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:serial_numbers.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -38938,8 +39008,21 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:customer_category_purchase.customer_id->customer_category_purchase.customer_id:SQL_LOG_EXISTS`
+- `CO_OCCURRENCE:customer_category_purchase.warehouse_id->customer_category_purchase.warehouse_id:SQL_LOG_EXISTS`
+- `CO_OCCURRENCE:customer_first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:customer_first_purchase.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_category_sales.month->store_total.month:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_category_sales.store_id->store_total.store_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_churn.warehouse_id->store_return_stats.store_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_return_stats.store_id->store_sales_stats.store_id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
@@ -38983,7 +39066,26 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:approval_instances.current_node_level->approval_nodes.node_level:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:approval_instances.submitted_by->employees.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:approval_instances.workflow_id->approval_nodes.workflow_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN`
+- `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:audit_log.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:invoices.reference_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -39026,7 +39128,23 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:employees.id->stock_transfers.requested_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->stocktakes.created_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:operation_chain.operation_id->production_operations.predecessor_operation_id:SQL_LOG_JOIN`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:operation_chain.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stocktake_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -39112,25 +39230,47 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:employees.id->master_data_change_requests.approved_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->master_data_change_requests.requested_by:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->picking_tasks.assigned_to:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_fact.fiscal_date:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `CO_OCCURRENCE:inventory.warehouse_id->sales_fact.warehouse_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.location_id->picking_task_items.location_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.product_id->picking_task_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:master_data_change_requests.master_id->sensitive_access_logs.object_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:master_data_change_requests.master_type->sensitive_access_logs.object_type:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:standard_costs.product_id->work_orders.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:budget_items.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:budget_items.version_id->budget_versions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.component_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.run_id->mrp_runs.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_request_items.ap_invoice_id->ap_invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_request_items.request_id->payment_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payments.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_task_items.location_id->warehouse_locations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_task_items.picking_task_id->picking_tasks.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_task_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_tasks.sales_order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_tasks.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_order_parts.issued_from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_order_parts.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_order_parts.repair_order_id->repair_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -39139,14 +39279,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_orders.technician_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.category_dim_id->category_dim.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_fact.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.region_dim_id->region_dim.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_order_costs.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -39234,7 +39379,7 @@ GROUP BY c.id;
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -39326,9 +39471,9 @@ _Preview truncated; see input file for full content._
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -39639,71 +39784,45 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:account_subjects.subject_code->accounts.code:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:budget_items.period_code->vouchers.voucher_date:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:category_dim.source_category_id->products.category_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.batch_id->inventory.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.product_id->inventory.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.warehouse_id->inventory.warehouse_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.work_order_id->work_order_costs.work_order_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_orders.order_date:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:inventory.batch_id->repair_order_parts.batch_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:inventory.product_id->repair_order_parts.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:inventory.warehouse_id->repair_order_parts.issued_from_warehouse_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:region_dim.city->warehouses.city:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:region_dim.province->warehouses.province:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:standard_costs.product_id->work_orders.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:work_orders.id->work_orders.id:SQL_LOG_JOIN`
-- `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_EXISTS,NAMING_MATCH`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_requests.master_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:material_issue_items.issue_id->material_issues.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:material_issues.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:repair_order_parts.repair_order_id->repair_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_return_items.order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
-- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
@@ -39721,31 +39840,20 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
 - `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
 - `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
 - `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 
 **Forbidden Tables**
@@ -39957,7 +40065,54 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:baseline_sales.promotion_id->promo_orders.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:bom_explosion.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:cost.dept_name->revenue.dept_name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:cost.period->revenue.period:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:current_month.product_id->last_month.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:current_month.product_id->same_month_last_year.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dept_staffing.dept_id->dept_workload.dept_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->service_tickets.assigned_to:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:monthly_headcount.department_id->monthly_turnover.department_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:monthly_headcount.month->monthly_turnover.resign_month:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:order_products.order_id->order_products.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_a:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_b:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_pairs.product_a->products.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_pairs.product_b->products.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:revenue.dept_name->salary_cost.dept_name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:revenue.period->salary_cost.period:SQL_LOG_JOIN`
+- `FK_LIKE:bom_explosion.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:bom_explosion.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:boms.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:boms.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:commissions.employee_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:current_month.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_profit.salesperson_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_delivery_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_price_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_quality_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.purchase_receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -39999,9 +40154,32 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:balance_sheet.fiscal_year->income_statement.fiscal_year:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:cohort_size.cohort_month->monthly_active.cohort_month:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->monthly_attendance.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->inventory_transactions.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.warehouse_id->inventory_transactions.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:pending_orders.product_id->stock_available.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:cumulative_allocation.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:demand_stats.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:wh_accuracy.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:wh_shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:wh_throughput.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -40043,7 +40221,20 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:attendance_summary.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:customer_category_spend.customer_id->customer_total.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:latest_performance.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
+- `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:customer_repurchase_stats.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:serial_numbers.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -40086,8 +40277,21 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:customer_category_purchase.customer_id->customer_category_purchase.customer_id:SQL_LOG_EXISTS`
+- `CO_OCCURRENCE:customer_category_purchase.warehouse_id->customer_category_purchase.warehouse_id:SQL_LOG_EXISTS`
+- `CO_OCCURRENCE:customer_first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:customer_first_purchase.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_category_sales.month->store_total.month:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_category_sales.store_id->store_total.store_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_churn.warehouse_id->store_return_stats.store_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_return_stats.store_id->store_sales_stats.store_id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
@@ -40131,7 +40335,26 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:approval_instances.current_node_level->approval_nodes.node_level:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:approval_instances.submitted_by->employees.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:approval_instances.workflow_id->approval_nodes.workflow_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN`
+- `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:audit_log.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:invoices.reference_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -40174,7 +40397,23 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:employees.id->stock_transfers.requested_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->stocktakes.created_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:operation_chain.operation_id->production_operations.predecessor_operation_id:SQL_LOG_JOIN`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:operation_chain.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stocktake_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -40260,25 +40499,47 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:employees.id->master_data_change_requests.approved_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->master_data_change_requests.requested_by:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->picking_tasks.assigned_to:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_fact.fiscal_date:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `CO_OCCURRENCE:inventory.warehouse_id->sales_fact.warehouse_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.location_id->picking_task_items.location_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.product_id->picking_task_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:master_data_change_requests.master_id->sensitive_access_logs.object_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:master_data_change_requests.master_type->sensitive_access_logs.object_type:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:standard_costs.product_id->work_orders.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:budget_items.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:budget_items.version_id->budget_versions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.component_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.run_id->mrp_runs.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_request_items.ap_invoice_id->ap_invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_request_items.request_id->payment_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payments.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_task_items.location_id->warehouse_locations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_task_items.picking_task_id->picking_tasks.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_task_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_tasks.sales_order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_tasks.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_order_parts.issued_from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_order_parts.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_order_parts.repair_order_id->repair_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -40287,14 +40548,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_orders.technician_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.category_dim_id->category_dim.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_fact.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.region_dim_id->region_dim.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_order_costs.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -40420,7 +40686,7 @@ GROUP BY c.id;
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -40512,9 +40778,9 @@ _Preview truncated; see input file for full content._
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -40825,71 +41091,45 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:account_subjects.subject_code->accounts.code:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:budget_items.period_code->vouchers.voucher_date:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:category_dim.source_category_id->products.category_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.batch_id->inventory.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.product_id->inventory.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.warehouse_id->inventory.warehouse_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.work_order_id->work_order_costs.work_order_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_orders.order_date:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:inventory.batch_id->repair_order_parts.batch_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:inventory.product_id->repair_order_parts.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:inventory.warehouse_id->repair_order_parts.issued_from_warehouse_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:region_dim.city->warehouses.city:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:region_dim.province->warehouses.province:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:standard_costs.product_id->work_orders.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:work_orders.id->work_orders.id:SQL_LOG_JOIN`
-- `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_EXISTS,NAMING_MATCH`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_requests.master_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:material_issue_items.issue_id->material_issues.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:material_issues.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:repair_order_parts.repair_order_id->repair_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_return_items.order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
-- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
@@ -40907,31 +41147,20 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
 - `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
 - `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
 - `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 
 **Forbidden Tables**
@@ -41143,7 +41372,54 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:baseline_sales.promotion_id->promo_orders.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:bom_explosion.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:cost.dept_name->revenue.dept_name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:cost.period->revenue.period:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:current_month.product_id->last_month.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:current_month.product_id->same_month_last_year.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dept_staffing.dept_id->dept_workload.dept_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->service_tickets.assigned_to:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:monthly_headcount.department_id->monthly_turnover.department_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:monthly_headcount.month->monthly_turnover.resign_month:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:order_products.order_id->order_products.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_a:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_b:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_pairs.product_a->products.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_pairs.product_b->products.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:revenue.dept_name->salary_cost.dept_name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:revenue.period->salary_cost.period:SQL_LOG_JOIN`
+- `FK_LIKE:bom_explosion.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:bom_explosion.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:boms.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:boms.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:commissions.employee_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:current_month.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_profit.salesperson_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_delivery_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_price_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_quality_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.purchase_receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41185,9 +41461,32 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:balance_sheet.fiscal_year->income_statement.fiscal_year:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:cohort_size.cohort_month->monthly_active.cohort_month:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->monthly_attendance.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->inventory_transactions.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.warehouse_id->inventory_transactions.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:pending_orders.product_id->stock_available.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:cumulative_allocation.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:demand_stats.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:wh_accuracy.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:wh_shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:wh_throughput.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41229,7 +41528,20 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:attendance_summary.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:customer_category_spend.customer_id->customer_total.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:latest_performance.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
+- `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:customer_repurchase_stats.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:serial_numbers.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41272,8 +41584,21 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:customer_category_purchase.customer_id->customer_category_purchase.customer_id:SQL_LOG_EXISTS`
+- `CO_OCCURRENCE:customer_category_purchase.warehouse_id->customer_category_purchase.warehouse_id:SQL_LOG_EXISTS`
+- `CO_OCCURRENCE:customer_first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:customer_first_purchase.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_category_sales.month->store_total.month:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_category_sales.store_id->store_total.store_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_churn.warehouse_id->store_return_stats.store_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_return_stats.store_id->store_sales_stats.store_id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
@@ -41317,7 +41642,26 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:approval_instances.current_node_level->approval_nodes.node_level:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:approval_instances.submitted_by->employees.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:approval_instances.workflow_id->approval_nodes.workflow_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN`
+- `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:audit_log.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:invoices.reference_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41360,7 +41704,23 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:employees.id->stock_transfers.requested_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->stocktakes.created_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:operation_chain.operation_id->production_operations.predecessor_operation_id:SQL_LOG_JOIN`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:operation_chain.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stocktake_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41446,25 +41806,47 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:employees.id->master_data_change_requests.approved_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->master_data_change_requests.requested_by:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->picking_tasks.assigned_to:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_fact.fiscal_date:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `CO_OCCURRENCE:inventory.warehouse_id->sales_fact.warehouse_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.location_id->picking_task_items.location_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.product_id->picking_task_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:master_data_change_requests.master_id->sensitive_access_logs.object_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:master_data_change_requests.master_type->sensitive_access_logs.object_type:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:standard_costs.product_id->work_orders.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:budget_items.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:budget_items.version_id->budget_versions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.component_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.run_id->mrp_runs.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_request_items.ap_invoice_id->ap_invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_request_items.request_id->payment_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payments.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_task_items.location_id->warehouse_locations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_task_items.picking_task_id->picking_tasks.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_task_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_tasks.sales_order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_tasks.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_order_parts.issued_from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_order_parts.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_order_parts.repair_order_id->repair_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -41473,14 +41855,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_orders.technician_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.category_dim_id->category_dim.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_fact.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.region_dim_id->region_dim.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_order_costs.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41608,7 +41995,7 @@ GROUP BY c.id;
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -41700,9 +42087,9 @@ _Preview truncated; see input file for full content._
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -42013,71 +42400,45 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:account_subjects.subject_code->accounts.code:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:budget_items.period_code->vouchers.voucher_date:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:category_dim.source_category_id->products.category_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.batch_id->inventory.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.product_id->inventory.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.warehouse_id->inventory.warehouse_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:finished_goods_receipts.work_order_id->work_order_costs.work_order_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_orders.order_date:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:inventory.batch_id->repair_order_parts.batch_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:inventory.product_id->repair_order_parts.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:inventory.warehouse_id->repair_order_parts.issued_from_warehouse_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:region_dim.city->warehouses.city:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:region_dim.province->warehouses.province:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:standard_costs.product_id->work_orders.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:work_orders.id->work_orders.id:SQL_LOG_JOIN`
-- `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_EXISTS,NAMING_MATCH`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_requests.master_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:material_issue_items.issue_id->material_issues.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:material_issues.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:repair_order_parts.repair_order_id->repair_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
-- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_return_items.order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
-- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
@@ -42095,31 +42456,20 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
 - `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
 - `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
 - `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 
 **Forbidden Tables**
@@ -42331,7 +42681,54 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:baseline_sales.promotion_id->promo_orders.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:bom_explosion.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:cost.dept_name->revenue.dept_name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:cost.period->revenue.period:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:current_month.product_id->last_month.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:current_month.product_id->same_month_last_year.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dept_staffing.dept_id->dept_workload.dept_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->service_tickets.assigned_to:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:monthly_headcount.department_id->monthly_turnover.department_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:monthly_headcount.month->monthly_turnover.resign_month:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:order_products.order_id->order_products.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_a:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_b:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_pairs.product_a->products.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_pairs.product_b->products.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:revenue.dept_name->salary_cost.dept_name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:revenue.period->salary_cost.period:SQL_LOG_JOIN`
+- `FK_LIKE:bom_explosion.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:bom_explosion.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:boms.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:boms.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:commissions.employee_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:current_month.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_profit.salesperson_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_delivery_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_price_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_quality_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.purchase_receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -42373,9 +42770,32 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:balance_sheet.fiscal_year->income_statement.fiscal_year:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:cohort_size.cohort_month->monthly_active.cohort_month:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->monthly_attendance.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->inventory_transactions.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.warehouse_id->inventory_transactions.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:pending_orders.product_id->stock_available.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:cumulative_allocation.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:demand_stats.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:wh_accuracy.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:wh_shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:wh_throughput.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -42417,7 +42837,20 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:attendance_summary.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:customer_category_spend.customer_id->customer_total.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:latest_performance.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
+- `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:customer_repurchase_stats.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:serial_numbers.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -42460,8 +42893,21 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:customer_category_purchase.customer_id->customer_category_purchase.customer_id:SQL_LOG_EXISTS`
+- `CO_OCCURRENCE:customer_category_purchase.warehouse_id->customer_category_purchase.warehouse_id:SQL_LOG_EXISTS`
+- `CO_OCCURRENCE:customer_first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:customer_first_purchase.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_category_sales.month->store_total.month:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_category_sales.store_id->store_total.store_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_churn.warehouse_id->store_return_stats.store_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:store_return_stats.store_id->store_sales_stats.store_id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
@@ -42505,7 +42951,26 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:approval_instances.current_node_level->approval_nodes.node_level:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:approval_instances.submitted_by->employees.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:approval_instances.workflow_id->approval_nodes.workflow_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN`
+- `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:audit_log.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:invoices.reference_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -42548,7 +43013,23 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:employees.id->stock_transfers.requested_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->stocktakes.created_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:operation_chain.operation_id->production_operations.predecessor_operation_id:SQL_LOG_JOIN`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:operation_chain.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stock_transfers.to_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stocktake_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stocktake_items.stocktake_id->stocktakes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -42634,25 +43115,47 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:employees.id->master_data_change_requests.approved_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->master_data_change_requests.requested_by:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->picking_tasks.assigned_to:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_fact.fiscal_date:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `CO_OCCURRENCE:inventory.warehouse_id->sales_fact.warehouse_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.location_id->picking_task_items.location_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.product_id->picking_task_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:master_data_change_requests.master_id->sensitive_access_logs.object_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:master_data_change_requests.master_type->sensitive_access_logs.object_type:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:standard_costs.product_id->work_orders.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:ar_invoices.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:budget_items.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:budget_items.version_id->budget_versions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_valuation_snapshots.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_valuation_snapshots.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.component_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.run_id->mrp_runs.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_run_items.suggested_supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:mrp_runs.plan_id->production_plans.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:operation_reports.work_order_operation_id->work_order_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_request_items.ap_invoice_id->ap_invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payment_request_items.request_id->payment_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:payments.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_task_items.location_id->warehouse_locations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_task_items.picking_task_id->picking_tasks.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_task_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_tasks.sales_order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:picking_tasks.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_order_parts.issued_from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_order_parts.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_order_parts.repair_order_id->repair_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -42661,14 +43164,19 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:repair_orders.service_ticket_id->service_tickets.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:repair_orders.technician_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.category_dim_id->category_dim.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_fact.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.region_dim_id->region_dim.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_order_costs.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.assigned_employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.operation_id->production_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_order_operations.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 

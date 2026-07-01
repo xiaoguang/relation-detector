@@ -1,4 +1,19 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "CO_OCCURRENCE:attendance_summary.employee_id->leave_balance.employee_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:customer_category_spend.customer_id->customer_total.customer_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:latest_performance.employee_id->leave_balance.employee_id:SQL_LOG_JOIN",
+    "FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:customer_repurchase_stats.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:serial_numbers.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
   "forbiddenTables": []
 }

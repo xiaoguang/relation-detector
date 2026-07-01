@@ -61,7 +61,7 @@
 ## 全局约束
 
 - Java 17 + Maven 多模块工程。
-- v1 成熟支持 MySQL 和 PostgreSQL；Oracle 已有初始 adaptor、Oracle token-event fallback、root correctness golden 和 `VERSION_SCOPED` versioned full-grammer smoke；SQL Server 仍是后续扩展。
+- v1 成熟支持 MySQL 和 PostgreSQL；Oracle 已有初始 adaptor、Oracle token-event fallback、root correctness golden 和 `INCOMPLETE_VERSIONED` versioned full-grammer smoke；SQL Server 仍是后续扩展。
 - core 统一负责候选关系归并、最终评分、输出模型。
 - adaptor 可以提供采集、token-event parser、versioned full-grammer module、证据生成、权重修正等数据库特定能力。
 - SQL/DDL parser 运行模式统一为 `parser.mode=auto|full-grammer|token-event`。无方言或无合理版本信息时使用 `token-event`；能选中版本化 grammar profile 时可使用 `full-grammer`。

@@ -9,3 +9,14 @@ Oracle SQL/PLSQL production.
 
 Source-of-truth target: Oracle Database 21c SQL Language Reference and PL/SQL
 Language Reference.
+
+Vendored base:
+
+- Upstream: `antlr/grammars-v4/sql/plsql`
+- Commit: `994628b6d261f5313b72e76039818549352684ce`
+- Local rename: `PlSqlLexer.g4` / `PlSqlParser.g4` to
+  `OracleFullGrammerLexer.g4` / `OracleFullGrammerParser.g4`
+- License: upstream Apache-2.0 headers retained in grammar and base class files
+
+Local 21c cut: inherits the 19c boundary and accepts `SQL_MACRO(SCALAR)` while
+rejecting 26ai `VECTOR`.

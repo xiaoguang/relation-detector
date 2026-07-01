@@ -53,6 +53,26 @@ Oracle 当前处于“adaptor + token-event baseline + `INCOMPLETE_VERSIONED` fu
 
 这些缺口记录在 `docs/parser-audit/oracle-sample-data-migration-review.md`，属于 `PARSER_GAP_BACKLOG` / `OFFICIAL_GRAMMAR_BACKLOG` / `RUNTIME_SMOKE_PENDING`，不是需要业务口径审核的 `REVIEW_NEEDED`。
 
+Oracle full-grammer 已经以 `antlr/grammars-v4/sql/plsql` 作为主底座完成
+第一轮 vendor 和重接。固定上游 commit：
+
+```text
+994628b6d261f5313b72e76039818549352684ce
+```
+
+本地把 `PlSqlLexer.g4`、`PlSqlParser.g4`、`PlSqlLexerBase.java`、
+`PlSqlParserBase.java` 重命名为每个版本自己的
+`OracleFullGrammerLexer/Parser/Base`。这套 grammar 的体量和覆盖面更接近
+MySQL/PostgreSQL 当前 vendored full-grammer：它包含独立 lexer/parser、
+`sql_script` 入口、DDL、DML、`MERGE`、`CREATE TABLE`、`ALTER TABLE`、
+`CREATE PROCEDURE`、`CREATE FUNCTION` 和 `CREATE TRIGGER` 等规则。
+
+但它不是社区预拆好的 Oracle 12c/19c/21c/26ai 严格 grammar，因此本项目
+继续维护官方文档驱动的版本裁剪：12c 删除高版本专属语法，19c 加
+`MEMOPTIMIZE FOR READ`，21c 加 `SQL_MACRO(SCALAR)`，26ai 加 `VECTOR(...)`。
+文档和测试仍将 Oracle 标为 `INCOMPLETE_VERSIONED`，不能等同于
+MySQL 8.0 或 PostgreSQL v16/v17/v18 的成熟覆盖度。
+
 ## 包结构
 
 ```text
@@ -152,10 +172,10 @@ Oracle correctness 当前统计：
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Oracle root token-event | 33 | 26 / 7 | 400 | 112 | 0 | 158 |
-| Oracle full-grammer v12c | 30 | 23 / 7 | 373 | 96 | 0 | 57 |
-| Oracle full-grammer v19c | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
-| Oracle full-grammer v21c | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
-| Oracle full-grammer v26ai | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
+| Oracle full-grammer v12c | 30 | 23 / 7 | 525 | 75 | 0 | 166 |
+| Oracle full-grammer v19c | 31 | 24 / 7 | 525 | 75 | 0 | 166 |
+| Oracle full-grammer v21c | 31 | 24 / 7 | 525 | 75 | 0 | 166 |
+| Oracle full-grammer v26ai | 31 | 24 / 7 | 525 | 75 | 0 | 166 |
 
 `sample-data/oracle/<version>` 仍保留完整 ERP SQL 资产；correctness 中只保留会产生 relationship / lineage / diagnostics，或承载 Oracle 版本特性、DDL 解析等特殊语法边界的 fixture。纯 seed / routine / metadata-only 空输出切片不再进入 correctness，以降低全量测试时间。
 
@@ -163,7 +183,7 @@ Oracle correctness 当前统计：
 
 Oracle 后续不能靠增加 regex、token span scanner 或表名/列名特殊规则来追能力。优先级如下：
 
-1. 用官方 SQL / PL/SQL Reference 逐版本固化 Oracle `.g4` source-of-truth 和转换说明。
+1. 继续用官方 SQL / PL/SQL Reference 逐版本固化 Oracle `.g4` source-of-truth 和转换说明。
 2. 在已覆盖 sample-data 和首批 official version-only golden 的基础上，继续扩大 full-grammer generated parser 和 typed parse-tree visitor 到 Oracle 官方 SQL/PLSQL 语法面。
 3. 继续为 12c / 19c / 21c / 26ai 增加真实版本边界 SQL，低版本不得接受高版本专属语法。
 4. 在可用 Oracle Free / XE / 企业版环境时对 `sample-data/oracle/12c|19c|21c|26ai` 做 runtime smoke，并把任何 runtime-only 方言问题继续回写到源 sample-data 与 correctness fixture。

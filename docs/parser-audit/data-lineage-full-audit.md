@@ -8174,7 +8174,7 @@ GROUP BY c.id;
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -8244,9 +8244,9 @@ GROUP BY c.id;
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -8488,35 +8488,25 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
-- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
@@ -8534,31 +8524,20 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
 - `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
 - `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
 - `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 
 **Extractor Candidate Fingerprints**
@@ -9018,7 +8997,7 @@ GROUP BY c.id;
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -9088,9 +9067,9 @@ GROUP BY c.id;
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -9332,35 +9311,25 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
-- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
@@ -9378,31 +9347,20 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
 - `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
 - `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
 - `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 
 **Extractor Candidate Fingerprints**
@@ -9891,7 +9849,7 @@ GROUP BY c.id;
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -9961,9 +9919,9 @@ GROUP BY c.id;
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -10205,35 +10163,25 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
-- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
@@ -10251,31 +10199,20 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
 - `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
 - `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
 - `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 
 **Extractor Candidate Fingerprints**
@@ -10766,7 +10703,7 @@ GROUP BY c.id;
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -10836,9 +10773,9 @@ GROUP BY c.id;
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -11080,35 +11017,25 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
-- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:ARITHMETIC:work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
@@ -11126,31 +11053,20 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
 - `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
 - `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
 - `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
 - `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
 - `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 
 **Extractor Candidate Fingerprints**
