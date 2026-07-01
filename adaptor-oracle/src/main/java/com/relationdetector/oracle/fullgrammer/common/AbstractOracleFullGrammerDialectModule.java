@@ -17,9 +17,17 @@ import com.relationdetector.core.fullgrammer.SqlGrammarProfile;
  */
 public abstract class AbstractOracleFullGrammerDialectModule implements FullGrammerDialectModule {
     private final SqlGrammarProfile profile;
+    private final OracleFullGrammerSqlBinding sqlBinding;
+    private final OracleFullGrammerDdlBinding ddlBinding;
 
-    protected AbstractOracleFullGrammerDialectModule(SqlGrammarProfile profile) {
+    protected AbstractOracleFullGrammerDialectModule(
+            SqlGrammarProfile profile,
+            OracleFullGrammerSqlBinding sqlBinding,
+            OracleFullGrammerDdlBinding ddlBinding
+    ) {
         this.profile = profile;
+        this.sqlBinding = sqlBinding;
+        this.ddlBinding = ddlBinding;
     }
 
     @Override
@@ -34,11 +42,11 @@ public abstract class AbstractOracleFullGrammerDialectModule implements FullGram
 
     @Override
     public StructuredSqlParser sqlParser() {
-        return new OracleFullGrammerStructuredSqlParser(profile);
+        return new OracleFullGrammerStructuredSqlParser(profile, sqlBinding);
     }
 
     @Override
     public StructuredDdlParser structuredDdlParser() {
-        return new OracleFullGrammerStructuredDdlParser(profile);
+        return new OracleFullGrammerStructuredDdlParser(profile, ddlBinding, sqlBinding);
     }
 }

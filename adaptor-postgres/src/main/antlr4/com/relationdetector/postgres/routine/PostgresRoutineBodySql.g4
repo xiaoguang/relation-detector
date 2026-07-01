@@ -1,13 +1,14 @@
-parser grammar OracleFullGrammerParser;
-options { tokenVocab = OracleFullGrammerLexer; }
+grammar PostgresRoutineBodySql;
 
 /*
- * Oracle scoped full-grammer.
+ * PostgreSQL routine-body structural grammar.
  *
- * This scoped grammar covers the currently implemented generated-parser subset for Oracle:
+ * This grammar covers the portable token-event subset plus PostgreSQL-specific lexical and structural extensions:
  * SELECT, CTE, derived tables, JOIN ... ON, comma rowsets, EXISTS, scalar and
  * tuple IN subqueries, INSERT ... SELECT, simple UPDATE SET ... WHERE, and
- * DELETE ... WHERE. Oracle version-specific syntax is added here incrementally as official grammar support is implemented.
+ * DELETE ... WHERE. This grammar is local to the PostgreSQL dialect and parses
+ * PL/pgSQL routine bodies after the outer parser extracts the CREATE
+ * FUNCTION/PROCEDURE body.
  */
 
 script
@@ -22,26 +23,26 @@ statement
     | controlStartStatement
     | selectStatement SEMI?
     | insertSelectStatement SEMI?
-    | insertValuesStatement SEMI?
     | updateStatement SEMI?
     | mergeStatement SEMI?
     | deleteStatement SEMI?
-    | returnStatement SEMI?
-    | plsqlAssignmentStatement SEMI?
     | createTableStatement SEMI?
     | alterTableStatement SEMI?
     | createIndexStatement SEMI?
-    | commentStatement SEMI?
-    | SLASH
+    | unknownStatement SEMI?
     | SEMI
     ;
 
+unknownStatement
+    : sqlToken+
+    ;
+
 routineStartStatement
-    : CREATE (OR REPLACE)? (PROCEDURE | FUNCTION | TRIGGER) routineHeaderToken* BEGIN
+    : CREATE routineHeaderToken* BEGIN
     ;
 
 routineHeaderToken
-    : ~(BEGIN | VECTOR)
+    : ~BEGIN
     ;
 
 blockStartStatement
@@ -59,10 +60,10 @@ declarationStatement
 controlStartStatement
     : IF ~THEN* THEN
     | ELSEIF ~THEN* THEN
-    | ELSIF ~THEN* THEN
     | ELSE
     | WHILE ~LOOP* LOOP
     | FOR ~LOOP* LOOP
+    | identifier OTHER LOOP
     | LOOP
     | REPEAT
     ;
@@ -76,11 +77,16 @@ withClause
     ;
 
 commonTableExpression
-    : identifier (LPAREN identifierList RPAREN)? AS LPAREN selectStatement RPAREN
+    : identifier (LPAREN identifierList RPAREN)? AS cteMaterialization? LPAREN selectStatement RPAREN
+    ;
+
+cteMaterialization
+    : MATERIALIZED
+    | NOT MATERIALIZED
     ;
 
 querySpecification
-    : SELECT selectList fromClause? whereClause? groupByClause? havingClause? orderByClause? rowLimitingClause?
+    : SELECT selectList fromClause? whereClause? groupByClause? havingClause? orderByClause? limitClause?
     ;
 
 selectList
@@ -99,8 +105,7 @@ selectItemFallback
 
 selectItemFallbackToken
     : LPAREN selectItemFallbackToken* RPAREN
-    | ~(COMMA | FROM | RPAREN | SLASH
-    | SEMI)
+    | ~(COMMA | FROM | RPAREN | SEMI)
     ;
 
 fromClause
@@ -112,22 +117,39 @@ tableReference
     ;
 
 tablePrimary
-    : ONLY? qualifiedName tableAlias?                                  # namedTablePrimary
-    | LPAREN selectStatement RPAREN tableAlias?                        # derivedTablePrimary
-    | qualifiedName LPAREN functionArgument? RPAREN tableAlias?        # functionRowsetPrimary
-    ;
-
-functionArgument
-    : functionArgumentToken+
-    ;
-
-functionArgumentToken
-    : LPAREN functionArgumentToken* RPAREN
-    | ~RPAREN
+    : ONLY? qualifiedName tableSampleClause? tableAlias? tableSampleClause?  # namedTablePrimary
+    | LPAREN selectStatement RPAREN tableAlias?                              # derivedTablePrimary
+    | ROWS FROM LPAREN rowsFromItem (COMMA rowsFromItem)* RPAREN tableAlias? # rowsFromTablePrimary
+    | LATERAL? qualifiedName LPAREN looseToken* RPAREN withOrdinality? tableAlias? # functionRowsetPrimary
     ;
 
 tableAlias
     : AS? identifier (LPAREN identifierList RPAREN)?
+    ;
+
+tableSampleClause
+    : TABLESAMPLE identifier LPAREN looseToken* RPAREN
+    ;
+
+rowsFromItem
+    : qualifiedName LPAREN looseToken* RPAREN (AS LPAREN looseToken* RPAREN)?
+    ;
+
+withOrdinality
+    : WITH ORDINALITY
+    ;
+
+looseToken
+    : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
+    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE
+    | USING | GROUP | BY | HAVING | ORDER | LIMIT | INSERT | INTO | UPDATE
+    | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
+    | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | IF | ADD | CONSTRAINT
+    | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
+    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
+    | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
+    | PARAMETER | DOT | COMMA | STAR | EQ | LBRACKET | RBRACKET | PLUS
+    | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | OTHER
     ;
 
 joinClause
@@ -162,20 +184,16 @@ orderByClause
     : ORDER BY expression (COMMA expression)*
     ;
 
-rowLimitingClause
-    : FETCH (FIRST | NEXT) NUMBER? (ROW | ROWS) ONLY
+limitClause
+    : LIMIT NUMBER
     ;
 
 insertSelectStatement
     : INSERT INTO qualifiedName LPAREN identifierList RPAREN selectStatement
     ;
 
-insertValuesStatement
-    : INSERT INTO qualifiedName LPAREN identifierList RPAREN VALUES LPAREN expressionList RPAREN
-    ;
-
 updateStatement
-    : UPDATE tablePrimary SET assignmentList whereClause?
+    : UPDATE tablePrimary SET assignmentList fromClause? whereClause?
     ;
 
 assignmentList
@@ -209,32 +227,31 @@ mergeWhenConditionToken
     | DOT
     | COMMA
     | LPAREN mergeWhenConditionToken* RPAREN
+    | OTHER
     ;
 
 mergeAction
     : UPDATE SET assignmentList                    # mergeUpdateAction
     | INSERT LPAREN identifierList RPAREN VALUES LPAREN expressionList RPAREN # mergeInsertAction
     | DELETE                                       # mergeDeleteAction
+    | DO NOTHING                                   # mergeDoNothingAction
     ;
 
 returningClause
-    : RETURNING expressionList (INTO identifierList)?
-    ;
-
-returnStatement
-    : RETURN expression
-    ;
-
-plsqlAssignmentStatement
-    : (bindVariable | qualifiedName) ASSIGN expression
+    : RETURNING sqlToken+
     ;
 
 createTableStatement
-    : CREATE TABLE qualifiedName LPAREN tableElement (COMMA tableElement)* RPAREN memoptimizeClause?
+    : CREATE tableModifier* TABLE ifNotExists? qualifiedName LPAREN tableElement (COMMA tableElement)* RPAREN
     ;
 
-memoptimizeClause
-    : MEMOPTIMIZE FOR READ
+tableModifier
+    : TEMPORARY
+    | UNLOGGED
+    ;
+
+ifNotExists
+    : IF NOT EXISTS
     ;
 
 tableElement
@@ -287,10 +304,8 @@ columnDefinitionToken
     | NEQ
     | AS
     | BY
-    | AND
-    | BETWEEN
     | DOT
-    | ASSIGN
+    | OTHER
     ;
 
 columnDefinitionParenToken
@@ -312,13 +327,11 @@ columnDefinitionParenToken
     | EQ
     | AS
     | BY
-    | AND
-    | BETWEEN
     | ON
     | UPDATE
     | SET
-    | ASSIGN
     | LPAREN columnDefinitionParenToken* RPAREN
+    | OTHER
     ;
 
 inlineColumnConstraint
@@ -332,26 +345,18 @@ alterTableStatement
     ;
 
 createIndexStatement
-    : CREATE UNIQUE? INDEX identifier ON qualifiedName LPAREN indexPartList RPAREN createIndexTail*
+    : CREATE UNIQUE? INDEX CONCURRENTLY? ifNotExists? identifier (USING identifier)? ON ONLY? qualifiedName (USING identifier)? LPAREN indexPartList RPAREN createIndexTail*
     ;
 
 createIndexTail
     : INCLUDE LPAREN indexPartList RPAREN
     | WHERE predicate
+    | WITH LPAREN sqlToken* RPAREN
     | TABLESPACE identifier
     | identifier
     | literal
     | EQ
     | COMMA
-    ;
-
-commentStatement
-    : COMMENT ON TABLE qualifiedName IS literal
-    | COMMENT ON COLUMN commentColumnTarget IS literal
-    ;
-
-commentColumnTarget
-    : identifier DOT identifier (DOT identifier)?
     ;
 
 constraintName
@@ -382,12 +387,10 @@ predicate
     | predicate OR predicate                                              # orPredicate
     | NOT predicate                                                       # notPredicate
     | EXISTS LPAREN selectStatement RPAREN                                # existsPredicate
-    | expression NOT? IN LPAREN selectStatement RPAREN                    # inSubqueryPredicate
-    | LPAREN expressionList RPAREN NOT? IN LPAREN selectStatement RPAREN  # tupleInSubqueryPredicate
-    | expression NOT? IN LPAREN expressionList RPAREN                     # literalInPredicate
-    | expression BETWEEN expression AND expression                         # betweenPredicate
+    | expression IN LPAREN selectStatement RPAREN                         # inSubqueryPredicate
+    | LPAREN expressionList RPAREN IN LPAREN selectStatement RPAREN       # tupleInSubqueryPredicate
+    | expression IN LPAREN expressionList RPAREN                          # literalInPredicate
     | expression likeOperator expression (ESCAPE expression)?             # likePredicate
-    | expression IS NOT? NULL                                           # isNullPredicate
     | expression comparisonOperator expression                            # comparisonPredicate
     | LPAREN predicate RPAREN                                             # parenPredicate
     | expression                                                          # expressionPredicate
@@ -411,7 +414,6 @@ expression
     : expression arithmeticOperator expression                            # binaryExpression
     | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
     | functionCall windowClause?                                          # functionExpression
-    | bindVariable                                                        # bindExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
     | qualifiedName                                                       # columnExpression
     | literal                                                             # literalExpression
@@ -457,10 +459,6 @@ identifierList
     : identifier (COMMA identifier)*
     ;
 
-bindVariable
-    : PARAMETER (DOT identifier)?
-    ;
-
 qualifiedName
     : identifier (DOT identifier)*
     ;
@@ -468,8 +466,6 @@ qualifiedName
 identifier
     : IDENTIFIER
     | QUOTED_IDENTIFIER
-    | COMMENT
-    | COLUMN
     ;
 
 literal
@@ -480,3 +476,188 @@ literal
     | NULL
     | PARAMETER
     ;
+
+sqlToken
+    : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
+    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE
+    | USING | GROUP | BY | HAVING | ORDER | LIMIT | INSERT | INTO | UPDATE
+    | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | DO | NOTHING
+    | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
+    | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE
+    | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
+    | ADD | CONSTRAINT
+    | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
+    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
+    | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
+    | PARAMETER | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | LBRACKET | RBRACKET | PLUS
+    | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | OTHER
+    ;
+
+SELECT: S E L E C T;
+WITH: W I T H;
+AS: A S;
+FROM: F R O M;
+JOIN: J O I N;
+ON: O N;
+USING: U S I N G;
+INNER: I N N E R;
+LEFT: L E F T;
+RIGHT: R I G H T;
+FULL: F U L L;
+OUTER: O U T E R;
+CROSS: C R O S S;
+WHERE: W H E R E;
+AND: A N D;
+OR: O R;
+NOT: N O T;
+EXISTS: E X I S T S;
+IN: I N;
+LIKE: L I K E;
+ESCAPE: E S C A P E;
+GROUP: G R O U P;
+BY: B Y;
+HAVING: H A V I N G;
+ORDER: O R D E R;
+LIMIT: L I M I T;
+INSERT: I N S E R T;
+INTO: I N T O;
+UPDATE: U P D A T E;
+SET: S E T;
+DELETE: D E L E T E;
+MERGE: M E R G E;
+MATCHED: M A T C H E D;
+VALUES: V A L U E S;
+RETURNING: R E T U R N I N G;
+DO: D O;
+NOTHING: N O T H I N G;
+CREATE: C R E A T E;
+ALTER: A L T E R;
+TABLE: T A B L E;
+TEMPORARY: T E M P O R A R Y;
+UNLOGGED: U N L O G G E D;
+BEGIN: B E G I N;
+IF: I F;
+ELSEIF: E L S E I F;
+WHILE: W H I L E;
+LOOP: L O O P;
+REPEAT: R E P E A T;
+DECLARE: D E C L A R E;
+PROCEDURE: P R O C E D U R E;
+FUNCTION: F U N C T I O N;
+TRIGGER: T R I G G E R;
+REPLACE: R E P L A C E;
+FOR: F O R;
+ADD: A D D;
+CONSTRAINT: C O N S T R A I N T;
+FOREIGN: F O R E I G N;
+KEY: K E Y;
+REFERENCES: R E F E R E N C E S;
+PRIMARY: P R I M A R Y;
+UNIQUE: U N I Q U E;
+INDEX: I N D E X;
+CONCURRENTLY: C O N C U R R E N T L Y;
+ONLY: O N L Y;
+INCLUDE: I N C L U D E;
+TABLESPACE: T A B L E S P A C E;
+MATERIALIZED: M A T E R I A L I Z E D;
+ROWS: R O W S;
+TABLESAMPLE: T A B L E S A M P L E;
+LATERAL: L A T E R A L;
+ORDINALITY: O R D I N A L I T Y;
+OVER: O V E R;
+CASE: C A S E;
+WHEN: W H E N;
+THEN: T H E N;
+ELSE: E L S E;
+END: E N D;
+DISTINCT: D I S T I N C T;
+TRUE: T R U E;
+FALSE: F A L S E;
+NULL: N U L L;
+
+DOT: '.';
+COMMA: ',';
+STAR: '*';
+EQ: '=';
+LPAREN: '(';
+RPAREN: ')';
+LBRACKET: '[';
+RBRACKET: ']';
+SEMI: ';';
+PLUS: '+';
+MINUS: '-';
+SLASH: '/';
+PERCENT: '%';
+CONCAT: '||';
+LE: '<=';
+GE: '>=';
+NEQ: '<>' | '!=';
+LT: '<';
+GT: '>';
+
+QUOTED_IDENTIFIER
+    : '"' (~'"' | '""')* '"'
+    ;
+
+STRING_LITERAL
+    : '\'' ('\'\'' | ~'\'')* '\''
+    ;
+
+DOLLAR_QUOTED_STRING
+    : '$$' .*? '$$'
+    ;
+
+NUMBER
+    : [0-9]+ ('.' [0-9]+)?
+    ;
+
+PARAMETER
+    : '?' | ':' [A-Za-z_] [A-Za-z0-9_]*
+    ;
+
+IDENTIFIER
+    : [A-Za-z_] [A-Za-z0-9_$]*
+    ;
+
+LINE_COMMENT
+    : '--' ~[\r\n]* -> channel(HIDDEN)
+    ;
+
+BLOCK_COMMENT
+    : '/*' .*? '*/' -> channel(HIDDEN)
+    ;
+
+WS
+    : [ \t\r\n]+ -> channel(HIDDEN)
+    ;
+
+OTHER
+    : .
+    ;
+
+fragment A: [aA];
+fragment B: [bB];
+fragment C: [cC];
+fragment D: [dD];
+fragment E: [eE];
+fragment F: [fF];
+fragment G: [gG];
+fragment H: [hH];
+fragment I: [iI];
+fragment J: [jJ];
+fragment K: [kK];
+fragment L: [lL];
+fragment M: [mM];
+fragment N: [nN];
+fragment O: [oO];
+fragment P: [pP];
+fragment Q: [qQ];
+fragment R: [rR];
+fragment S: [sS];
+fragment T: [tT];
+fragment U: [uU];
+fragment V: [vV];
+fragment W: [wW];
+fragment X: [xX];
+fragment Y: [yY];
+fragment Z: [zZ];

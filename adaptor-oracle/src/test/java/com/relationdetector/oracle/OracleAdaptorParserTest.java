@@ -16,6 +16,7 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
+import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.core.fullgrammer.FullGrammerDialectModule;
 import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
 import com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule;
@@ -121,6 +122,37 @@ class OracleAdaptorParserTest {
                         && "customer_id".equals(event.attributes().get("sourceColumn"))
                         && "customers".equals(event.attributes().get("targetTable"))
                         && "id".equals(event.attributes().get("targetColumn"))));
+    }
+
+    @Test
+    void oracleDdlParsersAcceptCommentOnTableAndColumnWithoutRelationshipEvents() {
+        String ddl = """
+                CREATE TABLE "person_EXTEND" (
+                    "psn_code" NUMBER(18),
+                    "psn_version" VARCHAR2(17),
+                    "psn_xml" XMLTYPE,
+                    comment VARCHAR2(500),
+                    CONSTRAINT "PK_person_EXTEND" PRIMARY KEY ("psn_code")
+                );
+                COMMENT ON COLUMN "person_EXTEND"."psn_xml" IS '人员xml';
+                COMMENT ON TABLE "person_EXTEND" IS '人员扩展表';
+                """;
+        List<StructuredDdlParser> parsers = List.of(
+                new OracleDatabaseAdaptor().structuredDdlParser().orElseThrow(),
+                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule().structuredDdlParser(),
+                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule().structuredDdlParser(),
+                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule().structuredDdlParser(),
+                new OracleFullGrammerDialectModule().structuredDdlParser());
+
+        for (StructuredDdlParser parser : parsers) {
+            var result = parser.parseDdl(ddl, "oracle-comment-ddl.sql", null);
+
+            assertEquals(0, result.attributes().get("syntaxErrors"),
+                    result.backend() + " should parse Oracle COMMENT ON DDL");
+            assertTrue(result.events().stream().noneMatch(event ->
+                            event.type() == StructuredParseEventType.DDL_FOREIGN_KEY),
+                    result.backend() + " should not turn comment-only metadata into relationships");
+        }
     }
 
     @Test
@@ -238,6 +270,31 @@ class OracleAdaptorParserTest {
                 vector26ai);
         assertParses(new com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule(),
                 vector26ai);
+    }
+
+    @Test
+    void oracleFullGrammerRejectsPostgresAndMysqlStructuralSyntaxForEveryVersion() {
+        List<FullGrammerDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
+                new OracleFullGrammerDialectModule());
+        List<String> nonOracleSql = List.of(
+                "CREATE UNLOGGED TABLE audit_buffer (id NUMBER)",
+                "CREATE TABLE IF NOT EXISTS customers_shadow (id NUMBER)",
+                "CREATE INDEX CONCURRENTLY idx_orders_customer ON orders (customer_id)",
+                """
+                MERGE INTO customers c
+                USING customer_stage s
+                ON (c.id = s.id)
+                WHEN NOT MATCHED THEN DO NOTHING
+                """);
+
+        for (FullGrammerDialectModule module : modules) {
+            for (String sql : nonOracleSql) {
+                assertSyntaxErrors(module, sql);
+            }
+        }
     }
 
     private SqlStatementRecord statement(String sql) {

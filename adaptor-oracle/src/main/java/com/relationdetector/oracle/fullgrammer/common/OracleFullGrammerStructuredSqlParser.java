@@ -5,8 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
@@ -15,7 +13,6 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.core.fullgrammer.SqlGrammarProfile;
-import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 
 /**
  * Oracle versioned full-grammer SQL parser backed by generated parser classes.
@@ -31,92 +28,17 @@ import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
  */
 public final class OracleFullGrammerStructuredSqlParser implements StructuredSqlParser {
     private final SqlGrammarProfile profile;
+    private final OracleFullGrammerSqlBinding binding;
 
-    OracleFullGrammerStructuredSqlParser(SqlGrammarProfile profile) {
+    OracleFullGrammerStructuredSqlParser(SqlGrammarProfile profile, OracleFullGrammerSqlBinding binding) {
         this.profile = profile;
+        this.binding = binding;
     }
 
     @Override
     public StructuredParseResult parseSql(SqlStatementRecord statement, AdaptorContext context) {
-        return switch (profile.id()) {
-            case "oracle-12c" -> parse12c(statement);
-            case "oracle-19c" -> parse19c(statement);
-            case "oracle-21c" -> parse21c(statement);
-            case "oracle-26ai" -> parse26ai(statement);
-            default -> throw new IllegalStateException("Unsupported Oracle full-grammer profile: " + profile.id());
-        };
-    }
-
-    private StructuredParseResult parse12c(SqlStatementRecord statement) {
-        SyntaxErrorCounter errors = new SyntaxErrorCounter();
-        var lexer = new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerLexer(
-                CharStreams.fromString(statement.sql()));
-        var tokens = tokens(lexer, errors);
-        var parser = new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-        var root = parser.script();
-        List<StructuredSqlEvent> events = errors.count() == 0
-                ? new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerParseTreeVisitor(statement)
-                        .collect(root)
-                : List.of();
-        return result(statement, events, List.copyOf(tokens.getTokens()), errors.count());
-    }
-
-    private StructuredParseResult parse19c(SqlStatementRecord statement) {
-        SyntaxErrorCounter errors = new SyntaxErrorCounter();
-        var lexer = new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerLexer(
-                CharStreams.fromString(statement.sql()));
-        var tokens = tokens(lexer, errors);
-        var parser = new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-        var root = parser.script();
-        List<StructuredSqlEvent> events = errors.count() == 0
-                ? new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerParseTreeVisitor(statement)
-                        .collect(root)
-                : List.of();
-        return result(statement, events, List.copyOf(tokens.getTokens()), errors.count());
-    }
-
-    private StructuredParseResult parse21c(SqlStatementRecord statement) {
-        SyntaxErrorCounter errors = new SyntaxErrorCounter();
-        var lexer = new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerLexer(
-                CharStreams.fromString(statement.sql()));
-        var tokens = tokens(lexer, errors);
-        var parser = new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-        var root = parser.script();
-        List<StructuredSqlEvent> events = errors.count() == 0
-                ? new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerParseTreeVisitor(statement)
-                        .collect(root)
-                : List.of();
-        return result(statement, events, List.copyOf(tokens.getTokens()), errors.count());
-    }
-
-    private StructuredParseResult parse26ai(SqlStatementRecord statement) {
-        SyntaxErrorCounter errors = new SyntaxErrorCounter();
-        var lexer = new com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerLexer(
-                CharStreams.fromString(statement.sql()));
-        var tokens = tokens(lexer, errors);
-        var parser = new com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(errors);
-        var root = parser.script();
-        List<StructuredSqlEvent> events = errors.count() == 0
-                ? new com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerParseTreeVisitor(statement)
-                        .collect(root)
-                : List.of();
-        return result(statement, events, List.copyOf(tokens.getTokens()), errors.count());
-    }
-
-    private static CommonTokenStream tokens(org.antlr.v4.runtime.Lexer lexer, SyntaxErrorCounter errors) {
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(errors);
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        tokens.fill();
-        return tokens;
+        OracleFullGrammerParseSupport.ParsedEvents parsed = binding.parseSql(statement);
+        return result(statement, parsed.events(), parsed.tokens(), parsed.syntaxErrors());
     }
 
     private StructuredParseResult result(
@@ -130,9 +52,9 @@ public final class OracleFullGrammerStructuredSqlParser implements StructuredSql
         attributes.put("fullGrammerProfile", profile.id());
         attributes.put("oracleVersionProfile", profile.id());
         attributes.put("grammarCoverage", "INCOMPLETE_VERSIONED");
-        attributes.put("parser", "OracleFullGrammerParser");
-        attributes.put("lexer", "OracleFullGrammerLexer");
-        attributes.put("eventBuilder", "OracleFullGrammerParseTreeVisitor");
+        attributes.put("parser", binding.parserName());
+        attributes.put("lexer", binding.lexerName());
+        attributes.put("eventBuilder", binding.visitorName());
         attributes.put("syntaxErrors", syntaxErrors);
         attributes.put("tokenCount", tokens.stream()
                 .filter(token -> token.getType() != Token.EOF)

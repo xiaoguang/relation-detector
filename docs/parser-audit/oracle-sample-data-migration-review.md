@@ -10,13 +10,13 @@ Oracle support matrix:
 
 | Profile | Sample-data directory | Correctness directory | Fixture count |
 | --- | --- | --- | ---: |
-| root token-event | `sample-data/oracle/26ai` as root fixture source pattern | `test-fixtures/correctness/oracle` | 37 |
-| `oracle/12c` | `sample-data/oracle/12c` + profile smoke | `test-fixtures/correctness/oracle/v12c` | 38 |
-| `oracle/19c` | `sample-data/oracle/19c` + profile smoke + 19c-only syntax | `test-fixtures/correctness/oracle/v19c` | 39 |
-| `oracle/21c` | `sample-data/oracle/21c` + profile smoke + 21c-only syntax | `test-fixtures/correctness/oracle/v21c` | 39 |
-| `oracle/26ai` | `sample-data/oracle/26ai` + profile smoke + 26ai-only syntax | `test-fixtures/correctness/oracle/v26ai` | 39 |
+| root token-event | `sample-data/oracle/26ai` as root fixture source pattern | `test-fixtures/correctness/oracle` | 33 |
+| `oracle/12c` | `sample-data/oracle/12c` + profile smoke | `test-fixtures/correctness/oracle/v12c` | 30 |
+| `oracle/19c` | `sample-data/oracle/19c` + profile smoke + 19c-only syntax | `test-fixtures/correctness/oracle/v19c` | 31 |
+| `oracle/21c` | `sample-data/oracle/21c` + profile smoke + 21c-only syntax | `test-fixtures/correctness/oracle/v21c` | 31 |
+| `oracle/26ai` | `sample-data/oracle/26ai` + profile smoke + 26ai-only syntax | `test-fixtures/correctness/oracle/v26ai` | 31 |
 
-Total Oracle fixtures: 192.
+Total Oracle correctness fixtures: 156.
 
 Each versioned `sample-data/oracle/<version>` directory still contains the translated ERP SQL assets for future runtime and parser work:
 
@@ -29,15 +29,17 @@ Each versioned `sample-data/oracle/<version>` directory still contains the trans
 
 These files feed both the root Oracle token-event baseline and the four Oracle versioned full-grammer golden directories. The versioned full-grammer path is independent: it uses each version's generated lexer/parser and typed visitor, not the Oracle token-event parser.
 
+The source `sample-data/oracle/<version>` directories remain complete ERP sample assets. The correctness directories are now a pruned execution set: they keep fixtures that produce relationship / lineage / diagnostics, plus fixtures needed for DDL parsing, version-only syntax and profile smoke. Pure seed-data, routine/function and metadata-only DDL slices that produce no relation, no lineage, and no diagnostic were removed from correctness to keep runtime manageable.
+
 ## Current Golden Statistics
 
 | Golden group | Fixture | SQL / DDL | Relation fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Oracle root token-event | 37 | 30 / 7 | 336 | 72 | 0 | 115 |
-| Oracle full-grammer v12c | 38 | 31 / 7 | 347 | 56 | 0 | 41 |
-| Oracle full-grammer v19c | 39 | 32 / 7 | 347 | 56 | 0 | 41 |
-| Oracle full-grammer v21c | 39 | 32 / 7 | 347 | 56 | 0 | 41 |
-| Oracle full-grammer v26ai | 39 | 32 / 7 | 347 | 56 | 0 | 41 |
+| Oracle root token-event | 33 | 26 / 7 | 400 | 112 | 0 | 158 |
+| Oracle full-grammer v12c | 30 | 23 / 7 | 373 | 96 | 0 | 57 |
+| Oracle full-grammer v19c | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
+| Oracle full-grammer v21c | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
+| Oracle full-grammer v26ai | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
 
 The versioned full-grammer counts intentionally stay close to root token-event counts because they cover the same sample-data surface, plus profile smoke and version-only syntax fixtures. They prove that each `oracle/<version>` profile uses its own generated lexer/parser and typed visitor for sample-data correctness and the first official grammar boundaries. They no longer reuse the Oracle token-event parser. They still do not prove complete Oracle official SQL/PLSQL coverage.
 
@@ -73,6 +75,7 @@ synced into correctness fixtures:
 | PostgreSQL aggregates / row limiting | Rewrote aggregate comments and executable SQL to Oracle `LISTAGG` / `FETCH FIRST ... ROWS ONLY` forms. | Query files. |
 | SQL/JSON access | Rewrote parser-facing JSON loops and field access to Oracle SQL/JSON style (`JSON_TABLE`, `JSON_VALUE`, `JSON_QUERY`) where used by sample routines. | Procedure files. |
 | Fixture source sync | Regenerated Oracle correctness `input.sql` files from `sample-data/oracle/<version>`. | 185 sample-data-backed fixtures. |
+| Full-grammer non-Oracle syntax cleanup | Removed PostgreSQL/MySQL structural grammar from Oracle full-grammer: `LIMIT`, `UNLOGGED`, `CONCURRENTLY`, PostgreSQL casts/arrows, `TABLESAMPLE`, `WITH ORDINALITY`, `DO NOTHING`, and materialized CTE syntax are no longer legal in versioned Oracle full-grammer. | `oracle/12c`, `oracle/19c`, `oracle/21c`, `oracle/26ai`. |
 
 The current Oracle sample-data is still **parser correctness coverage**, not a proven loadable Oracle
 ERP schema. A future runtime-smoke task should load `sample-data/oracle/19c` and

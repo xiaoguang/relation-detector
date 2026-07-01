@@ -74,6 +74,28 @@ class DialectGrammarArchitectureTest {
         }
     }
 
+    @Test
+    void routineParsersLiveAtDialectLevelNotFullGrammerLevel() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().contains("/src/main/"))
+                    .filter(path -> path.toString().contains("/fullgrammer/routine"))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Routine body parsers belong at dialect level, offenders=" + offenders);
+        }
+
+        assertTrue(Files.isDirectory(root.resolve("adaptor-postgres/src/main/java/com/relationdetector/postgres/routine")),
+                "PostgreSQL must expose a dialect-level routine package");
+        assertTrue(Files.isDirectory(root.resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle/routine")),
+                "Oracle must expose a dialect-level routine package");
+        assertTrue(Files.isDirectory(root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/routine")),
+                "MySQL must expose a dialect-level routine package");
+    }
+
     private static boolean startsWithDialect(Path path, String dialect) {
         return path.getNameCount() > 0
                 && path.getName(0).toString().toLowerCase(Locale.ROOT).equals(dialect);

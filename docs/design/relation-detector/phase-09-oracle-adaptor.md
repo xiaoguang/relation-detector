@@ -49,6 +49,7 @@ Oracle 当前处于“adaptor + token-event baseline + `INCOMPLETE_VERSIONED` fu
 - Oracle versioned `.g4` 目前是 `INCOMPLETE_VERSIONED` grammar projection，不是官方完整 Oracle grammar；它已经拆成每个版本自己的 lexer/parser grammar，并运行本版本 generated lexer/parser/visitor。
 - Oracle full-grammer 不再持有或调用 Oracle token-event parser delegate；versioned sample-data golden 通过各版本 generated parser 直接验收。
 - Oracle sample-data 是从 ERP 样例迁移而来，已进入 parser correctness golden；Oracle SQL 资产卫生测试会拒绝 PostgreSQL/MySQL 残留语法，例如 `LANGUAGE plpgsql`、`::TYPE`、`WITH RECURSIVE`、`LIMIT`、`string_agg`、`jsonb_*`、`->>`、`AUTO_INCREMENT`、`ENGINE=` 和 `ON DUPLICATE KEY UPDATE`。真实 Oracle 实例 runtime smoke 仍待补充。
+- Oracle full-grammer 的版本 `.g4` 不再声明 PostgreSQL/MySQL 结构性语法：`LIMIT`、`UNLOGGED`、`CONCURRENTLY`、PostgreSQL `::` cast / JSON arrow、`TABLESAMPLE`、`WITH ORDINALITY`、`DO NOTHING` 和 materialized CTE 等都会在 versioned full-grammer 层失败，而不是被宽松 statement fallback 吞掉。
 
 这些缺口记录在 `docs/parser-audit/oracle-sample-data-migration-review.md`，属于 `PARSER_GAP_BACKLOG` / `OFFICIAL_GRAMMAR_BACKLOG` / `RUNTIME_SMOKE_PENDING`，不是需要业务口径审核的 `REVIEW_NEEDED`。
 
@@ -150,11 +151,13 @@ Oracle correctness 当前统计：
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Oracle root token-event | 37 | 30 / 7 | 300 | 94 | 0 | 128 |
-| Oracle full-grammer v12c | 38 | 31 / 7 | 301 | 96 | 0 | 129 |
-| Oracle full-grammer v19c | 39 | 32 / 7 | 301 | 96 | 0 | 129 |
-| Oracle full-grammer v21c | 39 | 32 / 7 | 301 | 96 | 0 | 129 |
-| Oracle full-grammer v26ai | 39 | 32 / 7 | 301 | 96 | 0 | 129 |
+| Oracle root token-event | 33 | 26 / 7 | 400 | 112 | 0 | 158 |
+| Oracle full-grammer v12c | 30 | 23 / 7 | 373 | 96 | 0 | 57 |
+| Oracle full-grammer v19c | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
+| Oracle full-grammer v21c | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
+| Oracle full-grammer v26ai | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
+
+`sample-data/oracle/<version>` 仍保留完整 ERP SQL 资产；correctness 中只保留会产生 relationship / lineage / diagnostics，或承载 Oracle 版本特性、DDL 解析等特殊语法边界的 fixture。纯 seed / routine / metadata-only 空输出切片不再进入 correctness，以降低全量测试时间。
 
 ## 后续收口
 

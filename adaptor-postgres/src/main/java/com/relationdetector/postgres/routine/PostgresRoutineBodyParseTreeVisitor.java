@@ -1,4 +1,4 @@
-package com.relationdetector.postgres.tokenevent;
+package com.relationdetector.postgres.routine;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -9,6 +9,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -17,22 +19,23 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.postgres.tokenevent.PostgresRelationSqlBaseVisitor;
-import com.relationdetector.postgres.tokenevent.PostgresRelationSqlParser;
-import com.relationdetector.postgres.routine.PostgresRoutineBodyParser;
+import com.relationdetector.postgres.routine.PostgresRoutineBodySqlBaseVisitor;
+import com.relationdetector.postgres.routine.PostgresRoutineBodySqlLexer;
+import com.relationdetector.postgres.routine.PostgresRoutineBodySqlParser;
+import com.relationdetector.core.parse.AntlrSqlParseSupport.SyntaxErrorCounter;
 
 /**
- * Parse-tree visitor for the PostgreSQL token-event structural grammar.
+ * Parse-tree visitor for PostgreSQL routine bodies.
  *
- * <p>CN: 本 visitor 只从 {@code PostgresRelationSql.g4} 的 typed context 生成
+ * <p>CN: 本 visitor 只从 {@code PostgresRoutineBodySql.g4} 的 typed context 生成
  * SQL 结构事件。它可以读取 identifier 原文和 source location，但不通过 regex、
  * token span scanner 或特殊表/列名判断 SQL 结构。
  *
- * <p>EN: Parse-tree visitor for the PostgreSQL token-event grammar. It emits
+ * <p>EN: Parse-tree visitor for the PostgreSQL routine-body grammar. It emits
  * structural events from typed grammar contexts, using token text only for
  * identifier spelling and source locations.
  */
-public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSqlBaseVisitor<Void> {
+public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineBodySqlBaseVisitor<Void> {
     private final SqlStatementRecord statement;
     private final List<StructuredSqlEvent> events = new ArrayList<>();
     private final Set<String> cteNames = new LinkedHashSet<>();
@@ -41,11 +44,11 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     private final ArrayDeque<QueryScope> queryScopes = new ArrayDeque<>();
     private int existsDepth;
 
-    public PostgresTokenEventParseTreeVisitor(SqlStatementRecord statement) {
+    public PostgresRoutineBodyParseTreeVisitor(SqlStatementRecord statement) {
         this.statement = statement;
     }
 
-    public List<StructuredSqlEvent> collect(PostgresRelationSqlParser.ScriptContext root) {
+    public List<StructuredSqlEvent> collect(PostgresRoutineBodySqlParser.ScriptContext root) {
         visit(root);
         return List.copyOf(events);
     }
@@ -53,14 +56,14 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     @Override
     public Void visitTerminal(TerminalNode node) {
         if (node.getSymbol() != null
-                && node.getSymbol().getType() == PostgresRelationSqlParser.DOLLAR_QUOTED_STRING) {
+                && node.getSymbol().getType() == PostgresRoutineBodySqlParser.DOLLAR_QUOTED_STRING) {
             collectRoutineBody(node.getText(), node.getSymbol().getLine());
         }
         return null;
     }
 
     @Override
-    public Void visitCommonTableExpression(PostgresRelationSqlParser.CommonTableExpressionContext ctx) {
+    public Void visitCommonTableExpression(PostgresRoutineBodySqlParser.CommonTableExpressionContext ctx) {
         String name = clean(ctx.identifier().getText());
         if (!name.isBlank()) {
             cteNames.add(normalize(name));
@@ -81,7 +84,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitQuerySpecification(PostgresRelationSqlParser.QuerySpecificationContext ctx) {
+    public Void visitQuerySpecification(PostgresRoutineBodySqlParser.QuerySpecificationContext ctx) {
         queryScopes.push(new QueryScope());
         try {
             if (ctx.fromClause() != null) {
@@ -103,7 +106,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitNamedTablePrimary(PostgresRelationSqlParser.NamedTablePrimaryContext ctx) {
+    public Void visitNamedTablePrimary(PostgresRoutineBodySqlParser.NamedTablePrimaryContext ctx) {
         String qualified = qualifiedName(ctx.qualifiedName());
         String table = baseName(qualified);
         String alias = ctx.tableAlias() == null ? "" : clean(ctx.tableAlias().identifier().getText());
@@ -120,10 +123,10 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitTableReference(PostgresRelationSqlParser.TableReferenceContext ctx) {
+    public Void visitTableReference(PostgresRoutineBodySqlParser.TableReferenceContext ctx) {
         visit(ctx.tablePrimary());
         String leftAlias = rowsetAlias(ctx.tablePrimary());
-        for (PostgresRelationSqlParser.JoinClauseContext join : ctx.joinClause()) {
+        for (PostgresRoutineBodySqlParser.JoinClauseContext join : ctx.joinClause()) {
             String rightAlias = rowsetAlias(join.tablePrimary());
             visit(join.tablePrimary());
             if (join.identifierList() != null) {
@@ -146,7 +149,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitDerivedTablePrimary(PostgresRelationSqlParser.DerivedTablePrimaryContext ctx) {
+    public Void visitDerivedTablePrimary(PostgresRoutineBodySqlParser.DerivedTablePrimaryContext ctx) {
         String alias = ctx.tableAlias() == null ? "" : clean(ctx.tableAlias().identifier().getText());
         if (!alias.isBlank()) {
             Map<String, Object> attrs = attrs();
@@ -165,7 +168,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitRowsFromTablePrimary(PostgresRelationSqlParser.RowsFromTablePrimaryContext ctx) {
+    public Void visitRowsFromTablePrimary(PostgresRoutineBodySqlParser.RowsFromTablePrimaryContext ctx) {
         Map<String, Object> attrs = attrs();
         attrs.put("name", "ROWS");
         attrs.put("table", "ROWS");
@@ -179,7 +182,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitFunctionRowsetPrimary(PostgresRelationSqlParser.FunctionRowsetPrimaryContext ctx) {
+    public Void visitFunctionRowsetPrimary(PostgresRoutineBodySqlParser.FunctionRowsetPrimaryContext ctx) {
         String functionName = baseName(qualifiedName(ctx.qualifiedName())).toUpperCase(Locale.ROOT);
         Map<String, Object> attrs = attrs();
         attrs.put("name", functionName);
@@ -194,7 +197,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitComparisonPredicate(PostgresRelationSqlParser.ComparisonPredicateContext ctx) {
+    public Void visitComparisonPredicate(PostgresRoutineBodySqlParser.ComparisonPredicateContext ctx) {
         if (!"=".equals(ctx.comparisonOperator().getText())) {
             return visitChildren(ctx);
         }
@@ -216,7 +219,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitExistsPredicate(PostgresRelationSqlParser.ExistsPredicateContext ctx) {
+    public Void visitExistsPredicate(PostgresRoutineBodySqlParser.ExistsPredicateContext ctx) {
         existsDepth++;
         visit(ctx.selectStatement());
         existsDepth--;
@@ -224,7 +227,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitInSubqueryPredicate(PostgresRelationSqlParser.InSubqueryPredicateContext ctx) {
+    public Void visitInSubqueryPredicate(PostgresRoutineBodySqlParser.InSubqueryPredicateContext ctx) {
         ColumnRead outer = singleColumn(ctx.expression());
         ColumnRead inner = singleSelectColumn(ctx.selectStatement());
         visit(ctx.selectStatement());
@@ -244,7 +247,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitTupleInSubqueryPredicate(PostgresRelationSqlParser.TupleInSubqueryPredicateContext ctx) {
+    public Void visitTupleInSubqueryPredicate(PostgresRoutineBodySqlParser.TupleInSubqueryPredicateContext ctx) {
         List<ColumnRead> outer = ctx.expressionList().expression().stream().map(this::singleColumn).toList();
         List<ColumnRead> inner = selectColumns(ctx.selectStatement());
         visit(ctx.selectStatement());
@@ -263,27 +266,27 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitLiteralInPredicate(PostgresRelationSqlParser.LiteralInPredicateContext ctx) {
+    public Void visitLiteralInPredicate(PostgresRoutineBodySqlParser.LiteralInPredicateContext ctx) {
         return null;
     }
 
     @Override
-    public Void visitLikePredicate(PostgresRelationSqlParser.LikePredicateContext ctx) {
+    public Void visitLikePredicate(PostgresRoutineBodySqlParser.LikePredicateContext ctx) {
         return null;
     }
 
     @Override
-    public Void visitInsertSelectStatement(PostgresRelationSqlParser.InsertSelectStatementContext ctx) {
+    public Void visitInsertSelectStatement(PostgresRoutineBodySqlParser.InsertSelectStatementContext ctx) {
         String targetTable = qualifiedName(ctx.qualifiedName());
         List<String> targetColumns = ctx.identifierList().identifier().stream()
                 .map(identifier -> clean(identifier.getText()))
                 .toList();
         visit(ctx.selectStatement());
-        List<PostgresRelationSqlParser.SelectItemContext> selectItems =
+        List<PostgresRoutineBodySqlParser.SelectItemContext> selectItems =
                 ctx.selectStatement().querySpecification().selectList().selectItem();
         int count = Math.min(targetColumns.size(), selectItems.size());
         for (int index = 0; index < count; index++) {
-            PostgresRelationSqlParser.SelectItemContext item = selectItems.get(index);
+            PostgresRoutineBodySqlParser.SelectItemContext item = selectItems.get(index);
             if (item.expression() == null) {
                 continue;
             }
@@ -305,7 +308,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitUpdateStatement(PostgresRelationSqlParser.UpdateStatementContext ctx) {
+    public Void visitUpdateStatement(PostgresRoutineBodySqlParser.UpdateStatementContext ctx) {
         visit(ctx.tablePrimary());
         String targetAlias = targetAlias(ctx.tablePrimary());
         String targetTable = targetTable(ctx.tablePrimary());
@@ -319,7 +322,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         if (ctx.fromClause() != null) {
             visit(ctx.fromClause());
         }
-        for (PostgresRelationSqlParser.AssignmentContext assignment : ctx.assignmentList().assignment()) {
+        for (PostgresRoutineBodySqlParser.AssignmentContext assignment : ctx.assignmentList().assignment()) {
             List<String> targetParts = parts(assignment.qualifiedName());
             String targetColumn = targetParts.isEmpty() ? "" : targetParts.get(targetParts.size() - 1);
             String assignmentAlias = targetParts.size() > 1 ? targetParts.get(targetParts.size() - 2) : targetAlias;
@@ -345,9 +348,9 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
-    public Void visitMergeStatement(PostgresRelationSqlParser.MergeStatementContext ctx) {
-        PostgresRelationSqlParser.TablePrimaryContext target = ctx.tablePrimary(0);
-        PostgresRelationSqlParser.TablePrimaryContext source = ctx.tablePrimary(1);
+    public Void visitMergeStatement(PostgresRoutineBodySqlParser.MergeStatementContext ctx) {
+        PostgresRoutineBodySqlParser.TablePrimaryContext target = ctx.tablePrimary(0);
+        PostgresRoutineBodySqlParser.TablePrimaryContext source = ctx.tablePrimary(1);
         visit(target);
         String targetAlias = targetAlias(target);
         String targetTable = targetTable(target);
@@ -362,11 +365,11 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         joinKinds.push("MERGE_OR_USING");
         visit(ctx.predicate());
         joinKinds.pop();
-        for (PostgresRelationSqlParser.MergeWhenClauseContext whenClause : ctx.mergeWhenClause()) {
-            PostgresRelationSqlParser.MergeActionContext action = whenClause.mergeAction();
-            if (action instanceof PostgresRelationSqlParser.MergeUpdateActionContext updateAction) {
+        for (PostgresRoutineBodySqlParser.MergeWhenClauseContext whenClause : ctx.mergeWhenClause()) {
+            PostgresRoutineBodySqlParser.MergeActionContext action = whenClause.mergeAction();
+            if (action instanceof PostgresRoutineBodySqlParser.MergeUpdateActionContext updateAction) {
                 emitMergeUpdateMappings(updateAction.assignmentList(), targetAlias, targetTable);
-            } else if (action instanceof PostgresRelationSqlParser.MergeInsertActionContext insertAction) {
+            } else if (action instanceof PostgresRoutineBodySqlParser.MergeInsertActionContext insertAction) {
                 emitMergeInsertMappings(insertAction, targetAlias, targetTable);
             }
         }
@@ -374,11 +377,11 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     private void emitMergeUpdateMappings(
-            PostgresRelationSqlParser.AssignmentListContext assignments,
+            PostgresRoutineBodySqlParser.AssignmentListContext assignments,
             String targetAlias,
             String targetTable
     ) {
-        for (PostgresRelationSqlParser.AssignmentContext assignment : assignments.assignment()) {
+        for (PostgresRoutineBodySqlParser.AssignmentContext assignment : assignments.assignment()) {
             List<String> targetParts = parts(assignment.qualifiedName());
             String targetColumn = targetParts.isEmpty() ? "" : targetParts.get(targetParts.size() - 1);
             String assignmentAlias = targetParts.size() > 1 ? targetParts.get(targetParts.size() - 2) : targetAlias;
@@ -400,14 +403,14 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     private void emitMergeInsertMappings(
-            PostgresRelationSqlParser.MergeInsertActionContext insertAction,
+            PostgresRoutineBodySqlParser.MergeInsertActionContext insertAction,
             String targetAlias,
             String targetTable
     ) {
         List<String> targetColumns = insertAction.identifierList().identifier().stream()
                 .map(identifier -> clean(identifier.getText()))
                 .toList();
-        List<PostgresRelationSqlParser.ExpressionContext> expressions = insertAction.expressionList().expression();
+        List<PostgresRoutineBodySqlParser.ExpressionContext> expressions = insertAction.expressionList().expression();
         int count = Math.min(targetColumns.size(), expressions.size());
         for (int index = 0; index < count; index++) {
             ExpressionAnalysis source = analyze(expressions.get(index));
@@ -427,10 +430,10 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         }
     }
 
-    private void emitProjectionItems(PostgresRelationSqlParser.SelectListContext ctx, ProjectionOwner owner) {
-        List<PostgresRelationSqlParser.SelectItemContext> items = ctx.selectItem();
+    private void emitProjectionItems(PostgresRoutineBodySqlParser.SelectListContext ctx, ProjectionOwner owner) {
+        List<PostgresRoutineBodySqlParser.SelectItemContext> items = ctx.selectItem();
         for (int index = 0; index < items.size(); index++) {
-            PostgresRelationSqlParser.SelectItemContext item = items.get(index);
+            PostgresRoutineBodySqlParser.SelectItemContext item = items.get(index);
             if (item.expression() == null) {
                 continue;
             }
@@ -453,7 +456,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         }
     }
 
-    private String outputColumn(PostgresRelationSqlParser.SelectItemContext item) {
+    private String outputColumn(PostgresRoutineBodySqlParser.SelectItemContext item) {
         if (item.identifier() != null) {
             return clean(item.identifier().getText());
         }
@@ -461,15 +464,15 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         return column == null ? "" : column.column();
     }
 
-    private ColumnRead singleSelectColumn(PostgresRelationSqlParser.SelectStatementContext select) {
+    private ColumnRead singleSelectColumn(PostgresRoutineBodySqlParser.SelectStatementContext select) {
         List<ColumnRead> columns = selectColumns(select);
         return columns.size() == 1 ? columns.get(0) : null;
     }
 
-    private List<ColumnRead> selectColumns(PostgresRelationSqlParser.SelectStatementContext select) {
-        List<PostgresRelationSqlParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
+    private List<ColumnRead> selectColumns(PostgresRoutineBodySqlParser.SelectStatementContext select) {
+        List<PostgresRoutineBodySqlParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
         List<ColumnRead> columns = new ArrayList<>();
-        for (PostgresRelationSqlParser.SelectItemContext item : items) {
+        for (PostgresRoutineBodySqlParser.SelectItemContext item : items) {
             if (item.expression() == null) {
                 return List.of();
             }
@@ -482,32 +485,32 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         return columns;
     }
 
-    private ColumnRead singleColumn(PostgresRelationSqlParser.ExpressionContext expression) {
-        if (expression instanceof PostgresRelationSqlParser.ColumnExpressionContext columnExpression) {
+    private ColumnRead singleColumn(PostgresRoutineBodySqlParser.ExpressionContext expression) {
+        if (expression instanceof PostgresRoutineBodySqlParser.ColumnExpressionContext columnExpression) {
             List<String> parts = parts(columnExpression.qualifiedName());
             if (parts.size() == 1) {
                 return new ColumnRead(defaultColumnAlias(), parts.get(0));
             }
             return new ColumnRead(parts.get(parts.size() - 2), parts.get(parts.size() - 1));
         }
-        if (expression instanceof PostgresRelationSqlParser.ParenExpressionContext paren) {
+        if (expression instanceof PostgresRoutineBodySqlParser.ParenExpressionContext paren) {
             return singleColumn(paren.expression());
         }
         return null;
     }
 
-    private ExpressionAnalysis analyze(PostgresRelationSqlParser.ExpressionContext expression) {
-        if (expression instanceof PostgresRelationSqlParser.ColumnExpressionContext columnExpression) {
+    private ExpressionAnalysis analyze(PostgresRoutineBodySqlParser.ExpressionContext expression) {
+        if (expression instanceof PostgresRoutineBodySqlParser.ColumnExpressionContext columnExpression) {
             ColumnRead column = singleColumn(columnExpression);
             if (column == null) {
                 return ExpressionAnalysis.empty();
             }
             return ExpressionAnalysis.of(column, LineageTransformType.DIRECT, LineageFlowKind.VALUE);
         }
-        if (expression instanceof PostgresRelationSqlParser.ParenExpressionContext paren) {
+        if (expression instanceof PostgresRoutineBodySqlParser.ParenExpressionContext paren) {
             return analyze(paren.expression());
         }
-        if (expression instanceof PostgresRelationSqlParser.BinaryExpressionContext binary) {
+        if (expression instanceof PostgresRoutineBodySqlParser.BinaryExpressionContext binary) {
             ExpressionAnalysis left = analyze(binary.expression(0));
             ExpressionAnalysis right = analyze(binary.expression(1));
             LineageTransformType transform = "||".equals(binary.arithmeticOperator().getText())
@@ -515,10 +518,10 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
                     : LineageTransformType.ARITHMETIC;
             return ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE, left, right);
         }
-        if (expression instanceof PostgresRelationSqlParser.FunctionExpressionContext function) {
+        if (expression instanceof PostgresRoutineBodySqlParser.FunctionExpressionContext function) {
             ExpressionAnalysis args = ExpressionAnalysis.empty();
             if (function.functionCall().expressionList() != null) {
-                for (PostgresRelationSqlParser.ExpressionContext argument : function.functionCall().expressionList().expression()) {
+                for (PostgresRoutineBodySqlParser.ExpressionContext argument : function.functionCall().expressionList().expression()) {
                     args = ExpressionAnalysis.combine(args.transform(), args.flowKind(), args, analyze(argument));
                 }
             }
@@ -537,9 +540,9 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
                     : LineageFlowKind.VALUE;
             return new ExpressionAnalysis(args.sources(), dominant, flowKind);
         }
-        if (expression instanceof PostgresRelationSqlParser.CaseExpressionContext caseExpression) {
+        if (expression instanceof PostgresRoutineBodySqlParser.CaseExpressionContext caseExpression) {
             ExpressionAnalysis combined = ExpressionAnalysis.empty();
-            for (PostgresRelationSqlParser.CaseWhenClauseContext whenClause : caseExpression.caseWhenClause()) {
+            for (PostgresRoutineBodySqlParser.CaseWhenClauseContext whenClause : caseExpression.caseWhenClause()) {
                 combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                         LineageFlowKind.CONTROL,
                         combined,
@@ -550,7 +553,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
                         analyze(whenClause.expression()));
             }
             if (caseExpression.expression().size() > 0) {
-                for (PostgresRelationSqlParser.ExpressionContext part : caseExpression.expression()) {
+                for (PostgresRoutineBodySqlParser.ExpressionContext part : caseExpression.expression()) {
                     combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                             LineageFlowKind.CONTROL,
                             combined,
@@ -559,17 +562,17 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             }
             return new ExpressionAnalysis(combined.sources(), LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL);
         }
-        if (expression instanceof PostgresRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
+        if (expression instanceof PostgresRoutineBodySqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
             return analyzeScalarSubquery(scalarSubquery.selectStatement());
         }
         return ExpressionAnalysis.empty();
     }
 
-    private ExpressionAnalysis analyzeScalarSubquery(PostgresRelationSqlParser.SelectStatementContext select) {
+    private ExpressionAnalysis analyzeScalarSubquery(PostgresRoutineBodySqlParser.SelectStatementContext select) {
         if (select.withClause() != null) {
             visit(select.withClause());
         }
-        PostgresRelationSqlParser.QuerySpecificationContext query = select.querySpecification();
+        PostgresRoutineBodySqlParser.QuerySpecificationContext query = select.querySpecification();
         queryScopes.push(new QueryScope());
         try {
             if (query.fromClause() != null) {
@@ -581,7 +584,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             if (query.havingClause() != null) {
                 visit(query.havingClause());
             }
-            List<PostgresRelationSqlParser.SelectItemContext> items = query.selectList().selectItem();
+            List<PostgresRoutineBodySqlParser.SelectItemContext> items = query.selectList().selectItem();
             if (items.size() != 1 || items.get(0).expression() == null) {
                 return ExpressionAnalysis.empty();
             }
@@ -591,32 +594,32 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         }
     }
 
-    private ExpressionAnalysis analyze(PostgresRelationSqlParser.PredicateContext predicate) {
-        if (predicate instanceof PostgresRelationSqlParser.AndPredicateContext andPredicate) {
+    private ExpressionAnalysis analyze(PostgresRoutineBodySqlParser.PredicateContext predicate) {
+        if (predicate instanceof PostgresRoutineBodySqlParser.AndPredicateContext andPredicate) {
             return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL,
                     analyze(andPredicate.predicate(0)),
                     analyze(andPredicate.predicate(1)));
         }
-        if (predicate instanceof PostgresRelationSqlParser.OrPredicateContext orPredicate) {
+        if (predicate instanceof PostgresRoutineBodySqlParser.OrPredicateContext orPredicate) {
             return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL,
                     analyze(orPredicate.predicate(0)),
                     analyze(orPredicate.predicate(1)));
         }
-        if (predicate instanceof PostgresRelationSqlParser.NotPredicateContext notPredicate) {
+        if (predicate instanceof PostgresRoutineBodySqlParser.NotPredicateContext notPredicate) {
             return analyze(notPredicate.predicate());
         }
-        if (predicate instanceof PostgresRelationSqlParser.ParenPredicateContext parenPredicate) {
+        if (predicate instanceof PostgresRoutineBodySqlParser.ParenPredicateContext parenPredicate) {
             return analyze(parenPredicate.predicate());
         }
-        if (predicate instanceof PostgresRelationSqlParser.ComparisonPredicateContext comparisonPredicate) {
+        if (predicate instanceof PostgresRoutineBodySqlParser.ComparisonPredicateContext comparisonPredicate) {
             return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL,
                     analyze(comparisonPredicate.expression(0)),
                     analyze(comparisonPredicate.expression(1)));
         }
-        if (predicate instanceof PostgresRelationSqlParser.LikePredicateContext likePredicate) {
+        if (predicate instanceof PostgresRoutineBodySqlParser.LikePredicateContext likePredicate) {
             ExpressionAnalysis combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL,
                     analyze(likePredicate.expression(0)),
@@ -629,9 +632,9 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             }
             return combined;
         }
-        if (predicate instanceof PostgresRelationSqlParser.LiteralInPredicateContext literalInPredicate) {
+        if (predicate instanceof PostgresRoutineBodySqlParser.LiteralInPredicateContext literalInPredicate) {
             ExpressionAnalysis combined = analyze(literalInPredicate.expression());
-            for (PostgresRelationSqlParser.ExpressionContext item : literalInPredicate.expressionList().expression()) {
+            for (PostgresRoutineBodySqlParser.ExpressionContext item : literalInPredicate.expressionList().expression()) {
                 combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                         LineageFlowKind.CONTROL,
                         combined,
@@ -639,12 +642,12 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             }
             return combined;
         }
-        if (predicate instanceof PostgresRelationSqlParser.InSubqueryPredicateContext inSubqueryPredicate) {
+        if (predicate instanceof PostgresRoutineBodySqlParser.InSubqueryPredicateContext inSubqueryPredicate) {
             return analyze(inSubqueryPredicate.expression());
         }
-        if (predicate instanceof PostgresRelationSqlParser.TupleInSubqueryPredicateContext tupleInPredicate) {
+        if (predicate instanceof PostgresRoutineBodySqlParser.TupleInSubqueryPredicateContext tupleInPredicate) {
             ExpressionAnalysis combined = ExpressionAnalysis.empty();
-            for (PostgresRelationSqlParser.ExpressionContext item : tupleInPredicate.expressionList().expression()) {
+            for (PostgresRoutineBodySqlParser.ExpressionContext item : tupleInPredicate.expressionList().expression()) {
                 combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                         LineageFlowKind.CONTROL,
                         combined,
@@ -652,7 +655,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             }
             return combined;
         }
-        if (predicate instanceof PostgresRelationSqlParser.ExpressionPredicateContext expressionPredicate) {
+        if (predicate instanceof PostgresRoutineBodySqlParser.ExpressionPredicateContext expressionPredicate) {
             return analyze(expressionPredicate.expression());
         }
         return ExpressionAnalysis.empty();
@@ -673,13 +676,26 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         if (body.isBlank()) {
             return;
         }
+        SyntaxErrorCounter errors = new SyntaxErrorCounter();
+        PostgresRoutineBodySqlLexer lexer = new PostgresRoutineBodySqlLexer(CharStreams.fromString(body));
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(errors);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        PostgresRoutineBodySqlParser parser = new PostgresRoutineBodySqlParser(tokens);
+        parser.removeErrorListeners();
+        parser.addErrorListener(errors);
+        PostgresRoutineBodySqlParser.ScriptContext root = parser.script();
+        tokens.fill();
+        if (errors.count() > 0) {
+            return;
+        }
         SqlStatementRecord nested = new SqlStatementRecord(body,
                 statement.sourceType(),
                 statement.sourceName(),
                 statement.startLine() + Math.max(0, tokenLine - 1),
                 statement.startLine() + Math.max(0, tokenLine - 1) + body.lines().count(),
                 statement.attributes());
-        events.addAll(PostgresRoutineBodyParser.extract(nested));
+        events.addAll(new PostgresRoutineBodyParseTreeVisitor(nested).collect(root));
     }
 
     private String unquoteDollarBody(String raw) {
@@ -704,53 +720,53 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         return statement.startLine() + Math.max(0, ctx.getStart().getLine() - 1);
     }
 
-    private String targetAlias(PostgresRelationSqlParser.TablePrimaryContext primary) {
-        if (primary instanceof PostgresRelationSqlParser.NamedTablePrimaryContext named && named.tableAlias() != null) {
+    private String targetAlias(PostgresRoutineBodySqlParser.TablePrimaryContext primary) {
+        if (primary instanceof PostgresRoutineBodySqlParser.NamedTablePrimaryContext named && named.tableAlias() != null) {
             return clean(named.tableAlias().identifier().getText());
         }
         return targetTable(primary);
     }
 
-    private String rowsetAlias(PostgresRelationSqlParser.TablePrimaryContext primary) {
-        if (primary instanceof PostgresRelationSqlParser.NamedTablePrimaryContext named) {
+    private String rowsetAlias(PostgresRoutineBodySqlParser.TablePrimaryContext primary) {
+        if (primary instanceof PostgresRoutineBodySqlParser.NamedTablePrimaryContext named) {
             if (named.tableAlias() != null) {
                 return clean(named.tableAlias().identifier().getText());
             }
             return baseName(qualifiedName(named.qualifiedName()));
         }
-        if (primary instanceof PostgresRelationSqlParser.DerivedTablePrimaryContext derived && derived.tableAlias() != null) {
+        if (primary instanceof PostgresRoutineBodySqlParser.DerivedTablePrimaryContext derived && derived.tableAlias() != null) {
             return clean(derived.tableAlias().identifier().getText());
         }
-        if (primary instanceof PostgresRelationSqlParser.RowsFromTablePrimaryContext rows && rows.tableAlias() != null) {
+        if (primary instanceof PostgresRoutineBodySqlParser.RowsFromTablePrimaryContext rows && rows.tableAlias() != null) {
             return clean(rows.tableAlias().identifier().getText());
         }
-        if (primary instanceof PostgresRelationSqlParser.FunctionRowsetPrimaryContext function && function.tableAlias() != null) {
+        if (primary instanceof PostgresRoutineBodySqlParser.FunctionRowsetPrimaryContext function && function.tableAlias() != null) {
             return clean(function.tableAlias().identifier().getText());
         }
         return "";
     }
 
-    private String targetTable(PostgresRelationSqlParser.TablePrimaryContext primary) {
-        if (primary instanceof PostgresRelationSqlParser.NamedTablePrimaryContext named) {
+    private String targetTable(PostgresRoutineBodySqlParser.TablePrimaryContext primary) {
+        if (primary instanceof PostgresRoutineBodySqlParser.NamedTablePrimaryContext named) {
             return qualifiedName(named.qualifiedName());
         }
-        if (primary instanceof PostgresRelationSqlParser.DerivedTablePrimaryContext derived && derived.tableAlias() != null) {
+        if (primary instanceof PostgresRoutineBodySqlParser.DerivedTablePrimaryContext derived && derived.tableAlias() != null) {
             return clean(derived.tableAlias().identifier().getText());
         }
-        if (primary instanceof PostgresRelationSqlParser.RowsFromTablePrimaryContext rows && rows.tableAlias() != null) {
+        if (primary instanceof PostgresRoutineBodySqlParser.RowsFromTablePrimaryContext rows && rows.tableAlias() != null) {
             return clean(rows.tableAlias().identifier().getText());
         }
-        if (primary instanceof PostgresRelationSqlParser.FunctionRowsetPrimaryContext function && function.tableAlias() != null) {
+        if (primary instanceof PostgresRoutineBodySqlParser.FunctionRowsetPrimaryContext function && function.tableAlias() != null) {
             return clean(function.tableAlias().identifier().getText());
         }
         return "";
     }
 
-    private String qualifiedName(PostgresRelationSqlParser.QualifiedNameContext ctx) {
+    private String qualifiedName(PostgresRoutineBodySqlParser.QualifiedNameContext ctx) {
         return String.join(".", parts(ctx));
     }
 
-    private List<String> parts(PostgresRelationSqlParser.QualifiedNameContext ctx) {
+    private List<String> parts(PostgresRoutineBodySqlParser.QualifiedNameContext ctx) {
         return ctx.identifier().stream().map(identifier -> clean(identifier.getText())).toList();
     }
 
@@ -784,7 +800,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         return joinKinds.isEmpty() ? "WHERE_OR_UNKNOWN" : joinKinds.peek();
     }
 
-    private String joinKind(PostgresRelationSqlParser.JoinClauseContext join) {
+    private String joinKind(PostgresRoutineBodySqlParser.JoinClauseContext join) {
         if (join.joinType() == null) {
             return "JOIN";
         }

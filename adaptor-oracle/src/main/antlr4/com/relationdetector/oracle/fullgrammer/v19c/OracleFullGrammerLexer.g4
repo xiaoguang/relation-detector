@@ -37,7 +37,6 @@ FETCH: F E T C H;
 FIRST: F I R S T;
 NEXT: N E X T;
 ROW: R O W;
-LIMIT: L I M I T;
 INSERT: I N S E R T;
 INTO: I N T O;
 UPDATE: U P D A T E;
@@ -49,13 +48,12 @@ VALUES: V A L U E S;
 RETURNING: R E T U R N I N G;
 RETURN: R E T U R N;
 BETWEEN: B E T W E E N;
-DO: D O;
-NOTHING: N O T H I N G;
 CREATE: C R E A T E;
 ALTER: A L T E R;
 TABLE: T A B L E;
+COMMENT: C O M M E N T;
+COLUMN: C O L U M N;
 TEMPORARY: T E M P O R A R Y;
-UNLOGGED: U N L O G G E D;
 BEGIN: B E G I N;
 IF: I F;
 ELSEIF: E L S E I F;
@@ -77,19 +75,15 @@ REFERENCES: R E F E R E N C E S;
 PRIMARY: P R I M A R Y;
 UNIQUE: U N I Q U E;
 INDEX: I N D E X;
-CONCURRENTLY: C O N C U R R E N T L Y;
 ONLY: O N L Y;
 INCLUDE: I N C L U D E;
 TABLESPACE: T A B L E S P A C E;
-MATERIALIZED: M A T E R I A L I Z E D;
 MEMOPTIMIZE: M E M O P T I M I Z E;
 READ: R E A D;
 SQL_MACRO: S Q L '_' M A C R O;
 VECTOR: V E C T O R;
 ROWS: R O W S;
-TABLESAMPLE: T A B L E S A M P L E;
 LATERAL: L A T E R A L;
-ORDINALITY: O R D I N A L I T Y;
 OVER: O V E R;
 CASE: C A S E;
 WHEN: W H E N;
@@ -116,9 +110,6 @@ SLASH: '/';
 PERCENT: '%';
 CONCAT: '||';
 ASSIGN: ':=';
-DOUBLE_COLON: '::';
-JSON_ARROW_TEXT: '->>';
-JSON_ARROW: '->';
 LE: '<=';
 GE: '>=';
 NEQ: '<>' | '!=';
@@ -133,9 +124,6 @@ STRING_LITERAL
     : '\'' ('\'\'' | ~'\'')* '\''
     ;
 
-DOLLAR_QUOTED_STRING
-    : '$$' .*? '$$'
-    ;
 
 NUMBER
     : [0-9]+ ('.' [0-9]+)?

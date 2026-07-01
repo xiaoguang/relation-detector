@@ -4,32 +4,34 @@ This review covers every correctness fixture manifest under `test-fixtures/corre
 
 ## Scope And Status
 
-- Fixture manifests reviewed: `896`.
+- Fixture manifests reviewed: `763`.
 - SQL/DDL inputs are the fixture `input.sql` files referenced by each manifest.
 - Current review result: no `REVIEW_NEEDED` items are open.
 - Confirmed recent fix: `NAMING_MATCH` is now generated as a direction hint on existing SQL predicate candidates. It supports `TABLE_ID`, `ID_SUFFIX_TO_ID`, and `SELF_ROLE_ID`; it cannot create a relationship by itself.
 - Confirmed recent lineage fix: token-event CASE analysis now includes columns from `WHEN` predicates as `CONTROL:CASE_WHEN` lineage sources when they are physical rowset columns.
 - Confirmed recent MySQL token-event grammar fix: `IS NULL` / `IS NOT NULL` predicates are now typed grammar nodes. This lets MySQL token-event parse the rest of JOIN predicates instead of dropping later joined rowsets, which restored semantically valid sample-data procedure/view/trigger relations and derived aggregate lineage.
 - Confirmed recent fixture fix: new ERP deep-scenario procedure files now carry object-block markers, so routine bodies are actually included in correctness parsing.
-- Confirmed Oracle correction: Oracle root token-event keeps the sample-data golden, and `oracle/v12c|v19c|v21c|v26ai` full-grammer golden now carries the same sample-data surface plus one profile smoke fixture per version. Oracle full-grammer no longer delegates to token-event; broader Oracle official syntax coverage remains backlog, not a `REVIEW_NEEDED` business decision.
+- Confirmed Oracle correction: Oracle root token-event keeps the sample-data golden. `oracle/v12c|v19c|v21c|v26ai` full-grammer golden carries each version's sample-data surface and profile/version-only fixtures. Metadata-only dictionary DDL with empty output is no longer retained in correctness. Oracle full-grammer no longer delegates to token-event; broader Oracle official syntax coverage remains backlog, not a `REVIEW_NEEDED` business decision.
 - Remaining cross-parser differences are categorized as typed visitor coverage gaps, official grammar backlog, runtime-smoke backlog, or expected version deltas, not as approved scanner-style guessing.
 
 ## Parser Category Totals
 
 | Category | Fixtures | Relations | Lineage | Naming relation fingerprints | Sample fixtures | Sample relations | Sample lineage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event | 36 | 737 | 231 | 207 | 19 | 721 | 225 |
-| MySQL token-event root | 97 | 631 | 265 | 255 | 40 | 556 | 208 |
-| MySQL full-grammer v8_0 | 97 | 908 | 368 | 448 | 40 | 784 | 273 |
-| PostgreSQL token-event root | 118 | 1119 | 194 | 251 | 39 | 438 | 119 |
-| PostgreSQL full-grammer v16 | 118 | 1452 | 211 | 405 | 39 | 671 | 120 |
-| PostgreSQL full-grammer v17 | 120 | 1455 | 233 | 406 | 39 | 671 | 120 |
-| PostgreSQL full-grammer v18 | 121 | 1456 | 231 | 405 | 39 | 670 | 119 |
-| Oracle token-event root | 37 | 300 | 94 | 128 | 37 | 300 | 94 |
-| Oracle full-grammer v12c | 38 | 301 | 96 | 129 | 37 | 300 | 94 |
-| Oracle full-grammer v19c | 39 | 301 | 96 | 129 | 37 | 300 | 94 |
-| Oracle full-grammer v21c | 39 | 301 | 96 | 129 | 37 | 300 | 94 |
-| Oracle full-grammer v26ai | 39 | 301 | 96 | 129 | 37 | 300 | 94 |
+| common token-event | 32 | 737 | 231 | 207 | 15 | 721 | 225 |
+| MySQL token-event root | 76 | 631 | 265 | 255 | 34 | 556 | 208 |
+| MySQL full-grammer v8_0 | 82 | 908 | 368 | 448 | 37 | 784 | 273 |
+| PostgreSQL token-event root | 103 | 1119 | 194 | 251 | 30 | 438 | 119 |
+| PostgreSQL full-grammer v16 | 103 | 1452 | 211 | 405 | 30 | 671 | 120 |
+| PostgreSQL full-grammer v17 | 105 | 1455 | 233 | 406 | 30 | 671 | 120 |
+| PostgreSQL full-grammer v18 | 106 | 1456 | 231 | 405 | 30 | 670 | 119 |
+| Oracle token-event root | 33 | 400 | 112 | 158 | 33 | 400 | 112 |
+| Oracle full-grammer v12c | 30 | 373 | 96 | 57 | 29 | 372 | 94 |
+| Oracle full-grammer v19c | 31 | 373 | 96 | 57 | 29 | 372 | 94 |
+| Oracle full-grammer v21c | 31 | 373 | 96 | 57 | 29 | 372 | 94 |
+| Oracle full-grammer v26ai | 31 | 373 | 96 | 57 | 29 | 372 | 94 |
+
+Correctness was pruned after this review: fixtures with no relationship, no lineage, no diagnostics, and no special syntax / version-boundary purpose were removed from the executable golden set. The semantic totals above are unchanged because the removed fixtures had empty outputs.
 
 ## Golden Semantic Shape
 

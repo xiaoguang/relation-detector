@@ -6,7 +6,7 @@ import java.util.List;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.postgres.fullgrammer.common.PostgresSqlEventVisitorCore;
-import com.relationdetector.postgres.fullgrammer.routine.PostgresFullGrammerRoutineBodyParser;
+import com.relationdetector.postgres.routine.PostgresRoutineBodyParser;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser.Common_table_exprContext;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser.A_exprContext;
 import com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerParser.A_expr_inContext;
@@ -67,7 +67,7 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
     }
 
     private List<StructuredSqlEvent> extractRoutineBody(SqlStatementRecord nestedStatement) {
-        return PostgresFullGrammerRoutineBodyParser.extract(nestedStatement);
+        return PostgresRoutineBodyParser.extract(nestedStatement);
     }
 
     @Override

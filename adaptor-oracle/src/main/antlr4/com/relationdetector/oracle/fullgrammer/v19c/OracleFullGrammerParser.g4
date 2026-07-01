@@ -31,6 +31,7 @@ statement
     | createTableStatement SEMI?
     | alterTableStatement SEMI?
     | createIndexStatement SEMI?
+    | commentStatement SEMI?
     | SLASH
     | SEMI
     ;
@@ -75,12 +76,7 @@ withClause
     ;
 
 commonTableExpression
-    : identifier (LPAREN identifierList RPAREN)? AS cteMaterialization? LPAREN selectStatement RPAREN
-    ;
-
-cteMaterialization
-    : MATERIALIZED
-    | NOT MATERIALIZED
+    : identifier (LPAREN identifierList RPAREN)? AS LPAREN selectStatement RPAREN
     ;
 
 querySpecification
@@ -116,39 +112,22 @@ tableReference
     ;
 
 tablePrimary
-    : ONLY? qualifiedName tableSampleClause? tableAlias? tableSampleClause?  # namedTablePrimary
-    | LPAREN selectStatement RPAREN tableAlias?                              # derivedTablePrimary
-    | ROWS FROM LPAREN rowsFromItem (COMMA rowsFromItem)* RPAREN tableAlias? # rowsFromTablePrimary
-    | LATERAL? qualifiedName LPAREN looseToken* RPAREN withOrdinality? tableAlias? # functionRowsetPrimary
+    : ONLY? qualifiedName tableAlias?                                  # namedTablePrimary
+    | LPAREN selectStatement RPAREN tableAlias?                        # derivedTablePrimary
+    | qualifiedName LPAREN functionArgument? RPAREN tableAlias?        # functionRowsetPrimary
+    ;
+
+functionArgument
+    : functionArgumentToken+
+    ;
+
+functionArgumentToken
+    : LPAREN functionArgumentToken* RPAREN
+    | ~RPAREN
     ;
 
 tableAlias
     : AS? identifier (LPAREN identifierList RPAREN)?
-    ;
-
-tableSampleClause
-    : TABLESAMPLE identifier LPAREN looseToken* RPAREN
-    ;
-
-rowsFromItem
-    : qualifiedName LPAREN looseToken* RPAREN (AS LPAREN looseToken* RPAREN)?
-    ;
-
-withOrdinality
-    : WITH ORDINALITY
-    ;
-
-looseToken
-    : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
-    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE | IS
-    | USING | GROUP | BY | HAVING | ORDER | FETCH | FIRST | NEXT | ROW | LIMIT | RETURN | BETWEEN | INSERT | INTO | UPDATE
-    | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
-    | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | IF | ADD | CONSTRAINT
-    | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
-    | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
-    | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
-    | PARAMETER | DOT | COMMA | STAR | EQ | LBRACKET | RBRACKET | PLUS
-    | MINUS | SLASH | PERCENT | CONCAT | ASSIGN | DOUBLE_COLON | JSON_ARROW_TEXT | JSON_ARROW | LT | GT | LE | GE | NEQ
     ;
 
 joinClause
@@ -236,7 +215,6 @@ mergeAction
     : UPDATE SET assignmentList                    # mergeUpdateAction
     | INSERT LPAREN identifierList RPAREN VALUES LPAREN expressionList RPAREN # mergeInsertAction
     | DELETE                                       # mergeDeleteAction
-    | DO NOTHING                                   # mergeDoNothingAction
     ;
 
 returningClause
@@ -252,20 +230,11 @@ plsqlAssignmentStatement
     ;
 
 createTableStatement
-    : CREATE tableModifier* TABLE ifNotExists? qualifiedName LPAREN tableElement (COMMA tableElement)* RPAREN memoptimizeClause?
+    : CREATE TABLE qualifiedName LPAREN tableElement (COMMA tableElement)* RPAREN memoptimizeClause?
     ;
 
 memoptimizeClause
     : MEMOPTIMIZE FOR READ
-    ;
-
-tableModifier
-    : TEMPORARY
-    | UNLOGGED
-    ;
-
-ifNotExists
-    : IF NOT EXISTS
     ;
 
 tableElement
@@ -322,9 +291,6 @@ columnDefinitionToken
     | BETWEEN
     | DOT
     | ASSIGN
-    | DOUBLE_COLON
-    | JSON_ARROW_TEXT
-    | JSON_ARROW
     ;
 
 columnDefinitionParenToken
@@ -352,9 +318,6 @@ columnDefinitionParenToken
     | UPDATE
     | SET
     | ASSIGN
-    | DOUBLE_COLON
-    | JSON_ARROW_TEXT
-    | JSON_ARROW
     | LPAREN columnDefinitionParenToken* RPAREN
     ;
 
@@ -369,18 +332,26 @@ alterTableStatement
     ;
 
 createIndexStatement
-    : CREATE UNIQUE? INDEX CONCURRENTLY? ifNotExists? identifier (USING identifier)? ON ONLY? qualifiedName (USING identifier)? LPAREN indexPartList RPAREN createIndexTail*
+    : CREATE UNIQUE? INDEX identifier ON qualifiedName LPAREN indexPartList RPAREN createIndexTail*
     ;
 
 createIndexTail
     : INCLUDE LPAREN indexPartList RPAREN
     | WHERE predicate
-    | WITH LPAREN sqlToken* RPAREN
     | TABLESPACE identifier
     | identifier
     | literal
     | EQ
     | COMMA
+    ;
+
+commentStatement
+    : COMMENT ON TABLE qualifiedName IS literal
+    | COMMENT ON COLUMN commentColumnTarget IS literal
+    ;
+
+commentColumnTarget
+    : identifier DOT identifier (DOT identifier)?
     ;
 
 constraintName
@@ -497,6 +468,8 @@ qualifiedName
 identifier
     : IDENTIFIER
     | QUOTED_IDENTIFIER
+    | COMMENT
+    | COLUMN
     ;
 
 literal
@@ -506,20 +479,4 @@ literal
     | FALSE
     | NULL
     | PARAMETER
-    ;
-
-sqlToken
-    : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
-    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE | IS
-    | USING | GROUP | BY | HAVING | ORDER | FETCH | FIRST | NEXT | ROW | LIMIT | RETURN | BETWEEN | INSERT | INTO | UPDATE
-    | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | RETURN | DO | NOTHING
-    | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
-    | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | ELSIF | WHILE
-    | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
-    | ADD | CONSTRAINT
-    | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
-    | INCLUDE | TABLESPACE | MATERIALIZED | MEMOPTIMIZE | READ | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
-    | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
-    | PARAMETER | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | LBRACKET | RBRACKET | PLUS
-    | MINUS | SLASH | PERCENT | CONCAT | ASSIGN | DOUBLE_COLON | JSON_ARROW_TEXT | JSON_ARROW | LT | GT | LE | GE | NEQ
     ;

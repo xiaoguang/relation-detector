@@ -13,6 +13,7 @@ required_jars=(
   "$ROOT/core/target/relation-detector-core-0.1.0-SNAPSHOT.jar"
   "$ROOT/adaptor-mysql/target/relation-detector-adaptor-mysql-0.1.0-SNAPSHOT.jar"
   "$ROOT/adaptor-postgres/target/relation-detector-adaptor-postgres-0.1.0-SNAPSHOT.jar"
+  "$ROOT/adaptor-oracle/target/relation-detector-adaptor-oracle-0.1.0-SNAPSHOT.jar"
   "$ROOT/cli/target/relation-detector-cli-0.1.0-SNAPSHOT.jar"
   "$HOME/.m2/repository/org/antlr/antlr4-runtime/4.13.2/antlr4-runtime-4.13.2.jar"
   "$HOME/.m2/repository/com/mysql/mysql-connector-j/8.4.0/mysql-connector-j-8.4.0.jar"

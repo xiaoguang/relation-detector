@@ -48,6 +48,21 @@ PL/SQL production in the official manuals. Future work should continue replacing
 packages, advanced PL/SQL, hierarchical queries, model clauses, JSON, XML,
 analytic SQL, and full Oracle DDL options.
 
+The current versioned full-grammer no longer accepts known non-Oracle structural
+syntax by grammar fallback. The Oracle full-grammer lexer/parser files do not
+declare PostgreSQL/MySQL constructs such as `LIMIT`, `UNLOGGED`, `CONCURRENTLY`,
+PostgreSQL `::` casts, JSON arrow operators, `TABLESAMPLE`, `WITH ORDINALITY`,
+`DO NOTHING`, or PostgreSQL materialized CTE modifiers. Scoped flexible tokens
+remain only inside bounded Oracle expression/function argument contexts where
+the parser still needs to tolerate Oracle built-in function arguments; they are
+not statement-level unknown fallbacks and cannot make an arbitrary non-Oracle
+statement parse successfully.
+
+Metadata-only DDL such as quoted identifiers, Oracle numeric/string/LOB/XML data
+types, `PRIMARY KEY`, `COMMENT ON TABLE`, and `COMMENT ON COLUMN` is covered by
+Oracle parser behavior tests. It is no longer retained as a large correctness
+fixture when it produces no relationship, lineage, or diagnostic output.
+
 ## Testing Rules
 
 - Token-event may parse broadly and must not be used as proof of version

@@ -16,6 +16,6 @@ public final class OracleFullGrammerDialectModule extends AbstractOracleFullGram
             Set.of("plsql", "sql_json", "listagg_distinct"));
 
     public OracleFullGrammerDialectModule() {
-        super(PROFILE);
+        super(PROFILE, new OracleFullGrammerBinding(), new OracleFullGrammerBinding());
     }
 }

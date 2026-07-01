@@ -27,6 +27,7 @@ statement
     | createTableStatement SEMI?
     | alterTableStatement SEMI?
     | createIndexStatement SEMI?
+    | commentStatement SEMI?
     | unknownStatement SEMI?
     | SEMI
     ;
@@ -357,6 +358,15 @@ createIndexTail
     | COMMA
     ;
 
+commentStatement
+    : COMMENT ON TABLE qualifiedName IS literal
+    | COMMENT ON COLUMN commentColumnTarget IS literal
+    ;
+
+commentColumnTarget
+    : identifier DOT identifier (DOT identifier)?
+    ;
+
 constraintName
     : CONSTRAINT identifier
     ;
@@ -465,6 +475,8 @@ qualifiedName
 identifier
     : IDENTIFIER
     | QUOTED_IDENTIFIER
+    | COMMENT
+    | COLUMN
     ;
 
 literal
@@ -533,6 +545,8 @@ NOTHING: N O T H I N G;
 CREATE: C R E A T E;
 ALTER: A L T E R;
 TABLE: T A B L E;
+COMMENT: C O M M E N T;
+COLUMN: C O L U M N;
 TEMPORARY: T E M P O R A R Y;
 UNLOGGED: U N L O G G E D;
 BEGIN: B E G I N;

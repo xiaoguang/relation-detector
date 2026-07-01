@@ -17,16 +17,16 @@ class CorrectnessSummaryGeneratorTest {
     void generatedSummaryCapturesFixtureCountsAndInputPreview() throws Exception {
         String markdown = CorrectnessSummaryGenerator.generate(WORKSPACE);
 
-        assertTrue(markdown.contains("| Total correctness fixtures | 899 |"));
-        assertTrue(markdown.contains("| SQL fixtures | 752 |"));
+        assertTrue(markdown.contains("| Total correctness fixtures | 763 |"));
+        assertTrue(markdown.contains("| SQL fixtures | 616 |"));
         assertTrue(markdown.contains("| DDL fixtures | 147 |"));
         assertTrue(markdown.contains("| Fixtures with expected lineage | 196 |"));
-        assertTrue(markdown.contains("| MySQL directory fixtures | 194 |"));
-        assertTrue(markdown.contains("| PostgreSQL directory fixtures | 477 |"));
-        assertTrue(markdown.contains("| Oracle directory fixtures | 192 |"));
-        assertTrue(markdown.contains("| MYSQL | 230 | 192 | 38 |"));
-        assertTrue(markdown.contains("| POSTGRESQL | 477 | 403 | 74 |"));
-        assertTrue(markdown.contains("| ORACLE | 192 | 157 | 35 |"));
+        assertTrue(markdown.contains("| MySQL directory fixtures | 158 |"));
+        assertTrue(markdown.contains("| PostgreSQL directory fixtures | 417 |"));
+        assertTrue(markdown.contains("| Oracle directory fixtures | 156 |"));
+        assertTrue(markdown.contains("| MYSQL | 190 | 152 | 38 |"));
+        assertTrue(markdown.contains("| POSTGRESQL | 417 | 343 | 74 |"));
+        assertTrue(markdown.contains("| ORACLE | 156 | 121 | 35 |"));
         assertTrue(markdown.contains("Lightweight index report. Full SQL/DDL is available in each input file."));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-commerce-promotion-update-explicit-join-sql/input.sql"));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/expected-lineage.json"));

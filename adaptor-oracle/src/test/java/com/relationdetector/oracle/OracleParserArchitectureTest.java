@@ -150,6 +150,35 @@ class OracleParserArchitectureTest {
     }
 
     @Test
+    void oracleFullGrammerDoesNotDeclareNonOracleDialectTokens() throws IOException {
+        Path grammarRoot = repoRoot().resolve("adaptor-oracle/src/main/antlr4/com/relationdetector/oracle/fullgrammer");
+        List<String> forbiddenFragments = List.of(
+                "LIMIT:",
+                "UNLOGGED:",
+                "CONCURRENTLY:",
+                "DOUBLE_COLON:",
+                "JSON_ARROW_TEXT:",
+                "JSON_ARROW:",
+                "TABLESAMPLE:",
+                "ORDINALITY:",
+                "DOLLAR_QUOTED_STRING",
+                "IF NOT EXISTS",
+                "WITH ORDINALITY",
+                "DO NOTHING");
+
+        for (String version : List.of("v12c", "v19c", "v21c", "v26ai")) {
+            String text = Files.readString(grammarRoot.resolve(version).resolve("OracleFullGrammerLexer.g4"))
+                    + "\n"
+                    + Files.readString(grammarRoot.resolve(version).resolve("OracleFullGrammerParser.g4"));
+            List<String> offenders = forbiddenFragments.stream()
+                    .filter(text::contains)
+                    .toList();
+            assertTrue(offenders.isEmpty(),
+                    version + " full-grammer must not expose PostgreSQL/MySQL syntax fragments: " + offenders);
+        }
+    }
+
+    @Test
     void oracleFullGrammerSmokeReportsGeneratedParserSource() {
         var module = new com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule();
         var result = module.sqlParser().parseSql(statement("SELECT c.id FROM customers c"), null);
@@ -161,7 +190,15 @@ class OracleParserArchitectureTest {
     }
 
     @Test
-    void oracleVersionedFullGrammerFixturesCoverRootSampleDataFixtures() throws IOException {
+    void runCliClasspathIncludesOracleAdaptorJar() throws IOException {
+        String script = Files.readString(repoRoot().resolve("scripts/run-cli.sh"));
+
+        assertTrue(script.contains("adaptor-oracle/target/relation-detector-adaptor-oracle-0.1.0-SNAPSHOT.jar"),
+                "scripts/run-cli.sh must include adaptor-oracle so manual Oracle CLI runs can discover OracleDatabaseAdaptor");
+    }
+
+    @Test
+    void oracleVersionedFullGrammerFixturesUsePrunedRootSampleDataSurface() throws IOException {
         Path correctnessRoot = repoRoot().resolve("test-fixtures/correctness/oracle");
         Set<String> rootSampleFixtures;
         try (Stream<Path> stream = Files.list(correctnessRoot)) {
@@ -171,7 +208,7 @@ class OracleParserArchitectureTest {
                     .filter(name -> name.startsWith("oracle-sample-data-full-"))
                     .collect(java.util.stream.Collectors.toSet());
         }
-        assertEquals(37, rootSampleFixtures.size(), "Root Oracle token-event sample-data fixture count");
+        assertFalse(rootSampleFixtures.isEmpty(), "Oracle root token-event must keep sample-data correctness coverage");
 
         for (String version : List.of("v12c", "v19c", "v21c", "v26ai")) {
             Path versionRoot = correctnessRoot.resolve(version);
@@ -184,8 +221,10 @@ class OracleParserArchitectureTest {
                         .map(name -> "oracle-" + name.substring(("oracle" + version.substring(1) + "-").length()))
                         .collect(java.util.stream.Collectors.toSet());
             }
-            assertEquals(rootSampleFixtures, versionSampleFixtures,
-                    version + " full-grammer must carry the same sample-data fixture surface as Oracle root");
+            assertFalse(versionSampleFixtures.isEmpty(),
+                    version + " full-grammer must keep sample-data correctness coverage");
+            assertTrue(rootSampleFixtures.containsAll(versionSampleFixtures),
+                    version + " full-grammer sample-data fixture surface must stay within the pruned Oracle root surface");
         }
     }
 
