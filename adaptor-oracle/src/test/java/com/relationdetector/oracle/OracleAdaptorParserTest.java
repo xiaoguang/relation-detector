@@ -3,6 +3,10 @@ package com.relationdetector.oracle;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -228,6 +232,46 @@ class OracleAdaptorParserTest {
     }
 
     @Test
+    void oracleFullGrammerDeepScenarioProceduresEmitConfirmedTokenEventLineageForEveryVersion() {
+        List<FullGrammerDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
+                new OracleFullGrammerDialectModule());
+        List<String> fixtureObjects = List.of(
+                "ROUTINE:oracle.sp_rebuild_sales_fact",
+                "ROUTINE:oracle.sp_run_mrp_for_plan",
+                "ROUTINE:oracle.sp_generate_picking_task_for_order",
+                "ROUTINE:oracle.sp_issue_repair_order_parts");
+        for (FullGrammerDialectModule module : modules) {
+            Set<String> lineages = fixtureObjects.stream()
+                    .flatMap(sourceName -> {
+                        var statement = statement(oracleFixtureObject(sourceName));
+                        var result = module.sqlParser().parseSql(statement, null);
+                        return lineage(statement, result).stream();
+                    })
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            assertTrue(lineages.contains("VALUE:DIRECT:sales_orders.id->sales_fact.order_id"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,"
+                    + "purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:ARITHMETIC:inventory.quantity->inventory.quantity"),
+                    () -> module.profile().id() + " " + lineages);
+        }
+    }
+
+    @Test
     void oracleFullGrammerEnforcesVersionSpecificSyntaxBoundaries() {
         String memoptimize19c = """
                 CREATE TABLE fast_lookup (
@@ -376,6 +420,38 @@ class OracleAdaptorParserTest {
                     commission_amount = sc.commission_amount + ROUND(sc.base_amount * 0.02, 2),
                     bonus = sc.bonus + 5000
                 """;
+    }
+
+    private String oracleFixtureObject(String sourceName) {
+        Path path = workspaceRoot().resolve("test-fixtures/correctness/oracle/"
+                + "oracle-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/input.sql");
+        try {
+            String text = Files.readString(path);
+            String sourceMarker = "-- relation-detector-fixture-source: " + sourceName;
+            int start = text.indexOf(sourceMarker);
+            if (start < 0) {
+                throw new IllegalStateException("Missing fixture object " + sourceName);
+            }
+            start = text.indexOf('\n', start);
+            int end = text.indexOf("-- relation-detector-fixture-end", start);
+            if (end < 0) {
+                throw new IllegalStateException("Missing fixture object end " + sourceName);
+            }
+            return text.substring(start + 1, end).strip();
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot read Oracle fixture from " + path, e);
+        }
+    }
+
+    private Path workspaceRoot() {
+        Path current = Path.of("").toAbsolutePath();
+        if (Files.exists(current.resolve("test-fixtures/correctness"))) {
+            return current;
+        }
+        if (Files.exists(current.getParent().resolve("test-fixtures/correctness"))) {
+            return current.getParent();
+        }
+        throw new IllegalStateException("Cannot locate workspace root from " + current);
     }
 
     private void assertParses(FullGrammerDialectModule module, String sql) {

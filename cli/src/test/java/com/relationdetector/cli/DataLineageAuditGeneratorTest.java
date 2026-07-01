@@ -2,6 +2,7 @@ package com.relationdetector.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +15,7 @@ class DataLineageAuditGeneratorTest {
 
     @Test
     void generatedAuditClassifiesLineageFixtureCoverage() throws Exception {
+        assumeGeneratedReportTestEnabled();
         String markdown = DataLineageAuditGenerator.generate(WORKSPACE);
 
         assertTrue(markdown.contains("# Data Lineage Full Audit"));
@@ -73,6 +75,7 @@ class DataLineageAuditGeneratorTest {
 
     @Test
     void generatedAuditFileIsUpToDate() throws Exception {
+        assumeGeneratedReportTestEnabled();
         String markdown = DataLineageAuditGenerator.generate(WORKSPACE);
         if (Boolean.getBoolean("updateDataLineageAudit")) {
             Files.createDirectories(AUDIT.getParent());
@@ -94,5 +97,13 @@ class DataLineageAuditGeneratorTest {
             current = current.getParent();
         }
         throw new IllegalStateException("Cannot locate relation-detector workspace root");
+    }
+
+    private static void assumeGeneratedReportTestEnabled() {
+        assumeTrue(Boolean.getBoolean("runGeneratedReportTests")
+                        || Boolean.getBoolean("updateDataLineageAudit"),
+                "Data Lineage audit checks are explicit. Run with "
+                        + "-DrunGeneratedReportTests=true for validation or "
+                        + "-DupdateDataLineageAudit=true to refresh.");
     }
 }

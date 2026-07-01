@@ -172,12 +172,29 @@ Oracle correctness 当前统计：
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Oracle root token-event | 33 | 26 / 7 | 400 | 112 | 0 | 158 |
-| Oracle full-grammer v12c | 30 | 23 / 7 | 525 | 75 | 0 | 166 |
-| Oracle full-grammer v19c | 31 | 24 / 7 | 525 | 75 | 0 | 166 |
-| Oracle full-grammer v21c | 31 | 24 / 7 | 525 | 75 | 0 | 166 |
-| Oracle full-grammer v26ai | 31 | 24 / 7 | 525 | 75 | 0 | 166 |
+| Oracle full-grammer v12c | 30 | 23 / 7 | 553 | 130 | 0 | 177 |
+| Oracle full-grammer v19c | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
+| Oracle full-grammer v21c | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
+| Oracle full-grammer v26ai | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
 
 `sample-data/oracle/<version>` 仍保留完整 ERP SQL 资产；correctness 中只保留会产生 relationship / lineage / diagnostics，或承载 Oracle 版本特性、DDL 解析等特殊语法边界的 fixture。纯 seed / routine / metadata-only 空输出切片不再进入 correctness，以降低全量测试时间。
+
+本轮 Oracle procedure lineage 追平后，sample-data 专项对比为：
+
+| Parser family | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints |
+| --- | ---: | ---: | ---: | ---: |
+| common token-event sample-data | 15 | 11 / 4 | 721 | 225 |
+| MySQL token-event root sample-data | 34 | 28 / 6 | 556 | 208 |
+| MySQL full-grammer v8_0 sample-data | 37 | 31 / 6 | 784 | 273 |
+| PostgreSQL token-event root sample-data | 30 | 24 / 6 | 438 | 119 |
+| PostgreSQL full-grammer v16 sample-data | 30 | 24 / 6 | 671 | 120 |
+| PostgreSQL full-grammer v17 sample-data | 30 | 24 / 6 | 671 | 120 |
+| PostgreSQL full-grammer v18 sample-data | 30 | 24 / 6 | 670 | 119 |
+| Oracle token-event root sample-data | 33 | 26 / 7 | 400 | 112 |
+| Oracle full-grammer v12c sample-data | 29 | 22 / 7 | 552 | 128 |
+| Oracle full-grammer v19c sample-data | 29 | 22 / 7 | 552 | 128 |
+| Oracle full-grammer v21c sample-data | 29 | 22 / 7 | 552 | 128 |
+| Oracle full-grammer v26ai sample-data | 29 | 22 / 7 | 552 | 128 |
 
 ## 后续收口
 

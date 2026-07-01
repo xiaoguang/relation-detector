@@ -419,10 +419,23 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
 
     private String outputColumn(OracleFullGrammerParser.Select_list_elementsContext item) {
         if (item.column_alias() != null) {
-            return lastPart(name(item.column_alias()));
+            return lastPart(columnAlias(item.column_alias()));
         }
         OracleColumnRead single = singleColumn(item.expression());
         return single == null ? "" : single.column();
+    }
+
+    private String columnAlias(OracleFullGrammerParser.Column_aliasContext ctx) {
+        if (ctx == null) {
+            return "";
+        }
+        if (ctx.identifier() != null) {
+            return name(ctx.identifier());
+        }
+        if (ctx.quoted_string() != null) {
+            return core.clean(ctx.quoted_string().getText());
+        }
+        return "";
     }
 
     private void addForeignKeyEvents(String sourceTable, List<String> sourceColumns, String targetTable, List<String> targetColumns, ParserRuleContext ctx) {

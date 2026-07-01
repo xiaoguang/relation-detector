@@ -154,7 +154,7 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 763 | 616 / 147 | 9650 | 2229 | 4 | 2763 |
+| 全部 correctness | 763 | 616 / 147 | 10370 | 2365 | 4 | 3243 |
 | common token-event | 32 | 28 / 4 | 737 | 231 | 0 | 207 |
 | MySQL root token-event | 76 | 59 / 17 | 631 | 265 | 1 | 255 |
 | MySQL full-grammer v8_0 | 82 | 65 / 17 | 908 | 368 | 0 | 448 |
@@ -163,10 +163,10 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 | PostgreSQL full-grammer v17 | 105 | 87 / 18 | 1455 | 233 | 0 | 406 |
 | PostgreSQL full-grammer v18 | 106 | 86 / 20 | 1456 | 231 | 0 | 405 |
 | Oracle root token-event | 33 | 26 / 7 | 400 | 112 | 0 | 158 |
-| Oracle full-grammer v12c | 30 | 23 / 7 | 373 | 96 | 0 | 57 |
-| Oracle full-grammer v19c | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
-| Oracle full-grammer v21c | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
-| Oracle full-grammer v26ai | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
+| Oracle full-grammer v12c | 30 | 23 / 7 | 553 | 130 | 0 | 177 |
+| Oracle full-grammer v19c | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
+| Oracle full-grammer v21c | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
+| Oracle full-grammer v26ai | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
 
 最新验证摘要：
 

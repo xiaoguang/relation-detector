@@ -751,7 +751,7 @@ function_body
     ;
 
 procedure_body
-    : PROCEDURE identifier ('(' parameter (',' parameter)* ')')? (
+    : PROCEDURE identifier ('(' (parameter (',' parameter)*)? ')')? (
         accessible_by_clause
         | PARALLEL_ENABLE
         | DETERMINISTIC
@@ -759,7 +759,7 @@ procedure_body
     ;
 
 create_procedure_body
-    : CREATE (OR REPLACE)? PROCEDURE procedure_name ('(' parameter (',' parameter)* ')')? invoker_rights_clause? (PARALLEL_ENABLE | DETERMINISTIC)* (
+    : CREATE (OR REPLACE)? PROCEDURE procedure_name ('(' (parameter (',' parameter)*)? ')')? invoker_rights_clause? (PARALLEL_ENABLE | DETERMINISTIC)* (
         IS
         | AS
     ) (DECLARE? seq_of_declare_specs? body | call_spec | EXTERNAL)
@@ -6441,7 +6441,7 @@ insert_statement
 // Insert Specific Clauses
 
 single_table_insert
-    : insert_into_clause (values_clause static_returning_clause? | select_statement) error_logging_clause?
+    : insert_into_clause (values_clause static_returning_clause? | select_statement static_returning_clause?) error_logging_clause?
     ;
 
 multi_table_insert

@@ -24,7 +24,7 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 763 | 616 / 147 | 9650 | 2229 | 4 | 2763 |
+| 全部 correctness | 763 | 616 / 147 | 10370 | 2365 | 4 | 3243 |
 | common token-event | 32 | 28 / 4 | 737 | 231 | 0 | 207 |
 | MySQL root token-event | 76 | 59 / 17 | 631 | 265 | 1 | 255 |
 | MySQL full-grammer v8_0 | 82 | 65 / 17 | 908 | 368 | 0 | 448 |
@@ -33,10 +33,10 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 | PostgreSQL full-grammer v17 | 105 | 87 / 18 | 1455 | 233 | 0 | 406 |
 | PostgreSQL full-grammer v18 | 106 | 86 / 20 | 1456 | 231 | 0 | 405 |
 | Oracle root token-event | 33 | 26 / 7 | 400 | 112 | 0 | 158 |
-| Oracle full-grammer v12c | 30 | 23 / 7 | 373 | 96 | 0 | 57 |
-| Oracle full-grammer v19c | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
-| Oracle full-grammer v21c | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
-| Oracle full-grammer v26ai | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
+| Oracle full-grammer v12c | 30 | 23 / 7 | 553 | 130 | 0 | 177 |
+| Oracle full-grammer v19c | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
+| Oracle full-grammer v21c | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
+| Oracle full-grammer v26ai | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
 
 ## 当前默认策略
 
@@ -82,9 +82,10 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 
 | 测试类 | 主要分类 | 说明 |
 | --- | --- | --- |
-| `CorrectnessFixtureRunnerTest` | DDL / SQL / warning | 扫描 `test-fixtures/correctness`，按 manifest/config 执行当前 selected parser；默认无 profile/version fixture 走 token-event fallback，并比对 golden |
+| `CorrectnessFixtureRunnerTest` | DDL / SQL / warning | 扫描 `test-fixtures/correctness`，按 manifest/config 执行当前 selected parser 并比对 golden；默认 `mvn test` 只跑 `smoke` profile，日常传 `-DcorrectnessFixtureProfile=common|mysql|postgres|oracle` 跑受影响方言，合并前传 `-DcorrectnessFixtureProfile=full` 跑全量 |
 | `CliEndToEndGoldenTest` | CLI / end-to-end / golden | JVM 内调用 CLI，从 YAML/CLI 参数进入 adaptor、ScanEngine、parser、merger、JSON writer，并复用现有 fixture golden 比对 relationship / Data Lineage |
-| `DataLineageAuditGeneratorTest` | Data Lineage / audit | 扫描全部 correctness fixture，生成 `docs/parser-audit/data-lineage-full-audit.md`，固定已有 lineage golden 数量、候选 fingerprints 和“不适用/待审核”原因；普通测试校验报告未漂移，只有显式 `-DupdateDataLineageAudit=true` 才刷新 |
+| `DataLineageAuditGeneratorTest` | Data Lineage / audit | 扫描全部 correctness fixture，生成 `docs/parser-audit/data-lineage-full-audit.md`，固定已有 lineage golden 数量、候选 fingerprints 和“不适用/待审核”原因；默认测试跳过，显式 `-DrunGeneratedReportTests=true` 才做验收，显式 `-DupdateDataLineageAudit=true` 才刷新 |
+| `DialectSqlAssetHygieneTest` | SQL 资产卫生 / 方言边界 | 扫描 `sample-data/mysql|postgres|oracle` 和对应 correctness SQL，阻止明显跨方言残留进入测试资产；每个方言使用独立 forbidden pattern，避免把 MySQL `LIMIT`、PostgreSQL `LANGUAGE plpgsql` 等合法语法误判 |
 | `ParserConfigRemovalTest` | 配置 / warning | YAML 和 CLI 拒绝已移除 parser mode/fallback 配置，同时验证 SQL log filter 配置解析 |
 | `DdlRelationParserRunnerTest` | DDL primary / warning | DDL runner 只调用 structured DDL parser，空结果不被旧 parser 替换 |
 | `SqlRelationParserRunnerTest` | SQL parser mode / warning | SQL runner 按 `parser.mode` 选择 full-grammer 或 token-event fallback，SQL log filter 仍生效 |

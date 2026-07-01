@@ -924,6 +924,16 @@ CorrectnessFixtureRunnerTest
   -> expected-diagnostics.json
 ```
 
+默认 `mvn test` 只运行 correctness `smoke` profile。日常开发按受影响方言显式运行：
+
+```bash
+mvn -pl cli -am -Dtest=CorrectnessFixtureRunnerTest \
+  -DcorrectnessFixtureProfile=oracle \
+  -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+可选 profile 包括 `common`、`mysql`、`postgres`、`oracle`、`mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`、`oracle/v12c`、`oracle/v19c`、`oracle/v21c`、`oracle/v26ai` 和 `full`。合并前使用 `-DcorrectnessFixtureProfile=full` 跑全量。runner 在非更新模式下按 fixture 并行执行，可用 `-DcorrectnessFixtureParallelism=N` 调整；`-DupdateCorrectnessGold=true` 时强制串行，保证 golden 写入稳定。
+
 生成报告：
 
 ```text
@@ -933,6 +943,8 @@ CorrectnessSummaryGeneratorTest
 DataLineageAuditGeneratorTest
   -> docs/parser-audit/data-lineage-full-audit.md
 ```
+
+生成报告不进入默认 `mvn test` 的长耗时路径。需要验收生成文件是否最新时传 `-DrunGeneratedReportTests=true`；需要刷新时分别传 `-DupdateCorrectnessSummary=true` 或 `-DupdateDataLineageAudit=true`。
 
 full-grammer versioned correctness：
 
@@ -968,7 +980,7 @@ ParserConfigRemovalTest
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 763 | 616 / 147 | 9650 | 2229 | 4 | 2763 |
+| 全部 correctness | 763 | 616 / 147 | 10370 | 2365 | 4 | 3243 |
 | common token-event | 32 | 28 / 4 | 737 | 231 | 0 | 207 |
 | MySQL root token-event | 76 | 59 / 17 | 631 | 265 | 1 | 255 |
 | MySQL full-grammer v8_0 | 82 | 65 / 17 | 908 | 368 | 0 | 448 |
@@ -977,10 +989,10 @@ ParserConfigRemovalTest
 | PostgreSQL full-grammer v17 | 105 | 87 / 18 | 1455 | 233 | 0 | 406 |
 | PostgreSQL full-grammer v18 | 106 | 86 / 20 | 1456 | 231 | 0 | 405 |
 | Oracle root token-event | 33 | 26 / 7 | 400 | 112 | 0 | 158 |
-| Oracle full-grammer v12c | 30 | 23 / 7 | 373 | 96 | 0 | 57 |
-| Oracle full-grammer v19c | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
-| Oracle full-grammer v21c | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
-| Oracle full-grammer v26ai | 31 | 24 / 7 | 373 | 96 | 0 | 57 |
+| Oracle full-grammer v12c | 30 | 23 / 7 | 553 | 130 | 0 | 177 |
+| Oracle full-grammer v19c | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
+| Oracle full-grammer v21c | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
+| Oracle full-grammer v26ai | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
 
 最新验证摘要：`mvn test` 已通过；targeted correctness / versioned full-grammer golden / CLI E2E 测试也已通过。该摘要是对当前手写设计的实现快照；如果后续 fixture/golden 增减，应同步刷新本表、`docs/relation-detector/test-assets-map.md` 和 `docs/design/relation-detector/design-validation-report.md`。
 

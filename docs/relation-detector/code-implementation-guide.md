@@ -525,12 +525,14 @@ sources:
   - `attributes.joinKind` 正确，例如 `LEFT_JOIN`、`RIGHT_JOIN`、`FULL_JOIN`。
   - 加入 `TARGET_UNIQUE`、`VALUE_CONTAINMENT_HIGH`、`NAMING_MATCH` 后 confidence 与公式一致。`NAMING_MATCH` 只能附着在已有 SQL predicate candidate 上；测试要同时覆盖“SQL predicate + 命名方向可定向”和“只有命名不能创建关系”。
 - correctness fixture：
-- `CorrectnessFixtureRunnerTest` 扫描 `test-fixtures/correctness`，以 `expected-relations.json` 中的当前 parser gold fingerprints 为关系正确性基线；如果 fixture 存在 `expected-lineage.json`，还会比对 Data Lineage fingerprints。root baseline fixture 显式走 token-event；`mysql/v8_0` 与 `postgres/v16|v17|v18` 版本目录显式走 full-grammer。full-grammer 不再通过 token-event 对照兜底；版本化 golden 直接暴露对应 parser 的 missing / extra。
+- `CorrectnessFixtureRunnerTest` 扫描 `test-fixtures/correctness`，以 `expected-relations.json` 中的当前 parser gold fingerprints 为关系正确性基线；如果 fixture 存在 `expected-lineage.json`，还会比对 Data Lineage fingerprints。默认 `mvn test` 只跑 `smoke` profile 的少量代表 fixture；日常开发按受影响方言显式传 `-DcorrectnessFixtureProfile=common|mysql|postgres|oracle`，合并前传 `-DcorrectnessFixtureProfile=full` 跑全量。root baseline fixture 显式走 token-event；`mysql/v8_0`、`postgres/v16|v17|v18`、`oracle/v12c|v19c|v21c|v26ai` 版本目录显式走 full-grammer。full-grammer 不再通过 token-event 对照兜底；版本化 golden 直接暴露对应 parser 的 missing / extra。
+  - correctness runner 在非 golden 更新模式下按 fixture 并行执行，默认并行度为 CPU 数和 8 的较小值，可用 `-DcorrectnessFixtureParallelism=N` 调整。`-DupdateCorrectnessGold=true` 时强制串行，保证 golden 文件写入稳定。
   - correctness、CLI E2E 和手工 SQL 分析前必须先跑 `mvn clean -pl cli -am -DskipTests test-compile` 与 `scripts/check-no-jls-bad-classes.sh`，确保测试源码可编译且 `target/classes` 没有 JLS/Eclipse 占位坏 class。`package -Dmaven.test.skip=true` 只能作为生成运行 jar/classpath 的临时步骤，不能替代主线验收。
   - `CliEndToEndGoldenTest` 从 YAML/CLI 参数进入 `Main.MainCommand`、adaptor registry、`ScanEngine`、parser runner、merger 和 JSON writer，并复用现有 fixture golden 比对 CLI JSON 中的 relationship / Data Lineage fingerprints。这是完整系统链路的黑盒正确性测试，不另建重复 golden。
   - routine/function fixture 使用 manifest `statementFormat: OBJECT_BLOCKS`，按 `-- relation-detector-fixture-source` / `-- relation-detector-fixture-end` block 读取一个完整对象定义，不能按普通 SQL 分号拆分过程体。
-  - `CorrectnessSummaryGeneratorTest` 从同一批 fixture/golden 生成 `docs/generated/correctness-test-summary.md`，报告只展示 SQL/DDL preview、input 文件路径、expected relationship/data-lineage fingerprints、warning codes 和 forbidden tables。完整 SQL/DDL 保留在对应 fixture 的 `input.sql` 或 `input.ddl.sql` 中。普通测试只校验报告是否最新，不自动写文件。
-  - `DataLineageAuditGeneratorTest` 从全部 correctness fixture 和 `TokenEventDataLineageExtractor` 当前输出生成 `docs/parser-audit/data-lineage-full-audit.md`。该报告不是 golden 自动扩容工具，而是人工审核索引：每个 fixture 被归类为 `EXISTING_GOLD`、`SUGGESTED_GOLD`、`PENDING_REVIEW` 或 `NOT_APPLICABLE`，并列出 extractor 候选 fingerprints 和未进入 golden 的原因。
+  - `CorrectnessSummaryGeneratorTest` 从同一批 fixture/golden 生成 `docs/generated/correctness-test-summary.md`，报告只展示 SQL/DDL preview、input 文件路径、expected relationship/data-lineage fingerprints、warning codes 和 forbidden tables。完整 SQL/DDL 保留在对应 fixture 的 `input.sql` 或 `input.ddl.sql` 中。该测试默认跳过；验收时显式传 `-DrunGeneratedReportTests=true`，刷新时传 `-DupdateCorrectnessSummary=true`。
+  - `DataLineageAuditGeneratorTest` 从全部 correctness fixture 和 `TokenEventDataLineageExtractor` 当前输出生成 `docs/parser-audit/data-lineage-full-audit.md`。该报告不是 golden 自动扩容工具，而是人工审核索引：每个 fixture 被归类为 `EXISTING_GOLD`、`SUGGESTED_GOLD`、`PENDING_REVIEW` 或 `NOT_APPLICABLE`，并列出 extractor 候选 fingerprints 和未进入 golden 的原因。该测试默认跳过；验收时显式传 `-DrunGeneratedReportTests=true`，刷新时传 `-DupdateDataLineageAudit=true`。
+  - `DialectSqlAssetHygieneTest` 扫描 MySQL / PostgreSQL / Oracle 的 `sample-data` 和 correctness SQL，阻止明显跨方言残留，例如 MySQL 资产里出现 `LANGUAGE plpgsql` / `VARCHAR2`，PostgreSQL 资产里出现 `AUTO_INCREMENT` / `ENGINE=...`，Oracle 资产里出现 `LIMIT` / `::type` / `ON DUPLICATE KEY UPDATE`。该检查只做资产卫生守门，不替代真实数据库装载或完整官方 grammar 验证。
 - MySQL/PostgreSQL/Oracle parser selection 测试必须断言 `attributes.grammar`、`attributes.lexer`、`attributes.parser` 和 `attributes.eventBuilder` 或 profile attributes，证明 adaptor 选择了自己的方言 parser/event builder。
   - fixture 的 `expected-diagnostics.json` 只记录 fixture hash 和 warning code count；不再保存 Simple/ANTLR comparison delta。
 - token-event / full-grammer 行为测试：
@@ -608,8 +610,8 @@ PostgreSQL：
 - 构建卫生测试：运行 `mvn clean -pl cli -am -DskipTests test-compile` 后执行 `scripts/check-no-jls-bad-classes.sh`。该脚本会扫描 `target/classes` 中的 JLS/Eclipse 占位错误字符串，并检查 MySQL/PostgreSQL/Oracle adaptor class 是否真实实现 `DatabaseAdaptor` SPI。
 - JSON snapshot 测试字段兼容性。
 - JSON evidence 输出测试：`rawEvidence` 是未压缩数组，`evidence` 是摘要数组，`attributes.count` 为数字，`attributes.sampleDetails` 为数组。
-- correctness 明细报告同步测试：修改 `test-fixtures/correctness` 后运行 `mvn -pl cli -Dtest=CorrectnessSummaryGeneratorTest -DupdateCorrectnessSummary=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新轻量索引报告 `docs/generated/correctness-test-summary.md`，再用普通 `mvn test` 校验报告没有漂移。
-- Data Lineage 全量审核报告同步测试：修改 SQL fixture、`expected-lineage.json` 或 `TokenEventDataLineageExtractor` 后运行 `mvn -pl cli -Dtest=DataLineageAuditGeneratorTest -DupdateDataLineageAudit=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新 `docs/parser-audit/data-lineage-full-audit.md`，再运行不带 update 参数的同一测试确认报告稳定。该报告只生成审核清单，不自动写入新的 lineage golden。
+- correctness 明细报告同步测试：修改 `test-fixtures/correctness` 后运行 `mvn -pl cli -Dtest=CorrectnessSummaryGeneratorTest -DupdateCorrectnessSummary=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新轻量索引报告 `docs/generated/correctness-test-summary.md`；需要只验收不刷新时运行 `mvn -pl cli -Dtest=CorrectnessSummaryGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`。
+- Data Lineage 全量审核报告同步测试：修改 SQL fixture、`expected-lineage.json` 或 `TokenEventDataLineageExtractor` 后运行 `mvn -pl cli -Dtest=DataLineageAuditGeneratorTest -DupdateDataLineageAudit=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新 `docs/parser-audit/data-lineage-full-audit.md`；需要只验收不刷新时运行 `mvn -pl cli -Dtest=DataLineageAuditGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`。该报告只生成审核清单，不自动写入新的 lineage golden。
 - enum 序列化值稳定性测试。
 - warning code 稳定性测试。
 - 置信度数值允许小范围精度变化，但 subtype 和 evidence 不应无故改变。
@@ -618,7 +620,7 @@ PostgreSQL：
 
 上线前建议按以下清单验证：
 
-- `mvn test` 成功。
+- `mvn test` 成功。该命令运行 correctness smoke，不代表全量 golden 验收；合并前还需要运行 `mvn -pl cli -am -Dtest=CorrectnessFixtureRunnerTest -DcorrectnessFixtureProfile=full -Dsurefire.failIfNoSpecifiedTests=false test`。
 - file-only 示例成功。
 - MySQL 只读账号能读取 metadata。
 - PostgreSQL 只读账号能读取 metadata。

@@ -9,13 +9,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ForkJoinPool;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -63,24 +68,61 @@ import com.relationdetector.postgres.PostgresDatabaseAdaptor;
  * correctness.
  */
 class CorrectnessFixtureRunnerTest {
+    private static final Set<String> SMOKE_FIXTURES = Set.of(
+            "common/sql-basic-join",
+            "mysql/basic-correctness-case-01-ddl",
+            "postgres/postgres-basic-correctness-case-01-ddl",
+            "oracle/oracle-sample-data-full-01-schema-01-tables-ddl");
+
     @Test
     void allCorrectnessFixturesPassGoldenExpectations() throws Exception {
         Path root = workspaceRoot().resolve("test-fixtures/correctness");
         List<Path> manifests;
         try (Stream<Path> paths = Files.walk(root)) {
             String fixtureFilter = System.getProperty("correctnessFixtureFilter", "");
+            String fixtureProfile = System.getProperty(
+                    "correctnessFixtureProfile",
+                    fixtureFilter.isBlank() ? "smoke" : "full");
             manifests = paths
                     .filter(path -> path.getFileName().toString().equals("manifest.yml"))
+                    .filter(path -> matchesCorrectnessProfile(root, path, fixtureProfile))
                     .filter(path -> fixtureFilter.isBlank() || path.toString().contains(fixtureFilter))
                     .sorted()
                     .toList();
         }
 
         assertFalse(manifests.isEmpty(), "Expected at least one correctness manifest under " + root);
+        List<FixtureFailure> failures = runFixtures(manifests);
         assertAll("correctness fixtures",
-                manifests.stream()
-                        .map(path -> (Executable) () -> runFixture(CorrectnessFixture.read(path)))
+                failures.stream()
+                        .map(failure -> (Executable) () -> {
+                            throw new AssertionError(failure.manifest() + " failed", failure.error());
+                        })
                         .toList());
+    }
+
+    @Test
+    void correctnessFixtureProfilesSelectDialectFamilies() {
+        Path root = Path.of("test-fixtures/correctness");
+
+        assertTrue(matchesCorrectnessProfile(root,
+                root.resolve("oracle/v26ai/oracle26ai-example/manifest.yml"),
+                "oracle"));
+        assertTrue(matchesCorrectnessProfile(root,
+                root.resolve("postgres/v18/postgres18-example/manifest.yml"),
+                "postgres/v18"));
+        assertTrue(matchesCorrectnessProfile(root,
+                root.resolve("mysql/v8_0/mysql80-example/manifest.yml"),
+                "mysql,mysql/v8_0"));
+        assertTrue(matchesCorrectnessProfile(root,
+                root.resolve("common/sql-basic-join/manifest.yml"),
+                "smoke"));
+        assertFalse(matchesCorrectnessProfile(root,
+                root.resolve("oracle/v12c/oracle12c-example/manifest.yml"),
+                "postgres"));
+        assertFalse(matchesCorrectnessProfile(root,
+                root.resolve("postgres/postgres-large-example/manifest.yml"),
+                "smoke"));
     }
 
     @Test
@@ -214,6 +256,84 @@ class CorrectnessFixtureRunnerTest {
             return;
         }
         throw new IllegalArgumentException("Unknown parserTarget " + fixture.parserTarget() + " in " + fixture.path());
+    }
+
+    private List<FixtureFailure> runFixtures(List<Path> manifests) {
+        int parallelism = correctnessFixtureParallelism();
+        if (parallelism <= 1) {
+            return manifests.stream()
+                    .map(this::runFixtureSafely)
+                    .filter(Objects::nonNull)
+                    .sorted(Comparator.comparing(failure -> failure.manifest().toString()))
+                    .toList();
+        }
+        ForkJoinPool pool = new ForkJoinPool(parallelism);
+        try {
+            return pool.submit(() -> manifests.parallelStream()
+                    .map(this::runFixtureSafely)
+                    .filter(Objects::nonNull)
+                    .sorted(Comparator.comparing(failure -> failure.manifest().toString()))
+                    .toList()).join();
+        } finally {
+            pool.shutdown();
+        }
+    }
+
+    private FixtureFailure runFixtureSafely(Path manifest) {
+        try {
+            runFixture(CorrectnessFixture.read(manifest));
+            return null;
+        } catch (Throwable error) {
+            return new FixtureFailure(manifest, error);
+        }
+    }
+
+    private static int correctnessFixtureParallelism() {
+        if (Boolean.getBoolean("updateCorrectnessGold")) {
+            return 1;
+        }
+        String configured = System.getProperty("correctnessFixtureParallelism", "").trim();
+        if (!configured.isBlank()) {
+            return Math.max(1, Integer.parseInt(configured));
+        }
+        return Math.max(1, Math.min(8, Runtime.getRuntime().availableProcessors()));
+    }
+
+    private static boolean matchesCorrectnessProfile(Path correctnessRoot, Path manifest, String profile) {
+        Set<String> profiles = Arrays.stream(profile.split("[,|]"))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (profiles.isEmpty()) {
+            profiles = Set.of("smoke");
+        }
+        Path fixtureDir = manifest.getParent();
+        Path relative = correctnessRoot.relativize(fixtureDir);
+        String fixtureKey = relative.toString().replace('\\', '/');
+        String dialect = relative.getName(0).toString().toLowerCase(Locale.ROOT);
+        String version = relative.getNameCount() > 1 ? relative.getName(1).toString().toLowerCase(Locale.ROOT) : "";
+        for (String rawProfile : profiles) {
+            String requested = rawProfile.toLowerCase(Locale.ROOT);
+            if (requested.equals("full") || requested.equals("all")) {
+                return true;
+            }
+            if (requested.equals("smoke")) {
+                return SMOKE_FIXTURES.contains(fixtureKey);
+            }
+            if (requested.equals(dialect)) {
+                return true;
+            }
+            if (requested.equals(dialect + "-root")) {
+                return !version.startsWith("v");
+            }
+            if (requested.equals(dialect + "/" + version) || requested.equals(dialect + "-" + version)) {
+                return true;
+            }
+            if (requested.equals("mysql80") || requested.equals("mysql8") || requested.equals("mysql-v8_0")) {
+                return dialect.equals("mysql") && version.equals("v8_0");
+            }
+        }
+        return false;
     }
 
     private void runSqlFixture(
@@ -652,6 +772,9 @@ class CorrectnessFixtureRunnerTest {
             return value;
         }
 
+    }
+
+    private record FixtureFailure(Path manifest, Throwable error) {
     }
 
     private record ExpectedRelations(

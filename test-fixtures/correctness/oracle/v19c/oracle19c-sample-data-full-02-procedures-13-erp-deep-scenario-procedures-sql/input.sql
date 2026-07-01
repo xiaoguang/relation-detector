@@ -737,7 +737,7 @@ BEGIN
         rop.batch_id,
         rop.issued_from_warehouse_id,
         'damage_out',
-        (-rop.quantity)(10),
+        -rop.quantity,
         COALESCE(inv.quantity, 0),
         COALESCE(inv.quantity, 0) - rop.quantity,
         'repair_order',

@@ -3,6 +3,7 @@ package com.relationdetector.cli;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,6 +16,7 @@ class CorrectnessSummaryGeneratorTest {
 
     @Test
     void generatedSummaryCapturesFixtureCountsAndInputPreview() throws Exception {
+        assumeGeneratedReportTestEnabled();
         String markdown = CorrectnessSummaryGenerator.generate(WORKSPACE);
 
         assertTrue(markdown.contains("| Total correctness fixtures | 763 |"));
@@ -71,6 +73,7 @@ class CorrectnessSummaryGeneratorTest {
 
     @Test
     void generatedSummaryFileIsUpToDate() throws Exception {
+        assumeGeneratedReportTestEnabled();
         String markdown = CorrectnessSummaryGenerator.generate(WORKSPACE);
         if (Boolean.getBoolean("updateCorrectnessSummary")) {
             Files.createDirectories(SUMMARY.getParent());
@@ -92,5 +95,13 @@ class CorrectnessSummaryGeneratorTest {
             current = current.getParent();
         }
         throw new IllegalStateException("Cannot locate relation-detector workspace root");
+    }
+
+    private static void assumeGeneratedReportTestEnabled() {
+        assumeTrue(Boolean.getBoolean("runGeneratedReportTests")
+                        || Boolean.getBoolean("updateCorrectnessSummary"),
+                "Generated correctness summary checks are explicit. Run with "
+                        + "-DrunGeneratedReportTests=true for validation or "
+                        + "-DupdateCorrectnessSummary=true to refresh.");
     }
 }
