@@ -1,21 +1,14 @@
 package com.relationdetector.oracle;
 
-import java.nio.file.Path;
-import java.sql.Connection;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.Enums.DatabaseType;
-import com.relationdetector.contracts.Enums.LogFormatHint;
-import com.relationdetector.contracts.Enums.StatementSourceType;
-import com.relationdetector.contracts.metadata.MetadataSnapshot;
-import com.relationdetector.contracts.model.Evidence;
-import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
-import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.contracts.spi.AdaptorCollectors;
+import com.relationdetector.contracts.spi.AdaptorParsers;
+import com.relationdetector.contracts.spi.AdaptorProfiling;
 import com.relationdetector.contracts.spi.Collectors.DataProfiler;
 import com.relationdetector.contracts.spi.Collectors.EvidenceWeightAdjuster;
 import com.relationdetector.contracts.spi.Collectors.MetadataCollector;
@@ -26,10 +19,11 @@ import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.IdentifierRules;
-import com.relationdetector.contracts.spi.ProfileRequest;
-import com.relationdetector.contracts.spi.ScanScope;
-import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.oracle.log.OracleLogExtractor;
+import com.relationdetector.oracle.metadata.OracleMetadataCollector;
+import com.relationdetector.oracle.objects.OracleObjectCollector;
+import com.relationdetector.oracle.profile.OracleDataProfiler;
 import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredDdlParser;
 import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParser;
 
@@ -53,6 +47,14 @@ public final class OracleDatabaseAdaptor implements DatabaseAdaptor {
         boolean quoted = identifier.startsWith("\"") && identifier.endsWith("\"");
         return quoted ? unquoted : unquoted.toUpperCase(Locale.ROOT);
     };
+    private final OracleMetadataCollector metadataCollector = new OracleMetadataCollector();
+    private final OracleObjectCollector objectCollector = new OracleObjectCollector();
+    private final OracleLogExtractor logExtractor = new OracleLogExtractor();
+    private final OracleTokenEventStructuredSqlParser structuredSqlParser = new OracleTokenEventStructuredSqlParser();
+    private final OracleTokenEventStructuredDdlParser structuredDdlParser = new OracleTokenEventStructuredDdlParser();
+    private final TokenEventSqlRelationParser sqlRelationParser = new TokenEventSqlRelationParser(structuredSqlParser);
+    private final OracleDataProfiler dataProfiler = new OracleDataProfiler();
+    private final EvidenceWeightAdjuster evidenceWeightAdjuster = (evidence, context) -> evidence;
 
     @Override
     public String id() {
@@ -86,55 +88,57 @@ public final class OracleDatabaseAdaptor implements DatabaseAdaptor {
     }
 
     @Override
+    public AdaptorCollectors collectors() {
+        return new AdaptorCollectors(metadataCollector, objectCollector, Optional.empty(), logExtractor);
+    }
+
+    @Override
+    public AdaptorParsers parsers() {
+        return new AdaptorParsers(sqlRelationParser, Optional.of(structuredSqlParser), Optional.of(structuredDdlParser));
+    }
+
+    @Override
+    public AdaptorProfiling profiling() {
+        return new AdaptorProfiling(Optional.of(dataProfiler), evidenceWeightAdjuster);
+    }
+
+    @Override
     public MetadataCollector metadataCollector() {
-        return (connection, scope) -> new MetadataSnapshot();
+        return metadataCollector;
     }
 
     @Override
     public ObjectDefinitionCollector objectDefinitionCollector() {
-        return new OracleObjectCollector();
+        return objectCollector;
     }
 
     @Override
     public SqlLogExtractor sqlLogExtractor() {
-        PlainSqlLogExtractor delegate = new PlainSqlLogExtractor();
-        return new SqlLogExtractor() {
-            @Override
-            public Stream<SqlStatementRecord> extract(Path file, LogFormatHint hint) {
-                return delegate.extract(file, StatementSourceType.PLAIN_SQL);
-            }
-        };
+        return logExtractor;
     }
 
     @Override
     public SqlRelationParser sqlRelationParser() {
-        return new TokenEventSqlRelationParser(new OracleTokenEventStructuredSqlParser());
+        return sqlRelationParser;
     }
 
     @Override
     public Optional<StructuredSqlParser> structuredSqlParser() {
-        return Optional.of(new OracleTokenEventStructuredSqlParser());
+        return Optional.of(structuredSqlParser);
     }
 
     @Override
     public Optional<StructuredDdlParser> structuredDdlParser() {
-        return Optional.of(new OracleTokenEventStructuredDdlParser());
+        return Optional.of(structuredDdlParser);
     }
 
     @Override
     public Optional<DataProfiler> dataProfiler() {
-        return Optional.of((Connection connection, ProfileRequest request) -> List.<Evidence>of());
+        return Optional.of(dataProfiler);
     }
 
     @Override
     public EvidenceWeightAdjuster evidenceWeightAdjuster() {
-        return (evidence, context) -> evidence;
-    }
-
-    private static final class OracleObjectCollector implements ObjectDefinitionCollector {
-        @Override
-        public List<DatabaseObjectDefinition> collect(Connection connection, ScanScope scope) {
-            return List.of();
-        }
+        return evidenceWeightAdjuster;
     }
 }

@@ -44,14 +44,14 @@ import org.antlr.v4.runtime.tree.RuleNode;
  * helpers are limited to source text/location and identifier reading;
  * relationship and lineage semantics remain in core.
  */
-final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParserBaseVisitor<Void> {
+final class PostgresFullGrammerParseTreeVisitor extends PostgresFullGrammerParserBaseVisitor<Void> {
     private final SqlStatementRecord statement;
     private final PostgresSqlEventVisitorCore core;
     private final FullGrammerTypedSqlEventSink sink;
     private final ArrayDeque<InsertSelectState> insertSelectTargets = new ArrayDeque<>();
     private int existsDepth;
 
-    PostgresTokenEventParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
+    PostgresFullGrammerParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
         this.statement = statement;
         this.core = new PostgresSqlEventVisitorCore(statement);
         this.sink = core.sink();

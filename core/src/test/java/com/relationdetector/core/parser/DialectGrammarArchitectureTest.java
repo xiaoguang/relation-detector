@@ -96,6 +96,48 @@ class DialectGrammarArchitectureTest {
                 "MySQL must expose a dialect-level routine package");
     }
 
+    @Test
+    void fullGrammerVisitorsAreNotNamedTokenEventVisitors() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> path.toString().contains("/fullgrammer/"))
+                    .filter(path -> path.getFileName().toString().contains("TokenEventParseTreeVisitor"))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "full-grammer parse-tree visitors should use full-grammer naming, offenders=" + offenders);
+        }
+    }
+
+    @Test
+    void databaseAdaptorMainClassesDoNotOwnCollectorImplementations() throws IOException {
+        Path root = repoRoot();
+        List<Path> adaptorMainClasses = List.of(
+                root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/MySqlDatabaseAdaptor.java"),
+                root.resolve("adaptor-postgres/src/main/java/com/relationdetector/postgres/PostgresDatabaseAdaptor.java"),
+                root.resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle/OracleDatabaseAdaptor.java"));
+
+        List<Path> offenders = adaptorMainClasses.stream()
+                .filter(path -> {
+                    try {
+                        String text = Files.readString(path);
+                        return text.contains(" static final class ")
+                                || text.contains(" private static final class ");
+                    } catch (IOException e) {
+                        throw new IllegalStateException("Failed to read " + path, e);
+                    }
+                })
+                .map(root::relativize)
+                .toList();
+
+        assertTrue(offenders.isEmpty(),
+                "Database adaptor main classes should only assemble capabilities, offenders=" + offenders);
+    }
+
     private static boolean startsWithDialect(Path path, String dialect) {
         return path.getNameCount() > 0
                 && path.getName(0).toString().toLowerCase(Locale.ROOT).equals(dialect);

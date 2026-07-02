@@ -19,6 +19,7 @@ import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.oracle.fullgrammer.common.OracleColumnRead;
+import com.relationdetector.oracle.fullgrammer.common.OracleDdlEventVisitorCore;
 import com.relationdetector.oracle.fullgrammer.common.OracleExpressionAnalysis;
 import com.relationdetector.oracle.fullgrammer.common.OracleSqlEventVisitorCore;
 import com.relationdetector.oracle.routine.OracleRoutineScope;
@@ -461,29 +462,11 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
     }
 
     private void addForeignKeyEvents(String sourceTable, List<String> sourceColumns, String targetTable, List<String> targetColumns, ParserRuleContext ctx) {
-        int count = Math.min(sourceColumns.size(), targetColumns.size());
-        for (int index = 0; index < count; index++) {
-            Map<String, Object> attrs = core.attrs();
-            attrs.put("sourceTable", sourceTable);
-            attrs.put("sourceColumn", sourceColumns.get(index));
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumns.get(index));
-            attrs.put("compositePosition", index + 1);
-            attrs.put("compositeSize", count);
-            core.add(StructuredParseEventType.DDL_FOREIGN_KEY, ctx, attrs);
-        }
+        OracleDdlEventVisitorCore.addForeignKeyEvents(core, ctx, sourceTable, sourceColumns, targetTable, targetColumns);
     }
 
     private void addIndexEvent(String table, String column, String role, String kind, ParserRuleContext ctx) {
-        if (table.isBlank() || column.isBlank()) {
-            return;
-        }
-        Map<String, Object> attrs = core.attrs();
-        attrs.put("table", table);
-        attrs.put("column", lastPart(column));
-        attrs.put("role", role);
-        attrs.put("kind", kind);
-        core.add(StructuredParseEventType.DDL_INDEX, ctx, attrs);
+        OracleDdlEventVisitorCore.addIndexEvent(core, ctx, table, lastPart(column), role, kind);
     }
 
     private void emitWriteTarget(ParserRuleContext ctx, String alias, String table) {

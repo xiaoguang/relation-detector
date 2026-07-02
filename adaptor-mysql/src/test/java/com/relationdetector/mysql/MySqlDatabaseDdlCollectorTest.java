@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.contracts.model.WarningMessage;
+import com.relationdetector.mysql.ddl.MySqlDatabaseDdlCollector;
 
 /**
  * Unit tests for MySQL's live database DDL collector.
@@ -34,7 +35,7 @@ class MySqlDatabaseDdlCollectorTest {
         Connection connection = connection(showCreateSql);
         ScanScope scope = new ScanScope(null, "shop", List.of("orders", "users", "audit_logs"), List.of("audit_logs"));
 
-        List<DatabaseDdlDefinition> definitions = new MySqlDatabaseAdaptor.MySqlDatabaseDdlCollector()
+        List<DatabaseDdlDefinition> definitions = new MySqlDatabaseDdlCollector()
                 .collect(connection, scope, warnings::add);
 
         assertEquals(1, definitions.size(), "orders should be returned even when users SHOW CREATE fails");

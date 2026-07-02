@@ -37,6 +37,27 @@ public interface DatabaseAdaptor {
 
     IdentifierRules identifierRules();
 
+    default AdaptorCollectors collectors() {
+        return new AdaptorCollectors(
+                metadataCollector(),
+                objectDefinitionCollector(),
+                databaseDdlCollector(),
+                sqlLogExtractor());
+    }
+
+    default AdaptorParsers parsers() {
+        return new AdaptorParsers(
+                sqlRelationParser(),
+                structuredSqlParser(),
+                structuredDdlParser());
+    }
+
+    default AdaptorProfiling profiling() {
+        return new AdaptorProfiling(
+                dataProfiler(),
+                evidenceWeightAdjuster());
+    }
+
     MetadataCollector metadataCollector();
 
     ObjectDefinitionCollector objectDefinitionCollector();

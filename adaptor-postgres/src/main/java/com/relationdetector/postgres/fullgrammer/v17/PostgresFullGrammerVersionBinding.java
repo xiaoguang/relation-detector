@@ -57,7 +57,7 @@ final class PostgresFullGrammerVersionBinding implements PostgresFullGrammerSqlB
             List<Token> visibleTokens,
             ParserRuleContext root
     ) {
-        return new PostgresTokenEventParseTreeVisitor(statement, visibleTokens).extract(root);
+        return new PostgresFullGrammerParseTreeVisitor(statement, visibleTokens).extract(root);
     }
 
     @Override

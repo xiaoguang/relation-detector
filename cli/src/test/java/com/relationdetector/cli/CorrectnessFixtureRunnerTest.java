@@ -24,7 +24,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,7 @@ import org.junit.jupiter.api.function.Executable;
  */
 class CorrectnessFixtureRunnerTest {
     private final CorrectnessFixtureExecutor executor = new CorrectnessFixtureExecutor();
+    private final ConcurrentLinkedQueue<FixtureTiming> fixtureTimings = new ConcurrentLinkedQueue<>();
 
     @Test
     void allCorrectnessFixturesPassGoldenExpectations() throws Exception {
@@ -55,6 +58,7 @@ class CorrectnessFixtureRunnerTest {
 
         assertFalse(manifests.isEmpty(), "Expected at least one correctness manifest under " + root);
         List<FixtureFailure> failures = runFixtures(manifests);
+        printFixtureTimingSummary();
         assertAll("correctness fixtures",
                 failures.stream()
                         .map(failure -> (Executable) () -> {
@@ -244,12 +248,33 @@ class CorrectnessFixtureRunnerTest {
     }
 
     private FixtureFailure runFixtureSafely(Path manifest) {
+        long startNanos = System.nanoTime();
         try {
             executor.runFixture(CorrectnessFixture.read(manifest));
             return null;
         } catch (Throwable error) {
             return new FixtureFailure(manifest, error);
+        } finally {
+            if (Boolean.getBoolean("correctnessFixtureTiming")) {
+                long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+                fixtureTimings.add(new FixtureTiming(manifest, elapsedMillis));
+                System.out.printf("correctness fixture %s %d ms%n", manifest, elapsedMillis);
+            }
         }
+    }
+
+    private void printFixtureTimingSummary() {
+        if (!Boolean.getBoolean("correctnessFixtureTiming") || fixtureTimings.isEmpty()) {
+            return;
+        }
+        int limit = Integer.getInteger("correctnessFixtureTimingTop", 20);
+        System.out.printf("slowest correctness fixtures top %d%n", limit);
+        fixtureTimings.stream()
+                .sorted(Comparator.comparingLong(FixtureTiming::elapsedMillis).reversed()
+                        .thenComparing(timing -> timing.manifest().toString()))
+                .limit(limit)
+                .forEach(timing -> System.out.printf("slow correctness fixture %s %d ms%n",
+                        timing.manifest(), timing.elapsedMillis()));
     }
 
     private static int correctnessFixtureParallelism() {
@@ -284,5 +309,8 @@ class CorrectnessFixtureRunnerTest {
     }
 
     private record FixtureFailure(Path manifest, Throwable error) {
+    }
+
+    private record FixtureTiming(Path manifest, long elapsedMillis) {
     }
 }

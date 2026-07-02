@@ -1,11 +1,9 @@
 package com.relationdetector.postgres.fullgrammer.common;
 
-import com.relationdetector.contracts.Enums.StructuredParseEventType;
-import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+
+import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.ddl.DdlEventBuilder;
 
 /**
  * Shared sink for PostgreSQL full-grammer DDL events.
@@ -18,15 +16,14 @@ import java.util.Map;
  * columns and constraints from their typed grammar contexts.
  */
 public final class PostgresDdlEventSink {
-    private final String sourceName;
-    private final List<StructuredSqlEvent> events = new ArrayList<>();
+    private final DdlEventBuilder builder;
 
     public PostgresDdlEventSink(String sourceName) {
-        this.sourceName = sourceName;
+        this.builder = new DdlEventBuilder(sourceName);
     }
 
     public List<StructuredSqlEvent> events() {
-        return List.copyOf(events);
+        return builder.events();
     }
 
     public void addForeignKeyEvents(
@@ -36,22 +33,11 @@ public final class PostgresDdlEventSink {
             List<String> targetColumns,
             long line
     ) {
-        int count = Math.min(sourceColumns.size(), targetColumns.size());
-        for (int i = 0; i < count; i++) {
-            Map<String, Object> attributes = new LinkedHashMap<>();
-            attributes.put("sourceTable", sourceTable);
-            attributes.put("sourceColumn", sourceColumns.get(i));
-            attributes.put("targetTable", targetTable);
-            attributes.put("targetColumn", targetColumns.get(i));
-            attributes.put("compositePosition", i + 1);
-            attributes.put("compositeSize", count);
-            events.add(new StructuredSqlEvent(StructuredParseEventType.DDL_FOREIGN_KEY, sourceName, line, attributes));
-        }
+        builder.addForeignKey(sourceTable, sourceColumns, targetTable, targetColumns, line);
     }
 
     public void addIndex(String table, String column, String role, String kind, long line) {
-        events.add(new StructuredSqlEvent(StructuredParseEventType.DDL_INDEX, sourceName, line,
-                Map.of("table", table, "column", column, "role", role, "kind", kind)));
+        builder.addIndex(table, column, role, kind, line);
     }
 
     public String clean(String value) {

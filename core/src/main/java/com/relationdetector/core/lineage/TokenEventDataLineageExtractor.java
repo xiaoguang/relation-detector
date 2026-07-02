@@ -22,6 +22,8 @@ import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.core.lineage.model.AssignmentMapping;
+import com.relationdetector.core.lineage.model.ExpressionSourceSet;
 
 /**
  * SQL Data Lineage 语义抽取器。
@@ -88,9 +90,10 @@ public final class TokenEventDataLineageExtractor {
             }
             LineageTransformType transform = effectiveTransform(text(event, "transformType"), sourceResolution.transforms());
             LineageFlowKind flowKind = flowKind(text(event, "flowKind"));
+            AssignmentMapping mapping = assignmentMapping(event, target, sources, transform);
             DataLineageCandidate candidate = new DataLineageCandidate(
-                    sources,
-                    Endpoint.column(target),
+                    mapping.expressionSources().sources(),
+                    mapping.target(),
                     flowKind,
                     transform);
             BigDecimal score = score(transform, flowKind);
@@ -109,6 +112,18 @@ public final class TokenEventDataLineageExtractor {
             candidates.add(candidate);
         }
         return new DataLineageMerger().merge(candidates);
+    }
+
+    private AssignmentMapping assignmentMapping(
+            StructuredSqlEvent event,
+            ColumnRef target,
+            List<Endpoint> sources,
+            LineageTransformType transform
+    ) {
+        return new AssignmentMapping(
+                Endpoint.column(target),
+                new ExpressionSourceSet(sources, transform.name()),
+                text(event, "mappingKind"));
     }
 
     private Map<String, TableId> aliases(List<StructuredSqlEvent> events) {
