@@ -1,9 +1,0 @@
-{
-  "fingerprints": [
-    "CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN",
-    "CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.orders.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN"
-  ],
-  "forbiddenTables": []
-}

@@ -8,11 +8,11 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 
 | Classification | Count |
 | --- | ---: |
-| TOTAL | 979 |
-| EXISTING_GOLD | 333 |
+| TOTAL | 1194 |
+| EXISTING_GOLD | 435 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 646 |
+| NOT_APPLICABLE | 759 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -35181,7 +35181,7 @@ INSERT INTO shipments (
 
 ```
 
-## `sqlserver-sample-data-01-core-ddl`
+## `sqlserver-sample-data-full-01-schema-01-tables-ddl`
 
 | Field | Value |
 | --- | --- |
@@ -35190,7 +35190,7 @@ INSERT INTO shipments (
 | Database | `SQLSERVER` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/sqlserver/2025/01-schema/01-core-schema.sql` |
+| Input | `sample-data/sqlserver/2025/01-schema/01-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -35204,17 +35204,17 @@ INSERT INTO shipments (
 **Input Preview**
 
 ```sql
-CREATE TABLE dbo.customers (
-    customer_id INT NOT NULL,
-    customer_name NVARCHAR(100) NOT NULL,
-    region_code NVARCHAR(20) NOT NULL,
-    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
-);
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
 
-CREATE TABLE dbo.orders (
+CREATE TABLE [dbo].[departments] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver2016-sample-data-01-core-ddl`
+## `sqlserver-sample-data-full-01-schema-02-indexes-and-views-ddl`
 
 | Field | Value |
 | --- | --- |
@@ -35223,7 +35223,7 @@ CREATE TABLE dbo.orders (
 | Database | `SQLSERVER` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/sqlserver/2016/01-schema/01-core-schema.sql` |
+| Input | `sample-data/sqlserver/2025/01-schema/02-indexes-and-views.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -35237,17 +35237,16 @@ CREATE TABLE dbo.orders (
 **Input Preview**
 
 ```sql
-CREATE TABLE dbo.customers (
-    customer_id INT NOT NULL,
-    customer_name NVARCHAR(100) NOT NULL,
-    region_code NVARCHAR(20) NOT NULL,
-    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
-);
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
 
-CREATE TABLE dbo.orders (
+CREATE INDEX [ix_departments_parent_id] ON [dbo].[departments] ([parent_id]);
 ```
 
-## `sqlserver2017-sample-data-01-core-ddl`
+## `sqlserver-sample-data-full-01-schema-04-supplementary-tables-ddl`
 
 | Field | Value |
 | --- | --- |
@@ -35256,7 +35255,7 @@ CREATE TABLE dbo.orders (
 | Database | `SQLSERVER` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/sqlserver/2017/01-schema/01-core-schema.sql` |
+| Input | `sample-data/sqlserver/2025/01-schema/04-supplementary-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -35270,17 +35269,17 @@ CREATE TABLE dbo.orders (
 **Input Preview**
 
 ```sql
-CREATE TABLE dbo.customers (
-    customer_id INT NOT NULL,
-    customer_name NVARCHAR(100) NOT NULL,
-    region_code NVARCHAR(20) NOT NULL,
-    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
-);
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
 
-CREATE TABLE dbo.orders (
+CREATE TABLE [dbo].[reconciliation_items] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver2019-sample-data-01-core-ddl`
+## `sqlserver-sample-data-full-01-schema-05-third-batch-tables-ddl`
 
 | Field | Value |
 | --- | --- |
@@ -35289,7 +35288,7 @@ CREATE TABLE dbo.orders (
 | Database | `SQLSERVER` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/sqlserver/2019/01-schema/01-core-schema.sql` |
+| Input | `sample-data/sqlserver/2025/01-schema/05-third-batch-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -35303,17 +35302,17 @@ CREATE TABLE dbo.orders (
 **Input Preview**
 
 ```sql
-CREATE TABLE dbo.customers (
-    customer_id INT NOT NULL,
-    customer_name NVARCHAR(100) NOT NULL,
-    region_code NVARCHAR(20) NOT NULL,
-    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
-);
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
 
-CREATE TABLE dbo.orders (
+CREATE TABLE [dbo].[ar_aging_snapshots] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver2022-sample-data-01-core-ddl`
+## `sqlserver-sample-data-full-01-schema-06-enterprise-extension-tables-ddl`
 
 | Field | Value |
 | --- | --- |
@@ -35322,7 +35321,7 @@ CREATE TABLE dbo.orders (
 | Database | `SQLSERVER` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/sqlserver/2022/01-schema/01-core-schema.sql` |
+| Input | `sample-data/sqlserver/2025/01-schema/06-enterprise-extension-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -35336,17 +35335,17 @@ CREATE TABLE dbo.orders (
 **Input Preview**
 
 ```sql
-CREATE TABLE dbo.customers (
-    customer_id INT NOT NULL,
-    customer_name NVARCHAR(100) NOT NULL,
-    region_code NVARCHAR(20) NOT NULL,
-    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
-);
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
 
-CREATE TABLE dbo.orders (
+CREATE TABLE [dbo].[consignment_consumptions] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver2025-sample-data-01-core-ddl`
+## `sqlserver-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
 
 | Field | Value |
 | --- | --- |
@@ -35355,7 +35354,7 @@ CREATE TABLE dbo.orders (
 | Database | `SQLSERVER` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
-| Input | `sample-data/sqlserver/2025/01-schema/01-core-schema.sql` |
+| Input | `sample-data/sqlserver/2025/01-schema/07-erp-deep-scenario-tables.sql` |
 | Expected lineage | None |
 
 **Expected Lineage Fingerprints**
@@ -35369,36 +35368,31 @@ CREATE TABLE dbo.orders (
 **Input Preview**
 
 ```sql
-CREATE TABLE dbo.customers (
-    customer_id INT NOT NULL,
-    customer_name NVARCHAR(100) NOT NULL,
-    region_code NVARCHAR(20) NOT NULL,
-    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
-);
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
 
-CREATE TABLE dbo.orders (
+CREATE TABLE [dbo].[production_plans] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver-sample-data-02-sales-fact-sql`
+## `sqlserver2016-sample-data-full-01-schema-01-tables-ddl`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
 | Database | `SQLSERVER` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/sqlserver/2025/04-queries/01-sales-fact-dml.sql` |
-| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-02-sales-fact-sql/expected-lineage.json` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2016/01-schema/01-tables.sql` |
+| Expected lineage | None |
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
-- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
-- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -35407,36 +35401,31 @@ CREATE TABLE dbo.orders (
 **Input Preview**
 
 ```sql
-INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
-SELECT
-    o.customer_id,
-    o.order_id,
-    SUM(p.amount) AS paid_amount,
-    MAX(p.paid_at) AS last_paid_at
-FROM dbo.orders AS o
-INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[departments] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver-sample-data-03-sales-fact-procedure-sql`
+## `sqlserver2016-sample-data-full-01-schema-02-indexes-and-views-ddl`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
 | Database | `SQLSERVER` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/sqlserver/2025/02-procedures/01-sales-fact.sql` |
-| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2016/01-schema/02-indexes-and-views.sql` |
+| Expected lineage | None |
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
-- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
-- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -35445,36 +35434,30 @@ INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
 **Input Preview**
 
 ```sql
-CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
-AS
-BEGIN
-    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
-    SELECT
-        o.customer_id,
-        o.order_id,
-        SUM(p.amount) AS paid_amount,
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE INDEX [ix_departments_parent_id] ON [dbo].[departments] ([parent_id]);
 ```
 
-## `sqlserver2016-sample-data-02-sales-fact-sql`
+## `sqlserver2016-sample-data-full-01-schema-04-supplementary-tables-ddl`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
 | Database | `SQLSERVER` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/sqlserver/2016/04-queries/01-sales-fact-dml.sql` |
-| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-02-sales-fact-sql/expected-lineage.json` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2016/01-schema/04-supplementary-tables.sql` |
+| Expected lineage | None |
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
-- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
-- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -35483,36 +35466,31 @@ BEGIN
 **Input Preview**
 
 ```sql
-INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
-SELECT
-    o.customer_id,
-    o.order_id,
-    SUM(p.amount) AS paid_amount,
-    MAX(p.paid_at) AS last_paid_at
-FROM dbo.orders AS o
-INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[reconciliation_items] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver2016-sample-data-03-sales-fact-procedure-sql`
+## `sqlserver2016-sample-data-full-01-schema-05-third-batch-tables-ddl`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
 | Database | `SQLSERVER` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/sqlserver/2016/02-procedures/01-sales-fact.sql` |
-| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2016/01-schema/05-third-batch-tables.sql` |
+| Expected lineage | None |
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
-- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
-- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -35521,36 +35499,31 @@ INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
 **Input Preview**
 
 ```sql
-CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
-AS
-BEGIN
-    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
-    SELECT
-        o.customer_id,
-        o.order_id,
-        SUM(p.amount) AS paid_amount,
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[ar_aging_snapshots] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver2017-sample-data-02-sales-fact-sql`
+## `sqlserver2016-sample-data-full-01-schema-06-enterprise-extension-tables-ddl`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
 | Database | `SQLSERVER` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/sqlserver/2017/04-queries/01-sales-fact-dml.sql` |
-| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-02-sales-fact-sql/expected-lineage.json` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2016/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
-- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
-- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -35559,36 +35532,31 @@ BEGIN
 **Input Preview**
 
 ```sql
-INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
-SELECT
-    o.customer_id,
-    o.order_id,
-    SUM(p.amount) AS paid_amount,
-    MAX(p.paid_at) AS last_paid_at
-FROM dbo.orders AS o
-INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[consignment_consumptions] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver2017-sample-data-03-sales-fact-procedure-sql`
+## `sqlserver2016-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
 | Database | `SQLSERVER` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/sqlserver/2017/02-procedures/01-sales-fact.sql` |
-| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2016/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
-- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
-- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -35597,36 +35565,31 @@ INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
 **Input Preview**
 
 ```sql
-CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
-AS
-BEGIN
-    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
-    SELECT
-        o.customer_id,
-        o.order_id,
-        SUM(p.amount) AS paid_amount,
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[production_plans] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver2019-sample-data-02-sales-fact-sql`
+## `sqlserver2017-sample-data-full-01-schema-01-tables-ddl`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
 | Database | `SQLSERVER` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/sqlserver/2019/04-queries/01-sales-fact-dml.sql` |
-| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-02-sales-fact-sql/expected-lineage.json` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2017/01-schema/01-tables.sql` |
+| Expected lineage | None |
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
-- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
-- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -35635,36 +35598,31 @@ BEGIN
 **Input Preview**
 
 ```sql
-INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
-SELECT
-    o.customer_id,
-    o.order_id,
-    SUM(p.amount) AS paid_amount,
-    MAX(p.paid_at) AS last_paid_at
-FROM dbo.orders AS o
-INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[departments] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver2019-sample-data-03-sales-fact-procedure-sql`
+## `sqlserver2017-sample-data-full-01-schema-02-indexes-and-views-ddl`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
 | Database | `SQLSERVER` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/sqlserver/2019/02-procedures/01-sales-fact.sql` |
-| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2017/01-schema/02-indexes-and-views.sql` |
+| Expected lineage | None |
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
-- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
-- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -35673,36 +35631,30 @@ INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
 **Input Preview**
 
 ```sql
-CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
-AS
-BEGIN
-    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
-    SELECT
-        o.customer_id,
-        o.order_id,
-        SUM(p.amount) AS paid_amount,
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE INDEX [ix_departments_parent_id] ON [dbo].[departments] ([parent_id]);
 ```
 
-## `sqlserver2022-sample-data-02-sales-fact-sql`
+## `sqlserver2017-sample-data-full-01-schema-04-supplementary-tables-ddl`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
 | Database | `SQLSERVER` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/sqlserver/2022/04-queries/01-sales-fact-dml.sql` |
-| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-02-sales-fact-sql/expected-lineage.json` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2017/01-schema/04-supplementary-tables.sql` |
+| Expected lineage | None |
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
-- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
-- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -35711,36 +35663,31 @@ BEGIN
 **Input Preview**
 
 ```sql
-INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
-SELECT
-    o.customer_id,
-    o.order_id,
-    SUM(p.amount) AS paid_amount,
-    MAX(p.paid_at) AS last_paid_at
-FROM dbo.orders AS o
-INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[reconciliation_items] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver2022-sample-data-03-sales-fact-procedure-sql`
+## `sqlserver2017-sample-data-full-01-schema-05-third-batch-tables-ddl`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
 | Database | `SQLSERVER` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/sqlserver/2022/02-procedures/01-sales-fact.sql` |
-| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2017/01-schema/05-third-batch-tables.sql` |
+| Expected lineage | None |
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
-- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
-- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -35749,36 +35696,31 @@ INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
 **Input Preview**
 
 ```sql
-CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
-AS
-BEGIN
-    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
-    SELECT
-        o.customer_id,
-        o.order_id,
-        SUM(p.amount) AS paid_amount,
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[ar_aging_snapshots] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver2025-sample-data-02-sales-fact-sql`
+## `sqlserver2017-sample-data-full-01-schema-06-enterprise-extension-tables-ddl`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
 | Database | `SQLSERVER` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/sqlserver/2025/04-queries/01-sales-fact-dml.sql` |
-| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-02-sales-fact-sql/expected-lineage.json` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2017/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
-- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
-- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -35787,36 +35729,31 @@ BEGIN
 **Input Preview**
 
 ```sql
-INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
-SELECT
-    o.customer_id,
-    o.order_id,
-    SUM(p.amount) AS paid_amount,
-    MAX(p.paid_at) AS last_paid_at
-FROM dbo.orders AS o
-INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[consignment_consumptions] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
-## `sqlserver2025-sample-data-03-sales-fact-procedure-sql`
+## `sqlserver2017-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
 | Database | `SQLSERVER` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/sqlserver/2025/02-procedures/01-sales-fact.sql` |
-| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2017/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
-- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
-- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -35825,13 +35762,8533 @@ INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
 **Input Preview**
 
 ```sql
-CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
-AS
-BEGIN
-    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
-    SELECT
-        o.customer_id,
-        o.order_id,
-        SUM(p.amount) AS paid_amount,
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[production_plans] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2019-sample-data-full-01-schema-01-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2019/01-schema/01-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[departments] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2019-sample-data-full-01-schema-02-indexes-and-views-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2019/01-schema/02-indexes-and-views.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE INDEX [ix_departments_parent_id] ON [dbo].[departments] ([parent_id]);
+```
+
+## `sqlserver2019-sample-data-full-01-schema-04-supplementary-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2019/01-schema/04-supplementary-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[reconciliation_items] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2019-sample-data-full-01-schema-05-third-batch-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2019/01-schema/05-third-batch-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[ar_aging_snapshots] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2019-sample-data-full-01-schema-06-enterprise-extension-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2019/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[consignment_consumptions] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2019-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2019/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[production_plans] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2022-sample-data-full-01-schema-01-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2022/01-schema/01-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[departments] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2022-sample-data-full-01-schema-02-indexes-and-views-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2022/01-schema/02-indexes-and-views.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE INDEX [ix_departments_parent_id] ON [dbo].[departments] ([parent_id]);
+```
+
+## `sqlserver2022-sample-data-full-01-schema-04-supplementary-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2022/01-schema/04-supplementary-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[reconciliation_items] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2022-sample-data-full-01-schema-05-third-batch-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2022/01-schema/05-third-batch-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[ar_aging_snapshots] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2022-sample-data-full-01-schema-06-enterprise-extension-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2022/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[consignment_consumptions] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2022-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2022/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[production_plans] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2025-sample-data-full-01-schema-01-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2025/01-schema/01-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[departments] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2025-sample-data-full-01-schema-02-indexes-and-views-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2025/01-schema/02-indexes-and-views.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE INDEX [ix_departments_parent_id] ON [dbo].[departments] ([parent_id]);
+```
+
+## `sqlserver2025-sample-data-full-01-schema-04-supplementary-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2025/01-schema/04-supplementary-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[reconciliation_items] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2025-sample-data-full-01-schema-05-third-batch-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2025/01-schema/05-third-batch-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[ar_aging_snapshots] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2025-sample-data-full-01-schema-06-enterprise-extension-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2025/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[consignment_consumptions] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver2025-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2025/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+CREATE TABLE [dbo].[production_plans] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL,
+```
+
+## `sqlserver-sample-data-full-01-schema-03-triggers-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `TRIGGER` |
+| Input | `sample-data/sqlserver/2025/01-schema/03-triggers.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-01-schema-03-triggers-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inserted.department_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.employee_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.manager_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.parent_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.permission_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.position_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.role_id->audit_log.target_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
+CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+```
+
+## `sqlserver-sample-data-full-02-procedures-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/01-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
+- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
+- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
+- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_01_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
+```
+
+## `sqlserver-sample-data-full-02-procedures-02-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/02-procedures-supplement.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-02-procedures-02-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
+- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_02_procedures_supplement_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
+```
+
+## `sqlserver-sample-data-full-02-procedures-03-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `sample-data/sqlserver/2025/02-procedures/03-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.fn_relation_1
+CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
+```
+
+## `sqlserver-sample-data-full-02-procedures-04-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/04-procedures-supplement.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-02-procedures-04-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_04_procedures_supplement_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
+```
+
+## `sqlserver-sample-data-full-02-procedures-05-third-batch-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/05-third-batch-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-02-procedures-05-third-batch-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_05_third_batch_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
+```
+
+## `sqlserver-sample-data-full-02-procedures-06-third-batch-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `sample-data/sqlserver/2025/02-procedures/06-third-batch-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
+CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+```
+
+## `sqlserver-sample-data-full-02-procedures-07-store-customer-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/07-store-customer-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-02-procedures-07-store-customer-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_07_store_customer_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
+```
+
+## `sqlserver-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/08-batch-expiry-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_08_batch_expiry_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
+```
+
+## `sqlserver-sample-data-full-02-procedures-09-return-refund-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/09-return-refund-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-02-procedures-09-return-refund-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_09_return_refund_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
+```
+
+## `sqlserver-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/10-supplier-geo-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_10_supplier_geo_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
+```
+
+## `sqlserver-sample-data-full-02-procedures-11-common-system-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/11-common-system-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-02-procedures-11-common-system-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id`
+- `VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_11_common_system_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
+```
+
+## `sqlserver-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/12-enterprise-extension-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->settlements.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->settlements.prepared_by`
+- `VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_12_enterprise_extension_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
+```
+
+## `sqlserver-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_13_erp_deep_scenario_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
+```
+
+## `sqlserver-sample-data-full-03-data-01-master-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/03-data/01-master-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
+- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
+- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
+- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[departments] ([parent_id])
+SELECT p.[id]
+```
+
+## `sqlserver-sample-data-full-03-data-02-supplementary-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/03-data/02-supplementary-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[inventory] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver-sample-data-full-03-data-03-third-batch-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/03-data/03-third-batch-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-03-data-03-third-batch-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[purchase_receipt_items] ([batch_id])
+SELECT p.[id]
+```
+
+## `sqlserver-sample-data-full-03-data-04-return-damage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/03-data/04-return-damage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-03-data-04-return-damage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[purchase_returns] ([handler_id])
+SELECT p.[id]
+```
+
+## `sqlserver-sample-data-full-03-data-05-massive-data-generator-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/03-data/05-massive-data-generator.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-03-data-05-massive-data-generator-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.approved_by`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipments.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[cashier_journals] ([account_id])
+SELECT p.[id]
+```
+
+## `sqlserver-sample-data-full-03-data-06-enterprise-extension-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/03-data/06-enterprise-extension-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-03-data-06-enterprise-extension-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.departments.id->fixed_assets.department_id`
+- `VALUE:DIRECT:dbo.employees.id->fixed_assets.custodian_id`
+- `VALUE:DIRECT:dbo.fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->boms.child_product_id`
+- `VALUE:DIRECT:dbo.products.id->boms.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
+- `VALUE:DIRECT:dbo.products.id->three_way_matching.product_id`
+- `VALUE:DIRECT:dbo.products.id->work_orders.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->work_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[promotion_products] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver-sample-data-full-03-data-07-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/03-data/07-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-03-data-07-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id`
+- `VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->contracts.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->contracts.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id`
+- `VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to`
+- `VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by`
+- `VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inspection_reports.product_id`
+- `VALUE:DIRECT:dbo.products.id->inspection_standards.product_id`
+- `VALUE:DIRECT:dbo.products.id->service_tickets.product_id`
+- `VALUE:DIRECT:dbo.products.id->work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[work_order_materials] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver-sample-data-full-04-queries-01-complex-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/01-complex-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Customer sales summary by region and category.
+```
+
+## `sqlserver-sample-data-full-04-queries-02-complex-queries-batch2-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/02-complex-queries-batch2.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Sales order payment status.
+```
+
+## `sqlserver-sample-data-full-04-queries-03-complex-queries-batch3-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/03-complex-queries-batch3.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Customer return and refund summary.
+```
+
+## `sqlserver-sample-data-full-04-queries-04-store-customer-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/04-store-customer-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Cashier journal reconciliation overview.
+```
+
+## `sqlserver-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Batch expiry risk by product and warehouse.
+```
+
+## `sqlserver-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Sales return item reason analysis.
+```
+
+## `sqlserver-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Supplier purchase and receipt scorecard.
+```
+
+## `sqlserver-sample-data-full-04-queries-08-common-system-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/08-common-system-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Production planning demand overview.
+```
+
+## `sqlserver-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Inventory valuation by product and warehouse.
+```
+
+## `sqlserver-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-full-04-queries-10-enterprise-extension-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Payment request approval amount.
+```
+
+## `sqlserver-sample-data-full-04-queries-11-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/11-erp-deep-scenario-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Picking task execution summary.
+```
+
+## `sqlserver2016-sample-data-full-01-schema-03-triggers-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `TRIGGER` |
+| Input | `sample-data/sqlserver/2016/01-schema/03-triggers.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-01-schema-03-triggers-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inserted.department_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.employee_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.manager_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.parent_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.permission_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.position_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.role_id->audit_log.target_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
+CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2016/02-procedures/01-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
+- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
+- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
+- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_01_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-02-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2016/02-procedures/02-procedures-supplement.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-02-procedures-02-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
+- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_02_procedures_supplement_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-03-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `sample-data/sqlserver/2016/02-procedures/03-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.fn_relation_1
+CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-04-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2016/02-procedures/04-procedures-supplement.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-02-procedures-04-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_04_procedures_supplement_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-05-third-batch-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2016/02-procedures/05-third-batch-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-02-procedures-05-third-batch-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_05_third_batch_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-06-third-batch-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `sample-data/sqlserver/2016/02-procedures/06-third-batch-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
+CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-07-store-customer-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2016/02-procedures/07-store-customer-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-02-procedures-07-store-customer-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_07_store_customer_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2016/02-procedures/08-batch-expiry-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_08_batch_expiry_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-09-return-refund-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2016/02-procedures/09-return-refund-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-02-procedures-09-return-refund-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_09_return_refund_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2016/02-procedures/10-supplier-geo-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_10_supplier_geo_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-11-common-system-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2016/02-procedures/11-common-system-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-02-procedures-11-common-system-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id`
+- `VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_11_common_system_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2016/02-procedures/12-enterprise-extension-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->settlements.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->settlements.prepared_by`
+- `VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_12_enterprise_extension_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
+```
+
+## `sqlserver2016-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2016/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_13_erp_deep_scenario_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
+```
+
+## `sqlserver2016-sample-data-full-03-data-01-master-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/03-data/01-master-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
+- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
+- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
+- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[departments] ([parent_id])
+SELECT p.[id]
+```
+
+## `sqlserver2016-sample-data-full-03-data-02-supplementary-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/03-data/02-supplementary-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[inventory] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2016-sample-data-full-03-data-03-third-batch-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/03-data/03-third-batch-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-03-data-03-third-batch-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[purchase_receipt_items] ([batch_id])
+SELECT p.[id]
+```
+
+## `sqlserver2016-sample-data-full-03-data-04-return-damage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/03-data/04-return-damage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-03-data-04-return-damage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[purchase_returns] ([handler_id])
+SELECT p.[id]
+```
+
+## `sqlserver2016-sample-data-full-03-data-05-massive-data-generator-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2016/03-data/05-massive-data-generator.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-03-data-05-massive-data-generator-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.approved_by`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipments.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[cashier_journals] ([account_id])
+SELECT p.[id]
+```
+
+## `sqlserver2016-sample-data-full-03-data-06-enterprise-extension-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/03-data/06-enterprise-extension-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-03-data-06-enterprise-extension-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.departments.id->fixed_assets.department_id`
+- `VALUE:DIRECT:dbo.employees.id->fixed_assets.custodian_id`
+- `VALUE:DIRECT:dbo.fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->boms.child_product_id`
+- `VALUE:DIRECT:dbo.products.id->boms.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
+- `VALUE:DIRECT:dbo.products.id->three_way_matching.product_id`
+- `VALUE:DIRECT:dbo.products.id->work_orders.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->work_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[promotion_products] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2016-sample-data-full-03-data-07-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/03-data/07-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-03-data-07-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id`
+- `VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->contracts.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->contracts.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id`
+- `VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to`
+- `VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by`
+- `VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inspection_reports.product_id`
+- `VALUE:DIRECT:dbo.products.id->inspection_standards.product_id`
+- `VALUE:DIRECT:dbo.products.id->service_tickets.product_id`
+- `VALUE:DIRECT:dbo.products.id->work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[work_order_materials] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2016-sample-data-full-04-queries-01-complex-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/04-queries/01-complex-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Customer sales summary by region and category.
+```
+
+## `sqlserver2016-sample-data-full-04-queries-02-complex-queries-batch2-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/04-queries/02-complex-queries-batch2.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Sales order payment status.
+```
+
+## `sqlserver2016-sample-data-full-04-queries-03-complex-queries-batch3-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/04-queries/03-complex-queries-batch3.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Customer return and refund summary.
+```
+
+## `sqlserver2016-sample-data-full-04-queries-04-store-customer-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/04-queries/04-store-customer-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Cashier journal reconciliation overview.
+```
+
+## `sqlserver2016-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Batch expiry risk by product and warehouse.
+```
+
+## `sqlserver2016-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Sales return item reason analysis.
+```
+
+## `sqlserver2016-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Supplier purchase and receipt scorecard.
+```
+
+## `sqlserver2016-sample-data-full-04-queries-08-common-system-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/04-queries/08-common-system-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Production planning demand overview.
+```
+
+## `sqlserver2016-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Inventory valuation by product and warehouse.
+```
+
+## `sqlserver2016-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-full-04-queries-10-enterprise-extension-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Payment request approval amount.
+```
+
+## `sqlserver2016-sample-data-full-04-queries-11-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/04-queries/11-erp-deep-scenario-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Picking task execution summary.
+```
+
+## `sqlserver2016-semantic-equivalent-relation-probe-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/relation-probe/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+
+-- ============================================================
+-- Source sample-data/sqlserver/2025/04-queries/01-complex-queries.sql
+-- Relation-probe benchmark: dense JOIN + EXISTS + IN predicates.
+-- ============================================================
+
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+```
+
+## `sqlserver2017-sample-data-full-01-schema-03-triggers-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `TRIGGER` |
+| Input | `sample-data/sqlserver/2017/01-schema/03-triggers.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-01-schema-03-triggers-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inserted.department_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.employee_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.manager_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.parent_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.permission_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.position_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.role_id->audit_log.target_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
+CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2017/02-procedures/01-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
+- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
+- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
+- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_01_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-02-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2017/02-procedures/02-procedures-supplement.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-02-procedures-02-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
+- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_02_procedures_supplement_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-03-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `sample-data/sqlserver/2017/02-procedures/03-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.fn_relation_1
+CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-04-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2017/02-procedures/04-procedures-supplement.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-02-procedures-04-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_04_procedures_supplement_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-05-third-batch-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2017/02-procedures/05-third-batch-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-02-procedures-05-third-batch-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_05_third_batch_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-06-third-batch-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `sample-data/sqlserver/2017/02-procedures/06-third-batch-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
+CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-07-store-customer-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2017/02-procedures/07-store-customer-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-02-procedures-07-store-customer-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_07_store_customer_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2017/02-procedures/08-batch-expiry-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_08_batch_expiry_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-09-return-refund-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2017/02-procedures/09-return-refund-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-02-procedures-09-return-refund-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_09_return_refund_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2017/02-procedures/10-supplier-geo-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_10_supplier_geo_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-11-common-system-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2017/02-procedures/11-common-system-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-02-procedures-11-common-system-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id`
+- `VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_11_common_system_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2017/02-procedures/12-enterprise-extension-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->settlements.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->settlements.prepared_by`
+- `VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_12_enterprise_extension_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
+```
+
+## `sqlserver2017-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2017/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_13_erp_deep_scenario_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
+```
+
+## `sqlserver2017-sample-data-full-03-data-01-master-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/03-data/01-master-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
+- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
+- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
+- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[departments] ([parent_id])
+SELECT p.[id]
+```
+
+## `sqlserver2017-sample-data-full-03-data-02-supplementary-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/03-data/02-supplementary-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[inventory] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2017-sample-data-full-03-data-03-third-batch-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/03-data/03-third-batch-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-03-data-03-third-batch-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[purchase_receipt_items] ([batch_id])
+SELECT p.[id]
+```
+
+## `sqlserver2017-sample-data-full-03-data-04-return-damage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/03-data/04-return-damage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-03-data-04-return-damage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[purchase_returns] ([handler_id])
+SELECT p.[id]
+```
+
+## `sqlserver2017-sample-data-full-03-data-05-massive-data-generator-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2017/03-data/05-massive-data-generator.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-03-data-05-massive-data-generator-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.approved_by`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipments.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[cashier_journals] ([account_id])
+SELECT p.[id]
+```
+
+## `sqlserver2017-sample-data-full-03-data-06-enterprise-extension-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/03-data/06-enterprise-extension-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-03-data-06-enterprise-extension-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.departments.id->fixed_assets.department_id`
+- `VALUE:DIRECT:dbo.employees.id->fixed_assets.custodian_id`
+- `VALUE:DIRECT:dbo.fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->boms.child_product_id`
+- `VALUE:DIRECT:dbo.products.id->boms.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
+- `VALUE:DIRECT:dbo.products.id->three_way_matching.product_id`
+- `VALUE:DIRECT:dbo.products.id->work_orders.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->work_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[promotion_products] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2017-sample-data-full-03-data-07-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/03-data/07-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-03-data-07-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id`
+- `VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->contracts.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->contracts.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id`
+- `VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to`
+- `VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by`
+- `VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inspection_reports.product_id`
+- `VALUE:DIRECT:dbo.products.id->inspection_standards.product_id`
+- `VALUE:DIRECT:dbo.products.id->service_tickets.product_id`
+- `VALUE:DIRECT:dbo.products.id->work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[work_order_materials] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2017-sample-data-full-04-queries-01-complex-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/04-queries/01-complex-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Customer sales summary by region and category.
+```
+
+## `sqlserver2017-sample-data-full-04-queries-02-complex-queries-batch2-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/04-queries/02-complex-queries-batch2.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Sales order payment status.
+```
+
+## `sqlserver2017-sample-data-full-04-queries-03-complex-queries-batch3-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/04-queries/03-complex-queries-batch3.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Customer return and refund summary.
+```
+
+## `sqlserver2017-sample-data-full-04-queries-04-store-customer-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/04-queries/04-store-customer-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Cashier journal reconciliation overview.
+```
+
+## `sqlserver2017-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Batch expiry risk by product and warehouse.
+```
+
+## `sqlserver2017-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Sales return item reason analysis.
+```
+
+## `sqlserver2017-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Supplier purchase and receipt scorecard.
+```
+
+## `sqlserver2017-sample-data-full-04-queries-08-common-system-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/04-queries/08-common-system-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Production planning demand overview.
+```
+
+## `sqlserver2017-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Inventory valuation by product and warehouse.
+```
+
+## `sqlserver2017-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-full-04-queries-10-enterprise-extension-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Payment request approval amount.
+```
+
+## `sqlserver2017-sample-data-full-04-queries-11-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/04-queries/11-erp-deep-scenario-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Picking task execution summary.
+```
+
+## `sqlserver2017-semantic-equivalent-relation-probe-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/relation-probe/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+
+-- ============================================================
+-- Source sample-data/sqlserver/2025/04-queries/01-complex-queries.sql
+-- Relation-probe benchmark: dense JOIN + EXISTS + IN predicates.
+-- ============================================================
+
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+```
+
+## `sqlserver2019-sample-data-full-01-schema-03-triggers-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `TRIGGER` |
+| Input | `sample-data/sqlserver/2019/01-schema/03-triggers.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-01-schema-03-triggers-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inserted.department_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.employee_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.manager_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.parent_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.permission_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.position_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.role_id->audit_log.target_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
+CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2019/02-procedures/01-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
+- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
+- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
+- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_01_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-02-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2019/02-procedures/02-procedures-supplement.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-02-procedures-02-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
+- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_02_procedures_supplement_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-03-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `sample-data/sqlserver/2019/02-procedures/03-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.fn_relation_1
+CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-04-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2019/02-procedures/04-procedures-supplement.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-02-procedures-04-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_04_procedures_supplement_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-05-third-batch-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2019/02-procedures/05-third-batch-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-02-procedures-05-third-batch-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_05_third_batch_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-06-third-batch-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `sample-data/sqlserver/2019/02-procedures/06-third-batch-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
+CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-07-store-customer-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2019/02-procedures/07-store-customer-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-02-procedures-07-store-customer-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_07_store_customer_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2019/02-procedures/08-batch-expiry-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_08_batch_expiry_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-09-return-refund-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2019/02-procedures/09-return-refund-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-02-procedures-09-return-refund-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_09_return_refund_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2019/02-procedures/10-supplier-geo-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_10_supplier_geo_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-11-common-system-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2019/02-procedures/11-common-system-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-02-procedures-11-common-system-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id`
+- `VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_11_common_system_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2019/02-procedures/12-enterprise-extension-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->settlements.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->settlements.prepared_by`
+- `VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_12_enterprise_extension_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
+```
+
+## `sqlserver2019-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2019/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_13_erp_deep_scenario_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
+```
+
+## `sqlserver2019-sample-data-full-03-data-01-master-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/03-data/01-master-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
+- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
+- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
+- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[departments] ([parent_id])
+SELECT p.[id]
+```
+
+## `sqlserver2019-sample-data-full-03-data-02-supplementary-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/03-data/02-supplementary-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[inventory] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2019-sample-data-full-03-data-03-third-batch-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/03-data/03-third-batch-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-03-data-03-third-batch-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[purchase_receipt_items] ([batch_id])
+SELECT p.[id]
+```
+
+## `sqlserver2019-sample-data-full-03-data-04-return-damage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/03-data/04-return-damage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-03-data-04-return-damage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[purchase_returns] ([handler_id])
+SELECT p.[id]
+```
+
+## `sqlserver2019-sample-data-full-03-data-05-massive-data-generator-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2019/03-data/05-massive-data-generator.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-03-data-05-massive-data-generator-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.approved_by`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipments.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[cashier_journals] ([account_id])
+SELECT p.[id]
+```
+
+## `sqlserver2019-sample-data-full-03-data-06-enterprise-extension-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/03-data/06-enterprise-extension-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-03-data-06-enterprise-extension-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.departments.id->fixed_assets.department_id`
+- `VALUE:DIRECT:dbo.employees.id->fixed_assets.custodian_id`
+- `VALUE:DIRECT:dbo.fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->boms.child_product_id`
+- `VALUE:DIRECT:dbo.products.id->boms.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
+- `VALUE:DIRECT:dbo.products.id->three_way_matching.product_id`
+- `VALUE:DIRECT:dbo.products.id->work_orders.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->work_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[promotion_products] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2019-sample-data-full-03-data-07-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/03-data/07-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-03-data-07-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id`
+- `VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->contracts.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->contracts.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id`
+- `VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to`
+- `VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by`
+- `VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inspection_reports.product_id`
+- `VALUE:DIRECT:dbo.products.id->inspection_standards.product_id`
+- `VALUE:DIRECT:dbo.products.id->service_tickets.product_id`
+- `VALUE:DIRECT:dbo.products.id->work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[work_order_materials] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2019-sample-data-full-04-queries-01-complex-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/04-queries/01-complex-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Customer sales summary by region and category.
+```
+
+## `sqlserver2019-sample-data-full-04-queries-02-complex-queries-batch2-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/04-queries/02-complex-queries-batch2.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Sales order payment status.
+```
+
+## `sqlserver2019-sample-data-full-04-queries-03-complex-queries-batch3-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/04-queries/03-complex-queries-batch3.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Customer return and refund summary.
+```
+
+## `sqlserver2019-sample-data-full-04-queries-04-store-customer-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/04-queries/04-store-customer-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Cashier journal reconciliation overview.
+```
+
+## `sqlserver2019-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Batch expiry risk by product and warehouse.
+```
+
+## `sqlserver2019-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Sales return item reason analysis.
+```
+
+## `sqlserver2019-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Supplier purchase and receipt scorecard.
+```
+
+## `sqlserver2019-sample-data-full-04-queries-08-common-system-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/04-queries/08-common-system-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Production planning demand overview.
+```
+
+## `sqlserver2019-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Inventory valuation by product and warehouse.
+```
+
+## `sqlserver2019-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-full-04-queries-10-enterprise-extension-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Payment request approval amount.
+```
+
+## `sqlserver2019-sample-data-full-04-queries-11-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/04-queries/11-erp-deep-scenario-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Picking task execution summary.
+```
+
+## `sqlserver2019-semantic-equivalent-relation-probe-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/relation-probe/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+
+-- ============================================================
+-- Source sample-data/sqlserver/2025/04-queries/01-complex-queries.sql
+-- Relation-probe benchmark: dense JOIN + EXISTS + IN predicates.
+-- ============================================================
+
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+```
+
+## `sqlserver2022-sample-data-full-01-schema-03-triggers-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `TRIGGER` |
+| Input | `sample-data/sqlserver/2022/01-schema/03-triggers.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-01-schema-03-triggers-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inserted.department_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.employee_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.manager_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.parent_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.permission_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.position_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.role_id->audit_log.target_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
+CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2022/02-procedures/01-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
+- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
+- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
+- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_01_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-02-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2022/02-procedures/02-procedures-supplement.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-02-procedures-02-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
+- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_02_procedures_supplement_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-03-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `sample-data/sqlserver/2022/02-procedures/03-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.fn_relation_1
+CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-04-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2022/02-procedures/04-procedures-supplement.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-02-procedures-04-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_04_procedures_supplement_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-05-third-batch-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2022/02-procedures/05-third-batch-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-02-procedures-05-third-batch-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_05_third_batch_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-06-third-batch-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `sample-data/sqlserver/2022/02-procedures/06-third-batch-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
+CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-07-store-customer-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2022/02-procedures/07-store-customer-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-02-procedures-07-store-customer-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_07_store_customer_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2022/02-procedures/08-batch-expiry-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_08_batch_expiry_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-09-return-refund-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2022/02-procedures/09-return-refund-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-02-procedures-09-return-refund-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_09_return_refund_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2022/02-procedures/10-supplier-geo-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_10_supplier_geo_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-11-common-system-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2022/02-procedures/11-common-system-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-02-procedures-11-common-system-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id`
+- `VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_11_common_system_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2022/02-procedures/12-enterprise-extension-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->settlements.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->settlements.prepared_by`
+- `VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_12_enterprise_extension_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
+```
+
+## `sqlserver2022-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2022/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_13_erp_deep_scenario_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
+```
+
+## `sqlserver2022-sample-data-full-03-data-01-master-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/03-data/01-master-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
+- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
+- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
+- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[departments] ([parent_id])
+SELECT p.[id]
+```
+
+## `sqlserver2022-sample-data-full-03-data-02-supplementary-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/03-data/02-supplementary-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[inventory] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2022-sample-data-full-03-data-03-third-batch-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/03-data/03-third-batch-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-03-data-03-third-batch-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[purchase_receipt_items] ([batch_id])
+SELECT p.[id]
+```
+
+## `sqlserver2022-sample-data-full-03-data-04-return-damage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/03-data/04-return-damage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-03-data-04-return-damage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[purchase_returns] ([handler_id])
+SELECT p.[id]
+```
+
+## `sqlserver2022-sample-data-full-03-data-05-massive-data-generator-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2022/03-data/05-massive-data-generator.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-03-data-05-massive-data-generator-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.approved_by`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipments.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[cashier_journals] ([account_id])
+SELECT p.[id]
+```
+
+## `sqlserver2022-sample-data-full-03-data-06-enterprise-extension-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/03-data/06-enterprise-extension-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-03-data-06-enterprise-extension-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.departments.id->fixed_assets.department_id`
+- `VALUE:DIRECT:dbo.employees.id->fixed_assets.custodian_id`
+- `VALUE:DIRECT:dbo.fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->boms.child_product_id`
+- `VALUE:DIRECT:dbo.products.id->boms.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
+- `VALUE:DIRECT:dbo.products.id->three_way_matching.product_id`
+- `VALUE:DIRECT:dbo.products.id->work_orders.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->work_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[promotion_products] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2022-sample-data-full-03-data-07-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/03-data/07-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-03-data-07-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id`
+- `VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->contracts.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->contracts.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id`
+- `VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to`
+- `VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by`
+- `VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inspection_reports.product_id`
+- `VALUE:DIRECT:dbo.products.id->inspection_standards.product_id`
+- `VALUE:DIRECT:dbo.products.id->service_tickets.product_id`
+- `VALUE:DIRECT:dbo.products.id->work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[work_order_materials] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2022-sample-data-full-04-queries-01-complex-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/04-queries/01-complex-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Customer sales summary by region and category.
+```
+
+## `sqlserver2022-sample-data-full-04-queries-02-complex-queries-batch2-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/04-queries/02-complex-queries-batch2.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Sales order payment status.
+```
+
+## `sqlserver2022-sample-data-full-04-queries-03-complex-queries-batch3-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/04-queries/03-complex-queries-batch3.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Customer return and refund summary.
+```
+
+## `sqlserver2022-sample-data-full-04-queries-04-store-customer-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/04-queries/04-store-customer-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Cashier journal reconciliation overview.
+```
+
+## `sqlserver2022-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Batch expiry risk by product and warehouse.
+```
+
+## `sqlserver2022-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Sales return item reason analysis.
+```
+
+## `sqlserver2022-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Supplier purchase and receipt scorecard.
+```
+
+## `sqlserver2022-sample-data-full-04-queries-08-common-system-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/04-queries/08-common-system-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Production planning demand overview.
+```
+
+## `sqlserver2022-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Inventory valuation by product and warehouse.
+```
+
+## `sqlserver2022-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-full-04-queries-10-enterprise-extension-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Payment request approval amount.
+```
+
+## `sqlserver2022-sample-data-full-04-queries-11-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/04-queries/11-erp-deep-scenario-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Picking task execution summary.
+```
+
+## `sqlserver2022-semantic-equivalent-relation-probe-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/relation-probe/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+
+-- ============================================================
+-- Source sample-data/sqlserver/2025/04-queries/01-complex-queries.sql
+-- Relation-probe benchmark: dense JOIN + EXISTS + IN predicates.
+-- ============================================================
+
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+```
+
+## `sqlserver2025-sample-data-full-01-schema-03-triggers-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `TRIGGER` |
+| Input | `sample-data/sqlserver/2025/01-schema/03-triggers.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-01-schema-03-triggers-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inserted.department_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.employee_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.manager_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.parent_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.permission_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.position_id->audit_log.target_id`
+- `VALUE:DIRECT:inserted.role_id->audit_log.target_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.tr_departments_1_audit
+CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/01-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
+- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
+- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
+- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_01_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-02-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/02-procedures-supplement.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-02-procedures-02-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
+- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_02_procedures_supplement_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-03-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `sample-data/sqlserver/2025/02-procedures/03-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.fn_relation_1
+CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-04-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/04-procedures-supplement.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-02-procedures-04-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_04_procedures_supplement_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-05-third-batch-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/05-third-batch-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-02-procedures-05-third-batch-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_05_third_batch_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-06-third-batch-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `sample-data/sqlserver/2025/02-procedures/06-third-batch-functions.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
+CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-07-store-customer-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/07-store-customer-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-02-procedures-07-store-customer-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_07_store_customer_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/08-batch-expiry-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_08_batch_expiry_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-09-return-refund-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/09-return-refund-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-02-procedures-09-return-refund-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_09_return_refund_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/10-supplier-geo-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_10_supplier_geo_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-11-common-system-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/11-common-system-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-02-procedures-11-common-system-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id`
+- `VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_11_common_system_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/12-enterprise-extension-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->settlements.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->settlements.prepared_by`
+- `VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_12_enterprise_extension_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
+```
+
+## `sqlserver2025-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+-- relation-detector-fixture-source:sqlserver.sp_13_erp_deep_scenario_procedures_1
+CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
+```
+
+## `sqlserver2025-sample-data-full-03-data-01-master-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/03-data/01-master-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-03-data-01-master-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
+- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
+- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
+- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[departments] ([parent_id])
+SELECT p.[id]
+```
+
+## `sqlserver2025-sample-data-full-03-data-02-supplementary-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/03-data/02-supplementary-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[inventory] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2025-sample-data-full-03-data-03-third-batch-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/03-data/03-third-batch-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-03-data-03-third-batch-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[purchase_receipt_items] ([batch_id])
+SELECT p.[id]
+```
+
+## `sqlserver2025-sample-data-full-03-data-04-return-damage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/03-data/04-return-damage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-03-data-04-return-damage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[purchase_returns] ([handler_id])
+SELECT p.[id]
+```
+
+## `sqlserver2025-sample-data-full-03-data-05-massive-data-generator-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/sqlserver/2025/03-data/05-massive-data-generator.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-03-data-05-massive-data-generator-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.approved_by`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipments.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[cashier_journals] ([account_id])
+SELECT p.[id]
+```
+
+## `sqlserver2025-sample-data-full-03-data-06-enterprise-extension-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/03-data/06-enterprise-extension-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-03-data-06-enterprise-extension-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.departments.id->fixed_assets.department_id`
+- `VALUE:DIRECT:dbo.employees.id->fixed_assets.custodian_id`
+- `VALUE:DIRECT:dbo.fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->boms.child_product_id`
+- `VALUE:DIRECT:dbo.products.id->boms.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
+- `VALUE:DIRECT:dbo.products.id->three_way_matching.product_id`
+- `VALUE:DIRECT:dbo.products.id->work_orders.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->work_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[promotion_products] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2025-sample-data-full-03-data-07-erp-deep-scenario-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/03-data/07-erp-deep-scenario-data.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-03-data-07-erp-deep-scenario-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id`
+- `VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->contracts.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->contracts.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id`
+- `VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to`
+- `VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by`
+- `VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id`
+- `VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id`
+- `VALUE:DIRECT:dbo.products.id->inspection_reports.product_id`
+- `VALUE:DIRECT:dbo.products.id->inspection_standards.product_id`
+- `VALUE:DIRECT:dbo.products.id->service_tickets.product_id`
+- `VALUE:DIRECT:dbo.products.id->work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+-- This corpus is intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- ============================================================
+
+INSERT INTO [dbo].[work_order_materials] ([product_id])
+SELECT p.[id]
+```
+
+## `sqlserver2025-sample-data-full-04-queries-01-complex-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/01-complex-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Customer sales summary by region and category.
+```
+
+## `sqlserver2025-sample-data-full-04-queries-02-complex-queries-batch2-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/02-complex-queries-batch2.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Sales order payment status.
+```
+
+## `sqlserver2025-sample-data-full-04-queries-03-complex-queries-batch3-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/03-complex-queries-batch3.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Customer return and refund summary.
+```
+
+## `sqlserver2025-sample-data-full-04-queries-04-store-customer-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/04-store-customer-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Cashier journal reconciliation overview.
+```
+
+## `sqlserver2025-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Batch expiry risk by product and warehouse.
+```
+
+## `sqlserver2025-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Sales return item reason analysis.
+```
+
+## `sqlserver2025-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Supplier purchase and receipt scorecard.
+```
+
+## `sqlserver2025-sample-data-full-04-queries-08-common-system-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/08-common-system-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Production planning demand overview.
+```
+
+## `sqlserver2025-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Inventory valuation by product and warehouse.
+```
+
+## `sqlserver2025-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-04-queries-10-enterprise-extension-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Payment request approval amount.
+```
+
+## `sqlserver2025-sample-data-full-04-queries-11-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/11-erp-deep-scenario-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- SQL Server ERP natural business query samples.
+-- These queries are intentionally T-SQL 2016-compatible so the same business
+-- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- ============================================================
+
+-- Picking task execution summary.
+```
+
+## `sqlserver2025-semantic-equivalent-relation-probe-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/relation-probe/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+
+-- ============================================================
+-- Source sample-data/sqlserver/2025/04-queries/01-complex-queries.sql
+-- Relation-probe benchmark: dense JOIN + EXISTS + IN predicates.
+-- ============================================================
+
+-- ============================================================
+-- SQL Server ERP sample data translated from MySQL 8.0 business sample.
 ```
 

@@ -1,0 +1,12 @@
+id: sqlserver2022-semantic-equivalent-relation-probe-sql
+databaseType: SQLSERVER
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: sqlserver/2022
+databaseVersion: 2022
+sourceType: PLAIN_SQL
+schema: dbo
+input: ../../../../semantic-equivalent/relation-probe/input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

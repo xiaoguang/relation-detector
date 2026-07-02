@@ -1,0 +1,9 @@
+id: sqlserver-sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl
+databaseType: SQLSERVER
+parserTarget: DDL
+parserMode: token-event
+sourceType: DDL_FILE
+schema: dbo
+input: ../../../../sample-data/sqlserver/2025/01-schema/07-erp-deep-scenario-tables.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

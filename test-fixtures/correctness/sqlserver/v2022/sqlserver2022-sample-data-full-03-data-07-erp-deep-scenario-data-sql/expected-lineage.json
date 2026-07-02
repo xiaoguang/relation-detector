@@ -1,0 +1,27 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id",
+    "VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id",
+    "VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id",
+    "VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id",
+    "VALUE:DIRECT:dbo.employees.id->contracts.approved_by",
+    "VALUE:DIRECT:dbo.employees.id->contracts.prepared_by",
+    "VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id",
+    "VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to",
+    "VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by",
+    "VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by",
+    "VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id",
+    "VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id",
+    "VALUE:DIRECT:dbo.products.id->inspection_reports.product_id",
+    "VALUE:DIRECT:dbo.products.id->inspection_standards.product_id",
+    "VALUE:DIRECT:dbo.products.id->service_tickets.product_id",
+    "VALUE:DIRECT:dbo.products.id->work_order_materials.product_id",
+    "VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id",
+    "VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id",
+    "VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id",
+    "VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

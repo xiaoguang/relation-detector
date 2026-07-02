@@ -1,0 +1,10 @@
+{
+  "fingerprints": [
+    "FK_LIKE:dbo.cashier_journals.account_id->dbo.accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.cashier_journals.cashier_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.payments.customer_id->dbo.customers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.salary_payments.employee_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.salary_payments.voucher_id->dbo.vouchers.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

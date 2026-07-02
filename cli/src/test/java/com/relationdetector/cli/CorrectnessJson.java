@@ -50,12 +50,11 @@ final class CorrectnessJson {
     }
 
     static List<String> stringArray(String json, String field) {
-        Matcher matcher = Pattern.compile("\"" + Pattern.quote(field) + "\"\\s*:\\s*\\[(.*?)\\]", Pattern.DOTALL)
-                .matcher(json);
-        if (!matcher.find()) {
+        String body = arrayBody(json, field);
+        if (body == null) {
             return List.of();
         }
-        return stringArrayFromBody(matcher.group(1));
+        return stringArrayFromBody(body);
     }
 
     static Map<String, Long> objectLongs(String json, String field) {
@@ -89,6 +88,38 @@ final class CorrectnessJson {
             values.put(entry.group(1), Long.parseLong(entry.group(2)));
         }
         return values;
+    }
+
+    private static String arrayBody(String json, String field) {
+        Matcher fieldMatcher = Pattern.compile("\"" + Pattern.quote(field) + "\"\\s*:").matcher(json);
+        if (!fieldMatcher.find()) {
+            return null;
+        }
+        int start = json.indexOf('[', fieldMatcher.end());
+        if (start < 0) {
+            return null;
+        }
+        boolean inString = false;
+        boolean escaped = false;
+        for (int i = start + 1; i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+            if (c == '\\' && inString) {
+                escaped = true;
+                continue;
+            }
+            if (c == '"') {
+                inString = !inString;
+                continue;
+            }
+            if (!inString && c == ']') {
+                return json.substring(start + 1, i).trim();
+            }
+        }
+        throw new IllegalArgumentException("Unclosed array field " + field);
     }
 
     private static String objectBody(String json, String field) {

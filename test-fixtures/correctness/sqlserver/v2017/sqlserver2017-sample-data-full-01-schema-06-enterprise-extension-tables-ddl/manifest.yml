@@ -1,0 +1,11 @@
+id: sqlserver2017-sample-data-full-01-schema-06-enterprise-extension-tables-ddl
+databaseType: SQLSERVER
+parserTarget: DDL
+parserMode: full-grammer
+grammarProfile: sqlserver/2017
+databaseVersion: 2017
+sourceType: DDL_FILE
+schema: dbo
+input: ../../../../../sample-data/sqlserver/2017/01-schema/06-enterprise-extension-tables.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

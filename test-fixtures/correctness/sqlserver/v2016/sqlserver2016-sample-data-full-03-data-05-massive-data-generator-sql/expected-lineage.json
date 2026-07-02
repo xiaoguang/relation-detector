@@ -1,0 +1,27 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id",
+    "VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id",
+    "VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id",
+    "VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id",
+    "VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id",
+    "VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id",
+    "VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id",
+    "VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by",
+    "VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by",
+    "VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id",
+    "VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id",
+    "VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id",
+    "VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id",
+    "VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id",
+    "VALUE:DIRECT:dbo.promotions.id->settlements.approved_by",
+    "VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by",
+    "VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id",
+    "VALUE:DIRECT:dbo.promotions.id->shipments.order_id",
+    "VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id",
+    "VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

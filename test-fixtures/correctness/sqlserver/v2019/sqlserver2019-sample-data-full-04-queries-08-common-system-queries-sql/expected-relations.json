@@ -1,0 +1,13 @@
+{
+  "fingerprints": [
+    "FK_LIKE:dbo.employee_shift_assignments.employee_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.mrp_run_items.component_product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.production_plans.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.production_plans.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

@@ -1,0 +1,17 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by",
+    "VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by",
+    "VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by",
+    "VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by",
+    "VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id",
+    "VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id",
+    "VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id",
+    "VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id",
+    "VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id",
+    "VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

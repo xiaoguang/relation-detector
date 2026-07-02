@@ -23,6 +23,8 @@ statement
     | merge_statement SEMI?
     | delete_statement SEMI?
     | create_or_alter_procedure SEMI?
+    | create_or_alter_function SEMI?
+    | create_or_alter_trigger SEMI?
     | create_table SEMI?
     | create_index SEMI?
     | GO
@@ -198,6 +200,14 @@ create_or_alter_procedure
     : CREATE OR ALTER PROCEDURE full_table_name AS BEGIN statement* END
     ;
 
+create_or_alter_function
+    : CREATE OR ALTER FUNCTION full_table_name LPAREN RPAREN RETURNS TABLE AS RETURN LPAREN select_statement RPAREN
+    ;
+
+create_or_alter_trigger
+    : CREATE OR ALTER TRIGGER full_table_name ON full_table_name AFTER (INSERT | UPDATE | DELETE) AS BEGIN statement* END
+    ;
+
 merge_statement
     : MERGE INTO ddl_object as_table_alias? USING table_sources ON search_condition merge_when_clause+
     ;
@@ -335,7 +345,7 @@ loose_token
     : SELECT | WITH | AS | FROM | WHERE | JOIN | INNER | LEFT | RIGHT | FULL | OUTER | CROSS | APPLY
     | ON | AND | OR | NOT | EXISTS | IN | GROUP | BY | HAVING | ORDER | ASC | DESC | TOP | FETCH
     | FIRST | NEXT | ROWS | ONLY | INSERT | INTO | VALUES | UPDATE | SET | DELETE | MERGE | USING
-    | WHEN | MATCHED | THEN | CREATE | ALTER | PROCEDURE | BEGIN | TABLE | INDEX | UNIQUE | CLUSTERED | NONCLUSTERED
+    | WHEN | MATCHED | THEN | CREATE | ALTER | PROCEDURE | FUNCTION | RETURNS | RETURN | TRIGGER | AFTER | BEGIN | TABLE | INDEX | UNIQUE | CLUSTERED | NONCLUSTERED
     | CONSTRAINT | FOREIGN | KEY | REFERENCES | PRIMARY | NULL | IDENTITY | DEFAULT | CASE | WHEN
     | ELSE | END | IS | CAST | COUNT | SUM | MAX | MIN | AVG | ID | BRACKET_ID | DOUBLE_QUOTE_ID
     | LOCAL_ID | TEMP_ID | DECIMAL_LITERAL | STRING | COMMA | DOT | STAR | EQ | PLUS | MINUS
@@ -394,6 +404,11 @@ THEN: 'THEN';
 CREATE: 'CREATE';
 ALTER: 'ALTER';
 PROCEDURE: 'PROCEDURE';
+FUNCTION: 'FUNCTION';
+RETURNS: 'RETURNS';
+RETURN: 'RETURN';
+TRIGGER: 'TRIGGER';
+AFTER: 'AFTER';
 BEGIN: 'BEGIN';
 TABLE: 'TABLE';
 INDEX: 'INDEX';

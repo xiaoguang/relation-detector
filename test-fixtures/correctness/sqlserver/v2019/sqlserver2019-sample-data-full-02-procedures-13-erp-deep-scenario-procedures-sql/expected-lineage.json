@@ -1,0 +1,17 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:dbo.customers.id->invoices.customer_id",
+    "VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id",
+    "VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id",
+    "VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id",
+    "VALUE:DIRECT:dbo.products.id->promotion_products.product_id",
+    "VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id",
+    "VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id",
+    "VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id",
+    "VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id",
+    "VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

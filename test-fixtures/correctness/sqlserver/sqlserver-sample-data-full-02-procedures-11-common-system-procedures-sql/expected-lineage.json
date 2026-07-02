@@ -1,0 +1,17 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id",
+    "VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id",
+    "VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id",
+    "VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by",
+    "VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by",
+    "VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id",
+    "VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id",
+    "VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id",
+    "VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id",
+    "VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

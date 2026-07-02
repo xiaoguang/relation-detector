@@ -1,0 +1,11 @@
+id: sqlserver2016-sample-data-full-01-schema-04-supplementary-tables-ddl
+databaseType: SQLSERVER
+parserTarget: DDL
+parserMode: full-grammer
+grammarProfile: sqlserver/2016
+databaseVersion: 2016
+sourceType: DDL_FILE
+schema: dbo
+input: ../../../../../sample-data/sqlserver/2016/01-schema/04-supplementary-tables.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

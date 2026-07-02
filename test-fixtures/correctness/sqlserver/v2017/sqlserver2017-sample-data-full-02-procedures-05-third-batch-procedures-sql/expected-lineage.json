@@ -1,0 +1,17 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id",
+    "VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id",
+    "VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id",
+    "VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id",
+    "VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id",
+    "VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id",
+    "VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id",
+    "VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id",
+    "VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id",
+    "VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

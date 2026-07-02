@@ -1,0 +1,11 @@
+id: sqlserver2025-sample-data-full-01-schema-02-indexes-and-views-ddl
+databaseType: SQLSERVER
+parserTarget: DDL
+parserMode: full-grammer
+grammarProfile: sqlserver/2025
+databaseVersion: 2025
+sourceType: DDL_FILE
+schema: dbo
+input: ../../../../../sample-data/sqlserver/2025/01-schema/02-indexes-and-views.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

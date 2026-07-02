@@ -96,7 +96,6 @@ class DialectSqlAssetHygieneTest {
             forbidden("PostgreSQL cast operator", "::[A-Za-z_][A-Za-z0-9_]*(?:\\([^)]*\\))?"),
             forbidden("PostgreSQL WITH RECURSIVE", "\\bWITH\\s+RECURSIVE\\b"),
             forbidden("PostgreSQL RETURN QUERY statement", "\\bRETURN\\s+QUERY\\b"),
-            forbidden("PostgreSQL RETURNS TABLE signature", "\\bRETURNS\\s+TABLE\\b"),
             forbidden("PostgreSQL string_agg function", "\\bstring_agg\\s*\\("),
             forbidden("PostgreSQL date_trunc function", "\\bdate_trunc\\s*\\("),
             forbidden("PostgreSQL/MySQL LIMIT clause", "\\bLIMIT\\b"),
@@ -154,17 +153,33 @@ class DialectSqlAssetHygieneTest {
         Set<Path> rootFixtureInputs = manifestInputs(correctnessRoot, correctnessRoot);
 
         List<String> missing = new ArrayList<>();
+        Set<Path> expectedRelativeSqlFiles = null;
         try (Stream<Path> versions = Files.list(sampleRoot)) {
             for (Path versionDir : versions.filter(Files::isDirectory).toList()) {
                 String version = versionDir.getFileName().toString();
                 Path versionFixtureRoot = correctnessRoot.resolve("v" + version);
                 Set<Path> versionFixtureInputs = manifestInputs(versionFixtureRoot, correctnessRoot);
+                List<Path> versionSqlFiles;
                 try (Stream<Path> sqlFiles = Files.walk(versionDir)) {
-                    for (Path sqlFile : sqlFiles
+                    versionSqlFiles = sqlFiles
                             .filter(Files::isRegularFile)
                             .filter(path -> path.toString().endsWith(".sql"))
                             .map(path -> path.toAbsolutePath().normalize())
-                            .toList()) {
+                            .sorted()
+                            .toList();
+                    if (versionSqlFiles.size() != 38) {
+                        missing.add("sqlserver/v" + version + " expected 38 sample-data SQL files, found "
+                                + versionSqlFiles.size());
+                    }
+                    Set<Path> relativeSqlFiles = versionSqlFiles.stream()
+                            .map(versionDir.toAbsolutePath().normalize()::relativize)
+                            .collect(java.util.stream.Collectors.toCollection(java.util.TreeSet::new));
+                    if (expectedRelativeSqlFiles == null) {
+                        expectedRelativeSqlFiles = relativeSqlFiles;
+                    } else if (!expectedRelativeSqlFiles.equals(relativeSqlFiles)) {
+                        missing.add("sqlserver/v" + version + " sample-data relative file set differs from baseline");
+                    }
+                    for (Path sqlFile : versionSqlFiles) {
                         if (!versionFixtureInputs.contains(sqlFile)) {
                             missing.add("sqlserver/v" + version + " missing " + repoRoot().relativize(sqlFile));
                         }
@@ -177,6 +192,68 @@ class DialectSqlAssetHygieneTest {
         }
 
         assertTrue(missing.isEmpty(), "SQL Server sample-data SQL files must all be correctness-covered: " + missing);
+    }
+
+    @Test
+    void sqlServerSampleDataKeepsComparableErpSemanticDensity() throws IOException {
+        Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
+        List<String> findings = new ArrayList<>();
+        try (Stream<Path> versions = Files.list(sampleRoot)) {
+            for (Path versionDir : versions.filter(Files::isDirectory).toList()) {
+                SqlAssetDensity density = sqlAssetDensity(versionDir);
+                if (density.createTables() < 120) {
+                    findings.add(versionDir.getFileName() + " create table count too low: " + density.createTables());
+                }
+                if (density.fkReferences() < 400) {
+                    findings.add(versionDir.getFileName() + " FK/reference count too low: " + density.fkReferences());
+                }
+                if (density.procedures() < 80) {
+                    findings.add(versionDir.getFileName() + " procedure count too low: " + density.procedures());
+                }
+                if (density.functions() < 10) {
+                    findings.add(versionDir.getFileName() + " function count too low: " + density.functions());
+                }
+                if (density.triggers() < 8) {
+                    findings.add(versionDir.getFileName() + " trigger count too low: " + density.triggers());
+                }
+                if (density.insertSelects() < 150) {
+                    findings.add(versionDir.getFileName() + " INSERT SELECT count too low: " + density.insertSelects());
+                }
+            }
+        }
+
+        assertTrue(findings.isEmpty(),
+                "SQL Server sample-data must stay comparable to the ERP semantic density of the other dialects: "
+                        + findings);
+    }
+
+    @Test
+    void sqlServerSampleDataDoesNotCarryRelationProbeBenchmarkTemplates() throws IOException {
+        Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
+        List<String> findings = new ArrayList<>();
+        try (Stream<Path> versions = Files.list(sampleRoot)) {
+            for (Path versionDir : versions.filter(Files::isDirectory).toList()) {
+                int probes = relationProbeTemplates(versionDir);
+                if (probes > 40) {
+                    findings.add(versionDir.getFileName()
+                            + " relation-probe templates belong in semantic-equivalent benchmark, found " + probes);
+                }
+            }
+        }
+
+        assertTrue(findings.isEmpty(),
+                "SQL Server sample-data should keep natural ERP SQL, not high-density relation-probe templates: "
+                        + findings);
+    }
+
+    @Test
+    void semanticEquivalentContainsRelationProbeBenchmark() throws IOException {
+        Path benchmarkRoot = repoRoot().resolve("test-fixtures/semantic-equivalent/relation-probe");
+        assertTrue(Files.isDirectory(benchmarkRoot), "Expected semantic-equivalent relation-probe benchmark");
+        int probes = relationProbeTemplates(benchmarkRoot);
+        assertTrue(probes >= 100,
+                "semantic-equivalent relation-probe benchmark should carry the high-density JOIN/EXISTS/IN corpus, found "
+                        + probes);
     }
 
     private static void assertNoForbiddenDialectResidue(
@@ -324,6 +401,56 @@ class DialectSqlAssetHygieneTest {
         return Pattern.compile("'(?:''|[^'])*'").matcher(text).replaceAll("''");
     }
 
+    private static SqlAssetDensity sqlAssetDensity(Path root) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        try (Stream<Path> stream = Files.walk(root)) {
+            for (Path path : stream
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".sql"))
+                    .sorted()
+                    .toList()) {
+                builder.append(Files.readString(path)).append('\n');
+            }
+        }
+        String sql = stripSqlStringLiterals(stripSqlComments(builder.toString()));
+        return new SqlAssetDensity(
+                count(sql, "\\bCREATE\\s+(?:OR\\s+(?:ALTER|REPLACE)\\s+)?TABLE\\b"),
+                count(sql, "\\bFOREIGN\\s+KEY\\b|\\bREFERENCES\\b"),
+                count(sql, "\\bCREATE\\s+(?:OR\\s+(?:ALTER|REPLACE)\\s+)?PROCEDURE\\b"),
+                count(sql, "\\bCREATE\\s+(?:OR\\s+(?:ALTER|REPLACE)\\s+)?FUNCTION\\b"),
+                count(sql, "\\bCREATE\\s+(?:OR\\s+(?:ALTER|REPLACE)\\s+)?TRIGGER\\b"),
+                count(sql, "\\bJOIN\\b"),
+                count(sql, "\\bINSERT\\b[\\s\\S]{0,300}?\\bSELECT\\b"),
+                count(sql, "\\bCASE\\b"),
+                count(sql, "\\bCOALESCE\\b|\\bISNULL\\b"),
+                count(sql, "\\bOVER\\s*\\("));
+    }
+
+    private static int relationProbeTemplates(Path root) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        try (Stream<Path> stream = Files.walk(root)) {
+            for (Path path : stream
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".sql"))
+                    .sorted()
+                    .toList()) {
+                builder.append(Files.readString(path)).append('\n');
+            }
+        }
+        String sql = stripSqlStringLiterals(stripSqlComments(builder.toString()));
+        return count(sql, "\\bJOIN\\b[\\s\\S]{0,240}?\\bON\\b[\\s\\S]{0,240}?\\bWHERE\\s+EXISTS\\s*\\("
+                + "[\\s\\S]{0,360}?\\bIN\\s*\\(\\s*SELECT\\b");
+    }
+
+    private static int count(String text, String regex) {
+        int count = 0;
+        var matcher = Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.MULTILINE).matcher(text);
+        while (matcher.find()) {
+            count++;
+        }
+        return count;
+    }
+
     private static ForbiddenSqlPattern forbidden(String description, String pattern) {
         return new ForbiddenSqlPattern(description, Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.MULTILINE));
     }
@@ -341,5 +468,19 @@ class DialectSqlAssetHygieneTest {
     }
 
     private record ForbiddenSqlPattern(String description, Pattern pattern) {
+    }
+
+    private record SqlAssetDensity(
+            int createTables,
+            int fkReferences,
+            int procedures,
+            int functions,
+            int triggers,
+            int joins,
+            int insertSelects,
+            int cases,
+            int nullHandlers,
+            int windows
+    ) {
     }
 }

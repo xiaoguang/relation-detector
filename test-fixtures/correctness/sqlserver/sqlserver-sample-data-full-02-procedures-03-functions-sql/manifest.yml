@@ -1,0 +1,11 @@
+id: sqlserver-sample-data-full-02-procedures-03-functions-sql
+databaseType: SQLSERVER
+parserTarget: SQL
+parserMode: token-event
+sourceType: FUNCTION
+schema: dbo
+statementFormat: OBJECT_BLOCKS
+input: ../../../../sample-data/sqlserver/2025/02-procedures/03-functions.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

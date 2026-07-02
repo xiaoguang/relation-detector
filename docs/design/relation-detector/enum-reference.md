@@ -29,14 +29,14 @@ public enum DatabaseType {
 | --- | --- | --- | --- |
 | `MYSQL` | MySQL 数据库。覆盖 MySQL 5.7/8.0+。 | 完整实现 | `type: mysql` |
 | `POSTGRESQL` | PostgreSQL 数据库。覆盖 PostgreSQL 12+。 | 完整实现 | `type: postgresql` |
-| `SQLSERVER` | Microsoft SQL Server。 | 预留 | `type: sqlserver` |
+| `SQLSERVER` | Microsoft SQL Server。 | sample-data parser golden 已接入 | `type: sqlserver` |
 | `ORACLE` | Oracle Database。 | 初始 adaptor / parser golden 已接入 | `type: oracle` |
 
 维护说明：
 
 - 配置中可以允许小写别名，例如 `mysql`，但内部统一转成 `MYSQL`。
-- 当前 `MYSQL`、`POSTGRESQL` 是成熟支持；`ORACLE` 已有初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammer；`SQLSERVER` 仍为预留。
-- 用户选择 `SQLSERVER` 时，如果没有对应 adaptor，应返回“adaptor 未找到”错误，不应偷偷降级到其他数据库。用户选择 `ORACLE` 时，应由 `adaptor-oracle` 接管；如果该模块未在 classpath 中，同样应返回 adaptor 未找到。
+- 当前 `MYSQL`、`POSTGRESQL` 是成熟支持；`ORACLE` 已有初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammer；`SQLSERVER` 已有 adaptor、token-event fallback 和 SQL Server 2016/2017/2019/2022/2025 versioned full-grammer sample-data golden。
+- 用户选择 `SQLSERVER` 时，应由 `adaptor-sqlserver` 接管；如果该模块未在 classpath 中，应返回“adaptor 未找到”错误，不应偷偷降级到其他数据库。用户选择 `ORACLE` 时，应由 `adaptor-oracle` 接管；如果该模块未在 classpath 中，同样应返回 adaptor 未找到。
 
 ## 2. OutputFormat
 

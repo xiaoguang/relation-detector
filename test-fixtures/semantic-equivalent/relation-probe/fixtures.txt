@@ -1,0 +1,5 @@
+test-fixtures/correctness/sqlserver/v2016/sqlserver2016-semantic-equivalent-relation-probe-sql
+test-fixtures/correctness/sqlserver/v2017/sqlserver2017-semantic-equivalent-relation-probe-sql
+test-fixtures/correctness/sqlserver/v2019/sqlserver2019-semantic-equivalent-relation-probe-sql
+test-fixtures/correctness/sqlserver/v2022/sqlserver2022-semantic-equivalent-relation-probe-sql
+test-fixtures/correctness/sqlserver/v2025/sqlserver2025-semantic-equivalent-relation-probe-sql

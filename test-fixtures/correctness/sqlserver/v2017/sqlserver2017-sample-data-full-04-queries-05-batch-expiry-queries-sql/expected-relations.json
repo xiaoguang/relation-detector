@@ -1,0 +1,12 @@
+{
+  "fingerprints": [
+    "FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.product_batches.product_id->dbo.products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:dbo.product_batches.supplier_id->dbo.suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.sales_order_items.batch_id->dbo.product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

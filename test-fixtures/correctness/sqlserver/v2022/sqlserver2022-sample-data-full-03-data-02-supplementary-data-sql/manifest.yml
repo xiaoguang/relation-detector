@@ -1,0 +1,12 @@
+id: sqlserver2022-sample-data-full-03-data-02-supplementary-data-sql
+databaseType: SQLSERVER
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: sqlserver/2022
+databaseVersion: 2022
+sourceType: PLAIN_SQL
+schema: dbo
+input: ../../../../../sample-data/sqlserver/2022/03-data/02-supplementary-data.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

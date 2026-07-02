@@ -1,0 +1,12 @@
+id: sqlserver2016-sample-data-full-04-queries-05-batch-expiry-queries-sql
+databaseType: SQLSERVER
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: sqlserver/2016
+databaseVersion: 2016
+sourceType: PLAIN_SQL
+schema: dbo
+input: ../../../../../sample-data/sqlserver/2016/04-queries/05-batch-expiry-queries.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,0 +1,17 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:dbo.departments.id->departments.parent_id",
+    "VALUE:DIRECT:dbo.departments.id->employees.department_id",
+    "VALUE:DIRECT:dbo.departments.id->positions.department_id",
+    "VALUE:DIRECT:dbo.employees.id->attendance.employee_id",
+    "VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id",
+    "VALUE:DIRECT:dbo.employees.id->employees.manager_id",
+    "VALUE:DIRECT:dbo.employees.id->leave_records.employee_id",
+    "VALUE:DIRECT:dbo.permissions.id->permissions.parent_id",
+    "VALUE:DIRECT:dbo.positions.id->employees.position_id",
+    "VALUE:DIRECT:dbo.roles.id->role_permissions.role_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

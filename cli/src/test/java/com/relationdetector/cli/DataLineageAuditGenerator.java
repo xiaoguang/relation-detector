@@ -36,6 +36,7 @@ import com.relationdetector.core.tokenevent.CommonTokenEventStructuredSqlParser;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
 import com.relationdetector.oracle.OracleDatabaseAdaptor;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
+import com.relationdetector.sqlserver.SqlServerDatabaseAdaptor;
 
 /**
  * Generates the human-review audit for Data Lineage correctness fixtures.
@@ -436,6 +437,7 @@ final class DataLineageAuditGenerator {
             case MYSQL -> new MySqlDatabaseAdaptor();
             case POSTGRESQL -> new PostgresDatabaseAdaptor();
             case ORACLE -> new OracleDatabaseAdaptor();
+            case SQLSERVER -> new SqlServerDatabaseAdaptor();
             default -> throw new IllegalArgumentException("No Data Lineage parser for " + databaseType);
         };
     }

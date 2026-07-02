@@ -1,0 +1,17 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:dbo.accounts.id->accounts.parent_id",
+    "VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id",
+    "VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id",
+    "VALUE:DIRECT:dbo.employees.id->vouchers.posted_by",
+    "VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by",
+    "VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by",
+    "VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id",
+    "VALUE:DIRECT:dbo.products.id->damage_report_items.product_id",
+    "VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id",
+    "VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

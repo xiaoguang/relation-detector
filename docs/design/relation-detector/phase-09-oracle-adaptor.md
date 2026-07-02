@@ -183,18 +183,24 @@ Oracle correctness 当前统计：
 
 | Parser family | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints |
 | --- | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 15 | 11 / 4 | 721 | 225 |
-| MySQL token-event root sample-data | 34 | 28 / 6 | 556 | 208 |
-| MySQL full-grammer v8_0 sample-data | 37 | 31 / 6 | 784 | 273 |
-| PostgreSQL token-event root sample-data | 30 | 24 / 6 | 438 | 119 |
-| PostgreSQL full-grammer v16 sample-data | 30 | 24 / 6 | 671 | 120 |
-| PostgreSQL full-grammer v17 sample-data | 30 | 24 / 6 | 671 | 120 |
-| PostgreSQL full-grammer v18 sample-data | 30 | 24 / 6 | 670 | 119 |
+| common token-event sample-data | 15 | 11 / 4 | 729 | 292 |
+| MySQL token-event root sample-data | 34 | 28 / 6 | 562 | 208 |
+| MySQL full-grammer v8_0 sample-data | 37 | 31 / 6 | 785 | 273 |
+| PostgreSQL token-event root sample-data | 31 | 25 / 6 | 673 | 218 |
+| PostgreSQL full-grammer v16 sample-data | 31 | 25 / 6 | 675 | 219 |
+| PostgreSQL full-grammer v17 sample-data | 31 | 25 / 6 | 675 | 219 |
+| PostgreSQL full-grammer v18 sample-data | 31 | 25 / 6 | 674 | 218 |
 | Oracle token-event root sample-data | 34 | 27 / 7 | 629 | 217 |
 | Oracle full-grammer v12c sample-data | 34 | 27 / 7 | 666 | 217 |
 | Oracle full-grammer v19c sample-data | 34 | 27 / 7 | 666 | 217 |
 | Oracle full-grammer v21c sample-data | 34 | 27 / 7 | 666 | 217 |
 | Oracle full-grammer v26ai sample-data | 34 | 27 / 7 | 666 | 217 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 711 | 257 |
+| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 717 | 257 |
+| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 717 | 257 |
+| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 717 | 257 |
+| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 717 | 257 |
+| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 717 | 257 |
 
 ## 后续收口
 

@@ -1,0 +1,17 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id",
+    "VALUE:DIRECT:dbo.employees.id->settlements.approved_by",
+    "VALUE:DIRECT:dbo.employees.id->settlements.prepared_by",
+    "VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id",
+    "VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id",
+    "VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id",
+    "VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id",
+    "VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id",
+    "VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id",
+    "VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

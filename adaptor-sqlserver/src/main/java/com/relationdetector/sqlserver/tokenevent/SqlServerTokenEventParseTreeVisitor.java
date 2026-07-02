@@ -247,12 +247,14 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
     public Void visitUpdate_statement(SqlServerRelationSqlParser.Update_statementContext ctx) {
         String targetAlias = clean(ctx.ddl_object().getText());
         String targetTable = targetAlias;
+        String qualifiedTargetTable = targetAlias;
         if (ctx.table_sources() != null) {
             visit(ctx.table_sources());
-            targetTable = baseName(tableForAlias(ctx.table_sources(), targetAlias));
+            qualifiedTargetTable = tableForAlias(ctx.table_sources(), targetAlias);
+            targetTable = baseName(qualifiedTargetTable);
         }
         Map<String, Object> writeTarget = attrs();
-        writeTarget.put("qualifiedTable", targetTable);
+        writeTarget.put("qualifiedTable", qualifiedTargetTable);
         writeTarget.put("table", baseName(targetTable));
         writeTarget.put("alias", targetAlias);
         add(StructuredParseEventType.WRITE_TARGET, ctx, writeTarget);
@@ -711,11 +713,14 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
     }
 
     private List<String> parts(String raw) {
-        String text = clean(raw);
+        String text = raw == null ? "" : raw.trim();
         if (text.isBlank()) {
             return List.of();
         }
-        return List.of(text.split("\\."));
+        return List.of(text.split("\\.")).stream()
+                .map(this::clean)
+                .filter(part -> !part.isBlank())
+                .toList();
     }
 
     private String lastPart(String raw) {

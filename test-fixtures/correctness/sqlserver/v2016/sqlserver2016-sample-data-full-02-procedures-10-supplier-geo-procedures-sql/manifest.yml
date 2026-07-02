@@ -1,0 +1,13 @@
+id: sqlserver2016-sample-data-full-02-procedures-10-supplier-geo-procedures-sql
+databaseType: SQLSERVER
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: sqlserver/2016
+databaseVersion: 2016
+sourceType: PROCEDURE
+schema: dbo
+statementFormat: OBJECT_BLOCKS
+input: ../../../../../sample-data/sqlserver/2016/02-procedures/10-supplier-geo-procedures.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

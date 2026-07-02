@@ -1,0 +1,12 @@
+id: sqlserver2019-sample-data-full-03-data-02-supplementary-data-sql
+databaseType: SQLSERVER
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: sqlserver/2019
+databaseVersion: 2019
+sourceType: PLAIN_SQL
+schema: dbo
+input: ../../../../../sample-data/sqlserver/2019/03-data/02-supplementary-data.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

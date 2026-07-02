@@ -1,0 +1,11 @@
+id: sqlserver-sample-data-full-02-procedures-10-supplier-geo-procedures-sql
+databaseType: SQLSERVER
+parserTarget: SQL
+parserMode: token-event
+sourceType: PROCEDURE
+schema: dbo
+statementFormat: OBJECT_BLOCKS
+input: ../../../../sample-data/sqlserver/2025/02-procedures/10-supplier-geo-procedures.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

@@ -15,6 +15,7 @@ relation-detector/
   adaptor-mysql/
   adaptor-postgres/
   adaptor-oracle/
+  adaptor-sqlserver/
   test-fixtures/examples/
 ```
 
@@ -24,7 +25,7 @@ relation-detector/
 
 - 稳定 enum 和 adaptor API。
 - Java SPI adaptor 发现。
-- MySQL/PostgreSQL 内置成熟 adaptor；Oracle 初始 adaptor。
+- MySQL/PostgreSQL 内置成熟 adaptor；Oracle 与 SQL Server 已有 adaptor、token-event baseline 和 versioned full-grammer sample-data golden。
 - DDL 外键解析，包括 inline references、ALTER TABLE FK、复合 FK、quoted schema-qualified 名称，以及 PK/unique/index 辅助 evidence。
 - 纯 SQL 文本、MySQL 日志、PostgreSQL statement log 的 SQL 抽取。
 - SQL/DML relationship 抽取，包括 JOIN、comma rowset、EXISTS、IN/tuple IN、CTE/derived 回溯、列级/表级共现、自连接弱共现，以及 MySQL/PostgreSQL 多表 DML；Oracle 当前覆盖 portable typed subset。
@@ -514,7 +515,7 @@ sources:
 - 方言复杂 SQL 矩阵：
   - MySQL backtick、multi-table `UPDATE`、multi-table `DELETE ... LEFT JOIN`、derived table column alias、recursive CTE。
   - PostgreSQL quoted identifier、多层 CTE、`WITH RECURSIVE`、`LATERAL`、`unnest(...) WITH ORDINALITY`、`MERGE`。
-  - SQL Server `[schema].[table]`、`CROSS APPLY`、`OUTER APPLY` 先作为 disabled/future fixture。
+  - SQL Server `[schema].[table]`、`UPDATE ... FROM`、`MERGE`、inline table-valued function、trigger object block 通过 SQL Server sample-data correctness 覆盖；`CROSS APPLY`、`OUTER APPLY` 可作为后续 T-SQL 深水区 fixture 补强。
 - 复杂 SQL 的负向断言：
   - 不输出 CTE/derived table/function rowset 伪表。
   - 不把 `u.id IS NULL`、`a.closed_at IS NULL`、`status = 'PAID'` 等过滤条件当关系。
@@ -532,7 +533,7 @@ sources:
   - routine/function fixture 使用 manifest `statementFormat: OBJECT_BLOCKS`，按 `-- relation-detector-fixture-source` / `-- relation-detector-fixture-end` block 读取一个完整对象定义，不能按普通 SQL 分号拆分过程体。
   - `CorrectnessSummaryGeneratorTest` 从同一批 fixture/golden 生成 `docs/generated/correctness-test-summary.md`，报告只展示 SQL/DDL preview、input 文件路径、expected relationship/data-lineage fingerprints、warning codes 和 forbidden tables。完整 SQL/DDL 保留在对应 fixture 的 `input.sql` 或 `input.ddl.sql` 中。该测试默认跳过；验收时显式传 `-DrunGeneratedReportTests=true`，刷新时传 `-DupdateCorrectnessSummary=true`。
   - `DataLineageAuditGeneratorTest` 从全部 correctness fixture 和 `TokenEventDataLineageExtractor` 当前输出生成 `docs/parser-audit/data-lineage-full-audit.md`。该报告不是 golden 自动扩容工具，而是人工审核索引：每个 fixture 被归类为 `EXISTING_GOLD`、`SUGGESTED_GOLD`、`PENDING_REVIEW` 或 `NOT_APPLICABLE`，并列出 extractor 候选 fingerprints 和未进入 golden 的原因。该测试默认跳过；验收时显式传 `-DrunGeneratedReportTests=true`，刷新时传 `-DupdateDataLineageAudit=true`。
-  - `DialectSqlAssetHygieneTest` 扫描 MySQL / PostgreSQL / Oracle 的 `sample-data` 和 correctness SQL，阻止明显跨方言残留，例如 MySQL 资产里出现 `LANGUAGE plpgsql` / `VARCHAR2`，PostgreSQL 资产里出现 `AUTO_INCREMENT` / `ENGINE=...`，Oracle 资产里出现 `LIMIT` / `::type` / `ON DUPLICATE KEY UPDATE`。该检查只做资产卫生守门，不替代真实数据库装载或完整官方 grammar 验证。
+  - `DialectSqlAssetHygieneTest` 扫描 MySQL / PostgreSQL / Oracle / SQL Server 的 `sample-data` 和 correctness SQL，阻止明显跨方言残留，例如 MySQL 资产里出现 `LANGUAGE plpgsql` / `VARCHAR2`，PostgreSQL 资产里出现 `AUTO_INCREMENT` / `ENGINE=...`，Oracle 资产里出现 `LIMIT` / `::type` / `ON DUPLICATE KEY UPDATE`，SQL Server 资产里出现 `VARCHAR2` / `AUTO_INCREMENT` / `LANGUAGE plpgsql`。该检查只做资产卫生守门，不替代真实数据库装载或完整官方 grammar 验证。
 - MySQL/PostgreSQL/Oracle parser selection 测试必须断言 `attributes.grammar`、`attributes.lexer`、`attributes.parser` 和 `attributes.eventBuilder` 或 profile attributes，证明 adaptor 选择了自己的方言 parser/event builder。
   - fixture 的 `expected-diagnostics.json` 只记录 fixture hash 和 warning code count；不再保存 Simple/ANTLR comparison delta。
 - token-event / full-grammer 行为测试：
@@ -637,4 +638,4 @@ PostgreSQL：
 - 在现有 JUnit 5 基础上引入 AssertJ、Testcontainers 做更强断言和真实数据库集成测试。
 - 增加 Maven assembly/shade 打包，生成单个可执行发行包。
 - 扩展 MySQL/PostgreSQL/Oracle unique/index 元数据采集。
-- 按 adaptor API 增加 SQL Server 模块，并补强 Oracle runtime smoke 与官方版本边界测试。
+- 补强 SQL Server JDBC metadata/object/profile collector、Microsoft 官方逐版本 T-SQL 边界 fixture，以及 Oracle runtime smoke 与官方版本边界测试。

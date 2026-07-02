@@ -1,0 +1,13 @@
+id: sqlserver2017-sample-data-full-02-procedures-03-functions-sql
+databaseType: SQLSERVER
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: sqlserver/2017
+databaseVersion: 2017
+sourceType: FUNCTION
+schema: dbo
+statementFormat: OBJECT_BLOCKS
+input: ../../../../../sample-data/sqlserver/2017/02-procedures/03-functions.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

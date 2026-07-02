@@ -1,0 +1,27 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id",
+    "VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id",
+    "VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id",
+    "VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id",
+    "VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id",
+    "VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id",
+    "VALUE:DIRECT:dbo.products.id->inventory.product_id",
+    "VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id",
+    "VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id",
+    "VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id",
+    "VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id",
+    "VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id",
+    "VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id",
+    "VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id",
+    "VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id",
+    "VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id",
+    "VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id",
+    "VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id",
+    "VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id",
+    "VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

@@ -4,7 +4,7 @@
 
 构建一个 Java 17 + Maven 的 CLI 命令行工具，用于自动探测数据库中的表关系，并为每条关系输出置信度、证据来源和解释信息。
 
-v1 成熟支持 MySQL 和 PostgreSQL；Oracle 已接入初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammer。系统架构继续保留数据库 adaptor 扩展接口，后续可以持续补强 Oracle 官方严格 grammar，并新增 SQL Server 等数据库适配器。
+v1 成熟支持 MySQL 和 PostgreSQL；Oracle 已接入初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammer；SQL Server 已接入 adaptor、token-event baseline 和 2016/2017/2019/2022/2025 versioned full-grammer sample-data golden。系统架构继续保留数据库 adaptor 扩展接口，后续可以持续补强 Oracle 官方严格 grammar、SQL Server 官方逐版本 T-SQL 边界和真实数据库 runtime smoke。
 
 本工具同时是后续语义层系统的事实采集与证据生成子系统。更上层的 Evidence-Grounded Semantic Layer 负责把 relationship、Data Lineage、metadata、SQL source 和注释组织成可审核的业务语义对象，用于自然语言问答、SQL draft 生成和指标候选审核。整体设计见 [Evidence-Grounded Semantic Layer 整体设计](../design/semantic-layer-overall-design.md)。当前语义层仍是总体设计；v1 优先落 evidence catalog、semantic search、question plan 和 SQL draft validation outline，不替代 relation-detector 的事实判断，也不自动执行 SQL。LLM 只能基于 evidence 做语义解释、同义词扩展和问题规划，不能创造数据库事实。
 
@@ -102,6 +102,12 @@ relation-detector/
   - Oracle token-event fallback，使用 adaptor-local `OracleRelationSql.g4` typed grammar。
   - Oracle 12c/19c/21c/26ai `INCOMPLETE_VERSIONED` full-grammer profile，当前覆盖对应版本 sample-data golden、profile smoke 和首批 version-only golden，并使用各自 generated parser。
   - 当前 metadata/object collector 保守返回空；更广泛的 Oracle 官方语法覆盖和真实 Oracle runtime smoke 属于后续补强。
+
+- `adaptor-sqlserver`
+  - SQL Server adaptor。
+  - SQL Server token-event fallback，使用 adaptor-local compact `SqlServerRelationSql.g4` typed grammar。
+  - SQL Server 2016/2017/2019/2022/2025 full-grammer profile，当前覆盖对应版本 sample-data golden，并使用各自 generated parser。
+  - 当前 sample-data 使用 SQL Server 2016-compatible 保守 T-SQL 子集；Microsoft 官方逐版本 T-SQL 边界和真实 SQL Server runtime smoke 属于后续补强。
 
 - `test-fixtures`
   - 样例 schema。
@@ -664,7 +670,7 @@ confidence = 1 - product(1 - evidenceScore)
 - core 负责统一输出模型、候选合并和最终评分。
 - adaptor 可以覆盖或增强采集、解析、证据生成、权重修正。
 
-后续新增或补强数据库时，实现独立 adaptor 模块；Oracle 已有初始模块，SQL Server 仍是 future：
+后续新增或补强数据库时，实现独立 adaptor 模块；Oracle 和 SQL Server 已有初始模块：
 
 ```text
 adaptor-oracle/

@@ -1,0 +1,21 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:dbo.accounts.id->dbo.accounts.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
+    "CO_OCCURRENCE:dbo.damage_reports.id->dbo.damage_reports.id:SQL_LOG_SUBQUERY_IN",
+    "CO_OCCURRENCE:dbo.employees.id->dbo.employees.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
+    "CO_OCCURRENCE:dbo.employees.id->dbo.vouchers.posted_by:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:dbo.employees.id->dbo.vouchers.prepared_by:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:dbo.employees.id->dbo.vouchers.reviewed_by:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:dbo.product_batches.id->dbo.product_batches.id:SQL_LOG_SUBQUERY_IN",
+    "CO_OCCURRENCE:dbo.products.id->dbo.products.id:SQL_LOG_SUBQUERY_IN",
+    "CO_OCCURRENCE:dbo.vouchers.id->dbo.vouchers.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
+    "FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

@@ -1,0 +1,20 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:dbo.departments.id->dbo.departments.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
+    "CO_OCCURRENCE:dbo.employees.id->dbo.employees.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
+    "CO_OCCURRENCE:dbo.permissions.id->dbo.permissions.id:SQL_LOG_SUBQUERY_IN",
+    "CO_OCCURRENCE:dbo.positions.id->dbo.positions.id:SQL_LOG_SUBQUERY_IN",
+    "CO_OCCURRENCE:dbo.roles.id->dbo.roles.id:SQL_LOG_SUBQUERY_IN",
+    "FK_LIKE:dbo.attendance.employee_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.departments.parent_id->dbo.departments.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.employee_salary_log.employee_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.employees.department_id->dbo.departments.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.employees.manager_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.employees.position_id->dbo.positions.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.leave_records.employee_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.permissions.parent_id->dbo.permissions.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.positions.department_id->dbo.departments.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.role_permissions.role_id->dbo.roles.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

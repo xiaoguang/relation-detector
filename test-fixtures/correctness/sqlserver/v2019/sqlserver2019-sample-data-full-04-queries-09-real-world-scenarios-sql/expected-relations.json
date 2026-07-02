@@ -1,0 +1,12 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:dbo.employees.id->dbo.standard_costs.approved_by:SQL_LOG_JOIN",
+    "FK_LIKE:dbo.finished_goods_receipts.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.standard_costs.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

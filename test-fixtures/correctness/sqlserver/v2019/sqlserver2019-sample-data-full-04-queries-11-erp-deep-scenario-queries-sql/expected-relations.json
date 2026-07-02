@@ -1,0 +1,13 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:dbo.fiscal_calendar.calendar_date->dbo.sales_fact.fiscal_date:SQL_LOG_JOIN",
+    "FK_LIKE:dbo.picking_task_items.task_id->dbo.picking_tasks.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.picking_tasks.picker_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.repair_orders.customer_id->dbo.customers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.repair_orders.service_ticket_id->dbo.service_tickets.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.sales_fact.region_dim_id->dbo.region_dim.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

@@ -1,0 +1,11 @@
+id: sqlserver-sample-data-full-01-schema-03-triggers-sql
+databaseType: SQLSERVER
+parserTarget: SQL
+parserMode: token-event
+sourceType: TRIGGER
+schema: dbo
+statementFormat: OBJECT_BLOCKS
+input: ../../../../sample-data/sqlserver/2025/01-schema/03-triggers.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json
