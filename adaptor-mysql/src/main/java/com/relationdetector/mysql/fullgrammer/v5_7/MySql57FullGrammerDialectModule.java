@@ -6,6 +6,7 @@ import java.util.Set;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.mysql.fullgrammer.common.MySqlFullGrammerVersionPolicy;
 
 /**
  * MySQL 5.7 full-grammer module 注册入口。
@@ -18,12 +19,16 @@ import com.relationdetector.contracts.Enums.DatabaseType;
  * core depends only on FullGrammerDialectModule.
  */
 public final class MySql57FullGrammerDialectModule implements FullGrammerDialectModule {
-    private static final SqlGrammarProfile PROFILE = new SqlGrammarProfile(
-            "mysql-5.7",
-            DatabaseType.MYSQL,
+    private static final MySqlFullGrammerVersionPolicy POLICY = new MySqlFullGrammerVersionPolicy(
             5,
             7,
             Set.of("generated_columns", "json_basic", "multi_table_dml", "stored_routines"));
+    private static final SqlGrammarProfile PROFILE = new SqlGrammarProfile(
+            POLICY.profileId(),
+            DatabaseType.MYSQL,
+            POLICY.major(),
+            POLICY.minor(),
+            POLICY.capabilities());
 
     @Override
     public SqlGrammarProfile profile() {

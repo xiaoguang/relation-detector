@@ -1,4 +1,4 @@
-package com.relationdetector.mysql.fullgrammer.v8_0;
+package com.relationdetector.mysql.fullgrammer.v5_7;
 
 import com.relationdetector.core.fullgrammer.*;
 import java.util.ArrayList;
@@ -7,55 +7,56 @@ import java.util.Map;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CommonTableExpressionContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CaseValueExpressionContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CreateTableContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CreateTriggerContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.DeleteStatementContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.DerivedTableContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.EscapedTableReferenceContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.FieldsContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.FunctionParameterContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.InsertStatementContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.JoinedTableContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.PredicateExprInContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.PredicateContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.PrimaryExprCompareContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.ProcedureParameterContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.QuerySpecificationContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.SelectItemContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.SimpleExprSubQueryContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.SingleTableContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.TableFunctionContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.TableReferenceContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.UpdateElementContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.UpdateStatementContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.VariableDeclarationContext;
-import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParserBaseVisitor;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.CommonTableExpressionContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.CaseValueExpressionContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.CreateTableContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.CreateTriggerContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.DeleteStatementContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.DerivedTableContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.EscapedTableReferenceContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.FieldsContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.FunctionParameterContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.InsertStatementContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.JoinedTableContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.PredicateExprInContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.PredicateContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.PrimaryExprCompareContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.ProcedureParameterContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.QuerySpecificationContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.SelectItemContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.SimpleExprSubQueryContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.SingleTableContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.TableFunctionContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.TableReferenceContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.UpdateElementContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.UpdateStatementContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.VariableDeclarationContext;
+import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParserBaseVisitor;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 
 /**
- * MySQL 8.0 full-grammer SQL parse-tree visitor。
+ * MySQL 5.7 full-grammer SQL parse-tree visitor。
  *
  * <p>CN: visitor 从具体 MySQL grammar context 生成 StructuredSqlEvent。token helper
  * 仅用于 source text/location 和 identifier 读取；relationship / lineage 语义仍在 core。
  *
- * <p>EN: MySQL 8.0 full-grammer SQL parse-tree visitor. It emits
+ * <p>EN: MySQL 5.7 full-grammer SQL parse-tree visitor. It emits
  * StructuredSqlEvent records from concrete MySQL grammar contexts. Token helpers
  * are limited to source text/location and identifier reading; relationship and
  * lineage semantics remain in core.
  */
-final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVisitor<Void> {
+final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseVisitor<Void> {
     private final SqlStatementRecord statement;
     private final FullGrammerTypedSqlEventSink sink;
-    private final List<String> rowsetAliases = new ArrayList<>();
+    private final com.relationdetector.mysql.fullgrammer.common.MySqlSqlEventVisitorCore core;
     private int existsDepth;
 
-    MySqlTokenEventParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
+    MySqlFullGrammerParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
         this.statement = statement;
         this.sink = new FullGrammerTypedSqlEventSink(statement, new MySqlExpressionAnalyzer());
+        this.core = new com.relationdetector.mysql.fullgrammer.common.MySqlSqlEventVisitorCore(sink);
     }
 
     /**
@@ -67,15 +68,12 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
         if (tree != null) {
             visit(tree);
         }
-        return FullGrammerEventMerger.merge(sink.events(), FullGrammerNativeEventTypes.MYSQL_NATIVE_EVENTS);
+        return core.mergedEvents();
     }
 
     @Override
     public Void visitSingleTable(SingleTableContext ctx) {
         String table = ctx.tableRef() == null ? "" : ctx.tableRef().getText();
-        if (isPostgresOnlyRowsetSentinel(table)) {
-            return visitChildren(ctx);
-        }
         String alias = ctx.tableAlias() == null ? "" : sink.firstIdentifier(ctx.tableAlias());
         sink.rowset(ctx, "FROM", table, alias);
         rememberRowset(alias.isBlank() ? sink.baseName(table) : alias);
@@ -128,7 +126,7 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
     @Override
     public Void visitVariableDeclaration(VariableDeclarationContext ctx) {
         if (ctx.identifierList() != null) {
-            ctx.identifierList().identifier().forEach(identifier -> sink.nonColumnIdentifier(identifier.getText()));
+            ctx.identifierList().identifier().forEach(identifier -> com.relationdetector.mysql.routine.MySqlRoutineScopePolicy.markNonColumnIdentifier(sink, identifier.getText()));
         }
         return visitChildren(ctx);
     }
@@ -163,13 +161,13 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
     }
 
     private void rememberSelectIntoVariables(
-            com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.IntoClauseContext ctx
+            com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.IntoClauseContext ctx
     ) {
         if (ctx == null || ctx.OUTFILE_SYMBOL() != null || ctx.DUMPFILE_SYMBOL() != null) {
             return;
         }
-        ctx.textOrIdentifier().forEach(identifier -> sink.nonColumnIdentifier(identifier.getText()));
-        ctx.userVariable().forEach(variable -> sink.nonColumnIdentifier(variable.getText()));
+        ctx.textOrIdentifier().forEach(identifier -> com.relationdetector.mysql.routine.MySqlRoutineScopePolicy.markNonColumnIdentifier(sink, identifier.getText()));
+        ctx.userVariable().forEach(variable -> com.relationdetector.mysql.routine.MySqlRoutineScopePolicy.markNonColumnIdentifier(sink, variable.getText()));
     }
 
     @Override
@@ -342,7 +340,7 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
 
     @Override
     public Void visitCreateTable(CreateTableContext ctx) {
-        if (ctx.getText().toLowerCase(java.util.Locale.ROOT).contains("temporary") && ctx.tableName() != null) {
+        if (com.relationdetector.mysql.routine.MySqlRoutineScopePolicy.isTemporaryTableDeclaration(ctx.getText()) && ctx.tableName() != null) {
             sink.localTempTable(ctx, ctx.tableName().getText());
         }
         return visitChildren(ctx);
@@ -472,22 +470,15 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
         if (ctx == null || ctx.parameterName() == null || ctx.parameterName().identifier() == null) {
             return;
         }
-        sink.nonColumnIdentifier(ctx.parameterName().identifier().getText());
+        com.relationdetector.mysql.routine.MySqlRoutineScopePolicy.markNonColumnIdentifier(sink, ctx.parameterName().identifier().getText());
     }
 
     private void rememberRowset(String aliasOrTable) {
-        String clean = sink.clean(aliasOrTable);
-        if (!clean.isBlank()) {
-            rowsetAliases.add(clean);
-        }
+        core.rememberRowset(aliasOrTable);
     }
 
     private String lastRowsetAlias() {
-        return rowsetAliases.isEmpty() ? "" : rowsetAliases.get(rowsetAliases.size() - 1);
-    }
-
-    private boolean isPostgresOnlyRowsetSentinel(String rawTableRef) {
-        return "ONLY".equalsIgnoreCase(rawTableRef) || "ROWS".equalsIgnoreCase(rawTableRef);
+        return core.lastRowsetAlias();
     }
 
     private ColumnParts columnParts(String raw) {
