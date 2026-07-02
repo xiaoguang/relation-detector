@@ -1,5 +1,7 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "VALUE:DIRECT:accounts.id->orders.audit_account_id"
+  ],
   "forbiddenSources": [
     "p_input_ledger_json",
     "p_max_limit_cap",

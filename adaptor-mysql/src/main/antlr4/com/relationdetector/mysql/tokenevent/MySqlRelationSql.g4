@@ -31,11 +31,11 @@ statement
     ;
 
 unknownStatement
-    : sqlToken+
+    : ~SEMI+
     ;
 
 routineStartStatement
-    : CREATE routineHeaderToken* BEGIN
+    : CREATE (OR REPLACE)? (PROCEDURE | FUNCTION | TRIGGER) routineHeaderToken* BEGIN
     ;
 
 routineHeaderToken
@@ -186,7 +186,7 @@ insertSelectStatement
     ;
 
 updateStatement
-    : UPDATE tableReference (COMMA tableReference)* SET assignmentList whereClause?
+    : withClause? UPDATE tableReference (COMMA tableReference)* SET assignmentList whereClause?
     ;
 
 assignmentList
@@ -316,6 +316,11 @@ columnDefinitionParenToken
     | NEQ
     | EQ
     | AS
+    | CASE
+    | WHEN
+    | THEN
+    | ELSE
+    | END
     | BY
     | ON
     | UPDATE

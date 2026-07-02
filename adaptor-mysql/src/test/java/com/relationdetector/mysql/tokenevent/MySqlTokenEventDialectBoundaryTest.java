@@ -6,11 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
 
@@ -219,6 +221,86 @@ class MySqlTokenEventDialectBoundaryTest {
     }
 
     @Test
+    void mysqlLineageVisitorOwnsCteUpdateJoinAssignment() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                WITH candidate_orders(order_id, user_id) AS (
+                  SELECT o.id, o.user_id
+                  FROM orders AS o
+                  JOIN users AS u ON o.user_id = u.id
+                ),
+                candidate_accounts(user_id, account_id) AS (
+                  SELECT co.user_id, u.account_id
+                  FROM candidate_orders AS co
+                  JOIN users AS u ON co.user_id = u.id
+                )
+                UPDATE orders AS target
+                JOIN candidate_orders AS co ON target.id = co.order_id
+                JOIN candidate_accounts AS ca ON co.user_id = ca.user_id
+                JOIN accounts AS a ON ca.account_id = a.id
+                SET target.audit_account_id = a.id
+                """, StatementSourceType.PLAIN_SQL, "mysql-cte-update.sql", 1, 1, java.util.Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        java.util.Set<String> fingerprints = new TokenEventDataLineageExtractor().extract(statement, structured).stream()
+                .map(this::fingerprint)
+                .collect(java.util.stream.Collectors.toSet());
+
+        assertTrue(fingerprints.contains("VALUE:DIRECT:accounts.id->orders.audit_account_id"),
+                () -> "MySQL token-event should resolve physical source lineage through WITH UPDATE JOIN: "
+                        + fingerprints);
+    }
+
+    @Test
+    void mysqlLineageVisitorOwnsUpdateJoinDerivedCteAssignment() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                UPDATE account_balances ab
+                INNER JOIN (
+                    WITH user_financial_snapshot AS (
+                        SELECT
+                            t.user_id,
+                            GROUP_CONCAT(DISTINCT t.merchant_category ORDER BY t.merchant_category SEPARATOR '; ')
+                                AS primary_categories
+                        FROM transaction_ledgers t
+                        GROUP BY t.user_id
+                    ),
+                    dormant_risk_scores AS (
+                        SELECT
+                            u.id AS user_id,
+                            u.country_code,
+                            snap.primary_categories
+                        FROM users u
+                        INNER JOIN user_financial_snapshot snap ON u.id = snap.user_id
+                    )
+                    SELECT
+                        drs.user_id,
+                        drs.country_code,
+                        drs.primary_categories
+                    FROM dormant_risk_scores drs
+                ) AS drs_engine ON ab.user_id = drs_engine.user_id
+                SET
+                    ab.compliance_notes = LOWER(CONCAT(
+                        'Country: ', drs_engine.country_code,
+                        ' | Cats: ', drs_engine.primary_categories
+                    )),
+                    ab.adjusted_limit = ab.max_credit_limit * 0.8
+                """, StatementSourceType.PROCEDURE, "mysql-update-join-derived-cte.sql", 1, 1, java.util.Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        java.util.Set<String> fingerprints = new TokenEventDataLineageExtractor().extract(statement, structured).stream()
+                .map(this::fingerprint)
+                .collect(java.util.stream.Collectors.toSet());
+
+        assertTrue(fingerprints.contains(
+                "VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.merchant_category->account_balances.compliance_notes"),
+                () -> "MySQL token-event should resolve UPDATE JOIN derived CTE lineage: "
+                        + fingerprints + " events=" + structured.events() + " attrs=" + structured.attributes());
+        assertTrue(fingerprints.contains(
+                "VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit"),
+                () -> "MySQL token-event should preserve target self-source arithmetic: "
+                        + fingerprints + " events=" + structured.events() + " attrs=" + structured.attributes());
+    }
+
+    @Test
     void mysqlRelationVisitorKeepsJoinsWhenSelectListContainsMysqlAggregateOptions() {
         java.util.List<RelationshipCandidate> relations = mysqlRelations("""
                 SELECT
@@ -293,5 +375,14 @@ class MySqlTokenEventDialectBoundaryTest {
                 forbidden.contains(relation.source().table().tableName().toLowerCase(java.util.Locale.ROOT))
                         || forbidden.contains(relation.target().table().tableName().toLowerCase(java.util.Locale.ROOT))),
                 () -> "Forbidden rowset modifiers must not become physical tables: " + relations);
+    }
+
+    private String fingerprint(DataLineageCandidate lineage) {
+        return lineage.flowKind() + ":"
+                + lineage.transformType() + ":"
+                + lineage.sources().stream()
+                        .map(com.relationdetector.contracts.model.Endpoint::displayName)
+                        .collect(java.util.stream.Collectors.joining(","))
+                + "->" + lineage.target().displayName();
     }
 }

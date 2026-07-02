@@ -9,10 +9,10 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 | Classification | Count |
 | --- | ---: |
 | TOTAL | 763 |
-| EXISTING_GOLD | 196 |
+| EXISTING_GOLD | 211 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 567 |
+| NOT_APPLICABLE | 552 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -2213,8 +2213,8 @@ SELECT departments.id
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -2223,7 +2223,73 @@ SELECT departments.id
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:DIRECT:accounts.id->cashier_journals.account_id`
+- `VALUE:DIRECT:accounts.id->cashier_journals.id`
+- `VALUE:DIRECT:accounts.id->reconciliations.account_id`
+- `VALUE:DIRECT:accounts.id->reconciliations.id`
+- `VALUE:DIRECT:approval_workflows.id->approval_instances.id`
+- `VALUE:DIRECT:approval_workflows.id->approval_instances.workflow_id`
+- `VALUE:DIRECT:customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:customers.id->sales_orders.id`
+- `VALUE:DIRECT:customers.id->service_tickets.customer_id`
+- `VALUE:DIRECT:customers.id->service_tickets.id`
+- `VALUE:DIRECT:departments.id->departments.id`
+- `VALUE:DIRECT:departments.id->departments.parent_id`
+- `VALUE:DIRECT:departments.id->employees.department_id`
+- `VALUE:DIRECT:departments.id->employees.id`
+- `VALUE:DIRECT:departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:departments.id->purchase_requisitions.id`
+- `VALUE:DIRECT:employees.id->attendance.employee_id`
+- `VALUE:DIRECT:employees.id->attendance.id`
+- `VALUE:DIRECT:employees.id->audit_log.id`
+- `VALUE:DIRECT:employees.id->contracts.id`
+- `VALUE:DIRECT:employees.id->contracts.prepared_by`
+- `VALUE:DIRECT:employees.id->customers.id`
+- `VALUE:DIRECT:employees.id->departments.id`
+- `VALUE:DIRECT:employees.id->inventory.id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.id`
+- `VALUE:DIRECT:employees.id->products.id`
+- `VALUE:DIRECT:employees.id->purchase_orders.id`
+- `VALUE:DIRECT:employees.id->sales_orders.id`
+- `VALUE:DIRECT:employees.id->suppliers.id`
+- `VALUE:DIRECT:employees.id->tax_filings.id`
+- `VALUE:DIRECT:employees.id->tax_filings.prepared_by`
+- `VALUE:DIRECT:employees.id->vouchers.id`
+- `VALUE:DIRECT:employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:employees.id->warehouses.id`
+- `VALUE:DIRECT:employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:invoices.id->three_way_matching.id`
+- `VALUE:DIRECT:invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:ledger_books.id->accounting_periods.id`
+- `VALUE:DIRECT:ledger_books.id->accounting_periods.ledger_book_id`
+- `VALUE:DIRECT:product_categories.id->products.category_id`
+- `VALUE:DIRECT:product_categories.id->products.id`
+- `VALUE:DIRECT:products.id->inventory.id`
+- `VALUE:DIRECT:products.id->inventory.product_id`
+- `VALUE:DIRECT:products.id->serial_numbers.id`
+- `VALUE:DIRECT:products.id->serial_numbers.product_id`
+- `VALUE:DIRECT:promotion_products.promotion_id->promotions.id`
+- `VALUE:DIRECT:purchase_orders.id->purchase_returns.id`
+- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:sales_orders.customer_id->customers.id`
+- `VALUE:DIRECT:sales_orders.id->sales_returns.id`
+- `VALUE:DIRECT:sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:supplier_products.supplier_id->suppliers.id`
+- `VALUE:DIRECT:suppliers.id->purchase_orders.id`
+- `VALUE:DIRECT:suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:vouchers.id->settlements.id`
+- `VALUE:DIRECT:vouchers.id->settlements.voucher_id`
+- `VALUE:DIRECT:warehouses.id->damage_reports.id`
+- `VALUE:DIRECT:warehouses.id->damage_reports.warehouse_id`
+- `VALUE:DIRECT:warehouses.id->stock_transfers.from_warehouse_id`
+- `VALUE:DIRECT:warehouses.id->stock_transfers.id`
+- `VALUE:DIRECT:warehouses.id->stocktakes.id`
+- `VALUE:DIRECT:warehouses.id->stocktakes.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -2824,8 +2890,8 @@ WHERE
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `MYSQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -2834,7 +2900,7 @@ WHERE
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:DIRECT:accounts.id->orders.audit_account_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -15440,8 +15506,8 @@ DECLARE
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -15450,7 +15516,9 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
 
@@ -15473,8 +15541,8 @@ WITH user_financial_snapshot AS (
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -15483,7 +15551,9 @@ WITH user_financial_snapshot AS (
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
 
@@ -15736,8 +15806,8 @@ WHERE isc.snapshot_id = i.id
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -15746,7 +15816,7 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -15769,8 +15839,8 @@ fraud_orders AS (
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -15779,7 +15849,7 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -16404,8 +16474,8 @@ SELECT
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -16414,7 +16484,7 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -19580,8 +19650,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -19590,7 +19660,11 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
+- `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
 **Extractor Candidate Fingerprints**
 
@@ -19684,8 +19758,8 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -19694,7 +19768,11 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -19792,9 +19870,11 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
+- `VALUE:AGGREGATE:purchase_return_items.return_qty,purchase_order_items.received_qty->supplier_products.return_rate`
 
 **Extractor Candidate Fingerprints**
 
@@ -19872,6 +19952,7 @@ DECLARE
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -19893,12 +19974,15 @@ DECLARE
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
 - `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
 - `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
@@ -19924,6 +20008,10 @@ DECLARE
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
 - `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
@@ -22621,8 +22709,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -22631,7 +22719,11 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
+- `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
 **Extractor Candidate Fingerprints**
 
@@ -22725,8 +22817,8 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -22735,7 +22827,11 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -22833,9 +22929,11 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
+- `VALUE:AGGREGATE:purchase_return_items.return_qty,purchase_order_items.received_qty->supplier_products.return_rate`
 
 **Extractor Candidate Fingerprints**
 
@@ -22913,6 +23011,7 @@ DECLARE
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -22934,12 +23033,15 @@ DECLARE
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
 - `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
 - `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
@@ -22965,6 +23067,10 @@ DECLARE
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
 - `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
@@ -25626,8 +25732,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -25636,7 +25742,11 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
+- `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
 **Extractor Candidate Fingerprints**
 
@@ -25730,8 +25840,8 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -25740,7 +25850,11 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -25838,9 +25952,11 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
+- `VALUE:AGGREGATE:purchase_return_items.return_qty,purchase_order_items.received_qty->supplier_products.return_rate`
 
 **Extractor Candidate Fingerprints**
 
@@ -25918,6 +26034,7 @@ DECLARE
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -25939,12 +26056,15 @@ DECLARE
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
 - `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
 - `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
@@ -25970,6 +26090,10 @@ DECLARE
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
 - `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
@@ -26387,8 +26511,8 @@ BEGIN
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -26397,7 +26521,11 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- None
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
+- `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
 **Extractor Candidate Fingerprints**
 
@@ -26491,8 +26619,8 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `POSTGRESQL` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -26501,7 +26629,11 @@ CREATE OR REPLACE PROCEDURE sp_create_shipment(
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -26599,9 +26731,11 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
+- `VALUE:AGGREGATE:purchase_return_items.return_qty,purchase_order_items.received_qty->supplier_products.return_rate`
 
 **Extractor Candidate Fingerprints**
 
@@ -26679,6 +26813,7 @@ DECLARE
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
@@ -26700,12 +26835,15 @@ DECLARE
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
 - `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
 - `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
@@ -26731,6 +26869,10 @@ DECLARE
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
 - `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`

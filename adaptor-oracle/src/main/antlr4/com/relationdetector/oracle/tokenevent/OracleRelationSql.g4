@@ -29,11 +29,12 @@ statement
     | createIndexStatement SEMI?
     | commentStatement SEMI?
     | unknownStatement SEMI?
+    | SLASH
     | SEMI
     ;
 
 unknownStatement
-    : sqlToken+
+    : ~(SEMI | SLASH)+
     ;
 
 routineStartStatement
@@ -68,11 +69,15 @@ controlStartStatement
     ;
 
 selectStatement
-    : withClause? querySpecification
+    : withClause? querySpecification setOperation*
     ;
 
 withClause
     : WITH commonTableExpression (COMMA commonTableExpression)*
+    ;
+
+setOperation
+    : (UNION ALL? | INTERSECT | EXCEPT) querySpecification
     ;
 
 commonTableExpression
@@ -140,19 +145,21 @@ withOrdinality
 
 looseToken
     : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
-    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE | IS
-    | USING | GROUP | BY | HAVING | ORDER | LIMIT | INSERT | INTO | UPDATE
+    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | BETWEEN | LIKE | ESCAPE | IS
+    | USING | GROUP | BY | HAVING | ORDER | LIMIT | ASC | DESC | NULLS | FIRST | LAST | INSERT | INTO | UPDATE
     | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | IF | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
+    | DATE | CURRENT_DATE | CURRENT_TIMESTAMP | SYSTIMESTAMP
+    | UNION | ALL | INTERSECT | EXCEPT | FETCH | FIRST | ASC | DESC | NULLS | LAST
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
     | PARAMETER | DOT | COMMA | STAR | EQ | LBRACKET | RBRACKET | PLUS
     | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | OTHER
     ;
 
 joinClause
-    : joinType? JOIN tablePrimary (ON predicate | USING LPAREN identifierList RPAREN usingAlias?)
+    : joinType? JOIN tablePrimary (ON predicate | USING LPAREN identifierList RPAREN usingAlias?)?
     ;
 
 joinType
@@ -180,15 +187,20 @@ havingClause
     ;
 
 orderByClause
-    : ORDER BY expression (COMMA expression)*
+    : ORDER BY orderByItem (COMMA orderByItem)*
+    ;
+
+orderByItem
+    : expression (ASC | DESC)? (NULLS (FIRST | LAST))?
     ;
 
 limitClause
     : LIMIT NUMBER
+    | FETCH FIRST NUMBER ROWS ONLY
     ;
 
 insertSelectStatement
-    : INSERT INTO qualifiedName LPAREN identifierList RPAREN selectStatement
+    : INSERT INTO qualifiedName LPAREN identifierList RPAREN selectStatement returningClause?
     ;
 
 updateStatement
@@ -290,6 +302,11 @@ columnDefinitionToken
     : identifier
     | NOT
     | literal
+    | DATE
+    | CURRENT_DATE
+    | CURRENT_TIMESTAMP
+    | SYSTIMESTAMP
+    | INTERVAL
     | LPAREN columnDefinitionParenToken* RPAREN
     | STAR
     | PLUS
@@ -310,7 +327,15 @@ columnDefinitionToken
 columnDefinitionParenToken
     : identifier
     | NOT
+    | AND
+    | OR
+    | IS
     | literal
+    | DATE
+    | CURRENT_DATE
+    | CURRENT_TIMESTAMP
+    | SYSTIMESTAMP
+    | INTERVAL
     | COMMA
     | DOT
     | STAR
@@ -325,6 +350,11 @@ columnDefinitionParenToken
     | NEQ
     | EQ
     | AS
+    | CASE
+    | WHEN
+    | THEN
+    | ELSE
+    | END
     | BY
     | ON
     | UPDATE
@@ -398,6 +428,7 @@ predicate
     | expression NOT? IN LPAREN selectStatement RPAREN                    # inSubqueryPredicate
     | LPAREN expressionList RPAREN NOT? IN LPAREN selectStatement RPAREN  # tupleInSubqueryPredicate
     | expression NOT? IN LPAREN expressionList RPAREN                     # literalInPredicate
+    | expression NOT? BETWEEN expression AND expression                    # betweenPredicate
     | expression likeOperator expression (ESCAPE expression)?             # likePredicate
     | expression IS NOT? NULL                                           # isNullPredicate
     | expression comparisonOperator expression                            # comparisonPredicate
@@ -421,6 +452,7 @@ comparisonOperator
 
 expression
     : expression arithmeticOperator expression                            # binaryExpression
+    | MINUS expression                                                    # unaryExpression
     | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
     | functionCall windowClause?                                          # functionExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
@@ -477,6 +509,7 @@ identifier
     | QUOTED_IDENTIFIER
     | COMMENT
     | COLUMN
+    | REPLACE
     ;
 
 literal
@@ -486,12 +519,17 @@ literal
     | FALSE
     | NULL
     | PARAMETER
+    | DATE STRING_LITERAL
+    | INTERVAL STRING_LITERAL identifier
+    | CURRENT_DATE
+    | CURRENT_TIMESTAMP
+    | SYSTIMESTAMP
     ;
 
 sqlToken
     : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
-    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE | IS
-    | USING | GROUP | BY | HAVING | ORDER | LIMIT | INSERT | INTO | UPDATE
+    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | BETWEEN | LIKE | ESCAPE | IS
+    | USING | GROUP | BY | HAVING | ORDER | LIMIT | ASC | DESC | NULLS | FIRST | LAST | INSERT | INTO | UPDATE
     | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | DO | NOTHING
     | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE
@@ -499,6 +537,8 @@ sqlToken
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
+    | DATE | CURRENT_DATE | CURRENT_TIMESTAMP | SYSTIMESTAMP | INTERVAL
+    | UNION | ALL | INTERSECT | EXCEPT | FETCH | FIRST | ASC | DESC | NULLS | LAST
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
     | PARAMETER | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | LBRACKET | RBRACKET | PLUS
     | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | OTHER
@@ -506,6 +546,10 @@ sqlToken
 
 SELECT: S E L E C T;
 WITH: W I T H;
+UNION: U N I O N;
+ALL: A L L;
+INTERSECT: I N T E R S E C T;
+EXCEPT: E X C E P T;
 AS: A S;
 FROM: F R O M;
 JOIN: J O I N;
@@ -523,6 +567,7 @@ OR: O R;
 NOT: N O T;
 EXISTS: E X I S T S;
 IN: I N;
+BETWEEN: B E T W E E N;
 IS: I S;
 LIKE: L I K E;
 ESCAPE: E S C A P E;
@@ -531,6 +576,12 @@ BY: B Y;
 HAVING: H A V I N G;
 ORDER: O R D E R;
 LIMIT: L I M I T;
+FETCH: F E T C H;
+FIRST: F I R S T;
+ASC: A S C;
+DESC: D E S C;
+NULLS: N U L L S;
+LAST: L A S T;
 INSERT: I N S E R T;
 INTO: I N T O;
 UPDATE: U P D A T E;
@@ -588,6 +639,11 @@ DISTINCT: D I S T I N C T;
 TRUE: T R U E;
 FALSE: F A L S E;
 NULL: N U L L;
+DATE: D A T E;
+CURRENT_DATE: C U R R E N T '_' D A T E;
+CURRENT_TIMESTAMP: C U R R E N T '_' T I M E S T A M P;
+SYSTIMESTAMP: S Y S T I M E S T A M P;
+INTERVAL: I N T E R V A L;
 
 DOT: '.';
 COMMA: ',';

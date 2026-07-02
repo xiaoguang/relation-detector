@@ -18,11 +18,13 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
+import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.core.fullgrammer.FullGrammerDialectModule;
 import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.relation.TokenEventSqlRelationParser;
 import com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule;
 
 class OracleAdaptorParserTest {
@@ -178,6 +180,241 @@ class OracleAdaptorParserTest {
     }
 
     @Test
+    void oracleTokenEventUsesOuterExpressionKindForLineageTransform() {
+        var parser = new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow();
+        var statement = statement("""
+                INSERT INTO sales_commissions (commission_amount, bonus)
+                SELECT
+                    ROUND(soi.amount * COALESCE(cr.commission_rate, 0.02), 2),
+                    COALESCE(cr.bonus, 0)
+                FROM sales_order_items soi
+                LEFT JOIN commission_rules cr ON cr.product_category_id = soi.product_id;
+
+                MERGE INTO budget_items bi
+                USING (
+                    SELECT
+                        vi.account_id AS subject_id,
+                        SUM(CASE WHEN vi.direction = 'debit' THEN vi.amount ELSE 0 END) AS used_amount
+                    FROM voucher_items vi
+                    GROUP BY vi.account_id
+                ) src
+                ON (src.subject_id = bi.subject_id)
+                WHEN MATCHED THEN UPDATE SET
+                    used_amount = src.used_amount;
+
+                INSERT INTO reconciliation_items (description)
+                SELECT cj.journal_type || ' - ' || COALESCE(cj.counterparty, '')
+                FROM cashier_journals cj
+
+                INSERT INTO employees (department_id, position_id, salary)
+                SELECT d.id, pos.id, pos.base_salary
+                FROM departments d
+                JOIN positions pos ON pos.id = p_position_id
+                WHERE d.id = p_department_id
+                RETURNING id INTO v_employee_id
+                """);
+        var result = parser.parseSql(statement, null);
+
+        assertEquals(0, result.attributes().get("syntaxErrors"));
+        Set<String> lineages = lineage(statement, result);
+        assertTrue(lineages.contains("VALUE:ARITHMETIC:sales_order_items.amount,"
+                + "commission_rules.commission_rate->sales_commissions.commission_amount"),
+                () -> lineages.toString());
+        assertTrue(lineages.contains("VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus"),
+                () -> lineages.toString());
+        assertTrue(lineages.contains("VALUE:AGGREGATE:voucher_items.direction,"
+                + "voucher_items.amount->budget_items.used_amount"), () -> lineages.toString());
+        assertTrue(lineages.contains("VALUE:CONCAT_FORMAT:cashier_journals.journal_type,"
+                + "cashier_journals.counterparty->reconciliation_items.description"), () -> lineages.toString());
+        assertTrue(lineages.contains("VALUE:DIRECT:departments.id->employees.department_id"),
+                () -> "lineages=" + lineages + " events=" + result.events());
+        assertTrue(lineages.contains("VALUE:DIRECT:positions.id->employees.position_id"),
+                () -> lineages.toString());
+        assertTrue(lineages.contains("VALUE:DIRECT:positions.base_salary->employees.salary"),
+                () -> lineages.toString());
+    }
+
+    @Test
+    void oracleTokenEventProcedureBlockParsesInsertSelectReturningLineage() {
+        var parser = new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow();
+        var statement = statement(oracleFixtureObject("ROUTINE:oracle.sp_onboard_employee_full"));
+        var result = parser.parseSql(statement, null);
+
+        assertEquals(0, result.attributes().get("syntaxErrors"));
+        Set<String> lineages = lineage(statement, result);
+        assertTrue(lineages.contains("VALUE:DIRECT:departments.id->employees.department_id"),
+                () -> "lineages=" + lineages + " events=" + result.events());
+        assertTrue(lineages.contains("VALUE:DIRECT:positions.id->employees.position_id"),
+                () -> lineages.toString());
+        assertTrue(lineages.contains("VALUE:DIRECT:positions.base_salary->employees.salary"),
+                () -> lineages.toString());
+    }
+
+    @Test
+    void oracleTokenEventDeepScenarioProcedureBlockParsesMrpAndApInsertLineage() {
+        var parser = new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow();
+        Set<String> lineages = List.of(
+                        "ROUTINE:oracle.sp_run_mrp_for_plan",
+                        "ROUTINE:oracle.sp_create_ap_invoice_from_purchase_order")
+                .stream()
+                .flatMap(sourceName -> {
+                    var statement = statement(oracleFixtureObject(sourceName));
+                    var result = parser.parseSql(statement, null);
+                    assertEquals(0, result.attributes().get("syntaxErrors"),
+                            sourceName + " should parse without syntax errors: " + result.events());
+                    return lineage(statement, result).stream();
+                })
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        assertTrue(lineages.contains("VALUE:DIRECT:production_plans.id->mrp_runs.plan_id"),
+                () -> lineages.toString());
+        assertTrue(lineages.contains("VALUE:CONCAT_FORMAT:production_plans.plan_month,"
+                + "production_plans.id->mrp_runs.run_no"), () -> lineages.toString());
+        assertTrue(lineages.contains("VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id"),
+                () -> lineages.toString());
+        assertTrue(lineages.contains("VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id"),
+                () -> lineages.toString());
+        assertTrue(lineages.contains("VALUE:COALESCE:purchase_orders.actual_delivery_date,"
+                + "purchase_orders.order_date->ap_invoices.invoice_date"), () -> lineages.toString());
+        assertTrue(lineages.contains("CONTROL:CASE_WHEN:purchase_orders.paid_amount,"
+                + "purchase_orders.total_amount->ap_invoices.status"), () -> lineages.toString());
+    }
+
+    @Test
+    void oracleTokenEventParsesOracleInsertSelectReturningShape() {
+        var parser = new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow();
+        var statement = statement("""
+                INSERT INTO employees (
+                    employee_no, name, birth_date, hire_date, department_id, position_id, salary
+                )
+                SELECT
+                    p_employee_no,
+                    p_name,
+                    DATE '1990-01-01',
+                    CURRENT_DATE,
+                    d.id,
+                    pos.id,
+                    pos.base_salary
+                FROM departments d
+                JOIN positions pos ON pos.id = p_position_id
+                WHERE d.id = p_department_id
+                RETURNING id INTO v_employee_id;
+                """);
+        var result = parser.parseSql(statement, null);
+
+        assertEquals(0, result.attributes().get("syntaxErrors"));
+        Set<String> lineages = lineage(statement, result);
+        assertTrue(lineages.contains("VALUE:DIRECT:departments.id->employees.department_id"),
+                () -> "lineages=" + lineages + " events=" + result.events());
+        assertTrue(lineages.contains("VALUE:DIRECT:positions.id->employees.position_id"),
+                () -> lineages.toString());
+        assertTrue(lineages.contains("VALUE:DIRECT:positions.base_salary->employees.salary"),
+                () -> lineages.toString());
+    }
+
+    @Test
+    void oracleTokenEventParsesCteUnionAllAndFetchFirstJoinPredicates() {
+        SqlStatementRecord statement = statement("""
+                WITH current_month AS (
+                    SELECT soi.product_id
+                    FROM sales_order_items soi
+                    JOIN sales_orders so ON soi.order_id = so.id
+                    GROUP BY soi.product_id
+                ),
+                last_month AS (
+                    SELECT soi.product_id
+                    FROM sales_order_items soi
+                    JOIN sales_orders so ON soi.order_id = so.id
+                    GROUP BY soi.product_id
+                ),
+                combined_products AS (
+                    SELECT product_id FROM current_month
+                    UNION ALL
+                    SELECT product_id FROM last_month
+                )
+                SELECT *
+                FROM combined_products cp
+                JOIN products p ON cp.product_id = p.id
+                FETCH FIRST 20 ROWS ONLY
+                """);
+
+        var structured = new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow().parseSql(statement, null);
+        java.util.List<RelationshipCandidate> relations =
+                new TokenEventSqlRelationParser(new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow())
+                        .parse(statement);
+        java.util.Set<String> fingerprints = relations.stream()
+                .map(relation -> relation.relationType() + ":"
+                        + relation.source().displayName() + "->"
+                        + relation.target().displayName())
+                .collect(Collectors.toSet());
+
+        assertTrue(fingerprints.contains("CO_OCCURRENCE:sales_order_items.order_id->sales_orders.id"),
+                () -> "CTE UNION ALL member SELECT joins should be parsed: fingerprints=" + fingerprints
+                        + " events=" + structured.events() + " relations=" + relations);
+        assertTrue(fingerprints.contains("CO_OCCURRENCE:sales_order_items.product_id->products.id")
+                        || fingerprints.contains("CO_OCCURRENCE:products.id->sales_order_items.product_id"),
+                () -> "CTE projection should resolve through FETCH FIRST query join: fingerprints=" + fingerprints
+                        + " events=" + structured.events() + " relations=" + relations);
+    }
+
+    @Test
+    void oracleTokenEventParsesCteBeforeCrossJoinWithoutOnClause() {
+        SqlStatementRecord statement = statement("""
+                WITH promo_orders AS (
+                    SELECT pu.promotion_id, SUM(so.total_amount) AS promo_total_sales
+                    FROM promotion_usages pu
+                    JOIN promotions p ON pu.promotion_id = p.id
+                    JOIN sales_orders so ON pu.order_id = so.id
+                    GROUP BY pu.promotion_id
+                ),
+                baseline_sales AS (
+                    SELECT po.promotion_id, AVG(daily.daily_sales) AS avg_daily_sales
+                    FROM promo_orders po
+                    CROSS JOIN (
+                        SELECT so.order_date, SUM(so.total_amount) AS daily_sales
+                        FROM sales_orders so
+                        GROUP BY so.order_date
+                    ) daily
+                    GROUP BY po.promotion_id
+                )
+                SELECT po.promotion_id, bs.avg_daily_sales
+                FROM promo_orders po
+                LEFT JOIN baseline_sales bs ON po.promotion_id = bs.promotion_id
+                """);
+
+        Set<String> fingerprints = relationFingerprints(statement);
+
+        assertTrue(fingerprints.contains("CO_OCCURRENCE:promotion_usages.promotion_id->promotions.id")
+                        || fingerprints.contains("CO_OCCURRENCE:promotions.id->promotion_usages.promotion_id"),
+                () -> "Oracle token-event should not let CROSS JOIN hide previous CTE joins: " + fingerprints);
+        assertTrue(fingerprints.contains("CO_OCCURRENCE:promotion_usages.order_id->sales_orders.id")
+                        || fingerprints.contains("CO_OCCURRENCE:sales_orders.id->promotion_usages.order_id"),
+                () -> "Oracle token-event should expose order predicate before CROSS JOIN: " + fingerprints);
+    }
+
+    @Test
+    void oracleTokenEventResolvesUnqualifiedInSubquerySelectColumn() {
+        SqlStatementRecord statement = statement("""
+                SELECT po.order_no
+                FROM purchase_orders po
+                WHERE po.purchaser_id IN (
+                    SELECT id
+                    FROM employees
+                    WHERE manager_id = (
+                        SELECT manager_id FROM warehouses WHERE id = 1
+                    )
+                )
+                """);
+
+        Set<String> fingerprints = relationFingerprints(statement);
+
+        assertTrue(fingerprints.contains("CO_OCCURRENCE:purchase_orders.purchaser_id->employees.id")
+                        || fingerprints.contains("CO_OCCURRENCE:employees.id->purchase_orders.purchaser_id"),
+                () -> "Oracle token-event should resolve unqualified SELECT id to employees.id: "
+                        + fingerprints);
+    }
+
+    @Test
     void oracleFullGrammerMergeUpdateEmitsLineageMappingsForEveryVersion() {
         List<FullGrammerDialectModule> modules = List.of(
                 new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
@@ -264,7 +501,7 @@ class OracleAdaptorParserTest {
                     () -> module.profile().id() + " " + lineages);
             assertTrue(lineages.contains("VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id"),
                     () -> module.profile().id() + " " + lineages);
-            assertTrue(lineages.contains("VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty"),
+            assertTrue(lineages.contains("VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty"),
                     () -> module.profile().id() + " " + lineages);
             assertTrue(lineages.contains("VALUE:ARITHMETIC:inventory.quantity->inventory.quantity"),
                     () -> module.profile().id() + " " + lineages);
@@ -350,6 +587,15 @@ class OracleAdaptorParserTest {
         return new TokenEventDataLineageExtractor().extract(statement, result).stream()
                 .map(this::lineageFingerprint)
                 .collect(Collectors.toCollection(java.util.TreeSet::new));
+    }
+
+    private Set<String> relationFingerprints(SqlStatementRecord statement) {
+        return new TokenEventSqlRelationParser(new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow())
+                .parse(statement).stream()
+                .map(relation -> relation.relationType() + ":"
+                        + relation.source().displayName() + "->"
+                        + relation.target().displayName())
+                .collect(Collectors.toSet());
     }
 
     private String lineageFingerprint(DataLineageCandidate lineage) {

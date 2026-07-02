@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.relationdetector.contracts.Enums.LineageFlowKind;
@@ -38,6 +39,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     private final Set<String> cteNames = new LinkedHashSet<>();
     private final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
     private final ArrayDeque<String> joinKinds = new ArrayDeque<>();
+    private final ArrayDeque<String> ddlTables = new ArrayDeque<>();
     private final ArrayDeque<QueryScope> queryScopes = new ArrayDeque<>();
     private int existsDepth;
 
@@ -95,6 +97,8 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             }
             if (!projectionOwners.isEmpty()) {
                 emitProjectionItems(ctx.selectList(), projectionOwners.peek());
+            } else {
+                visit(ctx.selectList());
             }
         } finally {
             queryScopes.pop();
@@ -198,10 +202,25 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         if (!"=".equals(ctx.comparisonOperator().getText())) {
             return visitChildren(ctx);
         }
-        ColumnRead left = singleColumn(ctx.expression(0));
-        ColumnRead right = singleColumn(ctx.expression(1));
+        emitColumnEquality(ctx.expression(0), ctx.expression(1), ctx);
+        return null;
+    }
+
+    @Override
+    public Void visitIsNotDistinctPredicate(PostgresRelationSqlParser.IsNotDistinctPredicateContext ctx) {
+        emitColumnEquality(ctx.expression(0), ctx.expression(1), ctx);
+        return null;
+    }
+
+    private void emitColumnEquality(
+            PostgresRelationSqlParser.ExpressionContext leftExpression,
+            PostgresRelationSqlParser.ExpressionContext rightExpression,
+            ParserRuleContext ctx
+    ) {
+        ColumnRead left = singleColumn(leftExpression);
+        ColumnRead right = singleColumn(rightExpression);
         if (left == null || right == null) {
-            return visitChildren(ctx);
+            return;
         }
         Map<String, Object> attrs = attrs();
         attrs.put("leftAlias", left.alias());
@@ -212,7 +231,6 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         add(existsDepth > 0 ? StructuredParseEventType.EXISTS_PREDICATE : StructuredParseEventType.PREDICATE_EQUALITY,
                 ctx,
                 attrs);
-        return null;
     }
 
     @Override
@@ -273,6 +291,12 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     @Override
+    public Void visitScalarSubqueryExpression(PostgresRelationSqlParser.ScalarSubqueryExpressionContext ctx) {
+        visit(ctx.selectStatement());
+        return null;
+    }
+
+    @Override
     public Void visitInsertSelectStatement(PostgresRelationSqlParser.InsertSelectStatementContext ctx) {
         String targetTable = qualifiedName(ctx.qualifiedName());
         List<String> targetColumns = ctx.identifierList().identifier().stream()
@@ -306,6 +330,9 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
 
     @Override
     public Void visitUpdateStatement(PostgresRelationSqlParser.UpdateStatementContext ctx) {
+        if (ctx.withClause() != null) {
+            visit(ctx.withClause());
+        }
         visit(ctx.tablePrimary());
         String targetAlias = targetAlias(ctx.tablePrimary());
         String targetTable = targetTable(ctx.tablePrimary());
@@ -346,6 +373,9 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
 
     @Override
     public Void visitMergeStatement(PostgresRelationSqlParser.MergeStatementContext ctx) {
+        if (ctx.withClause() != null) {
+            visit(ctx.withClause());
+        }
         PostgresRelationSqlParser.TablePrimaryContext target = ctx.tablePrimary(0);
         PostgresRelationSqlParser.TablePrimaryContext source = ctx.tablePrimary(1);
         visit(target);
@@ -369,6 +399,93 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             } else if (action instanceof PostgresRelationSqlParser.MergeInsertActionContext insertAction) {
                 emitMergeInsertMappings(insertAction, targetAlias, targetTable);
             }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitCreateTableStatement(PostgresRelationSqlParser.CreateTableStatementContext ctx) {
+        ddlTables.push(qualifiedName(ctx.qualifiedName()));
+        for (PostgresRelationSqlParser.TableElementContext element : ctx.tableElement()) {
+            visit(element);
+        }
+        ddlTables.pop();
+        return null;
+    }
+
+    @Override
+    public Void visitAlterTableStatement(PostgresRelationSqlParser.AlterTableStatementContext ctx) {
+        ddlTables.push(qualifiedName(ctx.qualifiedName()));
+        visit(ctx.tableForeignKey());
+        ddlTables.pop();
+        return null;
+    }
+
+    @Override
+    public Void visitTableForeignKey(PostgresRelationSqlParser.TableForeignKeyContext ctx) {
+        String sourceTable = currentDdlTable();
+        List<String> sourceColumns = identifiers(ctx.identifierList(0));
+        String targetTable = qualifiedName(ctx.qualifiedName());
+        List<String> targetColumns = identifiers(ctx.identifierList(1));
+        addForeignKeyEvents(sourceTable, sourceColumns, targetTable, targetColumns, ctx);
+        return null;
+    }
+
+    @Override
+    public Void visitPrimaryKeyConstraint(PostgresRelationSqlParser.PrimaryKeyConstraintContext ctx) {
+        for (String column : identifiers(ctx.identifierList())) {
+            addIndexEvent(currentDdlTable(), column, "TARGET_UNIQUE", "PRIMARY_KEY", ctx);
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitUniqueConstraint(PostgresRelationSqlParser.UniqueConstraintContext ctx) {
+        for (String column : identifiers(ctx.identifierList())) {
+            addIndexEvent(currentDdlTable(), column, "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", ctx);
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitTableIndexConstraint(PostgresRelationSqlParser.TableIndexConstraintContext ctx) {
+        for (String column : safeIndexColumns(ctx.indexPartList())) {
+            addIndexEvent(currentDdlTable(), column, "SOURCE_INDEX", "CREATE_TABLE_INDEX", ctx);
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitColumnDefinition(PostgresRelationSqlParser.ColumnDefinitionContext ctx) {
+        String table = currentDdlTable();
+        String column = clean(ctx.identifier().getText());
+        for (PostgresRelationSqlParser.ColumnDefinitionPartContext part : ctx.columnDefinitionPart()) {
+            PostgresRelationSqlParser.InlineColumnConstraintContext constraint = part.inlineColumnConstraint();
+            if (constraint == null) {
+                continue;
+            }
+            if (constraint.PRIMARY() != null) {
+                addIndexEvent(table, column, "TARGET_UNIQUE", "INLINE_PRIMARY_KEY", constraint);
+            } else if (constraint.UNIQUE() != null) {
+                addIndexEvent(table, column, "TARGET_UNIQUE", "INLINE_UNIQUE", constraint);
+            } else if (constraint.REFERENCES() != null) {
+                addForeignKeyEvents(table,
+                        List.of(column),
+                        qualifiedName(constraint.qualifiedName()),
+                        identifiers(constraint.identifierList()),
+                        constraint);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitCreateIndexStatement(PostgresRelationSqlParser.CreateIndexStatementContext ctx) {
+        String table = qualifiedName(ctx.qualifiedName());
+        String role = ctx.UNIQUE() == null ? "SOURCE_INDEX" : "TARGET_UNIQUE";
+        String kind = ctx.UNIQUE() == null ? "CREATE_INDEX" : "CREATE_UNIQUE_INDEX";
+        for (String column : safeIndexColumns(ctx.indexPartList())) {
+            addIndexEvent(table, column, role, kind, ctx);
         }
         return null;
     }
@@ -467,19 +584,24 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     private List<ColumnRead> selectColumns(PostgresRelationSqlParser.SelectStatementContext select) {
-        List<PostgresRelationSqlParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
-        List<ColumnRead> columns = new ArrayList<>();
-        for (PostgresRelationSqlParser.SelectItemContext item : items) {
-            if (item.expression() == null) {
-                return List.of();
+        queryScopes.push(scopeFor(select.querySpecification()));
+        try {
+            List<PostgresRelationSqlParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
+            List<ColumnRead> columns = new ArrayList<>();
+            for (PostgresRelationSqlParser.SelectItemContext item : items) {
+                if (item.expression() == null) {
+                    return List.of();
+                }
+                ColumnRead column = singleColumn(item.expression());
+                if (column == null) {
+                    return List.of();
+                }
+                columns.add(column);
             }
-            ColumnRead column = singleColumn(item.expression());
-            if (column == null) {
-                return List.of();
-            }
-            columns.add(column);
+            return columns;
+        } finally {
+            queryScopes.pop();
         }
-        return columns;
     }
 
     private ColumnRead singleColumn(PostgresRelationSqlParser.ExpressionContext expression) {
@@ -507,6 +629,9 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         if (expression instanceof PostgresRelationSqlParser.ParenExpressionContext paren) {
             return analyze(paren.expression());
         }
+        if (expression instanceof PostgresRelationSqlParser.CastExpressionContext cast) {
+            return analyze(cast.expression());
+        }
         if (expression instanceof PostgresRelationSqlParser.BinaryExpressionContext binary) {
             ExpressionAnalysis left = analyze(binary.expression(0));
             ExpressionAnalysis right = analyze(binary.expression(1));
@@ -522,6 +647,12 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
                     args = ExpressionAnalysis.combine(args.transform(), args.flowKind(), args, analyze(argument));
                 }
             }
+            if (function.windowClause() != null) {
+                args = ExpressionAnalysis.combine(args.transform(),
+                        args.flowKind(),
+                        args,
+                        analyzeWindowClause(function.windowClause()));
+            }
             String functionName = baseName(qualifiedName(function.functionCall().qualifiedName())).toLowerCase(Locale.ROOT);
             boolean windowed = function.windowClause() != null;
             LineageTransformType transform = switch (functionName) {
@@ -536,6 +667,12 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
                     ? LineageFlowKind.CONTROL
                     : LineageFlowKind.VALUE;
             return new ExpressionAnalysis(args.sources(), dominant, flowKind);
+        }
+        if (expression instanceof PostgresRelationSqlParser.ExtractExpressionContext extract) {
+            ExpressionAnalysis source = analyze(extract.expression());
+            return new ExpressionAnalysis(source.sources(),
+                    ExpressionAnalysis.dominant(LineageTransformType.FUNCTION_CALL, source.transform()),
+                    source.flowKind());
         }
         if (expression instanceof PostgresRelationSqlParser.CaseExpressionContext caseExpression) {
             ExpressionAnalysis combined = ExpressionAnalysis.empty();
@@ -562,7 +699,52 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         if (expression instanceof PostgresRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
             return analyzeScalarSubquery(scalarSubquery.selectStatement());
         }
+        if (expression instanceof PostgresRelationSqlParser.ArrayExpressionContext arrayExpression) {
+            ExpressionAnalysis combined = ExpressionAnalysis.empty();
+            if (arrayExpression.expressionList() != null) {
+                for (PostgresRelationSqlParser.ExpressionContext item : arrayExpression.expressionList().expression()) {
+                    combined = ExpressionAnalysis.combine(combined.transform(), combined.flowKind(), combined, analyze(item));
+                }
+            }
+            return combined;
+        }
         return ExpressionAnalysis.empty();
+    }
+
+    private ExpressionAnalysis analyzeWindowClause(PostgresRelationSqlParser.WindowClauseContext windowClause) {
+        List<String> tokens = new ArrayList<>();
+        collectLeafText(windowClause, tokens);
+        List<ColumnRead> columns = new ArrayList<>();
+        for (int index = 0; index + 2 < tokens.size(); index++) {
+            if (!".".equals(tokens.get(index + 1))) {
+                continue;
+            }
+            String alias = clean(tokens.get(index));
+            String column = clean(tokens.get(index + 2));
+            if (alias.isBlank() || column.isBlank()) {
+                continue;
+            }
+            columns.add(new ColumnRead(alias, column));
+        }
+        if (columns.isEmpty()) {
+            return ExpressionAnalysis.empty();
+        }
+        return new ExpressionAnalysis(columns.stream().distinct().toList(),
+                LineageTransformType.WINDOW_DERIVED,
+                LineageFlowKind.VALUE);
+    }
+
+    private void collectLeafText(ParseTree tree, List<String> tokens) {
+        if (tree instanceof TerminalNode terminal) {
+            String text = terminal.getText();
+            if (text != null && !text.isBlank()) {
+                tokens.add(text);
+            }
+            return;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            collectLeafText(tree.getChild(index), tokens);
+        }
     }
 
     private ExpressionAnalysis analyzeScalarSubquery(PostgresRelationSqlParser.SelectStatementContext select) {
@@ -628,6 +810,9 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
                         analyze(likePredicate.expression(2)));
             }
             return combined;
+        }
+        if (predicate instanceof PostgresRelationSqlParser.IsNullPredicateContext isNullPredicate) {
+            return analyze(isNullPredicate.expression());
         }
         if (predicate instanceof PostgresRelationSqlParser.LiteralInPredicateContext literalInPredicate) {
             ExpressionAnalysis combined = analyze(literalInPredicate.expression());
@@ -780,6 +965,62 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         return dot < 0 ? qualified : qualified.substring(dot + 1);
     }
 
+    private String currentDdlTable() {
+        return ddlTables.isEmpty() ? "" : ddlTables.peek();
+    }
+
+    private List<String> identifiers(PostgresRelationSqlParser.IdentifierListContext ctx) {
+        if (ctx == null) {
+            return List.of();
+        }
+        return ctx.identifier().stream().map(identifier -> clean(identifier.getText())).toList();
+    }
+
+    private List<String> safeIndexColumns(PostgresRelationSqlParser.IndexPartListContext ctx) {
+        if (ctx == null) {
+            return List.of();
+        }
+        List<String> columns = new ArrayList<>();
+        for (PostgresRelationSqlParser.IndexPartContext part : ctx.indexPart()) {
+            if (part.identifier() != null) {
+                columns.add(clean(part.identifier().getText()));
+            }
+        }
+        return columns;
+    }
+
+    private void addForeignKeyEvents(
+            String sourceTable,
+            List<String> sourceColumns,
+            String targetTable,
+            List<String> targetColumns,
+            ParserRuleContext ctx
+    ) {
+        int count = Math.min(sourceColumns.size(), targetColumns.size());
+        for (int index = 0; index < count; index++) {
+            Map<String, Object> attrs = attrs();
+            attrs.put("sourceTable", sourceTable);
+            attrs.put("sourceColumn", sourceColumns.get(index));
+            attrs.put("targetTable", targetTable);
+            attrs.put("targetColumn", targetColumns.get(index));
+            attrs.put("compositePosition", index + 1);
+            attrs.put("compositeSize", count);
+            add(StructuredParseEventType.DDL_FOREIGN_KEY, ctx, attrs);
+        }
+    }
+
+    private void addIndexEvent(String table, String column, String role, String kind, ParserRuleContext ctx) {
+        if (table.isBlank() || column.isBlank()) {
+            return;
+        }
+        Map<String, Object> attrs = attrs();
+        attrs.put("table", table);
+        attrs.put("column", column);
+        attrs.put("role", role);
+        attrs.put("kind", kind);
+        add(StructuredParseEventType.DDL_INDEX, ctx, attrs);
+    }
+
     private String currentJoinKind() {
         return joinKinds.isEmpty() ? "WHERE_OR_UNKNOWN" : joinKinds.peek();
     }
@@ -809,6 +1050,26 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             return;
         }
         queryScopes.peek().rowsetAliases().add(alias);
+    }
+
+    private QueryScope scopeFor(PostgresRelationSqlParser.QuerySpecificationContext query) {
+        QueryScope scope = new QueryScope();
+        if (query == null || query.fromClause() == null) {
+            return scope;
+        }
+        for (PostgresRelationSqlParser.TableReferenceContext reference : query.fromClause().tableReference()) {
+            addScopeAlias(scope, rowsetAlias(reference.tablePrimary()));
+            for (PostgresRelationSqlParser.JoinClauseContext join : reference.joinClause()) {
+                addScopeAlias(scope, rowsetAlias(join.tablePrimary()));
+            }
+        }
+        return scope;
+    }
+
+    private void addScopeAlias(QueryScope scope, String alias) {
+        if (alias != null && !alias.isBlank()) {
+            scope.rowsetAliases().add(alias);
+        }
     }
 
     private String defaultColumnAlias() {

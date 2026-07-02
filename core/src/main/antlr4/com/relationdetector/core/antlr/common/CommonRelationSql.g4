@@ -15,7 +15,12 @@ script
     ;
 
 statement
-    : selectStatement SEMI?
+    : routineStartStatement
+    | blockStartStatement SEMI?
+    | blockEndStatement SEMI?
+    | declarationStatement SEMI?
+    | controlStartStatement
+    | selectStatement SEMI?
     | insertSelectStatement SEMI?
     | updateStatement SEMI?
     | deleteStatement SEMI?
@@ -27,7 +32,38 @@ statement
     ;
 
 unknownStatement
-    : sqlToken+
+    : ~SEMI+
+    ;
+
+routineStartStatement
+    : CREATE (OR REPLACE)? (PROCEDURE | FUNCTION | TRIGGER) routineHeaderToken* BEGIN ATOMIC?
+    ;
+
+routineHeaderToken
+    : ~BEGIN
+    ;
+
+blockStartStatement
+    : BEGIN ATOMIC?
+    ;
+
+blockEndStatement
+    : END (IF | LOOP | WHILE | REPEAT)?
+    ;
+
+declarationStatement
+    : DECLARE ~SEMI+
+    ;
+
+controlStartStatement
+    : IF ~THEN* THEN
+    | ELSEIF ~THEN* THEN
+    | ELSE
+    | WHILE ~DO* DO
+    | FOR ~LOOP* LOOP
+    | identifier OTHER LOOP
+    | LOOP
+    | REPEAT
     ;
 
 selectStatement
@@ -219,6 +255,11 @@ columnDefinitionParenToken
     | NEQ
     | EQ
     | AS
+    | CASE
+    | WHEN
+    | THEN
+    | ELSE
+    | END
     | BY
     | ON
     | UPDATE
@@ -399,7 +440,9 @@ sqlToken
     | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE
     | USING | GROUP | BY | HAVING | ORDER | LIMIT | INSERT | INTO | UPDATE
     | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
-    | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | IF | ADD | CONSTRAINT
+    | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | ATOMIC
+    | IF | ELSEIF | WHILE | DO | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION
+    | TRIGGER | REPLACE | FOR | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | NUMBER
     | PARAMETER | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | PLUS
@@ -442,7 +485,20 @@ ALTER: A L T E R;
 TABLE: T A B L E;
 TEMPORARY: T E M P O R A R Y;
 UNLOGGED: U N L O G G E D;
+BEGIN: B E G I N;
+ATOMIC: A T O M I C;
 IF: I F;
+ELSEIF: E L S E I F;
+WHILE: W H I L E;
+DO: D O;
+LOOP: L O O P;
+REPEAT: R E P E A T;
+DECLARE: D E C L A R E;
+PROCEDURE: P R O C E D U R E;
+FUNCTION: F U N C T I O N;
+TRIGGER: T R I G G E R;
+REPLACE: R E P L A C E;
+FOR: F O R;
 ADD: A D D;
 CONSTRAINT: C O N S T R A I N T;
 FOREIGN: F O R E I G N;

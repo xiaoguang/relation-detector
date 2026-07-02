@@ -362,6 +362,9 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
 
     @Override
     public Void visitUpdateStatement(MySqlRelationSqlParser.UpdateStatementContext ctx) {
+        if (ctx.withClause() != null) {
+            visit(ctx.withClause());
+        }
         for (MySqlRelationSqlParser.TableReferenceContext tableReference : ctx.tableReference()) {
             visit(tableReference);
         }

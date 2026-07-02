@@ -1,7 +1,10 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:account_subjects.subject_code->accounts.code:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:boms.child_product_id->inventory.product_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:boms.child_product_id->inventory_reservations.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:boms.child_product_id->supplier_products.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:budget_items.period_code->vouchers.voucher_date:SQL_LOG_JOIN",
     "CO_OCCURRENCE:category_dim.source_category_id->products.category_id:SQL_LOG_JOIN",
@@ -13,6 +16,8 @@
     "CO_OCCURRENCE:inventory.batch_id->repair_order_parts.batch_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:inventory.product_id->repair_order_parts.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:inventory.warehouse_id->repair_order_parts.issued_from_warehouse_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:inventory_cost_layers.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:inventory_cost_layers.product_id->sales_order_items.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:inventory_location_balances.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:inventory_location_balances.location_id->picking_task_items.location_id:SQL_LOG_JOIN",
@@ -24,6 +29,7 @@
     "CO_OCCURRENCE:work_orders.id->work_orders.id:SQL_LOG_JOIN",
     "FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_EXISTS,NAMING_MATCH",
+    "FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:master_data_change_requests.master_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",

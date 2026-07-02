@@ -20,10 +20,10 @@ class DataLineageAuditGeneratorTest {
 
         assertTrue(markdown.contains("# Data Lineage Full Audit"));
         assertTrue(markdown.contains("| TOTAL | 763 |"));
-        assertTrue(markdown.contains("| EXISTING_GOLD | 196 |"));
+        assertTrue(markdown.contains("| EXISTING_GOLD | 211 |"));
         assertTrue(markdown.contains("| SUGGESTED_GOLD | 0 |"));
         assertTrue(markdown.contains("| PENDING_REVIEW | 0 |"));
-        assertTrue(markdown.contains("| NOT_APPLICABLE | 567 |"));
+        assertTrue(markdown.contains("| NOT_APPLICABLE | 552 |"));
         assertTrue(markdown.contains("| Classification | `EXISTING_GOLD` |"));
         assertTrue(markdown.contains("| Classification | `NOT_APPLICABLE` |"));
         assertTrue(markdown.contains("mysql-user-spending-left-join-update-sql"));

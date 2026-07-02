@@ -98,6 +98,25 @@ class CommonTokenEventStructuredSqlParserTest {
     }
 
     @Test
+    void commonParserEntersPortableRoutineWrapperForLineage() {
+        SqlStatementRecord statement = statement("""
+                CREATE PROCEDURE sp_approve_sales_return()
+                BEGIN ATOMIC
+                  INSERT INTO sales_returns (id, order_id)
+                  SELECT sales_orders.id, sales_orders.id
+                  FROM sales_orders;
+                END;
+                """);
+
+        Set<String> fingerprints = lineage(statement, parser.parseSql(statement, null));
+
+        assertTrue(fingerprints.contains(
+                "VALUE:DIRECT:sales_orders.id->sales_returns.id"));
+        assertTrue(fingerprints.contains(
+                "VALUE:DIRECT:sales_orders.id->sales_returns.order_id"));
+    }
+
+    @Test
     void commonParserDoesNotTreatLiteralInOrLikeAsRelationships() {
         SqlStatementRecord statement = statement("""
                 SELECT c.id

@@ -1,8 +1,10 @@
 {
   "fingerprints": [
+    "CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score",
     "VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty",
     "VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count",
-    "VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date"
+    "VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date",
+    "VALUE:AGGREGATE:purchase_return_items.return_qty,purchase_order_items.received_qty->supplier_products.return_rate"
   ],
   "forbiddenSources": [],
   "forbiddenTargets": [],

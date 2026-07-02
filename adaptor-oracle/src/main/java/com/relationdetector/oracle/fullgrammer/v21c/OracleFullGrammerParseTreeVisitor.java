@@ -610,11 +610,11 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
         if (text.startsWith("sum(") || text.startsWith("avg(") || text.startsWith("count(") || text.startsWith("min(") || text.startsWith("max(")) {
             return LineageTransformType.AGGREGATE;
         }
-        if (text.startsWith("coalesce(") || text.startsWith("nvl(")) {
-            return LineageTransformType.COALESCE;
-        }
         if (text.contains("+") || text.contains("-") || text.contains("*") || text.contains("/")) {
             return LineageTransformType.ARITHMETIC;
+        }
+        if (text.startsWith("coalesce(") || text.startsWith("nvl(")) {
+            return LineageTransformType.COALESCE;
         }
         return LineageTransformType.DIRECT;
     }

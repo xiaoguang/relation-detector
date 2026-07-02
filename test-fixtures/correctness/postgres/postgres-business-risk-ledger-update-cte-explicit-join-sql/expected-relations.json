@@ -1,5 +1,8 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "FK_LIKE:order_ledgers.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
   "forbiddenTables": [
     "active_users",
     "fraud_orders",

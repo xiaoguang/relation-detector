@@ -518,6 +518,9 @@ public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineBo
                     : LineageTransformType.ARITHMETIC;
             return ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE, left, right);
         }
+        if (expression instanceof PostgresRoutineBodySqlParser.TypeCastExpressionContext cast) {
+            return analyze(cast.expression());
+        }
         if (expression instanceof PostgresRoutineBodySqlParser.FunctionExpressionContext function) {
             ExpressionAnalysis args = ExpressionAnalysis.empty();
             if (function.functionCall().expressionList() != null) {

@@ -34,11 +34,11 @@ statement
     ;
 
 unknownStatement
-    : sqlToken+
+    : ~SEMI+
     ;
 
 routineStartStatement
-    : CREATE routineHeaderToken* BEGIN
+    : CREATE (OR REPLACE)? (PROCEDURE | FUNCTION | TRIGGER) routineHeaderToken* BEGIN
     ;
 
 routineHeaderToken
@@ -147,9 +147,10 @@ looseToken
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | IF | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
+    | INTERVAL
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
     | PARAMETER | DOT | COMMA | STAR | EQ | LBRACKET | RBRACKET | PLUS
-    | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | OTHER
+    | MINUS | SLASH | PERCENT | CONCAT | TYPE_CAST | LT | GT | LE | GE | NEQ | OTHER
     ;
 
 joinClause
@@ -412,9 +413,11 @@ comparisonOperator
 
 expression
     : expression arithmeticOperator expression                            # binaryExpression
+    | expression TYPE_CAST typeName                                       # typeCastExpression
     | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
     | functionCall windowClause?                                          # functionExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
+    | INTERVAL STRING_LITERAL                                             # intervalLiteralExpression
     | qualifiedName                                                       # columnExpression
     | literal                                                             # literalExpression
     | LPAREN expression RPAREN                                            # parenExpression
@@ -426,6 +429,10 @@ caseWhenClause
 
 functionCall
     : qualifiedName LPAREN (DISTINCT? expressionList | STAR)? functionCallOption* RPAREN
+    ;
+
+typeName
+    : qualifiedName (LPAREN NUMBER (COMMA NUMBER)? RPAREN)?
     ;
 
 windowClause
@@ -488,9 +495,10 @@ sqlToken
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
+    | INTERVAL
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
     | PARAMETER | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | LBRACKET | RBRACKET | PLUS
-    | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | OTHER
+    | MINUS | SLASH | PERCENT | CONCAT | TYPE_CAST | LT | GT | LE | GE | NEQ | OTHER
     ;
 
 SELECT: S E L E C T;
@@ -574,6 +582,7 @@ DISTINCT: D I S T I N C T;
 TRUE: T R U E;
 FALSE: F A L S E;
 NULL: N U L L;
+INTERVAL: I N T E R V A L;
 
 DOT: '.';
 COMMA: ',';
@@ -589,6 +598,7 @@ MINUS: '-';
 SLASH: '/';
 PERCENT: '%';
 CONCAT: '||';
+TYPE_CAST: '::';
 LE: '<=';
 GE: '>=';
 NEQ: '<>' | '!=';

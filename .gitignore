@@ -3,3 +3,8 @@ target/
 .DS_Store
 test-fixtures/local/
 亿问/
+mysql80-sample-data-provenance.ttl
+mysql80-sample-data-rdf-summary.json
+mysql80-sample-data-rdf.ttl
+mysql80-sample-data-readable-triples.ttl
+Semantica*.md

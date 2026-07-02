@@ -33,7 +33,6 @@
     "FK_LIKE:case_01.rnc_accession_sequence_feature.rnc_sequence_feature_id->rnc_sequence_features.rnc_sequence_features_id:DDL_FOREIGN_KEY",
     "FK_LIKE:case_01.rnc_accession_sequence_region.accession->rnc_accessions.accession:DDL_FOREIGN_KEY",
     "FK_LIKE:case_01.rnc_accession_sequence_region.region_id->rnc_sequence_regions.id:DDL_FOREIGN_KEY,SOURCE_INDEX",
-    "FK_LIKE:case_01.rnc_accessions.rna_type->ontology_terms.ontology_term_id:DDL_FOREIGN_KEY",
     "FK_LIKE:case_01.rnc_database_references.dbid->rnc_database.id:DDL_FOREIGN_KEY",
     "FK_LIKE:case_01.rnc_database_references.reference_id->rnc_references.id:DDL_FOREIGN_KEY",
     "FK_LIKE:case_01.rnc_feedback_overlap.assembly_id->ensembl_assembly.assembly_id:DDL_FOREIGN_KEY",

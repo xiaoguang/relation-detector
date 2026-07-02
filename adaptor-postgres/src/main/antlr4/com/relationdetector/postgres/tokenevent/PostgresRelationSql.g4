@@ -32,11 +32,11 @@ statement
     ;
 
 unknownStatement
-    : sqlToken+
+    : ~SEMI+
     ;
 
 routineStartStatement
-    : CREATE routineHeaderToken* BEGIN
+    : CREATE (OR REPLACE)? (PROCEDURE | FUNCTION | TRIGGER) routineHeaderToken* BEGIN
     ;
 
 routineHeaderToken
@@ -67,11 +67,15 @@ controlStartStatement
     ;
 
 selectStatement
-    : withClause? querySpecification
+    : withClause? querySpecification setOperation*
     ;
 
 withClause
-    : WITH commonTableExpression (COMMA commonTableExpression)*
+    : WITH RECURSIVE? commonTableExpression (COMMA commonTableExpression)*
+    ;
+
+setOperation
+    : (UNION ALL? | INTERSECT | EXCEPT) querySpecification
     ;
 
 commonTableExpression
@@ -139,19 +143,20 @@ withOrdinality
 
 looseToken
     : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
-    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE
-    | USING | GROUP | BY | HAVING | ORDER | LIMIT | INSERT | INTO | UPDATE
-    | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
+    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | BETWEEN | LIKE | ESCAPE | IS
+    | USING | GROUP | BY | HAVING | ORDER | LIMIT | ASC | DESC | NULLS | FIRST | LAST | INSERT | INTO | UPDATE
+    | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | EXTRACT | INTERVAL | ARRAY | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | IF | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
+    | RECURSIVE | UNION | ALL | INTERSECT | EXCEPT
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
-    | PARAMETER | DOT | COMMA | STAR | EQ | LBRACKET | RBRACKET | PLUS
-    | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | OTHER
+    | PARAMETER | TYPECAST | DOT | COMMA | STAR | EQ | LBRACKET | RBRACKET | PLUS
+    | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | CONTAINS | OTHER
     ;
 
 joinClause
-    : joinType? JOIN tablePrimary (ON predicate | USING LPAREN identifierList RPAREN usingAlias?)
+    : joinType? JOIN tablePrimary (ON predicate | USING LPAREN identifierList RPAREN usingAlias?)?
     ;
 
 joinType
@@ -179,7 +184,11 @@ havingClause
     ;
 
 orderByClause
-    : ORDER BY expression (COMMA expression)*
+    : ORDER BY orderByItem (COMMA orderByItem)*
+    ;
+
+orderByItem
+    : expression (ASC | DESC)? (NULLS (FIRST | LAST))?
     ;
 
 limitClause
@@ -191,7 +200,7 @@ insertSelectStatement
     ;
 
 updateStatement
-    : UPDATE tablePrimary SET assignmentList fromClause? whereClause?
+    : withClause? UPDATE tablePrimary SET assignmentList fromClause? whereClause?
     ;
 
 assignmentList
@@ -207,7 +216,7 @@ deleteStatement
     ;
 
 mergeStatement
-    : MERGE INTO tablePrimary USING tablePrimary ON predicate mergeWhenClause+ returningClause?
+    : withClause? MERGE INTO tablePrimary USING tablePrimary ON predicate mergeWhenClause+ returningClause?
     ;
 
 mergeWhenClause
@@ -309,6 +318,9 @@ columnDefinitionToken
 columnDefinitionParenToken
     : identifier
     | NOT
+    | AND
+    | OR
+    | IS
     | literal
     | COMMA
     | DOT
@@ -324,6 +336,11 @@ columnDefinitionParenToken
     | NEQ
     | EQ
     | AS
+    | CASE
+    | WHEN
+    | THEN
+    | ELSE
+    | END
     | BY
     | ON
     | UPDATE
@@ -385,11 +402,14 @@ predicate
     | predicate OR predicate                                              # orPredicate
     | NOT predicate                                                       # notPredicate
     | EXISTS LPAREN selectStatement RPAREN                                # existsPredicate
-    | expression IN LPAREN selectStatement RPAREN                         # inSubqueryPredicate
-    | LPAREN expressionList RPAREN IN LPAREN selectStatement RPAREN       # tupleInSubqueryPredicate
-    | expression IN LPAREN expressionList RPAREN                          # literalInPredicate
+    | expression NOT? IN LPAREN selectStatement RPAREN                    # inSubqueryPredicate
+    | LPAREN expressionList RPAREN NOT? IN LPAREN selectStatement RPAREN  # tupleInSubqueryPredicate
+    | expression NOT? IN LPAREN expressionList RPAREN                     # literalInPredicate
+    | expression NOT? BETWEEN expression AND expression                    # betweenPredicate
     | expression likeOperator expression (ESCAPE expression)?             # likePredicate
+    | expression IS NOT? DISTINCT FROM expression                         # isNotDistinctPredicate
     | expression comparisonOperator expression                            # comparisonPredicate
+    | expression IS NOT? NULL                                             # isNullPredicate
     | LPAREN predicate RPAREN                                             # parenPredicate
     | expression                                                          # expressionPredicate
     ;
@@ -406,13 +426,18 @@ comparisonOperator
     | LE
     | GE
     | NEQ
+    | CONTAINS
     ;
 
 expression
-    : expression arithmeticOperator expression                            # binaryExpression
+    : expression TYPECAST qualifiedName                                   # castExpression
+    | expression arithmeticOperator expression                            # binaryExpression
     | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
+    | EXTRACT LPAREN identifier FROM expression RPAREN                    # extractExpression
     | functionCall windowClause?                                          # functionExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
+    | INTERVAL STRING_LITERAL                                             # intervalLiteralExpression
+    | ARRAY LBRACKET expressionList? RBRACKET                             # arrayExpression
     | qualifiedName                                                       # columnExpression
     | literal                                                             # literalExpression
     | LPAREN expression RPAREN                                            # parenExpression
@@ -477,22 +502,28 @@ literal
 
 sqlToken
     : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
-    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE
-    | USING | GROUP | BY | HAVING | ORDER | LIMIT | INSERT | INTO | UPDATE
+    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | BETWEEN | LIKE | ESCAPE | IS
+    | USING | GROUP | BY | HAVING | ORDER | LIMIT | ASC | DESC | NULLS | FIRST | LAST | INSERT | INTO | UPDATE
     | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | DO | NOTHING
     | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
+    | EXTRACT | INTERVAL | ARRAY
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
-    | PARAMETER | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | LBRACKET | RBRACKET | PLUS
-    | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | OTHER
+    | PARAMETER | TYPECAST | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | LBRACKET | RBRACKET | PLUS
+    | MINUS | SLASH | PERCENT | CONCAT | LT | GT | LE | GE | NEQ | CONTAINS | OTHER
     ;
 
 SELECT: S E L E C T;
 WITH: W I T H;
+RECURSIVE: R E C U R S I V E;
+UNION: U N I O N;
+ALL: A L L;
+INTERSECT: I N T E R S E C T;
+EXCEPT: E X C E P T;
 AS: A S;
 FROM: F R O M;
 JOIN: J O I N;
@@ -510,13 +541,20 @@ OR: O R;
 NOT: N O T;
 EXISTS: E X I S T S;
 IN: I N;
+BETWEEN: B E T W E E N;
 LIKE: L I K E;
 ESCAPE: E S C A P E;
+IS: I S;
 GROUP: G R O U P;
 BY: B Y;
 HAVING: H A V I N G;
 ORDER: O R D E R;
 LIMIT: L I M I T;
+ASC: A S C;
+DESC: D E S C;
+NULLS: N U L L S;
+FIRST: F I R S T;
+LAST: L A S T;
 INSERT: I N S E R T;
 INTO: I N T O;
 UPDATE: U P D A T E;
@@ -569,6 +607,9 @@ THEN: T H E N;
 ELSE: E L S E;
 END: E N D;
 DISTINCT: D I S T I N C T;
+EXTRACT: E X T R A C T;
+INTERVAL: I N T E R V A L;
+ARRAY: A R R A Y;
 TRUE: T R U E;
 FALSE: F A L S E;
 NULL: N U L L;
@@ -587,6 +628,8 @@ MINUS: '-';
 SLASH: '/';
 PERCENT: '%';
 CONCAT: '||';
+TYPECAST: '::';
+CONTAINS: '@>';
 LE: '<=';
 GE: '>=';
 NEQ: '<>' | '!=';

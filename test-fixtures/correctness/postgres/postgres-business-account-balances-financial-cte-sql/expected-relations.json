@@ -1,5 +1,9 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "CO_OCCURRENCE:account_balances.region_code->global_compliance_policies.region_code:SQL_LOG_JOIN",
+    "FK_LIKE:account_balances.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:transaction_ledgers.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
   "forbiddenTables": [
     "user_financial_snapshot",
     "dormant_risk_scores",

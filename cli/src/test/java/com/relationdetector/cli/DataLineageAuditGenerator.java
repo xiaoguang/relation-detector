@@ -18,17 +18,24 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.relationdetector.contracts.model.DataLineageCandidate;
+import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
+import com.relationdetector.contracts.spi.AdaptorContext;
+import com.relationdetector.contracts.spi.DatabaseAdaptor;
+import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.core.parser.ParserBundleSelector;
 import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
 import com.relationdetector.core.lineage.DataLineageMerger;
 import com.relationdetector.core.log.PlainSqlLogExtractor;
-import com.relationdetector.mysql.tokenevent.MySqlTokenEventStructuredSqlParser;
-import com.relationdetector.oracle.tokenevent.OracleTokenEventStructuredSqlParser;
-import com.relationdetector.postgres.tokenevent.PostgresTokenEventStructuredSqlParser;
+import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.tokenevent.CommonTokenEventStructuredSqlParser;
+import com.relationdetector.mysql.MySqlDatabaseAdaptor;
+import com.relationdetector.oracle.OracleDatabaseAdaptor;
+import com.relationdetector.postgres.PostgresDatabaseAdaptor;
 
 /**
  * Generates the human-review audit for Data Lineage correctness fixtures.
@@ -167,6 +174,11 @@ final class DataLineageAuditGenerator {
             StatementSourceType sourceType = StatementSourceType.valueOf(values.getOrDefault("sourceType", "PLAIN_SQL"));
             String statementFormat = values.getOrDefault("statementFormat", "SEMICOLON");
             String objectSourceFilter = values.getOrDefault("objectSourceFilter", "");
+            String structuredParser = values.getOrDefault("structuredParser", "");
+            String parserMode = values.getOrDefault("parserMode", "auto");
+            String grammarProfile = values.getOrDefault("grammarProfile", "");
+            String databaseVersion = values.getOrDefault("databaseVersion", "");
+            String schema = values.getOrDefault("schema", "");
             List<String> expectedLineageFingerprints = Files.exists(expectedLineageFile)
                     ? stringArray(Files.readString(expectedLineageFile), "fingerprints")
                     : List.of();
@@ -180,7 +192,8 @@ final class DataLineageAuditGenerator {
                     && !versionBoundaryUnsupported
                     && containsValueWrite(lower);
             List<String> candidates = shouldExtractCandidates
-                    ? lineageCandidates(databaseType, input, inputText, sourceType, statementFormat, objectSourceFilter)
+                    ? lineageCandidates(databaseType, input, inputText, sourceType, statementFormat, objectSourceFilter,
+                            structuredParser, parserMode, grammarProfile, databaseVersion, schema)
                     : List.of();
             Decision decision = classify(parserTarget, sourceType, statementFormat, inputText,
                     expectedLineageFingerprints, candidates, required(values, "id", manifest),
@@ -361,16 +374,32 @@ final class DataLineageAuditGenerator {
             String inputText,
             StatementSourceType sourceType,
             String statementFormat,
-            String objectSourceFilter
+            String objectSourceFilter,
+            String structuredParser,
+            String parserMode,
+            String grammarProfile,
+            String databaseVersion,
+            String schema
     ) {
         List<SqlStatementRecord> statements = statementFormat.equalsIgnoreCase("OBJECT_BLOCKS")
                 ? parseObjectBlockStatements(inputText, sourceType, input.toString(), databaseType, objectSourceFilter)
                 : new PlainSqlLogExtractor().extract(input, sourceType, warning -> { }).toList();
         TokenEventDataLineageExtractor extractor = new TokenEventDataLineageExtractor();
-        StructuredSqlParser parser = structuredSqlParser(databaseType);
+        StructuredSqlParser parser = structuredSqlParser(
+                databaseType,
+                structuredParser,
+                parserMode,
+                grammarProfile,
+                databaseVersion,
+                schema);
+        List<WarningMessage> warnings = new ArrayList<>();
+        AdaptorContext context = new AdaptorContext(
+                new ScanScope(null, schema, List.of(), List.of()),
+                Map.of(),
+                warnings::add);
         List<DataLineageCandidate> candidates = new ArrayList<>();
         for (SqlStatementRecord statement : statements) {
-            StructuredParseResult structured = parser.parseSql(statement, null);
+            StructuredParseResult structured = parser.parseSql(statement, context);
             candidates.addAll(extractor.extract(statement, structured));
         }
         return new DataLineageMerger().merge(candidates).stream()
@@ -379,11 +408,34 @@ final class DataLineageAuditGenerator {
                 .toList();
     }
 
-    private static StructuredSqlParser structuredSqlParser(DatabaseType databaseType) {
+    private static StructuredSqlParser structuredSqlParser(
+            DatabaseType databaseType,
+            String structuredParser,
+            String parserMode,
+            String grammarProfile,
+            String databaseVersion,
+            String schema
+    ) {
+        if ("common-token-event".equals(structuredParser)) {
+            return new CommonTokenEventStructuredSqlParser();
+        }
+        DatabaseAdaptor adaptor = adaptor(databaseType);
+        ScanConfig config = new ScanConfig();
+        config.databaseType = databaseType;
+        config.schema = schema;
+        config.parserMode = parserMode;
+        config.grammarProfile = grammarProfile;
+        config.databaseVersion = databaseVersion;
+        config.databaseVersionSource = databaseVersion == null || databaseVersion.isBlank() ? "UNKNOWN" : "CONFIG";
+        ParserBundleSelector selector = new ParserBundleSelector();
+        return selector.select(adaptor, config, null).sqlParser();
+    }
+
+    private static DatabaseAdaptor adaptor(DatabaseType databaseType) {
         return switch (databaseType) {
-            case MYSQL -> new MySqlTokenEventStructuredSqlParser();
-            case POSTGRESQL -> new PostgresTokenEventStructuredSqlParser();
-            case ORACLE -> new OracleTokenEventStructuredSqlParser();
+            case MYSQL -> new MySqlDatabaseAdaptor();
+            case POSTGRESQL -> new PostgresDatabaseAdaptor();
+            case ORACLE -> new OracleDatabaseAdaptor();
             default -> throw new IllegalArgumentException("No Data Lineage parser for " + databaseType);
         };
     }
