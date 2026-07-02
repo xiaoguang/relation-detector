@@ -19,11 +19,11 @@ class DataLineageAuditGeneratorTest {
         String markdown = DataLineageAuditGenerator.generate(WORKSPACE);
 
         assertTrue(markdown.contains("# Data Lineage Full Audit"));
-        assertTrue(markdown.contains("| TOTAL | 961 |"));
-        assertTrue(markdown.contains("| EXISTING_GOLD | 321 |"));
+        assertTrue(markdown.contains("| TOTAL | 979 |"));
+        assertTrue(markdown.contains("| EXISTING_GOLD | 333 |"));
         assertTrue(markdown.contains("| SUGGESTED_GOLD | 0 |"));
         assertTrue(markdown.contains("| PENDING_REVIEW | 0 |"));
-        assertTrue(markdown.contains("| NOT_APPLICABLE | 640 |"));
+        assertTrue(markdown.contains("| NOT_APPLICABLE | 646 |"));
         assertTrue(markdown.contains("| Classification | `EXISTING_GOLD` |"));
         assertTrue(markdown.contains("| Classification | `NOT_APPLICABLE` |"));
         assertTrue(markdown.contains("mysql-user-spending-left-join-update-sql"));
@@ -66,6 +66,13 @@ class DataLineageAuditGeneratorTest {
         assertTrue(markdown.contains("oracle26ai-sample-data-full-02-procedures-01-procedures-sql"));
         assertTrue(markdown.contains(
                 "test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json"));
+        assertTrue(markdown.contains("sqlserver2025-sample-data-02-sales-fact-sql"));
+        assertTrue(markdown.contains(
+                "test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-02-sales-fact-sql/expected-lineage.json"));
+        assertTrue(markdown.contains("sqlserver2025-sample-data-03-sales-fact-procedure-sql"));
+        assertTrue(markdown.contains(
+                "test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-03-sales-fact-procedure-sql/expected-lineage.json"));
+        assertTrue(markdown.contains("VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id"));
         assertTrue(markdown.contains("VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note"));
         assertTrue(markdown.contains(
                 "VALUE:ARITHMETIC:account_balances.balance,transaction_ledgers.amount->account_balances.balance"));

@@ -8,20 +8,22 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 
 | Metric | Count |
 | --- | ---: |
-| Total correctness fixtures | 961 |
-| SQL fixtures | 784 |
-| DDL fixtures | 177 |
-| Fixtures with expected lineage | 321 |
+| Total correctness fixtures | 979 |
+| SQL fixtures | 796 |
+| DDL fixtures | 183 |
+| Fixtures with expected lineage | 333 |
 | Common directory fixtures | 39 |
 | MySQL directory fixtures | 261 |
 | PostgreSQL directory fixtures | 449 |
 | Oracle directory fixtures | 212 |
+| SQL Server directory fixtures | 18 |
 
 | Database type | Total | SQL | DDL |
 | --- | ---: | ---: | ---: |
 | MYSQL | 300 | 241 | 59 |
 | ORACLE | 212 | 172 | 40 |
 | POSTGRESQL | 449 | 371 | 78 |
+| SQLSERVER | 18 | 12 | 6 |
 
 ## Common Fixtures
 
@@ -56768,6 +56770,890 @@ _Preview truncated; see input file for full content._
 -- 数据库: Oracle 16/17/18 compatible
 -- ============================================================
 
+```
+_Preview truncated; see input file for full content._
+
+## SQL Server Fixtures
+
+### `sqlserver-sample-data-01-core-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2025/01-schema/01-core-schema.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-01-core-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-01-core-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:payments.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.customers (
+    customer_id INT NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    region_code NVARCHAR(20) NOT NULL,
+    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE dbo.orders (
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2016-sample-data-01-core-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2016/01-schema/01-core-schema.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-01-core-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-01-core-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:payments.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.customers (
+    customer_id INT NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    region_code NVARCHAR(20) NOT NULL,
+    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE dbo.orders (
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2017-sample-data-01-core-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2017/01-schema/01-core-schema.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-01-core-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-01-core-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:payments.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.customers (
+    customer_id INT NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    region_code NVARCHAR(20) NOT NULL,
+    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE dbo.orders (
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2019-sample-data-01-core-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2019/01-schema/01-core-schema.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-01-core-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-01-core-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:payments.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.customers (
+    customer_id INT NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    region_code NVARCHAR(20) NOT NULL,
+    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE dbo.orders (
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2022-sample-data-01-core-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2022/01-schema/01-core-schema.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-01-core-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-01-core-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:payments.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.customers (
+    customer_id INT NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    region_code NVARCHAR(20) NOT NULL,
+    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE dbo.orders (
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2025-sample-data-01-core-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2025/01-schema/01-core-schema.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-01-core-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-01-core-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:orders.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:payments.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_fact.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.customers (
+    customer_id INT NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    region_code NVARCHAR(20) NOT NULL,
+    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE dbo.orders (
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver-sample-data-02-sales-fact-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2025/04-queries/01-sales-fact-dml.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-02-sales-fact-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-02-sales-fact-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-02-sales-fact-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+SELECT
+    o.customer_id,
+    o.order_id,
+    SUM(p.amount) AS paid_amount,
+    MAX(p.paid_at) AS last_paid_at
+FROM dbo.orders AS o
+INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver-sample-data-03-sales-fact-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2025/02-procedures/01-sales-fact.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-03-sales-fact-procedure-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-03-sales-fact-procedure-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
+AS
+BEGIN
+    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+    SELECT
+        o.customer_id,
+        o.order_id,
+        SUM(p.amount) AS paid_amount,
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2016-sample-data-02-sales-fact-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2016/04-queries/01-sales-fact-dml.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-02-sales-fact-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-02-sales-fact-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-02-sales-fact-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+SELECT
+    o.customer_id,
+    o.order_id,
+    SUM(p.amount) AS paid_amount,
+    MAX(p.paid_at) AS last_paid_at
+FROM dbo.orders AS o
+INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2016-sample-data-03-sales-fact-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2016/02-procedures/01-sales-fact.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-03-sales-fact-procedure-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-03-sales-fact-procedure-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
+AS
+BEGIN
+    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+    SELECT
+        o.customer_id,
+        o.order_id,
+        SUM(p.amount) AS paid_amount,
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2017-sample-data-02-sales-fact-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2017/04-queries/01-sales-fact-dml.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-02-sales-fact-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-02-sales-fact-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-02-sales-fact-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+SELECT
+    o.customer_id,
+    o.order_id,
+    SUM(p.amount) AS paid_amount,
+    MAX(p.paid_at) AS last_paid_at
+FROM dbo.orders AS o
+INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2017-sample-data-03-sales-fact-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2017/02-procedures/01-sales-fact.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-03-sales-fact-procedure-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-03-sales-fact-procedure-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
+AS
+BEGIN
+    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+    SELECT
+        o.customer_id,
+        o.order_id,
+        SUM(p.amount) AS paid_amount,
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2019-sample-data-02-sales-fact-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2019/04-queries/01-sales-fact-dml.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-02-sales-fact-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-02-sales-fact-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-02-sales-fact-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+SELECT
+    o.customer_id,
+    o.order_id,
+    SUM(p.amount) AS paid_amount,
+    MAX(p.paid_at) AS last_paid_at
+FROM dbo.orders AS o
+INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2019-sample-data-03-sales-fact-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2019/02-procedures/01-sales-fact.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-03-sales-fact-procedure-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-03-sales-fact-procedure-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
+AS
+BEGIN
+    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+    SELECT
+        o.customer_id,
+        o.order_id,
+        SUM(p.amount) AS paid_amount,
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2022-sample-data-02-sales-fact-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2022/04-queries/01-sales-fact-dml.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-02-sales-fact-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-02-sales-fact-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-02-sales-fact-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+SELECT
+    o.customer_id,
+    o.order_id,
+    SUM(p.amount) AS paid_amount,
+    MAX(p.paid_at) AS last_paid_at
+FROM dbo.orders AS o
+INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2022-sample-data-03-sales-fact-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2022/02-procedures/01-sales-fact.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-03-sales-fact-procedure-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-03-sales-fact-procedure-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
+AS
+BEGIN
+    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+    SELECT
+        o.customer_id,
+        o.order_id,
+        SUM(p.amount) AS paid_amount,
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2025-sample-data-02-sales-fact-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2025/04-queries/01-sales-fact-dml.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-02-sales-fact-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-02-sales-fact-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-02-sales-fact-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+SELECT
+    o.customer_id,
+    o.order_id,
+    SUM(p.amount) AS paid_amount,
+    MAX(p.paid_at) AS last_paid_at
+FROM dbo.orders AS o
+INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2025-sample-data-03-sales-fact-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `sample-data/sqlserver/2025/02-procedures/01-sales-fact.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-03-sales-fact-procedure-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-03-sales-fact-procedure-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:dbo.customers.customer_id->dbo.orders.customer_id:SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.payments.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.orders.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:dbo.payments.order_id->dbo.sales_fact.order_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
+AS
+BEGIN
+    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+    SELECT
+        o.customer_id,
+        o.order_id,
+        SUM(p.amount) AS paid_amount,
 ```
 _Preview truncated; see input file for full content._
 

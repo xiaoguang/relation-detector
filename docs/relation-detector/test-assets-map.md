@@ -10,6 +10,8 @@ full-grammer expression transform 的审核记录见 [full-grammer Expression Tr
 
 MySQL 5.7 full-grammer 的迁移分类、5.7-compatible sample-data 改写和版本边界负向 fixture 见 [MySQL 5.7 Full-Grammer Migration Review](../parser-audit/mysql57-migration-review.md)。
 
+SQL Server adaptor 的语法来源、初始 smoke correctness 和 MySQL 8.0 语义迁移状态见 [SQL Server Adaptor And MySQL 8.0 Migration Review](../parser-audit/sqlserver-migration-review.md)。当前 SQL Server 已有 root token-event smoke 与 `sqlserver/2016|2017|2019|2022|2025` full-grammer smoke；它不是完整 MySQL 8.0 correctness 迁移。
+
 历史 parser 迁移对比报告保留在 `docs/parser-audit/archive`，只作为追溯资料；当前验收只看 correctness fixture 的 `expected-relations.json` / `expected-lineage.json` 和本文件列出的测试矩阵。
 
 token-event 当前状态：MySQL/PostgreSQL SQL relation、Data Lineage 和 DDL 均使用 token-event 作为无 profile 或 unsupported version 时的正式 fallback；Oracle 已有初始 token-event fallback，并使用 `adaptor-oracle` 自己的 `OracleRelationSql.g4` 与 typed visitor，不再复用 common parser 的装配入口。公共 relation、rowset/scope、Data Lineage 写入映射、derived aggregate projection 回溯、显式临时表过滤、MySQL/PostgreSQL DML 深水区、方言 rowset 防伪表都有事件/抽取测试。profile 已选中后的 full-grammer parse warning / partial result 不会委托 token-event 补事件。
@@ -48,7 +50,7 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 - MySQL/PostgreSQL/Oracle root correctness fixture 显式以方言 token-event 输出作为 baseline gold；versioned fixture 显式以 full-grammer 输出作为对应版本 gold。full-grammer 不再通过 token-event baseline 做跨 parser 保护，漏识别必须在自己的 versioned golden 中直接暴露。
 - MySQL/PostgreSQL/Oracle root DDL correctness fixture 显式以方言 token-event DDL pipeline 作为 baseline gold；versioned DDL fixture 显式以 full-grammer DDL 输出作为对应版本 gold。full-grammer DDL 同样只由 versioned golden 验收，不再用 token-event DDL baseline 兜底。
 - `simple`、`antlr-shadow`、`simple-ddl`、`antlr-ddl-shadow` 以及对应 parser mode/fallback 配置已经移除；配置中出现旧 key 时应报错。
-- SQL Server 仍只保留接口/future fixture；Oracle 已进入 adaptor、root token-event golden 和四个 versioned sample-data full-grammer golden，但 Oracle official complete full-grammer visitor 仍在 backlog。
+- SQL Server 已有初始 adaptor、root token-event smoke golden 和五个 versioned full-grammer smoke golden；完整 SQL Server semantic-equivalent 迁移、JDBC collector 和官方版本边界仍在 backlog。Oracle 已进入 adaptor、root token-event golden 和四个 versioned sample-data full-grammer golden，但 Oracle official complete full-grammer visitor 仍在 backlog。
 
 ## 目录地图
 

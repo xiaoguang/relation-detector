@@ -346,6 +346,22 @@ public final class FullGrammerTypedSqlEventSink {
         addPredicateEvent(ctx, StructuredParseEventType.PREDICATE_EQUALITY, left.get(), right.get(), joinKind);
     }
 
+    public void predicateEqualityColumns(
+            ParserRuleContext ctx,
+            String leftAlias,
+            String leftColumn,
+            String rightAlias,
+            String rightColumn,
+            String joinKind
+    ) {
+        ExpressionColumn left = new ExpressionColumn(clean(leftAlias), clean(leftColumn));
+        ExpressionColumn right = new ExpressionColumn(clean(rightAlias), clean(rightColumn));
+        if (left.column().isBlank() || right.column().isBlank()) {
+            return;
+        }
+        addPredicateEvent(ctx, StructuredParseEventType.PREDICATE_EQUALITY, left, right, joinKind);
+    }
+
     public void existsPredicateEqualities(ParserRuleContext ctx, ParseTree predicate) {
         for (ColumnPair pair : equalityPairs(predicate)) {
             addPredicateEvent(ctx, StructuredParseEventType.EXISTS_PREDICATE, pair.left(), pair.right(), "EXISTS");
@@ -668,7 +684,8 @@ public final class FullGrammerTypedSqlEventSink {
         String className = current.getClass().getSimpleName();
         if (!(className.equals("ColumnrefContext")
                 || className.equals("ColumnRefContext")
-                || className.equals("SimpleExprColumnRefContext"))) {
+                || className.equals("SimpleExprColumnRefContext")
+                || className.equals("Full_column_nameContext"))) {
             return Optional.empty();
         }
         List<String> parts = splitQualifiedName(clean(current.getText())).stream()
@@ -750,9 +767,15 @@ public final class FullGrammerTypedSqlEventSink {
         if (targetList == null) {
             targetList = directChildWithClassContaining(tree, "SelectItemList");
         }
+        if (targetList == null) {
+            targetList = directChildWithClassContaining(tree, "Select_list");
+        }
         ParseTree fromClause = directChildWithClassContaining(tree, "From_clause");
         if (fromClause == null) {
             fromClause = directChildWithClassContaining(tree, "FromClause");
+        }
+        if (fromClause == null) {
+            fromClause = directChildWithClassContaining(tree, "Table_sources");
         }
         if (targetList == null || fromClause == null) {
             return Optional.empty();
@@ -773,6 +796,10 @@ public final class FullGrammerTypedSqlEventSink {
     }
 
     private FromBinding bindingFromFromNode(ParseTree fromClause) {
+        ParseTree tableSourceItem = descendantWithClassContaining(fromClause, "Table_source_item");
+        if (tableSourceItem != null) {
+            return bindingFromTableSourceItem(tableSourceItem);
+        }
         List<String> identifiers = identifiers(fromClause);
         if (identifiers.isEmpty()) {
             return new FromBinding("", "");
@@ -780,6 +807,28 @@ public final class FullGrammerTypedSqlEventSink {
         String table = identifiers.get(0);
         String qualifier = identifiers.size() >= 2 ? identifiers.get(1) : table;
         return new FromBinding(qualifier, table);
+    }
+
+    private FromBinding bindingFromTableSourceItem(ParseTree tableSourceItem) {
+        List<String> identifiers = identifiers(tableSourceItem);
+        if (identifiers.isEmpty()) {
+            return new FromBinding("", "");
+        }
+        if (identifiers.size() >= 3) {
+            String table = identifiers.get(identifiers.size() - 2);
+            String qualifier = identifiers.get(identifiers.size() - 1);
+            return new FromBinding(qualifier, table);
+        }
+        if (identifiers.size() == 2) {
+            String text = tableSourceItem.getText();
+            if (text.contains(".")) {
+                String table = identifiers.get(1);
+                return new FromBinding(table, table);
+            }
+            return new FromBinding(identifiers.get(1), identifiers.get(0));
+        }
+        String table = identifiers.get(0);
+        return new FromBinding(table, table);
     }
 
     private List<ExpressionColumn> targetListColumns(ParseTree targetList, String defaultQualifier) {
@@ -830,6 +879,10 @@ public final class FullGrammerTypedSqlEventSink {
     private void collectTargetListItems(ParseTree tree, List<ParseTree> items) {
         String className = tree.getClass().getSimpleName();
         if (className.equals("Target_labelContext") || className.equals("SelectItemContext")) {
+            items.add(tree);
+            return;
+        }
+        if (className.equals("Select_list_elemContext")) {
             items.add(tree);
             return;
         }
@@ -924,7 +977,8 @@ public final class FullGrammerTypedSqlEventSink {
         String text = raw.trim();
         while ((text.startsWith("`") && text.endsWith("`"))
                 || (text.startsWith("\"") && text.endsWith("\""))
-                || (text.startsWith("'") && text.endsWith("'"))) {
+                || (text.startsWith("'") && text.endsWith("'"))
+                || (text.startsWith("[") && text.endsWith("]"))) {
             if (text.length() < 2) {
                 return "";
             }
@@ -1017,5 +1071,18 @@ public final class FullGrammerTypedSqlEventSink {
     }
 
     private record SelectColumns(List<ExpressionColumn> columns, String table) {
+    }
+
+    private ParseTree descendantWithClassContaining(ParseTree tree, String fragment) {
+        if (tree.getClass().getSimpleName().contains(fragment)) {
+            return tree;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            ParseTree child = descendantWithClassContaining(tree.getChild(index), fragment);
+            if (child != null) {
+                return child;
+            }
+        }
+        return null;
     }
 }

@@ -1,0 +1,9 @@
+{
+  "fingerprints": [
+    "FK_LIKE:orders.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:payments.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:sales_fact.customer_id->customers.customer_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:sales_fact.order_id->orders.order_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+  ],
+  "forbiddenTables": []
+}

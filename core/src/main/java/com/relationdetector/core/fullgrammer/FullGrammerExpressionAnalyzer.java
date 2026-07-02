@@ -155,8 +155,7 @@ public abstract class FullGrammerExpressionAnalyzer {
             return;
         }
         String contextName = tree.getClass().getSimpleName();
-        if (contextName.equals("ColumnrefContext") || contextName.equals("ColumnRefContext")
-                || contextName.equals("SimpleExprColumnRefContext")) {
+        if (isColumnReferenceContext(contextName)) {
             ExpressionColumn column = expressionColumn(tree.getText(), defaultQualifier);
             if (column != null) {
                 result.add(column);
@@ -233,13 +232,19 @@ public abstract class FullGrammerExpressionAnalyzer {
         return isAggregateFunction(firstLeafText(tree).toLowerCase(Locale.ROOT));
     }
 
+    private boolean isColumnReferenceContext(String contextName) {
+        return contextName.equals("ColumnrefContext")
+                || contextName.equals("ColumnRefContext")
+                || contextName.equals("SimpleExprColumnRefContext")
+                || contextName.equals("Full_column_nameContext");
+    }
+
     private void collectColumns(ParseTree tree, String defaultQualifier, Set<ExpressionColumn> result) {
         if (tree == null) {
             return;
         }
         String contextName = tree.getClass().getSimpleName();
-        if (contextName.equals("ColumnrefContext") || contextName.equals("ColumnRefContext")
-                || contextName.equals("SimpleExprColumnRefContext")) {
+        if (isColumnReferenceContext(contextName)) {
             ExpressionColumn column = expressionColumn(tree.getText(), defaultQualifier);
             if (column != null) {
                 result.add(column);

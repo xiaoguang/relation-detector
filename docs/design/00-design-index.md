@@ -28,6 +28,7 @@
 - [Phase 7：可选数据画像](relation-detector/phase-07-data-profiling.md)
 - [Phase 8：输出和用户体验](relation-detector/phase-08-output-ux.md)
 - [Phase 9：Oracle adaptor](relation-detector/phase-09-oracle-adaptor.md)
+- [Phase 10：SQL Server adaptor](relation-detector/phase-10-sqlserver-adaptor.md)
 - [ENUM 详细说明](relation-detector/enum-reference.md)
 - [设计一致性检查报告](relation-detector/design-validation-report.md)
 
@@ -61,7 +62,7 @@
 ## 全局约束
 
 - Java 17 + Maven 多模块工程。
-- v1 成熟支持 MySQL 和 PostgreSQL；Oracle 已有初始 adaptor、Oracle token-event fallback、root correctness golden 和 `INCOMPLETE_VERSIONED` versioned full-grammer smoke；SQL Server 仍是后续扩展。
+- v1 成熟支持 MySQL 和 PostgreSQL；Oracle 已有初始 adaptor、Oracle token-event fallback、root correctness golden 和 `INCOMPLETE_VERSIONED` versioned full-grammer smoke；SQL Server 已有初始 adaptor、root token-event smoke 和 `sqlserver/2016|2017|2019|2022|2025` full-grammer smoke，完整 MySQL 8.0 语义迁移和官方版本边界仍在后续扩展。
 - core 统一负责候选关系归并、最终评分、输出模型。
 - adaptor 可以提供采集、token-event parser、versioned full-grammer module、证据生成、权重修正等数据库特定能力。
 - SQL/DDL parser 运行模式统一为 `parser.mode=auto|full-grammer|token-event`。无方言或无合理版本信息时使用 `token-event`；能选中版本化 grammar profile 时可使用 `full-grammer`。

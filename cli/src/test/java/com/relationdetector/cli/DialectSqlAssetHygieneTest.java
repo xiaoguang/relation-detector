@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -90,6 +91,28 @@ class DialectSqlAssetHygieneTest {
                     "\\b[A-Za-z_][A-Za-z0-9_]*\\s*\\.\\s*VARCHAR2\\s*\\("),
             forbidden("Mechanical migration produced VARCHAR2 pseudo DDL/variable name", "^\\s*VARCHAR2\\s*\\("));
 
+    private static final List<ForbiddenSqlPattern> SQLSERVER_FORBIDDEN = List.of(
+            forbidden("PostgreSQL PL/pgSQL language marker", "\\bLANGUAGE\\s+plpgsql\\b"),
+            forbidden("PostgreSQL cast operator", "::[A-Za-z_][A-Za-z0-9_]*(?:\\([^)]*\\))?"),
+            forbidden("PostgreSQL WITH RECURSIVE", "\\bWITH\\s+RECURSIVE\\b"),
+            forbidden("PostgreSQL RETURN QUERY statement", "\\bRETURN\\s+QUERY\\b"),
+            forbidden("PostgreSQL RETURNS TABLE signature", "\\bRETURNS\\s+TABLE\\b"),
+            forbidden("PostgreSQL string_agg function", "\\bstring_agg\\s*\\("),
+            forbidden("PostgreSQL date_trunc function", "\\bdate_trunc\\s*\\("),
+            forbidden("PostgreSQL/MySQL LIMIT clause", "\\bLIMIT\\b"),
+            forbidden("MySQL AUTO_INCREMENT", "\\bAUTO_INCREMENT\\b"),
+            forbidden("MySQL ENGINE table option", "\\bENGINE\\s*="),
+            forbidden("MySQL ON DUPLICATE KEY UPDATE", "\\bON\\s+DUPLICATE\\s+KEY\\s+UPDATE\\b"),
+            forbidden("MySQL DELIMITER command", "^\\s*DELIMITER\\b"),
+            forbidden("MySQL backtick quoted identifier", "`"),
+            forbidden("Oracle VARCHAR2 type", "\\bVARCHAR2\\b"),
+            forbidden("Oracle NVARCHAR2 type", "\\bNVARCHAR2\\b"),
+            forbidden("Oracle CLOB type", "\\bCLOB\\b"),
+            forbidden("Oracle NUMBER type", "\\bNUMBER\\s*\\("),
+            forbidden("Oracle SYS_REFCURSOR", "\\bSYS_REFCURSOR\\b"),
+            forbidden("Oracle LISTAGG function", "\\bLISTAGG\\s*\\("),
+            forbidden("Oracle CONNECT BY clause", "\\bCONNECT\\s+BY\\b"));
+
     @Test
     void mysqlSqlAssetsDoNotContainPostgresOrOracleDialectResidue() throws IOException {
         assertNoForbiddenDialectResidue("MySQL", List.of(
@@ -115,6 +138,45 @@ class DialectSqlAssetHygieneTest {
         assertNoForbiddenDialectResidue("Oracle", List.of(
                 repoRoot().resolve("sample-data/oracle"),
                 repoRoot().resolve("test-fixtures/correctness/oracle")), ORACLE_FORBIDDEN);
+    }
+
+    @Test
+    void sqlServerSqlAssetsDoNotContainOtherDialectResidue() throws IOException {
+        assertNoForbiddenDialectResidue("SQL Server", List.of(
+                repoRoot().resolve("sample-data/sqlserver"),
+                repoRoot().resolve("test-fixtures/correctness/sqlserver")), SQLSERVER_FORBIDDEN);
+    }
+
+    @Test
+    void sqlServerSampleDataFilesAreCoveredByRootAndVersionedCorrectnessFixtures() throws IOException {
+        Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
+        Path correctnessRoot = repoRoot().resolve("test-fixtures/correctness/sqlserver");
+        Set<Path> rootFixtureInputs = manifestInputs(correctnessRoot, correctnessRoot);
+
+        List<String> missing = new ArrayList<>();
+        try (Stream<Path> versions = Files.list(sampleRoot)) {
+            for (Path versionDir : versions.filter(Files::isDirectory).toList()) {
+                String version = versionDir.getFileName().toString();
+                Path versionFixtureRoot = correctnessRoot.resolve("v" + version);
+                Set<Path> versionFixtureInputs = manifestInputs(versionFixtureRoot, correctnessRoot);
+                try (Stream<Path> sqlFiles = Files.walk(versionDir)) {
+                    for (Path sqlFile : sqlFiles
+                            .filter(Files::isRegularFile)
+                            .filter(path -> path.toString().endsWith(".sql"))
+                            .map(path -> path.toAbsolutePath().normalize())
+                            .toList()) {
+                        if (!versionFixtureInputs.contains(sqlFile)) {
+                            missing.add("sqlserver/v" + version + " missing " + repoRoot().relativize(sqlFile));
+                        }
+                        if ("2025".equals(version) && !rootFixtureInputs.contains(sqlFile)) {
+                            missing.add("sqlserver root token-event missing " + repoRoot().relativize(sqlFile));
+                        }
+                    }
+                }
+            }
+        }
+
+        assertTrue(missing.isEmpty(), "SQL Server sample-data SQL files must all be correctness-covered: " + missing);
     }
 
     private static void assertNoForbiddenDialectResidue(
@@ -167,6 +229,41 @@ class DialectSqlAssetHygieneTest {
             findings.add(repoRoot().relativize(path) + " -> PostgreSQL UPDATE FROM statement");
         }
         return findings;
+    }
+
+    private static Set<Path> manifestInputs(Path searchRoot, Path correctnessRoot) throws IOException {
+        if (!Files.exists(searchRoot)) {
+            return Set.of();
+        }
+        try (Stream<Path> stream = Files.walk(searchRoot)) {
+            return stream
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().equals("manifest.yml"))
+                    .filter(path -> isManifestDirectChildOfSearchRoot(path, searchRoot, correctnessRoot))
+                    .map(DialectSqlAssetHygieneTest::manifestInputPath)
+                    .filter(path -> !path.toString().isBlank())
+                    .collect(java.util.stream.Collectors.toSet());
+        }
+    }
+
+    private static boolean isManifestDirectChildOfSearchRoot(Path manifest, Path searchRoot, Path correctnessRoot) {
+        if (!searchRoot.equals(correctnessRoot)) {
+            return true;
+        }
+        return manifest.getParent().getParent().equals(searchRoot);
+    }
+
+    private static Path manifestInputPath(Path manifest) {
+        try {
+            String input = Files.readAllLines(manifest).stream()
+                    .filter(line -> line.startsWith("input:"))
+                    .map(line -> line.substring("input:".length()).trim())
+                    .findFirst()
+                    .orElse("");
+            return input.isBlank() ? Path.of("") : manifest.getParent().resolve(input).toAbsolutePath().normalize();
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to read manifest " + manifest, exception);
+        }
     }
 
     private static boolean containsTopLevelUpdateFrom(String sqlText) {

@@ -44,6 +44,7 @@ final class CorrectnessSummaryGenerator {
         appendSection(markdown, "MySQL Fixtures", fixtures, "mysql");
         appendSection(markdown, "PostgreSQL Fixtures", fixtures, "postgres");
         appendSection(markdown, "Oracle Fixtures", fixtures, "oracle");
+        appendSection(markdown, "SQL Server Fixtures", fixtures, "sqlserver");
         return markdown.toString();
     }
 
@@ -80,6 +81,7 @@ final class CorrectnessSummaryGenerator {
         markdown.append("| MySQL directory fixtures | ").append(stats.sectionCounts().getOrDefault("mysql", 0)).append(" |\n");
         markdown.append("| PostgreSQL directory fixtures | ").append(stats.sectionCounts().getOrDefault("postgres", 0)).append(" |\n");
         markdown.append("| Oracle directory fixtures | ").append(stats.sectionCounts().getOrDefault("oracle", 0)).append(" |\n");
+        markdown.append("| SQL Server directory fixtures | ").append(stats.sectionCounts().getOrDefault("sqlserver", 0)).append(" |\n");
         markdown.append("\n");
 
         markdown.append("| Database type | Total | SQL | DDL |\n");

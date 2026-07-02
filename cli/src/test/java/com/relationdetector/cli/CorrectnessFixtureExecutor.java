@@ -30,6 +30,7 @@ import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
 import com.relationdetector.oracle.OracleDatabaseAdaptor;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
+import com.relationdetector.sqlserver.SqlServerDatabaseAdaptor;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -44,8 +45,8 @@ import java.util.stream.Collectors;
 final class CorrectnessFixtureExecutor {
     void runFixture(CorrectnessFixture fixture) throws Exception {
         String input = Files.readString(fixture.inputFile());
-        ExpectedRelations expectedRelations = ExpectedRelations.read(fixture.expectedRelationsFile());
-        ExpectedDiagnostics expectedDiagnostics = ExpectedDiagnostics.read(fixture.expectedDiagnosticsFile());
+        ExpectedRelations expectedRelations = expectedRelations(fixture);
+        ExpectedDiagnostics expectedDiagnostics = expectedDiagnostics(fixture);
         ExpectedLineage expectedLineage = ExpectedLineage.readIfPresent(fixture.expectedLineageFile());
         if (!Boolean.getBoolean("updateCorrectnessGold") && shouldAssertFixtureHash(fixture)) {
             assertEquals(expectedDiagnostics.fixtureSha256(), sha256(input), fixture.id() + " fixture hash");
@@ -60,6 +61,20 @@ final class CorrectnessFixtureExecutor {
             return;
         }
         throw new IllegalArgumentException("Unknown parserTarget " + fixture.parserTarget() + " in " + fixture.path());
+    }
+
+    private ExpectedRelations expectedRelations(CorrectnessFixture fixture) throws Exception {
+        if (Boolean.getBoolean("updateCorrectnessGold") && !Files.exists(fixture.expectedRelationsFile())) {
+            return new ExpectedRelations(List.of(), List.of());
+        }
+        return ExpectedRelations.read(fixture.expectedRelationsFile());
+    }
+
+    private ExpectedDiagnostics expectedDiagnostics(CorrectnessFixture fixture) throws Exception {
+        if (Boolean.getBoolean("updateCorrectnessGold") && !Files.exists(fixture.expectedDiagnosticsFile())) {
+            return new ExpectedDiagnostics("", Map.of());
+        }
+        return ExpectedDiagnostics.read(fixture.expectedDiagnosticsFile());
     }
 
     private void runSqlFixture(
@@ -267,6 +282,7 @@ final class CorrectnessFixtureExecutor {
             case MYSQL -> new MySqlDatabaseAdaptor();
             case POSTGRESQL -> new PostgresDatabaseAdaptor();
             case ORACLE -> new OracleDatabaseAdaptor();
+            case SQLSERVER -> new SqlServerDatabaseAdaptor();
             default -> throw new IllegalArgumentException("No correctness adaptor for " + databaseType);
         };
     }

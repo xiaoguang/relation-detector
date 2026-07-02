@@ -19,16 +19,18 @@ class CorrectnessSummaryGeneratorTest {
         assumeGeneratedReportTestEnabled();
         String markdown = CorrectnessSummaryGenerator.generate(WORKSPACE);
 
-        assertTrue(markdown.contains("| Total correctness fixtures | 961 |"));
-        assertTrue(markdown.contains("| SQL fixtures | 784 |"));
-        assertTrue(markdown.contains("| DDL fixtures | 177 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 321 |"));
+        assertTrue(markdown.contains("| Total correctness fixtures | 979 |"));
+        assertTrue(markdown.contains("| SQL fixtures | 796 |"));
+        assertTrue(markdown.contains("| DDL fixtures | 183 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 333 |"));
         assertTrue(markdown.contains("| MySQL directory fixtures | 261 |"));
         assertTrue(markdown.contains("| PostgreSQL directory fixtures | 449 |"));
         assertTrue(markdown.contains("| Oracle directory fixtures | 212 |"));
+        assertTrue(markdown.contains("| SQL Server directory fixtures | 18 |"));
         assertTrue(markdown.contains("| MYSQL | 300 | 241 | 59 |"));
         assertTrue(markdown.contains("| POSTGRESQL | 449 | 371 | 78 |"));
         assertTrue(markdown.contains("| ORACLE | 212 | 172 | 40 |"));
+        assertTrue(markdown.contains("| SQLSERVER | 18 | 12 | 6 |"));
         assertTrue(markdown.contains("Lightweight index report. Full SQL/DDL is available in each input file."));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-commerce-promotion-update-explicit-join-sql/input.sql"));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/expected-lineage.json"));
@@ -67,6 +69,11 @@ class CorrectnessSummaryGeneratorTest {
         assertTrue(markdown.contains("sample-data/oracle/26ai/01-schema/01-tables.sql"));
         assertTrue(markdown.contains(
                 "test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json"));
+        assertTrue(markdown.contains("sample-data/sqlserver/2025/04-queries/01-sales-fact-dml.sql"));
+        assertTrue(markdown.contains(
+                "test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-02-sales-fact-sql/expected-lineage.json"));
+        assertTrue(markdown.contains(
+                "test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-03-sales-fact-procedure-sql/expected-lineage.json"));
         assertTrue(markdown.contains("FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH"));
         assertTrue(markdown.contains("```sql"));
         assertFalse(markdown.contains("SHOW CREATE TABLE `jsh_account_head`;"),

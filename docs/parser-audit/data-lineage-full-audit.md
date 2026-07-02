@@ -8,11 +8,11 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 
 | Classification | Count |
 | --- | ---: |
-| TOTAL | 961 |
-| EXISTING_GOLD | 321 |
+| TOTAL | 979 |
+| EXISTING_GOLD | 333 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 640 |
+| NOT_APPLICABLE | 646 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -35179,5 +35179,659 @@ INSERT INTO shipments (
 -- 数据库: PostgreSQL 16/17/18 compatible
 -- ============================================================
 
+```
+
+## `sqlserver-sample-data-01-core-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2025/01-schema/01-core-schema.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.customers (
+    customer_id INT NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    region_code NVARCHAR(20) NOT NULL,
+    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE dbo.orders (
+```
+
+## `sqlserver2016-sample-data-01-core-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2016/01-schema/01-core-schema.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.customers (
+    customer_id INT NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    region_code NVARCHAR(20) NOT NULL,
+    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE dbo.orders (
+```
+
+## `sqlserver2017-sample-data-01-core-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2017/01-schema/01-core-schema.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.customers (
+    customer_id INT NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    region_code NVARCHAR(20) NOT NULL,
+    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE dbo.orders (
+```
+
+## `sqlserver2019-sample-data-01-core-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2019/01-schema/01-core-schema.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.customers (
+    customer_id INT NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    region_code NVARCHAR(20) NOT NULL,
+    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE dbo.orders (
+```
+
+## `sqlserver2022-sample-data-01-core-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2022/01-schema/01-core-schema.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.customers (
+    customer_id INT NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    region_code NVARCHAR(20) NOT NULL,
+    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE dbo.orders (
+```
+
+## `sqlserver2025-sample-data-01-core-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/sqlserver/2025/01-schema/01-core-schema.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.customers (
+    customer_id INT NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    region_code NVARCHAR(20) NOT NULL,
+    CONSTRAINT pk_customers PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE dbo.orders (
+```
+
+## `sqlserver-sample-data-02-sales-fact-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/01-sales-fact-dml.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-02-sales-fact-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+SELECT
+    o.customer_id,
+    o.order_id,
+    SUM(p.amount) AS paid_amount,
+    MAX(p.paid_at) AS last_paid_at
+FROM dbo.orders AS o
+INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+```
+
+## `sqlserver-sample-data-03-sales-fact-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/02-procedures/01-sales-fact.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/sqlserver-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
+AS
+BEGIN
+    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+    SELECT
+        o.customer_id,
+        o.order_id,
+        SUM(p.amount) AS paid_amount,
+```
+
+## `sqlserver2016-sample-data-02-sales-fact-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/04-queries/01-sales-fact-dml.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-02-sales-fact-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+SELECT
+    o.customer_id,
+    o.order_id,
+    SUM(p.amount) AS paid_amount,
+    MAX(p.paid_at) AS last_paid_at
+FROM dbo.orders AS o
+INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+```
+
+## `sqlserver2016-sample-data-03-sales-fact-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2016/02-procedures/01-sales-fact.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2016/sqlserver2016-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
+AS
+BEGIN
+    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+    SELECT
+        o.customer_id,
+        o.order_id,
+        SUM(p.amount) AS paid_amount,
+```
+
+## `sqlserver2017-sample-data-02-sales-fact-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/04-queries/01-sales-fact-dml.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-02-sales-fact-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+SELECT
+    o.customer_id,
+    o.order_id,
+    SUM(p.amount) AS paid_amount,
+    MAX(p.paid_at) AS last_paid_at
+FROM dbo.orders AS o
+INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+```
+
+## `sqlserver2017-sample-data-03-sales-fact-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2017/02-procedures/01-sales-fact.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
+AS
+BEGIN
+    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+    SELECT
+        o.customer_id,
+        o.order_id,
+        SUM(p.amount) AS paid_amount,
+```
+
+## `sqlserver2019-sample-data-02-sales-fact-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/04-queries/01-sales-fact-dml.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-02-sales-fact-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+SELECT
+    o.customer_id,
+    o.order_id,
+    SUM(p.amount) AS paid_amount,
+    MAX(p.paid_at) AS last_paid_at
+FROM dbo.orders AS o
+INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+```
+
+## `sqlserver2019-sample-data-03-sales-fact-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2019/02-procedures/01-sales-fact.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2019/sqlserver2019-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
+AS
+BEGIN
+    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+    SELECT
+        o.customer_id,
+        o.order_id,
+        SUM(p.amount) AS paid_amount,
+```
+
+## `sqlserver2022-sample-data-02-sales-fact-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/04-queries/01-sales-fact-dml.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-02-sales-fact-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+SELECT
+    o.customer_id,
+    o.order_id,
+    SUM(p.amount) AS paid_amount,
+    MAX(p.paid_at) AS last_paid_at
+FROM dbo.orders AS o
+INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+```
+
+## `sqlserver2022-sample-data-03-sales-fact-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2022/02-procedures/01-sales-fact.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
+AS
+BEGIN
+    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+    SELECT
+        o.customer_id,
+        o.order_id,
+        SUM(p.amount) AS paid_amount,
+```
+
+## `sqlserver2025-sample-data-02-sales-fact-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/04-queries/01-sales-fact-dml.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-02-sales-fact-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+SELECT
+    o.customer_id,
+    o.order_id,
+    SUM(p.amount) AS paid_amount,
+    MAX(p.paid_at) AS last_paid_at
+FROM dbo.orders AS o
+INNER JOIN dbo.payments AS p ON p.order_id = o.order_id
+```
+
+## `sqlserver2025-sample-data-03-sales-fact-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/sqlserver/2025/02-procedures/01-sales-fact.sql` |
+| Expected lineage | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-03-sales-fact-procedure-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:AGGREGATE:dbo.payments.paid_at->sales_fact.last_paid_at`
+- `VALUE:DIRECT:dbo.orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.orders.order_id->sales_fact.order_id`
+- `VALUE:DIRECT:dbo.payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:dbo.payments.paid_at->sales_fact.last_paid_at`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE OR ALTER PROCEDURE dbo.sp_rebuild_sales_fact
+AS
+BEGIN
+    INSERT INTO dbo.sales_fact (customer_id, order_id, paid_amount, last_paid_at)
+    SELECT
+        o.customer_id,
+        o.order_id,
+        SUM(p.amount) AS paid_amount,
 ```
 

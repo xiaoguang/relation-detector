@@ -1,0 +1,13 @@
+id: sqlserver2025-sample-data-03-sales-fact-procedure-sql
+databaseType: SQLSERVER
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: sqlserver/2025
+databaseVersion: 2025
+sourceType: PLAIN_SQL
+statementFormat: OBJECT_BLOCKS
+schema: dbo
+input: ../../../../../sample-data/sqlserver/2025/02-procedures/01-sales-fact.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

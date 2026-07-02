@@ -15,6 +15,7 @@
     <module>adaptor-mysql</module>
     <module>adaptor-postgres</module>
     <module>adaptor-oracle</module>
+    <module>adaptor-sqlserver</module>
   </modules>
 
   <properties>
