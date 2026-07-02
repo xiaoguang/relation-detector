@@ -1,0 +1,8 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:discount_policies.category_id->products.category_id:SQL_LOG_JOIN",
+    "FK_LIKE:products.shop_id->shops.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:shops.merchant_id->merchants.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

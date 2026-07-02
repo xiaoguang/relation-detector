@@ -140,10 +140,10 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 - 用户可见模式名是 `full-grammer` 与 `token-event`。
 - Java package 使用 `fullgrammer` / `tokenevent`，因为 Java package 不能包含横线。
-- `full-grammer` 具体版本实现在 adaptor，例如 `mysql.fullgrammer.v8_0`、`postgres.fullgrammer.v16|v17|v18`、`oracle.fullgrammer.v12c|v19c|v21c|v26ai`。
+- `full-grammer` 具体版本实现在 adaptor，例如 `mysql.fullgrammer.v5_7|v8_0`、`postgres.fullgrammer.v16|v17|v18`、`oracle.fullgrammer.v12c|v19c|v21c|v26ai`。
 - 无方言或无合理版本信息时使用 token-event。
 - PostgreSQL full-grammer 当前有严格版本 profile：`postgresql/16`、`postgresql/17`、`postgresql/18`。三者分别有独立 versioned correctness golden。root `postgres` fixture 目录是历史兼容 baseline，不代表 `v1` 数据库版本。
-- MySQL full-grammer 当前有 `mysql/8.0` profile，并已有独立 `test-fixtures/correctness/mysql/v8_0` versioned correctness golden。root `mysql` fixture 目录是 token-event baseline，不代表严格 MySQL 8.0 版本证明。
+- MySQL full-grammer 当前有 `mysql/5.7`、`mysql/8.0` profile，并已有独立 `test-fixtures/correctness/mysql/v5_7`、`test-fixtures/correctness/mysql/v8_0` versioned correctness golden。root `mysql` fixture 目录是 token-event baseline，不代表严格 MySQL 版本证明。
 - Oracle full-grammer 当前有 `oracle/12c`、`oracle/19c`、`oracle/21c`、`oracle/26ai` profile，并已有独立 `test-fixtures/correctness/oracle/v12c|v19c|v21c|v26ai` sample-data correctness golden。当前 Oracle full-grammer 使用本版本 generated parser/visitor，但状态是 `INCOMPLETE_VERSIONED`，尚不代表 更广泛的 Oracle 官方语法 已完成。
 
 ### 当前 golden 与验证结果

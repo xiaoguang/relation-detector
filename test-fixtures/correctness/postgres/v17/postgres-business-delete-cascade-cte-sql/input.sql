@@ -8,5 +8,5 @@ WITH deleted_orders AS (
     RETURNING o.id
 )
 DELETE FROM order_items oi
-USING deleted_orders do
-WHERE oi.order_id = do.id;
+USING deleted_orders deleted_order_rows
+WHERE oi.order_id = deleted_order_rows.id;

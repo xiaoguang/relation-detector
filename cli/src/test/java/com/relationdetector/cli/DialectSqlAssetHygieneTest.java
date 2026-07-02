@@ -31,6 +31,22 @@ class DialectSqlAssetHygieneTest {
             forbidden("Oracle interval helper", "\\bNUMTODSINTERVAL\\s*\\("),
             forbidden("Oracle CONNECT BY clause", "\\bCONNECT\\s+BY\\b"));
 
+    private static final List<ForbiddenSqlPattern> MYSQL57_FORBIDDEN = List.of(
+            forbidden("MySQL 8.0 CTE statement", "^\\s*WITH\\b"),
+            forbidden("MySQL 8.0 recursive CTE", "\\bWITH\\s+RECURSIVE\\b"),
+            forbidden("MySQL 8.0 window OVER clause", "\\bOVER\\s*\\("),
+            forbidden("MySQL 8.0 ROW_NUMBER window function", "\\bROW_NUMBER\\s*\\("),
+            forbidden("MySQL 8.0 RANK window function", "\\bRANK\\s*\\("),
+            forbidden("MySQL 8.0 DENSE_RANK window function", "\\bDENSE_RANK\\s*\\("),
+            forbidden("MySQL 8.0 NTILE window function", "\\bNTILE\\s*\\("),
+            forbidden("MySQL 8.0 LAG window function", "\\bLAG\\s*\\("),
+            forbidden("MySQL 8.0 LEAD window function", "\\bLEAD\\s*\\("),
+            forbidden("MySQL 8.0 FIRST_VALUE window function", "\\bFIRST_VALUE\\s*\\("),
+            forbidden("MySQL 8.0 JSON_TABLE rowset", "\\bJSON_TABLE\\s*\\("),
+            forbidden("MySQL 8.0 LATERAL derived table", "\\bLATERAL\\b"),
+            forbidden("MySQL 8.0 invisible index", "\\bINVISIBLE\\b"),
+            forbidden("MySQL 8.0 visible index option", "\\bVISIBLE\\b"));
+
     private static final List<ForbiddenSqlPattern> POSTGRES_FORBIDDEN = List.of(
             forbidden("MySQL AUTO_INCREMENT", "\\bAUTO_INCREMENT\\b"),
             forbidden("MySQL ENGINE table option", "\\bENGINE\\s*="),
@@ -79,6 +95,12 @@ class DialectSqlAssetHygieneTest {
         assertNoForbiddenDialectResidue("MySQL", List.of(
                 repoRoot().resolve("sample-data/mysql"),
                 repoRoot().resolve("test-fixtures/correctness/mysql")), MYSQL_FORBIDDEN);
+    }
+
+    @Test
+    void mysql57SampleDataDoesNotContainMysql80OnlySyntax() throws IOException {
+        assertNoForbiddenDialectResidue("MySQL 5.7", List.of(
+                repoRoot().resolve("sample-data/mysql/5.7")), MYSQL57_FORBIDDEN);
     }
 
     @Test

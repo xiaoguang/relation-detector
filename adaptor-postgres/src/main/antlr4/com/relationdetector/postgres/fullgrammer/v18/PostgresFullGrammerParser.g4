@@ -725,7 +725,7 @@ colconstraintelem
     | DEFAULT b_expr
     | GENERATED generated_when AS (
         IDENTITY_P optparenthesizedseqoptlist?
-        | OPEN_PAREN a_expr CLOSE_PAREN STORED
+        | OPEN_PAREN a_expr CLOSE_PAREN (STORED | VIRTUAL)
     )
     | REFERENCES qualified_name column_list_? key_match? key_actions?
     ;
@@ -3213,10 +3213,12 @@ table_primary
     : (
         relation_expr alias_clause? tablesample_clause?
         | func_table func_alias_clause?
+        | json_table alias_clause?
         | xmltable alias_clause?
         | select_with_parens alias_clause?
         | LATERAL_P (
-            xmltable alias_clause?
+            json_table alias_clause?
+            | xmltable alias_clause?
             | func_table func_alias_clause?
             | select_with_parens alias_clause?
         )
@@ -3251,8 +3253,12 @@ join_type
     ;
 
 join_qual
-    : USING OPEN_PAREN name_list CLOSE_PAREN
+    : USING OPEN_PAREN name_list CLOSE_PAREN join_using_alias?
     | ON a_expr
+    ;
+
+join_using_alias
+    : AS colid
     ;
 
 relation_expr
@@ -3338,6 +3344,26 @@ xmltable_column_list
 
 xmltable_column_el
     : colid (typename xmltable_column_option_list? | FOR ORDINALITY)
+    ;
+
+json_table
+    : JSON_TABLE OPEN_PAREN json_value_expr COMMA a_expr COLUMNS OPEN_PAREN json_table_column_list CLOSE_PAREN CLOSE_PAREN
+    ;
+
+json_table_column_list
+    : json_table_column (COMMA json_table_column)*
+    ;
+
+json_table_column
+    : colid typename json_table_column_option* PATH a_expr json_table_column_option*
+    | colid FOR ORDINALITY
+    | NESTED PATH a_expr (AS colid)? COLUMNS OPEN_PAREN json_table_column_list CLOSE_PAREN
+    ;
+
+json_table_column_option
+    : DEFAULT a_expr ON (EMPTY_P | ERROR)
+    | NULL_P ON (EMPTY_P | ERROR)
+    | ERROR ON (EMPTY_P | ERROR)
     ;
 
 xmltable_column_option_list

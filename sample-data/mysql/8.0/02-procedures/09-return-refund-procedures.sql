@@ -92,7 +92,7 @@ CREATE PROCEDURE sp_process_sales_return_refund(
     IN p_inspector_id BIGINT UNSIGNED,
     IN p_inspection_result ENUM('qualified','partial','rejected'),
     IN p_actual_refund DECIMAL(18,2),
-    IN p_items_json JSON COMMENT '[{"order_item_id":1,"accepted_qty":2,"scrapped_qty":1}]'
+    IN p_items_json JSON
 )
 BEGIN
     DECLARE v_status VARCHAR(20);
@@ -592,7 +592,6 @@ BEGIN
     JOIN product_categories pc ON p.category_id = pc.id
     WHERE sr.return_date BETWEEN p_start_date AND p_end_date
     GROUP BY pc.name, sr.return_type
-    ORDER BY return_amount DESC
 
     UNION ALL
 
@@ -610,7 +609,6 @@ BEGIN
     JOIN warehouses w ON sr.warehouse_id = w.id
     WHERE sr.return_date BETWEEN p_start_date AND p_end_date
     GROUP BY w.name
-    ORDER BY SUM(sr.total_amount) DESC
 
     UNION ALL
 
@@ -629,7 +627,7 @@ BEGIN
     WHERE sr.return_date BETWEEN p_start_date AND p_end_date
     GROUP BY c.name
     HAVING COUNT(DISTINCT sr.id) >= 2
-    ORDER BY SUM(sr.total_amount) DESC;
+    ORDER BY return_amount DESC;
 END//
 
 

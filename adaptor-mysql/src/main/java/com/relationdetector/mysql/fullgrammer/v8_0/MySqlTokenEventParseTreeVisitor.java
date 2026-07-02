@@ -8,6 +8,7 @@ import java.util.Map;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CommonTableExpressionContext;
+import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CaseValueExpressionContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CreateTableContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.CreateTriggerContext;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser.DeleteStatementContext;
@@ -72,6 +73,9 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
     @Override
     public Void visitSingleTable(SingleTableContext ctx) {
         String table = ctx.tableRef() == null ? "" : ctx.tableRef().getText();
+        if (isPostgresOnlyRowsetSentinel(table)) {
+            return visitChildren(ctx);
+        }
         String alias = ctx.tableAlias() == null ? "" : sink.firstIdentifier(ctx.tableAlias());
         sink.rowset(ctx, "FROM", table, alias);
         rememberRowset(alias.isBlank() ? sink.baseName(table) : alias);
@@ -296,15 +300,24 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
 
     @Override
     public Void visitUpdateElement(UpdateElementContext ctx) {
-        if (ctx.columnRef() == null || ctx.expr() == null) {
+        ParseTree valueExpression = updateValueExpression(ctx);
+        if (ctx.columnRef() == null || valueExpression == null) {
             return visitChildren(ctx);
         }
         ColumnParts target = columnParts(ctx.columnRef().getText());
         String targetTable = target.qualifier().isBlank()
                 ? sink.currentWriteTarget()
                 : sink.tableForAlias(target.qualifier());
-        sink.updateAssignment(ctx, target.qualifier(), targetTable, target.column(), ctx.expr());
+        sink.updateAssignment(ctx, target.qualifier(), targetTable, target.column(), valueExpression);
         return visitChildren(ctx);
+    }
+
+    private ParseTree updateValueExpression(UpdateElementContext ctx) {
+        if (ctx.expr() != null) {
+            return ctx.expr();
+        }
+        CaseValueExpressionContext caseExpression = ctx.caseValueExpression();
+        return caseExpression == null ? null : caseExpression;
     }
 
     @Override
@@ -471,6 +484,10 @@ final class MySqlTokenEventParseTreeVisitor extends MySqlFullGrammerParserBaseVi
 
     private String lastRowsetAlias() {
         return rowsetAliases.isEmpty() ? "" : rowsetAliases.get(rowsetAliases.size() - 1);
+    }
+
+    private boolean isPostgresOnlyRowsetSentinel(String rawTableRef) {
+        return "ONLY".equalsIgnoreCase(rawTableRef) || "ROWS".equalsIgnoreCase(rawTableRef);
     }
 
     private ColumnParts columnParts(String raw) {

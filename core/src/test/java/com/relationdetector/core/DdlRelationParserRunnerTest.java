@@ -40,6 +40,7 @@ import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.contracts.Enums.WarningType;
 
 class DdlRelationParserRunnerTest {
     @TempDir
@@ -71,6 +72,29 @@ class DdlRelationParserRunnerTest {
 
         assertTrue(relations.isEmpty(), "empty token-event DDL output must not be replaced by an old parser output");
         assertEquals(1, structuredCalls.get());
+    }
+
+    @Test
+    void forwardsStructuredDdlParserWarningsToContext() throws Exception {
+        Path ddl = ddlFile();
+        List<WarningMessage> warnings = new ArrayList<>();
+
+        new DdlRelationParserRunner()
+                .parse(new TestAdaptor((text, sourceName, context) ->
+                        new StructuredParseResult("ANTLR", "MYSQL", sourceName,
+                                List.of(),
+                                List.of(WarningMessage.warn(WarningType.PARSE_WARNING,
+                                        "FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX",
+                                        "unsupported DDL",
+                                        sourceName,
+                                        0)),
+                                Map.of())),
+                        new ScanConfig(),
+                        ddl,
+                        context(warnings));
+
+        assertEquals(List.of("FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX"),
+                warnings.stream().map(WarningMessage::code).toList());
     }
 
     private Path ddlFile() throws Exception {

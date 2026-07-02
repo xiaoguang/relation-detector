@@ -1,0 +1,14 @@
+{
+  "fingerprints": [
+    "CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status",
+    "VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost",
+    "VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved"
+  ],
+  "forbiddenSources": [
+    "p_input_ledger_json",
+    "p_max_limit_cap",
+    "CURRENT_TIMESTAMP"
+  ],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

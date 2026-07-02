@@ -85,9 +85,19 @@ public final class PlainSqlLogExtractor {
         char quote = 0;
         boolean lineComment = false;
         boolean blockComment = false;
+        String dollarQuote = null;
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
             current.append(c);
+            if (dollarQuote != null) {
+                if (c == '$' && text.startsWith(dollarQuote, i)) {
+                    for (int end = 1; end < dollarQuote.length(); end++) {
+                        current.append(text.charAt(++i));
+                    }
+                    dollarQuote = null;
+                }
+                continue;
+            }
             if (lineComment) {
                 if (c == '\n' || c == '\r') {
                     lineComment = false;
@@ -115,6 +125,16 @@ public final class PlainSqlLogExtractor {
                 quote = c;
                 continue;
             }
+            if (c == '$') {
+                String delimiter = dollarQuoteDelimiterAt(text, i);
+                if (delimiter != null) {
+                    for (int end = 1; end < delimiter.length(); end++) {
+                        current.append(text.charAt(++i));
+                    }
+                    dollarQuote = delimiter;
+                    continue;
+                }
+            }
             if (c == '-' && i + 1 < text.length() && text.charAt(i + 1) == '-') {
                 current.append(text.charAt(++i));
                 lineComment = true;
@@ -134,6 +154,35 @@ public final class PlainSqlLogExtractor {
             statements.add(current.toString());
         }
         return statements;
+    }
+
+    private static String dollarQuoteDelimiterAt(String text, int index) {
+        if (index >= text.length() || text.charAt(index) != '$') {
+            return null;
+        }
+        int cursor = index + 1;
+        if (cursor < text.length() && text.charAt(cursor) == '$') {
+            return "$$";
+        }
+        if (cursor >= text.length() || !isDollarQuoteTagStart(text.charAt(cursor))) {
+            return null;
+        }
+        cursor++;
+        while (cursor < text.length() && isDollarQuoteTagPart(text.charAt(cursor))) {
+            cursor++;
+        }
+        if (cursor < text.length() && text.charAt(cursor) == '$') {
+            return text.substring(index, cursor + 1);
+        }
+        return null;
+    }
+
+    private static boolean isDollarQuoteTagStart(char character) {
+        return character == '_' || Character.isLetter(character);
+    }
+
+    private static boolean isDollarQuoteTagPart(char character) {
+        return character == '_' || Character.isLetterOrDigit(character);
     }
 
     public static List<String> localTempTablesIn(String text) {

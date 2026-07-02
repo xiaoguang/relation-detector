@@ -1,6 +1,4 @@
 {
   "fixtureSha256": "f6ab818ba210d2bfdd1cc40dd1a0c990ccc0eed7ee2f952ca4462f9975bd59b2",
-  "warningCodes": {
-    "DYNAMIC_SQL_UNRESOLVED": 12
-  }
+  "warningCodes": {}
 }

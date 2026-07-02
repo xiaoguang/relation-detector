@@ -1,0 +1,13 @@
+id: mysql57-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: mysql/5.7
+databaseVersion: 5.7.44
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+objectSourceFilter: PROCEDURE:case_01.proc_create_order_mock_retail
+schema: case_01
+input: ../../../../mysql/basic-correctness/case-01/sql/routines-procedures.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

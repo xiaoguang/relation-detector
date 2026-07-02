@@ -332,7 +332,7 @@ LEFT JOIN LATERAL (
             '$.preferences.alerts[*] ? (@.enabled == true)'
         ) AS active_alert
 ) alerts ON true
-CROSS JOIN LATERAL (
+JOIN LATERAL (
     SELECT
         count(*) FILTER (WHERE amount_rank <= 3) AS top3_count,
         sum(total_amount) FILTER (WHERE amount_rank <= 10) AS top10_sum,

@@ -1,0 +1,12 @@
+id: mysql57sample-data-full-04-queries-04-store-customer-queries-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: mysql/5.7
+databaseVersion: 5.7.44
+sourceType: PLAIN_SQL
+schema: erp_system
+input: ../../../../../sample-data/mysql/5.7/04-queries/04-store-customer-queries.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

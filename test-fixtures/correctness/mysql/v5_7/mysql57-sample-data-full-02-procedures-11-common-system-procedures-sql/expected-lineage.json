@@ -1,0 +1,13 @@
+{
+  "fingerprints": [
+    "VALUE:CONCAT_FORMAT:salary_payments.employee_id,salary_payments.salary_month->vouchers.voucher_no",
+    "VALUE:DIRECT:salary_payments.employee_id->vouchers.prepared_by",
+    "VALUE:DIRECT:salary_payments.id->vouchers.reference_id",
+    "VALUE:DIRECT:salary_payments.net_pay->vouchers.total_credit",
+    "VALUE:DIRECT:salary_payments.net_pay->vouchers.total_debit",
+    "VALUE:DIRECT:salary_payments.payment_date->vouchers.voucher_date"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

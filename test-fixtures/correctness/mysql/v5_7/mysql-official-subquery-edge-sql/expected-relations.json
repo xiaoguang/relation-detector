@@ -1,0 +1,11 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:blocked_carriers.region_id->shipments.region_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:customers.region_id->orders.region_id:SQL_LOG_SUBQUERY_IN",
+    "FK_LIKE:customers.account_id->accounts.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH",
+    "FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH",
+    "FK_LIKE:payments.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

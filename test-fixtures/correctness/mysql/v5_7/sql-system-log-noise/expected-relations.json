@@ -1,0 +1,8 @@
+{
+  "fingerprints": [],
+  "forbiddenTables": [
+    "information_schema",
+    "KEY_COLUMN_USAGE",
+    "TABLE_CONSTRAINTS"
+  ]
+}

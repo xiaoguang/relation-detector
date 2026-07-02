@@ -1,0 +1,19 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_fact.fiscal_date:SQL_LOG_JOIN",
+    "FK_LIKE:boms.component_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:boms.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_fact.category_id->category_dim.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_fact.region_id->region_dim.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

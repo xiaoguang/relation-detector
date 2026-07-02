@@ -1,0 +1,6 @@
+{
+  "fixtureSha256": "d97aee824d5b75c2b89b4d5f0fe6100e589b748779876216f23f98eab4167758",
+  "warningCodes": {
+    "FULL_GRAMMAR_DDL_PARSE_WARNING": 1
+  }
+}

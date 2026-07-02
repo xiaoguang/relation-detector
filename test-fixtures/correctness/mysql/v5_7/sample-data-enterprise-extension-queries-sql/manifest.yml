@@ -1,0 +1,11 @@
+id: mysql57-sample-data-enterprise-extension-queries-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: mysql/5.7
+databaseVersion: 5.7.44
+sourceType: PLAIN_SQL
+schema: erp_system
+input: ../../../../../sample-data/mysql/5.7/04-queries/10-enterprise-extension-queries.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

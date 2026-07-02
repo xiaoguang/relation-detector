@@ -20,6 +20,7 @@ import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.Enums.WarningType;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerLexer;
 import com.relationdetector.mysql.fullgrammer.v8_0.MySqlFullGrammerParser;
+import com.relationdetector.mysql.fullgrammer.MySqlFullGrammerSqlNormalizer;
 
 /**
  * MySQL 8.0 full-grammer SQL parser。
@@ -76,7 +77,8 @@ final class MySqlFullGrammerStructuredSqlParser implements StructuredSqlParser {
 
     private FullGrammerParse parseFullGrammer(String sql) {
         try {
-            MySqlFullGrammerLexer lexer = new MySqlFullGrammerLexer(CharStreams.fromString(sql));
+            MySqlFullGrammerLexer lexer = new MySqlFullGrammerLexer(
+                    CharStreams.fromString(MySqlFullGrammerSqlNormalizer.normalizeClientDelimiters(sql)));
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             MySqlFullGrammerParser parser = new MySqlFullGrammerParser(tokens);
             FullGrammerSyntaxErrorCounter errors = new FullGrammerSyntaxErrorCounter();

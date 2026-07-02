@@ -347,7 +347,7 @@ CREATE PROCEDURE sp_monthly_store_ranking(
 )
 BEGIN
     SELECT
-        RANK() OVER (ORDER BY COALESCE(sales.total, 0) DESC) AS rank,
+        RANK() OVER (ORDER BY COALESCE(sales.total, 0) DESC) AS store_rank,
         w.name AS store_name,
         w.city AS store_city,
         w.province AS store_province,
@@ -355,8 +355,8 @@ BEGIN
         COALESCE(sales.order_count, 0) AS order_count,
         COALESCE(sales.customer_count, 0) AS customer_count,
         ROUND(COALESCE(sales.total, 0) / NULLIF(COALESCE(sales.order_count, 0), 0), 2) AS avg_order_value,
-        COALESCE(returns.return_amount, 0) AS return_amount,
-        ROUND(COALESCE(returns.return_amount, 0) * 100.0 / NULLIF(COALESCE(sales.total, 0), 0), 2) AS return_rate_pct,
+        COALESCE(return_stats.return_amount, 0) AS return_amount,
+        ROUND(COALESCE(return_stats.return_amount, 0) * 100.0 / NULLIF(COALESCE(sales.total, 0), 0), 2) AS return_rate_pct,
         (SELECT COUNT(*) FROM employees e
          WHERE e.id = w.manager_id OR e.manager_id = w.manager_id) AS staff_count,
         w.status AS store_status,
@@ -381,7 +381,7 @@ BEGIN
         FROM sales_returns
         WHERE DATE_FORMAT(return_date, '%Y-%m') = p_year_month AND status = 'refunded'
         GROUP BY warehouse_id
-    ) returns ON w.id = returns.warehouse_id
+    ) return_stats ON w.id = return_stats.warehouse_id
     WHERE w.status = 'active'
     ORDER BY monthly_sales DESC;
 END

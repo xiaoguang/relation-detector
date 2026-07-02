@@ -92,6 +92,22 @@ class TokenEventStructuredSqlParserTest {
     }
 
     @Test
+    void postgresTriggerExecuteFunctionIsNotReportedAsDynamicSql() {
+        String sql = """
+                CREATE TRIGGER trg_orders_updated
+                BEFORE UPDATE ON orders
+                FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+                """;
+
+        StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.POSTGRES)
+                .parseSql(record(sql, StatementSourceType.TRIGGER), null);
+
+        assertTrue(result.warnings().stream().noneMatch(w -> w.code().equals("DYNAMIC_SQL_UNRESOLVED")),
+                () -> "CREATE TRIGGER ... EXECUTE FUNCTION is static trigger DDL, not dynamic SQL: "
+                        + result.warnings());
+    }
+
+    @Test
     void antlrSqlRelationParserReturnsRelationExtractorOutputDirectly() {
         String sql = "SELECT * FROM orders o JOIN users u ON o.user_id = u.id";
         SqlStatementRecord statement = record(sql, StatementSourceType.NATIVE_LOG);

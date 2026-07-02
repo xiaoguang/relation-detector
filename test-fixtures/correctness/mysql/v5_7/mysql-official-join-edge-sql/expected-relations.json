@@ -1,0 +1,13 @@
+{
+  "fingerprints": [
+    "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH"
+  ],
+  "forbiddenTables": [
+    "status_code",
+    "idx_orders_user",
+    "PRIMARY"
+  ]
+}

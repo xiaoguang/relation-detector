@@ -1,0 +1,8 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:contracts.id->contracts.id:SQL_LOG_SUBQUERY_IN",
+    "FK_LIKE:contract_milestones.contract_id->contracts.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": []
+}

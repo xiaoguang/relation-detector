@@ -19,14 +19,14 @@ class CorrectnessSummaryGeneratorTest {
         assumeGeneratedReportTestEnabled();
         String markdown = CorrectnessSummaryGenerator.generate(WORKSPACE);
 
-        assertTrue(markdown.contains("| Total correctness fixtures | 872 |"));
-        assertTrue(markdown.contains("| SQL fixtures | 713 |"));
-        assertTrue(markdown.contains("| DDL fixtures | 159 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 285 |"));
-        assertTrue(markdown.contains("| MySQL directory fixtures | 172 |"));
+        assertTrue(markdown.contains("| Total correctness fixtures | 961 |"));
+        assertTrue(markdown.contains("| SQL fixtures | 784 |"));
+        assertTrue(markdown.contains("| DDL fixtures | 177 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 321 |"));
+        assertTrue(markdown.contains("| MySQL directory fixtures | 261 |"));
         assertTrue(markdown.contains("| PostgreSQL directory fixtures | 449 |"));
         assertTrue(markdown.contains("| Oracle directory fixtures | 212 |"));
-        assertTrue(markdown.contains("| MYSQL | 211 | 170 | 41 |"));
+        assertTrue(markdown.contains("| MYSQL | 300 | 241 | 59 |"));
         assertTrue(markdown.contains("| POSTGRESQL | 449 | 371 | 78 |"));
         assertTrue(markdown.contains("| ORACLE | 212 | 172 | 40 |"));
         assertTrue(markdown.contains("Lightweight index report. Full SQL/DDL is available in each input file."));
@@ -55,6 +55,8 @@ class CorrectnessSummaryGeneratorTest {
                 "test-fixtures/correctness/mysql/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json"));
         assertTrue(markdown.contains(
                 "test-fixtures/correctness/mysql/v8_0/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json"));
+        assertTrue(markdown.contains(
+                "test-fixtures/correctness/mysql/v5_7/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json"));
         assertTrue(markdown.contains(
                 "test-fixtures/correctness/postgres/postgres-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json"));
         assertTrue(markdown.contains(

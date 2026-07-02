@@ -79,6 +79,7 @@ public final class SqlRelationParserRunner {
         }
         ParserBundle bundle = parserBundleSelector.select(adaptor, config, context);
         StructuredParseResult structured = bundle.sqlParser().parseSql(effectiveStatement, context);
+        forwardWarnings(context, structured);
         List<RelationshipCandidate> relationships = relationExtractor.extract(effectiveStatement, structured);
         namingMatchEvidenceEnhancer.enhance(relationships);
         return new ParsedSqlRelations(
@@ -98,6 +99,13 @@ public final class SqlRelationParserRunner {
             context.warn(WarningMessage.warn(WarningType.PARSE_WARNING, code, message,
                     statement.sourceName(), statement.startLine()));
         }
+    }
+
+    private static void forwardWarnings(AdaptorContext context, StructuredParseResult structured) {
+        if (context == null || structured == null || structured.warnings().isEmpty()) {
+            return;
+        }
+        structured.warnings().forEach(context::warn);
     }
 
     public record ParsedSqlRelations(

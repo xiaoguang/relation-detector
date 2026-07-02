@@ -8,11 +8,13 @@ Data Lineage 的全量审核入口见 [Data Lineage Full Audit](../parser-audit/
 
 full-grammer expression transform 的审核记录见 [full-grammer Expression Transform Compatibility Audit](../parser-audit/full-grammer-expression-transform-compatibility-audit.md)。它记录严格表达式分析曾暴露出的 transform 差异，例如疑似过粗的 `AGGREGATE` 判断和 `CASE_WHEN` 的 value/control flow 差异；本轮已按人工审核结论固化到 lineage golden。后续不再用跨 parser 对照机制遮蔽差异，每个 parser 必须直接通过自己的 golden。
 
+MySQL 5.7 full-grammer 的迁移分类、5.7-compatible sample-data 改写和版本边界负向 fixture 见 [MySQL 5.7 Full-Grammer Migration Review](../parser-audit/mysql57-migration-review.md)。
+
 历史 parser 迁移对比报告保留在 `docs/parser-audit/archive`，只作为追溯资料；当前验收只看 correctness fixture 的 `expected-relations.json` / `expected-lineage.json` 和本文件列出的测试矩阵。
 
 token-event 当前状态：MySQL/PostgreSQL SQL relation、Data Lineage 和 DDL 均使用 token-event 作为无 profile 或 unsupported version 时的正式 fallback；Oracle 已有初始 token-event fallback，并使用 `adaptor-oracle` 自己的 `OracleRelationSql.g4` 与 typed visitor，不再复用 common parser 的装配入口。公共 relation、rowset/scope、Data Lineage 写入映射、derived aggregate projection 回溯、显式临时表过滤、MySQL/PostgreSQL DML 深水区、方言 rowset 防伪表都有事件/抽取测试。profile 已选中后的 full-grammer parse warning / partial result 不会委托 token-event 补事件。
 
-版本化 full-grammer 当前状态：MySQL 当前 module 为 `mysql-8.0`，并已有独立 `mysql/v8_0` version golden；PostgreSQL 当前 module 为 `postgresql-16`、`postgresql-17`、`postgresql-18`，每个 major version 都有独立 package、`.g4`、parser support、typed visitor、DDL collector 和 version golden。Oracle 当前 module 为 `oracle-12c`、`oracle-19c`、`oracle-21c`、`oracle-26ai`：四个 profile 各自使用本版本 split lexer/parser grammar 和 typed visitor，不再桥接 Oracle token-event；但 Oracle full-grammer 当前状态是 `INCOMPLETE_VERSIONED`，只证明 scoped generated parser、首批版本边界和 Oracle sample-data fixture 真实接线，尚不是官方 SQL/PLSQL Reference 的完整转换。官方 PostgreSQL `gram.y` / `scan.l` / keywords 是 source-of-truth，仓库中的 ANTLR `.g4` 是固定 grammars-v4 基础上的 checked-in projection，并按 major version 做边界约束；Oracle `.g4` 目前是受控的文档派生 projection，已编码 19c/21c/26ai 首批官方版本边界。具体实现归属 adaptor：MySQL 在 `adaptor-mysql` 的 `com.relationdetector.mysql.fullgrammer.v8_0`，PostgreSQL 在 `adaptor-postgres` 的 `com.relationdetector.postgres.fullgrammer.v16` / `v17` / `v18`，Oracle 在 `adaptor-oracle` 的 `com.relationdetector.oracle.fullgrammer.v12c` / `v19c` / `v21c` / `v26ai`；版本由 package 表达，类名不带 `80` / `16`。profile 选择由 core 的 `FullGrammerDialectModule` registry 注入，人工配置 `parser.grammarProfile` 优先，之后可使用 `parser.databaseVersion` 或 JDBC metadata；同一 major 的 minor 默认复用该 major profile，最多只允许高 1 个 major 的临时降级，完全没有方言/版本信息时回退 token-event。SQL/DDL full-grammer parser 可作为 `parser.mode=auto|full-grammer` 的正式运行选择；versioned correctness fixture 要求匹配版本 full-grammer 成功。PostgreSQL 低版本遇到高版本专属语法会返回 `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`；Oracle 当前低版本遇到已编码的高版本专属语法会在 grammar 层产生 syntax error，token-event 才承担宽松向前兼容。
+版本化 full-grammer 当前状态：MySQL 当前 module 为 `mysql-5.7`、`mysql-8.0`，并已有独立 `mysql/v5_7`、`mysql/v8_0` version golden；PostgreSQL 当前 module 为 `postgresql-16`、`postgresql-17`、`postgresql-18`，每个 major version 都有独立 package、`.g4`、parser support、typed visitor、DDL collector 和 version golden。Oracle 当前 module 为 `oracle-12c`、`oracle-19c`、`oracle-21c`、`oracle-26ai`：四个 profile 各自使用本版本 split lexer/parser grammar 和 typed visitor，不再桥接 Oracle token-event；但 Oracle full-grammer 当前状态是 `INCOMPLETE_VERSIONED`，只证明 scoped generated parser、首批版本边界和 Oracle sample-data fixture 真实接线，尚不是官方 SQL/PLSQL Reference 的完整转换。官方 PostgreSQL `gram.y` / `scan.l` / keywords 是 source-of-truth，仓库中的 ANTLR `.g4` 是固定 grammars-v4 基础上的 checked-in projection，并按 major version 做边界约束；MySQL 5.7 / 8.0 grammar 来自固定 grammars-v4 MySQL 快照，5.7 版本边界以 MySQL 5.7 官方文档收紧；Oracle `.g4` 目前是受控的文档派生 projection，已编码 19c/21c/26ai 首批官方版本边界。具体实现归属 adaptor：MySQL 在 `adaptor-mysql` 的 `com.relationdetector.mysql.fullgrammer.v5_7` / `v8_0`，PostgreSQL 在 `adaptor-postgres` 的 `com.relationdetector.postgres.fullgrammer.v16` / `v17` / `v18`，Oracle 在 `adaptor-oracle` 的 `com.relationdetector.oracle.fullgrammer.v12c` / `v19c` / `v21c` / `v26ai`；版本由 package 表达。profile 选择由 core 的 `FullGrammerDialectModule` registry 注入，人工配置 `parser.grammarProfile` 优先，之后可使用 `parser.databaseVersion` 或 JDBC metadata；同一 major 的 minor 默认复用该 major profile，最多只允许高 1 个 major 的临时降级，完全没有方言/版本信息时回退 token-event。SQL/DDL full-grammer parser 可作为 `parser.mode=auto|full-grammer` 的正式运行选择；versioned correctness fixture 要求匹配版本 full-grammer 成功。PostgreSQL 低版本遇到高版本专属语法会返回 `FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX`；Oracle 当前低版本遇到已编码的高版本专属语法会在 grammar 层产生 syntax error，token-event 才承担宽松向前兼容。
 
 PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgres/v17`、`postgres/v18`。测试命令、文档和验收描述必须显式列出这些目录，不使用 `postgres/v1` 这类聚合前缀；即使 fixture filter 技术上可以按字符串前缀匹配多个目录，也不能把它写成维护者可依赖的版本标识。
 
@@ -24,14 +26,15 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 763 | 616 / 147 | 10370 | 2365 | 4 | 3243 |
-| common token-event | 32 | 28 / 4 | 737 | 231 | 0 | 207 |
-| MySQL root token-event | 76 | 59 / 17 | 631 | 265 | 1 | 255 |
-| MySQL full-grammer v8_0 | 82 | 65 / 17 | 908 | 368 | 0 | 448 |
-| PostgreSQL root token-event | 103 | 85 / 18 | 1119 | 194 | 2 | 251 |
-| PostgreSQL full-grammer v16 | 103 | 85 / 18 | 1452 | 211 | 1 | 405 |
-| PostgreSQL full-grammer v17 | 105 | 87 / 18 | 1455 | 233 | 0 | 406 |
-| PostgreSQL full-grammer v18 | 106 | 86 / 20 | 1456 | 231 | 0 | 405 |
+| 全部 correctness | 961 | 784 / 177 | 12214 | 4076 | 533 | 4294 |
+| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 223 |
+| MySQL root token-event | 83 | 65 / 18 | 655 | 296 | 2 | 266 |
+| MySQL full-grammer v5_7 | 89 | 71 / 18 | 690 | 411 | 145 | 288 |
+| MySQL full-grammer v8_0 | 89 | 71 / 18 | 922 | 398 | 173 | 457 |
+| PostgreSQL root token-event | 111 | 92 / 19 | 1400 | 332 | 26 | 394 |
+| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1472 | 342 | 66 | 418 |
+| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1475 | 364 | 60 | 419 |
+| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1474 | 362 | 61 | 418 |
 | Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 |
 | Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 |
 | Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
@@ -58,6 +61,7 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 | `cli/src/test/java/com/relationdetector/cli` | Java CLI/config/fixture runner 测试 | YAML/CLI 配置、统一 correctness fixture runner |
 | `test-fixtures/correctness/common` | 文件化 SQL correctness fixture | 跨方言基础 SQL 行为，例如 basic join、JOIN USING |
 | `test-fixtures/correctness/mysql` | 文件化 MySQL correctness fixture | MySQL SQL/DDL/parser/warning golden |
+| `test-fixtures/correctness/mysql/v5_7` | 文件化 MySQL 5.7 correctness fixture | MySQL 5.7 strict full-grammer version golden，manifest 强制 `mysql/5.7` full-grammer |
 | `test-fixtures/correctness/mysql/v8_0` | 文件化 MySQL 8.0 correctness fixture | MySQL 8.0 strict full-grammer version golden，manifest 强制 `mysql/8.0` full-grammer |
 | `test-fixtures/correctness/postgres` | 文件化 Postgres correctness fixture | Postgres SQL/DDL/parser/warning golden |
 | `test-fixtures/correctness/postgres/v16` | 文件化 Postgres 16 correctness fixture | 根 PostgreSQL fixture 的 16.x strict version golden，manifest 强制 `postgresql/16` full-grammer |
@@ -135,7 +139,8 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 | `mysql/mysql-user-spending-*-update-sql` | SQL primary / MySQL DML / Data Lineage | 用户消费汇总回写覆盖 `LEFT JOIN` derived aggregate 与 comma join 对照；`u.id = o_summary.user_id` 归一为 `orders.user_id -> users.id`，不输出派生表伪关系；`expected-lineage.json` 固化 `VALUE:AGGREGATE:orders.pay_amount->users.total_spent` 和 `CONTROL:CASE_WHEN:orders.pay_amount->users.level` |
 | `mysql/mysql-supply-chain-update-*-sql` | SQL primary / MySQL DML / derived lineage | 复杂供应链 multi-table `UPDATE` 覆盖窗口函数 derived table、聚合 derived table、列级弱共现、`INNER JOIN` 与 comma/subquery 等价输出；`latest_orders`、`sm`、`ranking`、`avg_cost` 不得作为物理关系端点 |
 | `mysql/sql-system-log-noise` | noise filter | MySQL information_schema/system query filter |
-| `mysql/v8_0/*` | SQL/DDL versioned full-grammer | 93 个 MySQL 8.0 strict version golden；manifest 强制 `parserMode: full-grammer`、`grammarProfile: mysql/8.0`；相对 root MySQL token-event 的差异记录在 `docs/parser-audit/all-golden-semantic-review.md` |
+| `mysql/v5_7/*` | SQL/DDL versioned full-grammer | 89 个 MySQL 5.7 strict version golden；manifest 强制 `parserMode: full-grammer`、`grammarProfile: mysql/5.7`；包含 MySQL 8.0 fixture 的 5.7 原样兼容、语义等价改写和 8.0-only 版本边界负向用例 |
+| `mysql/v8_0/*` | SQL/DDL versioned full-grammer | 89 个 MySQL 8.0 strict version golden；manifest 强制 `parserMode: full-grammer`、`grammarProfile: mysql/8.0`；相对 root MySQL token-event 的差异记录在 `docs/parser-audit/all-golden-semantic-review.md` |
 | `postgres/ddl-alter-table-fk` | DDL primary | `ALTER TABLE ... FOREIGN KEY ... NOT VALID` |
 | `postgres/ddl-partial-index-boundary` | DDL primary / metadata | partial index 不作为全局唯一证据 |
 | `postgres/ddl-unique-include-index` | DDL primary | `CREATE UNIQUE INDEX ... INCLUDE` |
@@ -164,7 +169,7 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 | --- | --- | --- |
 | MySQL DDL fallback gold 是否完整 | 是 | MySQL DDL fixture 覆盖真实 `SHOW CREATE TABLE` 和官方复杂 DDL；root token-event DDL gold 只验收 token-event 自身 |
 | Postgres DDL fallback gold 是否完整 | 是 | `postgres-basic-correctness-case-01-ddl` 与官方复杂 DDL fixture 使用 token-event DDL gold；versioned full-grammer DDL gold 单独验收对应版本 |
-| MySQL SQL fallback gold 是否完整 | 是 | MySQL correctness fixture、noise filter、UPDATE/DELETE/JOIN 矩阵均有 token-event SQL gold；MySQL 8.0 full-grammer 由 `mysql/v8_0` 独立 golden 验收 |
+| MySQL SQL fallback gold 是否完整 | 是 | MySQL correctness fixture、noise filter、UPDATE/DELETE/JOIN 矩阵均有 token-event SQL gold；MySQL 5.7 / 8.0 full-grammer 分别由 `mysql/v5_7`、`mysql/v8_0` 独立 golden 验收 |
 | Postgres SQL fallback gold 是否完整 | 是 | Postgres correctness fixture、真实库对象/statement 样本、复杂 SQL 样本均有 token-event SQL gold；PostgreSQL full-grammer 由 `postgres/v16|v17|v18` 独立 golden 验收 |
 | Oracle SQL 是否可 primary | token-event 可用；full-grammer `INCOMPLETE_VERSIONED` | 已有 Oracle adaptor、Oracle token-event root golden 和 `oracle/12c|19c|21c|26ai` sample-data versioned full-grammer golden；当前 full-grammer 不再桥接 token-event，更广泛的 Oracle 官方语法覆盖是后续补强 |
 | SQL Server SQL 是否可 primary | 不切 | 当前只保留接口和 future fixture，尚未建立独立 adaptor/golden 验收 |
@@ -172,8 +177,9 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 | metadata 增强是否有保护 | 有 | MySQL metadata facts、database DDL collector、metadata evidence enhancer 测试覆盖 |
 | confidence 是否有保护 | 有 | confidence examples、evidence aggregation、dialect parser evidence/confidence 测试覆盖；SQL-only predicate 保留 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN` 等具体 evidence，方向由 DDL/metadata/data-profile、unique-vs-nonunique evidence 或附着在已有 SQL predicate 上的 `NAMING_MATCH` 方向提示提供 |
 | noise filter 是否有保护 | 有 | MySQL system log fixture、token-event USING/noise 单元测试覆盖 |
-| full-grammer 是否覆盖 SQL fixture | 是 | `CorrectnessFixtureRunnerTest` 直接扫描 `mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`；full-grammer 漏识别会在自身 versioned golden 中失败 |
+| full-grammer 是否覆盖 SQL fixture | 是 | `CorrectnessFixtureRunnerTest` 直接扫描 `mysql/v5_7`、`mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`；full-grammer 漏识别会在自身 versioned golden 中失败 |
 | full-grammer 是否覆盖 DDL fixture | 是 | `CorrectnessFixtureRunnerTest` 直接扫描 versioned DDL fixture；不再使用 token-event DDL baseline 做 cross-parser 保护 |
+| full-grammer 是否覆盖 MySQL 5.7 version fixture | 是 | `CorrectnessFixtureRunnerTest` 扫描 `mysql/v5_7`，manifest 强制 `parserMode: full-grammer` 和 `grammarProfile: mysql/5.7`，比对独立 version golden |
 | full-grammer 是否覆盖 MySQL 8.0 version fixture | 是 | `CorrectnessFixtureRunnerTest` 扫描 `mysql/v8_0`，manifest 强制 `parserMode: full-grammer` 和 `grammarProfile: mysql/8.0`，比对独立 version golden |
 | full-grammer 是否覆盖 PostgreSQL 16/17/18 version fixture | 是 | `CorrectnessFixtureRunnerTest` 扫描 `postgres/v16`、`postgres/v17`、`postgres/v18`，manifest 强制 `parserMode: full-grammer` 和对应 `grammarProfile`，比对独立 version golden |
 | full-grammer 是否覆盖 Oracle 12c/19c/21c/26ai version fixture | sample-data 覆盖 | `CorrectnessFixtureRunnerTest` 扫描 `oracle/v12c`、`oracle/v19c`、`oracle/v21c`、`oracle/v26ai`，manifest 强制 `parserMode: full-grammer` 和对应 `grammarProfile`；当前结果证明每个 profile 使用本版本 generated parser 覆盖 sample-data，不证明官方严格语法边界 |

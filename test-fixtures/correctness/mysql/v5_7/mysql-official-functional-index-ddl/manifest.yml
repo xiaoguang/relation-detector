@@ -1,0 +1,12 @@
+id: mysql57-mysql-official-functional-index-ddl
+databaseType: MYSQL
+parserTarget: DDL
+parserMode: full-grammer
+grammarProfile: mysql/5.7
+databaseVersion: 5.7.44
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: official_mysql
+input: input.ddl.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

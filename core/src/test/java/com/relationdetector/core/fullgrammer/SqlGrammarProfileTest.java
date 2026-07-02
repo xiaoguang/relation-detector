@@ -22,6 +22,12 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 class SqlGrammarProfileTest {
     private static final List<FullGrammerDialectModule> MODULES = List.of(
             new FakeModule(new SqlGrammarProfile(
+                    "mysql-5.7",
+                    DatabaseType.MYSQL,
+                    5,
+                    7,
+                    Set.of("generated_columns", "json_basic", "multi_table_dml", "stored_routines"))),
+            new FakeModule(new SqlGrammarProfile(
                     "mysql-8.0",
                     DatabaseType.MYSQL,
                     8,
@@ -79,6 +85,31 @@ class SqlGrammarProfileTest {
         assertEquals(8, selection.profile().majorVersion());
         assertEquals(0, selection.profile().minorVersion());
         assertTrue(selection.profile().capabilities().contains("json_table"));
+        assertFalse(selection.usedFallback());
+    }
+
+    @Test
+    void selectsMysql57ProfileFromVersionString() {
+        SqlGrammarProfileSelection selection = select(DatabaseType.MYSQL, "5.7.44");
+
+        assertEquals("mysql-5.7", selection.profile().id());
+        assertEquals(DatabaseType.MYSQL, selection.profile().databaseType());
+        assertEquals(5, selection.profile().majorVersion());
+        assertEquals(7, selection.profile().minorVersion());
+        assertTrue(selection.profile().capabilities().contains("stored_routines"));
+        assertFalse(selection.usedFallback());
+    }
+
+    @Test
+    void configuredMysql57ProfileOverridesVersion() {
+        SqlGrammarProfileSelection selection = select(FullGrammerProfileRequest.builder()
+                .databaseType(DatabaseType.MYSQL)
+                .configuredProfile("mysql/5.7")
+                .configuredVersion("8.0.36")
+                .build());
+
+        assertEquals("mysql-5.7", selection.profile().id());
+        assertEquals("CONFIG", selection.versionSource());
         assertFalse(selection.usedFallback());
     }
 

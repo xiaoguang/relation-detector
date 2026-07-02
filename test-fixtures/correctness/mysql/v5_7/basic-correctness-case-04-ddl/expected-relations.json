@@ -1,0 +1,14 @@
+{
+  "fingerprints": [
+    "FK_LIKE:act_tool_info.think_act_record_id->think_act_record.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:agent_execution_record.plan_execution_id->plan_execution_record.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:dynamic_agent_tools.agent_id->dynamic_agents.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:dynamic_agents.model_id->dynamic_models.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:memory_plan_mappings.memory_id->dynamic_memories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:plan_execution_steps.plan_execution_id->plan_execution_record.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:think_act_record.agent_execution_record_id->agent_execution_record.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:user_input_wait_state.root_task_manager_id->root_task_manager.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:user_preferences.user_id->users.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+  ],
+  "forbiddenTables": []
+}

@@ -1,0 +1,12 @@
+{
+  "fingerprints": [
+    "VALUE:AGGREGATE:inventory.reserved_quantity,sales_order_items.quantity->inventory.reserved_quantity",
+    "VALUE:AGGREGATE:sales_orders.total_amount,commission_rules.rate->sales_commissions.commission_amount",
+    "VALUE:AGGREGATE:sales_orders.total_amount->sales_commissions.sales_amount",
+    "VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id",
+    "VALUE:FUNCTION_CALL:sales_orders.order_date->sales_commissions.commission_month"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

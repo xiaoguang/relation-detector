@@ -1,4 +1,7 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "FK_LIKE:fe_agent_message.sessionid->fe_agent_session.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:graph_checkpoint.thread_id->graph_thread.thread_id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+  ],
   "forbiddenTables": []
 }

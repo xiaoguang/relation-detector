@@ -1,0 +1,21 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:currency_exchange_rates.source_currency->master_skus.native_currency:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:master_skus.sku_ref->reconciliation_input_items.cleaned_sku:SQL_LOG_JOIN",
+    "FK_LIKE:reconciliation_input_items.input_order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:reconciliations.reference_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:sales_orders.customer_id->customer_profiles.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": [
+    "memory_input_cargo",
+    "fx_valuation",
+    "reconciliation_gap_analysis",
+    "customer_risk_analytics",
+    "jt",
+    "mic",
+    "fx",
+    "rga",
+    "cra",
+    "db_o"
+  ]
+}

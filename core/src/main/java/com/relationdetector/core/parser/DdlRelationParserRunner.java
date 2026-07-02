@@ -52,6 +52,7 @@ public final class DdlRelationParserRunner {
         String ddl = read(file);
         StructuredParseResult structured = parserBundleSelector.select(adaptor, config, context).ddlParser()
                 .parseDdl(ddl, file.toString(), context);
+        forwardWarnings(context, structured);
         return visitor.extract(ddl, file.toString(), structured);
     }
 
@@ -94,10 +95,18 @@ public final class DdlRelationParserRunner {
             AdaptorContext context
     ) {
         StructuredParseResult structured = parser.parseDdl(ddl, sourceName, context);
+        forwardWarnings(context, structured);
         return rewriteEvidenceSource(
                 visitor.extract(ddl, sourceName, structured),
                 sourceType,
                 sourceName);
+    }
+
+    private static void forwardWarnings(AdaptorContext context, StructuredParseResult structured) {
+        if (context == null || structured == null || structured.warnings().isEmpty()) {
+            return;
+        }
+        structured.warnings().forEach(context::warn);
     }
 
     private List<RelationshipCandidate> rewriteEvidenceSource(

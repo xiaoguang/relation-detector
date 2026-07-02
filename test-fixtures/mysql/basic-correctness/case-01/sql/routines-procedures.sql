@@ -1774,11 +1774,8 @@ BEGIN
     SELECT IFNULL(MAX(CAST(SUBSTRING(default_number, 5) AS UNSIGNED)), 0) 
     INTO v_start_lsck_val FROM jsh_depot_head WHERE tenant_id = v_tenant_id FOR UPDATE;
 
-    -- 步骤 1.2：【物理防回卷拦截】动态重置计划表的 AUTO_INCREMENT 物理起点，确保多次执行总台时其自增不断向高位推进
-    SET @alter_sql = CONCAT('ALTER TABLE `jsh_temp_mock_plan` AUTO_INCREMENT = ', (v_start_lsck_val + 1));
-    PREPARE stmt_alter FROM @alter_sql;
-    EXECUTE stmt_alter;
-    DEALLOCATE PREPARE stmt_alter;
+    -- 步骤 1.2：【物理防回卷拦截】原系统可在运行时动态调整 AUTO_INCREMENT。
+    -- correctness fixture 不保留动态 DDL；该逻辑不产生可审计的物理 relation 或 data lineage。
 
     -- [步骤2：高速构建单列极轻量数字辅助表]
     DROP TEMPORARY TABLE IF EXISTS tmp_sequence;
@@ -2261,4 +2258,3 @@ BEGIN
     TRUNCATE TABLE tmp_batch_buffer;
 END
 -- relation-detector-fixture-end
-

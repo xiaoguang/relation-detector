@@ -40,7 +40,7 @@ queries
     ;
 
 query
-    : (simpleStatement | beginWork) SEMICOLON_SYMBOL
+    : (simpleStatement | beginWork | beginEndBlock | labeledBlock) SEMICOLON_SYMBOL?
     ;
 
 simpleStatement
@@ -1122,6 +1122,7 @@ limitOptions
 
 limitOption
     : identifier
+    | rvalueSystemOrUserVariable
     | (PARAM_MARKER | ULONGLONG_NUMBER | LONG_NUMBER | INT_NUMBER)
     ;
 
@@ -3491,9 +3492,7 @@ getDiagnosticsStatement
 
 // Only a limited subset of expr is allowed in SIGNAL/RESIGNAL/CONDITIONS.
 signalAllowedExpr
-    : literal
-    | rvalueSystemOrUserVariable
-    | qualifiedIdentifier
+    : expr
     ;
 
 statementInformationItem
@@ -4062,7 +4061,13 @@ updateList
     ;
 
 updateElement
-    : columnRef EQUAL_OPERATOR (expr | DEFAULT_SYMBOL)
+    : columnRef EQUAL_OPERATOR caseValueExpression
+    | columnRef EQUAL_OPERATOR expr
+    | columnRef EQUAL_OPERATOR DEFAULT_SYMBOL
+    ;
+
+caseValueExpression
+    : CASE_SYMBOL expr? (whenExpression thenExpression)+ elseExpression? END_SYMBOL
     ;
 
 charsetClause
@@ -4819,6 +4824,7 @@ identifierKeywordsUnambiguous
         | CONSTRAINT_SCHEMA_SYMBOL
         | CONTEXT_SYMBOL
         | CPU_SYMBOL
+        | CUME_DIST_SYMBOL
         | CURRENT_SYMBOL
         | CURSOR_NAME_SYMBOL
         | DATAFILE_SYMBOL
@@ -4830,6 +4836,7 @@ identifierKeywordsUnambiguous
         | DEFINER_SYMBOL
         | DEFINITION_SYMBOL
         | DELAY_KEY_WRITE_SYMBOL
+        | DENSE_RANK_SYMBOL
         | DESCRIPTION_SYMBOL
         | DIAGNOSTICS_SYMBOL
         | DIRECTORY_SYMBOL
@@ -4865,6 +4872,7 @@ identifierKeywordsUnambiguous
         | FILTER_SYMBOL
         | FINISH_SYMBOL
         | FIRST_SYMBOL
+        | FIRST_VALUE_SYMBOL
         | FIXED_SYMBOL
         | FOLLOWING_SYMBOL
         | FORMAT_SYMBOL
@@ -4904,7 +4912,10 @@ identifierKeywordsUnambiguous
         | JSON_VALUE_SYMBOL
         | KEY_BLOCK_SIZE_SYMBOL
         | KEYRING_SYMBOL
+        | LAG_SYMBOL
         | LAST_SYMBOL
+        | LAST_VALUE_SYMBOL
+        | LEAD_SYMBOL
         | LEAVES_SYMBOL
         | LESS_SYMBOL
         | LEVEL_SYMBOL
@@ -4974,6 +4985,8 @@ identifierKeywordsUnambiguous
         | NODEGROUP_SYMBOL
         | NOWAIT_SYMBOL
         | NO_WAIT_SYMBOL
+        | NTH_VALUE_SYMBOL
+        | NTILE_SYMBOL
         | NULLS_SYMBOL
         | NUMBER_SYMBOL
         | NVARCHAR_SYMBOL
@@ -4997,6 +5010,7 @@ identifierKeywordsUnambiguous
         | PARTITIONS_SYMBOL
         | PASSWORD_SYMBOL
         | PATH_SYMBOL
+        | PERCENT_RANK_SYMBOL
         | PHASE_SYMBOL
         | PLUGINS_SYMBOL
         | PLUGIN_DIR_SYMBOL
@@ -5015,6 +5029,7 @@ identifierKeywordsUnambiguous
         | QUARTER_SYMBOL
         | QUERY_SYMBOL
         | QUICK_SYMBOL
+        | RANK_SYMBOL
         | READ_ONLY_SYMBOL
         | REBUILD_SYMBOL
         | RECOVER_SYMBOL
@@ -5054,6 +5069,7 @@ identifierKeywordsUnambiguous
         | ROLLUP_SYMBOL
         | ROTATE_SYMBOL
         | ROUTINE_SYMBOL
+        | ROW_NUMBER_SYMBOL
         | ROW_COUNT_SYMBOL
         | ROW_FORMAT_SYMBOL
         | RTREE_SYMBOL

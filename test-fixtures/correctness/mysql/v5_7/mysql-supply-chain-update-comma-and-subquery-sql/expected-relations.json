@@ -1,0 +1,15 @@
+{
+  "fingerprints": [
+    "CO_OCCURRENCE:order_items.product_id->warehouse_inventory.product_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:orders.customer_id->supplier_manifests.supplier_id:SQL_LOG_JOIN",
+    "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:orders.customer_id->customer_profiles.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:warehouse_inventory.bin_id->bin_locations.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
+  "forbiddenTables": [
+    "latest_orders",
+    "sm",
+    "ranking",
+    "avg_cost"
+  ]
+}

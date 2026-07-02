@@ -144,7 +144,7 @@ BEGIN
     WHERE pb.status = 'active'
       AND pb.current_qty > 0
       AND (p_role IN ('senior_mgmt', 'all') OR w.id = p_warehouse_id)
-      AND (pb.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p_expiry_days) OR pb.expiry_date < CURDATE())
+      AND (pb.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p_expiry_days DAY) OR pb.expiry_date < CURDATE())
     ORDER BY urgency_level ASC, pb.expiry_date ASC;
 END//
 
@@ -189,13 +189,13 @@ BEGIN
             SUM(i.quantity) AS total_stock_qty,
             SUM(i.quantity * p.purchase_price) AS total_stock_value,
             -- 临期库存
-            SUM(CASE WHEN pb.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p_expiry_days) THEN i.quantity ELSE 0 END) AS near_expiry_qty,
-            SUM(CASE WHEN pb.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p_expiry_days) THEN i.quantity * p.purchase_price ELSE 0 END) AS near_expiry_value,
+            SUM(CASE WHEN pb.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p_expiry_days DAY) THEN i.quantity ELSE 0 END) AS near_expiry_qty,
+            SUM(CASE WHEN pb.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p_expiry_days DAY) THEN i.quantity * p.purchase_price ELSE 0 END) AS near_expiry_value,
             -- 已过期
             SUM(CASE WHEN pb.expiry_date < CURDATE() THEN i.quantity ELSE 0 END) AS expired_qty,
             SUM(CASE WHEN pb.expiry_date < CURDATE() THEN i.quantity * p.purchase_price ELSE 0 END) AS expired_value,
             -- 批号数量
-            COUNT(DISTINCT CASE WHEN pb.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p_expiry_days) THEN pb.id END) AS near_expiry_batch_count,
+            COUNT(DISTINCT CASE WHEN pb.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p_expiry_days DAY) THEN pb.id END) AS near_expiry_batch_count,
             -- 最早过期日期
             MIN(pb.expiry_date) AS earliest_expiry
         FROM product_categories pc
@@ -229,7 +229,7 @@ BEGIN
         FROM products p
         JOIN inventory i ON p.id = i.product_id
         JOIN product_batches pb ON i.batch_id = pb.id
-        WHERE pb.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p_expiry_days)
+        WHERE pb.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p_expiry_days DAY)
         GROUP BY p.category_id, p.sku, p.name
     )
     SELECT

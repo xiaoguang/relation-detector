@@ -140,6 +140,7 @@ auto | full-grammer | token-event
 
 | 数据库 | Profile | 归属 | correctness golden |
 | --- | --- | --- | --- |
+| MySQL | `mysql/5.7` | `adaptor-mysql/fullgrammer/v5_7` | `test-fixtures/correctness/mysql/v5_7` |
 | MySQL | `mysql/8.0` | `adaptor-mysql/fullgrammer/v8_0` | `test-fixtures/correctness/mysql/v8_0` |
 | PostgreSQL | `postgresql/16` | `adaptor-postgres/fullgrammer/v16` | `test-fixtures/correctness/postgres/v16` |
 | PostgreSQL | `postgresql/17` | `adaptor-postgres/fullgrammer/v17` | `test-fixtures/correctness/postgres/v17` |
@@ -149,7 +150,7 @@ auto | full-grammer | token-event
 | Oracle | `oracle/21c` | `adaptor-oracle/fullgrammer/v21c` | `test-fixtures/correctness/oracle/v21c` |
 | Oracle | `oracle/26ai` | `adaptor-oracle/fullgrammer/v26ai` | `test-fixtures/correctness/oracle/v26ai` |
 
-root `test-fixtures/correctness/mysql`、root `test-fixtures/correctness/postgres` 与 root `test-fixtures/correctness/oracle` 是 token-event baseline，不代表严格数据库版本目录。严格 full-grammer 版本证明分别位于 `mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`、`oracle/v12c`、`oracle/v19c`、`oracle/v21c`、`oracle/v26ai`。Oracle 当前 versioned golden 是 `INCOMPLETE_VERSIONED` generated parser golden；更广泛的 Oracle 官方语法覆盖仍是后续工作。
+root `test-fixtures/correctness/mysql`、root `test-fixtures/correctness/postgres` 与 root `test-fixtures/correctness/oracle` 是 token-event baseline，不代表严格数据库版本目录。严格 full-grammer 版本证明分别位于 `mysql/v5_7`、`mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`、`oracle/v12c`、`oracle/v19c`、`oracle/v21c`、`oracle/v26ai`。Oracle 当前 versioned golden 是 `INCOMPLETE_VERSIONED` generated parser golden；更广泛的 Oracle 官方语法覆盖仍是后续工作。
 
 ### 4.1 表和列
 
@@ -744,7 +745,7 @@ sources:
 
 parser:
   mode: auto              # auto | full-grammer | token-event
-  grammarProfile: ""      # 可选，例如 postgresql/16 或 mysql/8.0
+  grammarProfile: ""      # 可选，例如 postgresql/16、mysql/5.7 或 mysql/8.0
   databaseVersion: ""     # 可选，例如 16.5；缺失时可由 JDBC metadata 补充
 
 output:

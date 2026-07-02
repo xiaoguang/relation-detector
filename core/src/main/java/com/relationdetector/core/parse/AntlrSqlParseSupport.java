@@ -1,8 +1,8 @@
 package com.relationdetector.core.parse;
 
 import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -84,8 +84,7 @@ public final class AntlrSqlParseSupport {
     }
 
     public java.util.Optional<WarningMessage> detectDynamicSql(SqlStatementRecord statement) {
-        String lower = statement.sql().toLowerCase(Locale.ROOT);
-        if (!lower.matches("(?s).*\\b(prepare|execute\\s+immediate|execute)\\b.*")) {
+        if (!containsDynamicSql(statement.sql())) {
             return java.util.Optional.empty();
         }
         Map<String, Object> attributes = new LinkedHashMap<>();
@@ -99,6 +98,45 @@ public final class AntlrSqlParseSupport {
                 statement.sourceName(),
                 statement.startLine(),
                 attributes));
+    }
+
+    private boolean containsDynamicSql(String sql) {
+        List<String> words = sqlWords(sql);
+        for (int i = 0; i < words.size(); i++) {
+            String word = words.get(i);
+            if ("prepare".equals(word)) {
+                return true;
+            }
+            if (!"execute".equals(word)) {
+                continue;
+            }
+            String next = i + 1 < words.size() ? words.get(i + 1) : "";
+            if ("function".equals(next) || "procedure".equals(next)) {
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private List<String> sqlWords(String sql) {
+        List<String> words = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        for (int i = 0; i < sql.length(); i++) {
+            char ch = sql.charAt(i);
+            if (Character.isLetterOrDigit(ch) || ch == '_') {
+                current.append(Character.toLowerCase(ch));
+                continue;
+            }
+            if (!current.isEmpty()) {
+                words.add(current.toString());
+                current.setLength(0);
+            }
+        }
+        if (!current.isEmpty()) {
+            words.add(current.toString());
+        }
+        return words;
     }
 
     public record ParsedSql(

@@ -5,6 +5,7 @@ databaseVersion: 17.5
 databaseType: POSTGRESQL
 parserTarget: SQL
 sourceType: PLAIN_SQL
+statementFormat: OBJECT_BLOCKS
 evidenceSourceType: DATABASE_OBJECT
 schema: case_01
 input: input.sql

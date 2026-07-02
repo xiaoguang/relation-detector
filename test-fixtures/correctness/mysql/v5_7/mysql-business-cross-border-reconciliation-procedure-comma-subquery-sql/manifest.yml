@@ -1,0 +1,12 @@
+id: mysql57-mysql-business-cross-border-reconciliation-procedure-comma-subquery-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: mysql/5.7
+databaseVersion: 5.7.44
+sourceType: PROCEDURE
+statementFormat: OBJECT_BLOCKS
+schema: finance
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

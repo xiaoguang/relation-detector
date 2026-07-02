@@ -115,6 +115,9 @@ class CorrectnessFixtureRunnerTest {
                 root.resolve("mysql/v8_0/mysql80-example/manifest.yml"),
                 "mysql,mysql/v8_0"));
         assertTrue(matchesCorrectnessProfile(root,
+                root.resolve("mysql/v5_7/mysql57-example/manifest.yml"),
+                "mysql57,mysql/v5_7"));
+        assertTrue(matchesCorrectnessProfile(root,
                 root.resolve("common/sql-basic-join/manifest.yml"),
                 "smoke"));
         assertFalse(matchesCorrectnessProfile(root,
@@ -362,6 +365,9 @@ class CorrectnessFixtureRunnerTest {
             }
             if (requested.equals("mysql80") || requested.equals("mysql8") || requested.equals("mysql-v8_0")) {
                 return dialect.equals("mysql") && version.equals("v8_0");
+            }
+            if (requested.equals("mysql57") || requested.equals("mysql5.7") || requested.equals("mysql-v5_7")) {
+                return dialect.equals("mysql") && version.equals("v5_7");
             }
         }
         return false;

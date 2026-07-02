@@ -45,4 +45,36 @@ class PlainSqlLogExtractorTest {
                 FROM ledger_system_a src
                 WHERE ab.account_id = src.account_id;""", statements.get(0).sql());
     }
+
+    @Test
+    void preservesPostgresDollarQuotedRoutineBodyWhenSplittingStatements() throws Exception {
+        Path sql = tempDir.resolve("routine.sql");
+        Files.writeString(sql, """
+                CREATE OR REPLACE PROCEDURE rebuild_rollups()
+                LANGUAGE plpgsql
+                AS $body$
+                DECLARE
+                    v_count int := 0;
+                BEGIN
+                    INSERT INTO rollups (customer_id, total_amount)
+                    SELECT o.customer_id, SUM(o.amount)
+                    FROM orders o
+                    GROUP BY o.customer_id;
+                    v_count := v_count + 1;
+                END;
+                $body$;
+
+                SELECT * FROM rollups;
+                """);
+
+        var statements = new PlainSqlLogExtractor()
+                .extract(sql, StatementSourceType.PLAIN_SQL)
+                .toList();
+
+        assertEquals(2, statements.size());
+        assertEquals(1, statements.get(0).startLine());
+        assertEquals(14, statements.get(1).startLine());
+        org.junit.jupiter.api.Assertions.assertTrue(statements.get(0).sql().contains("v_count := v_count + 1;"));
+        assertEquals("SELECT * FROM rollups;", statements.get(1).sql());
+    }
 }

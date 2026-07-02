@@ -1,0 +1,23 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number"
+  ],
+  "forbiddenSources": [
+    "tmp_available_categories",
+    "tmp_pdf_selection",
+    "tmp_affinity_buffer",
+    "tmp_final_categories",
+    "p_",
+    "v_",
+    "CURRENT_TIMESTAMP",
+    "NOW"
+  ],
+  "forbiddenTargets": [
+    "tmp_available_categories.cat_id",
+    "tmp_pdf_selection.target_ratio",
+    "tmp_affinity_buffer.cat_id",
+    "tmp_affinity_buffer.t_ratio",
+    "tmp_final_categories.t_ratio"
+  ],
+  "warningCodes": {}
+}

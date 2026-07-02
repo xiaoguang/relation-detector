@@ -45,6 +45,7 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.Enums.WarningType;
 
 /**
  * Tests SQL parser dispatch without running a full scan.
@@ -89,6 +90,30 @@ class SqlRelationParserRunnerTest {
         assertTrue(relations.isEmpty());
         assertEquals(1, structuredCalls.get(), "auto without profile should choose token-event directly");
         assertTrue(warnings.isEmpty(), "auto token-event selection should not be reported as fallback");
+    }
+
+    @Test
+    void forwardsStructuredParserWarningsToContext() {
+        ScanConfig config = new ScanConfig();
+        config.databaseType = DatabaseType.MYSQL;
+        List<WarningMessage> warnings = new ArrayList<>();
+
+        new SqlRelationParserRunner()
+                .parse(new TestAdaptor((statement, context) -> List.of(), (statement, context) ->
+                        new StructuredParseResult("token-event", "mysql", statement.sourceName(),
+                                List.of(),
+                                List.of(WarningMessage.warn(WarningType.PARSE_WARNING,
+                                        "FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX",
+                                        "unsupported syntax",
+                                        statement.sourceName(),
+                                        statement.startLine())),
+                                Map.of())),
+                        config,
+                        statement(),
+                        context(warnings));
+
+        assertEquals(List.of("FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX"),
+                warnings.stream().map(WarningMessage::code).toList());
     }
 
     @Test

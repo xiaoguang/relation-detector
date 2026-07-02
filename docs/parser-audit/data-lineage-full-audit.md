@@ -8,11 +8,11 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 
 | Classification | Count |
 | --- | ---: |
-| TOTAL | 872 |
-| EXISTING_GOLD | 285 |
+| TOTAL | 961 |
+| EXISTING_GOLD | 321 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 587 |
+| NOT_APPLICABLE | 640 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -606,6 +606,599 @@ CREATE TABLE sales_orders (
     id INT PRIMARY KEY,
     customer_id INT,
     FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+
+## `mysql57-mysql-basic-correctness-case-01-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/ddl/show-create-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL SHOW CREATE TABLE for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_01.GRAPH_CHECKPOINT
+CREATE TABLE `GRAPH_CHECKPOINT` (
+  `checkpoint_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `thread_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `node_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+```
+
+## `mysql57-mysql-basic-correctness-case-02-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-02/ddl/show-create-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL SHOW CREATE TABLE for basic-correctness-case-02.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_02.GRAPH_CHECKPOINT
+CREATE TABLE `GRAPH_CHECKPOINT` (
+  `checkpoint_id` varchar(36) NOT NULL,
+  `thread_id` varchar(36) NOT NULL,
+  `node_id` varchar(255) DEFAULT NULL,
+```
+
+## `mysql57-mysql-basic-correctness-case-03-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-03/ddl/show-create-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL SHOW CREATE TABLE for basic-correctness-case-03.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_03.biz_bill_item_fact
+CREATE TABLE `biz_bill_item_fact` (
+  `factId` bigint NOT NULL AUTO_INCREMENT COMMENT '事实明细ID，语义层生成',
+  `tenantId` bigint NOT NULL COMMENT '租户ID，来源: jsh_depot_head.tenant_id / jsh_depot_item.tenant_id',
+  `sourceOrderId` bigint NOT NULL COMMENT '主单ID，来源: jsh_depot_head.id',
+```
+
+## `mysql57-mysql-basic-correctness-case-04-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-04/ddl/show-create-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL SHOW CREATE TABLE for basic-correctness-case-04.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-table: case_04.act_tool_info
+CREATE TABLE `act_tool_info` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `parameters` longtext COLLATE utf8mb4_unicode_ci,
+```
+
+## `mysql57-mysql-ddl-create-table-fk-index`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/ddl-create-table-fk-index/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE users (
+  id bigint NOT NULL,
+  email varchar(255),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_users_email (email)
+);
+
+CREATE TABLE orders (
+```
+
+## `mysql57-mysql-official-alter-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-alter-index-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/invisible_indexes.test
+-- - MySQL 5.7 Reference Manual: CREATE INDEX Statement
+-- ALTER INDEX operations should be parsed without creating relationships.
+
+CREATE TABLE order_search_tokens (
+  token_id BIGINT NOT NULL,
+```
+
+## `mysql57-mysql-official-complex-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-complex-index-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/functional_index.test
+-- - mysql/mysql-server mysql-test/t/invisible_indexes.test
+-- - MySQL 5.7 Reference Manual: CREATE INDEX Statement
+
+CREATE TABLE customer_identity (
+  id BIGINT NOT NULL,
+```
+
+## `mysql57-mysql-official-functional-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-functional-index-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/functional_index.test
+-- - MySQL 5.7 Reference Manual: CREATE INDEX Statement
+
+CREATE TABLE metric_events (
+  id BIGINT NOT NULL,
+  account_id BIGINT NOT NULL,
+```
+
+## `mysql57-mysql-official-index-options-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-index-options-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/create_index.test
+-- - MySQL 5.7 Reference Manual: CREATE INDEX Statement
+-- These index options are parser coverage only; they must not create FK-like
+-- relationships by themselves.
+
+CREATE TABLE search_documents (
+```
+
+## `mysql57-mysql-official-invisible-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-invisible-index-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/invisible_indexes.test
+-- - MySQL 5.7 Reference Manual: CREATE INDEX Statement
+
+CREATE TABLE inventory_snapshots (
+  snapshot_id BIGINT NOT NULL,
+  warehouse_id BIGINT NOT NULL,
+```
+
+## `mysql57-mysql-official-special-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-special-index-ddl/input.ddl.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/functional_index.test
+-- - MySQL 5.7 Reference Manual: CREATE INDEX Statement
+-- FULLTEXT, SPATIAL, and JSON expression indexes are useful DDL parser
+-- coverage, but none of them is a relationship on its own.
+
+CREATE TABLE geo_assets (
+```
+
+## `mysql57-sample-data-enterprise-extension-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/mysql/5.7/01-schema/06-enterprise-extension-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统企业级扩展表
+-- 覆盖: 多租户/账套、地址、税率、会计期间、收付款、
+--       库存盘点/调拨/预留、工艺路线/工序、班次排班
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+
+## `mysql57-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+
+## `mysql57sample-data-full-01-schema-01-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/mysql/5.7/01-schema/01-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统完整数据库设计
+-- 模块: HR, 权限, 货品, 批号, 库存, 采购, 销售, 财务
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+CREATE DATABASE IF NOT EXISTS erp_system
+  CHARACTER SET utf8mb4
+```
+
+## `mysql57sample-data-full-01-schema-02-indexes-and-views-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/mysql/5.7/01-schema/02-indexes-and-views.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 索引补充 - 覆盖跨表查询常用路径
+-- ============================================================
+
+USE erp_system;
+
+-- 库存与批号关联查询
+CREATE INDEX idx_inv_batch_warehouse ON inventory(batch_id, warehouse_id);
+```
+
+## `mysql57sample-data-full-01-schema-04-supplementary-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/mysql/5.7/01-schema/04-supplementary-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充表: 发货物流、销售提成、促销活动、
+--   三单匹配、固定资产、BOM生产工单、客服工单
+-- 关系说明:
+--   shipments -> sales_orders (1:1), 通过tracking_no追踪物流
+--   sales_commissions -> sales_orders + employees (N:1:1), 按销售额计算提成
+--   promotions -> sales_order_items (N:M), 通过promotion_items关联
+--   invoices -> purchase_orders + purchase_receipts (三单匹配)
+```
+
+## `mysql57sample-data-full-01-schema-05-third-batch-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/mysql/5.7/01-schema/05-third-batch-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统第三批补充表: 合同管理、AR/AP账龄、税务管理、
+--   质检、审批流引擎、现金流预测、项目成本、多币种汇率、
+--   绩效考核、序列号追踪、寄售库存、价格变更历史
+-- 关系说明:
+--   contracts -> sales_orders/purchase_orders (1:1), 管理合同条款和里程碑
+--   ar_aging / ap_aging: 账龄分析用，按月计算应收账款/应付账款
+--   tax_invoices: 增值税发票管理，进项税/销项税
+```
+
+## `mysql57sample-data-full-01-schema-07-erp-deep-scenario-tables-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `sample-data/mysql/5.7/01-schema/07-erp-deep-scenario-tables.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景扩展表
+-- 覆盖: MRP/生产执行、成本核算、总账预算、AR/AP、WMS、售后维修、主数据治理
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
 ```
 
 ## `mysql80-mysql-basic-correctness-case-01-ddl`
@@ -4122,6 +4715,2703 @@ LEFT JOIN (
     GROUP BY user_id
 ) o_summary ON u.id = o_summary.user_id
 SET
+```
+
+## `mysql57-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql57-basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/basic-correctness-case-01-procedure-proc-generate-purchase-inbound-from-order-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
+- `VALUE:DIRECT:jsh_depot_item.another_depot_id->jsh_depot_item.another_depot_id`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.sn_list->jsh_depot_item.sn_list`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+- `VALUE:FUNCTION_CALL:jsh_material.expiry_num->jsh_depot_item.expiration_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql57-basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/basic-correctness-case-01-procedure-proc-generate-purchase-order-from-requisition-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
+- `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
+- `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
+- `VALUE:DIRECT:jsh_depot_item.delete_flag->jsh_depot_item.delete_flag`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->jsh_depot_item.depot_id`
+- `VALUE:DIRECT:jsh_depot_item.id->jsh_depot_item.link_id`
+- `VALUE:DIRECT:jsh_depot_item.material_extend_id->jsh_depot_item.material_extend_id`
+- `VALUE:DIRECT:jsh_depot_item.material_id->jsh_depot_item.material_id`
+- `VALUE:DIRECT:jsh_depot_item.material_type->jsh_depot_item.material_type`
+- `VALUE:DIRECT:jsh_depot_item.material_unit->jsh_depot_item.material_unit`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->jsh_depot_item.oper_number`
+- `VALUE:DIRECT:jsh_depot_item.purchase_unit_price->jsh_depot_item.purchase_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.remark->jsh_depot_item.remark`
+- `VALUE:DIRECT:jsh_depot_item.sku->jsh_depot_item.sku`
+- `VALUE:DIRECT:jsh_depot_item.tax_money->jsh_depot_item.tax_money`
+- `VALUE:DIRECT:jsh_depot_item.tax_rate->jsh_depot_item.tax_rate`
+- `VALUE:DIRECT:jsh_depot_item.tax_unit_price->jsh_depot_item.tax_unit_price`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->jsh_depot_item.tenant_id`
+- `VALUE:DIRECT:jsh_material_extend.purchase_decimal->jsh_depot_item.unit_price`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql57-basic-correctness-case-01-procedure-proc-insert-purchase-requisition-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql57-basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/basic-correctness-case-01-procedure-proc-refresh-org-pdf-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
+- `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
+- `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql57-basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/basic-correctness-case-01-procedure-proc-worker-daily-distribution-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id,jsh_orga_user_rel.delete_flag->jsh_temp_mock_plan.user_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql57-basic-correctness-case-01-procedure-sp-fill-biz-bill-item-fact-new-with-progress-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/basic-correctness-case-01-procedure-sp-fill-biz-bill-item-fact-new-with-progress-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_apply->biz_bill_item_fact_new.purchaseApplyLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_number->biz_bill_item_fact_new.purchaseOrderLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.another_depot_id->biz_bill_item_fact_new.inWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.depot_id->biz_bill_item_fact_new.outWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.inventoryDirection`
+- `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.salesDirection`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.customerId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.memberId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.supplierId`
+- `VALUE:AGGREGATE:jsh_orga_user_rel.orga_id->biz_bill_item_fact_new.storeId`
+- `VALUE:COALESCE:jsh_depot_item.tax_last_money,jsh_depot_item.all_price->biz_bill_item_fact_new.amount`
+- `VALUE:DIRECT:jsh_depot_head.creator->biz_bill_item_fact_new.creator`
+- `VALUE:DIRECT:jsh_depot_head.id->biz_bill_item_fact_new.sourceOrderId`
+- `VALUE:DIRECT:jsh_depot_head.number->biz_bill_item_fact_new.sourceOrderNo`
+- `VALUE:DIRECT:jsh_depot_head.oper_time->biz_bill_item_fact_new.businessDate`
+- `VALUE:DIRECT:jsh_depot_head.sub_type->biz_bill_item_fact_new.sourceSubType`
+- `VALUE:DIRECT:jsh_depot_head.type->biz_bill_item_fact_new.sourceType`
+- `VALUE:DIRECT:jsh_depot_item.depot_id->biz_bill_item_fact_new.warehouseId`
+- `VALUE:DIRECT:jsh_depot_item.id->biz_bill_item_fact_new.sourceOrderItemId`
+- `VALUE:DIRECT:jsh_depot_item.material_id->biz_bill_item_fact_new.productId`
+- `VALUE:DIRECT:jsh_depot_item.oper_number->biz_bill_item_fact_new.quantity`
+- `VALUE:DIRECT:jsh_depot_item.tenant_id->biz_bill_item_fact_new.tenantId`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql57-basic-correctness-case-01-procedure-sp-sync-retail-out-fact-batch-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | local temporary table sources are excluded from Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Generated from MySQL information_schema.ROUTINES procedures for basic-correctness-case-01.
+-- Refresh with MySqlBasicCorrectnessFixtureExporter.
+
+-- relation-detector-fixture-source: PROCEDURE:case_01.proc_batch_call_generate_po
+BEGIN
+    -- [1. 局部控制变量声明]
+    DECLARE i INT DEFAULT 0;
+```
+
+## `mysql57-mysql-business-cross-border-reconciliation-procedure-comma-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-business-cross-border-reconciliation-procedure-comma-subquery-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql-business-cross-border-reconciliation-procedure-comma-subquery-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score->reconciliations.status`
+- `VALUE:COALESCE:reconciliation_input_items.item_qty,reconciliation_input_items.base_unit_price,currency_exchange_rates.rate,sales_orders.paid_amount->reconciliations.difference`
+- `VALUE:CONCAT_FORMAT:reconciliation_input_items.cleaned_sku,master_skus.merchant_id->reconciliations.remark`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7 semantic rewrite using comma rowsets instead of CTE/JSON_TABLE.
+-- relation-detector-fixture-source: PROCEDURE:finance.sp_cross_border_reconciliation_engine
+CREATE PROCEDURE sp_cross_border_reconciliation_engine(
+    IN p_target_currency VARCHAR(10),
+    IN p_risk_threshold DECIMAL(5,2)
+)
+BEGIN
+    UPDATE reconciliations r, sales_orders so, reconciliation_input_items rii, master_skus ms
+```
+
+## `mysql57-mysql-business-cross-border-reconciliation-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-business-cross-border-reconciliation-procedure-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql-business-cross-border-reconciliation-procedure-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score->reconciliations.status`
+- `VALUE:COALESCE:reconciliation_input_items.item_qty,reconciliation_input_items.base_unit_price,currency_exchange_rates.rate,sales_orders.paid_amount->reconciliations.difference`
+- `VALUE:CONCAT_FORMAT:reconciliation_input_items.cleaned_sku,master_skus.merchant_id->reconciliations.remark`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7 semantic rewrite: JSON_TABLE/CTE/window input is represented by a physical staging table.
+-- relation-detector-fixture-source: PROCEDURE:finance.sp_cross_border_reconciliation_engine
+CREATE PROCEDURE sp_cross_border_reconciliation_engine(
+    IN p_target_currency VARCHAR(10),
+    IN p_risk_threshold DECIMAL(5,2)
+)
+BEGIN
+    UPDATE reconciliations r
+```
+
+## `mysql57-mysql-business-financial-asset-wash-procedure-comma-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-business-financial-asset-wash-procedure-comma-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql-business-financial-asset-wash-procedure-comma-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7 semantic rewrite: JSON_TABLE/CTE/window input is represented by a physical staging table.
+-- relation-detector-fixture-source: PROCEDURE:finance.sp_financial_asset_wash_update
+CREATE PROCEDURE sp_financial_asset_wash_update(
+    IN p_max_limit_cap DECIMAL(16,4)
+)
+BEGIN
+    UPDATE account_balances ab
+    , (
+```
+
+## `mysql57-mysql-business-financial-asset-wash-procedure-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-business-financial-asset-wash-procedure-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql-business-financial-asset-wash-procedure-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7 semantic rewrite: JSON_TABLE/CTE/window input is represented by a physical staging table.
+-- relation-detector-fixture-source: PROCEDURE:finance.sp_financial_asset_wash_update
+CREATE PROCEDURE sp_financial_asset_wash_update(
+    IN p_max_limit_cap DECIMAL(16,4)
+)
+BEGIN
+    UPDATE account_balances ab
+    INNER JOIN (
+```
+
+## `mysql57-mysql-commerce-promotion-update-comma-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-commerce-promotion-update-comma-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql-commerce-promotion-update-comma-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE products p, shops s, merchants m, discount_policies dp
+SET
+    p.promo_price = p.original_price * 0.90,
+    p.is_on_sale = 1,
+    p.updated_at = NOW()
+WHERE
+    p.shop_id = s.id
+    AND s.merchant_id = m.id
+```
+
+## `mysql57-mysql-commerce-promotion-update-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-commerce-promotion-update-explicit-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql-commerce-promotion-update-explicit-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:products.original_price->products.promo_price`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE products p
+INNER JOIN shops s ON p.shop_id = s.id
+INNER JOIN merchants m ON s.merchant_id = m.id
+INNER JOIN discount_policies dp ON p.category_id = dp.category_id
+SET
+    p.promo_price = p.original_price * 0.90,
+    p.is_on_sale = 1,
+    p.updated_at = NOW()
+```
+
+## `mysql57-mysql-invalid-orders-delete-comma-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-invalid-orders-delete-comma-join-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE o, oi
+FROM orders o, order_items oi, users u
+WHERE
+    o.id = oi.order_id
+    AND o.user_id = u.id
+    AND o.payment_status = 'UNPAID'
+    AND o.created_at < NOW() - INTERVAL 7 DAY
+    AND u.risk_level = 'HIGH';
+```
+
+## `mysql57-mysql-invalid-orders-delete-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-invalid-orders-delete-explicit-join-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE o, oi
+FROM orders o
+INNER JOIN order_items oi ON o.id = oi.order_id
+INNER JOIN users u ON o.user_id = u.id
+WHERE
+    o.payment_status = 'UNPAID'
+    AND o.created_at < NOW() - INTERVAL 7 DAY
+    AND u.risk_level = 'HIGH';
+```
+
+## `mysql57-mysql-official-cte-dml-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-cte-dml-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql-official-cte-dml-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:accounts.id->orders.audit_account_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/include/with_non_recursive.inc
+-- - MySQL 5.7 Reference Manual: UPDATE, DELETE, derived tables
+-- MySQL 5.7 does not support CTE syntax, so this fixture keeps the same
+-- relation shape using derived tables.
+
+UPDATE orders AS target
+```
+
+## `mysql57-mysql-official-cte-nested-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-cte-nested-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/include/with_non_recursive.inc
+-- - MySQL 5.7 Reference Manual: derived tables
+-- MySQL 5.7 does not support CTE syntax, so nested CTEs are rewritten as
+-- nested derived tables with equivalent join predicates.
+
+SELECT co.id, a.id
+```
+
+## `mysql57-mysql-official-derived-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-derived-subquery-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/derived.test
+-- - mysql/mysql-server mysql-test/t/subquery_exists.test
+-- - MySQL 5.7 Reference Manual: Subqueries and Derived Tables
+-- Derived aliases must not be emitted as physical tables.
+
+SELECT m2.id, d.pla_id
+```
+
+## `mysql57-mysql-official-join-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-join-edge-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/join.test
+-- - MySQL 5.7 Reference Manual: JOIN Clause
+-- This file focuses on MySQL-specific join forms that are easy to regress:
+-- STRAIGHT_JOIN, NATURAL JOIN, nested parenthesized joins, index hints, and
+-- ODBC escaped outer joins.
+```
+
+## `mysql57-mysql-official-join-matrix-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-join-matrix-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/join.test
+-- - MySQL 5.7 Reference Manual: JOIN Clause
+-- This file keeps only standalone SQL statements that exercise relation extraction.
+
+SELECT o.id, oi.order_id
+FROM orders AS o
+```
+
+## `mysql57-mysql-official-lateral-derived-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-lateral-derived-edge-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/derived.test
+-- - MySQL 5.7 Reference Manual: Derived Tables
+-- MySQL 5.7 does not support LATERAL derived tables, so the lateral case is
+-- rewritten as an ordinary derived table with the same visible join edges.
+
+SELECT o.id, projected.product_id
+```
+
+## `mysql57-mysql-official-recursive-cte-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-recursive-cte-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/include/with_recursive.inc
+-- - MySQL 5.7 Reference Manual: JOIN Clause
+-- MySQL 5.7 does not support recursive CTE syntax, so this fixture keeps the
+-- same parent-child relationship checks as direct self joins.
+
+SELECT child.id, mgr.id
+```
+
+## `mysql57-mysql-official-subquery-edge-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-official-subquery-edge-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL official-test inspired fixture.
+-- Sources:
+-- - mysql/mysql-server mysql-test/t/subquery_exists.test
+-- - MySQL 5.7 Reference Manual: Subqueries
+-- This fixture stresses row/tuple subqueries, ANY/SOME/ALL, correlated
+-- subqueries, and scalar subquery equality.
+
+SELECT o.id
+```
+
+## `mysql57-mysql-orphan-reviews-delete-left-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-orphan-reviews-delete-left-join-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE pr
+FROM product_reviews pr
+LEFT JOIN products p ON pr.product_id = p.id
+WHERE
+    p.id IS NULL
+    AND pr.created_at < NOW() - INTERVAL 1 MONTH;
+```
+
+## `mysql57-mysql-orphan-reviews-delete-not-exists-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-orphan-reviews-delete-not-exists-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE pr
+FROM product_reviews pr
+WHERE
+    NOT EXISTS (
+        SELECT 1
+        FROM products p
+        WHERE p.id = pr.product_id
+    )
+```
+
+## `mysql57-mysql-sql-cte-lateral`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/sql-cte-lateral/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT ro.order_id, u.email
+FROM (
+  SELECT o.id AS order_id, o.user_id
+  FROM `orders` AS o
+  WHERE o.created_at >= CURRENT_DATE - INTERVAL 7 DAY
+) AS ro
+JOIN `users` AS u ON ro.user_id = u.id;
+```
+
+## `mysql57-mysql-sql-delete-left-join`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/sql-delete-left-join/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE FROM o
+USING orders AS o
+LEFT JOIN users AS u ON o.user_id = u.id
+WHERE u.id IS NULL;
+```
+
+## `mysql57-mysql-sql-multi-table-update`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/sql-multi-table-update/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE orders o, users u
+JOIN accounts a ON u.account_id = a.id
+SET o.reviewed_at = CURRENT_TIMESTAMP
+WHERE o.user_id = u.id
+  AND o.status = 'PAID'
+  AND a.closed_at IS NULL;
+```
+
+## `mysql57-mysql-sql-system-log-noise`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `NATIVE_LOG` |
+| Input | `test-fixtures/correctness/mysql/v5_7/sql-system-log-noise/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT kcu.TABLE_SCHEMA, kcu.TABLE_NAME, tc.CONSTRAINT_TYPE
+FROM information_schema.KEY_COLUMN_USAGE kcu
+JOIN information_schema.TABLE_CONSTRAINTS tc
+  ON kcu.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+ AND kcu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME;
+```
+
+## `mysql57-mysql-supply-chain-update-comma-and-subquery-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-supply-chain-update-comma-and-subquery-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql-supply-chain-update-comma-and-subquery-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE warehouse_inventory wi, bin_locations bl, order_items oi,
+    (
+        SELECT
+            o.id AS order_id,
+            o.customer_id,
+            c.risk_score
+        FROM orders o
+        INNER JOIN customer_profiles c ON o.customer_id = c.id
+```
+
+## `mysql57-mysql-supply-chain-update-explicit-join-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-supply-chain-update-explicit-join-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql-supply-chain-update-explicit-join-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
+- `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE warehouse_inventory wi
+INNER JOIN bin_locations bl ON wi.bin_id = bl.id AND bl.zone_type = 'PICKING'
+INNER JOIN order_items oi ON wi.product_id = oi.product_id
+INNER JOIN (
+    SELECT
+        o.id AS order_id,
+        o.customer_id,
+        c.risk_score
+```
+
+## `mysql57-mysql-user-spending-comma-join-update-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-user-spending-comma-join-update-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql-user-spending-comma-join-update-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE users u,
+(
+    SELECT user_id, SUM(pay_amount) AS actual_total
+    FROM orders
+    WHERE order_status = 'PAID'
+    GROUP BY user_id
+) o_summary
+SET
+```
+
+## `mysql57-mysql-user-spending-left-join-update-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql-user-spending-left-join-update-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql-user-spending-left-join-update-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE users u
+LEFT JOIN (
+    SELECT user_id, SUM(pay_amount) AS actual_total
+    FROM orders
+    WHERE order_status = 'PAID'
+    GROUP BY user_id
+) o_summary ON u.id = o_summary.user_id
+SET
+```
+
+## `mysql57-sample-data-enterprise-extension-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/04-queries/10-enterprise-extension-queries.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7-compatible ERP analysis queries.
+-- CTE/window based MySQL 8.0 examples are rewritten as derived tables and grouped joins.
+
+SELECT
+    c.id AS customer_id,
+    c.name AS customer_name,
+    w.id AS warehouse_id,
+    w.name AS warehouse_name,
+```
+
+## `mysql57-sample-data-enterprise-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/sample-data-enterprise-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/sample-data-enterprise-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:sample_data.sp_post_stocktake
+CREATE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT UNSIGNED,
+    IN p_posted_by BIGINT UNSIGNED
+)
+BEGIN
+    DECLARE v_warehouse_id BIGINT UNSIGNED;
+```
+
+## `mysql57-sample-data-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/sample-data-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7-compatible ERP analysis queries.
+-- CTE/window based MySQL 8.0 examples are rewritten as derived tables and grouped joins.
+
+SELECT
+    c.id AS customer_id,
+    c.name AS customer_name,
+    w.id AS warehouse_id,
+    w.name AS warehouse_name,
+```
+
+## `mysql57-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `mysql57-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `mysql57-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `mysql57-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `mysql57-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `mysql57-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+
+## `mysql57sample-data-full-01-schema-02-indexes-and-views-views-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `VIEW` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-01-schema-02-indexes-and-views-views-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-01-schema-02-indexes-and-views-views-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: VIEW:erp_system.v_employee_full
+SELECT
+    e.id,
+    e.employee_no,
+    e.name,
+    e.gender,
+    e.phone,
+    e.email,
+```
+
+## `mysql57sample-data-full-01-schema-03-triggers-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `TRIGGER` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-01-schema-03-triggers-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-01-schema-03-triggers-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
+- `VALUE:COALESCE:sales_order_items.product_id,sales_order_items.batch_id,sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:sales_order_items.product_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: TRIGGER:erp_system.trg_audit_employee_insert
+CREATE TRIGGER trg_audit_employee_insert
+AFTER INSERT ON employees
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_log (employee_id, action, target_type, target_id, new_value)
+    VALUES (NEW.id, 'INSERT', 'employee', NEW.id,
+            JSON_OBJECT('name', NEW.name, 'employee_no', NEW.employee_no,
+```
+
+## `mysql57sample-data-full-02-procedures-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-01-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
+- `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.sp_create_department
+CREATE PROCEDURE sp_create_department(
+    IN p_parent_id BIGINT UNSIGNED,
+    IN p_name VARCHAR(100),
+    IN p_code VARCHAR(20),
+    IN p_budget DECIMAL(18,2),
+    IN p_headcount_plan INT UNSIGNED
+)
+```
+
+## `mysql57sample-data-full-02-procedures-02-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-02-procedures-supplement-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-02-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:inventory.reserved_quantity,sales_order_items.quantity->inventory.reserved_quantity`
+- `VALUE:AGGREGATE:sales_orders.total_amount,commission_rules.rate->sales_commissions.commission_amount`
+- `VALUE:AGGREGATE:sales_orders.total_amount->sales_commissions.sales_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->sales_commissions.commission_month`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.sp_mysql57_salesperson_performance
+CREATE PROCEDURE sp_mysql57_salesperson_performance(IN p_start_date DATE, IN p_end_date DATE)
+BEGIN
+    INSERT INTO sales_commissions (employee_id, commission_month, sales_amount, commission_amount, status)
+    SELECT
+        so.salesperson_id,
+        DATE_FORMAT(so.order_date, '%Y-%m'),
+        SUM(so.total_amount),
+```
+
+## `mysql57sample-data-full-02-procedures-03-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-03-functions-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-03-functions-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.fn_employee_full_name
+CREATE FUNCTION fn_employee_full_name(p_employee_id BIGINT UNSIGNED)
+RETURNS VARCHAR(100)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE v_result VARCHAR(100);
+    SELECT CONCAT(employee_no, ' - ', name) INTO v_result
+```
+
+## `mysql57sample-data-full-02-procedures-04-procedures-supplement-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-04-procedures-supplement-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-04-procedures-supplement-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
+- `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
+- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
+- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
+- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.sp_create_shipment
+CREATE PROCEDURE sp_create_shipment(
+    IN p_order_id BIGINT UNSIGNED,
+    IN p_carrier VARCHAR(100),
+    IN p_shipping_method ENUM('express','truck','air','sea','self_pickup'),
+    IN p_shipping_fee DECIMAL(12,2),
+    IN p_to_address VARCHAR(300),
+    IN p_receiver_name VARCHAR(50),
+```
+
+## `mysql57sample-data-full-02-procedures-05-third-batch-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-05-third-batch-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-05-third-batch-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.sp_generate_ar_aging
+CREATE PROCEDURE sp_generate_ar_aging()
+BEGIN
+    -- 清理当天快照
+    DELETE FROM ar_aging_snapshots WHERE snapshot_date = CURDATE();
+
+    INSERT INTO ar_aging_snapshots (snapshot_date, customer_id, order_id,
+        invoice_amount, paid_amount, due_date)
+```
+
+## `mysql57sample-data-full-02-procedures-06-third-batch-functions-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `FUNCTION` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-06-third-batch-functions-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-06-third-batch-functions-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.fn_get_customer_clv
+CREATE FUNCTION fn_get_customer_clv(
+    p_customer_id BIGINT UNSIGNED
+)
+RETURNS DECIMAL(18,2)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+```
+
+## `mysql57sample-data-full-02-procedures-07-store-customer-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-07-store-customer-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-07-store-customer-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.sp_mysql57_customer_store_summary
+CREATE PROCEDURE sp_mysql57_customer_store_summary(IN p_customer_id BIGINT UNSIGNED)
+BEGIN
+    SELECT
+        so.customer_id,
+        so.warehouse_id,
+        SUM(soi.quantity) AS quantity_sold,
+        SUM(soi.amount) AS sales_amount
+```
+
+## `mysql57sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-08-batch-expiry-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.sp_mysql57_batch_expiry_risk
+CREATE PROCEDURE sp_mysql57_batch_expiry_risk(IN p_days INT)
+BEGIN
+    SELECT
+        pb.product_id,
+        p.category_id,
+        SUM(i.quantity) AS at_risk_quantity,
+        SUM(i.quantity * p.purchase_price) AS at_risk_value
+```
+
+## `mysql57sample-data-full-02-procedures-09-return-refund-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-09-return-refund-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-09-return-refund-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:AGGREGATE:sales_return_items.amount->vouchers.total_credit`
+- `VALUE:AGGREGATE:sales_return_items.amount->vouchers.total_debit`
+- `VALUE:CONCAT_FORMAT:sales_returns.id->vouchers.voucher_no`
+- `VALUE:DIRECT:sales_returns.created_by->vouchers.prepared_by`
+- `VALUE:DIRECT:sales_returns.id->vouchers.reference_id`
+- `VALUE:DIRECT:sales_returns.return_date->vouchers.voucher_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.sp_mysql57_return_refund_summary
+CREATE PROCEDURE sp_mysql57_return_refund_summary(IN p_start_date DATE, IN p_end_date DATE)
+BEGIN
+    INSERT INTO vouchers (voucher_no, voucher_date, voucher_type, reference_type, reference_id, total_debit, total_credit, prepared_by, status)
+    SELECT
+        CONCAT('SR-', sr.id),
+        sr.return_date,
+        'payment',
+```
+
+## `mysql57sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-10-supplier-geo-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.sp_mysql57_supplier_product_score
+CREATE PROCEDURE sp_mysql57_supplier_product_score(IN p_supplier_id BIGINT UNSIGNED)
+BEGIN
+    SELECT
+        sp.supplier_id,
+        sp.product_id,
+        AVG(sp.supplier_price) AS avg_supplier_price,
+        MIN(sp.lead_time_days) AS best_lead_time_days,
+```
+
+## `mysql57sample-data-full-02-procedures-11-common-system-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-11-common-system-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-11-common-system-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:CONCAT_FORMAT:salary_payments.employee_id,salary_payments.salary_month->vouchers.voucher_no`
+- `VALUE:DIRECT:salary_payments.employee_id->vouchers.prepared_by`
+- `VALUE:DIRECT:salary_payments.id->vouchers.reference_id`
+- `VALUE:DIRECT:salary_payments.net_pay->vouchers.total_credit`
+- `VALUE:DIRECT:salary_payments.net_pay->vouchers.total_debit`
+- `VALUE:DIRECT:salary_payments.payment_date->vouchers.voucher_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.sp_mysql57_employee_payroll_summary
+CREATE PROCEDURE sp_mysql57_employee_payroll_summary(IN p_salary_month VARCHAR(7))
+BEGIN
+    INSERT INTO vouchers (voucher_no, voucher_date, voucher_type, reference_type, reference_id, total_debit, total_credit, prepared_by, status)
+    SELECT
+        CONCAT('PAY-', sp.employee_id, '-', sp.salary_month),
+        sp.payment_date,
+        'payment',
+```
+
+## `mysql57sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:stocktake_items.counted_quantity,inventory.quantity->inventory_transactions.quantity_change`
+- `VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:DIRECT:stocktake_items.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory.quantity`
+- `VALUE:DIRECT:stocktake_items.counted_quantity->inventory_transactions.after_qty`
+- `VALUE:DIRECT:stocktake_items.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:stocktakes.stocktake_date->inventory.last_stocktake_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.sp_post_stocktake
+CREATE PROCEDURE sp_post_stocktake(
+    IN p_stocktake_id BIGINT UNSIGNED,
+    IN p_posted_by BIGINT UNSIGNED
+)
+BEGIN
+    DECLARE v_warehouse_id BIGINT UNSIGNED;
+```
+
+## `mysql57sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/mysql/5.7/02-procedures/13-erp-deep-scenario-procedures.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id,product_categories.name->category_dim.level2_name`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
+- `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
+- `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
+- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:accounting_periods.id->fiscal_calendar.accounting_period_id`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:departments.id->employees.department_id`
+- `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory.last_stocktake_date`
+- `VALUE:DIRECT:finished_goods_receipts.receipt_date->inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory.quantity`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:finished_goods_receipts.received_qty->inventory_transactions.quantity_change`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
+- `VALUE:DIRECT:positions.base_salary->employees.salary`
+- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
+- `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:product_categories.code->category_dim.category_code`
+- `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
+- `VALUE:DIRECT:product_categories.name->category_dim.is_womenwear`
+- `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->cogs_entries.quantity`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cashier_journals.reference_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.fiscal_month`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_invoices.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景存储过程
+-- 覆盖: MRP计算、工单成本、完工入库、销售成本、AR/AP开票、
+--       WMS拣货、预算占用、主数据变更和维修备件出库
+-- 数据库: MySQL 8.0
+-- ============================================================
+
+USE erp_system;
+```
+
+## `mysql57sample-data-full-03-data-02-supplementary-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/03-data/02-supplementary-data.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-03-data-02-supplementary-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:sales_orders.customer_id->shipping_tracks.location`
+- `VALUE:AGGREGATE:fixed_assets.id->fixed_assets.accumulated_depreciation`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.before_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:ARITHMETIC:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_date,sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.order_date,sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.status->invoices.status`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->shipments.receiver_name`
+- `VALUE:DIRECT:sales_orders.customer_id->shipments.receiver_phone`
+- `VALUE:DIRECT:sales_orders.customer_id->shipments.to_address`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.status->shipments.status`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+- `VALUE:DIRECT:work_orders.status->work_order_materials.status`
+- `VALUE:FUNCTION_CALL:purchase_orders.order_date->invoices.due_date`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:FUNCTION_CALL:shipments.shipped_at->shipping_tracks.track_time`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统补充数据: 发货物流、促销、提成规则、发票、
+--   固定资产、BOM、工单、客服工单
+-- ============================================================
+
+USE erp_system;
+
+-- ============================================================
+```
+
+## `mysql57sample-data-full-03-data-03-third-batch-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/03-data/03-third-batch-data.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-03-data-03-third-batch-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:products.retail_price->price_change_logs.old_price`
+- `VALUE:COALESCE:employees.manager_id->performance_reviews.reviewer_id`
+- `VALUE:COALESCE:projects.start_date,projects.actual_end_date->project_costs.cost_date`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:products.sku->serial_numbers.serial_no`
+- `VALUE:CONCAT_FORMAT:projects.name->project_costs.description`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:products.id->price_change_logs.product_id`
+- `VALUE:DIRECT:products.id->serial_numbers.batch_id`
+- `VALUE:DIRECT:products.id->serial_numbers.product_id`
+- `VALUE:DIRECT:products.retail_price->price_change_logs.new_price`
+- `VALUE:DIRECT:projects.id->project_costs.project_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:FUNCTION_CALL:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第三批补充数据: 合同、汇率、审批流、KPI、质检标准、项目、序列号、寄售
+-- ============================================================
+
+USE erp_system;
+
+-- 合同数据
+INSERT INTO contracts (contract_no, contract_type, party_type, party_id, subject,
+```
+
+## `mysql57sample-data-full-03-data-04-return-damage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/03-data/04-return-damage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-03-data-04-return-damage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.refund_received`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.total_amount`
+- `VALUE:DIRECT:damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:purchase_returns.id->purchase_return_items.return_id`
+- `VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.product_id`
+- `VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.unit_price`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 退货退款 + 报损数据生成
+-- ============================================================
+
+USE erp_system;
+
+-- 采购退货数据
+INSERT INTO purchase_returns (return_no, purchase_order_id, purchase_receipt_id, supplier_id,
+```
+
+## `mysql57sample-data-full-03-data-05-massive-data-generator-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-03-data-05-massive-data-generator-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-03-data-05-massive-data-generator-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:suppliers.id->supplier_products.supplier_id`
+- `VALUE:FUNCTION_CALL:purchase_orders.order_date->invoices.due_date`
+- `VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:erp_system.sp_generate_massive_data
+CREATE PROCEDURE sp_generate_massive_data()
+BEGIN
+    DECLARE v_start TIMESTAMP DEFAULT NOW();
+
+    -- 1. 清理并生成组织架构
+    CALL sp_gen_org_structure();
+```
+
+## `mysql57sample-data-full-04-queries-01-complex-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/04-queries/01-complex-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-04-queries-01-complex-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7-compatible ERP analysis queries.
+-- CTE/window based MySQL 8.0 examples are rewritten as derived tables and grouped joins.
+
+SELECT
+    c.id AS customer_id,
+    c.name AS customer_name,
+    w.id AS warehouse_id,
+    w.name AS warehouse_name,
+```
+
+## `mysql57sample-data-full-04-queries-02-complex-queries-batch2-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/04-queries/02-complex-queries-batch2.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-04-queries-02-complex-queries-batch2-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7-compatible ERP analysis queries.
+-- CTE/window based MySQL 8.0 examples are rewritten as derived tables and grouped joins.
+
+SELECT
+    c.id AS customer_id,
+    c.name AS customer_name,
+    w.id AS warehouse_id,
+    w.name AS warehouse_name,
+```
+
+## `mysql57sample-data-full-04-queries-03-complex-queries-batch3-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/04-queries/03-complex-queries-batch3.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-04-queries-03-complex-queries-batch3-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7-compatible ERP analysis queries.
+-- CTE/window based MySQL 8.0 examples are rewritten as derived tables and grouped joins.
+
+SELECT
+    c.id AS customer_id,
+    c.name AS customer_name,
+    w.id AS warehouse_id,
+    w.name AS warehouse_name,
+```
+
+## `mysql57sample-data-full-04-queries-04-store-customer-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/04-queries/04-store-customer-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-04-queries-04-store-customer-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7-compatible ERP analysis queries.
+-- CTE/window based MySQL 8.0 examples are rewritten as derived tables and grouped joins.
+
+SELECT
+    c.id AS customer_id,
+    c.name AS customer_name,
+    w.id AS warehouse_id,
+    w.name AS warehouse_name,
+```
+
+## `mysql57sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7-compatible ERP analysis queries.
+-- CTE/window based MySQL 8.0 examples are rewritten as derived tables and grouped joins.
+
+SELECT
+    c.id AS customer_id,
+    c.name AS customer_name,
+    w.id AS warehouse_id,
+    w.name AS warehouse_name,
+```
+
+## `mysql57sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7-compatible ERP analysis queries.
+-- CTE/window based MySQL 8.0 examples are rewritten as derived tables and grouped joins.
+
+SELECT
+    c.id AS customer_id,
+    c.name AS customer_name,
+    w.id AS warehouse_id,
+    w.name AS warehouse_name,
+```
+
+## `mysql57sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7-compatible ERP analysis queries.
+-- CTE/window based MySQL 8.0 examples are rewritten as derived tables and grouped joins.
+
+SELECT
+    c.id AS customer_id,
+    c.name AS customer_name,
+    w.id AS warehouse_id,
+    w.name AS warehouse_name,
+```
+
+## `mysql57sample-data-full-04-queries-08-common-system-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/04-queries/08-common-system-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-04-queries-08-common-system-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7-compatible ERP analysis queries.
+-- CTE/window based MySQL 8.0 examples are rewritten as derived tables and grouped joins.
+
+SELECT
+    c.id AS customer_id,
+    c.name AS customer_name,
+    w.id AS warehouse_id,
+    w.name AS warehouse_name,
+```
+
+## `mysql57sample-data-full-04-queries-11-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/mysql/5.7/04-queries/11-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v5_7/mysql57-sample-data-full-04-queries-11-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- MySQL 5.7-compatible ERP analysis queries.
+-- CTE/window based MySQL 8.0 examples are rewritten as derived tables and grouped joins.
+
+SELECT
+    c.id AS customer_id,
+    c.name AS customer_name,
+    w.id AS warehouse_id,
+    w.name AS warehouse_name,
 ```
 
 ## `mysql80-basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql`
@@ -21460,9 +24750,18 @@ DECLARE
 - `VALUE:ARITHMETIC:pg15_inventory_target.reserved,pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
 - `VALUE:ARITHMETIC:pg15_inventory_target.version->pg15_inventory_target.version`
 - `VALUE:COALESCE:pg15_inventory_source.latest_cost,pg15_inventory_target.cost->pg15_inventory_target.cost`
+- `VALUE:COALESCE:pg15_inventory_source.latest_cost->pg15_inventory_target.cost`
 - `VALUE:COALESCE:pg15_inventory_source.latest_price,pg15_inventory_target.price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.latest_price->pg15_inventory_target.price`
+- `VALUE:COALESCE:pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
 - `VALUE:COALESCE:pg15_inventory_target.metadata,pg15_inventory_source.merged_metadata->pg15_inventory_target.metadata`
+- `VALUE:CONCAT_FORMAT:pg15_inventory_target.metadata,pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics,pg15_inventory_source.latest_processed_at->pg15_inventory_target.metadata`
 - `VALUE:DIRECT:pg15_inventory_source.latest_processed_at->pg15_inventory_target.last_updated`
+- `VALUE:DIRECT:pg15_inventory_source.sku->pg15_inventory_target.sku`
+- `VALUE:DIRECT:pg15_inventory_source.total_qty_delta->pg15_inventory_target.quantity`
+- `VALUE:DIRECT:pg15_inventory_source.total_reserved_delta->pg15_inventory_target.reserved`
+- `VALUE:DIRECT:pg15_inventory_source.warehouse_id->pg15_inventory_target.warehouse_id`
+- `VALUE:FUNCTION_CALL:pg15_inventory_source.validation_status,pg15_inventory_source.change_log,pg15_inventory_source.risk_metrics->pg15_inventory_target.metadata`
 
 **Extractor Candidate Fingerprints**
 
