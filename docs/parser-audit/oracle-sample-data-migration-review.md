@@ -35,11 +35,11 @@ The source `sample-data/oracle/<version>` directories remain complete ERP sample
 
 | Golden group | Fixture | SQL / DDL | Relation fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Oracle root token-event | 33 | 26 / 7 | 400 | 112 | 0 | 158 |
-| Oracle full-grammer v12c | 30 | 23 / 7 | 553 | 130 | 0 | 177 |
-| Oracle full-grammer v19c | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
-| Oracle full-grammer v21c | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
-| Oracle full-grammer v26ai | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
+| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 |
+| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 |
+| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
+| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
+| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
 
 The versioned full-grammer counts intentionally stay close to root token-event counts because they cover the same sample-data surface, plus profile smoke and version-only syntax fixtures. They prove that each `oracle/<version>` profile uses its own generated lexer/parser and typed visitor for sample-data correctness and the first official grammar boundaries. They no longer reuse the Oracle token-event parser. They still do not prove complete Oracle official SQL/PLSQL coverage.
 
@@ -54,11 +54,11 @@ The sample-data-only cross-parser comparison after the procedure lineage parity 
 | PostgreSQL full-grammer v16 sample-data | 30 | 24 / 6 | 671 | 120 |
 | PostgreSQL full-grammer v17 sample-data | 30 | 24 / 6 | 671 | 120 |
 | PostgreSQL full-grammer v18 sample-data | 30 | 24 / 6 | 670 | 119 |
-| Oracle token-event root sample-data | 33 | 26 / 7 | 400 | 112 |
-| Oracle full-grammer v12c sample-data | 29 | 22 / 7 | 552 | 128 |
-| Oracle full-grammer v19c sample-data | 29 | 22 / 7 | 552 | 128 |
-| Oracle full-grammer v21c sample-data | 29 | 22 / 7 | 552 | 128 |
-| Oracle full-grammer v26ai sample-data | 29 | 22 / 7 | 552 | 128 |
+| Oracle token-event root sample-data | 34 | 27 / 7 | 629 | 217 |
+| Oracle full-grammer v12c sample-data | 34 | 27 / 7 | 666 | 217 |
+| Oracle full-grammer v19c sample-data | 34 | 27 / 7 | 666 | 217 |
+| Oracle full-grammer v21c sample-data | 34 | 27 / 7 | 666 | 217 |
+| Oracle full-grammer v26ai sample-data | 34 | 27 / 7 | 666 | 217 |
 
 The Oracle full-grammer sample-data lineage now covers the previously confirmed root token-event procedure lineage from `02-procedures/13-erp-deep-scenario-procedures.sql`, including sales fact rebuild, MRP planning, picking task generation and repair-part inventory issue mappings. The fix is in typed grammar / generated parse-tree visitor behavior plus one Oracle SQL asset correction from the invalid `(-rop.quantity)(10)` fragment to the Oracle unary expression `-rop.quantity`.
 

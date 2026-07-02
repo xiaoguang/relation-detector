@@ -8,20 +8,20 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 
 | Metric | Count |
 | --- | ---: |
-| Total correctness fixtures | 763 |
-| SQL fixtures | 616 |
-| DDL fixtures | 147 |
-| Fixtures with expected lineage | 211 |
-| Common directory fixtures | 32 |
-| MySQL directory fixtures | 158 |
-| PostgreSQL directory fixtures | 417 |
-| Oracle directory fixtures | 156 |
+| Total correctness fixtures | 872 |
+| SQL fixtures | 713 |
+| DDL fixtures | 159 |
+| Fixtures with expected lineage | 285 |
+| Common directory fixtures | 39 |
+| MySQL directory fixtures | 172 |
+| PostgreSQL directory fixtures | 449 |
+| Oracle directory fixtures | 212 |
 
 | Database type | Total | SQL | DDL |
 | --- | ---: | ---: | ---: |
-| MYSQL | 190 | 152 | 38 |
-| ORACLE | 156 | 121 | 35 |
-| POSTGRESQL | 417 | 343 | 74 |
+| MYSQL | 211 | 170 | 41 |
+| ORACLE | 212 | 172 | 40 |
+| POSTGRESQL | 449 | 371 | 78 |
 
 ## Common Fixtures
 
@@ -257,6 +257,49 @@ CREATE TABLE departments (
   parent_id BIGINT,
   name VARCHAR,
   code VARCHAR UNIQUE,
+```
+_Preview truncated; see input file for full content._
+
+### `common-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `portable` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected relations | `test-fixtures/correctness/common/semantic-equivalent-ddl-fk-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/common/semantic-equivalent-ddl-fk-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
 ```
 _Preview truncated; see input file for full content._
 
@@ -983,6 +1026,296 @@ WHERE EXISTS (
   SELECT 1
   FROM departments
   WHERE departments.id = employees.department_id
+```
+_Preview truncated; see input file for full content._
+
+### `common-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `portable` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected relations | `test-fixtures/correctness/common/semantic-equivalent-batch-expiry-analysis-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/common/semantic-equivalent-batch-expiry-analysis-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+_Preview truncated; see input file for full content._
+
+### `common-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `portable` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected relations | `test-fixtures/correctness/common/semantic-equivalent-inventory-posting-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/common/semantic-equivalent-inventory-posting-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+_Preview truncated; see input file for full content._
+
+### `common-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `portable` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected relations | `test-fixtures/correctness/common/semantic-equivalent-mrp-run-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/common/semantic-equivalent-mrp-run-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+_Preview truncated; see input file for full content._
+
+### `common-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `portable` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected relations | `test-fixtures/correctness/common/semantic-equivalent-picking-task-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-picking-task-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/common/semantic-equivalent-picking-task-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:picking_tasks.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+_Preview truncated; see input file for full content._
+
+### `common-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `portable` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected relations | `test-fixtures/correctness/common/semantic-equivalent-return-refund-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-return-refund-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/common/semantic-equivalent-return-refund-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+_Preview truncated; see input file for full content._
+
+### `common-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `portable` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected relations | `test-fixtures/correctness/common/semantic-equivalent-sales-fact-rebuild-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/common/semantic-equivalent-sales-fact-rebuild-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
 ```
 _Preview truncated; see input file for full content._
 
@@ -2895,6 +3228,49 @@ USE erp_system;
 ```
 _Preview truncated; see input file for full content._
 
+### `mysql-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/semantic-equivalent-ddl-fk-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/semantic-equivalent-ddl-fk-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+_Preview truncated; see input file for full content._
+
 ### `mysql80-mysql-basic-correctness-case-01-ddl`
 
 | Field | Value |
@@ -3450,6 +3826,49 @@ _Preview truncated; see input file for full content._
 -- ============================================================
 
 USE erp_system;
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-ddl-fk-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-ddl-fk-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
 ```
 _Preview truncated; see input file for full content._
 
@@ -4193,12 +4612,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_records.instance_id->approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.node_id->approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -4212,6 +4635,8 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:project_costs.project_id->projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -5667,6 +6092,296 @@ _Preview truncated; see input file for full content._
 --       供应商集中度风险、月度关账核对、需求预测准确率、
 --       仓库库容利用率、提成核对、价格弹性分析
 -- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `mysql-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/semantic-equivalent-batch-expiry-analysis-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/semantic-equivalent-batch-expiry-analysis-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+_Preview truncated; see input file for full content._
+
+### `mysql-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/semantic-equivalent-inventory-posting-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/semantic-equivalent-inventory-posting-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+_Preview truncated; see input file for full content._
+
+### `mysql-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/semantic-equivalent-mrp-run-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/semantic-equivalent-mrp-run-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+_Preview truncated; see input file for full content._
+
+### `mysql-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/semantic-equivalent-picking-task-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/semantic-equivalent-picking-task-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/semantic-equivalent-picking-task-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:picking_tasks.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+_Preview truncated; see input file for full content._
+
+### `mysql-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/semantic-equivalent-return-refund-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/semantic-equivalent-return-refund-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/semantic-equivalent-return-refund-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+_Preview truncated; see input file for full content._
+
+### `mysql-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/semantic-equivalent-sales-fact-rebuild-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/semantic-equivalent-sales-fact-rebuild-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
 ```
 _Preview truncated; see input file for full content._
 
@@ -7889,6 +8604,296 @@ _Preview truncated; see input file for full content._
 --       供应商集中度风险、月度关账核对、需求预测准确率、
 --       仓库库容利用率、提成核对、价格弹性分析
 -- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-batch-expiry-analysis-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-batch-expiry-analysis-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-inventory-posting-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-inventory-posting-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-mrp-run-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-mrp-run-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-picking-task-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-picking-task-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:picking_tasks.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-return-refund-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-return-refund-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+_Preview truncated; see input file for full content._
+
+### `mysql80-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `erp_system` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected relations | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-sales-fact-rebuild-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-sales-fact-rebuild-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
 ```
 _Preview truncated; see input file for full content._
 
@@ -12301,6 +13306,49 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `postgres-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-ddl-fk-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-ddl-fk-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres16-basic-correctness-case-01-proc-support-tables-ddl`
 
 | Field | Value |
@@ -13403,6 +14451,49 @@ _Preview truncated; see input file for full content._
 -- ============================================================
 
 -- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-ddl-fk-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-ddl-fk-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
 ```
 _Preview truncated; see input file for full content._
 
@@ -14984,6 +16075,49 @@ _Preview truncated; see input file for full content._
 -- ============================================================
 
 -- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-ddl-fk-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-ddl-fk-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
 ```
 _Preview truncated; see input file for full content._
 
@@ -16569,6 +17703,49 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `postgres18-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-ddl-fk-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-ddl-fk-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres18-temporal-constraints-ddl`
 
 | Field | Value |
@@ -17144,32 +18321,100 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:attendance.employee_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:damage_reports.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:departments.manager_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:products.category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:accounts.parent_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:attendance.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:cashier_journals.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:cashier_journals.cashier_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:cashier_journals.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:damage_report_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:damage_report_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:damage_reports.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:damage_reports.executed_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:damage_reports.reported_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:damage_reports.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:damage_reports.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:departments.manager_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:departments.parent_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:employee_roles.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:employee_roles.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:employee_salary_log.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:employees.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:employees.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:employees.position_id->positions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:inventory_transactions.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_transactions.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:leave_records.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:permissions.parent_id->permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:positions.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:product_batches.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:product_categories.parent_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:products.category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:purchase_order_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:purchase_receipts.receiver_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:purchase_receipts.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_receipt_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_receipt_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_receipts.receiver_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_receipts.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:purchase_requisition_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:purchase_requisition_items.requisition_id->purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:purchase_requisitions.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:purchase_requisitions.requester_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:purchase_returns.refund_voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:role_permissions.permission_id->permissions.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:purchase_requisitions.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_requisitions.requester_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_return_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_return_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_return_items.return_id->purchase_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.handler_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.purchase_receipt_id->purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.refund_voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:reconciliation_items.reconciliation_id->reconciliations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:reconciliations.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:reconciliations.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:reconciliations.reviewed_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:role_permissions.permission_id->permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:role_permissions.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:salary_payments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:salary_payments.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_order_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
-- `FK_LIKE:sales_orders.salesperson_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:sales_returns.refund_voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:settlement_items.settlement_id->settlements.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_return_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_return_items.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_returns.approved_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_returns.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_returns.handler_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_returns.refund_voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:settlement_items.settlement_id->settlements.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:vouchers.posted_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:vouchers.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:vouchers.reviewed_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouses.manager_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 
 **Expected Data Lineage Fingerprints**
 
@@ -17277,6 +18522,10 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:shipments.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:shipments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:shipping_tracks.shipment_id->shipments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:three_way_matching.invoice_id->invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:three_way_matching.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:three_way_matching.purchase_receipt_id->purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:work_order_materials.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:work_order_materials.work_order_id->work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:work_orders.bom_id->boms.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -17324,12 +18573,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_records.instance_id->approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.node_id->approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
@@ -17343,6 +18596,8 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:project_costs.project_id->projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
@@ -18998,7 +20253,9 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:pg10_accounts.account_type->pg10_accounts.account_type:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:pg10_transactions.account_id->pg10_transactions.account_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:pg10_transactions.txn_date->pg10_transactions.txn_date:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -19041,7 +20298,9 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:pg10_accounts.account_type->pg10_accounts.account_type:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:pg10_transactions.account_id->pg10_transactions.account_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:pg10_transactions.txn_date->pg10_transactions.txn_date:SQL_LOG_JOIN`
 - `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:orders.sales_rep_id->sales_reps.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
@@ -19088,7 +20347,9 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:pg10_accounts.account_type->pg10_accounts.account_type:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:pg10_transactions.account_id->pg10_transactions.account_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:pg10_transactions.txn_date->pg10_transactions.txn_date:SQL_LOG_JOIN`
 - `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS,NAMING_MATCH`
@@ -19143,6 +20404,8 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:assembly_stations.line_id->production_lines.line_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:assembly_stations.station_id->calibration_logs.station_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:assembly_stations.station_key->factory_telemetry.station_key:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:catalog_categories.category_id->catalog_products.category_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:catalog_categories.category_id->running_promotions.target_category_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:chart_of_accounts.account_id->journal_entries.account_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:claim_diagnoses.claim_id->medical_claims.claim_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:corporate_tax_matrix.jurisdiction_string->financial_subsidiaries.tax_jurisdiction:SQL_LOG_JOIN`
@@ -19172,14 +20435,16 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:logistics_carriers.carrier_id->maritime_vessels.carrier_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:maritime_vessels.vessel_id->transit_legs.vessel_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:medical_claims.patient_id->patient_registry.patient_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:network_edges.dest_node->network_edges.source_node:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:order_fulfillments.order_id->sales_orders.order_id:SQL_LOG_EXISTS`
-- `CO_OCCURRENCE:package_dependencies.package_uuid->software_packages.package_uuid:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:payment_cards.card_token_id->point_of_sale_transactions.payment_token_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:shipping_manifests.first_leg_id->transit_legs.leg_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:shipping_manifests.second_leg_id->transit_legs.leg_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:system_modules.module_id->tenant_configurations.module_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:system_tenants.tenant_id->tenant_config_values.tenant_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:system_tenants.tier_level->tenant_configurations.minimum_tier:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:tenant_config_values.config_id->tenant_configurations.config_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:wiki_pages.page_id->wiki_pages.parent_page_id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -19250,9 +20515,11 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:employees.id->R_projects.manager_id:SQL_LOG_JOIN,NAMING_MATCH`
 - `CO_OCCURRENCE:role_permissions.role_id->user_roles_mapping.role_id:SQL_LOG_EXISTS`
 - `CO_OCCURRENCE:system_logs.triggered_by->user_preferences.user_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_JOIN`
+- `FK_LIKE:infrastructure_nodes.parent_id->infrastructure_nodes.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:profiles.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:user_roles.role_id->roles.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:user_roles.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -19308,12 +20575,14 @@ _Preview truncated; see input file for full content._
 
 - `CO_OCCURRENCE:side_a.id->side_b.id:SQL_LOG_JOIN`
 - `FK_LIKE:account_metadata.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:categories.s_id->sub_labels.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:departments.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:main_catalog.p_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:products.c_id->categories.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:products.dept_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:revisions.doc_id->documents.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -19410,6 +20679,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:departments.id->departments.parent_department:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:orders.user_id->orders.user_id:SQL_LOG_JOIN`
 - `FK_LIKE:audit_events.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:customers.region_id->regions.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -19656,7 +20926,9 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:customers.external_ref->invoices.customer_ref:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:orders.category_id->products.category_id:SQL_LOG_JOIN`
+- `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
+- `FK_LIKE:order_items.product_id->products.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
 - `FK_LIKE:orders.user_id->users.id:SQL_LOG_EXISTS,NAMING_MATCH,SQL_LOG_JOIN`
 - `FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS,NAMING_MATCH`
 - `FK_LIKE:users.account_id->accounts.id:SQL_LOG_EXISTS,NAMING_MATCH`
@@ -19702,10 +20974,10 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:invoices.customer_id->orders.customer_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:orders.category_id->products.category_id:SQL_LOG_JOIN`
 - `FK_LIKE:order_items.order_id->orders.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
 - `FK_LIKE:order_items.product_id->products.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
+- `FK_LIKE:refunds.order_id->orders.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
 - `FK_LIKE:shipments.order_id->orders.id:SQL_LOG_EXISTS,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
@@ -19749,7 +21021,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:pg10_accounts.account_id->pg10_transactions.account_id:SQL_LOG_SUBQUERY_IN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -19878,7 +21150,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:pg13_hash_metrics.metric_name->pg13_hash_metrics.metric_name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:pg13_hash_metrics.tenant_id->pg13_hash_metrics.tenant_id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -19964,7 +21237,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:pg15_inventory_target.warehouse_id->pg15_inventory_target.warehouse_id:SQL_LOG_JOIN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -20100,6 +21373,9 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_routes.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -20244,28 +21520,61 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->inventory.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:promotion_products.promotion_id->promotion_usages.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:purchase_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:purchase_orders.supplier_id->purchase_orders.supplier_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:salary_payments.employee_id->sales_commissions.employee_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:salary_payments.salary_month->sales_commissions.period:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:cashier_journals.reference_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:cashier_journals.reference_id->sales_orders.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
+- `FK_LIKE:damage_report_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_receipt_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_requisitions.requester_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
@@ -20291,6 +21600,296 @@ _Preview truncated; see input file for full content._
 --       供应商集中度风险、月度关账核对、需求预测准确率、
 --       仓库库容利用率、提成核对、价格弹性分析
 -- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-batch-expiry-analysis-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-batch-expiry-analysis-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-inventory-posting-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-inventory-posting-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-mrp-run-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-mrp-run-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-picking-task-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-picking-task-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:picking_tasks.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-return-refund-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-return-refund-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+_Preview truncated; see input file for full content._
+
+### `postgres-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-sales-fact-rebuild-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-sales-fact-rebuild-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
 ```
 _Preview truncated; see input file for full content._
 
@@ -20514,7 +22113,7 @@ JOIN "payments" ON "payments".order_id = o.id;
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:employees.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -22871,6 +24470,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:DIRECT:order_staging.order_id->order_archive.order_id`
+- `VALUE:DIRECT:order_staging.user_id->order_archive.user_id`
 - `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Forbidden Tables**
@@ -23832,6 +25433,296 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `postgres16-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-batch-expiry-analysis-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-batch-expiry-analysis-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-inventory-posting-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-inventory-posting-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-mrp-run-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-mrp-run-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-picking-task-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-picking-task-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:picking_tasks.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-return-refund-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-return-refund-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-sales-fact-rebuild-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-sales-fact-rebuild-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres16sample-data-full-01-schema-02-indexes-and-views-views-sql`
 
 | Field | Value |
@@ -24484,6 +26375,129 @@ _Preview truncated; see input file for full content._
 CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
     IN p_plan_id BIGINT,
     IN p_created_by BIGINT
+```
+_Preview truncated; see input file for full content._
+
+### `postgres16sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/16/03-data/06-derived-lineage-data.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-06-derived-lineage-data-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-06-derived-lineage-data-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.bom_id->boms.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- PostgreSQL 16/17/18 compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
 ```
 _Preview truncated; see input file for full content._
 
@@ -27072,6 +29086,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:DIRECT:order_staging.order_id->order_archive.order_id`
+- `VALUE:DIRECT:order_staging.user_id->order_archive.user_id`
 - `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Forbidden Tables**
@@ -28086,6 +30102,296 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `postgres17-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-batch-expiry-analysis-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-batch-expiry-analysis-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-inventory-posting-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-inventory-posting-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-mrp-run-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-mrp-run-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-picking-task-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-picking-task-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:picking_tasks.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-return-refund-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-return-refund-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-sales-fact-rebuild-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-sales-fact-rebuild-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres17-sql-delete-using-no-alias`
 
 | Field | Value |
@@ -29064,6 +31370,129 @@ _Preview truncated; see input file for full content._
 CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
     IN p_plan_id BIGINT,
     IN p_created_by BIGINT
+```
+_Preview truncated; see input file for full content._
+
+### `postgres17sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/17/03-data/06-derived-lineage-data.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-06-derived-lineage-data-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-06-derived-lineage-data-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.bom_id->boms.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- PostgreSQL 16/17/18 compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
 ```
 _Preview truncated; see input file for full content._
 
@@ -31564,6 +33993,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
+- `VALUE:DIRECT:order_staging.order_id->order_archive.order_id`
+- `VALUE:DIRECT:order_staging.user_id->order_archive.user_id`
 - `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Forbidden Tables**
@@ -32619,6 +35050,296 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `postgres18-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-batch-expiry-analysis-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-batch-expiry-analysis-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-inventory-posting-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-inventory-posting-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-mrp-run-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-mrp-run-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-picking-task-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-picking-task-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:picking_tasks.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-return-refund-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-return-refund-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-sales-fact-rebuild-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-sales-fact-rebuild-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `postgres18-sql-delete-using-no-alias`
 
 | Field | Value |
@@ -33597,6 +36318,129 @@ _Preview truncated; see input file for full content._
 CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
     IN p_plan_id BIGINT,
     IN p_created_by BIGINT
+```
+_Preview truncated; see input file for full content._
+
+### `postgres18sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/03-data/06-derived-lineage-data.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-full-03-data-06-derived-lineage-data-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-full-03-data-06-derived-lineage-data-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.bom_id->boms.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- PostgreSQL 16/17/18 compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
 ```
 _Preview truncated; see input file for full content._
 
@@ -34861,6 +37705,129 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 ```
 _Preview truncated; see input file for full content._
 
+### `postgressample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `public` |
+| Input | `sample-data/postgres/18/03-data/06-derived-lineage-data.sql` |
+| Expected relations | `test-fixtures/correctness/postgres/postgres-sample-data-full-03-data-06-derived-lineage-data-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/postgres/postgres-sample-data-full-03-data-06-derived-lineage-data-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.bom_id->boms.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- PostgreSQL 16/17/18 compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `postgressample-data-full-04-queries-01-complex-queries-sql`
 
 | Field | Value |
@@ -34876,24 +37843,46 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:employees.department_id->employees.department_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:departments.id->departments.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:departments.name->departments.name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.department_id->employees.department_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `CO_OCCURRENCE:employees.hire_date->employees.resignation_date:SQL_LOG_JOIN`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:employees.id->service_tickets.assigned_to:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:promotion_usages.promotion_id->promotion_usages.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.salary_month->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:boms.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:boms.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:service_tickets.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.purchase_receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_order_materials.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_order_materials.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:work_orders.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
@@ -34940,19 +37929,26 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:inventory.product_id->inventory_transactions.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.warehouse_id->inventory_transactions.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN,REPEATED_OBSERVATION,SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH,SQL_LOG_EXISTS`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_orders.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -34994,7 +37990,13 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:ap_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:approval_instances.workflow_id->approval_instances.workflow_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:approval_instances.workflow_id->approval_nodes.workflow_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:ar_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:purchase_receipt_items.product_id->serial_numbers.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -35002,8 +38004,17 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:project_costs.project_id->projects.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:serial_numbers.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:serial_numbers.purchase_receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:serial_numbers.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:serial_numbers.sales_order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -35046,11 +38057,18 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_EXISTS,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -35093,12 +38111,20 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:products.sku->products.sku:SQL_LOG_JOIN`
 - `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
@@ -35142,6 +38168,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
 - `FK_LIKE:damage_reports.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -35152,8 +38179,10 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_return_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_return_items.return_id->purchase_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
@@ -35246,19 +38275,35 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:approval_instances.submitted_by->employees.id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:approval_instances.workflow_id->approval_nodes.workflow_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:audit_log.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employee_salary_log.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inspection_reports.reference_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:invoices.reference_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_returns.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_SUBQUERY_IN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -35303,14 +38348,17 @@ _Preview truncated; see input file for full content._
 
 - `CO_OCCURRENCE:employees.id->master_data_change_requests.approved_by:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->master_data_change_requests.requested_by:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->picking_tasks.assigned_to:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_fact.fiscal_date:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `CO_OCCURRENCE:inventory.warehouse_id->sales_fact.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.location_id->picking_task_items.location_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.product_id->picking_task_items.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:master_data_change_requests.master_id->sensitive_access_logs.object_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:master_data_change_requests.master_type->sensitive_access_logs.object_type:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:standard_costs.product_id->work_orders.product_id:SQL_LOG_JOIN`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:ar_invoices.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:budget_items.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -35351,7 +38399,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.region_dim_id->region_dim.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -35387,6 +38435,49 @@ _Preview truncated; see input file for full content._
 _Preview truncated; see input file for full content._
 
 ## Oracle Fixtures
+
+### `oracle-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-ddl-fk-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-ddl-fk-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+_Preview truncated; see input file for full content._
 
 ### `oracle12c-sample-data-full-01-schema-01-tables-ddl`
 
@@ -35977,6 +39068,49 @@ _Preview truncated; see input file for full content._
 
 CREATE TABLE production_plans (
     id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+```
+_Preview truncated; see input file for full content._
+
+### `oracle12c-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-ddl-fk-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-ddl-fk-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
 ```
 _Preview truncated; see input file for full content._
 
@@ -36572,6 +39706,49 @@ CREATE TABLE production_plans (
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle19c-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-ddl-fk-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-ddl-fk-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle21c-sample-data-full-01-schema-01-tables-ddl`
 
 | Field | Value |
@@ -37161,6 +40338,49 @@ _Preview truncated; see input file for full content._
 
 CREATE TABLE production_plans (
     id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+```
+_Preview truncated; see input file for full content._
+
+### `oracle21c-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-ddl-fk-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-ddl-fk-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
 ```
 _Preview truncated; see input file for full content._
 
@@ -37756,6 +40976,49 @@ CREATE TABLE production_plans (
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle26ai-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-ddl-fk-index-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-ddl-fk-index-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+_Preview truncated; see input file for full content._
+
 ### `oraclesample-data-full-01-schema-01-tables-ddl`
 
 | Field | Value |
@@ -37771,18 +41034,100 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:attendance.employee_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:damage_reports.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:purchase_receipts.receiver_id->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:purchase_receipts.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:purchase_requisitions.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:purchase_requisitions.requester_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:purchase_returns.refund_voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:role_permissions.permission_id->permissions.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:accounts.parent_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:attendance.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:cashier_journals.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:cashier_journals.cashier_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:cashier_journals.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:damage_report_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:damage_report_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:damage_reports.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:damage_reports.executed_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:damage_reports.reported_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:damage_reports.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:damage_reports.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:departments.manager_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:departments.parent_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:employee_roles.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:employee_roles.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:employee_salary_log.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:employees.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:employees.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:employees.position_id->positions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:inventory_transactions.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inventory_transactions.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:leave_records.employee_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:permissions.parent_id->permissions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:positions.department_id->departments.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:product_batches.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:product_categories.parent_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:products.category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_order_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_receipt_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_receipt_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_receipts.receiver_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_receipts.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_requisition_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_requisition_items.requisition_id->purchase_requisitions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_requisitions.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_requisitions.requester_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_return_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_return_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_return_items.return_id->purchase_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.handler_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.purchase_receipt_id->purchase_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.refund_voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:purchase_returns.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:reconciliation_items.reconciliation_id->reconciliations.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:reconciliations.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:reconciliations.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:reconciliations.reviewed_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:role_permissions.permission_id->permissions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:role_permissions.role_id->roles.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
-- `FK_LIKE:sales_returns.refund_voucher_id->vouchers.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:salary_payments.employee_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:salary_payments.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_order_items.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_orders.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_return_items.batch_id->product_batches.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_return_items.product_id->products.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_returns.approved_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_returns.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_returns.handler_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:sales_returns.refund_voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:settlement_items.settlement_id->settlements.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:settlements.approved_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:settlements.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:settlements.voucher_id->vouchers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:voucher_items.account_id->accounts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:vouchers.posted_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:vouchers.prepared_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:vouchers.reviewed_by->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:warehouses.manager_id->employees.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 
 **Expected Data Lineage Fingerprints**
 
@@ -37913,10 +41258,14 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:boms.child_product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:boms.parent_product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:commission_rules.product_category_id->product_categories.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:depreciation_log.asset_id->fixed_assets.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:fixed_assets.custodian_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:fixed_assets.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:invoices.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:promotion_products.category_id->product_categories.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:promotion_products.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:promotion_usages.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:promotion_usages.order_id->sales_orders.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -37928,6 +41277,13 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:service_tickets.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:shipments.order_id->sales_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:shipments.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:shipping_tracks.shipment_id->shipments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:three_way_matching.invoice_id->invoices.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+- `FK_LIKE:three_way_matching.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:three_way_matching.purchase_receipt_id->purchase_receipts.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:work_order_materials.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:work_order_materials.work_order_id->work_orders.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:work_orders.bom_id->boms.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:work_orders.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:work_orders.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
@@ -37973,29 +41329,41 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `FK_LIKE:ap_aging_snapshots.order_id->purchase_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ap_aging_snapshots.supplier_id->suppliers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:approval_instances.submitted_by->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:approval_nodes.workflow_id->approval_workflows.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.approver_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:approval_records.instance_id->approval_instances.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:approval_records.node_id->approval_nodes.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:ar_aging_snapshots.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:ar_aging_snapshots.order_id->sales_orders.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:consignment_inventory.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:consignment_inventory.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:consignment_inventory.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:contract_milestones.contract_id->contracts.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:contracts.approved_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:contracts.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:foreign_currency_accounts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:inspection_reports.inspector_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inspection_reports.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
-- `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:inspection_reports.standard_id->inspection_standards.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
+- `FK_LIKE:inspection_standards.product_id->products.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:performance_reviews.reviewer_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:price_change_logs.changed_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:price_change_logs.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:project_costs.project_id->projects.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:projects.department_id->departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:projects.manager_id->employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:serial_number_logs.serial_number_id->serial_numbers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
 - `FK_LIKE:serial_numbers.batch_id->product_batches.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:serial_numbers.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:serial_numbers.warehouse_id->warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
+- `FK_LIKE:tax_filings.prepared_by->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:tax_invoices.verified_by->employees.id:DDL_FOREIGN_KEY`
 
 **Expected Data Lineage Fingerprints**
@@ -38242,6 +41610,296 @@ CREATE TABLE production_plans (
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-batch-expiry-analysis-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-batch-expiry-analysis-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-inventory-posting-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-inventory-posting-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-mrp-run-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-mrp-run-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+_Preview truncated; see input file for full content._
+
+### `oracle-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-picking-task-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-picking-task-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:picking_tasks.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-return-refund-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-return-refund-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+_Preview truncated; see input file for full content._
+
+### `oracle-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-sales-fact-rebuild-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-sales-fact-rebuild-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle12c-fullgrammer-smoke-sql`
 
 | Field | Value |
@@ -38344,7 +42002,18 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipt_items.order_item_id->purchase_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -38388,6 +42057,7 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:commission_rules.product_category_id->products.category_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_commissions.employee_id->sales_commissions.employee_id:SQL_LOG_JOIN`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
@@ -38440,11 +42110,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Forbidden Tables**
 
@@ -38483,7 +42158,20 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:sales_order_items.order_id->sales_order_items.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.product_id->sales_order_items.product_id:SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -38526,7 +42214,13 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:product_categories.id->product_categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -38569,7 +42263,14 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:employees.id->sales_returns.approved_by:SQL_LOG_JOIN`
+- `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.refund_voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -38612,7 +42313,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -38709,7 +42415,10 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:account_subjects.subject_code->accounts.code:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->inventory.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->inventory_reservations.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->supplier_products.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:budget_items.period_code->vouchers.voucher_date:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:category_dim.source_category_id->products.category_id:SQL_LOG_JOIN`
@@ -38721,6 +42430,8 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:inventory.batch_id->repair_order_parts.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.product_id->repair_order_parts.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.warehouse_id->repair_order_parts.issued_from_warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory_cost_layers.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory_cost_layers.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.location_id->picking_task_items.location_id:SQL_LOG_JOIN`
@@ -38732,6 +42443,7 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:work_orders.id->work_orders.id:SQL_LOG_JOIN`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_requests.master_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -38763,35 +42475,40 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
 - `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
@@ -39057,6 +42774,129 @@ INSERT INTO shipments (
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle12c-sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/12c/03-data/06-derived-lineage-data.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-03-data-06-derived-lineage-data-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-03-data-06-derived-lineage-data-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.bom_id->boms.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- Oracle 12c/19c/21c/26ai compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle12c-sample-data-full-04-queries-01-complex-queries-sql`
 
 | Field | Value |
@@ -39072,29 +42912,19 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:baseline_sales.promotion_id->promo_orders.promotion_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:bom_explosion.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:cost.dept_name->revenue.dept_name:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:cost.period->revenue.period:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:current_month.product_id->last_month.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:current_month.product_id->same_month_last_year.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:dept_staffing.dept_id->dept_workload.dept_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:departments.id->departments.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:departments.name->departments.name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.department_id->employees.department_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.hire_date->employees.resignation_date:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->service_tickets.assigned_to:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:monthly_headcount.department_id->monthly_turnover.department_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:monthly_headcount.month->monthly_turnover.resign_month:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:order_products.order_id->order_products.order_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_a:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_b:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_pairs.product_a->products.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_pairs.product_b->products.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:revenue.dept_name->salary_cost.dept_name:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:revenue.period->salary_cost.period:SQL_LOG_JOIN`
-- `FK_LIKE:bom_explosion.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:bom_explosion.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:promotion_usages.promotion_id->promotion_usages.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.salary_month->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.order_id->sales_order_items.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
 - `FK_LIKE:boms.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:boms.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:commissions.employee_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:current_month.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
@@ -39103,18 +42933,17 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:sales_profit.salesperson_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_delivery_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_price_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_quality_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -39161,32 +42990,28 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:balance_sheet.fiscal_year->income_statement.fiscal_year:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:cohort_size.cohort_month->monthly_active.cohort_month:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:employees.id->monthly_attendance.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->employees.id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.product_id->inventory_transactions.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.warehouse_id->inventory_transactions.warehouse_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:pending_orders.product_id->stock_available.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:cumulative_allocation.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:demand_stats.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH,SQL_LOG_EXISTS`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH,SQL_LOG_JOIN`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:wh_accuracy.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:wh_shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:wh_throughput.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -39228,15 +43053,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:attendance_summary.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:customer_category_spend.customer_id->customer_total.customer_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:latest_performance.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:ap_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:ar_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:customer_repurchase_stats.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -39284,14 +43110,11 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:customer_category_purchase.customer_id->customer_category_purchase.customer_id:SQL_LOG_EXISTS`
-- `CO_OCCURRENCE:customer_category_purchase.warehouse_id->customer_category_purchase.warehouse_id:SQL_LOG_EXISTS`
-- `CO_OCCURRENCE:customer_first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:customer_first_purchase.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_category_sales.month->store_total.month:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_category_sales.store_id->store_total.store_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_churn.warehouse_id->store_return_stats.store_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_return_stats.store_id->store_sales_stats.store_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_categories.id->product_categories.id:SQL_LOG_EXISTS`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_EXISTS,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.warehouse_id->sales_orders.warehouse_id:SQL_LOG_EXISTS,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
@@ -39324,6 +43147,160 @@ _Preview truncated; see input file for full content._
 
 
 -- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `oracle12c-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/12c/04-queries/05-batch-expiry-queries.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `oracle12c-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/12c/04-queries/06-return-damage-queries.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
+- `FK_LIKE:damage_reports.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_return_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_return_items.return_id->purchase_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+_Preview truncated; see input file for full content._
+
+### `oracle12c-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/12c/04-queries/07-supplier-analysis-queries.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
 ```
 _Preview truncated; see input file for full content._
 
@@ -39389,6 +43366,92 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle12c-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/12c/04-queries/09-real-world-scenarios.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->inventory.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:promotion_products.promotion_id->promotion_usages.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.employee_id->sales_commissions.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.salary_month->sales_commissions.period:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:cashier_journals.reference_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:damage_report_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_requisitions.requester_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle12c-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
 
 | Field | Value |
@@ -39406,14 +43469,14 @@ _Preview truncated; see input file for full content._
 
 - `CO_OCCURRENCE:employees.id->stock_transfers.requested_by:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->stocktakes.created_by:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:operation_chain.operation_id->production_operations.predecessor_operation_id:SQL_LOG_JOIN`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:operation_chain.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_routes.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -39594,6 +43657,296 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle12c-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-batch-expiry-analysis-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-batch-expiry-analysis-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle12c-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-inventory-posting-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-inventory-posting-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle12c-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-mrp-run-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-mrp-run-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+_Preview truncated; see input file for full content._
+
+### `oracle12c-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-picking-task-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-picking-task-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:picking_tasks.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle12c-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-return-refund-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-return-refund-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+_Preview truncated; see input file for full content._
+
+### `oracle12c-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-sales-fact-rebuild-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-sales-fact-rebuild-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle19c-fullgrammer-smoke-sql`
 
 | Field | Value |
@@ -39696,7 +44049,18 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipt_items.order_item_id->purchase_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -39740,6 +44104,7 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:commission_rules.product_category_id->products.category_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_commissions.employee_id->sales_commissions.employee_id:SQL_LOG_JOIN`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
@@ -39792,11 +44157,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Forbidden Tables**
 
@@ -39835,7 +44205,20 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:sales_order_items.order_id->sales_order_items.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.product_id->sales_order_items.product_id:SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -39878,7 +44261,13 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:product_categories.id->product_categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -39921,7 +44310,14 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:employees.id->sales_returns.approved_by:SQL_LOG_JOIN`
+- `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.refund_voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -39964,7 +44360,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -40061,7 +44462,10 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:account_subjects.subject_code->accounts.code:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->inventory.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->inventory_reservations.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->supplier_products.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:budget_items.period_code->vouchers.voucher_date:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:category_dim.source_category_id->products.category_id:SQL_LOG_JOIN`
@@ -40073,6 +44477,8 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:inventory.batch_id->repair_order_parts.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.product_id->repair_order_parts.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.warehouse_id->repair_order_parts.issued_from_warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory_cost_layers.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory_cost_layers.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.location_id->picking_task_items.location_id:SQL_LOG_JOIN`
@@ -40084,6 +44490,7 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:work_orders.id->work_orders.id:SQL_LOG_JOIN`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_requests.master_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -40115,35 +44522,40 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
 - `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
@@ -40409,6 +44821,129 @@ INSERT INTO shipments (
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle19c-sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/19c/03-data/06-derived-lineage-data.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-03-data-06-derived-lineage-data-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-03-data-06-derived-lineage-data-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.bom_id->boms.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- Oracle 12c/19c/21c/26ai compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle19c-sample-data-full-04-queries-01-complex-queries-sql`
 
 | Field | Value |
@@ -40424,29 +44959,19 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:baseline_sales.promotion_id->promo_orders.promotion_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:bom_explosion.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:cost.dept_name->revenue.dept_name:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:cost.period->revenue.period:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:current_month.product_id->last_month.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:current_month.product_id->same_month_last_year.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:dept_staffing.dept_id->dept_workload.dept_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:departments.id->departments.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:departments.name->departments.name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.department_id->employees.department_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.hire_date->employees.resignation_date:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->service_tickets.assigned_to:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:monthly_headcount.department_id->monthly_turnover.department_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:monthly_headcount.month->monthly_turnover.resign_month:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:order_products.order_id->order_products.order_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_a:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_b:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_pairs.product_a->products.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_pairs.product_b->products.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:revenue.dept_name->salary_cost.dept_name:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:revenue.period->salary_cost.period:SQL_LOG_JOIN`
-- `FK_LIKE:bom_explosion.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:bom_explosion.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:promotion_usages.promotion_id->promotion_usages.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.salary_month->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.order_id->sales_order_items.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
 - `FK_LIKE:boms.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:boms.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:commissions.employee_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:current_month.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
@@ -40455,18 +44980,17 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:sales_profit.salesperson_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_delivery_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_price_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_quality_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -40513,32 +45037,28 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:balance_sheet.fiscal_year->income_statement.fiscal_year:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:cohort_size.cohort_month->monthly_active.cohort_month:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:employees.id->monthly_attendance.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->employees.id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.product_id->inventory_transactions.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.warehouse_id->inventory_transactions.warehouse_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:pending_orders.product_id->stock_available.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:cumulative_allocation.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:demand_stats.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH,SQL_LOG_EXISTS`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH,SQL_LOG_JOIN`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:wh_accuracy.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:wh_shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:wh_throughput.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -40580,15 +45100,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:attendance_summary.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:customer_category_spend.customer_id->customer_total.customer_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:latest_performance.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:ap_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:ar_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:customer_repurchase_stats.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -40636,14 +45157,11 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:customer_category_purchase.customer_id->customer_category_purchase.customer_id:SQL_LOG_EXISTS`
-- `CO_OCCURRENCE:customer_category_purchase.warehouse_id->customer_category_purchase.warehouse_id:SQL_LOG_EXISTS`
-- `CO_OCCURRENCE:customer_first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:customer_first_purchase.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_category_sales.month->store_total.month:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_category_sales.store_id->store_total.store_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_churn.warehouse_id->store_return_stats.store_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_return_stats.store_id->store_sales_stats.store_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_categories.id->product_categories.id:SQL_LOG_EXISTS`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_EXISTS,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.warehouse_id->sales_orders.warehouse_id:SQL_LOG_EXISTS,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
@@ -40676,6 +45194,160 @@ _Preview truncated; see input file for full content._
 
 
 -- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `oracle19c-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/19c/04-queries/05-batch-expiry-queries.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `oracle19c-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/19c/04-queries/06-return-damage-queries.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
+- `FK_LIKE:damage_reports.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_return_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_return_items.return_id->purchase_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+_Preview truncated; see input file for full content._
+
+### `oracle19c-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/19c/04-queries/07-supplier-analysis-queries.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
 ```
 _Preview truncated; see input file for full content._
 
@@ -40741,6 +45413,92 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle19c-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/19c/04-queries/09-real-world-scenarios.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->inventory.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:promotion_products.promotion_id->promotion_usages.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.employee_id->sales_commissions.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.salary_month->sales_commissions.period:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:cashier_journals.reference_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:damage_report_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_requisitions.requester_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle19c-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
 
 | Field | Value |
@@ -40758,14 +45516,14 @@ _Preview truncated; see input file for full content._
 
 - `CO_OCCURRENCE:employees.id->stock_transfers.requested_by:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->stocktakes.created_by:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:operation_chain.operation_id->production_operations.predecessor_operation_id:SQL_LOG_JOIN`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:operation_chain.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_routes.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -40946,6 +45704,296 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle19c-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-batch-expiry-analysis-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-batch-expiry-analysis-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle19c-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-inventory-posting-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-inventory-posting-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle19c-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-mrp-run-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-mrp-run-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+_Preview truncated; see input file for full content._
+
+### `oracle19c-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-picking-task-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-picking-task-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:picking_tasks.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle19c-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-return-refund-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-return-refund-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+_Preview truncated; see input file for full content._
+
+### `oracle19c-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-sales-fact-rebuild-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-sales-fact-rebuild-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle19c-version-memoptimize-sql`
 
 | Field | Value |
@@ -41086,7 +46134,18 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipt_items.order_item_id->purchase_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41130,6 +46189,7 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:commission_rules.product_category_id->products.category_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_commissions.employee_id->sales_commissions.employee_id:SQL_LOG_JOIN`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
@@ -41182,11 +46242,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Forbidden Tables**
 
@@ -41225,7 +46290,20 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:sales_order_items.order_id->sales_order_items.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.product_id->sales_order_items.product_id:SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41268,7 +46346,13 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:product_categories.id->product_categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41311,7 +46395,14 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:employees.id->sales_returns.approved_by:SQL_LOG_JOIN`
+- `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.refund_voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41354,7 +46445,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41451,7 +46547,10 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:account_subjects.subject_code->accounts.code:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->inventory.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->inventory_reservations.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->supplier_products.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:budget_items.period_code->vouchers.voucher_date:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:category_dim.source_category_id->products.category_id:SQL_LOG_JOIN`
@@ -41463,6 +46562,8 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:inventory.batch_id->repair_order_parts.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.product_id->repair_order_parts.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.warehouse_id->repair_order_parts.issued_from_warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory_cost_layers.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory_cost_layers.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.location_id->picking_task_items.location_id:SQL_LOG_JOIN`
@@ -41474,6 +46575,7 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:work_orders.id->work_orders.id:SQL_LOG_JOIN`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_requests.master_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -41505,35 +46607,40 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
 - `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
@@ -41799,6 +46906,129 @@ INSERT INTO shipments (
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle21c-sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/21c/03-data/06-derived-lineage-data.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-03-data-06-derived-lineage-data-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-03-data-06-derived-lineage-data-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.bom_id->boms.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- Oracle 12c/19c/21c/26ai compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle21c-sample-data-full-04-queries-01-complex-queries-sql`
 
 | Field | Value |
@@ -41814,29 +47044,19 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:baseline_sales.promotion_id->promo_orders.promotion_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:bom_explosion.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:cost.dept_name->revenue.dept_name:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:cost.period->revenue.period:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:current_month.product_id->last_month.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:current_month.product_id->same_month_last_year.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:dept_staffing.dept_id->dept_workload.dept_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:departments.id->departments.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:departments.name->departments.name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.department_id->employees.department_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.hire_date->employees.resignation_date:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->service_tickets.assigned_to:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:monthly_headcount.department_id->monthly_turnover.department_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:monthly_headcount.month->monthly_turnover.resign_month:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:order_products.order_id->order_products.order_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_a:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_b:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_pairs.product_a->products.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_pairs.product_b->products.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:revenue.dept_name->salary_cost.dept_name:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:revenue.period->salary_cost.period:SQL_LOG_JOIN`
-- `FK_LIKE:bom_explosion.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:bom_explosion.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:promotion_usages.promotion_id->promotion_usages.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.salary_month->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.order_id->sales_order_items.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
 - `FK_LIKE:boms.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:boms.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:commissions.employee_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:current_month.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
@@ -41845,18 +47065,17 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:sales_profit.salesperson_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_delivery_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_price_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_quality_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -41903,32 +47122,28 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:balance_sheet.fiscal_year->income_statement.fiscal_year:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:cohort_size.cohort_month->monthly_active.cohort_month:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:employees.id->monthly_attendance.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->employees.id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.product_id->inventory_transactions.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.warehouse_id->inventory_transactions.warehouse_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:pending_orders.product_id->stock_available.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:cumulative_allocation.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:demand_stats.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH,SQL_LOG_EXISTS`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH,SQL_LOG_JOIN`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:wh_accuracy.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:wh_shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:wh_throughput.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -41970,15 +47185,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:attendance_summary.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:customer_category_spend.customer_id->customer_total.customer_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:latest_performance.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:ap_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:ar_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:customer_repurchase_stats.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -42026,14 +47242,11 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:customer_category_purchase.customer_id->customer_category_purchase.customer_id:SQL_LOG_EXISTS`
-- `CO_OCCURRENCE:customer_category_purchase.warehouse_id->customer_category_purchase.warehouse_id:SQL_LOG_EXISTS`
-- `CO_OCCURRENCE:customer_first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:customer_first_purchase.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_category_sales.month->store_total.month:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_category_sales.store_id->store_total.store_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_churn.warehouse_id->store_return_stats.store_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_return_stats.store_id->store_sales_stats.store_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_categories.id->product_categories.id:SQL_LOG_EXISTS`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_EXISTS,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.warehouse_id->sales_orders.warehouse_id:SQL_LOG_EXISTS,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
@@ -42066,6 +47279,160 @@ _Preview truncated; see input file for full content._
 
 
 -- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `oracle21c-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/21c/04-queries/05-batch-expiry-queries.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `oracle21c-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/21c/04-queries/06-return-damage-queries.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
+- `FK_LIKE:damage_reports.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_return_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_return_items.return_id->purchase_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+_Preview truncated; see input file for full content._
+
+### `oracle21c-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/21c/04-queries/07-supplier-analysis-queries.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
 ```
 _Preview truncated; see input file for full content._
 
@@ -42131,6 +47498,92 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle21c-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/21c/04-queries/09-real-world-scenarios.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->inventory.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:promotion_products.promotion_id->promotion_usages.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.employee_id->sales_commissions.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.salary_month->sales_commissions.period:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:cashier_journals.reference_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:damage_report_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_requisitions.requester_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle21c-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
 
 | Field | Value |
@@ -42148,14 +47601,14 @@ _Preview truncated; see input file for full content._
 
 - `CO_OCCURRENCE:employees.id->stock_transfers.requested_by:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->stocktakes.created_by:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:operation_chain.operation_id->production_operations.predecessor_operation_id:SQL_LOG_JOIN`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:operation_chain.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_routes.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -42336,6 +47789,296 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle21c-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-batch-expiry-analysis-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-batch-expiry-analysis-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle21c-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-inventory-posting-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-inventory-posting-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle21c-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-mrp-run-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-mrp-run-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+_Preview truncated; see input file for full content._
+
+### `oracle21c-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-picking-task-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-picking-task-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:picking_tasks.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle21c-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-return-refund-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-return-refund-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+_Preview truncated; see input file for full content._
+
+### `oracle21c-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-sales-fact-rebuild-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-sales-fact-rebuild-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle21c-version-sql-macro-sql`
 
 | Field | Value |
@@ -42478,7 +48221,18 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipt_items.order_item_id->purchase_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -42522,6 +48276,7 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:commission_rules.product_category_id->products.category_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_commissions.employee_id->sales_commissions.employee_id:SQL_LOG_JOIN`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
@@ -42574,11 +48329,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:consignment_consumptions.consignment_id->consignment_inventory.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Forbidden Tables**
 
@@ -42617,7 +48377,20 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:sales_order_items.order_id->sales_order_items.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.product_id->sales_order_items.product_id:SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.order_item_id->sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -42660,7 +48433,13 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:product_categories.id->product_categories.id:SQL_LOG_JOIN`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -42703,7 +48482,14 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `CO_OCCURRENCE:employees.id->sales_returns.approved_by:SQL_LOG_JOIN`
+- `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.refund_voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -42746,7 +48532,12 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -42843,7 +48634,10 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:account_subjects.subject_code->accounts.code:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->inventory.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->inventory_reservations.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->supplier_products.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:budget_items.period_code->vouchers.voucher_date:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:category_dim.source_category_id->products.category_id:SQL_LOG_JOIN`
@@ -42855,6 +48649,8 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:inventory.batch_id->repair_order_parts.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.product_id->repair_order_parts.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.warehouse_id->repair_order_parts.issued_from_warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory_cost_layers.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory_cost_layers.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.location_id->picking_task_items.location_id:SQL_LOG_JOIN`
@@ -42866,6 +48662,7 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:work_orders.id->work_orders.id:SQL_LOG_JOIN`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_requests.master_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -42897,35 +48694,40 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
 - `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
@@ -43191,6 +48993,129 @@ INSERT INTO shipments (
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle26ai-sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/26ai/03-data/06-derived-lineage-data.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-03-data-06-derived-lineage-data-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-03-data-06-derived-lineage-data-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.bom_id->boms.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- Oracle 12c/19c/21c/26ai compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle26ai-sample-data-full-04-queries-01-complex-queries-sql`
 
 | Field | Value |
@@ -43206,29 +49131,19 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:baseline_sales.promotion_id->promo_orders.promotion_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:bom_explosion.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:cost.dept_name->revenue.dept_name:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:cost.period->revenue.period:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:current_month.product_id->last_month.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:current_month.product_id->same_month_last_year.product_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:dept_staffing.dept_id->dept_workload.dept_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:departments.id->departments.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:departments.name->departments.name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.department_id->employees.department_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.hire_date->employees.resignation_date:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->service_tickets.assigned_to:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:monthly_headcount.department_id->monthly_turnover.department_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:monthly_headcount.month->monthly_turnover.resign_month:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:order_products.order_id->order_products.order_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_a:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_order_count.product_id->product_pairs.product_b:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_pairs.product_a->products.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:product_pairs.product_b->products.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:revenue.dept_name->salary_cost.dept_name:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:revenue.period->salary_cost.period:SQL_LOG_JOIN`
-- `FK_LIKE:bom_explosion.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:bom_explosion.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:promotion_usages.promotion_id->promotion_usages.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.salary_month->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.order_id->sales_order_items.order_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
 - `FK_LIKE:boms.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:boms.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:commissions.employee_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:current_month.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
@@ -43237,18 +49152,17 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:promotion_usages.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:sales_profit.salesperson_id->sales_person_metrics.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_delivery_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_price_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_quality_score.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -43295,32 +49209,28 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:balance_sheet.fiscal_year->income_statement.fiscal_year:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:cohort_size.cohort_month->monthly_active.cohort_month:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:employees.id->monthly_attendance.id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.id->employees.id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.product_id->inventory_transactions.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.warehouse_id->inventory_transactions.warehouse_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:pending_orders.product_id->stock_available.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:cumulative_allocation.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:demand_stats.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH,SQL_LOG_EXISTS`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH,SQL_LOG_JOIN`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:wh_accuracy.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:wh_shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:wh_throughput.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -43362,15 +49272,16 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:attendance_summary.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:customer_category_spend.customer_id->customer_total.customer_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:latest_performance.employee_id->leave_balance.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:ap_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:ar_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:customer_repurchase_stats.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -43418,14 +49329,11 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:customer_category_purchase.customer_id->customer_category_purchase.customer_id:SQL_LOG_EXISTS`
-- `CO_OCCURRENCE:customer_category_purchase.warehouse_id->customer_category_purchase.warehouse_id:SQL_LOG_EXISTS`
-- `CO_OCCURRENCE:customer_first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:customer_first_purchase.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_category_sales.month->store_total.month:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_category_sales.store_id->store_total.store_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_churn.warehouse_id->store_return_stats.store_id:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:store_return_stats.store_id->store_sales_stats.store_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:product_categories.id->product_categories.id:SQL_LOG_EXISTS`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_EXISTS,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.warehouse_id->sales_orders.warehouse_id:SQL_LOG_EXISTS,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
@@ -43458,6 +49366,160 @@ _Preview truncated; see input file for full content._
 
 
 -- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `oracle26ai-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/26ai/04-queries/05-batch-expiry-queries.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
+
+### `oracle26ai-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/26ai/04-queries/06-return-damage-queries.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-06-return-damage-queries-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-06-return-damage-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
+- `FK_LIKE:damage_reports.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_return_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_return_items.return_id->purchase_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+_Preview truncated; see input file for full content._
+
+### `oracle26ai-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/26ai/04-queries/07-supplier-analysis-queries.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
 ```
 _Preview truncated; see input file for full content._
 
@@ -43523,6 +49585,92 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle26ai-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/26ai/04-queries/09-real-world-scenarios.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->inventory.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:promotion_products.promotion_id->promotion_usages.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.employee_id->sales_commissions.employee_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.salary_month->sales_commissions.period:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:cashier_journals.reference_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:damage_report_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.requisition_id->purchase_requisitions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_requisitions.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_requisitions.requester_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
+-- ============================================================
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle26ai-sample-data-full-04-queries-10-enterprise-extension-queries-sql`
 
 | Field | Value |
@@ -43540,14 +49688,14 @@ _Preview truncated; see input file for full content._
 
 - `CO_OCCURRENCE:employees.id->stock_transfers.requested_by:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->stocktakes.created_by:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:operation_chain.operation_id->production_operations.predecessor_operation_id:SQL_LOG_JOIN`
 - `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:operation_chain.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_routes.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -43728,6 +49876,296 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `oracle26ai-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-batch-expiry-analysis-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-batch-expiry-analysis-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle26ai-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-inventory-posting-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-inventory-posting-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle26ai-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-mrp-run-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-mrp-run-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+_Preview truncated; see input file for full content._
+
+### `oracle26ai-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-picking-task-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-picking-task-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `CO_OCCURRENCE:inventory_location_balances.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `FK_LIKE:picking_tasks.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+_Preview truncated; see input file for full content._
+
+### `oracle26ai-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-return-refund-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-return-refund-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+_Preview truncated; see input file for full content._
+
+### `oracle26ai-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-sales-fact-rebuild-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-sales-fact-rebuild-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `oracle26ai-version-vector-sql`
 
 | Field | Value |
@@ -43787,7 +50225,7 @@ CREATE TABLE product_embeddings (
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -43872,6 +50310,7 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:commission_rules.product_category_id->products.category_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_commissions.employee_id->sales_commissions.employee_id:SQL_LOG_JOIN`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 
@@ -43879,9 +50318,9 @@ _Preview truncated; see input file for full content._
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -43924,11 +50363,15 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- None
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Forbidden Tables**
 
@@ -44193,7 +50636,10 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `CO_OCCURRENCE:account_subjects.subject_code->accounts.code:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->inventory.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->inventory_reservations.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:boms.child_product_id->purchase_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:boms.child_product_id->supplier_products.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:budget_items.period_code->vouchers.voucher_date:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:category_dim.source_category_id->products.category_id:SQL_LOG_JOIN`
@@ -44205,6 +50651,8 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:inventory.batch_id->repair_order_parts.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.product_id->repair_order_parts.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory.warehouse_id->repair_order_parts.issued_from_warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory_cost_layers.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory_cost_layers.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:inventory_location_balances.location_id->picking_task_items.location_id:SQL_LOG_JOIN`
@@ -44216,6 +50664,7 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:work_orders.id->work_orders.id:SQL_LOG_JOIN`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:inventory_location_balances.location_id->warehouse_locations.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_items.request_id->master_data_change_requests.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:master_data_change_requests.master_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -44245,40 +50694,52 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
+- `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
 - `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
 - `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:departments.id->employees.department_id`
 - `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
@@ -44298,7 +50759,16 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
+- `VALUE:DIRECT:positions.base_salary->employees.salary`
+- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
+- `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
 - `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
@@ -44525,6 +50995,129 @@ INSERT INTO shipments (
 ```
 _Preview truncated; see input file for full content._
 
+### `oraclesample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `oracle` |
+| Input | `sample-data/oracle/26ai/03-data/06-derived-lineage-data.sql` |
+| Expected relations | `test-fixtures/correctness/oracle/oracle-sample-data-full-03-data-06-derived-lineage-data-sql/expected-relations.json` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+| Expected diagnostics | `test-fixtures/correctness/oracle/oracle-sample-data-full-03-data-06-derived-lineage-data-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:work_orders.bom_id->boms.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+- `VALUE:FUNCTION_CALL:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period`
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- Oracle 12c/19c/21c/26ai compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
+```
+_Preview truncated; see input file for full content._
+
 ### `oraclesample-data-full-04-queries-01-complex-queries-sql`
 
 | Field | Value |
@@ -44540,17 +51133,39 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:boms.child_product_id->boms.parent_product_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:departments.id->departments.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:departments.name->departments.name:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.department_id->employees.department_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:employees.hire_date->employees.resignation_date:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.id->service_tickets.assigned_to:SQL_LOG_JOIN`
-- `CO_OCCURRENCE:sales_order_items.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:promotion_usages.promotion_id->promotion_usages.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:salary_payments.salary_month->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_order_items.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:boms.child_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:boms.parent_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.promotion_id->promotions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipt_items.receipt_id->purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_receipts.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:service_tickets.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:three_way_matching.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -44596,14 +51211,30 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH`
+- `CO_OCCURRENCE:employees.id->employees.id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->inventory_transactions.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.warehouse_id->inventory_transactions.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN,REPEATED_OBSERVATION,SQL_LOG_SUBQUERY_IN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH,SQL_LOG_EXISTS`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_EXISTS,NAMING_MATCH,SQL_LOG_JOIN`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:purchase_orders.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -44645,9 +51276,19 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
+- `CO_OCCURRENCE:ap_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:approval_instances.workflow_id->approval_instances.workflow_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:approval_instances.workflow_id->approval_nodes.workflow_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:ar_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
+- `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:project_costs.project_id->projects.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -44696,11 +51337,17 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_EXISTS,SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:sales_orders.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
@@ -44745,12 +51392,19 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -44795,11 +51449,20 @@ _Preview truncated; see input file for full content._
 
 - `CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN`
 - `FK_LIKE:damage_reports.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inspection_reports.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_return_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_return_items.return_id->purchase_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -44842,8 +51505,8 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
@@ -44891,15 +51554,28 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:approval_instances.submitted_by->employees.id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:approval_instances.workflow_id->approval_nodes.workflow_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
 - `FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:audit_log.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:employee_salary_log.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:leave_records.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:performance_reviews.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:salary_payments.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_SUBQUERY_IN`
 
 **Expected Data Lineage Fingerprints**
 
@@ -44942,21 +51618,47 @@ _Preview truncated; see input file for full content._
 
 **Expected Relation Fingerprints**
 
-- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->inventory.product_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN,REPEATED_OBSERVATION`
+- `CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:promotion_products.promotion_id->promotion_usages.promotion_id:SQL_LOG_JOIN`
+- `CO_OCCURRENCE:purchase_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:salary_payments.employee_id->sales_commissions.employee_id:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:salary_payments.salary_month->sales_commissions.period:SQL_LOG_JOIN`
-- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN`
+- `FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:cashier_journals.reference_id->sales_orders.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH`
+- `FK_LIKE:damage_report_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:damage_report_items.report_id->damage_reports.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:promotion_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:promotion_usages.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_commissions.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
-- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_returns.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
+- `FK_LIKE:sales_returns.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH`
 
 **Expected Data Lineage Fingerprints**
 
@@ -45005,6 +51707,9 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:production_routes.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfer_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfer_items.transfer_id->stock_transfers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:stock_transfers.from_warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -45109,6 +51814,7 @@ _Preview truncated; see input file for full content._
 - `CO_OCCURRENCE:master_data_change_requests.master_type->sensitive_access_logs.object_type:SQL_LOG_JOIN`
 - `CO_OCCURRENCE:standard_costs.product_id->work_orders.product_id:SQL_LOG_JOIN`
 - `FK_LIKE:ap_invoices.purchase_order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:ap_invoices.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:ar_invoices.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:budget_items.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH`
@@ -45149,7 +51855,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:sales_fact.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_fact.region_dim_id->region_dim.id:SQL_LOG_JOIN,NAMING_MATCH`
-- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH`
+- `FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH`
 - `FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH`
 - `FK_LIKE:warehouse_locations.zone_id->warehouse_zones.id:SQL_LOG_JOIN,NAMING_MATCH`

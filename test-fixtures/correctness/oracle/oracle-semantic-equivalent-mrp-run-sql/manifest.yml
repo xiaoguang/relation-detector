@@ -1,0 +1,10 @@
+id: oracle-semantic-equivalent-mrp-run-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: token-event
+sourceType: PLAIN_SQL
+schema: oracle
+input: ../../../semantic-equivalent/mrp-run/input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

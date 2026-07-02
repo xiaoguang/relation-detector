@@ -1,0 +1,12 @@
+id: oracle21c-sample-data-full-03-data-06-derived-lineage-data-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: oracle/21c
+databaseVersion: 21
+sourceType: PLAIN_SQL
+schema: oracle
+input: ../../../../../sample-data/oracle/21c/03-data/06-derived-lineage-data.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,13 +1,10 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:customer_category_purchase.customer_id->customer_category_purchase.customer_id:SQL_LOG_EXISTS",
-    "CO_OCCURRENCE:customer_category_purchase.warehouse_id->customer_category_purchase.warehouse_id:SQL_LOG_EXISTS",
-    "CO_OCCURRENCE:customer_first_purchase.customer_id->sales_orders.customer_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:customer_first_purchase.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:store_category_sales.month->store_total.month:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:store_category_sales.store_id->store_total.store_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:store_churn.warehouse_id->store_return_stats.store_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:store_return_stats.store_id->store_sales_stats.store_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:product_categories.id->product_categories.id:SQL_LOG_EXISTS",
+    "CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_EXISTS,SQL_LOG_JOIN",
+    "CO_OCCURRENCE:sales_orders.order_date->sales_orders.order_date:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:sales_orders.warehouse_id->sales_orders.warehouse_id:SQL_LOG_EXISTS,SQL_LOG_JOIN",
+    "CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
     "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",

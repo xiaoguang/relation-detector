@@ -1,0 +1,10 @@
+id: oracle-semantic-equivalent-ddl-fk-index-ddl
+databaseType: ORACLE
+parserTarget: DDL
+parserMode: token-event
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: oracle
+input: ../../../semantic-equivalent/ddl-fk-index/input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

@@ -915,9 +915,9 @@ BEGIN
     -- 更新账户余额
     SELECT current_balance INTO v_old_balance FROM accounts WHERE id = p_account_id;
 
-    IF VARCHAR2(40) IN ('cash_in', 'bank_in') THEN
+    IF p_journal_type IN ('cash_in', 'bank_in') THEN
         UPDATE accounts SET current_balance = current_balance + p_amount WHERE id = p_account_id;
-    ELSIF VARCHAR2(40) IN ('cash_out', 'bank_out') THEN
+    ELSIF p_journal_type IN ('cash_out', 'bank_out') THEN
         UPDATE accounts SET current_balance = current_balance - p_amount WHERE id = p_account_id;
     END IF;
 

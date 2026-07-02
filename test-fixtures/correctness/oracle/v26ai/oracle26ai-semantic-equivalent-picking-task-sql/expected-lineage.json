@@ -1,0 +1,13 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty",
+    "VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id",
+    "VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id",
+    "VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id",
+    "VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty",
+    "VALUE:DIRECT:sales_orders.id->picking_task_items.order_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

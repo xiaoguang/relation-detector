@@ -1,0 +1,12 @@
+id: oracle19c-semantic-equivalent-sales-fact-rebuild-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: oracle/19c
+databaseVersion: 19.1
+sourceType: PLAIN_SQL
+schema: oracle
+input: ../../../../semantic-equivalent/sales-fact-rebuild/input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

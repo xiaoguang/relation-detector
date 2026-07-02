@@ -13,17 +13,22 @@
 
 | 分组 | Fixture 数 | Parser 模式 | 样例来源 | Relationship | Lineage |
 | --- | ---: | --- | --- | ---: | ---: |
-| Common portable | 14 | `token-event` + `common-token-event` | `sample-data/portable` | 536 | 144 |
-| MySQL root | 36 | `token-event` | `sample-data/mysql/8.0` | 248 | 43 |
-| MySQL v8_0 | 36 | `full-grammer`, `mysql/8.0` | `sample-data/mysql/8.0` | 542 | 183 |
-| PostgreSQL root | 34 | `token-event` | `sample-data/postgres/18` | 177 | 27 |
-| PostgreSQL v16 | 34 | `full-grammer`, `postgresql/16` | PG18 兼容部分 + PG18-only version-boundary | 442 | 27 |
-| PostgreSQL v17 | 34 | `full-grammer`, `postgresql/17` | PG18 兼容部分 + PG18-only version-boundary | 442 | 27 |
-| PostgreSQL v18 | 34 | `full-grammer`, `postgresql/18` | `sample-data/postgres/18` | 442 | 27 |
+| Common portable | 15 | `token-event` + `common-token-event` | `sample-data/portable` | 729 | 292 |
+| MySQL root | 34 | `token-event` | `sample-data/mysql/8.0` | 562 | 208 |
+| MySQL v8_0 | 37 | `full-grammer`, `mysql/8.0` | `sample-data/mysql/8.0` | 784 | 273 |
+| PostgreSQL root | 31 | `token-event` | `sample-data/postgres/18` | 673 | 218 |
+| PostgreSQL v16 | 31 | `full-grammer`, `postgresql/16` | PG18 兼容部分 + PG18-only version-boundary | 675 | 219 |
+| PostgreSQL v17 | 31 | `full-grammer`, `postgresql/17` | PG18 兼容部分 + PG18-only version-boundary | 675 | 219 |
+| PostgreSQL v18 | 31 | `full-grammer`, `postgresql/18` | `sample-data/postgres/18` | 674 | 218 |
+| Oracle root | 34 | `token-event` | `sample-data/oracle/*` | 629 | 217 |
+| Oracle v12c | 34 | `full-grammer`, `oracle/12c` | `sample-data/oracle/12c` | 666 | 217 |
+| Oracle v19c | 34 | `full-grammer`, `oracle/19c` | `sample-data/oracle/19c` | 666 | 217 |
+| Oracle v21c | 34 | `full-grammer`, `oracle/21c` | `sample-data/oracle/21c` | 666 | 217 |
+| Oracle v26ai | 34 | `full-grammer`, `oracle/26ai` | `sample-data/oracle/26ai` | 666 | 217 |
 
-当前 sample-data 相关 fixture 合计 222 个。DDL 文件保留原始文件引用；procedure/function/trigger 通过 `OBJECT_BLOCKS` 把对象体作为单个 parser 输入；view 文件同时覆盖 DDL/index 入口和 view query body 入口。
+当前 sample-data 相关 fixture 合计 380 个。DDL 文件保留原始文件引用；procedure/function/trigger 通过 `OBJECT_BLOCKS` 把对象体作为单个 parser 输入；view 文件同时覆盖 DDL/index 入口和 view query body 入口。
 
-说明：Common portable 下同时保留了早期 portable smoke fixture 和本轮 full sample-data fixture；上表按当前 tracked golden 文件中的 `expected-relations.json` / `expected-lineage.json` 实际条数统计。
+说明：Common portable 下同时保留了早期 portable smoke fixture 和本轮 full sample-data fixture；上表按当前 tracked golden 文件中的 `expected-relations.json` / `expected-lineage.json` 实际条数统计。严格的跨 parser 语义追平结果见 `docs/parser-audit/parser-comparison-summary.md` 与 `docs/parser-audit/semantic-equivalent-benchmark.md`。
 
 ## 本轮已修复的 parser gap
 
@@ -39,6 +44,9 @@
 | Common DDL fixture routing gap | `structuredParser: common-token-event` 的 DDL fixture 曾经仍按 `databaseType` 走 adaptor DDL parser | `CorrectnessFixtureRunnerTest` 对 common DDL 显式注入 `TokenEventStructuredDdlParser(SqlDialect.GENERIC)`，保证 common SQL 与 common DDL 都独立验证 common typed grammar |
 | MySQL token-event routine lineage gap | `CREATE PROCEDURE ... BEGIN ... INSERT SELECT / UPDATE JOIN ... END` 中前半段 DML 曾被 routine 外壳吞掉；`<=>` null-safe equality 会打断 UPDATE JOIN | MySQL token-event grammar 增加 typed routine/block/control 容器，并把 `<=>` 加入 MySQL comparison operator；内部 DML 继续由 typed visitor 产出 lineage |
 | PostgreSQL routine body lineage gap | PL/pgSQL body 在 `$$...$$` 中，root token-event 与 full-grammer v16/v17/v18 以前没有递归解析 body DML | PostgreSQL token-event 对 dollar body 做二次 typed parse；full-grammer v16/v17/v18 在 `func_as` context 中调用同一 typed body parser，不修改官方版本 grammar |
+| Oracle unmarked procedure fixture scope gap | `02-procedures/05-third-batch-procedures.sql` 没有 `relation-detector-fixture-source` marker，旧 correctness fallback 把整份 Oracle procedure 文件当成一个 statement，导致 alias `c` 在不同 procedure 间泄漏 | `OBJECT_BLOCKS` 对 Oracle 无 marker 文件按 `CREATE OR REPLACE ... /` object 分块；root token-event 与 versioned full-grammer 都按单个 procedure 解析 |
+| Oracle sample SQL migration residue | `ELSEIF`、`IF VARCHAR2(40)`、`CASE VARCHAR2(40)`、无 `FROM dual` 的 cursor result SELECT 和空 `SQL%ROWCOUNT` notice block | 改为 12c-compatible Oracle PL/SQL：`ELSIF`、真实变量分支、`FROM dual`、`CURSOR ... IS`、`ROWNUM = 1`，并用 `NULL;` 代替无业务效果的空通知块 |
+| Oracle full-grammer procedure lineage gap | `sp_generate_ar_aging` 中 `INSERT INTO ar_aging_snapshots ... SELECT ... FROM sales_orders so JOIN customers c ...` | 修正 SQL asset 与 object-block 切分后，`oracle/12c|19c|21c|26ai` full-grammer 均补齐 5 条 AR aging lineage，sample-data lineage 与 root token-event 追平 |
 
 相关行为测试已补充：
 

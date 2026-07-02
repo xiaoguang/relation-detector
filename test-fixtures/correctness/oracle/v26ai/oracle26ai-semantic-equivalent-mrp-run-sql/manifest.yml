@@ -1,0 +1,12 @@
+id: oracle26ai-semantic-equivalent-mrp-run-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: oracle/26ai
+databaseVersion: 26.1
+sourceType: PLAIN_SQL
+schema: oracle
+input: ../../../../semantic-equivalent/mrp-run/input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

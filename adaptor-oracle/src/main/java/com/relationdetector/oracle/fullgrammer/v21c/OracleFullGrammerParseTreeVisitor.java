@@ -38,6 +38,7 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
     private final OracleSqlEventVisitorCore core;
     private final OracleRoutineScope routineScope = new OracleRoutineScope();
     private final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
+    private final ArrayDeque<QueryScope> queryScopes = new ArrayDeque<>();
     private final ArrayDeque<String> ddlTables = new ArrayDeque<>();
     private final ArrayDeque<String> writeTargetTables = new ArrayDeque<>();
     private final ArrayDeque<String> writeTargetAliases = new ArrayDeque<>();
@@ -75,6 +76,22 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
         routineScope.enterRoutine();
         visitChildren(ctx);
         routineScope.leaveRoutineEnd(false);
+        return null;
+    }
+
+    @Override
+    public Void visitSubquery_factoring_clause(OracleFullGrammerParser.Subquery_factoring_clauseContext ctx) {
+        String cte = name(ctx.query_name());
+        if (cte.isBlank()) {
+            return visitChildren(ctx);
+        }
+        emitCteDeclaration(ctx, cte);
+        List<String> outputColumns = ctx.paren_column_list() == null
+                ? List.of()
+                : columns(ctx.paren_column_list().column_list().column_name());
+        projectionOwners.push(new ProjectionOwner(cte, outputColumns));
+        visit(ctx.subquery());
+        projectionOwners.pop();
         return null;
     }
 
@@ -152,23 +169,28 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
 
     @Override
     public Void visitQuery_block(OracleFullGrammerParser.Query_blockContext ctx) {
-        if (ctx.from_clause() != null) {
-            visit(ctx.from_clause());
-        }
-        if (ctx.where_clause() != null) {
-            visit(ctx.where_clause());
-        }
-        for (OracleFullGrammerParser.Hierarchical_query_clauseContext clause : ctx.hierarchical_query_clause()) {
-            visit(clause);
-        }
-        for (OracleFullGrammerParser.Group_by_clauseContext clause : ctx.group_by_clause()) {
-            visit(clause);
-        }
-        if (ctx.model_clause() != null) {
-            visit(ctx.model_clause());
-        }
-        if (!projectionOwners.isEmpty()) {
-            emitProjectionItems(ctx.selected_list(), projectionOwners.peek());
+        queryScopes.push(new QueryScope());
+        try {
+            if (ctx.from_clause() != null) {
+                visit(ctx.from_clause());
+            }
+            if (ctx.where_clause() != null) {
+                visit(ctx.where_clause());
+            }
+            for (OracleFullGrammerParser.Hierarchical_query_clauseContext clause : ctx.hierarchical_query_clause()) {
+                visit(clause);
+            }
+            for (OracleFullGrammerParser.Group_by_clauseContext clause : ctx.group_by_clause()) {
+                visit(clause);
+            }
+            if (ctx.model_clause() != null) {
+                visit(ctx.model_clause());
+            }
+            if (!projectionOwners.isEmpty()) {
+                emitProjectionItems(ctx.selected_list(), projectionOwners.peek());
+            }
+        } finally {
+            queryScopes.pop();
         }
         return null;
     }
@@ -483,6 +505,16 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
         attrs.put("table", alias);
         attrs.put("qualifiedTable", alias);
         core.add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
+        registerCurrentRowset(alias);
+    }
+
+    private void emitCteDeclaration(ParserRuleContext ctx, String name) {
+        Map<String, Object> attrs = core.attrs();
+        attrs.put("name", name);
+        attrs.put("table", name);
+        attrs.put("qualifiedTable", name);
+        core.add(StructuredParseEventType.CTE_DECLARATION, ctx, attrs);
+        core.add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
     }
 
     private void emitRowset(ParserRuleContext ctx, String table, String alias) {
@@ -501,6 +533,7 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
             attrs.put("alias", alias);
         }
         core.add(StructuredParseEventType.ROWSET_REFERENCE, ctx, attrs);
+        registerCurrentRowset(alias.isBlank() ? core.baseName(table) : alias);
     }
 
     private String currentDdlTable() {
@@ -643,6 +676,11 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
                 addColumnRead(text, reads);
                 return;
             }
+            if (!text.contains("(") && element.general_element_part().size() == 1
+                    && element.general_element_part(0).function_argument().isEmpty()) {
+                addColumnRead(text, reads);
+                return;
+            }
         }
         for (int index = 0; index < tree.getChildCount(); index++) {
             collectColumnReads(tree.getChild(index), reads);
@@ -652,7 +690,23 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
     private void addColumnRead(String raw, Map<String, OracleColumnRead> reads) {
         String value = core.clean(raw);
         int dot = value.lastIndexOf('.');
-        if (dot <= 0 || dot == value.length() - 1) {
+        if (dot < 0) {
+            if (projectionOwners.isEmpty()) {
+                return;
+            }
+            String defaultAlias = defaultColumnAlias();
+            if (defaultAlias.isBlank()) {
+                return;
+            }
+            String column = core.clean(value);
+            if (column.isBlank()) {
+                return;
+            }
+            String key = defaultAlias + "." + column;
+            reads.putIfAbsent(key, new OracleColumnRead(defaultAlias, column));
+            return;
+        }
+        if (dot == 0 || dot == value.length() - 1) {
             return;
         }
         String alias = core.clean(value.substring(0, dot));
@@ -662,6 +716,21 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
         }
         String key = alias + "." + column;
         reads.putIfAbsent(key, new OracleColumnRead(alias, column));
+    }
+
+    private void registerCurrentRowset(String alias) {
+        if (alias == null || alias.isBlank() || queryScopes.isEmpty()) {
+            return;
+        }
+        queryScopes.peek().rowsetAliases().add(alias);
+    }
+
+    private String defaultColumnAlias() {
+        if (queryScopes.isEmpty()) {
+            return "";
+        }
+        Set<String> aliases = queryScopes.peek().rowsetAliases();
+        return aliases.size() == 1 ? aliases.iterator().next() : "";
     }
 
     private <T extends ParserRuleContext> T first(ParseTree tree, Class<T> type) {
@@ -702,5 +771,11 @@ public final class OracleFullGrammerParseTreeVisitor extends OracleFullGrammerPa
     }
 
     private record ProjectionOwner(String alias, List<String> columns) {
+    }
+
+    private record QueryScope(Set<String> rowsetAliases) {
+        QueryScope() {
+            this(new LinkedHashSet<>());
+        }
     }
 }

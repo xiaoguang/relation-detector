@@ -1,0 +1,12 @@
+id: mysql80-semantic-equivalent-sales-fact-rebuild-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: mysql/8.0
+databaseVersion: 8.0
+sourceType: PLAIN_SQL
+schema: erp_system
+input: ../../../../semantic-equivalent/sales-fact-rebuild/input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

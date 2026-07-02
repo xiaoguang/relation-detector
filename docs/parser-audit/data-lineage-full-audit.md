@@ -8,11 +8,11 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 
 | Classification | Count |
 | --- | ---: |
-| TOTAL | 763 |
-| EXISTING_GOLD | 211 |
+| TOTAL | 872 |
+| EXISTING_GOLD | 285 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 552 |
+| NOT_APPLICABLE | 587 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -45,6 +45,39 @@ CREATE TABLE departments (
   parent_id BIGINT,
   name VARCHAR,
   code VARCHAR UNIQUE,
+```
+
+## `common-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
 ```
 
 ## `commonsample-data-full-01-schema-01-tables-ddl`
@@ -542,6 +575,39 @@ CREATE TABLE geo_assets (
 USE erp_system;
 ```
 
+## `mysql-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+
 ## `mysql80-mysql-basic-correctness-case-01-ddl`
 
 | Field | Value |
@@ -936,6 +1002,39 @@ CREATE TABLE geo_assets (
 -- ============================================================
 
 USE erp_system;
+```
+
+## `mysql80-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `MYSQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
 ```
 
 ## `mysql80sample-data-full-01-schema-01-tables-ddl`
@@ -1664,6 +1763,229 @@ WHERE EXISTS (
   SELECT 1
   FROM departments
   WHERE departments.id = employees.department_id
+```
+
+## `common-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `common-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `common-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `common-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `common-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `common-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
 ```
 
 ## `common-sql-basic-join`
@@ -3318,6 +3640,229 @@ BEGIN
 -- ============================================================
 ```
 
+## `mysql-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `mysql-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `mysql-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `mysql-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `mysql-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `mysql-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+
 ## `mysql-sql-cte-lateral`
 
 | Field | Value |
@@ -4864,6 +5409,229 @@ BEGIN
 --       供应商集中度风险、月度关账核对、需求预测准确率、
 --       仓库库容利用率、提成核对、价格弹性分析
 -- ============================================================
+```
+
+## `mysql80-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `mysql80-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `mysql80-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `mysql80-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `mysql80-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `mysql80-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `MYSQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
 ```
 
 ## `mysql80sample-data-full-01-schema-02-indexes-and-views-views-sql`
@@ -7043,6 +7811,39 @@ USE erp_system;
 USE erp_system;
 ```
 
+## `oracle-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+
 ## `oracle12c-sample-data-full-01-schema-01-tables-ddl`
 
 | Field | Value |
@@ -7271,6 +8072,39 @@ CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
 
 CREATE TABLE production_plans (
     id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+```
+
+## `oracle12c-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
 ```
 
 ## `oracle19c-sample-data-full-01-schema-01-tables-ddl`
@@ -7503,6 +8337,39 @@ CREATE TABLE production_plans (
     id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
 ```
 
+## `oracle19c-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+
 ## `oracle21c-sample-data-full-01-schema-01-tables-ddl`
 
 | Field | Value |
@@ -7731,6 +8598,39 @@ CREATE INDEX idx_inv_product_warehouse ON inventory(product_id, warehouse_id);
 
 CREATE TABLE production_plans (
     id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+```
+
+## `oracle21c-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
 ```
 
 ## `oracle26ai-sample-data-full-01-schema-01-tables-ddl`
@@ -7963,6 +8863,39 @@ CREATE TABLE production_plans (
     id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
 ```
 
+## `oracle26ai-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+
 ## `oraclesample-data-full-01-schema-01-tables-ddl`
 
 | Field | Value |
@@ -8193,6 +9126,229 @@ CREATE TABLE production_plans (
     id NUMBER(19) GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
 ```
 
+## `oracle-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `oracle-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `oracle-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `oracle-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `oracle-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `oracle-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+
 ## `oracle12c-fullgrammer-smoke-sql`
 
 | Field | Value |
@@ -8339,8 +9495,8 @@ GROUP BY c.id;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -8349,7 +9505,11 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -8561,35 +9721,40 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
 - `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
@@ -8810,6 +9975,117 @@ INSERT INTO shipments (
     id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
 ```
 
+## `oracle12c-sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/03-data/06-derived-lineage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- Oracle 12c/19c/21c/26ai compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
+```
+
 ## `oracle12c-sample-data-full-04-queries-01-complex-queries-sql`
 
 | Field | Value |
@@ -8940,6 +10216,105 @@ INSERT INTO shipments (
 -- ============================================================
 ```
 
+## `oracle12c-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle12c-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+
+## `oracle12c-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
+```
+
 ## `oracle12c-sample-data-full-04-queries-08-common-system-queries-sql`
 
 | Field | Value |
@@ -8970,6 +10345,39 @@ INSERT INTO shipments (
 -- ============================================================
 
 
+-- ============================================================
+```
+
+## `oracle12c-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/12c/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
 -- ============================================================
 ```
 
@@ -9069,6 +10477,229 @@ CREATE TABLE oracle_12c_identity_demo (
 -- 数据库: Oracle 16/17/18 compatible
 -- ============================================================
 
+```
+
+## `oracle12c-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `oracle12c-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `oracle12c-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `oracle12c-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `oracle12c-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `oracle12c-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
 ```
 
 ## `oracle19c-fullgrammer-smoke-sql`
@@ -9217,8 +10848,8 @@ GROUP BY c.id;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -9227,7 +10858,11 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -9439,35 +11074,40 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
 - `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
@@ -9688,6 +11328,117 @@ INSERT INTO shipments (
     id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
 ```
 
+## `oracle19c-sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/03-data/06-derived-lineage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- Oracle 12c/19c/21c/26ai compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
+```
+
 ## `oracle19c-sample-data-full-04-queries-01-complex-queries-sql`
 
 | Field | Value |
@@ -9818,6 +11569,105 @@ INSERT INTO shipments (
 -- ============================================================
 ```
 
+## `oracle19c-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle19c-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+
+## `oracle19c-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
+```
+
 ## `oracle19c-sample-data-full-04-queries-08-common-system-queries-sql`
 
 | Field | Value |
@@ -9848,6 +11698,39 @@ INSERT INTO shipments (
 -- ============================================================
 
 
+-- ============================================================
+```
+
+## `oracle19c-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/19c/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
 -- ============================================================
 ```
 
@@ -9947,6 +11830,229 @@ CREATE TABLE oracle_19_memoptimize_demo (
 -- 数据库: Oracle 16/17/18 compatible
 -- ============================================================
 
+```
+
+## `oracle19c-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `oracle19c-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `oracle19c-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `oracle19c-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `oracle19c-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `oracle19c-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
 ```
 
 ## `oracle19c-version-memoptimize-sql`
@@ -10124,8 +12230,8 @@ GROUP BY c.id;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -10134,7 +12240,11 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -10346,35 +12456,40 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
 - `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
@@ -10595,6 +12710,117 @@ INSERT INTO shipments (
     id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
 ```
 
+## `oracle21c-sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/03-data/06-derived-lineage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- Oracle 12c/19c/21c/26ai compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
+```
+
 ## `oracle21c-sample-data-full-04-queries-01-complex-queries-sql`
 
 | Field | Value |
@@ -10725,6 +12951,105 @@ INSERT INTO shipments (
 -- ============================================================
 ```
 
+## `oracle21c-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle21c-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+
+## `oracle21c-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
+```
+
 ## `oracle21c-sample-data-full-04-queries-08-common-system-queries-sql`
 
 | Field | Value |
@@ -10755,6 +13080,39 @@ INSERT INTO shipments (
 -- ============================================================
 
 
+-- ============================================================
+```
+
+## `oracle21c-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/21c/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
 -- ============================================================
 ```
 
@@ -10854,6 +13212,229 @@ CREATE TABLE oracle_21_sales_demo (
 -- 数据库: Oracle 16/17/18 compatible
 -- ============================================================
 
+```
+
+## `oracle21c-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `oracle21c-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `oracle21c-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `oracle21c-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `oracle21c-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `oracle21c-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
 ```
 
 ## `oracle21c-version-sql-macro-sql`
@@ -11033,8 +13614,8 @@ GROUP BY c.id;
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -11043,7 +13624,11 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -11255,35 +13840,40 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
 - `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:ARITHMETIC:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
@@ -11504,6 +14094,117 @@ INSERT INTO shipments (
     id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
 ```
 
+## `oracle26ai-sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/03-data/06-derived-lineage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- Oracle 12c/19c/21c/26ai compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
+```
+
 ## `oracle26ai-sample-data-full-04-queries-01-complex-queries-sql`
 
 | Field | Value |
@@ -11634,6 +14335,105 @@ INSERT INTO shipments (
 -- ============================================================
 ```
 
+## `oracle26ai-sample-data-full-04-queries-05-batch-expiry-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/05-batch-expiry-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-05-batch-expiry-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第五批超复杂SQL: 批号保质期 + 类别销售/临期深度分析
+-- 覆盖: 门店批号追踪、类别临期热力图、保质期预警、
+--        类别动销对比、临期vs销售健康度、FIFO执行检查
+-- ============================================================
+
+
+-- ============================================================
+```
+
+## `oracle26ai-sample-data-full-04-queries-06-return-damage-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/06-return-damage-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-06-return-damage-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第六批超复杂SQL: 退货退款 + 报损分析 + 财务影响
+-- ============================================================
+
+
+-- ============================================================
+-- Q68: 退货原因根因分析 - 按品类/门店/供应商交叉
+-- 语法: CTE + 多维度交叉 + 原因占比 + 饼图数据
+```
+
+## `oracle26ai-sample-data-full-04-queries-07-supplier-analysis-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/07-supplier-analysis-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-07-supplier-analysis-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- 第七批超复杂SQL: 供应商地理分析 + 智能选择 + 对比
+-- 覆盖: 供应商PK、地理距离优化、物流成本、退货率、综合评分
+-- ============================================================
+
+
+-- ============================================================
+-- Q76: 全产品供应商覆盖率分析 - 哪些产品缺供应商
+```
+
 ## `oracle26ai-sample-data-full-04-queries-08-common-system-queries-sql`
 
 | Field | Value |
@@ -11664,6 +14464,39 @@ INSERT INTO shipments (
 -- ============================================================
 
 
+-- ============================================================
+```
+
+## `oracle26ai-sample-data-full-04-queries-09-real-world-scenarios-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/04-queries/09-real-world-scenarios.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP系统真实业务场景SQL查询 - 第九批
+-- 覆盖: Procure-to-Pay全链路、Order-to-Cash全链路、
+--       产品真实利润、员工人效、库存持有成本、资金周转周期、
+--       信用风险监控、批号全链路追溯、毛利瀑布、预算滚动预测、
+--       供应商集中度风险、月度关账核对、需求预测准确率、
+--       仓库库容利用率、提成核对、价格弹性分析
 -- ============================================================
 ```
 
@@ -11765,6 +14598,229 @@ CREATE TABLE oracle_26ai_product_vector_demo (
 
 ```
 
+## `oracle26ai-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `oracle26ai-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `oracle26ai-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `oracle26ai-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `oracle26ai-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `oracle26ai-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+
 ## `oracle26ai-version-vector-sql`
 
 | Field | Value |
@@ -11810,7 +14866,7 @@ CREATE TABLE product_embeddings (
 
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
 - `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -11880,9 +14936,9 @@ CREATE TABLE product_embeddings (
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -11909,8 +14965,8 @@ CREATE TABLE product_embeddings (
 
 | Field | Value |
 | --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
 | Database | `ORACLE` |
 | Parser target | `SQL` |
 | Source type | `PROCEDURE` |
@@ -11919,7 +14975,11 @@ CREATE TABLE product_embeddings (
 
 **Expected Lineage Fingerprints**
 
-- None
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
 
 **Extractor Candidate Fingerprints**
 
@@ -12129,40 +15189,52 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
 - `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.completed_quantity->work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:ARITHMETIC:inventory.quantity->inventory.quantity`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
+- `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:products.purchase_price->cogs_entries.unit_cost`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.quantity,products.purchase_price->cogs_entries.cogs_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
-- `VALUE:COALESCE:work_orders.completed_quantity->work_order_costs.finished_qty`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
 - `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
 - `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:departments.id->employees.department_id`
 - `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
@@ -12182,7 +15254,16 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
+- `VALUE:DIRECT:positions.base_salary->employees.salary`
+- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
+- `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_invoices.invoice_amount`
 - `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
 - `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
@@ -12362,6 +15443,117 @@ INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, st
 
 INSERT INTO shipments (
     id, shipment_no, order_id, warehouse_id, carrier, tracking_no,
+```
+
+## `oraclesample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/oracle/26ai/03-data/06-derived-lineage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/oracle/oracle-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+- `VALUE:FUNCTION_CALL:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- Oracle 12c/19c/21c/26ai compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
 ```
 
 ## `oraclesample-data-full-04-queries-01-complex-queries-sql`
@@ -13186,6 +16378,39 @@ CREATE TABLE public.users (
 -- ============================================================
 ```
 
+## `postgres-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+
 ## `postgres16-basic-correctness-case-01-proc-support-tables-ddl`
 
 | Field | Value |
@@ -13613,6 +16838,39 @@ CREATE TABLE public.users (
 -- ============================================================
 
 -- ============================================================
+```
+
+## `postgres16-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
 ```
 
 ## `postgres16sample-data-full-01-schema-01-tables-ddl`
@@ -14208,6 +17466,39 @@ CREATE TABLE public.users (
 -- ============================================================
 ```
 
+## `postgres17-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+```
+
 ## `postgres17sample-data-full-01-schema-01-tables-ddl`
 
 | Field | Value |
@@ -14799,6 +18090,39 @@ CREATE TABLE public.users (
 -- ============================================================
 
 -- ============================================================
+```
+
+## `postgres18-semantic-equivalent-ddl-fk-index-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `POSTGRESQL` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: FK plus supporting source index and target unique evidence.
+CREATE TABLE customers (
+    id INT PRIMARY KEY
+);
+CREATE TABLE sales_orders (
+    id INT PRIMARY KEY,
+    customer_id INT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
 ```
 
 ## `postgres18-temporal-constraints-ddl`
@@ -17137,6 +20461,229 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 -- ============================================================
 ```
 
+## `postgres-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `postgres-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `postgres-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `postgres-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `postgres-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `postgres-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+
 ## `postgres-sql-delete-using-no-alias`
 
 | Field | Value |
@@ -18942,6 +22489,8 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:DIRECT:order_staging.order_id->order_archive.order_id`
+- `VALUE:DIRECT:order_staging.user_id->order_archive.user_id`
 - `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Extractor Candidate Fingerprints**
@@ -19576,6 +23125,229 @@ DECLARE
 -- ============================================================
 ```
 
+## `postgres16-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `postgres16-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `postgres16-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `postgres16-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `postgres16-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `postgres16-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+
 ## `postgres16sample-data-full-01-schema-02-indexes-and-views-views-sql`
 
 | Field | Value |
@@ -20059,6 +23831,117 @@ DECLARE
 CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
     IN p_plan_id BIGINT,
     IN p_created_by BIGINT
+```
+
+## `postgres16sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/16/03-data/06-derived-lineage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v16/postgres16-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- PostgreSQL 16/17/18 compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
 ```
 
 ## `postgres16sample-data-full-04-queries-01-complex-queries-sql`
@@ -21712,6 +25595,8 @@ WHEN NOT MATCHED BY SOURCE THEN
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:DIRECT:order_staging.order_id->order_archive.order_id`
+- `VALUE:DIRECT:order_staging.user_id->order_archive.user_id`
 - `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Extractor Candidate Fingerprints**
@@ -22388,6 +26273,229 @@ DECLARE
 --       供应商集中度风险、月度关账核对、需求预测准确率、
 --       仓库库容利用率、提成核对、价格弹性分析
 -- ============================================================
+```
+
+## `postgres17-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `postgres17-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `postgres17-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `postgres17-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `postgres17-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `postgres17-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
 ```
 
 ## `postgres17-sql-delete-using-no-alias`
@@ -23118,6 +27226,117 @@ DECLARE
 CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
     IN p_plan_id BIGINT,
     IN p_created_by BIGINT
+```
+
+## `postgres17sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/17/03-data/06-derived-lineage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v17/postgres17-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- PostgreSQL 16/17/18 compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
 ```
 
 ## `postgres17sample-data-full-04-queries-01-complex-queries-sql`
@@ -24704,6 +28923,8 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:DIRECT:order_staging.order_id->order_archive.order_id`
+- `VALUE:DIRECT:order_staging.user_id->order_archive.user_id`
 - `VALUE:DIRECT:staging_orders.customer_id->orders.customer_id`
 
 **Extractor Candidate Fingerprints**
@@ -25411,6 +29632,229 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 --       供应商集中度风险、月度关账核对、需求预测准确率、
 --       仓库库容利用率、提成核对、价格弹性分析
 -- ============================================================
+```
+
+## `postgres18-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `postgres18-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `postgres18-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `postgres18-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `postgres18-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `postgres18-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
 ```
 
 ## `postgres18-sql-delete-using-no-alias`
@@ -26141,6 +30585,117 @@ DECLARE
 CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
     IN p_plan_id BIGINT,
     IN p_created_by BIGINT
+```
+
+## `postgres18sample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/03-data/06-derived-lineage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/v18/postgres18-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- PostgreSQL 16/17/18 compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
 ```
 
 ## `postgres18sample-data-full-04-queries-01-complex-queries-sql`
@@ -26920,6 +31475,117 @@ DECLARE
 CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
     IN p_plan_id BIGINT,
     IN p_created_by BIGINT
+```
+
+## `postgressample-data-full-03-data-06-derived-lineage-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `POSTGRESQL` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/postgres/18/03-data/06-derived-lineage-data.sql` |
+| Expected lineage | `test-fixtures/correctness/postgres/postgres-sample-data-full-03-data-06-derived-lineage-data-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
+- `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.housing_fund_personal`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.income_tax`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.net_pay`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_company`
+- `VALUE:ARITHMETIC:employees.salary->salary_payments.social_security_personal`
+- `VALUE:ARITHMETIC:fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
+- `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.accumulated_depreciation->depreciation_log.before_net_value`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->ap_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.due_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
+- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
+- `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
+- `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
+- `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
+- `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
+- `VALUE:CONCAT_FORMAT:departments.code->positions.code`
+- `VALUE:CONCAT_FORMAT:departments.name->positions.name`
+- `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
+- `VALUE:CONCAT_FORMAT:employees.id->salary_payments.payment_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_code`
+- `VALUE:CONCAT_FORMAT:purchase_orders.id->tax_invoices.invoice_no`
+- `VALUE:CONCAT_FORMAT:purchase_orders.order_date->tax_invoices.tax_period`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no`
+- `VALUE:CONCAT_FORMAT:sales_orders.id->shipments.tracking_no`
+- `VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id`
+- `VALUE:DIRECT:boms.id->work_orders.bom_id`
+- `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
+- `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
+- `VALUE:DIRECT:departments.id->positions.department_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->salary_payments.employee_id`
+- `VALUE:DIRECT:employees.salary->salary_payments.base_salary`
+- `VALUE:DIRECT:fixed_assets.accumulated_depreciation->depreciation_log.before_accumulated`
+- `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
+- `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
+- `VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:purchase_orders.paid_amount->ap_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:purchase_orders.purchaser_id->invoices.verified_by`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->tax_invoices.party_id`
+- `VALUE:DIRECT:purchase_orders.total_amount->ap_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.packer_id`
+- `VALUE:DIRECT:sales_orders.salesperson_id->shipments.picker_id`
+- `VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount`
+- `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
+- `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- Derived lineage data cases translated from MySQL 8.0 sample-data
+-- PostgreSQL 16/17/18 compatible
+-- ============================================================
+
+INSERT INTO shipments (
+    shipment_no, order_id, warehouse_id, carrier, tracking_no, shipping_method,
+    shipping_fee, package_count, weight_kg, status, picker_id, packer_id,
 ```
 
 ## `postgressample-data-full-04-queries-01-complex-queries-sql`

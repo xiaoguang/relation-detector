@@ -1,6 +1,8 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:customers.external_ref->invoices.customer_ref:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:orders.category_id->products.category_id:SQL_LOG_JOIN",
+    "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH",
+    "FK_LIKE:order_items.product_id->products.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH",
     "FK_LIKE:orders.user_id->users.id:SQL_LOG_EXISTS,NAMING_MATCH,SQL_LOG_JOIN",
     "FK_LIKE:payments.order_id->orders.id:SQL_LOG_EXISTS,NAMING_MATCH",
     "FK_LIKE:users.account_id->accounts.id:SQL_LOG_EXISTS,NAMING_MATCH"

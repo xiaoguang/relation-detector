@@ -1,0 +1,11 @@
+id: common-semantic-equivalent-mrp-run-sql
+databaseType: MYSQL
+parserTarget: SQL
+parserMode: token-event
+structuredParser: common-token-event
+sourceType: PLAIN_SQL
+schema: portable
+input: ../../../semantic-equivalent/mrp-run/input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

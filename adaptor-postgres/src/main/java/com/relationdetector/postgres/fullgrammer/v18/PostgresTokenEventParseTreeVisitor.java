@@ -1,6 +1,7 @@
 package com.relationdetector.postgres.fullgrammer.v18;
 
 import com.relationdetector.core.fullgrammer.*;
+import java.util.ArrayDeque;
 import java.util.List;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
@@ -15,6 +16,7 @@ import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.D
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.Func_asContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.Func_alias_clauseContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.In_expr_selectContext;
+import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.InsertstmtContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.Join_qualContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.Merge_insert_clauseContext;
 import com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerParser.Merge_update_clauseContext;
@@ -46,6 +48,7 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
     private final SqlStatementRecord statement;
     private final PostgresSqlEventVisitorCore core;
     private final FullGrammerTypedSqlEventSink sink;
+    private final ArrayDeque<InsertSelectState> insertSelectTargets = new ArrayDeque<>();
     private int existsDepth;
 
     PostgresTokenEventParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
@@ -200,6 +203,26 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
     }
 
     @Override
+    public Void visitInsertstmt(InsertstmtContext ctx) {
+        if (ctx.insert_target() == null
+                || ctx.insert_target().qualified_name() == null
+                || ctx.insert_rest() == null
+                || ctx.insert_rest().insert_column_list() == null
+                || ctx.insert_rest().selectstmt() == null) {
+            return visitChildren(ctx);
+        }
+        String targetTable = ctx.insert_target().qualified_name().getText();
+        List<String> targetColumns = sink.identifiers(ctx.insert_rest().insert_column_list());
+        insertSelectTargets.push(new InsertSelectState(targetTable, targetColumns));
+        try {
+            visit(ctx.insert_rest().selectstmt());
+        } finally {
+            insertSelectTargets.pop();
+        }
+        return null;
+    }
+
+    @Override
     public Void visitSet_clause(Set_clauseContext ctx) {
         if (ctx.set_target() == null || ctx.a_expr() == null) {
             return visitChildren(ctx);
@@ -252,6 +275,13 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
 
     @Override
     public Void visitTarget_label(Target_labelContext ctx) {
+        if (ctx.a_expr() != null && !insertSelectTargets.isEmpty()) {
+            InsertSelectState state = insertSelectTargets.peek();
+            if (state.index < state.targetColumns.size()) {
+                sink.insertSelect(ctx, "", state.targetTable, state.targetColumns.get(state.index), ctx.a_expr());
+            }
+            state.index++;
+        }
         if (ctx.a_expr() == null || sink.currentProjectionOwner().isBlank()) {
             return visitChildren(ctx);
         }
@@ -355,5 +385,16 @@ final class PostgresTokenEventParseTreeVisitor extends PostgresFullGrammerParser
 
     private boolean isExpressionContext(ParserRuleContext ctx) {
         return core.isExpressionContext(ctx);
+    }
+
+    private static final class InsertSelectState {
+        private final String targetTable;
+        private final List<String> targetColumns;
+        private int index;
+
+        private InsertSelectState(String targetTable, List<String> targetColumns) {
+            this.targetTable = targetTable;
+            this.targetColumns = targetColumns;
+        }
     }
 }

@@ -1,0 +1,11 @@
+id: common-semantic-equivalent-ddl-fk-index-ddl
+databaseType: MYSQL
+parserTarget: DDL
+parserMode: token-event
+structuredParser: common-token-event
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: portable
+input: ../../../semantic-equivalent/ddl-fk-index/input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

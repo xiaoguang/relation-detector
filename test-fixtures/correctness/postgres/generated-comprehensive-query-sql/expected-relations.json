@@ -7,6 +7,8 @@
     "CO_OCCURRENCE:assembly_stations.line_id->production_lines.line_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:assembly_stations.station_id->calibration_logs.station_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:assembly_stations.station_key->factory_telemetry.station_key:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:catalog_categories.category_id->catalog_products.category_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:catalog_categories.category_id->running_promotions.target_category_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:chart_of_accounts.account_id->journal_entries.account_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:claim_diagnoses.claim_id->medical_claims.claim_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:corporate_tax_matrix.jurisdiction_string->financial_subsidiaries.tax_jurisdiction:SQL_LOG_JOIN",
@@ -36,14 +38,16 @@
     "CO_OCCURRENCE:logistics_carriers.carrier_id->maritime_vessels.carrier_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:maritime_vessels.vessel_id->transit_legs.vessel_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:medical_claims.patient_id->patient_registry.patient_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:network_edges.dest_node->network_edges.source_node:SQL_LOG_JOIN",
     "CO_OCCURRENCE:order_fulfillments.order_id->sales_orders.order_id:SQL_LOG_EXISTS",
-    "CO_OCCURRENCE:package_dependencies.package_uuid->software_packages.package_uuid:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:payment_cards.card_token_id->point_of_sale_transactions.payment_token_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:shipping_manifests.first_leg_id->transit_legs.leg_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:shipping_manifests.second_leg_id->transit_legs.leg_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:system_modules.module_id->tenant_configurations.module_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:system_tenants.tenant_id->tenant_config_values.tenant_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:system_tenants.tier_level->tenant_configurations.minimum_tier:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:tenant_config_values.config_id->tenant_configurations.config_id:SQL_LOG_JOIN"
+    "CO_OCCURRENCE:tenant_config_values.config_id->tenant_configurations.config_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:wiki_pages.page_id->wiki_pages.parent_page_id:SQL_LOG_JOIN"
   ],
   "forbiddenTables": [
     "rawledger",

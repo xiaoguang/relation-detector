@@ -1,0 +1,12 @@
+test-fixtures/correctness/common/semantic-equivalent-picking-task-sql
+test-fixtures/correctness/mysql/semantic-equivalent-picking-task-sql
+test-fixtures/correctness/mysql/v8_0/mysql80-semantic-equivalent-picking-task-sql
+test-fixtures/correctness/postgres/postgres-semantic-equivalent-picking-task-sql
+test-fixtures/correctness/postgres/v16/postgres16-semantic-equivalent-picking-task-sql
+test-fixtures/correctness/postgres/v17/postgres17-semantic-equivalent-picking-task-sql
+test-fixtures/correctness/postgres/v18/postgres18-semantic-equivalent-picking-task-sql
+test-fixtures/correctness/oracle/oracle-semantic-equivalent-picking-task-sql
+test-fixtures/correctness/oracle/v12c/oracle12c-semantic-equivalent-picking-task-sql
+test-fixtures/correctness/oracle/v19c/oracle19c-semantic-equivalent-picking-task-sql
+test-fixtures/correctness/oracle/v21c/oracle21c-semantic-equivalent-picking-task-sql
+test-fixtures/correctness/oracle/v26ai/oracle26ai-semantic-equivalent-picking-task-sql

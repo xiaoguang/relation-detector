@@ -1,0 +1,10 @@
+id: postgres-semantic-equivalent-ddl-fk-index-ddl
+databaseType: POSTGRESQL
+parserTarget: DDL
+parserMode: token-event
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: public
+input: ../../../semantic-equivalent/ddl-fk-index/input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

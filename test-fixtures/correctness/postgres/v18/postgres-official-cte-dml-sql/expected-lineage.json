@@ -1,5 +1,7 @@
 {
   "fingerprints": [
+    "VALUE:DIRECT:order_staging.order_id->order_archive.order_id",
+    "VALUE:DIRECT:order_staging.user_id->order_archive.user_id",
     "VALUE:DIRECT:staging_orders.customer_id->orders.customer_id"
   ],
   "forbiddenSources": [

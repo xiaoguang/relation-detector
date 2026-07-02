@@ -1,0 +1,10 @@
+id: postgres-semantic-equivalent-batch-expiry-analysis-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: token-event
+sourceType: PLAIN_SQL
+schema: public
+input: ../../../semantic-equivalent/batch-expiry-analysis/input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

@@ -1,0 +1,13 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity",
+    "VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id",
+    "VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity",
+    "VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id",
+    "VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta",
+    "VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

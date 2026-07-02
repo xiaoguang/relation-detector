@@ -19,16 +19,16 @@ class CorrectnessSummaryGeneratorTest {
         assumeGeneratedReportTestEnabled();
         String markdown = CorrectnessSummaryGenerator.generate(WORKSPACE);
 
-        assertTrue(markdown.contains("| Total correctness fixtures | 763 |"));
-        assertTrue(markdown.contains("| SQL fixtures | 616 |"));
-        assertTrue(markdown.contains("| DDL fixtures | 147 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 211 |"));
-        assertTrue(markdown.contains("| MySQL directory fixtures | 158 |"));
-        assertTrue(markdown.contains("| PostgreSQL directory fixtures | 417 |"));
-        assertTrue(markdown.contains("| Oracle directory fixtures | 156 |"));
-        assertTrue(markdown.contains("| MYSQL | 190 | 152 | 38 |"));
-        assertTrue(markdown.contains("| POSTGRESQL | 417 | 343 | 74 |"));
-        assertTrue(markdown.contains("| ORACLE | 156 | 121 | 35 |"));
+        assertTrue(markdown.contains("| Total correctness fixtures | 872 |"));
+        assertTrue(markdown.contains("| SQL fixtures | 713 |"));
+        assertTrue(markdown.contains("| DDL fixtures | 159 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 285 |"));
+        assertTrue(markdown.contains("| MySQL directory fixtures | 172 |"));
+        assertTrue(markdown.contains("| PostgreSQL directory fixtures | 449 |"));
+        assertTrue(markdown.contains("| Oracle directory fixtures | 212 |"));
+        assertTrue(markdown.contains("| MYSQL | 211 | 170 | 41 |"));
+        assertTrue(markdown.contains("| POSTGRESQL | 449 | 371 | 78 |"));
+        assertTrue(markdown.contains("| ORACLE | 212 | 172 | 40 |"));
         assertTrue(markdown.contains("Lightweight index report. Full SQL/DDL is available in each input file."));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-commerce-promotion-update-explicit-join-sql/input.sql"));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-user-spending-left-join-update-sql/expected-lineage.json"));

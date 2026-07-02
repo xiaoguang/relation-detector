@@ -1,0 +1,14 @@
+{
+  "fingerprints": [
+    "VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount",
+    "VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount",
+    "VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id",
+    "VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold",
+    "VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id",
+    "VALUE:DIRECT:sales_orders.id->sales_fact.order_id",
+    "VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

@@ -1,4 +1,6 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "CO_OCCURRENCE:pg15_inventory_target.warehouse_id->pg15_inventory_target.warehouse_id:SQL_LOG_JOIN"
+  ],
   "forbiddenTables": []
 }

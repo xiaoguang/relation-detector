@@ -282,6 +282,8 @@ class PostgresTokenEventDialectBoundaryTest {
                 MERGE INTO target_orders AS t
                 USING source_orders AS s
                 ON t.source_order_id = s.id
+                WHEN MATCHED AND s.cancelled_at IS NULL THEN
+                  UPDATE SET synced_at = CURRENT_TIMESTAMP
                 WHEN NOT MATCHED THEN
                   INSERT (source_order_id) VALUES (s.id);
                 """, StatementSourceType.PLAIN_SQL, "postgres-merge-insert.sql", 1, 1, java.util.Map.of());
@@ -296,6 +298,16 @@ class PostgresTokenEventDialectBoundaryTest {
 
         assertTrue(fingerprints.contains("VALUE:DIRECT:source_orders.id->target_orders.source_order_id"),
                 () -> "MERGE INSERT value expression should flow into target column: " + fingerprints
+                        + " events=" + result.events() + " attrs=" + result.attributes());
+        var relationships = new com.relationdetector.core.relation.TokenEventRelationExtractor()
+                .extract(statement, result)
+                .stream()
+                .map(this::relationFingerprint)
+                .sorted()
+                .toList();
+        assertTrue(relationships.contains("CO_OCCURRENCE:source_orders.id->target_orders.source_order_id:SQL_LOG_JOIN")
+                        || relationships.contains("CO_OCCURRENCE:target_orders.source_order_id->source_orders.id:SQL_LOG_JOIN"),
+                () -> "MERGE ON predicate should remain typed SQL_LOG_JOIN evidence before naming enhancement: " + relationships
                         + " events=" + result.events() + " attrs=" + result.attributes());
     }
 
@@ -331,14 +343,14 @@ class PostgresTokenEventDialectBoundaryTest {
     }
 
     @Test
-    void postgresTokenEventDdlParserUsesTypedCommonDdlVisitor() {
+    void postgresTokenEventDdlParserUsesTypedDialectDdlVisitor() {
         var result = new PostgresTokenEventStructuredDdlParser().parseDdl(
                 "CREATE TABLE orders(user_id BIGINT REFERENCES users(id));",
                 "postgres-ddl.sql",
                 null);
 
-        assertEquals("CommonRelationSql", result.attributes().get("grammar"));
-        assertEquals("CommonTokenEventParseTreeVisitor", result.attributes().get("eventBuilder"));
+        assertEquals("PostgresRelationSql", result.attributes().get("grammar"));
+        assertEquals("PostgresTokenEventParseTreeVisitor", result.attributes().get("eventBuilder"));
         assertFalse(result.attributes().containsKey("ddlEventVisitor"));
         assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.DDL_FOREIGN_KEY
@@ -346,6 +358,47 @@ class PostgresTokenEventDialectBoundaryTest {
                         && "user_id".equals(event.attributes().get("sourceColumn"))
                         && "users".equals(event.attributes().get("targetTable"))
                         && "id".equals(event.attributes().get("targetColumn"))));
+    }
+
+    @Test
+    void postgresTokenEventDdlParserHandlesTypeCastsAndDeferrableForeignKeys() {
+        var result = new PostgresTokenEventStructuredDdlParser().parseDdl("""
+                CREATE TABLE case_01.xref_p10_deleted (
+                  dbid smallint NOT NULL,
+                  created integer NOT NULL,
+                  last integer NOT NULL,
+                  upi character varying(26) NOT NULL,
+                  timestamp timestamp without time zone DEFAULT ('now'::text)::timestamp without time zone NOT NULL,
+                  userstamp character varying(20) DEFAULT 'USER'::character varying NOT NULL,
+                  CONSTRAINT xref_p10_deleted_fk1 FOREIGN KEY (created) REFERENCES rnc_release(id) DEFERRABLE,
+                  CONSTRAINT xref_p10_deleted_fk2 FOREIGN KEY (dbid) REFERENCES rnc_database(id) DEFERRABLE,
+                  CONSTRAINT xref_p10_deleted_fk3 FOREIGN KEY (last) REFERENCES rnc_release(id) DEFERRABLE,
+                  CONSTRAINT xref_p10_deleted_fk4 FOREIGN KEY (upi) REFERENCES rna(upi) DEFERRABLE
+                );
+                CREATE INDEX xref_p10_deleted_upi_like
+                  ON case_01.xref_p10_deleted USING btree (upi varchar_pattern_ops);
+                """, "postgres-ddl.sql", null);
+
+        assertEquals(0, result.attributes().get("syntaxErrors"), () -> "attrs=" + result.attributes());
+        java.util.List<String> fingerprints = result.events().stream()
+                .filter(event -> event.type() == StructuredParseEventType.DDL_FOREIGN_KEY)
+                .map(event -> event.attributes().get("sourceTable") + "."
+                        + event.attributes().get("sourceColumn") + "->"
+                        + event.attributes().get("targetTable") + "."
+                        + event.attributes().get("targetColumn"))
+                .sorted()
+                .toList();
+
+        assertEquals(java.util.List.of(
+                "case_01.xref_p10_deleted.created->rnc_release.id",
+                "case_01.xref_p10_deleted.dbid->rnc_database.id",
+                "case_01.xref_p10_deleted.last->rnc_release.id",
+                "case_01.xref_p10_deleted.upi->rna.upi"), fingerprints);
+        assertTrue(result.events().stream().anyMatch(event ->
+                event.type() == StructuredParseEventType.DDL_INDEX
+                        && "SOURCE_INDEX".equals(event.attributes().get("role"))
+                        && "case_01.xref_p10_deleted".equals(event.attributes().get("table"))
+                        && "upi".equals(event.attributes().get("column"))));
     }
 
     @Test
@@ -816,6 +869,16 @@ class PostgresTokenEventDialectBoundaryTest {
                         + relation.source().displayName() + "->"
                         + relation.target().displayName())
                 .collect(java.util.stream.Collectors.toSet());
+    }
+
+    private String relationFingerprint(RelationshipCandidate relation) {
+        return relation.relationType() + ":"
+                + relation.source().displayName() + "->"
+                + relation.target().displayName() + ":"
+                + relation.evidence().stream()
+                        .map(evidence -> evidence.type().name())
+                        .sorted()
+                        .collect(java.util.stream.Collectors.joining(","));
     }
 
     private void assertNoForbiddenTables(java.util.List<RelationshipCandidate> relations, String... forbiddenTables) {

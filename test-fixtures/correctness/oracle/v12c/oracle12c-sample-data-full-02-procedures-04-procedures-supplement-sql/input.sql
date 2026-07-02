@@ -193,7 +193,7 @@ BEGIN
     END IF;
 
     -- 计算折扣金额
-    CASE VARCHAR2(40)
+    CASE v_promotion_type
         WHEN 'discount_pct' THEN
             v_discount_amount := LEAST(ROUND(p_order_amount * v_discount_value / 100.0, 2), v_max_discount);
         WHEN 'discount_amount' THEN

@@ -50,7 +50,7 @@ BEGIN
     v_annual_frequency := v_total_orders / NULLIF(v_active_months, 0) * 12.0;
 
     -- 根据会员等级调整预估生命周期
-    SELECT CASE VARCHAR2(40)
+    SELECT CASE loyalty_level
         WHEN 'diamond' THEN 5.0
         WHEN 'platinum' THEN 4.0
         WHEN 'gold' THEN 3.0

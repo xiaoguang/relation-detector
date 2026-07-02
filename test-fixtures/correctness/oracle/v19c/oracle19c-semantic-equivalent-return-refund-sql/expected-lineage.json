@@ -1,0 +1,13 @@
+{
+  "fingerprints": [
+    "VALUE:DIRECT:payments.amount->refund_records.original_paid_amount",
+    "VALUE:DIRECT:payments.id->refund_records.payment_id",
+    "VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id",
+    "VALUE:DIRECT:sales_orders.id->refund_records.order_id",
+    "VALUE:DIRECT:sales_returns.id->refund_records.return_id",
+    "VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount"
+  ],
+  "forbiddenSources": [],
+  "forbiddenTargets": [],
+  "warningCodes": {}
+}

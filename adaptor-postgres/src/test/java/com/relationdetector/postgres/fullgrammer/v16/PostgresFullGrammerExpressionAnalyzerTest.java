@@ -12,7 +12,9 @@ import java.util.Map;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
@@ -128,6 +130,43 @@ class PostgresFullGrammerExpressionAnalyzerTest {
         assertEquals(List.of("risk_level", "rnk"), assignment.get("sourceColumns"));
     }
 
+    @Test
+    void fullGrammerPlainInsertSelectEmitsLineage() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO shipments (shipment_no, order_id, warehouse_id, to_address, receiver_phone)
+                SELECT
+                    CONCAT('SH-', CAST(so.id AS text)),
+                    so.id,
+                    so.warehouse_id,
+                    c.address,
+                    c.phone
+                FROM sales_orders so
+                JOIN customers c ON c.id = so.customer_id;
+                """);
+
+        var structured = new PostgresFullGrammerDialectModule().sqlParser().parseSql(statement, null);
+        List<String> fingerprints = new TokenEventDataLineageExtractor().extract(statement, structured).stream()
+                .map(PostgresFullGrammerExpressionAnalyzerTest::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains("VALUE:CONCAT_FORMAT:sales_orders.id->shipments.shipment_no"),
+                () -> "Full-grammer INSERT SELECT should map expression source to target. Actual="
+                        + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains("VALUE:DIRECT:sales_orders.id->shipments.order_id"),
+                () -> "Full-grammer INSERT SELECT should map direct source to target. Actual="
+                        + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains("VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id"),
+                () -> "Full-grammer INSERT SELECT should map direct source to target. Actual="
+                        + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains("VALUE:DIRECT:customers.address->shipments.to_address"),
+                () -> "Full-grammer INSERT SELECT should map joined source to target. Actual="
+                        + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains("VALUE:DIRECT:customers.phone->shipments.receiver_phone"),
+                () -> "Full-grammer INSERT SELECT should map joined source to target. Actual="
+                        + fingerprints + " events=" + structured.events());
+    }
+
     private static SqlStatementRecord statement(String sql) {
         return new SqlStatementRecord(sql, StatementSourceType.PLAIN_SQL, "fixture.sql", 1, 1, Map.of());
     }
@@ -137,6 +176,15 @@ class PostgresFullGrammerExpressionAnalyzerTest {
         return candidate.relationType() + ":"
                 + candidate.source().displayName() + "->" + candidate.target().displayName()
                 + ":" + evidenceType;
+    }
+
+    private static String lineageFingerprint(DataLineageCandidate lineage) {
+        return lineage.flowKind() + ":"
+                + lineage.transformType() + ":"
+                + lineage.sources().stream()
+                        .map(com.relationdetector.contracts.model.Endpoint::displayName)
+                        .collect(java.util.stream.Collectors.joining(","))
+                + "->" + lineage.target().displayName();
     }
 
 }

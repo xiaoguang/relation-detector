@@ -632,6 +632,9 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
         if (expression instanceof PostgresRelationSqlParser.CastExpressionContext cast) {
             return analyze(cast.expression());
         }
+        if (expression instanceof PostgresRelationSqlParser.StandardCastExpressionContext cast) {
+            return analyze(cast.expression());
+        }
         if (expression instanceof PostgresRelationSqlParser.BinaryExpressionContext binary) {
             ExpressionAnalysis left = analyze(binary.expression(0));
             ExpressionAnalysis right = analyze(binary.expression(1));
@@ -659,7 +662,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
                 case "sum" -> windowed ? LineageTransformType.CUMULATIVE : LineageTransformType.AGGREGATE;
                 case "avg", "count", "min", "max" -> LineageTransformType.AGGREGATE;
                 case "coalesce" -> LineageTransformType.COALESCE;
-                case "concat", "format", "string_agg" -> LineageTransformType.CONCAT_FORMAT;
+                case "concat", "format", "string_agg", "to_char" -> LineageTransformType.CONCAT_FORMAT;
                 default -> LineageTransformType.FUNCTION_CALL;
             };
             LineageTransformType dominant = ExpressionAnalysis.dominant(transform, args.transform());

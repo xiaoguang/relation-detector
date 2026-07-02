@@ -199,6 +199,37 @@ class CorrectnessFixtureRunnerTest {
     }
 
     @Test
+    void objectBlockStatementFormatSplitsUnmarkedOracleSlashTerminatedObjects() {
+        String text = """
+                CREATE OR REPLACE PROCEDURE sp_one
+                AS
+                BEGIN
+                  SELECT * FROM customers c;
+                END;
+                /
+
+                CREATE OR REPLACE PROCEDURE sp_two
+                AS
+                BEGIN
+                  SELECT * FROM contracts c;
+                END;
+                /
+                """;
+
+        List<SqlStatementRecord> statements = parseObjectBlockStatements(
+                text,
+                StatementSourceType.PROCEDURE,
+                "oracle-routine-fixture.sql",
+                DatabaseType.ORACLE);
+
+        assertEquals(2, statements.size());
+        assertEquals("oracle-routine-fixture.sql#sp_one", statements.get(0).sourceName());
+        assertEquals("oracle-routine-fixture.sql#sp_two", statements.get(1).sourceName());
+        assertTrue(statements.get(0).sql().contains("FROM customers c"));
+        assertTrue(statements.get(1).sql().contains("FROM contracts c"));
+    }
+
+    @Test
     void commonDdlFixtureUsesCommonParserInsteadOfDialectAdaptorParser() throws Exception {
         String input = """
                 CREATE TABLE "customers" (
@@ -703,7 +734,82 @@ class CorrectnessFixtureRunnerTest {
                     "No relation-detector-fixture-source matched objectSourceFilter "
                             + filter + " in " + sourceFile);
         }
+        if (statements.isEmpty() && !text.isBlank() && databaseType == DatabaseType.ORACLE) {
+            List<SqlStatementRecord> oracleObjects = parseUnmarkedOracleObjectBlocks(
+                    text,
+                    sourceType,
+                    sourceFile,
+                    localTempTables);
+            if (!oracleObjects.isEmpty()) {
+                return List.copyOf(oracleObjects);
+            }
+        }
+        if (statements.isEmpty() && !text.isBlank()) {
+            Map<String, Object> attributes = new LinkedHashMap<>();
+            if (!localTempTables.isEmpty()) {
+                attributes.put("localTempTables", localTempTables);
+            }
+            statements.add(new SqlStatementRecord(text.strip(), sourceType, sourceFile, 1, lines.length, attributes));
+        }
         return List.copyOf(statements);
+    }
+
+    private static List<SqlStatementRecord> parseUnmarkedOracleObjectBlocks(
+            String text,
+            StatementSourceType sourceType,
+            String sourceFile,
+            List<String> localTempTables
+    ) {
+        List<SqlStatementRecord> statements = new ArrayList<>();
+        String[] lines = text.split("\\R", -1);
+        StringBuilder currentSql = new StringBuilder();
+        String currentName = "";
+        long startLine = 0;
+        for (int index = 0; index < lines.length; index++) {
+            String line = lines[index];
+            String trimmed = line.trim();
+            if (currentSql.isEmpty() && startsOracleObject(trimmed)) {
+                currentName = oracleObjectName(trimmed);
+                startLine = index + 1L;
+                currentSql.append(line).append('\n');
+                continue;
+            }
+            if (!currentSql.isEmpty()) {
+                currentSql.append(line).append('\n');
+                if (trimmed.equals("/")) {
+                    Map<String, Object> attributes = new LinkedHashMap<>();
+                    if (!localTempTables.isEmpty()) {
+                        attributes.put("localTempTables", localTempTables);
+                    }
+                    String sourceName = currentName.isBlank() ? sourceFile : sourceFile + "#" + currentName;
+                    statements.add(new SqlStatementRecord(currentSql.toString().strip(), sourceType, sourceName,
+                            startLine, index + 1L, attributes));
+                    currentSql.setLength(0);
+                    currentName = "";
+                }
+            }
+        }
+        return statements;
+    }
+
+    private static boolean startsOracleObject(String trimmed) {
+        String upper = trimmed.toUpperCase(Locale.ROOT);
+        return upper.startsWith("CREATE OR REPLACE PROCEDURE ")
+                || upper.startsWith("CREATE OR REPLACE FUNCTION ")
+                || upper.startsWith("CREATE OR REPLACE TRIGGER ")
+                || upper.startsWith("CREATE OR REPLACE PACKAGE ");
+    }
+
+    private static String oracleObjectName(String trimmed) {
+        String[] parts = trimmed.split("\\s+");
+        if (parts.length < 5) {
+            return "";
+        }
+        int nameIndex = parts.length > 5 && parts[3].equalsIgnoreCase("PACKAGE")
+                && parts[4].equalsIgnoreCase("BODY")
+                        ? 5
+                        : 4;
+        return parts[nameIndex].replace("\"", "").replace("(", "");
     }
 
     private record CorrectnessFixture(

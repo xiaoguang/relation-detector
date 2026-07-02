@@ -606,11 +606,7 @@ BEGIN
             JSON_OBJECT('role_id' VALUE p_role_id, 'expires_at' VALUE p_expires_at));
 
     -- 返回是否成功（FOUND 表示上一条 DML 影响了行）
-    IF SQL%ROWCOUNT > 0 THEN
-        -- RAISE NOTICE 'success: 1';
-    ELSE
-        -- RAISE NOTICE 'success: 0';
-    END IF;
+    NULL;
 END;
 /
 

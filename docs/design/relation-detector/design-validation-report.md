@@ -162,11 +162,11 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 | PostgreSQL full-grammer v16 | 103 | 85 / 18 | 1452 | 211 | 1 | 405 |
 | PostgreSQL full-grammer v17 | 105 | 87 / 18 | 1455 | 233 | 0 | 406 |
 | PostgreSQL full-grammer v18 | 106 | 86 / 20 | 1456 | 231 | 0 | 405 |
-| Oracle root token-event | 33 | 26 / 7 | 400 | 112 | 0 | 158 |
-| Oracle full-grammer v12c | 30 | 23 / 7 | 553 | 130 | 0 | 177 |
-| Oracle full-grammer v19c | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
-| Oracle full-grammer v21c | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
-| Oracle full-grammer v26ai | 31 | 24 / 7 | 553 | 130 | 0 | 177 |
+| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 |
+| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 |
+| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
+| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
+| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
 
 最新验证摘要：
 

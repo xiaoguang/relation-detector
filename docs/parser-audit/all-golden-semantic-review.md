@@ -4,7 +4,7 @@ This review covers every correctness fixture manifest under `test-fixtures/corre
 
 ## Scope And Status
 
-- Fixture manifests reviewed: `763`.
+- Fixture manifests reviewed: `872`.
 - SQL/DDL inputs are the fixture `input.sql` files referenced by each manifest.
 - Current review result: no `REVIEW_NEEDED` items are open.
 - Confirmed recent fix: `NAMING_MATCH` is now generated as a direction hint on existing SQL predicate candidates. It supports `TABLE_ID`, `ID_SUFFIX_TO_ID`, and `SELF_ROLE_ID`; it cannot create a relationship by itself.
@@ -18,18 +18,18 @@ This review covers every correctness fixture manifest under `test-fixtures/corre
 
 | Category | Fixtures | Relations | Lineage | Naming relation fingerprints | Sample fixtures | Sample relations | Sample lineage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event | 32 | 737 | 231 | 207 | 15 | 721 | 225 |
-| MySQL token-event root | 76 | 631 | 265 | 255 | 34 | 556 | 208 |
-| MySQL full-grammer v8_0 | 82 | 908 | 368 | 448 | 37 | 784 | 273 |
-| PostgreSQL token-event root | 103 | 1119 | 194 | 251 | 30 | 438 | 119 |
-| PostgreSQL full-grammer v16 | 103 | 1452 | 211 | 405 | 30 | 671 | 120 |
-| PostgreSQL full-grammer v17 | 105 | 1455 | 233 | 406 | 30 | 671 | 120 |
-| PostgreSQL full-grammer v18 | 106 | 1456 | 231 | 405 | 30 | 670 | 119 |
-| Oracle token-event root | 33 | 400 | 112 | 158 | 33 | 400 | 112 |
-| Oracle full-grammer v12c | 30 | 373 | 96 | 57 | 29 | 372 | 94 |
-| Oracle full-grammer v19c | 31 | 373 | 96 | 57 | 29 | 372 | 94 |
-| Oracle full-grammer v21c | 31 | 373 | 96 | 57 | 29 | 372 | 94 |
-| Oracle full-grammer v26ai | 31 | 373 | 96 | 57 | 29 | 372 | 94 |
+| common token-event | 39 | 759 | 328 | 223 | 15 | 729 | 292 |
+| MySQL token-event root | 83 | 655 | 296 | 266 | 34 | 562 | 208 |
+| MySQL full-grammer v8_0 | 89 | 922 | 398 | 457 | 37 | 784 | 273 |
+| PostgreSQL token-event root | 111 | 1400 | 332 | 394 | 31 | 673 | 218 |
+| PostgreSQL full-grammer v16 | 111 | 1470 | 342 | 418 | 31 | 675 | 219 |
+| PostgreSQL full-grammer v17 | 113 | 1473 | 364 | 419 | 31 | 675 | 219 |
+| PostgreSQL full-grammer v18 | 114 | 1474 | 362 | 418 | 31 | 674 | 218 |
+| Oracle token-event root | 41 | 643 | 247 | 255 | 34 | 629 | 217 |
+| Oracle full-grammer v12c | 42 | 681 | 249 | 289 | 34 | 666 | 217 |
+| Oracle full-grammer v19c | 43 | 681 | 249 | 289 | 34 | 666 | 217 |
+| Oracle full-grammer v21c | 43 | 681 | 249 | 289 | 34 | 666 | 217 |
+| Oracle full-grammer v26ai | 43 | 681 | 249 | 289 | 34 | 666 | 217 |
 
 Correctness was pruned after this review: fixtures with no relationship, no lineage, no diagnostics, and no special syntax / version-boundary purpose were removed from the executable golden set. The semantic totals above are unchanged because the removed fixtures had empty outputs.
 
@@ -139,11 +139,11 @@ Oracle fixtures are intentionally summarized here instead of fully expanded in t
 
 | Oracle group | Fixture | Relations | Lineage | Review status |
 | --- | ---: | ---: | ---: | --- |
-| root token-event | 37 | 300 | 94 | No business `REVIEW_NEEDED`; parser output follows current Oracle typed grammar. |
-| full-grammer v12c | 38 | 301 | 96 | Sample-data versioned golden wired through the v12c generated parser; 更广泛的 Oracle 官方语法 backlog. |
-| full-grammer v19c | 38 | 301 | 96 | Sample-data versioned golden wired through the v19c generated parser; 更广泛的 Oracle 官方语法 backlog. |
-| full-grammer v21c | 38 | 301 | 96 | Sample-data versioned golden wired through the v21c generated parser; 更广泛的 Oracle 官方语法 backlog. |
-| full-grammer v26ai | 38 | 301 | 96 | Sample-data versioned golden wired through the v26ai generated parser; 更广泛的 Oracle 官方语法 backlog. |
+| root token-event | 41 | 643 | 247 | No business `REVIEW_NEEDED`; parser output follows current Oracle typed grammar. |
+| full-grammer v12c | 42 | 681 | 249 | Sample-data versioned golden wired through the v12c generated parser; broader Oracle official syntax remains backlog. |
+| full-grammer v19c | 43 | 681 | 249 | Sample-data versioned golden wired through the v19c generated parser; broader Oracle official syntax remains backlog. |
+| full-grammer v21c | 43 | 681 | 249 | Sample-data versioned golden wired through the v21c generated parser; broader Oracle official syntax remains backlog. |
+| full-grammer v26ai | 43 | 681 | 249 | Sample-data versioned golden wired through the v26ai generated parser; broader Oracle official syntax remains backlog. |
 
 ## Confirmed Fixes In Current Review
 

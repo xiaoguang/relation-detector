@@ -1,5 +1,11 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date",
+    "VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id",
+    "VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id",
+    "VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount",
+    "VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount"
+  ],
   "forbiddenSources": [],
   "forbiddenTargets": [],
   "warningCodes": {}

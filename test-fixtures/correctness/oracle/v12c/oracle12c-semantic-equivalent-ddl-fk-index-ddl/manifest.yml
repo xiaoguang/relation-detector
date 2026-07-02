@@ -1,0 +1,12 @@
+id: oracle12c-semantic-equivalent-ddl-fk-index-ddl
+databaseType: ORACLE
+parserTarget: DDL
+parserMode: full-grammer
+grammarProfile: oracle/12c
+databaseVersion: 12.2
+sourceType: DDL_FILE
+evidenceSourceType: DDL_FILE
+schema: oracle
+input: ../../../../semantic-equivalent/ddl-fk-index/input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

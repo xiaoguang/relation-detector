@@ -1,0 +1,12 @@
+id: postgres17-semantic-equivalent-picking-task-sql
+databaseType: POSTGRESQL
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: postgresql/17
+databaseVersion: 17.5
+sourceType: PLAIN_SQL
+schema: public
+input: ../../../../semantic-equivalent/picking-task/input.sql
+expectedRelations: expected-relations.json
+expectedLineage: expected-lineage.json
+expectedDiagnostics: expected-diagnostics.json

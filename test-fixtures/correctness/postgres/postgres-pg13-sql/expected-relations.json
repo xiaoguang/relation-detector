@@ -1,4 +1,7 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "CO_OCCURRENCE:pg13_hash_metrics.metric_name->pg13_hash_metrics.metric_name:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:pg13_hash_metrics.tenant_id->pg13_hash_metrics.tenant_id:SQL_LOG_JOIN"
+  ],
   "forbiddenTables": []
 }

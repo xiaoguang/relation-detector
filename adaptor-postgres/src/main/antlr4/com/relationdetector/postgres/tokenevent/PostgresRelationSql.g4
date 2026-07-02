@@ -145,7 +145,7 @@ looseToken
     : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
     | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | BETWEEN | LIKE | ESCAPE | IS
     | USING | GROUP | BY | HAVING | ORDER | LIMIT | ASC | DESC | NULLS | FIRST | LAST | INSERT | INTO | UPDATE
-    | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | EXTRACT | INTERVAL | ARRAY | TRUE | FALSE
+    | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | EXTRACT | INTERVAL | DATE | CAST | ARRAY | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | IF | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
@@ -228,6 +228,8 @@ mergeWhenConditionToken
     | NOT
     | BY
     | AND
+    | IS
+    | NULL
     | identifier
     | literal
     | comparisonOperator
@@ -270,7 +272,7 @@ tableElement
     ;
 
 tableForeignKey
-    : constraintName? FOREIGN KEY LPAREN identifierList RPAREN REFERENCES qualifiedName LPAREN identifierList RPAREN referentialAction*
+    : constraintName? FOREIGN KEY LPAREN identifierList RPAREN REFERENCES qualifiedName LPAREN identifierList RPAREN foreignKeyTail*
     ;
 
 primaryKeyConstraint
@@ -298,6 +300,9 @@ columnDefinitionToken
     : identifier
     | NOT
     | literal
+    | TYPECAST
+    | LBRACKET
+    | RBRACKET
     | LPAREN columnDefinitionParenToken* RPAREN
     | STAR
     | PLUS
@@ -322,8 +327,11 @@ columnDefinitionParenToken
     | OR
     | IS
     | literal
+    | TYPECAST
     | COMMA
     | DOT
+    | LBRACKET
+    | RBRACKET
     | STAR
     | PLUS
     | MINUS
@@ -352,7 +360,7 @@ columnDefinitionParenToken
 inlineColumnConstraint
     : PRIMARY KEY
     | UNIQUE
-    | REFERENCES qualifiedName LPAREN identifierList RPAREN
+    | REFERENCES qualifiedName LPAREN identifierList RPAREN foreignKeyTail*
     ;
 
 alterTableStatement
@@ -382,6 +390,16 @@ referentialAction
     : ON (DELETE | UPDATE) referentialActionToken+
     ;
 
+foreignKeyTail
+    : referentialAction
+    | identifier
+    | NOT
+    | literal
+    | EQ
+    | LPAREN columnDefinitionParenToken* RPAREN
+    | OTHER
+    ;
+
 referentialActionToken
     : identifier
     | SET
@@ -393,8 +411,26 @@ indexPartList
     ;
 
 indexPart
-    : identifier (LPAREN NUMBER RPAREN)?
-    | LPAREN functionCall RPAREN
+    : identifier (LPAREN NUMBER RPAREN)? indexPartOption*
+    | LPAREN functionCall RPAREN indexPartOption*
+    ;
+
+indexPartOption
+    : identifier
+    | NOT
+    | literal
+    | EQ
+    | DOT
+    | PLUS
+    | MINUS
+    | SLASH
+    | PERCENT
+    | LT
+    | GT
+    | LE
+    | GE
+    | NEQ
+    | OTHER
     ;
 
 predicate
@@ -431,12 +467,14 @@ comparisonOperator
 
 expression
     : expression TYPECAST qualifiedName                                   # castExpression
+    | CAST LPAREN expression AS qualifiedName RPAREN                      # standardCastExpression
     | expression arithmeticOperator expression                            # binaryExpression
     | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
     | EXTRACT LPAREN identifier FROM expression RPAREN                    # extractExpression
     | functionCall windowClause?                                          # functionExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
     | INTERVAL STRING_LITERAL                                             # intervalLiteralExpression
+    | DATE STRING_LITERAL                                                 # typedDateLiteralExpression
     | ARRAY LBRACKET expressionList? RBRACKET                             # arrayExpression
     | qualifiedName                                                       # columnExpression
     | literal                                                             # literalExpression
@@ -489,6 +527,8 @@ qualifiedName
 identifier
     : IDENTIFIER
     | QUOTED_IDENTIFIER
+    | DATE
+    | LAST
     ;
 
 literal
@@ -506,7 +546,7 @@ sqlToken
     | USING | GROUP | BY | HAVING | ORDER | LIMIT | ASC | DESC | NULLS | FIRST | LAST | INSERT | INTO | UPDATE
     | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | DO | NOTHING
     | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
-    | EXTRACT | INTERVAL | ARRAY
+    | EXTRACT | INTERVAL | DATE | CAST | ARRAY
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
     | ADD | CONSTRAINT
@@ -609,6 +649,8 @@ END: E N D;
 DISTINCT: D I S T I N C T;
 EXTRACT: E X T R A C T;
 INTERVAL: I N T E R V A L;
+DATE: D A T E;
+CAST: C A S T;
 ARRAY: A R R A Y;
 TRUE: T R U E;
 FALSE: F A L S E;

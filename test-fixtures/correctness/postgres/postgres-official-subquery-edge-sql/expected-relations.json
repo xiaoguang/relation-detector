@@ -1,9 +1,9 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:invoices.customer_id->orders.customer_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:orders.category_id->products.category_id:SQL_LOG_JOIN",
     "FK_LIKE:order_items.order_id->orders.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH",
     "FK_LIKE:order_items.product_id->products.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH",
+    "FK_LIKE:refunds.order_id->orders.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH",
     "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_EXISTS,NAMING_MATCH"
   ],
   "forbiddenTables": [

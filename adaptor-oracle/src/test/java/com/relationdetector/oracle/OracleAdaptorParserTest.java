@@ -469,6 +469,115 @@ class OracleAdaptorParserTest {
     }
 
     @Test
+    void oracleFullGrammerProcedureBlockEmitsArAgingInsertSelectLineageForEveryVersion() {
+        List<FullGrammerDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
+                new OracleFullGrammerDialectModule());
+        var statement = statement("""
+                CREATE OR REPLACE PROCEDURE sp_generate_ar_aging(
+                    p_result OUT SYS_REFCURSOR
+                )
+                AS
+                BEGIN
+                    INSERT INTO ar_aging_snapshots (snapshot_date, customer_id, order_id,
+                        invoice_amount, paid_amount, due_date)
+                    SELECT
+                        CURRENT_DATE,
+                        so.customer_id,
+                        so.id,
+                        so.total_amount,
+                        so.paid_amount,
+                        so.order_date + c.credit_days * INTERVAL '1' DAY
+                    FROM sales_orders so
+                    JOIN customers c ON so.customer_id = c.id
+                    WHERE so.status IN ('confirmed', 'delivering', 'delivered')
+                      AND so.total_amount > so.paid_amount;
+                END;
+                /
+                """);
+
+        for (FullGrammerDialectModule module : modules) {
+            var result = module.sqlParser().parseSql(statement, null);
+
+            assertEquals(0, result.attributes().get("syntaxErrors"),
+                    module.profile().id() + " should parse AR aging procedure");
+            Set<String> lineages = lineage(statement, result);
+            assertTrue(lineages.contains("VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:DIRECT:sales_orders.id->ar_aging_snapshots.order_id"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:DIRECT:sales_orders.total_amount->ar_aging_snapshots.invoice_amount"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:DIRECT:sales_orders.paid_amount->ar_aging_snapshots.paid_amount"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:ARITHMETIC:sales_orders.order_date,"
+                    + "customers.credit_days->ar_aging_snapshots.due_date"),
+                    () -> module.profile().id() + " " + lineages);
+        }
+    }
+
+    @Test
+    void oracleFullGrammerThirdBatchProcedureFixtureEmitsArAgingLineageForEveryVersion() throws IOException {
+        List<FullGrammerDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
+                new OracleFullGrammerDialectModule());
+        String sql = Files.readString(workspaceRoot().resolve("test-fixtures/correctness/oracle/"
+                + "oracle-sample-data-full-02-procedures-05-third-batch-procedures-sql/input.sql"));
+        java.util.Map<String, String> procedures = oracleProcedureBlocks(sql);
+
+        for (FullGrammerDialectModule module : modules) {
+            Set<String> lineages = procedures.values().stream()
+                    .flatMap(procedure -> {
+                        var statement = statement(procedure);
+                        var result = module.sqlParser().parseSql(statement, null);
+                        assertEquals(0, result.attributes().get("syntaxErrors"),
+                                module.profile().id() + " should parse third-batch procedure fixture");
+                        return lineage(statement, result).stream();
+                    })
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            assertTrue(lineages.contains("VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:ARITHMETIC:sales_orders.order_date,"
+                    + "customers.credit_days->ar_aging_snapshots.due_date"),
+                    () -> module.profile().id() + " " + lineages);
+        }
+    }
+
+    @Test
+    void oracleFullGrammerThirdBatchIndividualProceduresParseForEveryVersion() throws IOException {
+        List<FullGrammerDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
+                new OracleFullGrammerDialectModule());
+        String sql = Files.readString(workspaceRoot().resolve("test-fixtures/correctness/oracle/"
+                + "oracle-sample-data-full-02-procedures-05-third-batch-procedures-sql/input.sql"));
+        java.util.Map<String, String> procedures = oracleProcedureBlocks(sql);
+        StringBuilder failures = new StringBuilder();
+
+        for (FullGrammerDialectModule module : modules) {
+            for (var entry : procedures.entrySet()) {
+                var result = module.sqlParser().parseSql(statement(entry.getValue()), null);
+                int syntaxErrors = (Integer) result.attributes().get("syntaxErrors");
+                if (syntaxErrors > 0) {
+                    failures.append(module.profile().id())
+                            .append(' ')
+                            .append(entry.getKey())
+                            .append(" syntaxErrors=")
+                            .append(syntaxErrors)
+                            .append('\n');
+                }
+            }
+        }
+
+        assertTrue(failures.isEmpty(), failures::toString);
+    }
+
+    @Test
     void oracleFullGrammerDeepScenarioProceduresEmitConfirmedTokenEventLineageForEveryVersion() {
         List<FullGrammerDialectModule> modules = List.of(
                 new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
@@ -479,6 +588,8 @@ class OracleAdaptorParserTest {
                 "ROUTINE:oracle.sp_rebuild_sales_fact",
                 "ROUTINE:oracle.sp_run_mrp_for_plan",
                 "ROUTINE:oracle.sp_generate_picking_task_for_order",
+                "ROUTINE:oracle.sp_calculate_work_order_actual_cost",
+                "ROUTINE:oracle.sp_post_cogs_for_sales_order",
                 "ROUTINE:oracle.sp_issue_repair_order_parts");
         for (FullGrammerDialectModule module : modules) {
             Set<String> lineages = fixtureObjects.stream()
@@ -495,7 +606,18 @@ class OracleAdaptorParserTest {
             assertTrue(lineages.contains("CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel"),
                     () -> module.profile().id() + " " + lineages);
             assertTrue(lineages.contains("VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,"
-                    + "purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement"),
+                    + "inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,"
+                    + "inventory_reservations.released_quantity,purchase_order_items.quantity,"
+                    + "purchase_order_items.received_qty->mrp_run_items.net_requirement"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:AGGREGATE:inventory_reservations.reserved_quantity,"
+                    + "inventory_reservations.released_quantity->mrp_run_items.reserved_qty"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date"),
                     () -> module.profile().id() + " " + lineages);
             assertTrue(lineages.contains("VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty"),
                     () -> module.profile().id() + " " + lineages);
@@ -503,8 +625,51 @@ class OracleAdaptorParserTest {
                     () -> module.profile().id() + " " + lineages);
             assertTrue(lineages.contains("VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty"),
                     () -> module.profile().id() + " " + lineages);
-            assertTrue(lineages.contains("VALUE:ARITHMETIC:inventory.quantity->inventory.quantity"),
+            assertTrue(lineages.contains("VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity"),
                     () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,"
+                    + "products.purchase_price->cogs_entries.cogs_amount"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:AGGREGATE:inventory_cost_layers.unit_cost,"
+                    + "products.purchase_price->cogs_entries.unit_cost"),
+                    () -> module.profile().id() + " " + lineages);
+            assertTrue(lineages.contains("VALUE:AGGREGATE:finished_goods_receipts.received_qty,"
+                    + "work_orders.completed_quantity->work_order_costs.finished_qty"),
+                    () -> module.profile().id() + " " + lineages);
+        }
+    }
+
+    @Test
+    void oracleFullGrammerResolvesCteProjectionRelationsToPhysicalSources() {
+        List<FullGrammerDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
+                new OracleFullGrammerDialectModule());
+        SqlStatementRecord statement = statement("""
+                WITH cat_sales AS (
+                    SELECT p.category_id
+                    FROM sales_order_items soi
+                    JOIN products p ON soi.product_id = p.id
+                )
+                SELECT pc.id
+                FROM product_categories pc
+                JOIN cat_sales cs ON pc.id = cs.category_id
+                """);
+
+        for (FullGrammerDialectModule module : modules) {
+            Set<String> fingerprints = new TokenEventSqlRelationParser(module.sqlParser())
+                    .parse(statement).stream()
+                    .map(relation -> relation.relationType() + ":"
+                            + relation.source().displayName() + "->"
+                            + relation.target().displayName())
+                    .collect(Collectors.toCollection(java.util.TreeSet::new));
+
+            assertTrue(fingerprints.stream().noneMatch(fingerprint -> fingerprint.contains("cat_sales")),
+                    () -> module.profile().id() + " should not leak CTE endpoints: " + fingerprints);
+            assertTrue(fingerprints.contains("CO_OCCURRENCE:products.category_id->product_categories.id")
+                            || fingerprints.contains("CO_OCCURRENCE:product_categories.id->products.category_id"),
+                    () -> module.profile().id() + " should resolve CTE projection to physical source: " + fingerprints);
         }
     }
 
@@ -687,6 +852,29 @@ class OracleAdaptorParserTest {
         } catch (IOException e) {
             throw new IllegalStateException("Cannot read Oracle fixture from " + path, e);
         }
+    }
+
+    private java.util.Map<String, String> oracleProcedureBlocks(String sql) {
+        java.util.Map<String, String> procedures = new java.util.LinkedHashMap<>();
+        int searchFrom = 0;
+        while (true) {
+            int start = sql.indexOf("CREATE OR REPLACE PROCEDURE", searchFrom);
+            if (start < 0) {
+                break;
+            }
+            int end = sql.indexOf("\n/\n", start);
+            if (end < 0) {
+                end = sql.length();
+            } else {
+                end += 3;
+            }
+            String block = sql.substring(start, end).strip();
+            String header = block.substring(0, block.indexOf('(')).strip();
+            String name = header.substring(header.lastIndexOf(' ') + 1);
+            procedures.put(name, block);
+            searchFrom = end;
+        }
+        return procedures;
     }
 
     private Path workspaceRoot() {

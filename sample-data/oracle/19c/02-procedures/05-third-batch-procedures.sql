@@ -96,9 +96,9 @@ BEGIN
     SELECT department_id, manager_id INTO v_employee_dept_id, v_employee_manager_id
     FROM employees WHERE id = p_submitted_by;
 
-    IF VARCHAR2(40) = 'department_manager' THEN
+    IF v_first_approver_type = 'department_manager' THEN
         SELECT manager_id INTO v_first_approver_id FROM departments WHERE id = v_employee_dept_id;
-    ELSEIF VARCHAR2(40) = 'direct_manager' THEN
+    ELSIF v_first_approver_type = 'direct_manager' THEN
         v_first_approver_id := v_employee_manager_id;
     END IF;
 
@@ -120,7 +120,8 @@ BEGIN
 
     OPEN p_result FOR
     SELECT v_instance_id AS instance_id, v_instance_no AS instance_no,
-           v_first_approver_id AS first_approver_id, v_total_nodes AS total_nodes;
+           v_first_approver_id AS first_approver_id, v_total_nodes AS total_nodes
+    FROM dual;
 END;
 /
 
@@ -154,7 +155,7 @@ BEGIN
     INTO v_current_node_level, v_total_nodes, v_status
     FROM approval_instances WHERE id = p_instance_id;
 
-    IF v_status != 'in_progress' THEN
+    IF v_status <> 'in_progress' THEN
         RAISE_APPLICATION_ERROR(-20000, '审批实例状态不允许操作');
     END IF;
 
@@ -174,7 +175,7 @@ BEGIN
             SET current_node_level = v_current_node_level + 1
             WHERE id = p_instance_id;
         END IF;
-    ELSEIF p_action = 'reject' THEN
+    ELSIF p_action = 'reject' THEN
         UPDATE approval_instances
         SET status = 'rejected', completed_at = SYSTIMESTAMP
         WHERE id = p_instance_id;
@@ -186,11 +187,7 @@ BEGIN
 
     COMMIT;
 
-    IF SQL%ROWCOUNT > 0 THEN
-        -- RAISE NOTICE 'success: 1';
-    ELSE
-        -- RAISE NOTICE 'success: 0';
-    END IF;
+    NULL;
 END;
 /
 
@@ -219,7 +216,7 @@ AS
     v_order_id NUMBER(19);
     v_total_amount NUMBER(18,2) DEFAULT 0.00;
     v_salesperson_id NUMBER(19);
-    cur CURSOR FOR
+    CURSOR cur IS
         SELECT ci.id, ci.product_id, ci.unit_price, COALESCE(SUM(cc.consumed_qty), 0)
         FROM consignment_inventory ci
         LEFT JOIN consignment_consumptions cc ON ci.id = cc.consignment_id
@@ -230,7 +227,7 @@ AS
 BEGIN
     -- 查找客户对应的销售员
     SELECT salesperson_id INTO v_salesperson_id
-    FROM sales_orders WHERE customer_id = p_customer_id FETCH FIRST 1 ROWS ONLY;
+    FROM sales_orders WHERE customer_id = p_customer_id AND ROWNUM = 1;
 
     v_salesperson_id := COALESCE(v_salesperson_id, 9);
 
@@ -273,7 +270,8 @@ BEGIN
     COMMIT;
 
     OPEN p_result FOR
-    SELECT v_order_id AS order_id, v_order_no AS order_no, v_total_amount AS total_amount;
+    SELECT v_order_id AS order_id, v_order_no AS order_no, v_total_amount AS total_amount
+    FROM dual;
 END;
 /
 
@@ -415,7 +413,8 @@ BEGIN
         v_output_tax AS output_tax,
         v_input_tax AS input_tax,
         v_tax_payable AS tax_payable,
-        v_deadline AS filing_deadline;
+        v_deadline AS filing_deadline
+    FROM dual;
 END;
 /
 
@@ -445,7 +444,7 @@ BEGIN
         RAISE_APPLICATION_ERROR(-20000, '序列号不存在');
     END IF;
 
-    CASE VARCHAR2(40)
+    CASE p_event_type
         WHEN 'purchase_in' THEN
             UPDATE serial_numbers SET status = 'in_stock', warehouse_id = p_warehouse_id,
                 purchase_receipt_id = p_reference_id WHERE id = v_sn_id;
@@ -489,22 +488,26 @@ CREATE OR REPLACE PROCEDURE sp_change_product_price(
 AS
     v_old_price NUMBER(12,2);
 BEGIN
-    CASE VARCHAR2(40)
-        WHEN 'purchase' THEN SELECT purchase_price INTO v_old_price FROM products WHERE id = p_product_id;
-        WHEN 'wholesale' THEN SELECT wholesale_price INTO v_old_price FROM products WHERE id = p_product_id;
-        WHEN 'retail' THEN SELECT retail_price INTO v_old_price FROM products WHERE id = p_product_id;
-    END CASE;
+    IF p_price_type = 'purchase' THEN
+        SELECT purchase_price INTO v_old_price FROM products WHERE id = p_product_id;
+    ELSIF p_price_type = 'wholesale' THEN
+        SELECT wholesale_price INTO v_old_price FROM products WHERE id = p_product_id;
+    ELSIF p_price_type = 'retail' THEN
+        SELECT retail_price INTO v_old_price FROM products WHERE id = p_product_id;
+    END IF;
 
     -- 记录价格变更
     INSERT INTO price_change_logs (product_id, price_type, old_price, new_price, change_reason, effective_date, changed_by)
     VALUES (p_product_id, p_price_type, v_old_price, p_new_price, p_change_reason, p_effective_date, p_changed_by);
 
     -- 更新产品价格
-    CASE VARCHAR2(40)
-        WHEN 'purchase' THEN UPDATE products SET purchase_price = p_new_price WHERE id = p_product_id;
-        WHEN 'wholesale' THEN UPDATE products SET wholesale_price = p_new_price WHERE id = p_product_id;
-        WHEN 'retail' THEN UPDATE products SET retail_price = p_new_price WHERE id = p_product_id;
-    END CASE;
+    IF p_price_type = 'purchase' THEN
+        UPDATE products SET purchase_price = p_new_price WHERE id = p_product_id;
+    ELSIF p_price_type = 'wholesale' THEN
+        UPDATE products SET wholesale_price = p_new_price WHERE id = p_product_id;
+    ELSIF p_price_type = 'retail' THEN
+        UPDATE products SET retail_price = p_new_price WHERE id = p_product_id;
+    END IF;
 
     INSERT INTO audit_log (action, target_type, target_id, employee_id, old_value, new_value)
     VALUES ('change_price', 'product', p_product_id, p_changed_by,
@@ -513,11 +516,7 @@ BEGIN
 
     COMMIT;
 
-    IF SQL%ROWCOUNT > 0 THEN
-        -- RAISE NOTICE 'success: 1';
-    ELSE
-        -- RAISE NOTICE 'success: 0';
-    END IF;
+    NULL;
 END;
 /
 
@@ -584,7 +583,7 @@ BEGIN
         (c.end_date - CURRENT_DATE) AS days_remaining,
         c.total_amount,
         c.status,
-        (SELECT COUNT(*) FROM contract_milestones cm WHERE cm.contract_id = c.id AND cm.status != 'completed') AS pending_milestones,
+        (SELECT COUNT(*) FROM contract_milestones cm WHERE cm.contract_id = c.id AND cm.status <> 'completed') AS pending_milestones,
         CASE
             WHEN (c.end_date - CURRENT_DATE) <= 0 THEN '已到期'
             WHEN (c.end_date - CURRENT_DATE) <= 30 THEN '30天内到期'
