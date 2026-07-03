@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -114,6 +115,152 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
+    void mysqlFullGrammerVisitorsDoNotCarryPostgresRowsetSentinels() throws IOException {
+        Path root = repoRoot();
+        Path mysqlFullGrammer = root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer");
+        try (Stream<Path> stream = Files.walk(mysqlFullGrammer)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> containsAny(path, List.of("PostgresOnly", "isPostgresOnlyRowsetSentinel")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "MySQL full-grammer must not hide PostgreSQL-only rowset syntax behind sentinel checks, offenders="
+                            + offenders);
+        }
+    }
+
+    @Test
+    void oracleFullGrammerVersionVisitorsAreThinBridges() throws IOException {
+        Path root = repoRoot();
+        Path oracleFullGrammer = root.resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammer");
+        try (Stream<Path> stream = Files.walk(oracleFullGrammer)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.getFileName().toString().equals("OracleFullGrammerParseTreeVisitor.java"))
+                    .filter(path -> path.toString().contains("/fullgrammer/v"))
+                    .filter(path -> !isThinOracleVersionVisitor(path))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Oracle version visitors should be thin generated-parser bridges over common full-grammer logic, offenders="
+                            + offenders);
+        }
+    }
+
+    @Test
+    void productionLineageDoesNotKeepRegexSqlLineageResolver() throws IOException {
+        Path root = repoRoot();
+        assertFalse(Files.exists(root.resolve("core/src/main/java/com/relationdetector/core/lineage/SqlLineageResolver.java")),
+                "Lineage projection tracing should come from StructuredSqlEvent, not the legacy regex SqlLineageResolver");
+    }
+
+    @Test
+    void productionLineageDoesNotUseTextRegexFallbacks() throws IOException {
+        Path root = repoRoot();
+        Path lineageRoot = root.resolve("core/src/main/java/com/relationdetector/core/lineage");
+        try (Stream<Path> stream = Files.walk(lineageRoot)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> containsAny(path, List.of("Pattern.compile", "java.util.regex")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Lineage must use StructuredSqlEvent / ProjectionTrace, not regex or text fallback, offenders="
+                            + offenders);
+        }
+    }
+
+    @Test
+    void jsonResultWriterUsesJacksonObjectModel() throws IOException {
+        Path root = repoRoot();
+        Path writer = root.resolve("core/src/main/java/com/relationdetector/core/output/JsonResultWriter.java");
+        String text = Files.readString(writer);
+
+        assertTrue(text.contains("ObjectMapper") && text.contains("ObjectNode"),
+                "JsonResultWriter should build JSON with Jackson ObjectMapper/ObjectNode");
+        assertFalse(text.contains("new StringBuilder(4096)"),
+                "JsonResultWriter should not hand-roll the top-level JSON document");
+    }
+
+    @Test
+    void visitorsAndCollectorsDoNotUseStaticMutableState() throws IOException {
+        Path root = repoRoot();
+        Set<String> mutableTypes = Set.of(
+                "List", "Map", "Set", "Deque", "Queue",
+                "ArrayList", "LinkedList", "HashMap", "LinkedHashMap", "HashSet", "LinkedHashSet");
+
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(this::isVisitorOrCollector)
+                    .filter(path -> hasStaticMutableField(path, mutableTypes))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Visitors/collectors must keep parse state per instance and avoid static mutable fields, offenders="
+                            + offenders);
+        }
+    }
+
+    @Test
+    void tokenEventAndFullGrammerDoNotDelegateAcrossModes() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> path.toString().contains("/tokenevent/")
+                            || path.toString().contains("/fullgrammer/"))
+                    .filter(path -> delegatesAcrossParserModes(path))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "token-event and full-grammer may share core models, but must not delegate parsers/visitors across modes, offenders="
+                            + offenders);
+        }
+    }
+
+    @Test
+    void semanticEquivalentIsTheOnlyParityTestSurface() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/test/java/"))
+                    .filter(path -> path.getFileName().toString().contains("Parity"))
+                    .filter(path -> !path.getFileName().toString().equals("SemanticEquivalentCorrectnessTest.java"))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Cross-parser equality tests must live in SemanticEquivalentCorrectnessTest, offenders="
+                            + offenders);
+        }
+    }
+
+    @Test
+    void productionCodeDoesNotExposeShadowParityEntrypoints() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> containsAny(path, List.of("shadow parity", "shadow/parity", "ShadowParity")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Production code should not expose old shadow/parity mechanisms, offenders=" + offenders);
+        }
+    }
+
+    @Test
     void databaseAdaptorMainClassesDoNotOwnCollectorImplementations() throws IOException {
         Path root = repoRoot();
         List<Path> adaptorMainClasses = List.of(
@@ -158,6 +305,55 @@ class DialectGrammarArchitectureTest {
         try {
             String text = Files.readString(path);
             return needles.stream().anyMatch(text::contains);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read " + path, e);
+        }
+    }
+
+    private boolean isVisitorOrCollector(Path path) {
+        String filename = path.getFileName().toString();
+        return filename.endsWith("Visitor.java") || filename.endsWith("Collector.java");
+    }
+
+    private boolean hasStaticMutableField(Path path, Set<String> mutableTypes) {
+        try {
+            String text = Files.readString(path);
+            return text.lines()
+                    .map(String::strip)
+                    .filter(line -> line.contains(" static "))
+                    .filter(line -> !line.startsWith("//"))
+                    .anyMatch(line -> mutableTypes.stream().anyMatch(type ->
+                            line.contains(" " + type + "<")
+                                    || line.contains(" " + type + " ")
+                                    || line.contains(" " + type + "[")));
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read " + path, e);
+        }
+    }
+
+    private boolean delegatesAcrossParserModes(Path path) {
+        try {
+            String text = Files.readString(path);
+            boolean inTokenEvent = path.toString().contains("/tokenevent/");
+            boolean inFullGrammer = path.toString().contains("/fullgrammer/");
+            if (inTokenEvent && text.contains(".fullgrammer.")) {
+                return true;
+            }
+            return inFullGrammer && text.contains(".tokenevent.");
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read " + path, e);
+        }
+    }
+
+    private static boolean isThinOracleVersionVisitor(Path path) {
+        try {
+            String text = Files.readString(path);
+            long lines = text.lines()
+                    .filter(line -> !line.isBlank())
+                    .filter(line -> !line.stripLeading().startsWith("*"))
+                    .filter(line -> !line.stripLeading().startsWith("//"))
+                    .count();
+            return lines <= 90 && text.contains("OracleFullGrammerParseTreeEventCollector");
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read " + path, e);
         }

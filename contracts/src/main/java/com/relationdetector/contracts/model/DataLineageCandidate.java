@@ -25,6 +25,7 @@ public final class DataLineageCandidate {
     private final LineageTransformType transformType;
     private BigDecimal confidence = BigDecimal.ZERO;
     private final List<DataLineageEvidence> evidence = new ArrayList<>();
+    private final List<DataLineageEvidence> rawEvidence = new ArrayList<>();
     private final List<WarningMessage> warnings = new ArrayList<>();
     private final Map<String, Object> attributes = new LinkedHashMap<>();
 
@@ -78,6 +79,10 @@ public final class DataLineageCandidate {
 
     public List<DataLineageEvidence> evidence() {
         return evidence;
+    }
+
+    public List<DataLineageEvidence> rawEvidence() {
+        return rawEvidence;
     }
 
     public List<WarningMessage> warnings() {

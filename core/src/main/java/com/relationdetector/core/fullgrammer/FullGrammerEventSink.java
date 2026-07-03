@@ -29,7 +29,8 @@ final class FullGrammerEventSink {
     /**
      * Adds a visitor event and marks it as full-grammer native.
      *
-     * <p>CN: 该标记用于诊断和 parity；正式输出仍只看 relationship/lineage candidates。</p>
+     * <p>CN: 该标记用于诊断和 semantic-equivalent benchmark；正式输出仍只看
+     * relationship/lineage candidates。</p>
      */
     void add(StructuredSqlEvent event) {
         Map<String, Object> attributes = new LinkedHashMap<>(event.attributes());

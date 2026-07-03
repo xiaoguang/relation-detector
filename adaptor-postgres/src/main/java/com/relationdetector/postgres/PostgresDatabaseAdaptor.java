@@ -11,6 +11,7 @@ import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.postgres.ddl.PostgresDatabaseDdlCollector;
 import com.relationdetector.postgres.log.PostgresLogExtractor;
 import com.relationdetector.postgres.metadata.PostgresMetadataCollector;
 import com.relationdetector.postgres.objects.PostgresObjectCollector;
@@ -43,7 +44,7 @@ public final class PostgresDatabaseAdaptor extends AbstractDatabaseAdaptor {
                 new AdaptorCollectors(
                         new PostgresMetadataCollector(),
                         new PostgresObjectCollector(),
-                        Optional.empty(),
+                        Optional.of(new PostgresDatabaseDdlCollector()),
                         new PostgresLogExtractor()),
                 new AdaptorParsers(
                         new TokenEventSqlRelationParser(structuredSqlParser),

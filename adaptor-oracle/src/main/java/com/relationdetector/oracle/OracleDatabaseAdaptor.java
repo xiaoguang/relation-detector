@@ -11,6 +11,7 @@ import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.oracle.ddl.OracleDatabaseDdlCollector;
 import com.relationdetector.oracle.log.OracleLogExtractor;
 import com.relationdetector.oracle.metadata.OracleMetadataCollector;
 import com.relationdetector.oracle.objects.OracleObjectCollector;
@@ -53,7 +54,7 @@ public final class OracleDatabaseAdaptor extends AbstractDatabaseAdaptor {
                 new AdaptorCollectors(
                         new OracleMetadataCollector(),
                         new OracleObjectCollector(),
-                        Optional.empty(),
+                        Optional.of(new OracleDatabaseDdlCollector()),
                         new OracleLogExtractor()),
                 new AdaptorParsers(
                         new TokenEventSqlRelationParser(structuredSqlParser),

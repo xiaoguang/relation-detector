@@ -1,5 +1,7 @@
 package com.relationdetector.contracts.model;
 
+import java.util.List;
+
 /**
  * Name-only evidence hint extracted from catalog, DDL inventory, or an already
  * parsed SQL predicate.
@@ -13,8 +15,19 @@ public record NamingEvidenceCandidate(
         Endpoint target,
         Evidence evidence,
         String rule,
-        boolean directionHint
+        boolean directionHint,
+        List<Evidence> rawEvidence
 ) {
+    public NamingEvidenceCandidate(
+            Endpoint source,
+            Endpoint target,
+            Evidence evidence,
+            String rule,
+            boolean directionHint
+    ) {
+        this(source, target, evidence, rule, directionHint, List.of(evidence));
+    }
+
     public NamingEvidenceCandidate {
         if (source == null) {
             throw new IllegalArgumentException("source is required");
@@ -27,6 +40,11 @@ public record NamingEvidenceCandidate(
         }
         if (rule == null || rule.isBlank()) {
             throw new IllegalArgumentException("rule is required");
+        }
+        if (rawEvidence == null || rawEvidence.isEmpty()) {
+            rawEvidence = List.of(evidence);
+        } else {
+            rawEvidence = List.copyOf(rawEvidence);
         }
     }
 }

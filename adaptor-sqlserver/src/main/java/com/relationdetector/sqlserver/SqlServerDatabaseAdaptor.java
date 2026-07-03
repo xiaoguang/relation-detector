@@ -11,6 +11,7 @@ import com.relationdetector.contracts.spi.AdaptorCollectors;
 import com.relationdetector.contracts.spi.AdaptorParsers;
 import com.relationdetector.contracts.spi.AdaptorProfiling;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
+import com.relationdetector.sqlserver.ddl.SqlServerDatabaseDdlCollector;
 import com.relationdetector.sqlserver.log.SqlServerLogExtractor;
 import com.relationdetector.sqlserver.metadata.SqlServerMetadataCollector;
 import com.relationdetector.sqlserver.objects.SqlServerObjectCollector;
@@ -42,7 +43,7 @@ public final class SqlServerDatabaseAdaptor extends AbstractDatabaseAdaptor {
                 new AdaptorCollectors(
                         new SqlServerMetadataCollector(),
                         new SqlServerObjectCollector(),
-                        Optional.empty(),
+                        Optional.of(new SqlServerDatabaseDdlCollector()),
                         new SqlServerLogExtractor()),
                 new AdaptorParsers(
                         new TokenEventSqlRelationParser(structuredSqlParser),

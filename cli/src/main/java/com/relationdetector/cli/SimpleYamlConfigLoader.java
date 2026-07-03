@@ -11,23 +11,26 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.OutputFormat;
 import com.relationdetector.core.scan.ScanConfig;
 
 /**
- * 轻量 YAML 配置读取器。
+ * YAML configuration loader backed by Jackson YAML.
  *
- * <p>CN: 当前只支持项目文档示例需要的 YAML 子集：两层 section、scalar value 和简单 list。
- * 未来替换为 Jackson YAML 不应影响 core/adaptor，因为输出仍是 ScanConfig。
+ * <p>CN: 保留历史类名和 ScanConfig 映射语义，内部使用 Jackson YAML 读取
+ * JsonNode。未知 key 继续忽略，方便配置向前兼容。
  *
- * <p>EN: Lightweight YAML reader for the documented configuration subset:
- * two-level sections, scalar values, and simple lists. Replacing it with
- * Jackson YAML later should not affect core/adaptor code because the output
- * remains ScanConfig.
+ * <p>EN: Keeps the historical class name and ScanConfig mapping semantics while
+ * using Jackson YAML to read JsonNode. Unknown keys are still ignored for
+ * forward-compatible configuration files.
  */
 public final class SimpleYamlConfigLoader {
+    private static final YAMLMapper YAML = new YAMLMapper();
+
     /**
      * 从 YAML 文件加载 ScanConfig。
      *
@@ -38,115 +41,154 @@ public final class SimpleYamlConfigLoader {
             throw new IllegalArgumentException("config file does not exist: " + file);
         }
         ScanConfig config = new ScanConfig();
-        List<String> lines = Files.readAllLines(file);
-        String section = "";
-        String subsection = "";
-        String activeList = "";
-
-        for (String raw : lines) {
-            String line = stripComment(raw);
-            if (line.isBlank()) {
-                continue;
-            }
-            int indent = countIndent(line);
-            String trimmed = line.trim();
-            if (trimmed.startsWith("- ")) {
-                addListValue(config, activeList, resolveEnv(unquote(trimmed.substring(2).trim())));
-                continue;
-            }
-            if (!trimmed.contains(":")) {
-                continue;
-            }
-            String key = trimmed.substring(0, trimmed.indexOf(':')).trim();
-            String value = trimmed.substring(trimmed.indexOf(':') + 1).trim();
-            if (indent == 0) {
-                section = key;
-                subsection = "";
-                activeList = "";
-                continue;
-            }
-            if (indent == 2 && value.isBlank()) {
-                if ("filters".equals(section)) {
-                    subsection = "";
-                    activeList = section + "." + key;
-                } else {
-                    subsection = key;
-                    activeList = "";
-                }
-                continue;
-            }
-            if (value.isBlank()) {
-                activeList = section + "." + subsection + "." + key;
-                continue;
-            }
-            setScalar(config, section, subsection, key, resolveEnv(unquote(value)));
+        JsonNode root = YAML.readTree(file.toFile());
+        if (root == null || root.isMissingNode() || root.isNull()) {
+            validate(config);
+            return config;
         }
+
+        readDatabase(config, root.path("database"));
+        readSources(config, root.path("sources"));
+        readFilters(config, root.path("filters"));
+        readOutput(config, root.path("output"));
+        readParser(config, root.path("parser"));
 
         expandConfiguredPaths(config);
         validate(config);
         return config;
     }
 
-    private void setScalar(ScanConfig config, String section, String subsection, String key, String value) {
-        String path = section + "." + (subsection.isBlank() ? "" : subsection + ".") + key;
-        switch (path) {
-            case "database.type" -> config.databaseType = DatabaseType.valueOf(value.toUpperCase().replace("-", ""));
-            case "database.adaptorId" -> config.adaptorId = value;
-            case "database.jdbcUrl" -> config.jdbcUrl = value;
-            case "database.username" -> config.username = value;
-            case "database.password" -> config.password = value;
-            case "database.schema" -> config.schema = value;
-            case "database.catalog" -> config.catalog = value;
-            case "sources.metadata.enabled" -> config.metadataEnabled = Boolean.parseBoolean(value);
-            case "sources.ddl.enabled" -> config.ddlEnabled = Boolean.parseBoolean(value);
-            case "sources.ddl.fromDatabase" -> config.ddlFromDatabase = Boolean.parseBoolean(value);
-            case "sources.objects.enabled" -> config.objectsEnabled = Boolean.parseBoolean(value);
-            case "sources.objects.fromDatabase" -> config.objectsFromDatabase = Boolean.parseBoolean(value);
-            case "sources.logs.enabled" -> config.logsEnabled = Boolean.parseBoolean(value);
-            case "sources.logs.format" -> config.logFormatHint = LogFormatHint.valueOf(value.toUpperCase());
-            case "sources.logs.filterSystemQueries" -> config.logsFilterSystemQueries = Boolean.parseBoolean(value);
-            case "sources.dataProfile.enabled" -> config.dataProfileEnabled = Boolean.parseBoolean(value);
-            case "sources.dataProfile.sampleRows" -> config.sampleRows = Integer.parseInt(value);
-            case "sources.dataProfile.timeoutSeconds" -> config.timeoutSeconds = Integer.parseInt(value);
-            case "sources.dataProfile.maxCandidatePairs" -> config.maxCandidatePairs = Integer.parseInt(value);
-            case "output.format" -> config.outputFormat = OutputFormat.valueOf(value.toUpperCase());
-            case "output.minConfidence" -> config.minConfidence = Double.parseDouble(value);
-            case "output.includeEvidence" -> config.includeEvidence = Boolean.parseBoolean(value);
-            case "output.includeWarnings" -> config.includeWarnings = Boolean.parseBoolean(value);
-            case "parser.mode" -> config.parserMode = normalizeParserMode(value);
-            case "parser.grammarProfile" -> config.grammarProfile = value;
-            case "parser.databaseVersion" -> {
-                config.databaseVersion = value;
-                config.databaseVersionSource = "CONFIG";
-            }
-            case "parser.sql.mode", "parser.sql.fallbackOnFailure",
-                    "parser.ddl.mode", "parser.ddl.fallbackOnFailure" ->
-                    throw new IllegalArgumentException(path
-                            + " has been removed; use parser.mode with auto, full-grammer, or token-event");
-            default -> {
-                // Unknown keys are ignored to allow forward-compatible configs.
-            }
+    private void readDatabase(ScanConfig config, JsonNode database) {
+        setIfPresent(database, "type", value ->
+                config.databaseType = DatabaseType.valueOf(value.toUpperCase().replace("-", "")));
+        setIfPresent(database, "adaptorId", value -> config.adaptorId = value);
+        setIfPresent(database, "jdbcUrl", value -> config.jdbcUrl = value);
+        setIfPresent(database, "username", value -> config.username = value);
+        setIfPresent(database, "password", value -> config.password = value);
+        setIfPresent(database, "schema", value -> config.schema = value);
+        setIfPresent(database, "catalog", value -> config.catalog = value);
+    }
+
+    private void readSources(ScanConfig config, JsonNode sources) {
+        JsonNode metadata = sources.path("metadata");
+        setBooleanIfPresent(metadata, "enabled", value -> config.metadataEnabled = value);
+
+        JsonNode ddl = sources.path("ddl");
+        setBooleanIfPresent(ddl, "enabled", value -> config.ddlEnabled = value);
+        setBooleanIfPresent(ddl, "fromDatabase", value -> config.ddlFromDatabase = value);
+        addPaths(ddl.path("files"), config.ddlFiles);
+        addPaths(ddl.path("paths"), config.ddlPaths);
+        addStrings(ddl.path("include"), config.ddlIncludes);
+
+        JsonNode objects = sources.path("objects");
+        setBooleanIfPresent(objects, "enabled", value -> config.objectsEnabled = value);
+        setBooleanIfPresent(objects, "fromDatabase", value -> config.objectsFromDatabase = value);
+        addPaths(objects.path("files"), config.objectFiles);
+        addPaths(objects.path("paths"), config.objectPaths);
+        addStrings(objects.path("include"), config.objectIncludes);
+
+        JsonNode logs = sources.path("logs");
+        setBooleanIfPresent(logs, "enabled", value -> config.logsEnabled = value);
+        setIfPresent(logs, "format", value -> config.logFormatHint = LogFormatHint.valueOf(value.toUpperCase()));
+        setBooleanIfPresent(logs, "filterSystemQueries", value -> config.logsFilterSystemQueries = value);
+        addPaths(logs.path("files"), config.logFiles);
+        addPaths(logs.path("paths"), config.logPaths);
+        addStrings(logs.path("include"), config.logIncludes);
+        addStrings(logs.path("systemSchemas"), config.logSystemSchemas);
+        addStrings(logs.path("metadataQueryMarkers"), config.logMetadataQueryMarkers);
+
+        JsonNode dataProfile = sources.path("dataProfile");
+        setBooleanIfPresent(dataProfile, "enabled", value -> config.dataProfileEnabled = value);
+        setIntIfPresent(dataProfile, "sampleRows", value -> config.sampleRows = value);
+        setIntIfPresent(dataProfile, "timeoutSeconds", value -> config.timeoutSeconds = value);
+        setIntIfPresent(dataProfile, "maxCandidatePairs", value -> config.maxCandidatePairs = value);
+    }
+
+    private void readFilters(ScanConfig config, JsonNode filters) {
+        addStrings(filters.path("includeTables"), config.includeTables);
+        addStrings(filters.path("excludeTables"), config.excludeTables);
+    }
+
+    private void readOutput(ScanConfig config, JsonNode output) {
+        setIfPresent(output, "format", value -> config.outputFormat = OutputFormat.valueOf(value.toUpperCase()));
+        setDoubleIfPresent(output, "minConfidence", value -> config.minConfidence = value);
+        setBooleanIfPresent(output, "includeEvidence", value -> config.includeEvidence = value);
+        setBooleanIfPresent(output, "includeWarnings", value -> config.includeWarnings = value);
+    }
+
+    private void readParser(ScanConfig config, JsonNode parser) {
+        rejectRemovedParserConfig(parser);
+        setIfPresent(parser, "mode", value -> config.parserMode = normalizeParserMode(value));
+        setIfPresent(parser, "grammarProfile", value -> config.grammarProfile = value);
+        setIfPresent(parser, "databaseVersion", value -> {
+            config.databaseVersion = value;
+            config.databaseVersionSource = "CONFIG";
+        });
+    }
+
+    private void rejectRemovedParserConfig(JsonNode parser) {
+        if (parser.path("sql").has("mode")) {
+            throw new IllegalArgumentException(
+                    "parser.sql.mode has been removed; use parser.mode with auto, full-grammer, or token-event");
+        }
+        if (parser.path("sql").has("fallbackOnFailure")) {
+            throw new IllegalArgumentException(
+                    "parser.sql.fallbackOnFailure has been removed; use parser.mode with auto, full-grammer, or token-event");
+        }
+        if (parser.path("ddl").has("mode")) {
+            throw new IllegalArgumentException(
+                    "parser.ddl.mode has been removed; use parser.mode with auto, full-grammer, or token-event");
+        }
+        if (parser.path("ddl").has("fallbackOnFailure")) {
+            throw new IllegalArgumentException(
+                    "parser.ddl.fallbackOnFailure has been removed; use parser.mode with auto, full-grammer, or token-event");
         }
     }
 
-    private void addListValue(ScanConfig config, String activeList, String value) {
-        switch (activeList) {
-            case "filters.includeTables" -> config.includeTables.add(value);
-            case "filters.excludeTables" -> config.excludeTables.add(value);
-            case "sources.ddl.files" -> config.ddlFiles.add(Path.of(value));
-            case "sources.ddl.paths" -> config.ddlPaths.add(Path.of(value));
-            case "sources.ddl.include" -> config.ddlIncludes.add(value);
-            case "sources.objects.files" -> config.objectFiles.add(Path.of(value));
-            case "sources.objects.paths" -> config.objectPaths.add(Path.of(value));
-            case "sources.objects.include" -> config.objectIncludes.add(value);
-            case "sources.logs.files" -> config.logFiles.add(Path.of(value));
-            case "sources.logs.paths" -> config.logPaths.add(Path.of(value));
-            case "sources.logs.include" -> config.logIncludes.add(value);
-            case "sources.logs.systemSchemas" -> config.logSystemSchemas.add(value);
-            case "sources.logs.metadataQueryMarkers" -> config.logMetadataQueryMarkers.add(value);
-            default -> {
-                // Ignore list values under unknown sections.
-            }
+    private void setIfPresent(JsonNode node, String key, StringConsumer consumer) {
+        JsonNode value = node.path(key);
+        if (!value.isMissingNode() && !value.isNull()) {
+            consumer.accept(resolveEnv(value.asText()));
+        }
+    }
+
+    private void setBooleanIfPresent(JsonNode node, String key, BooleanConsumer consumer) {
+        JsonNode value = node.path(key);
+        if (!value.isMissingNode() && !value.isNull()) {
+            consumer.accept(value.asBoolean());
+        }
+    }
+
+    private void setIntIfPresent(JsonNode node, String key, IntConsumer consumer) {
+        JsonNode value = node.path(key);
+        if (!value.isMissingNode() && !value.isNull()) {
+            consumer.accept(value.asInt());
+        }
+    }
+
+    private void setDoubleIfPresent(JsonNode node, String key, DoubleConsumer consumer) {
+        JsonNode value = node.path(key);
+        if (!value.isMissingNode() && !value.isNull()) {
+            consumer.accept(value.asDouble());
+        }
+    }
+
+    private void addPaths(JsonNode node, List<Path> target) {
+        addStrings(node, value -> target.add(Path.of(value)));
+    }
+
+    private void addStrings(JsonNode node, List<String> target) {
+        addStrings(node, target::add);
+    }
+
+    private void addStrings(JsonNode node, StringConsumer consumer) {
+        if (node.isMissingNode() || node.isNull()) {
+            return;
+        }
+        if (node.isArray()) {
+            node.forEach(value -> consumer.accept(resolveEnv(value.asText())));
+        } else {
+            consumer.accept(resolveEnv(node.asText()));
         }
     }
 
@@ -233,26 +275,6 @@ public final class SimpleYamlConfigLoader {
         };
     }
 
-    private String stripComment(String line) {
-        int index = line.indexOf('#');
-        return index >= 0 ? line.substring(0, index) : line;
-    }
-
-    private int countIndent(String line) {
-        int count = 0;
-        while (count < line.length() && line.charAt(count) == ' ') {
-            count++;
-        }
-        return count;
-    }
-
-    private String unquote(String value) {
-        if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
-            return value.substring(1, value.length() - 1);
-        }
-        return value;
-    }
-
     private String resolveEnv(String value) {
         List<String> missing = new ArrayList<>();
         String resolved = value;
@@ -263,16 +285,32 @@ public final class SimpleYamlConfigLoader {
                 break;
             }
             String name = resolved.substring(start + 2, end);
-            String env = System.getenv(name);
-            if (env == null) {
+            String replacement = System.getenv(name);
+            if (replacement == null) {
                 missing.add(name);
-                env = "";
+                replacement = "";
             }
-            resolved = resolved.substring(0, start) + env + resolved.substring(end + 1);
+            resolved = resolved.substring(0, start) + replacement + resolved.substring(end + 1);
         }
         if (!missing.isEmpty()) {
-            throw new IllegalArgumentException("missing environment variables: " + missing);
+            throw new IllegalArgumentException("Missing environment variable(s): " + String.join(", ", missing));
         }
         return resolved;
+    }
+
+    private interface StringConsumer {
+        void accept(String value);
+    }
+
+    private interface BooleanConsumer {
+        void accept(boolean value);
+    }
+
+    private interface IntConsumer {
+        void accept(int value);
+    }
+
+    private interface DoubleConsumer {
+        void accept(double value);
     }
 }

@@ -25,6 +25,7 @@ import com.relationdetector.core.parser.DdlParseOutcome;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
 import com.relationdetector.core.relation.NamingEvidenceExtractor;
 import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
+import com.relationdetector.core.relation.NamingEvidenceMerger;
 import com.relationdetector.core.relation.RelationshipMerger;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 import com.relationdetector.core.scan.ScanConfig;
@@ -269,7 +270,7 @@ final class CorrectnessFixtureExecutor {
             ExpectedNamingEvidence expected,
             List<NamingEvidenceCandidate> actual
     ) throws Exception {
-        Set<String> actualFingerprints = actual.stream()
+        Set<String> actualFingerprints = new NamingEvidenceMerger().merge(actual).stream()
                 .map(this::namingEvidenceFingerprint)
                 .collect(Collectors.toCollection(TreeSet::new));
         if (Boolean.getBoolean("updateCorrectnessGold")

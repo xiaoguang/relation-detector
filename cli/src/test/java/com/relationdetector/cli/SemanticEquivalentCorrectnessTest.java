@@ -61,10 +61,10 @@ class SemanticEquivalentCorrectnessTest {
             Path fixture = workspaceRoot().resolve(fixturePath).normalize();
             checks.add(() -> assertEquals(canonicalRelations,
                     fingerprints(fixture.resolve("expected-relations.json")),
-                    scenario.getFileName() + " relation parity for " + fixturePath));
+                    scenario.getFileName() + " relation equivalence for " + fixturePath));
             checks.add(() -> assertEquals(canonicalLineage,
                     fingerprints(fixture.resolve("expected-lineage.json")),
-                    scenario.getFileName() + " lineage parity for " + fixturePath));
+                    scenario.getFileName() + " lineage equivalence for " + fixturePath));
         }
         return checks;
     }

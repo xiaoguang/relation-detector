@@ -1,9 +1,14 @@
 package com.relationdetector.core.output;
 
 import java.math.RoundingMode;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.DataLineageEvidence;
 import com.relationdetector.contracts.model.Endpoint;
@@ -11,304 +16,188 @@ import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.WarningMessage;
+import com.relationdetector.core.relation.NamingEvidenceMerger;
 import com.relationdetector.core.scan.ScanResult;
 
 /**
- * dependency-free JSON 输出 writer。
+ * JSON output writer backed by Jackson's object model.
  *
- * <p>CN: 输出层不引入 Jackson，手写稳定 JSON 结构。relationship 在 includeEvidence=true
- * 时输出 rawEvidence 与 evidence：rawEvidence 是未压缩审计轨迹，evidence 是
- * RelationshipMerger 聚合 repeated observation 后用于 confidence 的证据。
+ * <p>CN: ObjectMapper 在静态初始化阶段完成配置，之后只读复用；每次 write 都创建新的
+ * ObjectNode/ArrayNode，因此服务端和测试并发调用不会共享可变输出状态。
  *
- * <p>EN: Dependency-free JSON writer. It keeps the JSON schema stable without
- * Jackson. When evidence is requested, relationships write rawEvidence as the
- * full audit trail and evidence as the grouped evidence used by confidence scoring.
+ * <p>EN: The ObjectMapper is fully configured during static initialization and
+ * reused read-only. Each write call creates fresh ObjectNode/ArrayNode state,
+ * so concurrent service or test calls do not share mutable output state.
  */
 public final class JsonResultWriter {
+    private static final ObjectMapper JSON = new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT);
+
+    private final NamingEvidenceMerger namingEvidenceMerger = new NamingEvidenceMerger();
+
     /**
      * 将 ScanResult 渲染成最终 JSON 字符串。
      *
      * <p>EN: Renders ScanResult into the final JSON string.
      */
     public String write(ScanResult result, boolean includeEvidence, boolean includeWarnings) {
-        StringBuilder out = new StringBuilder(4096);
-        out.append("{\n");
-        out.append("  \"database\": { \"type\": \"").append(escape(result.databaseType())).append("\", \"schema\": \"")
-                .append(escape(result.schema())).append("\" },\n");
-        out.append("  \"generatedAt\": \"").append(result.generatedAt()).append("\",\n");
-        out.append("  \"summary\": { \"relationshipCount\": ").append(result.relationships().size())
-                .append(", \"dataLineageCount\": ").append(result.dataLineages().size())
-                .append(", \"namingEvidenceCount\": ").append(result.namingEvidence().size())
-                .append(", \"warningCount\": ").append(result.warnings().size()).append(", \"sources\": ");
-        writeStringArray(out, result.sources());
-        out.append(" },\n");
-        out.append("  \"relationships\": [\n");
-        for (int i = 0; i < result.relationships().size(); i++) {
-            writeRelationship(out, result.relationships().get(i), includeEvidence);
-            if (i + 1 < result.relationships().size()) {
-                out.append(",");
-            }
-            out.append("\n");
-        }
-        out.append("  ],\n");
-        out.append("  \"dataLineages\": [\n");
-        for (int i = 0; i < result.dataLineages().size(); i++) {
-            writeDataLineage(out, result.dataLineages().get(i), includeEvidence);
-            if (i + 1 < result.dataLineages().size()) {
-                out.append(",");
-            }
-            out.append("\n");
-        }
-        out.append("  ],\n");
-        out.append("  \"namingEvidence\": [\n");
-        for (int i = 0; i < result.namingEvidence().size(); i++) {
-            writeNamingEvidence(out, result.namingEvidence().get(i), includeEvidence);
-            if (i + 1 < result.namingEvidence().size()) {
-                out.append(",");
-            }
-            out.append("\n");
-        }
-        out.append("  ],\n");
-        out.append("  \"warnings\": ");
+        List<NamingEvidenceCandidate> namingEvidence = namingEvidenceMerger.merge(result.namingEvidence());
+        int namingEvidenceObservationCount = namingEvidence.stream()
+                .mapToInt(candidate -> candidate.rawEvidence().size())
+                .sum();
+
+        ObjectNode root = JSON.createObjectNode();
+        ObjectNode database = root.putObject("database");
+        database.put("type", safe(result.databaseType()));
+        database.put("schema", safe(result.schema()));
+        root.put("generatedAt", String.valueOf(result.generatedAt()));
+
+        ObjectNode summary = root.putObject("summary");
+        summary.put("relationshipCount", result.relationships().size());
+        summary.put("dataLineageCount", result.dataLineages().size());
+        summary.put("namingEvidenceCount", namingEvidence.size());
+        summary.put("namingEvidenceObservationCount", namingEvidenceObservationCount);
+        summary.put("warningCount", result.warnings().size());
+        ArrayNode sources = summary.putArray("sources");
+        result.sources().forEach(sources::add);
+
+        ArrayNode relationships = root.putArray("relationships");
+        result.relationships().forEach(relation ->
+                relationships.add(relationshipNode(relation, includeEvidence)));
+
+        ArrayNode dataLineages = root.putArray("dataLineages");
+        result.dataLineages().forEach(lineage ->
+                dataLineages.add(dataLineageNode(lineage, includeEvidence)));
+
+        ArrayNode naming = root.putArray("namingEvidence");
+        namingEvidence.forEach(candidate ->
+                naming.add(namingEvidenceNode(candidate, includeEvidence)));
+
         if (includeWarnings) {
-            writeWarnings(out, result.warnings());
+            root.set("warnings", warningsNode(result.warnings()));
         } else {
-            out.append("[]");
+            root.set("warnings", JSON.createArrayNode());
         }
-        out.append("\n}\n");
-        return out.toString();
+
+        try {
+            return JSON.writeValueAsString(root) + "\n";
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to render scan result JSON", e);
+        }
     }
 
-    private void writeRelationship(StringBuilder out, RelationshipCandidate relation, boolean includeEvidence) {
-        out.append("    {\n");
-        out.append("      \"source\": { \"table\": \"").append(escape(relation.source().table().displayName()))
-                .append("\", \"column\": ");
-        writeNullable(out, relation.source().isColumnLevel() ? relation.source().column().columnName() : null);
-        out.append(" },\n");
-        out.append("      \"target\": { \"table\": \"").append(escape(relation.target().table().displayName()))
-                .append("\", \"column\": ");
-        writeNullable(out, relation.target().isColumnLevel() ? relation.target().column().columnName() : null);
-        out.append(" },\n");
-        out.append("      \"relationType\": \"").append(relation.relationType()).append("\",\n");
-        out.append("      \"relationSubType\": \"").append(relation.relationSubType()).append("\",\n");
-        out.append("      \"confidence\": ").append(relation.confidence().setScale(4, RoundingMode.HALF_UP)).append(",\n");
-        out.append("      \"rawEvidence\": ");
-        if (includeEvidence) {
-            writeEvidence(out, relation.rawEvidence().isEmpty() ? relation.evidence() : relation.rawEvidence());
+    private ObjectNode relationshipNode(RelationshipCandidate relation, boolean includeEvidence) {
+        ObjectNode node = JSON.createObjectNode();
+        node.set("source", endpointNode(relation.source()));
+        node.set("target", endpointNode(relation.target()));
+        node.put("relationType", relation.relationType().name());
+        node.put("relationSubType", relation.relationSubType().name());
+        node.put("confidence", relation.confidence().setScale(4, RoundingMode.HALF_UP));
+        node.set("rawEvidence", includeEvidence
+                ? evidenceNode(relation.rawEvidence().isEmpty() ? relation.evidence() : relation.rawEvidence())
+                : JSON.createArrayNode());
+        node.set("evidence", includeEvidence
+                ? evidenceNode(relation.evidence())
+                : JSON.createArrayNode());
+        node.set("warnings", warningsNode(relation.warnings()));
+        return node;
+    }
+
+    private ObjectNode dataLineageNode(DataLineageCandidate lineage, boolean includeEvidence) {
+        ObjectNode node = JSON.createObjectNode();
+        ArrayNode sources = node.putArray("sources");
+        lineage.sources().forEach(source -> sources.add(endpointNode(source)));
+        node.set("target", endpointNode(lineage.target()));
+        node.put("flowKind", lineage.flowKind().name());
+        node.put("transformType", lineage.transformType().name());
+        node.put("confidence", lineage.confidence().setScale(4, RoundingMode.HALF_UP));
+        node.set("rawEvidence", includeEvidence
+                ? dataLineageEvidenceNode(lineage.rawEvidence().isEmpty() ? lineage.evidence() : lineage.rawEvidence())
+                : JSON.createArrayNode());
+        node.set("evidence", includeEvidence
+                ? dataLineageEvidenceNode(lineage.evidence())
+                : JSON.createArrayNode());
+        node.set("warnings", warningsNode(lineage.warnings()));
+        node.set("attributes", attributesNode(lineage.attributes()));
+        return node;
+    }
+
+    private ObjectNode namingEvidenceNode(NamingEvidenceCandidate naming, boolean includeEvidence) {
+        ObjectNode node = JSON.createObjectNode();
+        node.set("source", endpointNode(naming.source()));
+        node.set("target", endpointNode(naming.target()));
+        node.put("rule", safe(naming.rule()));
+        node.put("directionHint", naming.directionHint());
+        node.set("evidence", includeEvidence
+                ? evidenceNode(List.of(naming.evidence()))
+                : JSON.createArrayNode());
+        node.set("rawEvidence", includeEvidence
+                ? evidenceNode(naming.rawEvidence())
+                : JSON.createArrayNode());
+        return node;
+    }
+
+    private ObjectNode endpointNode(Endpoint endpoint) {
+        ObjectNode node = JSON.createObjectNode();
+        node.put("table", endpoint.table().displayName());
+        if (endpoint.isColumnLevel()) {
+            node.put("column", endpoint.column().columnName());
         } else {
-            out.append("[]");
+            node.putNull("column");
         }
-        out.append(",\n");
-        out.append("      \"evidence\": ");
-        if (includeEvidence) {
-            writeEvidence(out, relation.evidence());
-        } else {
-            out.append("[]");
-        }
-        out.append(",\n      \"warnings\": ");
-        writeWarnings(out, relation.warnings());
-        out.append("\n    }");
+        return node;
     }
 
-    private void writeDataLineage(StringBuilder out, DataLineageCandidate lineage, boolean includeEvidence) {
-        out.append("    {\n");
-        out.append("      \"sources\": [");
-        for (int i = 0; i < lineage.sources().size(); i++) {
-            if (i > 0) {
-                out.append(", ");
-            }
-            out.append("{ \"table\": \"").append(escape(lineage.sources().get(i).table().displayName()))
-                    .append("\", \"column\": ");
-            writeNullable(out, lineage.sources().get(i).isColumnLevel()
-                    ? lineage.sources().get(i).column().columnName() : null);
-            out.append(" }");
-        }
-        out.append("],\n");
-        out.append("      \"target\": { \"table\": \"").append(escape(lineage.target().table().displayName()))
-                .append("\", \"column\": ");
-        writeNullable(out, lineage.target().isColumnLevel() ? lineage.target().column().columnName() : null);
-        out.append(" },\n");
-        out.append("      \"flowKind\": \"").append(lineage.flowKind()).append("\",\n");
-        out.append("      \"transformType\": \"").append(lineage.transformType()).append("\",\n");
-        out.append("      \"confidence\": ").append(lineage.confidence().setScale(4, RoundingMode.HALF_UP)).append(",\n");
-        out.append("      \"evidence\": ");
-        if (includeEvidence) {
-            writeDataLineageEvidence(out, lineage.evidence());
-        } else {
-            out.append("[]");
-        }
-        out.append(",\n      \"warnings\": ");
-        writeWarnings(out, lineage.warnings());
-        out.append(",\n      \"attributes\": ");
-        writeAttributes(out, lineage.attributes());
-        out.append("\n    }");
+    private ArrayNode evidenceNode(List<Evidence> evidence) {
+        ArrayNode array = JSON.createArrayNode();
+        evidence.forEach(item -> {
+            ObjectNode node = array.addObject();
+            node.put("type", item.type().name());
+            node.put("sourceType", item.sourceType().name());
+            node.put("score", item.score());
+            node.put("source", safe(item.source()));
+            node.put("detail", safe(item.detail()));
+            node.set("attributes", attributesNode(item.attributes()));
+        });
+        return array;
     }
 
-    private void writeNamingEvidence(StringBuilder out, NamingEvidenceCandidate naming, boolean includeEvidence) {
-        out.append("    {\n");
-        out.append("      \"source\": ");
-        writeEndpoint(out, naming.source());
-        out.append(",\n      \"target\": ");
-        writeEndpoint(out, naming.target());
-        out.append(",\n");
-        out.append("      \"rule\": \"").append(escape(naming.rule())).append("\",\n");
-        out.append("      \"directionHint\": ").append(naming.directionHint()).append(",\n");
-        out.append("      \"evidence\": ");
-        if (includeEvidence) {
-            writeEvidence(out, java.util.List.of(naming.evidence()));
-        } else {
-            out.append("[]");
-        }
-        out.append("\n    }");
+    private ArrayNode dataLineageEvidenceNode(List<DataLineageEvidence> evidence) {
+        ArrayNode array = JSON.createArrayNode();
+        evidence.forEach(item -> {
+            ObjectNode node = array.addObject();
+            node.put("transformType", item.transformType().name());
+            node.put("sourceType", item.sourceType().name());
+            node.put("score", item.score());
+            node.put("source", safe(item.source()));
+            node.put("detail", safe(item.detail()));
+            node.set("attributes", attributesNode(item.attributes()));
+        });
+        return array;
     }
 
-    private void writeEndpoint(StringBuilder out, Endpoint endpoint) {
-        out.append("{ \"table\": \"").append(escape(endpoint.table().displayName())).append("\", \"column\": ");
-        writeNullable(out, endpoint.isColumnLevel() ? endpoint.column().columnName() : null);
-        out.append(" }");
+    private ArrayNode warningsNode(List<WarningMessage> warnings) {
+        ArrayNode array = JSON.createArrayNode();
+        warnings.forEach(warning -> {
+            ObjectNode node = array.addObject();
+            node.put("type", warning.type().name());
+            node.put("severity", warning.severity().name());
+            node.put("code", safe(warning.code()));
+            node.put("message", safe(warning.message()));
+            node.put("source", safe(warning.source()));
+            node.put("line", warning.line());
+            node.set("attributes", attributesNode(warning.attributes()));
+        });
+        return array;
     }
 
-    private void writeEvidence(StringBuilder out, java.util.List<Evidence> evidence) {
-        out.append("[");
-        for (int i = 0; i < evidence.size(); i++) {
-            Evidence item = evidence.get(i);
-            out.append("\n        { \"type\": \"").append(item.type()).append("\", \"sourceType\": \"")
-                    .append(item.sourceType()).append("\", \"score\": ").append(item.score())
-                    .append(", \"source\": \"").append(escape(item.source())).append("\", \"detail\": \"")
-                    .append(escape(item.detail())).append("\", \"attributes\": ");
-            writeAttributes(out, item.attributes());
-            out.append(" }");
-            if (i + 1 < evidence.size()) {
-                out.append(",");
-            }
-        }
-        if (!evidence.isEmpty()) {
-            out.append("\n      ");
-        }
-        out.append("]");
+    private ObjectNode attributesNode(Map<String, Object> attributes) {
+        ObjectNode node = JSON.createObjectNode();
+        attributes.forEach((key, value) -> node.set(key, JSON.valueToTree(value)));
+        return node;
     }
 
-    private void writeDataLineageEvidence(StringBuilder out, java.util.List<DataLineageEvidence> evidence) {
-        out.append("[");
-        for (int i = 0; i < evidence.size(); i++) {
-            DataLineageEvidence item = evidence.get(i);
-            out.append("\n        { \"transformType\": \"").append(item.transformType()).append("\", \"sourceType\": \"")
-                    .append(item.sourceType()).append("\", \"score\": ").append(item.score())
-                    .append(", \"source\": \"").append(escape(item.source())).append("\", \"detail\": \"")
-                    .append(escape(item.detail())).append("\", \"attributes\": ");
-            writeAttributes(out, item.attributes());
-            out.append(" }");
-            if (i + 1 < evidence.size()) {
-                out.append(",");
-            }
-        }
-        if (!evidence.isEmpty()) {
-            out.append("\n      ");
-        }
-        out.append("]");
-    }
-
-    private void writeWarnings(StringBuilder out, java.util.List<WarningMessage> warnings) {
-        out.append("[");
-        for (int i = 0; i < warnings.size(); i++) {
-            WarningMessage warning = warnings.get(i);
-            out.append("{ \"type\": \"").append(warning.type()).append("\", \"severity\": \"")
-                    .append(warning.severity()).append("\", \"code\": \"").append(escape(warning.code()))
-                    .append("\", \"message\": \"").append(escape(warning.message())).append("\", \"source\": \"")
-                    .append(escape(warning.source())).append("\", \"line\": ").append(warning.line())
-                    .append(", \"attributes\": ");
-            writeAttributes(out, warning.attributes());
-            out.append(" }");
-            if (i + 1 < warnings.size()) {
-                out.append(", ");
-            }
-        }
-        out.append("]");
-    }
-
-    private void writeAttributes(StringBuilder out, Map<String, Object> attributes) {
-        out.append("{");
-        Iterator<Map.Entry<String, Object>> iterator = attributes.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, Object> entry = iterator.next();
-            out.append("\"").append(escape(entry.getKey())).append("\": ");
-            writeAttributeValue(out, entry.getValue());
-            if (iterator.hasNext()) {
-                out.append(", ");
-            }
-        }
-        out.append("}");
-    }
-
-    /**
-     * Writes metadata attributes without flattening all values into strings.
-     *
-     * <p>RelationshipMerger stores operator-facing attributes such as:
-     *
-     * <pre>{@code
-     * count: 3
-     * sampleTruncated: false
-     * sampleDetails: ["line 10: o.user_id = u.id", "line 38: o.user_id = u.id"]
-     * }</pre>
-     *
-     * Keeping these as JSON numbers, booleans, and arrays makes downstream
-     * dashboards and tests consume them directly instead of reparsing strings.
-     */
-    private void writeAttributeValue(StringBuilder out, Object value) {
-        if (value == null) {
-            out.append("null");
-        } else if (value instanceof Number || value instanceof Boolean) {
-            out.append(value);
-        } else if (value instanceof Map<?, ?> mapValue) {
-            out.append("{");
-            Iterator<? extends Map.Entry<?, ?>> iterator = mapValue.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<?, ?> entry = iterator.next();
-                out.append("\"").append(escape(String.valueOf(entry.getKey()))).append("\": ");
-                writeAttributeValue(out, entry.getValue());
-                if (iterator.hasNext()) {
-                    out.append(", ");
-                }
-            }
-            out.append("}");
-        } else if (value instanceof Iterable<?> values) {
-            out.append("[");
-            Iterator<?> iterator = values.iterator();
-            while (iterator.hasNext()) {
-                writeAttributeValue(out, iterator.next());
-                if (iterator.hasNext()) {
-                    out.append(", ");
-                }
-            }
-            out.append("]");
-        } else {
-            out.append("\"").append(escape(String.valueOf(value))).append("\"");
-        }
-    }
-
-    private void writeStringArray(StringBuilder out, java.util.List<String> values) {
-        out.append("[");
-        for (int i = 0; i < values.size(); i++) {
-            out.append("\"").append(escape(values.get(i))).append("\"");
-            if (i + 1 < values.size()) {
-                out.append(", ");
-            }
-        }
-        out.append("]");
-    }
-
-    private void writeNullable(StringBuilder out, String value) {
-        if (value == null) {
-            out.append("null");
-        } else {
-            out.append("\"").append(escape(value)).append("\"");
-        }
-    }
-
-    private String escape(String value) {
-        if (value == null) {
-            return "";
-        }
-        return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 }

@@ -118,21 +118,18 @@ class OracleParserArchitectureTest {
         Path routineScope = mainSource.resolve("routine/OracleRoutineScope.java");
         assertTrue(Files.exists(routineScope), "Oracle routine package must contain a real routine scope helper");
 
-        List<Path> visitors = List.of(
+        List<Path> routineAwareVisitors = List.of(
                 mainSource.resolve("tokenevent/OracleTokenEventParseTreeVisitor.java"),
-                mainSource.resolve("fullgrammer/v12c/OracleFullGrammerParseTreeVisitor.java"),
-                mainSource.resolve("fullgrammer/v19c/OracleFullGrammerParseTreeVisitor.java"),
-                mainSource.resolve("fullgrammer/v21c/OracleFullGrammerParseTreeVisitor.java"),
-                mainSource.resolve("fullgrammer/v26ai/OracleFullGrammerParseTreeVisitor.java"));
+                mainSource.resolve("fullgrammer/common/OracleFullGrammerParseTreeEventCollector.java"));
 
-        List<Path> offenders = visitors.stream()
+        List<Path> offenders = routineAwareVisitors.stream()
                 .filter(path -> !contains(path, "com.relationdetector.oracle.routine.OracleRoutineScope")
                         || !contains(path, "routineScope.enterRoutine()")
                         || !contains(path, "routineScope.leaveRoutineEnd("))
                 .map(repoRoot()::relativize)
                 .toList();
         assertTrue(offenders.isEmpty(),
-                "Oracle token-event and full-grammer visitors must use the dialect-level routine scope, offenders="
+                "Oracle token-event visitor and full-grammer common collector must use the dialect-level routine scope, offenders="
                         + offenders);
     }
 

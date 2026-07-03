@@ -104,10 +104,12 @@ public final class Collectors {
     /**
      * Collects table DDL text from the live database.
      *
-     * <p>For MySQL this runs {@code SHOW CREATE TABLE} for tables inside the
-     * configured scope. The collector returns text only; relationship extraction
-     * still belongs to the normal ANTLR DDL parser runner so relationship
-     * extraction behavior stays centralized.
+     * <p>Implementations use the native catalog surface for each database, for
+     * example MySQL {@code SHOW CREATE TABLE}, Oracle {@code DBMS_METADATA}, or
+     * reconstructed DDL from information schema/catalog views. The collector
+     * returns text only; relationship extraction still belongs to the normal
+     * ANTLR DDL parser runner so relationship extraction behavior stays
+     * centralized.
      */
     public interface DatabaseDdlCollector {
         List<DatabaseDdlDefinition> collect(Connection connection, ScanScope scope);

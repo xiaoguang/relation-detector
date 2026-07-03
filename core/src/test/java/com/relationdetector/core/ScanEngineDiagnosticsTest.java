@@ -129,7 +129,14 @@ class ScanEngineDiagnosticsTest {
 
         String json = new JsonResultWriter().write(result, true, true);
 
-        assertTrue(json.contains("\"attributes\": {\"rawStatement\": \"SELECT * FROM orders o JOIN users u ON o.user_id = u.id\"}"));
+        try {
+            var root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(json);
+            assertEquals(
+                    "SELECT * FROM orders o JOIN users u ON o.user_id = u.id",
+                    root.path("warnings").get(0).path("attributes").path("rawStatement").asText());
+        } catch (Exception e) {
+            throw new AssertionError("Expected valid JSON warning output", e);
+        }
     }
 
     private ScanConfig baseConfig() {

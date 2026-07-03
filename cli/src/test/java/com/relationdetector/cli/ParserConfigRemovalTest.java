@@ -220,6 +220,47 @@ class ParserConfigRemovalTest {
     }
 
     @Test
+    void yamlConfigUsesJacksonYamlLoaderAndKeepsNestedValues() throws Exception {
+        Path file = Files.createTempFile("relation-detector-jackson-yaml", ".yml");
+        Files.writeString(file, """
+                database:
+                  type: mysql
+                  schema: "shop"
+                sources:
+                  metadata:
+                    enabled: false
+                  dataProfile:
+                    enabled: true
+                    sampleRows: 25
+                    timeoutSeconds: 12
+                    maxCandidatePairs: 77
+                  logs:
+                    enabled: true
+                    files:
+                      - "app.sql"
+                output:
+                  minConfidence: 0.42
+                  includeEvidence: false
+                  includeWarnings: true
+                  ignoredFutureKey:
+                    nested: value
+                """);
+
+        ScanConfig config = new SimpleYamlConfigLoader().load(file);
+
+        assertTrue(SimpleYamlConfigLoader.class.getDeclaredField("YAML").getType().getName().contains("YAMLMapper"),
+                "SimpleYamlConfigLoader should be backed by Jackson YAML");
+        assertEquals("shop", config.schema);
+        assertEquals(true, config.dataProfileEnabled);
+        assertEquals(25, config.sampleRows);
+        assertEquals(12, config.timeoutSeconds);
+        assertEquals(77, config.maxCandidatePairs);
+        assertEquals(0.42d, config.minConfidence);
+        assertEquals(false, config.includeEvidence);
+        assertEquals(true, config.includeWarnings);
+    }
+
+    @Test
     void cliAcceptsParserModeAndGrammarOverrides() {
         Main.CliArguments args = Main.CliArguments.parse(new String[] {
                 "scan", "--config", "config.yml",

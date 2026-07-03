@@ -206,7 +206,7 @@ The current acceptance line is:
 
 - Root token-event golden must contain only facts it can extract from typed structural grammar.
 - Versioned full-grammer golden remains the stronger version-specific correctness target.
-- Future root token-event parity work should continue by expanding typed grammar and visitors, not by restoring scanner/token-span inference.
+- Future root token-event coverage work should continue by expanding typed grammar and visitors, not by restoring scanner/token-span inference.
 
 ## Verification
 

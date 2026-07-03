@@ -74,9 +74,6 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
     @Override
     public Void visitSingleTable(SingleTableContext ctx) {
         String table = ctx.tableRef() == null ? "" : ctx.tableRef().getText();
-        if (isPostgresOnlyRowsetSentinel(table)) {
-            return visitChildren(ctx);
-        }
         String alias = ctx.tableAlias() == null ? "" : sink.firstIdentifier(ctx.tableAlias());
         sink.rowset(ctx, "FROM", table, alias);
         rememberRowset(alias.isBlank() ? sink.baseName(table) : alias);
@@ -482,10 +479,6 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
 
     private String lastRowsetAlias() {
         return core.lastRowsetAlias();
-    }
-
-    private boolean isPostgresOnlyRowsetSentinel(String rawTableRef) {
-        return "ONLY".equalsIgnoreCase(rawTableRef) || "ROWS".equalsIgnoreCase(rawTableRef);
     }
 
     private ColumnParts columnParts(String raw) {

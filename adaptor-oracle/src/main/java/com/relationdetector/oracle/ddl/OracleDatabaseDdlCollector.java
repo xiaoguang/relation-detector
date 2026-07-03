@@ -1,9 +1,8 @@
-package com.relationdetector.mysql.ddl;
+package com.relationdetector.oracle.ddl;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -16,8 +15,8 @@ import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
 import com.relationdetector.contracts.spi.Collectors.DatabaseDdlCollector;
 import com.relationdetector.contracts.spi.ScanScope;
 
-/** Collects MySQL table DDL through SHOW CREATE TABLE. */
-public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
+/** Collects Oracle table DDL through DBMS_METADATA. */
+public final class OracleDatabaseDdlCollector implements DatabaseDdlCollector {
     @Override
     public List<DatabaseDdlDefinition> collect(Connection connection, ScanScope scope) {
         return collect(connection, scope, warning -> {
@@ -30,24 +29,29 @@ public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
             ScanScope scope,
             Consumer<WarningMessage> warnings
     ) {
+        String owner = owner(scope);
         List<DatabaseDdlDefinition> definitions = new ArrayList<>();
-        for (String tableName : tableNames(connection, scope, warnings)) {
-            collectShowCreate(connection, scope.schema(), tableName, definitions, warnings);
+        for (String tableName : tableNames(connection, scope, owner, warnings)) {
+            collectTableDdl(connection, owner, tableName, definitions, warnings);
         }
         return definitions;
     }
 
-    private List<String> tableNames(Connection connection, ScanScope scope, Consumer<WarningMessage> warnings) {
+    private List<String> tableNames(
+            Connection connection,
+            ScanScope scope,
+            String owner,
+            Consumer<WarningMessage> warnings
+    ) {
         String sql = """
                 SELECT TABLE_NAME
-                FROM information_schema.TABLES
-                WHERE TABLE_SCHEMA = ?
-                  AND TABLE_TYPE = 'BASE TABLE'
+                FROM ALL_TABLES
+                WHERE OWNER = ?
                 ORDER BY TABLE_NAME
                 """;
         List<String> tableNames = new ArrayList<>();
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, scope.schema());
+            ps.setString(1, owner);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String tableName = rs.getString("TABLE_NAME");
@@ -58,33 +62,41 @@ public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
             }
         } catch (Exception ex) {
             warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "MYSQL_DATABASE_DDL_TABLES_FAILED", ex.getMessage(), "information_schema.TABLES", 0));
+                    "ORACLE_DATABASE_DDL_TABLES_FAILED", ex.getMessage(), "ALL_TABLES", 0));
         }
         return tableNames;
     }
 
-    private void collectShowCreate(
+    private void collectTableDdl(
             Connection connection,
-            String schema,
+            String owner,
             String tableName,
             List<DatabaseDdlDefinition> definitions,
             Consumer<WarningMessage> warnings
     ) {
-        String sql = "SHOW CREATE TABLE " + quote(schema) + "." + quote(tableName);
-        try (Statement statement = connection.createStatement();
-                ResultSet rs = statement.executeQuery(sql)) {
-            if (rs.next()) {
-                definitions.add(new DatabaseDdlDefinition(schema, tableName, rs.getString(2), "SHOW CREATE TABLE"));
+        String sql = "SELECT DBMS_METADATA.GET_DDL('TABLE', ?, ?) AS DDL FROM DUAL";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, tableName);
+            ps.setString(2, owner);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    definitions.add(new DatabaseDdlDefinition(owner, tableName, rs.getString(1), "DBMS_METADATA.GET_DDL"));
+                }
             }
         } catch (Exception ex) {
             warnings.accept(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "MYSQL_SHOW_CREATE_TABLE_FAILED", ex.getMessage(), "SHOW CREATE TABLE", 0,
-                    java.util.Map.of("objectSchema", schema,
+                    "ORACLE_DBMS_METADATA_GET_DDL_FAILED", ex.getMessage(), "DBMS_METADATA.GET_DDL", 0,
+                    Map.of("objectSchema", owner,
                             "objectName", tableName,
                             "objectType", "TABLE",
-                            "rawStatement", sql,
                             "exceptionClass", ex.getClass().getSimpleName())));
         }
+    }
+
+    private String owner(ScanScope scope) {
+        return scope.schema() == null || scope.schema().isBlank()
+                ? ""
+                : scope.schema().toUpperCase(Locale.ROOT);
     }
 
     private boolean inScope(ScanScope scope, String tableName) {
@@ -95,11 +107,7 @@ public final class MySqlDatabaseDdlCollector implements DatabaseDdlCollector {
         return included && !excluded;
     }
 
-    private String quote(String identifier) {
-        return "`" + identifier.replace("`", "``") + "`";
-    }
-
     private String normalize(String value) {
-        return value == null ? "" : value.toLowerCase(Locale.ROOT);
+        return value == null ? "" : value.toUpperCase(Locale.ROOT);
     }
 }

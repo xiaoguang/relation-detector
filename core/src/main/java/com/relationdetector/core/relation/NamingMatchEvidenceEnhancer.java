@@ -36,10 +36,33 @@ public final class NamingMatchEvidenceEnhancer {
                 continue;
             }
             NamingMatchRules.match(candidate.source(), candidate.target(), hasSelfJoinRole(candidate))
-                    .ifPresent(match -> candidate.evidence().add(NamingEvidenceExtractor.evidenceFor(
-                            match,
-                            "naming heuristic",
-                            match.source().displayName() + " matches " + match.target().displayName())));
+                    .ifPresent(match -> {
+                        NamingEvidenceCandidate local = new NamingEvidenceCandidate(
+                                match.source(),
+                                match.target(),
+                                NamingEvidenceExtractor.evidenceFor(
+                                        match,
+                                        "naming heuristic",
+                                        match.source().displayName() + " matches " + match.target().displayName()),
+                                match.rule(),
+                                Boolean.TRUE.equals(match.attributes().get("directionHint")));
+                        candidate.evidence().add(local.evidence());
+                        addToPoolIfPossible(namingEvidence, local);
+                    });
+        }
+    }
+
+    private void addToPoolIfPossible(List<NamingEvidenceCandidate> namingEvidence, NamingEvidenceCandidate local) {
+        if (namingEvidence.stream().anyMatch(existing -> sameEndpoint(existing.source(), local.source())
+                && sameEndpoint(existing.target(), local.target())
+                && existing.rule().equals(local.rule()))) {
+            return;
+        }
+        try {
+            namingEvidence.add(local);
+        } catch (UnsupportedOperationException ignored) {
+            // The no-pool overload passes an immutable empty list. Relationship enrichment
+            // still works; runtime ScanEngine passes the mutable top-level evidence pool.
         }
     }
 

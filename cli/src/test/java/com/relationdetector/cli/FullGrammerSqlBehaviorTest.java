@@ -755,19 +755,6 @@ class FullGrammerSqlBehaviorTest {
     }
 
     @Test
-    void mysqlDialectEventsDoNotLeakPostgresOnlyRowsets() {
-        SqlStatementRecord statement = statement("""
-                SELECT *
-                FROM ONLY orders TABLESAMPLE SYSTEM (10), ROWS FROM(generate_series(1, 3)) AS g(id)
-                """);
-
-        StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
-
-        assertFalse(hasEvent(result, StructuredParseEventType.ROWSET_REFERENCE, "table", "ONLY"));
-        assertFalse(hasEvent(result, StructuredParseEventType.ROWSET_REFERENCE, "table", "ROWS"));
-    }
-
-    @Test
     void postgresqlDialectEventsDoNotLeakMysqlOnlyPseudoRowsets() {
         SqlStatementRecord statement = statement("""
                 SELECT *

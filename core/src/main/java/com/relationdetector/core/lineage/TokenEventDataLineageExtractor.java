@@ -63,7 +63,8 @@ public final class TokenEventDataLineageExtractor {
         Map<String, TableId> aliases = aliases(structured.events());
         Set<String> localTempTables = localTempTables(statement, structured.events());
         Set<String> ignoredRowsets = ignoredRowsets(structured.events());
-        Map<String, Projection> projections = projections(structured.events(), aliases);
+        ProjectionTraceResolver projectionTraces = ProjectionTraceResolver.fromEvents(
+                structured.events(), aliases, ignoredRowsets);
         List<DataLineageCandidate> candidates = new ArrayList<>();
         for (StructuredSqlEvent event : structured.events()) {
             if (event.type() != StructuredParseEventType.UPDATE_ASSIGNMENT
@@ -72,12 +73,13 @@ public final class TokenEventDataLineageExtractor {
                 continue;
             }
             ColumnRef target = targetColumn(event, aliases);
-            SourceResolution sourceResolution = sourceEndpoints(event, aliases, projections, ignoredRowsets);
             if (target == null
                     || isLocalTemp(target.table(), localTempTables)
                     || !isKnownPhysical(target.table(), knownPhysicalTables)) {
                 continue;
             }
+            ProjectionTraceResolver.SourceResolution sourceResolution =
+                    projectionTraces.resolveSources(event, aliases, ignoredRowsets);
             List<Endpoint> sources = sourceResolution.sources().stream()
                     .filter(source -> source.column() != null)
                     .filter(source -> !isLocalTemp(source.column().table(), localTempTables))
@@ -88,7 +90,8 @@ public final class TokenEventDataLineageExtractor {
             if (sources.isEmpty()) {
                 continue;
             }
-            LineageTransformType transform = effectiveTransform(text(event, "transformType"), sourceResolution.transforms());
+            LineageTransformType transform = ProjectionTraceResolver.effectiveTransform(
+                    text(event, "transformType"), sourceResolution.transforms());
             LineageFlowKind flowKind = flowKind(text(event, "flowKind"));
             AssignmentMapping mapping = assignmentMapping(event, target, sources, transform);
             DataLineageCandidate candidate = new DataLineageCandidate(
@@ -168,94 +171,6 @@ public final class TokenEventDataLineageExtractor {
         return table == null ? null : ColumnRef.of(table, targetColumn);
     }
 
-    private SourceResolution sourceEndpoints(
-            StructuredSqlEvent event,
-            Map<String, TableId> aliases,
-            Map<String, Projection> projections,
-            Set<String> ignoredRowsets
-    ) {
-        List<String> sourceAliases = stringList(event.attributes().get("sourceAliases"));
-        List<String> sourceColumns = stringList(event.attributes().get("sourceColumns"));
-        List<Endpoint> endpoints = new ArrayList<>();
-        List<LineageTransformType> transforms = new ArrayList<>();
-        int count = Math.min(sourceAliases.size(), sourceColumns.size());
-        for (int index = 0; index < count; index++) {
-            String sourceAlias = sourceAliases.get(index);
-            String sourceColumn = sourceColumns.get(index);
-            Projection projection = projections.get(projectionKey(sourceAlias, sourceColumn));
-            if (projection != null) {
-                endpoints.addAll(projection.sources());
-                transforms.add(projection.transform());
-                continue;
-            }
-            TableId table = aliases.get(normalize(sourceAlias));
-            if (table != null && !sourceColumn.isBlank() && !isIgnoredRowsetTable(table, ignoredRowsets)) {
-                endpoints.add(Endpoint.column(ColumnRef.of(table, sourceColumns.get(index))));
-                transforms.add(LineageTransformType.DIRECT);
-            }
-        }
-        return new SourceResolution(endpoints.stream().distinct().toList(), transforms);
-    }
-
-    private Map<String, Projection> projections(List<StructuredSqlEvent> events, Map<String, TableId> aliases) {
-        Map<String, Projection> projections = new LinkedHashMap<>();
-        Set<String> ignoredRowsets = ignoredRowsets(events);
-        boolean changed;
-        do {
-            changed = false;
-            for (StructuredSqlEvent event : events) {
-                if (event.type() != StructuredParseEventType.PROJECTION_ITEM) {
-                    continue;
-                }
-                String outputAlias = text(event, "outputAlias");
-                String outputColumn = text(event, "outputColumn");
-                if (outputAlias.isBlank() || outputColumn.isBlank()) {
-                    continue;
-                }
-                SourceResolution resolved = sourceEndpoints(event, aliases, projections, ignoredRowsets);
-                if (!resolved.sources().isEmpty()) {
-                    changed |= putProjection(
-                            projections,
-                            outputAlias,
-                            outputColumn,
-                            new Projection(
-                                    resolved.sources().stream().distinct().toList(),
-                                    effectiveTransform(text(event, "transformType"), resolved.transforms())),
-                            ignoredRowsets);
-                }
-            }
-            changed |= copyIgnoredRowsetAliases(events, ignoredRowsets, projections);
-        } while (changed);
-        return projections;
-    }
-
-    private boolean copyIgnoredRowsetAliases(
-            List<StructuredSqlEvent> events,
-            Set<String> ignoredRowsets,
-            Map<String, Projection> projections
-    ) {
-        boolean changed = false;
-        for (StructuredSqlEvent event : events) {
-            if (event.type() != StructuredParseEventType.ROWSET_REFERENCE) {
-                continue;
-            }
-            String table = text(event, "table");
-            String qualified = text(event, "qualifiedTable");
-            String alias = text(event, "alias");
-            if (alias.isBlank()
-                    || (!ignoredRowsets.contains(normalize(table)) && !ignoredRowsets.contains(normalize(qualified)))) {
-                continue;
-            }
-            for (Map.Entry<String, Projection> entry : List.copyOf(projections.entrySet())) {
-                ProjectionKey key = parseProjectionKey(entry.getKey());
-                if (key.matches(table) || key.matches(qualified)) {
-                    changed |= putProjection(projections, alias, key.column(), entry.getValue(), ignoredRowsets);
-                }
-            }
-        }
-        return changed;
-    }
-
     private Set<String> ignoredRowsets(List<StructuredSqlEvent> events) {
         Set<String> result = new java.util.LinkedHashSet<>();
         for (StructuredSqlEvent event : events) {
@@ -277,57 +192,6 @@ public final class TokenEventDataLineageExtractor {
         }
         ignored.add(normalize(raw));
         ignored.add(normalize(baseName(raw)));
-    }
-
-    private boolean putProjection(
-            Map<String, Projection> projections,
-            String alias,
-            String column,
-            Projection projection,
-            Set<String> ignoredRowsets
-    ) {
-        String key = projectionKey(alias, column);
-        if (parseProjectionKey(key).alias().isBlank()
-                || parseProjectionKey(key).column().isBlank()) {
-            return false;
-        }
-        boolean changed = putProjectionKey(projections, key, projection, ignoredRowsets);
-        String baseKey = projectionKey(baseName(alias), column);
-        if (!baseKey.equals(key)) {
-            changed |= putProjectionKey(projections, baseKey, projection, ignoredRowsets);
-        }
-        return changed;
-    }
-
-    private boolean putProjectionKey(
-            Map<String, Projection> projections,
-            String key,
-            Projection projection,
-            Set<String> ignoredRowsets
-    ) {
-        Projection existing = projections.get(key);
-        if (existing == null || isBetterProjection(projection, existing, ignoredRowsets)) {
-            projections.put(key, projection);
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isBetterProjection(Projection candidate, Projection existing, Set<String> ignoredRowsets) {
-        int candidateScore = projectionResolutionScore(candidate, ignoredRowsets);
-        int existingScore = projectionResolutionScore(existing, ignoredRowsets);
-        return candidateScore > existingScore;
-    }
-
-    private int projectionResolutionScore(Projection projection, Set<String> ignoredRowsets) {
-        int score = 0;
-        for (Endpoint source : projection.sources()) {
-            if (source.column() == null) {
-                continue;
-            }
-            score += ignoredRowsets.contains(normalize(source.table().tableName())) ? 1 : 4;
-        }
-        return score;
     }
 
     private Set<String> localTempTables(SqlStatementRecord statement, List<StructuredSqlEvent> events) {
@@ -389,35 +253,6 @@ public final class TokenEventDataLineageExtractor {
             return list.stream().map(String::valueOf).toList();
         }
         return List.of();
-    }
-
-    private LineageTransformType transform(String value) {
-        try {
-            return LineageTransformType.valueOf(value);
-        } catch (RuntimeException ignored) {
-            return LineageTransformType.UNKNOWN_EXPRESSION;
-        }
-    }
-
-    private LineageTransformType effectiveTransform(String eventTransform, List<LineageTransformType> sourceTransforms) {
-        LineageTransformType transform = transform(eventTransform);
-        if (sourceTransforms.contains(LineageTransformType.CUMULATIVE)
-                && (transform == LineageTransformType.DIRECT || transform == LineageTransformType.UNKNOWN_EXPRESSION)) {
-            return LineageTransformType.CUMULATIVE;
-        }
-        if (sourceTransforms.contains(LineageTransformType.AGGREGATE)
-                && (transform == LineageTransformType.DIRECT
-                || transform == LineageTransformType.UNKNOWN_EXPRESSION
-                || transform == LineageTransformType.COALESCE
-                || transform == LineageTransformType.CASE_WHEN
-                || transform == LineageTransformType.ARITHMETIC)) {
-            return LineageTransformType.AGGREGATE;
-        }
-        if (sourceTransforms.contains(LineageTransformType.WINDOW_DERIVED)
-                && transform == LineageTransformType.DIRECT) {
-            return LineageTransformType.WINDOW_DERIVED;
-        }
-        return transform;
     }
 
     private LineageFlowKind flowKind(String value) {
@@ -484,30 +319,4 @@ public final class TokenEventDataLineageExtractor {
         return clean(value).toLowerCase(Locale.ROOT);
     }
 
-    private String projectionKey(String alias, String column) {
-        return normalize(alias) + "." + normalize(column);
-    }
-
-    private ProjectionKey parseProjectionKey(String key) {
-        int dot = key.lastIndexOf('.');
-        if (dot < 0) {
-            return new ProjectionKey(key, "");
-        }
-        return new ProjectionKey(key.substring(0, dot), key.substring(dot + 1));
-    }
-
-    private record Projection(List<Endpoint> sources, LineageTransformType transform) {
-    }
-
-    private record SourceResolution(List<Endpoint> sources, List<LineageTransformType> transforms) {
-    }
-
-    private record ProjectionKey(String alias, String column) {
-        boolean matches(String rowset) {
-            String normalized = rowset == null ? "" : rowset.toLowerCase(Locale.ROOT);
-            int dot = normalized.lastIndexOf('.');
-            String base = dot < 0 ? normalized : normalized.substring(dot + 1);
-            return alias.equals(normalized) || alias.equals(base);
-        }
-    }
 }
