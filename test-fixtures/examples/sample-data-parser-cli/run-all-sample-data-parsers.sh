@@ -255,6 +255,10 @@ def file_counts(config_path):
 summary_rows = []
 warning_rows = []
 for path in sorted(result_dir.glob("*.json")):
+    if path.stem == "common-token-event-sample-data":
+        continue
+    if requested_cases and path.stem not in requested_cases:
+        continue
     data = json.loads(path.read_text(encoding="utf-8"))
     summary = data.get("summary", {})
     warnings = data.get("warnings") or []
@@ -288,6 +292,22 @@ def json_count(path):
     data = json.loads(path.read_text(encoding="utf-8"))
     return len(data.get("fingerprints") or [])
 
+def fingerprint_items(path, key, fixture):
+    if not path.exists():
+        return []
+    data = json.loads(path.read_text(encoding="utf-8"))
+    items = []
+    for fingerprint in data.get("fingerprints") or []:
+        item = {
+            "fingerprint": fingerprint,
+            "fixture": fixture.name,
+            "source": str(fixture),
+        }
+        if key == "namingEvidence" and fingerprint.endswith(":NAMING_MATCH"):
+            item["id"] = fingerprint.rsplit(":", 1)[0]
+        items.append(item)
+    return items
+
 def manifest_target(path):
     text = (path / "manifest.yml").read_text(encoding="utf-8")
     return "DDL" if "parserTarget: DDL" in text else "SQL"
@@ -304,6 +324,35 @@ if should_include_common_row():
     lineage_count = sum(json_count(fixture / "expected-lineage.json") for fixture in common_fixtures)
     naming_count = sum(json_count(fixture / "expected-naming-evidence.json") for fixture in common_fixtures)
     diagnostic_count = sum(json_count(fixture / "expected-diagnostics.json") for fixture in common_fixtures)
+    common_relationships = []
+    common_lineages = []
+    common_naming = []
+    common_warnings = []
+    for fixture in common_fixtures:
+        common_relationships.extend(fingerprint_items(fixture / "expected-relations.json", "relationships", fixture))
+        common_lineages.extend(fingerprint_items(fixture / "expected-lineage.json", "dataLineages", fixture))
+        common_naming.extend(fingerprint_items(fixture / "expected-naming-evidence.json", "namingEvidence", fixture))
+        common_warnings.extend(fingerprint_items(fixture / "expected-diagnostics.json", "warnings", fixture))
+    common_output = result_dir / "common-token-event-sample-data.json"
+    common_output.write_text(json.dumps({
+        "database": {
+            "type": "COMMON",
+            "parserMode": "token-event",
+            "structuredParser": "common-token-event",
+        },
+        "generatedBy": "sample-data-parser-cli common benchmark aggregator",
+        "summary": {
+            "relationshipCount": relation_count,
+            "dataLineageCount": lineage_count,
+            "namingEvidenceCount": naming_count,
+            "warningCount": diagnostic_count,
+            "sources": ["correctness-common-portable-benchmark"],
+        },
+        "relationships": common_relationships,
+        "dataLineages": common_lineages,
+        "namingEvidence": common_naming,
+        "warnings": common_warnings,
+    }, ensure_ascii=False, indent=2, sort_keys=False) + "\n", encoding="utf-8")
     summary_rows.insert(0, [
         "common-token-event-sample-data",
         str(len(common_fixtures)),
@@ -313,7 +362,7 @@ if should_include_common_row():
         str(naming_count),
         str(diagnostic_count),
         "correctness-common-portable-benchmark",
-        str(common_root),
+        str(common_output),
     ])
     warning_rows.insert(0, ["common-token-event-sample-data", "NONE" if diagnostic_count == 0 else "EXPECTED_DIAGNOSTICS",
                             str(diagnostic_count)])

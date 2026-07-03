@@ -11,7 +11,7 @@ This directory contains runnable CLI examples for scanning `sample-data` with ev
 - SQL Server root `token-event`
 - SQL Server `full-grammer` profiles `sqlserver/2016`, `sqlserver/2017`, `sqlserver/2019`, `sqlserver/2022`, `sqlserver/2025`
 
-`common token-event` is a portable correctness/benchmark parser, not a CLI database adaptor. The summary includes a `common-token-event-sample-data` row from `test-fixtures/correctness/common/*sample-data*` so the portable benchmark is visible next to real CLI scans. It is a high-density portable benchmark, not a one-to-one 38-file natural dialect sample-data scan.
+`common token-event` is a portable correctness/benchmark parser, not a database-specific adaptor. The script emits a `common-token-event-sample-data` JSON file by aggregating `test-fixtures/correctness/common/*sample-data*`, so the portable benchmark appears next to real CLI scans. It is a high-density portable benchmark, not a one-to-one 38-file natural dialect sample-data scan.
 
 Run all sample-data parser scans:
 
@@ -38,4 +38,10 @@ target/sample-data-parser-cli/configs/
 target/sample-data-parser-cli/results/
 target/sample-data-parser-cli/summary.tsv
 target/sample-data-parser-cli/warning-codes.tsv
+```
+
+The common benchmark output is:
+
+```text
+target/sample-data-parser-cli/results/common-token-event-sample-data.json
 ```
