@@ -45,7 +45,9 @@ for adaptor in \
   com.relationdetector.postgres.PostgresDatabaseAdaptor
 do
   class_output="$(javap -classpath "$classpath" "$adaptor" 2>/dev/null || true)"
-  if [[ -n "$class_output" ]] && ! grep -q 'implements com.relationdetector.contracts.spi.DatabaseAdaptor' <<< "$class_output"; then
+  if [[ -n "$class_output" ]] \
+    && ! grep -q 'implements com.relationdetector.contracts.spi.DatabaseAdaptor' <<< "$class_output" \
+    && ! grep -q 'extends com.relationdetector.contracts.spi.AbstractDatabaseAdaptor' <<< "$class_output"; then
     cat >&2 <<MSG
 
 Adaptor class does not implement the public DatabaseAdaptor SPI in target/classes:

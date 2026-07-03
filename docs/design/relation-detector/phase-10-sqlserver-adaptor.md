@@ -118,16 +118,16 @@ flowchart TD
 
 ## Correctness 范围
 
-当前 SQL Server correctness 覆盖 root token-event 与五个 versioned full-grammer 的全量 ERP sample-data fixture。每组 38 个 fixture，32 个 SQL / 6 个 DDL。root token-event 和 versioned full-grammer lineage 已对齐；full-grammer 由于 typed DDL / predicate context 更完整，会产生更多 relationship 和 `NAMING_MATCH` evidence：
+当前 SQL Server correctness 覆盖 root token-event 与五个 versioned full-grammer 的全量 ERP sample-data fixture。每组 38 个 fixture，32 个 SQL / 6 个 DDL。root token-event 和 versioned full-grammer lineage 已对齐；full-grammer 由于 typed DDL / predicate context 更完整，会产生更多 relationship 和命名 evidence：
 
-| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| SQL Server root token-event | 38 | 32 / 6 | 711 | 257 | 0 | 313 |
-| SQL Server full-grammer v2016 | 38 | 32 / 6 | 717 | 257 | 0 | 317 |
-| SQL Server full-grammer v2017 | 38 | 32 / 6 | 717 | 257 | 0 | 317 |
-| SQL Server full-grammer v2019 | 38 | 32 / 6 | 717 | 257 | 0 | 317 |
-| SQL Server full-grammer v2022 | 38 | 32 / 6 | 717 | 257 | 0 | 317 |
-| SQL Server full-grammer v2025 | 38 | 32 / 6 | 717 | 257 | 0 | 317 |
+| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| SQL Server root token-event | 38 | 32 / 6 | 711 | 257 | 0 | 313 | 313 |
+| SQL Server full-grammer v2016 | 38 | 32 / 6 | 717 | 257 | 0 | 317 | 317 |
+| SQL Server full-grammer v2017 | 38 | 32 / 6 | 717 | 257 | 0 | 317 | 317 |
+| SQL Server full-grammer v2019 | 38 | 32 / 6 | 717 | 257 | 0 | 317 | 317 |
+| SQL Server full-grammer v2022 | 38 | 32 / 6 | 717 | 257 | 0 | 317 | 317 |
+| SQL Server full-grammer v2025 | 38 | 32 / 6 | 717 | 257 | 0 | 317 | 317 |
 
 当前 fixture 语义：
 
@@ -136,7 +136,7 @@ flowchart TD
 - 预期 relationship：DDL FK/index 关系，以及 SQL predicate join / subquery relation。
 - 预期 lineage：明确字段写入、聚合写入、`UPDATE ... FROM` 与 `MERGE` 更新映射；参数、局部变量、临时表和动态 SQL 不作为物理 source。
 
-SQL Server root token-event 与 full-grammer v2025 在 sample-data 上当前 lineage fingerprint 数一致；full-grammer 因 typed DDL / predicate context 更完整，多识别少量 relationship 与 `NAMING_MATCH` evidence。五个 versioned full-grammer 输出一致；该一致性来自当前 sample-data 的跨版本保守 T-SQL 子集，不代表官方版本差异已经完成。
+SQL Server root token-event 与 full-grammer v2025 在 sample-data 上当前 lineage fingerprint 数一致；full-grammer 因 typed DDL / predicate context 更完整，多识别少量 relationship 与 top-level naming evidence。五个 versioned full-grammer 输出一致；该一致性来自当前 sample-data 的跨版本保守 T-SQL 子集，不代表官方版本差异已经完成。
 
 ## 后续收口
 

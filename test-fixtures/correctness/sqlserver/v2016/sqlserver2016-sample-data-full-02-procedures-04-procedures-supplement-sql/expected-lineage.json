@@ -1,5 +1,15 @@
 {
   "fingerprints": [
+    "VALUE:COALESCE:dbo.departments.id->purchase_requisitions.department_id",
+    "VALUE:COALESCE:dbo.employees.id->purchase_requisitions.requester_id",
+    "VALUE:COALESCE:dbo.product_batches.id->inventory.batch_id",
+    "VALUE:COALESCE:dbo.product_batches.id->inventory_transactions.batch_id",
+    "VALUE:COALESCE:dbo.products.id->inventory.product_id",
+    "VALUE:COALESCE:dbo.products.id->inventory_transactions.product_id",
+    "VALUE:COALESCE:dbo.products.id->purchase_requisition_items.product_id",
+    "VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id",
+    "VALUE:COALESCE:dbo.warehouses.id->inventory.warehouse_id",
+    "VALUE:COALESCE:dbo.warehouses.id->inventory_transactions.warehouse_id",
     "VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id",
     "VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id",
     "VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id",

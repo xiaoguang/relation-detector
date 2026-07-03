@@ -1,12 +1,3 @@
 {
-  "fingerprints": [
-    "naming:inserted.department_id->dbo.departments.id:TABLE_ID:NAMING_MATCH",
-    "naming:inserted.employee_id->dbo.employees.id:TABLE_ID:NAMING_MATCH",
-    "naming:inserted.manager_id->dbo.employees.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:inserted.parent_id->dbo.departments.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:inserted.parent_id->dbo.permissions.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:inserted.permission_id->dbo.permissions.id:TABLE_ID:NAMING_MATCH",
-    "naming:inserted.position_id->dbo.positions.id:TABLE_ID:NAMING_MATCH",
-    "naming:inserted.role_id->dbo.roles.id:TABLE_ID:NAMING_MATCH"
-  ]
+  "fingerprints": []
 }

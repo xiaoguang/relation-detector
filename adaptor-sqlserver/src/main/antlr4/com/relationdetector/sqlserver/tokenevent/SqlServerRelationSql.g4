@@ -304,8 +304,8 @@ expression
     ;
 
 expression_atom
-    : full_column_name
-    | function_call
+    : function_call
+    | full_column_name
     | case_expression
     | CAST LPAREN expression AS data_type RPAREN
     | DECIMAL_LITERAL
@@ -317,7 +317,7 @@ expression_atom
     ;
 
 function_call
-    : function_name LPAREN (STAR | expression_list_)? RPAREN
+    : function_name LPAREN (STAR | expression_list_)? RPAREN over_clause?
     ;
 
 function_name
@@ -327,6 +327,10 @@ function_name
     | MAX
     | MIN
     | AVG
+    ;
+
+over_clause
+    : OVER LPAREN (PARTITION BY expression_list_)? order_by_clause? RPAREN
     ;
 
 case_expression
@@ -347,7 +351,7 @@ loose_token
     | FIRST | NEXT | ROWS | ONLY | INSERT | INTO | VALUES | UPDATE | SET | DELETE | MERGE | USING
     | WHEN | MATCHED | THEN | CREATE | ALTER | PROCEDURE | FUNCTION | RETURNS | RETURN | TRIGGER | AFTER | BEGIN | TABLE | INDEX | UNIQUE | CLUSTERED | NONCLUSTERED
     | CONSTRAINT | FOREIGN | KEY | REFERENCES | PRIMARY | NULL | IDENTITY | DEFAULT | CASE | WHEN
-    | ELSE | END | IS | CAST | COUNT | SUM | MAX | MIN | AVG | ID | BRACKET_ID | DOUBLE_QUOTE_ID
+    | ELSE | END | IS | CAST | COUNT | SUM | MAX | MIN | AVG | OVER | PARTITION | ID | BRACKET_ID | DOUBLE_QUOTE_ID
     | LOCAL_ID | TEMP_ID | DECIMAL_LITERAL | STRING | COMMA | DOT | STAR | EQ | PLUS | MINUS
     | DIVIDE | PERCENT | LT | GT | LE | GE | NEQ | OTHER
     ;
@@ -434,6 +438,8 @@ SUM: 'SUM';
 MAX: 'MAX';
 MIN: 'MIN';
 AVG: 'AVG';
+OVER: 'OVER';
+PARTITION: 'PARTITION';
 
 BRACKET_ID: '[' (~']' | ']]')+ ']';
 DOUBLE_QUOTE_ID: '"' (~'"' | '""')+ '"';

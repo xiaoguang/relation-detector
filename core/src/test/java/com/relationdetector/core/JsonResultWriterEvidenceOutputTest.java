@@ -58,6 +58,8 @@ class JsonResultWriterEvidenceOutputTest {
         JsonNode root = readTree(json);
 
         JsonNode relation = root.path("relationships").get(0);
+        assertTrue(root.path("summary").path("relationshipObservationCount").asInt() == 2,
+                "Debug summary should count relationship raw observations");
         assertTrue(relation.path("rawEvidence").size() == 2,
                 "JSON should expose the original uncompressed evidence");
         assertTrue(relation.path("evidence").isArray(),
@@ -115,6 +117,8 @@ class JsonResultWriterEvidenceOutputTest {
 
         assertTrue(root.path("summary").path("dataLineageCount").asInt() == 1,
                 "Summary should count one merged lineage");
+        assertTrue(root.path("summary").path("dataLineageObservationCount").asInt() == 2,
+                "Debug summary should count lineage raw observations");
         assertTrue(root.path("dataLineages").get(0).path("rawEvidence").size() == 2,
                 "Lineage rawEvidence should keep both observations as JSON nodes");
         assertTrue(root.path("dataLineages").get(0).path("evidence").get(0).path("attributes").path("count").asInt() == 2,
@@ -238,6 +242,37 @@ class JsonResultWriterEvidenceOutputTest {
                 "Grouped naming evidence should list bounded sample details");
         assertTrue(root.path("namingEvidence").size() == 1,
                 "Only one top-level namingEvidence item should be emitted for the same endpoint/rule");
+    }
+
+    @Test
+    void canDisableDebugObservationCounts() {
+        RelationshipCandidate first = sqlLogJoin("line 10: o.user_id = u.id");
+        RelationshipCandidate second = sqlLogJoin("line 38: o.user_id = u.id");
+        DataLineageCandidate lineage = new DataLineageMerger()
+                .merge(List.of(aggregateLineage("line 10: SUM(p.amount)"),
+                        aggregateLineage("line 42: SUM(p.amount)")))
+                .get(0);
+        Endpoint source = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id"));
+        Endpoint target = Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id"));
+
+        ScanResult result = new ScanResult("mysql", "public");
+        result.relationships().add(new RelationshipMerger()
+                .merge(List.of(first, second), 0.0d)
+                .get(0));
+        result.dataLineages().add(lineage);
+        result.namingEvidence().add(namingEvidence(source, target, "line 10: orders.customer_id = customers.id"));
+
+        String json = new JsonResultWriter().write(result, true, true, false);
+        JsonNode summary = readTree(json).path("summary");
+
+        assertTrue(summary.path("relationshipObservationCount").isMissingNode(),
+                "Debug relationship observation count should be configurable");
+        assertTrue(summary.path("dataLineageObservationCount").isMissingNode(),
+                "Debug lineage observation count should be configurable");
+        assertTrue(summary.path("namingEvidenceObservationCount").isMissingNode(),
+                "Debug naming observation count should be configurable");
+        assertTrue(summary.path("relationshipCount").asInt() == 1,
+                "Stable fact counts should remain available when debug counts are disabled");
     }
 
     private RelationshipCandidate sqlLogJoin(String detail) {

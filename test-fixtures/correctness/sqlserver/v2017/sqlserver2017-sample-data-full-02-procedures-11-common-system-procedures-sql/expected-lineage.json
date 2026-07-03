@@ -1,5 +1,15 @@
 {
   "fingerprints": [
+    "VALUE:COALESCE:dbo.accounts.id->cashier_journals.account_id",
+    "VALUE:COALESCE:dbo.accounts.id->reconciliations.account_id",
+    "VALUE:COALESCE:dbo.employees.id->cashier_journals.cashier_id",
+    "VALUE:COALESCE:dbo.employees.id->reconciliations.prepared_by",
+    "VALUE:COALESCE:dbo.employees.id->reconciliations.reviewed_by",
+    "VALUE:COALESCE:dbo.employees.id->salary_payments.employee_id",
+    "VALUE:COALESCE:dbo.reconciliations.id->reconciliation_items.reconciliation_id",
+    "VALUE:COALESCE:dbo.vouchers.id->cashier_journals.voucher_id",
+    "VALUE:COALESCE:dbo.vouchers.id->salary_payments.voucher_id",
+    "VALUE:COALESCE:dbo.vouchers.id->settlements.voucher_id",
     "VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id",
     "VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id",
     "VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id",

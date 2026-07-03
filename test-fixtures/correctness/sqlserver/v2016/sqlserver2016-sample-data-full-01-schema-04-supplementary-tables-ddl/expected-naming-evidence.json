@@ -1,0 +1,13 @@
+{
+  "fingerprints": [
+    "naming:contract_milestones.contract_id->contracts.id:TABLE_ID:NAMING_MATCH",
+    "naming:promotion_products.promotion_id->promotions.id:TABLE_ID:NAMING_MATCH",
+    "naming:promotion_usages.promotion_id->promotions.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_commissions.settlement_id->settlements.id:TABLE_ID:NAMING_MATCH",
+    "naming:settlement_items.settlement_id->settlements.id:TABLE_ID:NAMING_MATCH",
+    "naming:shipping_tracks.shipment_id->shipments.id:TABLE_ID:NAMING_MATCH",
+    "naming:three_way_matching.invoice_id->invoices.id:TABLE_ID:NAMING_MATCH",
+    "naming:work_order_materials.work_order_id->work_orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:work_orders.bom_id->boms.id:TABLE_ID:NAMING_MATCH"
+  ]
+}

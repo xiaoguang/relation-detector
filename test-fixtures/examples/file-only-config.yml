@@ -43,3 +43,4 @@ output:
   minConfidence: 0.20
   includeEvidence: true
   includeWarnings: true
+  includeObservationCounts: true

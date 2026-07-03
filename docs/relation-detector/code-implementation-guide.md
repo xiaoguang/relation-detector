@@ -31,10 +31,10 @@ relation-detector/
 - SQL/DML relationship 抽取，包括 JOIN、comma rowset、EXISTS、IN/tuple IN、CTE/derived 回溯、列级/表级共现、自连接弱共现，以及 MySQL/PostgreSQL 多表 DML；Oracle 当前覆盖 portable typed subset。
 - Data Lineage v1，包括 `UPDATE SET`、`INSERT SELECT`、基础 `MERGE`、projection alias、derived aggregate、CASE/control flow、COALESCE、算术、函数和 CUMULATIVE transform。
 - 关系证据合并和置信度计算。
-- JSON/table 输出。
+- JSON/table 输出，以及 top-level `namingEvidence` 命名证据池。
 - file-only 示例配置和输入数据。
 
-当前 CLI/YAML/JSON 仍采用轻量手写实现，以保持核心链路可读、依赖边界清晰；测试体系已经以 JUnit 5 为主，并用各 parser 自己的 correctness fixture、CLI E2E golden 和语义单测保护 SQL/DDL 行为。后续可按模块引入 picocli、Jackson、AssertJ、Testcontainers 等工程化增强，但不能改变 relationship / Data Lineage JSON schema 或 confidence 语义。
+当前 CLI 参数解析仍是轻量实现；YAML 配置读取已经由 `SimpleYamlConfigLoader` 内部使用 Jackson `YAMLMapper` 完成，JSON 输出已经由 `JsonResultWriter` 使用 Jackson `ObjectMapper` 完成。测试体系以 JUnit 5 为主，并用各 parser 自己的 correctness fixture、CLI E2E golden 和语义单测保护 SQL/DDL 行为。后续可按模块引入 picocli、AssertJ、Testcontainers 等工程化增强，但不能改变 relationship / Data Lineage / naming evidence JSON schema 或 confidence 语义。
 
 ## 2. 模块说明
 
@@ -49,6 +49,7 @@ relation-detector/
 - `contracts/model/DataLineageCandidate.java`
 - `contracts/model/DataLineageEvidence.java`
 - `contracts/model/Evidence.java`
+- `contracts/model/NamingEvidenceCandidate.java`
 - `contracts/model/TableId.java`
 - `contracts/model/ColumnRef.java`
 - `contracts/model/Endpoint.java`
@@ -59,7 +60,7 @@ relation-detector/
 
 - 定义第三方数据库 adaptor 必须遵守的接口。
 - 定义 JSON 输出和内部模型使用的 enum。
-- 定义 evidence、warning、metadata snapshot、SQL statement 等跨模块类型。
+- 定义 relationship、Data Lineage、naming evidence、warning、metadata snapshot、SQL statement 等跨模块类型。
 
 设计对应：
 
@@ -81,7 +82,11 @@ relation-detector/
 - `scan/ScanConfig.java`
 - `scan/ScanResult.java`
 - `relation/RelationshipMerger.java`
+- `relation/NamingEvidenceExtractor.java`
+- `relation/NamingEvidenceMerger.java`
+- `relation/NamingMatchEvidenceEnhancer.java`
 - `lineage/TokenEventDataLineageExtractor.java`
+- `lineage/ProjectionTraceResolver.java`
 - `lineage/DataLineageMerger.java`
 - `scoring/ConfidenceCalculator.java`
 - `diagnostics/DiagnosticWarnings.java`
@@ -89,7 +94,6 @@ relation-detector/
 - `tokenevent/TokenEventStructuredDdlParser.java`
 - `tokenevent/TokenEventStructuredSqlParser.java`
 - `relation/TokenEventRelationExtractor.java`
-- `lineage/SqlLineageResolver.java`
 - `parser/DdlRelationParserRunner.java`
 - `parser/SqlRelationParserRunner.java`
 - `output/JsonResultWriter.java`
@@ -103,6 +107,7 @@ relation-detector/
 - 编排扫描流程。
 - 调用 adaptor 的 metadata、DDL、object、log、profile 钩子。
 - 合并多个来源产生的关系候选。
+- 抽取、合并并输出 top-level naming evidence 证据池。
 - 计算最终 confidence。
 - 输出 JSON/table。
 
@@ -138,18 +143,19 @@ relation-detector/
 - `SqlGrammarProfile` / `SqlGrammarProfileRegistry` / `FullGrammerDialectModule` 是版本化 full-grammer 接入点。当前注册 `mysql-5.7`、`mysql-8.0`、`postgresql-16`、`postgresql-17`、`postgresql-18`、`oracle-12c`、`oracle-19c`、`oracle-21c`、`oracle-26ai` module；人工配置 `parser.grammarProfile` 优先，其次可用 `parser.databaseVersion` 或 JDBC `DatabaseMetaData` 选择 profile。同一 major 的 minor 默认复用该 major profile；如果请求版本只比最高已支持版本高 1 个 major，可以临时选择最近低版本 profile 并返回 diagnostic；超过 1 个 major 或没有方言/版本信息时，回退 token-event parser。
 - `FullGrammerParserBundleFactory` / `FullGrammerTokenEventStructuredSqlParser` 是版本化 full-grammer 接入基础设施。`mysql-5.7`、`mysql-8.0` 与 PostgreSQL full-grammer 已接入 versioned ANTLR `.g4`；MySQL 使用固定 grammars-v4 MySQL 快照，`mysql-5.7` 以 MySQL 5.7 官方文档在 grammar 层收紧 8.0-only 能力。PostgreSQL 的官方 `gram.y` / `scan.l` / keywords 是语法 source-of-truth，仓库 `.g4` 是从固定 grammars-v4 基础生成并按 major version 约束的 ANTLR projection。具体实现分别位于 `adaptor-mysql` 的 `com.relationdetector.mysql.fullgrammer.v5_7` / `v8_0` 和 `adaptor-postgres` 的 `com.relationdetector.postgres.fullgrammer.v16` / `v17` / `v18`。Oracle 当前位于 `adaptor-oracle` 的 `com.relationdetector.oracle.fullgrammer.v12c` / `v19c` / `v21c` / `v26ai`，状态为 `INCOMPLETE_VERSIONED`：四个 profile 各自运行本版本 split lexer/parser、generated parser 和 typed visitor，并通过 Oracle sample-data、profile smoke 与 version-only fixture 锁定首批边界；它尚不是官方 SQL/PLSQL Reference 的完整转换。Oracle full-grammer 不桥接 token-event，也不使用旧桥接生成的 golden。MySQL 5.7 / 8.0 分别通过 `test-fixtures/correctness/mysql/v5_7` 和 `test-fixtures/correctness/mysql/v8_0` 独立 version golden 锁定；PostgreSQL 16/17/18 通过独立 `.g4`、parser package、profile 与 versioned correctness fixture 锁定选择路径和版本专属语法；Oracle 12c/19c/21c/26ai 通过 sample-data fixture 和官方版本边界 fixture 锁定 generated parser 接线，但不声称已覆盖 Oracle 官方全部语法。低版本 profile 遇到已编码的高版本专属语法会产生 grammar syntax error，不能静默复用更高版本能力。版本由 package 表达，类名保持无版本数字；core 只通过 `ServiceLoader<FullGrammerDialectModule>` 查找 module，不按 `profile.id()` switch 分发，也不直接 import adaptor 类。新增大版本时注册新的 adaptor module 和 fixture。full-grammer parser 调用真实 entry rule 后进入 parse-tree visitor；relationship、lineage、confidence、JSON schema 仍由现有 semantic extractor/merger 决定。
 - `FullGrammerGeneratedParserSmokeTest` 验证 MySQL/PostgreSQL full-grammer generated lexer/parser 可实例化并解析基础 SQL；Oracle adaptor 由 `OracleAdaptorParserTest` 和 `OracleParserArchitectureTest` 验证 ServiceLoader、Oracle token-event grammar、`INCOMPLETE_VERSIONED` full-grammer generated parser attributes、“不得持有 token-event delegate”和 Oracle SQL 资产卫生边界。full-grammer 行为测试只验证具体 SQL/DDL 的关系、血缘、warning 行为；不再把内部事件来源标签作为默认测试目标，也不再用 token-event baseline 兜底验证 full-grammer。后续 profile 深化 parse-tree visitor 后，missing 必须修 visitor，extra 进入审核，不自动写入 golden。
-- `TokenEventRelationExtractor` 从 `ROWSET_REFERENCE` / `PREDICATE_EQUALITY` / `JOIN_USING_COLUMNS` / `EXISTS_PREDICATE` / `IN_SUBQUERY_PREDICATE` / `TUPLE_IN_SUBQUERY_PREDICATE` 等事件独立构造 FK-like/CO_OCCURRENCE 候选，并复用 `SqlLineageResolver` 做保守 CTE/派生表列回溯。公共 extractor 只保留跨方言关系语义；MySQL/PostgreSQL/Oracle 专属 rowset keyword、rowset modifier、CTE modifier 和多表 DML rowset 识别必须通过对应方言 `.g4` 与 typed visitor 实现。明确列等值时保留具体语法 evidence：JOIN / comma join 为 `SQL_LOG_JOIN`，correlated `EXISTS` 为 `SQL_LOG_EXISTS`，`IN (SELECT ...)` / tuple IN 为 `SQL_LOG_SUBQUERY_IN`。同一物理表 self-join 在不同 SQL alias 下保留 role co-occurrence，并在 attributes 记录 alias；同 alias 行内比较不输出。没有列端点时才输出表级 `SQL_LOG_TABLE_CO_OCCURRENCE`。PostgreSQL `ONLY`、`TABLESAMPLE`、`ROWS FROM`、`JOIN USING (...) AS alias` 这类语法必须配套 MySQL/Oracle 负向测试，防止被其他方言当作物理表或共现证据；MySQL `STRAIGHT_JOIN`、ODBC `{ OJ ... }`、optimizer hints、`PARTITION (...)`、`JSON_TABLE(...)`、multi-table `UPDATE/DELETE` 这类语法也必须配套 Postgres/Oracle 负向测试，防止被误抽为关系。
+- `TokenEventRelationExtractor` 从 `ROWSET_REFERENCE` / `PREDICATE_EQUALITY` / `JOIN_USING_COLUMNS` / `EXISTS_PREDICATE` / `IN_SUBQUERY_PREDICATE` / `TUPLE_IN_SUBQUERY_PREDICATE` 等事件独立构造 FK-like/CO_OCCURRENCE 候选，并使用结构化 projection trace 信息把 CTE / 派生表端点回溯到物理列。公共 extractor 只保留跨方言关系语义；MySQL/PostgreSQL/Oracle/SQL Server 专属 rowset keyword、rowset modifier、CTE modifier 和多表 DML rowset 识别必须通过对应方言 `.g4` 与 typed visitor 实现。明确列等值时保留具体语法 evidence：JOIN / comma join 为 `SQL_LOG_JOIN`，correlated `EXISTS` 为 `SQL_LOG_EXISTS`，`IN (SELECT ...)` / tuple IN 为 `SQL_LOG_SUBQUERY_IN`。同一物理表 self-join 在不同 SQL alias 下保留 role co-occurrence，并在 attributes 记录 alias；同 alias 行内比较不输出。没有列端点时才输出表级 `SQL_LOG_TABLE_CO_OCCURRENCE`。PostgreSQL `ONLY`、`TABLESAMPLE`、`ROWS FROM`、`JOIN USING (...) AS alias` 这类语法必须配套其他方言负向测试，防止被当作物理表或共现证据；MySQL `STRAIGHT_JOIN`、ODBC `{ OJ ... }`、optimizer hints、`PARTITION (...)`、`JSON_TABLE(...)`、multi-table `UPDATE/DELETE` 这类语法也必须配套其他方言负向测试，防止被误抽为关系。
 - `correlated EXISTS` 是公共 SQL 关系语义，新增或维护这类能力时，公共层只能处理跨方言相关谓词抽取，例如 `WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = o.user_id)` 生成 `SQL_LOG_EXISTS` evidence。EXISTS 子查询内部如果出现 MySQL/PostgreSQL/Oracle 专属 rowset、function table、hint、`ONLY`、`JSON_TABLE`、`CONNECT BY` 等语法，必须下沉到对应方言 visitor，并配套反向负向测试。
-- SQL-only predicate 不能只靠“出现了 JOIN”直接定向成 FK-like。普通 JOIN、EXISTS、IN 和 tuple IN 都先证明列级谓词存在；如果 DDL/metadata/data-profile 在同一端点上提供方向，metadata/DDL index facts 证明一侧 unique、一侧 non-unique，或 `NamingMatchEvidenceEnhancer` 在这个已有 SQL 谓词上给出唯一 `_id/id` 方向提示，`RelationshipMerger` 才把关系定向为 FK-like。无法判断方向时保留 `CO_OCCURRENCE`。`NAMING_MATCH` 不能凭空创建 relation，也不能参与 SQL 结构判断；它只读取已解析 endpoint 的 table/column 名。
+- SQL-only predicate 不能只靠“出现了 JOIN”直接定向成 FK-like。普通 JOIN、EXISTS、IN 和 tuple IN 都先证明列级谓词存在；如果 DDL/metadata/data-profile 在同一端点上提供方向，metadata/DDL index facts 证明一侧 unique、一侧 non-unique，或 `NamingMatchEvidenceEnhancer` 从 top-level `namingEvidence` 池里命中唯一 `_id/id` 方向提示，`RelationshipMerger` 才把关系定向为 FK-like。无法判断方向时保留 `CO_OCCURRENCE`。`NAMING_MATCH` 不能凭空创建 relation，也不能参与 SQL 结构判断；relationship 只能消费已经抽取出的 `namingEvidence`，不能自己重新计算命名规则。
 - `TokenEventRelationExtractor` 消费结构事件并负责跨方言关系语义，不应重新承载数据库专属 rowset scanner。新增或修改方言 rowset/DDL 兼容逻辑必须进入对应 token-event typed grammar/visitor，并同时补 correctness fixture、更新 `docs/design/relation-detector/phase-06-parser-enhancement.md`。
 - `SqlLogNoiseFilter` 在 `SqlRelationParserRunner` 之前过滤 native log 噪声。默认按数据库类型过滤系统 catalog 查询，并允许 YAML 通过 `sources.logs.filterSystemQueries`、`sources.logs.systemSchemas`、`sources.logs.metadataQueryMarkers` 覆盖。
 - `TokenEventStructuredDdlParser`、`MySqlTokenEventStructuredDdlParser`、`PostgresTokenEventStructuredDdlParser` 通过 typed DDL grammar context 输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 事件；`DdlRelationExtractionVisitor` 独立把这些事件转换成 DDL FK-like 关系，并用 source index / target unique evidence 增强关系。DDL relationship 结构判断不依赖 DDL cursor/scanner、regex 或名字白名单。
-- `SqlLineageResolver` 为 relationship extractor 和 Data Lineage extractor 提供保守列来源映射，支持 CTE、派生表、多层嵌套查询、PostgreSQL data-modifying CTE `DELETE ... RETURNING`，以及简单 LATERAL/correlated derived table 中的外层列投影回溯。它消费结构事件，不重新充当 SQL parser。裸列投影（例如 `SELECT user_id FROM orders`）只有在事件作用域和 fixture 覆盖证明安全时才回溯；复杂表达式的完整多源字段血缘由 `TokenEventDataLineageExtractor` 输出。新增类似能力必须先说明方言和 SQL 形态边界，并配 correctness fixture。
-- `NamingMatchEvidenceEnhancer` 位于 metadata evidence 增强之后、relationship merge 之前。它只处理已经存在的列级 SQL predicate candidate，支持 `TABLE_ID`、`ID_SUFFIX_TO_ID`、`SELF_ROLE_ID` 三类方向提示，并在 evidence attributes 中写入 `namingRule`、`suggestedSourceEndpoint`、`suggestedTargetEndpoint`、`matchedColumn`、`matchedTable`、`directionHint=true`。两侧都命中或方向不唯一时不生成 `NAMING_MATCH`。
-- `TokenEventDataLineageExtractor` 是正式 Data Lineage v1 输出链路，独立于 `TokenEventRelationExtractor`。它从 token-event 结构事件中抽取 `UPDATE SET`、`INSERT INTO ... SELECT` 和基础 `MERGE UPDATE/INSERT` 的 `table.column -> table.column` 字段血缘，跳过参数、JSON path、字面量和局部变量。`DataLineageCandidate.confidence` 只解释血缘可信度，不参与 relationship confidence。
-- `DataLineageMerger` 只按 `sources + target + flowKind + transformType` 去重字段血缘；不要把它接入 `RelationshipMerger`。
+- `ProjectionTraceResolver` 为 Data Lineage 写入映射提供保守列来源回溯，支持 CTE、派生表、多层嵌套 projection alias 和结构化表达式来源。它消费 `StructuredSqlEvent`，不重新解析 SQL 文本，也不保留 regex / token span fallback。裸列投影（例如 `SELECT user_id FROM orders`）只有在事件作用域和 fixture 覆盖证明安全时才回溯；复杂表达式的完整多源字段血缘由 `TokenEventDataLineageExtractor` 通过 `ExpressionSourceSet`、`AssignmentMapping`、`ProjectionTrace` 输出。新增类似能力必须先说明方言和 SQL 形态边界，并配 correctness fixture。
+- `NamingEvidenceExtractor` 位于 metadata / DDL / SQL predicate 解析之后，负责生成唯一的 top-level `namingEvidence` 证据池。它可以从 metadata columns、DDL column inventory 和已有 SQL predicate candidate 中抽取 `TABLE_ID`、`ID_SUFFIX_TO_ID`、`SELF_ROLE_ID` 三类 name-only hint，但不能生成 relationship。
+- `NamingMatchEvidenceEnhancer` 位于 naming evidence 抽取之后、relationship merge 之前。它只查询 top-level `namingEvidence` 池，并在命中已有列级 SQL predicate candidate 时给 relationship 挂轻量 `NAMING_MATCH` evidence：attributes 包含 `evidenceRef`、`namingRule`、`suggestedSourceEndpoint`、`suggestedTargetEndpoint`、`matchedColumn`、`matchedTable`、`directionHint=true`。relationship 内不重复 raw naming observations。
+- `TokenEventDataLineageExtractor` 是正式 Data Lineage v1 输出链路，独立于 `TokenEventRelationExtractor`。它从 token-event / full-grammer 结构事件中抽取 `UPDATE SET`、`INSERT INTO ... SELECT` 和基础 `MERGE UPDATE/INSERT` 的 `table.column -> table.column` 字段血缘，跳过参数、JSON path、字面量和局部变量。`DataLineageCandidate.confidence` 只解释血缘可信度，不参与 relationship confidence。
+- `DataLineageMerger` 只按 `sources + target + flowKind + transformType` 去重字段血缘，并与 relationship / naming evidence 一样保留 `rawEvidence` 与 grouped `evidence` 双层模型；不要把它接入 `RelationshipMerger`。
 - `mysql.tokenevent.MySqlTokenEventStructuredDdlParser` / `postgres.tokenevent.PostgresTokenEventStructuredDdlParser` 是 adaptor DDL 入口，内部共享 token-event DDL event pipeline。数据库私有 DDL 写法应进入对应方言 `.g4` 和 typed visitor，不应回流为一个跨库万能 parser。
-- `JsonResultWriter` 当前手写 JSON，后续可替换为 Jackson，但字段结构应保持兼容。
+- `JsonResultWriter` 使用 Jackson `ObjectMapper` 输出稳定 JSON。顶层包含 `relationships`、`dataLineages`、`namingEvidence`、`warnings`；relationship / lineage / naming evidence 都使用 `rawEvidence` + grouped `evidence` 双层结构，`NAMING_MATCH` 在 relationship 里只保存 `evidenceRef` 和轻量摘要。`relationshipObservationCount`、`dataLineageObservationCount`、`namingEvidenceObservationCount` 是可通过 `output.includeObservationCounts` 关闭的调试字段，只统计 raw observation 数量，不参与 confidence 或事实判断。
 - `DiagnosticWarnings` 集中构造解析/提取失败 warning。`ScanEngine`、DDL parser、log extractor 不应各自拼装不同格式；失败时应保留 `exceptionClass`，并在能拿到输入文本时把原始 SQL/DDL 放入 `attributes.rawStatement`。full-grammer profile 选不中时由 parser selection 层 fallback 到 token-event；full-grammer 或 token-event 已选中后的硬失败只影响当前 statement/source，不回退旧 parser，也不混合另一条 parser 的事件。
 - core 根包不再放生产 Java 类。公共能力按职责分到 `scan`、`parser`、`relation`、`lineage`、`ddl`、`tokenevent`、`fullgrammer`、`parse`、`output`、`diagnostics`、`metadata`、`log`、`scoring` 等子包。新增公共类时必须先判断职责归属，不能重新平铺到 `com.relationdetector.core`。
 
@@ -164,7 +170,7 @@ relation-detector/
 职责：
 
 - 解析命令行参数。
-- 读取 YAML 配置。
+- 使用 Jackson YAML 读取配置。
 - 通过 Java SPI 加载 adaptor。
 - 调用 `ScanEngine`。
 - 将结果写到 stdout 或文件。
@@ -177,8 +183,7 @@ relation-detector/
 
 维护注意：
 
-- `SimpleYamlConfigLoader` 只支持示例配置所需的 YAML 子集。
-- 生产化时建议替换为 Jackson YAML。
+- `SimpleYamlConfigLoader` 保留历史类名，内部使用 Jackson `YAMLMapper` 读取配置，并保持旧配置语义：未知 key 忽略、环境变量解析、`paths/include` 展开、旧 parser 配置拒绝、默认值和校验逻辑。
 - `AdaptorRegistry` 同时支持 classpath 内置 adaptor 和 `--plugin-dir` 外部 jar。
 
 ### 2.4 adaptor-mysql
@@ -567,9 +572,9 @@ sources:
   - `EvidenceType` 正确，例如 SQL typed parser 的 `SQL_LOG_JOIN`、`SQL_LOG_EXISTS`、`SQL_LOG_SUBQUERY_IN`，以及 DDL/metadata 方向证据 `DDL_FOREIGN_KEY`、`METADATA_FOREIGN_KEY`。
   - `EvidenceSourceType` 正确，例如 `NATIVE_LOG`、`PLAIN_SQL`、`DATABASE_OBJECT`。
   - `attributes.joinKind` 正确，例如 `LEFT_JOIN`、`RIGHT_JOIN`、`FULL_JOIN`。
-  - 加入 `TARGET_UNIQUE`、`VALUE_CONTAINMENT_HIGH`、`NAMING_MATCH` 后 confidence 与公式一致。`NAMING_MATCH` 只能附着在已有 SQL predicate candidate 上；测试要同时覆盖“SQL predicate + 命名方向可定向”和“只有命名不能创建关系”。
+  - 加入 `TARGET_UNIQUE`、`VALUE_CONTAINMENT_HIGH`、relationship 引用的 top-level `namingEvidence` 后 confidence 与公式一致。`NAMING_MATCH` 只能通过 `evidenceRef` 引用命名证据池；测试要同时覆盖“SQL predicate + 命名方向可定向”和“只有命名不能创建关系”。
 - correctness fixture：
-- `CorrectnessFixtureRunnerTest` 扫描 `test-fixtures/correctness`，以 `expected-relations.json` 中的当前 parser gold fingerprints 为关系正确性基线；如果 fixture 存在 `expected-lineage.json`，还会比对 Data Lineage fingerprints。默认 `mvn test` 只跑 `smoke` profile 的少量代表 fixture；日常开发按受影响方言显式传 `-DcorrectnessFixtureProfile=common|mysql|postgres|oracle`，合并前传 `-DcorrectnessFixtureProfile=full` 跑全量。root baseline fixture 显式走 token-event；`mysql/v5_7|v8_0`、`postgres/v16|v17|v18`、`oracle/v12c|v19c|v21c|v26ai` 版本目录显式走 full-grammer。full-grammer 不再通过 token-event 对照兜底；版本化 golden 直接暴露对应 parser 的 missing / extra。
+- `CorrectnessFixtureRunnerTest` 扫描 `test-fixtures/correctness`，以 `expected-relations.json` 中的当前 parser gold fingerprints 为关系正确性基线；如果 fixture 存在 `expected-lineage.json` 和 `expected-naming-evidence.json`，还会比对 Data Lineage 和 naming evidence fingerprints。默认 `mvn test` 只跑 `smoke` profile 的少量代表 fixture；日常开发按受影响方言显式传 `-DcorrectnessFixtureProfile=common|mysql|postgres|oracle|sqlserver`，合并前传 `-DcorrectnessFixtureProfile=full` 跑全量。root baseline fixture 显式走 token-event；`mysql/v5_7|v8_0`、`postgres/v16|v17|v18`、`oracle/v12c|v19c|v21c|v26ai`、`sqlserver/v2016|v2017|v2019|v2022|v2025` 版本目录显式走 full-grammer。full-grammer 不再通过 token-event 对照兜底；版本化 golden 直接暴露对应 parser 的 missing / extra。
   - correctness runner 在非 golden 更新模式下按 fixture 并行执行，默认并行度为 CPU 数和 8 的较小值，可用 `-DcorrectnessFixtureParallelism=N` 调整。`-DupdateCorrectnessGold=true` 时强制串行，保证 golden 文件写入稳定。
   - correctness、CLI E2E 和手工 SQL 分析前必须先跑 `mvn clean -pl cli -am -DskipTests test-compile` 与 `scripts/check-no-jls-bad-classes.sh`，确保测试源码可编译且 `target/classes` 没有 JLS/Eclipse 占位坏 class。`package -Dmaven.test.skip=true` 只能作为生成运行 jar/classpath 的临时步骤，不能替代主线验收。
   - `CliEndToEndGoldenTest` 从 YAML/CLI 参数进入 `Main.MainCommand`、adaptor registry、`ScanEngine`、parser runner、merger 和 JSON writer，并复用现有 fixture golden 比对 CLI JSON 中的 relationship / Data Lineage fingerprints。这是完整系统链路的黑盒正确性测试，不另建重复 golden。
@@ -676,7 +681,7 @@ PostgreSQL：
 ## 6. 后续演进建议
 
 - 引入 picocli 替换手写 CLI 参数解析。
-- 引入 Jackson YAML/JSON 替换轻量解析和手写 JSON。
+- YAML/JSON 已经使用 Jackson；后续如需演进，应优先补配置 schema 校验、错误定位和 CLI help，而不是再替换输出实现。
 - 按 `SqlGrammarProfile` 继续引入 MySQL/PostgreSQL/Oracle 大版本 full-grammer module。新增 profile 必须补 profile selection 和独立 versioned fixture；无方言、无版本信息、unsupported version 或 full-grammer hard failure 时仍使用 token-event fallback。Oracle 后续优先补 更广泛的 Oracle 官方语法覆盖，扩大当前 `INCOMPLETE_VERSIONED` generated parser 覆盖面。
 - 在现有 JUnit 5 基础上引入 AssertJ、Testcontainers 做更强断言和真实数据库集成测试。
 - 增加 Maven assembly/shade 打包，生成单个可执行发行包。

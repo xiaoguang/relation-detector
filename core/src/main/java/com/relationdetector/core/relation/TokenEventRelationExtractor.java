@@ -319,6 +319,10 @@ public final class TokenEventRelationExtractor {
             addIgnored(ignored, table);
         }
         for (StructuredSqlEvent event : events) {
+            if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET) {
+                addIgnored(ignored, text(event, "name"));
+                continue;
+            }
             if (event.type() == StructuredParseEventType.IGNORED_ROWSET
                     || event.type() == StructuredParseEventType.CTE_DECLARATION
                     || event.type() == StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION) {

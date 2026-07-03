@@ -24,30 +24,30 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 
 ## 当前 Golden 统计
 
-统计口径：按 `expected-relations.json` / `expected-lineage.json` 的 `fingerprints` 数量计算，不按 JSON 顶层字段数计算。
+统计口径：Relationship / Lineage 分别按 `expected-relations.json` / `expected-lineage.json` 的 `fingerprints` 数量计算；`Rel NAMING_MATCH` 是 relationship evidence 中引用的命名证据数量；`Top-level namingEvidence` 来自 `expected-naming-evidence.json`，表示独立命名证据池。
 
-| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 1194 | 981 / 213 | 18016 | 5630 | 25 | 7503 |
-| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 223 |
-| MySQL root token-event | 83 | 65 / 18 | 655 | 296 | 0 | 266 |
-| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 300 |
-| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 458 |
-| PostgreSQL root token-event | 111 | 92 / 19 | 1401 | 332 | 0 | 394 |
-| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 419 |
-| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 420 |
-| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 419 |
-| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 |
-| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| SQL Server root token-event | 38 | 32 / 6 | 711 | 257 | 0 | 313 |
-| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
-| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
-| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
-| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
-| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
+| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 全部 correctness | 1194 | 981 / 213 | 18016 | 5630 | 25 | 7503 | 52375 |
+| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 223 | 45095 |
+| MySQL root token-event | 83 | 65 / 18 | 655 | 296 | 0 | 266 | 266 |
+| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 300 | 300 |
+| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 458 | 458 |
+| PostgreSQL root token-event | 111 | 92 / 19 | 1401 | 332 | 0 | 394 | 394 |
+| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 419 | 419 |
+| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 420 | 420 |
+| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 419 | 419 |
+| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 | 255 |
+| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 | 289 |
+| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
+| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
+| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
+| SQL Server root token-event | 38 | 32 / 6 | 711 | 257 | 0 | 313 | 313 |
+| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
 
 ## 当前默认策略
 
@@ -100,18 +100,21 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 
 | 测试类 | 主要分类 | 说明 |
 | --- | --- | --- |
-| `CorrectnessFixtureRunnerTest` | DDL / SQL / warning | 扫描 `test-fixtures/correctness`，按 manifest/config 执行当前 selected parser 并比对 golden；默认 `mvn test` 只跑 `smoke` profile，日常传 `-DcorrectnessFixtureProfile=common|mysql|postgres|oracle` 跑受影响方言，合并前传 `-DcorrectnessFixtureProfile=full` 跑全量 |
-| `CliEndToEndGoldenTest` | CLI / end-to-end / golden | JVM 内调用 CLI，从 YAML/CLI 参数进入 adaptor、ScanEngine、parser、merger、JSON writer，并复用现有 fixture golden 比对 relationship / Data Lineage |
-| `DataLineageAuditGeneratorTest` | Data Lineage / audit | 扫描全部 correctness fixture，生成 `docs/parser-audit/data-lineage-full-audit.md`，固定已有 lineage golden 数量、候选 fingerprints 和“不适用/待审核”原因；默认测试跳过，显式 `-DrunGeneratedReportTests=true` 才做验收，显式 `-DupdateDataLineageAudit=true` 才刷新 |
-| `DialectSqlAssetHygieneTest` | SQL 资产卫生 / 方言边界 | 扫描 `sample-data/mysql|postgres|oracle|sqlserver` 和对应 correctness SQL，阻止明显跨方言残留进入测试资产；每个方言使用独立 forbidden pattern，避免把 MySQL `LIMIT`、PostgreSQL `LANGUAGE plpgsql`、SQL Server `RETURNS TABLE` 等合法语法误判 |
-| `ParserConfigRemovalTest` | 配置 / warning | YAML 和 CLI 拒绝已移除 parser mode/fallback 配置，同时验证 SQL log filter 配置解析 |
-| `DdlRelationParserRunnerTest` | DDL primary / warning | DDL runner 只调用 structured DDL parser，空结果不被旧 parser 替换 |
+| `CorrectnessFixtureRunnerTest` | DDL / SQL / warning / naming evidence | 扫描 `test-fixtures/correctness`，按 manifest/config 执行当前 selected parser，并比对 `expected-relations.json`、`expected-lineage.json`、`expected-diagnostics.json`、`expected-naming-evidence.json`；默认 `mvn test` 只跑 `smoke` profile，合并前传 `-DcorrectnessFixtureProfile=full -DcorrectnessFixtureParallelism=8` 跑全量 |
+| `CorrectnessNamingEvidenceGoldenTest` | naming evidence golden | 验证 relationship 中的 `NAMING_MATCH.evidenceRef` 能在 top-level `namingEvidence.id` 中找到，并防止 relationship 本地重新发明命名证据 |
+| `CliEndToEndGoldenTest` | CLI / end-to-end / golden | JVM 内调用 CLI，从 Jackson YAML 配置和 CLI 参数进入 adaptor、ScanEngine、parser、merger、Jackson JSON writer，并复用现有 fixture golden 比对 relationship / Data Lineage / naming evidence |
+| `CorrectnessSummaryGeneratorTest` | generated report | 生成 `docs/generated/correctness-test-summary.md`；默认跳过，显式 `-DrunGeneratedReportTests=true` 才验收，显式 `-DupdateCorrectnessSummary=true` 才刷新 |
+| `DataLineageAuditGeneratorTest` | Data Lineage / audit | 扫描全部 correctness fixture，生成 `docs/parser-audit/data-lineage-full-audit.md`；默认跳过，显式 `-DrunGeneratedReportTests=true` 才验收，显式 `-DupdateDataLineageAudit=true` 才刷新 |
+| `DialectSqlAssetHygieneTest` | SQL 资产卫生 / 方言边界 | 扫描 `sample-data/mysql|postgres|oracle|sqlserver` 和对应 correctness SQL，阻止明显跨方言残留进入测试资产；每个方言使用独立 forbidden pattern |
+| `ParserConfigRemovalTest` | 配置 / warning | Jackson YAML loader 与 CLI 拒绝已移除 parser mode/fallback 配置，同时验证 SQL log filter、paths/include、环境变量和 parser 配置解析 |
+| `DdlRelationParserRunnerTest` | DDL primary / warning | DDL runner 只调用 selected structured DDL parser，空结果不被旧 parser 替换 |
 | `SqlRelationParserRunnerTest` | SQL parser mode / warning | SQL runner 按 `parser.mode` 选择 full-grammer 或 token-event fallback，SQL log filter 仍生效 |
 | `DdlRelationExtractionVisitorIndependenceTest` | DDL primary | DDL token-event 抽取不能委托旧 simple 实现 |
-| `TokenEventRelationEventsTest` | SQL primary / token-event relation + lineage | 验证 token-event 公共 relation、rowset/scope、DML 深水区和 Data Lineage：`JOIN USING`、raw equality、correlated `EXISTS`、scalar/tuple `IN`、列级弱共现、CTE/temp/trigger scope、MySQL multi-table `DELETE`、PostgreSQL `UPDATE FROM`、`UPDATE SET`、derived aggregate、`INSERT SELECT`、`MERGE` |
-| `DialectSqlRelationParserComplexMatrixTest` | SQL primary / token-event | 复杂 JOIN/CTE/DML 方言场景直接跑 MySQL/PostgreSQL token-event parser；SQL Server token-event 的 sample-data 覆盖主要由 correctness fixture 验收 |
+| `CommonTokenEventStructuredSqlParserTest` / `TokenEventStructuredSqlParserTest` | common token-event | 验证 common portable typed grammar、rowset/predicate/write mapping 和 DDL/SQL 结构事件 |
+| `ProjectionTraceResolverTest` | Data Lineage / projection trace | 验证 CTE、derived table、projection alias、表达式来源和字段写入映射都通过结构化 `ProjectionTrace`，不使用 SQL 文本 regex/token span fallback |
+| `VisitorThreadSafetyTest` | parser state / 并发稳定性 | 并行解析同一批 SQL，验证 visitor/collector per-parse state 不泄漏 |
+| `NamingEvidenceExtractorTest` / `NamingMatchEvidenceEnhancerTest` | naming evidence | 验证 top-level naming evidence 池、relationship `evidenceRef` 引用和“不从 relationship 里本地重算 NAMING_MATCH”的边界 |
 | `DialectParserEvidenceConfidenceTest` | SQL primary / token-event / confidence | evidence type/source type、confidence 示例；验证 JOIN / correlated EXISTS / IN 子查询分别保留 `SQL_LOG_JOIN`、`SQL_LOG_EXISTS`、`SQL_LOG_SUBQUERY_IN`，且 SQL evidence 需要结合 unique/metadata/profile 或 `NAMING_MATCH` 方向提示才决定 FK-like 方向 |
-| `TokenEventSqlNoiseAndUsingTest` | SQL primary / token-event / noise filter | 系统 schema、截断 token、JOIN USING 防误报 |
 | `SqlParserAdditionalSourceTypesTest` | SQL primary / token-event / warning diagnostics | view/procedure/trigger/function/rule/event/package/migration 等 source type 行为 |
 | `ScanEngineDiagnosticsTest` | warning diagnostics | parse failure、raw SQL/DDL warning 保留 |
 | `ScanEngineObjectWarningProvenanceTest` | warning diagnostics | routine/object warning provenance 字段 |
@@ -119,16 +122,20 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 | `MetadataEvidenceEnhancerTest` | metadata / confidence | TARGET_UNIQUE、SOURCE_INDEX、COLUMN_TYPE_COMPATIBLE 增强 |
 | `RelationshipMergerEvidenceAggregationTest` | confidence | raw/aggregated evidence、递减增益和上限 |
 | `ConfidenceScoringExamplesTest` | SQL primary / token-event / confidence | 置信度公式示例回归；SQL/DDL 解析型示例走 token-event，纯表级共现示例手工构造 evidence 测评分 |
-| `JsonResultWriterEvidenceOutputTest` | output | 输出 raw/aggregated evidence 结构 |
-| `TokenEventDataLineageExtractorTest` | Data Lineage / token-event | UPDATE SET、PostgreSQL UPDATE FROM、INSERT SELECT、MERGE、聚合 derived、CASE control、显式临时表过滤、字面量/函数跳过 |
+| `JsonResultWriterEvidenceOutputTest` | output | Jackson JSON 输出 raw/aggregated evidence 结构、top-level `namingEvidence` 和 `includeEvidence=false` 行为 |
 | `MySqlMetadataCollectorFactsTest` | metadata | MySQL catalog facts：table/column/index/constraint |
 | `MySqlDatabaseDdlCollectorTest` | DDL primary / metadata | MySQL `SHOW CREATE TABLE` 数据库内 DDL source |
 | `MySqlDdlParserTest` | DDL primary | MySQL DDL parser 方言行为 |
 | `MySqlTokenEventDialectBoundaryTest` | SQL primary / DDL primary / 方言边界 | MySQL adaptor parser selection/wiring 和 MySQL-only 语法隔离 |
 | `MySqlTokenEventParserSelectionTest` | SQL primary / token-event / 方言边界 | MySQL production parser 使用 MySQL lexer/parser 和 `MySqlTokenEventParseTreeVisitor` |
+| `MySqlTokenEventProcedureRelationBehaviorTest` | MySQL routine / token-event | MySQL procedure body 中的 relationship / lineage 行为 |
+| `MySql57FullGrammerVersionBoundaryTest` / `MySqlFullGrammerGeneratedParserSmokeTest` / `MySqlFullGrammerExpressionAnalyzerTest` | MySQL full-grammer | MySQL 5.7/8.0 generated parser、版本边界和 expression analyzer 行为 |
 | `PostgresDdlParserTest` | DDL primary | Postgres DDL parser 方言行为 |
 | `PostgresTokenEventDialectBoundaryTest` | SQL primary / DDL primary / 方言边界 | Postgres adaptor parser selection/wiring 和 Postgres-only 语法隔离 |
 | `PostgresTokenEventParserSelectionTest` | SQL primary / token-event / 方言边界 | PostgreSQL production parser 使用 PostgreSQL lexer/parser 和 `PostgresTokenEventParseTreeVisitor` |
+| `PostgresFullGrammerVersionBoundaryTest` / `PostgresFullGrammerGeneratedParserSmokeTest` / `PostgresFullGrammerExpressionAnalyzerTest` | PostgreSQL full-grammer | PostgreSQL 16/17/18 generated parser、版本边界和 expression analyzer 行为 |
+| `OracleAdaptorParserTest` / `OracleParserArchitectureTest` / `OracleDatabaseDdlCollectorTest` / `OracleRoutineScopeTest` | Oracle adaptor | Oracle token-event/full-grammer 独立性、ServiceLoader、DDL collector 和 routine scope policy |
+| `SqlServerTokenEventParserTest` / `SqlServerParserArchitectureTest` / `SqlServerDatabaseDdlCollectorTest` | SQL Server adaptor | SQL Server token-event/full-grammer 独立性、T-SQL parser smoke 和 live DDL collector |
 | `PostgresBasicCorrectnessFixtureExporterTest` | real fixture / security | Postgres exporter case 命名、匿名化、secret 不落盘 |
 
 ## Correctness Fixture 分类
@@ -189,7 +196,7 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 | SQL Server SQL 是否可 primary | sample-data 覆盖 | 已有 SQL Server adaptor、root token-event baseline 和 `sqlserver/2016|2017|2019|2022|2025` versioned full-grammer sample-data golden；当前 sample-data 为 2016-compatible 保守 T-SQL 子集，官方逐版本语法边界仍需补强 |
 | warning/diagnostics 链路是否有保护 | 有 | runner、diagnostics、object provenance、dynamic SQL warning、parser failure warning 均有测试 |
 | metadata 增强是否有保护 | 有 | MySQL metadata facts、database DDL collector、metadata evidence enhancer 测试覆盖 |
-| confidence 是否有保护 | 有 | confidence examples、evidence aggregation、dialect parser evidence/confidence 测试覆盖；SQL-only predicate 保留 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN` 等具体 evidence，方向由 DDL/metadata/data-profile、unique-vs-nonunique evidence 或附着在已有 SQL predicate 上的 `NAMING_MATCH` 方向提示提供 |
+| confidence 是否有保护 | 有 | confidence examples、evidence aggregation、dialect parser evidence/confidence 测试覆盖；SQL-only predicate 保留 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN` 等具体 evidence，方向由 DDL/metadata/data-profile、unique-vs-nonunique evidence 或 relationship 引用的 top-level `namingEvidence` 方向提示提供 |
 | noise filter 是否有保护 | 有 | MySQL system log fixture、token-event USING/noise 单元测试覆盖 |
 | full-grammer 是否覆盖 SQL fixture | 是 | `CorrectnessFixtureRunnerTest` 直接扫描 `mysql/v5_7`、`mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`；full-grammer 漏识别会在自身 versioned golden 中失败 |
 | full-grammer 是否覆盖 DDL fixture | 是 | `CorrectnessFixtureRunnerTest` 直接扫描 versioned DDL fixture；不再使用 token-event DDL baseline 做 cross-parser 保护 |

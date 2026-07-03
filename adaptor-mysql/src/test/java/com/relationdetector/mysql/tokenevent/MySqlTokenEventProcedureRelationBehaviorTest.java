@@ -9,12 +9,14 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
+import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
@@ -204,6 +206,44 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
     }
 
     @Test
+    void workOrderInsertSelectCarriesBomAndWorkOrderLineage() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO work_order_materials (
+                    work_order_id, product_id, required_qty, issued_qty, actual_consumed, unit, status
+                )
+                SELECT
+                    wo.id,
+                    b.child_product_id,
+                    b.quantity * wo.planned_quantity,
+                    b.quantity * wo.completed_quantity * 1.1,
+                    b.quantity * wo.completed_quantity,
+                    b.unit,
+                    IF(wo.status = 'completed', 'completed', 'issued')
+                FROM work_orders wo
+                JOIN boms b ON wo.bom_id = b.id;
+                """, StatementSourceType.PLAIN_SQL, "mysql-work-order-materials.sql", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new TokenEventDataLineageExtractor()
+                .extract(statement, structured)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertEquals(List.of(
+                "CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status",
+                "VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed",
+                "VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty",
+                "VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty",
+                "VALUE:DIRECT:boms.child_product_id->work_order_materials.product_id",
+                "VALUE:DIRECT:boms.unit->work_order_materials.unit",
+                "VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id"), fingerprints,
+                () -> "BOM/work order INSERT SELECT should keep direct, arithmetic, and IF expression sources: "
+                        + structured.events());
+    }
+
+    @Test
     void scalarAggregateSubqueryCarriesThroughUpdateExpressionLineage() {
         SqlStatementRecord statement = new SqlStatementRecord("""
                 UPDATE warehouse_inventory wi, order_items oi
@@ -227,6 +267,88 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 "VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost"),
                 fingerprints,
                 () -> "Scalar aggregate subquery should remain a physical aggregate source: " + structured.events());
+    }
+
+    @Test
+    void supplierMetricScalarSubqueriesAreValidAggregateLineage() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                UPDATE supplier_products sp
+                SET
+                    total_order_count = (
+                        SELECT COUNT(DISTINCT po.id)
+                        FROM purchase_order_items poi
+                        JOIN purchase_orders po ON poi.order_id = po.id
+                        WHERE poi.product_id = sp.product_id AND po.supplier_id = sp.supplier_id
+                    ),
+                    total_order_qty = (
+                        SELECT COALESCE(SUM(poi.received_qty), 0)
+                        FROM purchase_order_items poi
+                        JOIN purchase_orders po ON poi.order_id = po.id
+                        WHERE poi.product_id = sp.product_id AND po.supplier_id = sp.supplier_id
+                    ),
+                    last_order_date = (
+                        SELECT MAX(po.order_date)
+                        FROM purchase_order_items poi
+                        JOIN purchase_orders po ON poi.order_id = po.id
+                        WHERE poi.product_id = sp.product_id AND po.supplier_id = sp.supplier_id
+                    );
+                """, StatementSourceType.PROCEDURE, "ROUTINE:erp_system.sp_update_supplier_metrics", 1, 1,
+                Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new TokenEventDataLineageExtractor()
+                .extract(statement, structured)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains(
+                        "VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count"),
+                () -> "COUNT(DISTINCT po.id) is valid aggregate lineage, not a false positive: "
+                        + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty"),
+                () -> "SUM(poi.received_qty) is valid aggregate lineage, not a false positive: "
+                        + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                       "VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date"),
+               () -> "MAX(po.order_date) is valid aggregate lineage, not a false positive: "
+                       + fingerprints + " events=" + structured.events());
+    }
+
+    @Test
+    void cancelledOrderInventoryRestoreQuantityIsValidLineageSource() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO inventory_transactions (product_id, batch_id, warehouse_id,
+                    transaction_type, quantity_change, before_qty, after_qty,
+                    reference_type, reference_id, operator_id, remark)
+                SELECT
+                    soi.product_id, soi.batch_id, NEW.warehouse_id,
+                    'return_in', soi.quantity,
+                    COALESCE((SELECT quantity FROM inventory WHERE product_id = soi.product_id), 0),
+                    COALESCE((SELECT quantity FROM inventory WHERE product_id = soi.product_id), 0) + soi.quantity,
+                    'sales_order', NEW.id, NEW.salesperson_id,
+                    CONCAT('restore: ', NEW.order_no)
+                FROM sales_order_items soi
+                WHERE soi.order_id = NEW.id;
+                """, StatementSourceType.TRIGGER, "TRIGGER:trg_sales_order_delivered", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new TokenEventDataLineageExtractor()
+                .extract(statement, structured, Set.of(
+                        TableId.of(null, "inventory"),
+                        TableId.of(null, "inventory_transactions"),
+                        TableId.of(null, "sales_order_items")))
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains(
+                        "VALUE:COALESCE:sales_order_items.quantity->inventory_transactions.after_qty"),
+                () -> "soi.quantity in COALESCE(...) + soi.quantity is a valid source for after_qty, not a false positive: "
+                        + fingerprints + " events=" + structured.events());
     }
 
     @Test
@@ -281,6 +403,44 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                         "VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date"),
                 () -> "Full routine block should keep derived supplier lead time lineage: " + fingerprints
                         + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "VALUE:DIRECT:production_plans.id->mrp_runs.plan_id"),
+                () -> "Full routine block should keep first INSERT SELECT direct plan lineage: " + fingerprints
+                        + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no"),
+                () -> "Full routine block should keep CONCAT/REPLACE/DATE_FORMAT run number lineage: " + fingerprints
+                        + " events=" + structured.events());
+    }
+
+    @Test
+    void sampleSemanticDimensionProcedureKeepsUnionAndDuplicateKeyLineage() throws Exception {
+        String sql = objectBlock(
+                workspaceRoot().resolve("sample-data/mysql/8.0/02-procedures/13-erp-deep-scenario-procedures.sql"),
+                "ROUTINE:erp_system.sp_refresh_semantic_dimensions");
+        SqlStatementRecord statement = new SqlStatementRecord(sql, StatementSourceType.PROCEDURE,
+                "ROUTINE:erp_system.sp_refresh_semantic_dimensions", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new TokenEventDataLineageExtractor()
+                .extract(statement, structured)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains(
+                        "VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date"),
+                () -> "SELECT DISTINCT over a derived UNION rowset should expose fiscal calendar lineage: "
+                        + fingerprints + " attrs=" + structured.attributes() + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "VALUE:DIRECT:product_categories.id->category_dim.source_category_id"),
+                () -> "INSERT SELECT ... ON DUPLICATE KEY UPDATE should still emit category dimension lineage: "
+                        + fingerprints + " attrs=" + structured.attributes() + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "CONTROL:CASE_WHEN:product_categories.id,product_categories.name->category_dim.level2_name"),
+                () -> "CASE expression lineage should survive ON DUPLICATE KEY UPDATE tails: "
+                        + fingerprints + " attrs=" + structured.attributes() + " events=" + structured.events());
     }
 
     @Test

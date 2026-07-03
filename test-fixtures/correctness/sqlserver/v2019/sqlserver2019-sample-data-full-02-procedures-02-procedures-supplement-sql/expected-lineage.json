@@ -1,5 +1,15 @@
 {
   "fingerprints": [
+    "VALUE:COALESCE:dbo.employees.id->employee_roles.employee_id",
+    "VALUE:COALESCE:dbo.employees.id->warehouses.manager_id",
+    "VALUE:COALESCE:dbo.permissions.id->role_permissions.permission_id",
+    "VALUE:COALESCE:dbo.product_categories.id->product_categories.parent_id",
+    "VALUE:COALESCE:dbo.product_categories.id->products.category_id",
+    "VALUE:COALESCE:dbo.products.id->product_batches.product_id",
+    "VALUE:COALESCE:dbo.products.id->supplier_products.product_id",
+    "VALUE:COALESCE:dbo.roles.id->employee_roles.role_id",
+    "VALUE:COALESCE:dbo.suppliers.id->product_batches.supplier_id",
+    "VALUE:COALESCE:dbo.suppliers.id->supplier_products.supplier_id",
     "VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id",
     "VALUE:DIRECT:dbo.employees.id->warehouses.manager_id",
     "VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id",

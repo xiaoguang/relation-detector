@@ -1,13 +1,5 @@
 {
-  "fingerprints": [
-    "VALUE:DIRECT:inserted.department_id->audit_log.target_id",
-    "VALUE:DIRECT:inserted.employee_id->audit_log.target_id",
-    "VALUE:DIRECT:inserted.manager_id->audit_log.target_id",
-    "VALUE:DIRECT:inserted.parent_id->audit_log.target_id",
-    "VALUE:DIRECT:inserted.permission_id->audit_log.target_id",
-    "VALUE:DIRECT:inserted.position_id->audit_log.target_id",
-    "VALUE:DIRECT:inserted.role_id->audit_log.target_id"
-  ],
+  "fingerprints": [],
   "forbiddenSources": [],
   "forbiddenTargets": [],
   "warningCodes": {}

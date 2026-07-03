@@ -63,7 +63,8 @@ public final class Main {
                 var result = new ScanEngine().scan(config, adaptor);
                 String rendered = config.outputFormat == OutputFormat.TABLE
                         ? new TableResultWriter().write(result)
-                        : new JsonResultWriter().write(result, config.includeEvidence, config.includeWarnings);
+                        : new JsonResultWriter().write(result, config.includeEvidence, config.includeWarnings,
+                                config.includeObservationCounts);
                 if (cli.output == null) {
                     System.out.print(rendered);
                 } else {

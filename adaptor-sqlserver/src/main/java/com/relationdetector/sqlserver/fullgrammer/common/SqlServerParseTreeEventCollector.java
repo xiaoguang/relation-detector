@@ -63,7 +63,9 @@ public final class SqlServerParseTreeEventCollector {
             case "insert_statement" -> visitInsert(ctx);
             case "update_statement" -> visitUpdate(ctx);
             case "merge_statement" -> visitMerge(ctx);
+            case "create_or_alter_dml_trigger" -> visitDmlTrigger(ctx);
             case "create_table" -> visitCreateTable(ctx);
+            case "alter_table" -> visitAlterTable(ctx);
             case "create_index" -> visitCreateIndex(ctx);
             default -> visitChildren(ctx);
         }
@@ -264,6 +266,13 @@ public final class SqlServerParseTreeEventCollector {
         visitChildren(ctx);
     }
 
+    private void visitDmlTrigger(ParserRuleContext ctx) {
+        String targetTable = firstDirectText(ctx, "table_name").orElse("");
+        sqlSink.triggerPseudoRowset(ctx, "inserted", targetTable);
+        sqlSink.triggerPseudoRowset(ctx, "deleted", targetTable);
+        visitChildren(ctx);
+    }
+
     private void emitUpdateElement(ParserRuleContext element, String targetTable, boolean merge) {
         List<ParserRuleContext> columns = directChildren(element, "full_column_name");
         List<ParserRuleContext> expressions = directChildren(element, "expression");
@@ -289,6 +298,7 @@ public final class SqlServerParseTreeEventCollector {
             if (columnName.isBlank()) {
                 continue;
             }
+            ddlBuilder.addColumn(baseName(table), columnName, line(column));
             if (containsDirectKeyword(column, "PRIMARY") || containsDirectKeyword(column, "UNIQUE")) {
                 ddlBuilder.addIndex(baseName(table), columnName, "TARGET_UNIQUE", "INLINE_CONSTRAINT", line(column));
             }
@@ -324,6 +334,21 @@ public final class SqlServerParseTreeEventCollector {
                         .forEach(column -> ddlBuilder.addIndex(baseName(table), column, "TARGET_UNIQUE", "TABLE_CONSTRAINT", line(constraint)));
             }
         }
+    }
+
+    private void visitAlterTable(ParserRuleContext ctx) {
+        String table = firstDirectText(ctx, "table_name").orElse("");
+        if (table.isBlank() || isLocalTemp(table)) {
+            visitChildren(ctx);
+            return;
+        }
+        for (ParserRuleContext column : descendants(ctx, "column_definition")) {
+            String columnName = firstDirectText(column, "id_").orElse("");
+            if (!columnName.isBlank()) {
+                ddlBuilder.addColumn(baseName(table), columnName, line(column));
+            }
+        }
+        visitChildren(ctx);
     }
 
     private void visitCreateIndex(ParserRuleContext ctx) {

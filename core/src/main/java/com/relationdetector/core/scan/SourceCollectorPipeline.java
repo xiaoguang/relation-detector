@@ -16,10 +16,12 @@ import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
+import com.relationdetector.core.log.ObjectSqlFileExtractor;
 import com.relationdetector.core.log.PlainSqlLogExtractor;
 
 final class SourceCollectorPipeline {
     private final PlainSqlLogExtractor plainExtractor = new PlainSqlLogExtractor();
+    private final ObjectSqlFileExtractor objectExtractor = new ObjectSqlFileExtractor();
     private final StatementParsePipeline statementParser;
 
     SourceCollectorPipeline(StatementParsePipeline statementParser) {
@@ -84,7 +86,8 @@ final class SourceCollectorPipeline {
             ctx.result.sources().add("object-files");
             Set<TableId> fileKnownPhysicalTables = statementParser.knownPhysicalTables(ctx.metadataSnapshot);
             for (Path file : ctx.config.objectFiles) {
-                plainExtractor.extract(file, StatementSourceType.PROCEDURE, ctx.result.warnings()::add)
+                objectExtractor.extract(file, StatementSourceType.PROCEDURE, ctx.config.databaseType,
+                                ctx.result.warnings()::add)
                         .forEach(statement -> ctx.relationshipCandidates.addAll(statementParser.parseStatement(
                                 ctx.adaptor, ctx.config, statement, ctx.adaptorContext, ctx.result,
                                 ctx.lineageCandidates, fileKnownPhysicalTables)));

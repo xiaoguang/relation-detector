@@ -66,7 +66,11 @@ controlStartStatement
     ;
 
 selectStatement
-    : withClause? querySpecification
+    : withClause? querySpecification unionSelect*
+    ;
+
+unionSelect
+    : UNION selectModifier* querySpecification
     ;
 
 withClause
@@ -83,6 +87,7 @@ querySpecification
 
 selectModifier
     : STRAIGHT_JOIN
+    | DISTINCT
     ;
 
 selectList
@@ -91,6 +96,7 @@ selectList
 
 selectItem
     : STAR
+    | booleanSelectExpression (AS? identifier)?
     | expression (AS? identifier)?
     | selectItemFallback (AS? identifier)?
     ;
@@ -182,7 +188,16 @@ limitClause
     ;
 
 insertSelectStatement
-    : INSERT INTO qualifiedName LPAREN identifierList RPAREN selectStatement
+    : INSERT INTO qualifiedName LPAREN identifierList RPAREN selectStatement onDuplicateKeyUpdateClause?
+    ;
+
+onDuplicateKeyUpdateClause
+    : ON DUPLICATE KEY UPDATE onDuplicateKeyUpdateToken+
+    ;
+
+onDuplicateKeyUpdateToken
+    : LPAREN onDuplicateKeyUpdateToken* RPAREN
+    | ~SEMI
     ;
 
 updateStatement
@@ -392,6 +407,16 @@ predicate
     | expression                                                          # expressionPredicate
     ;
 
+booleanSelectExpression
+    : booleanSelectExpression AND booleanSelectExpression                 # selectAndBoolean
+    | booleanSelectExpression OR booleanSelectExpression                  # selectOrBoolean
+    | NOT booleanSelectExpression                                         # selectNotBoolean
+    | expression IS NOT? NULL                                             # selectIsNullBoolean
+    | expression likeOperator expression (ESCAPE expression)?             # selectLikeBoolean
+    | expression comparisonOperator expression                            # selectComparisonBoolean
+    | LPAREN booleanSelectExpression RPAREN                               # selectParenBoolean
+    ;
+
 likeOperator
     : LIKE
     | NOT LIKE
@@ -411,6 +436,7 @@ expression
     : expression arithmeticOperator expression                            # binaryExpression
     | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
     | INTERVAL expression identifier                                      # intervalExpression
+    | IF LPAREN predicate COMMA expression COMMA expression RPAREN        # ifExpression
     | functionCall                                                        # functionExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
     | qualifiedName                                                       # columnExpression
@@ -460,6 +486,7 @@ qualifiedName
 identifier
     : IDENTIFIER
     | QUOTED_IDENTIFIER
+    | REPLACE
     ;
 
 literal
@@ -474,7 +501,7 @@ literal
 sqlToken
     : SELECT | WITH | AS | FROM | JOIN | STRAIGHT_JOIN | ON | INNER | LEFT | RIGHT | FULL
     | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE
-    | USING | GROUP | BY | HAVING | ORDER | LIMIT | INSERT | INTO | UPDATE
+    | USING | GROUP | BY | HAVING | ORDER | LIMIT | UNION | INSERT | INTO | UPDATE
     | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE | DO
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE
@@ -516,10 +543,12 @@ BY: B Y;
 HAVING: H A V I N G;
 ORDER: O R D E R;
 LIMIT: L I M I T;
+UNION: U N I O N;
 INSERT: I N S E R T;
 INTO: I N T O;
 UPDATE: U P D A T E;
 SET: S E T;
+DUPLICATE: D U P L I C A T E;
 DELETE: D E L E T E;
 CREATE: C R E A T E;
 ALTER: A L T E R;

@@ -55,6 +55,21 @@ public final class OracleDdlEventVisitorCore {
         core.add(StructuredParseEventType.DDL_INDEX, ctx, attrs);
     }
 
+    public static void addColumnEvent(
+            OracleSqlEventVisitorCore core,
+            ParserRuleContext ctx,
+            String table,
+            String column
+    ) {
+        if (table.isBlank() || column.isBlank()) {
+            return;
+        }
+        Map<String, Object> attrs = core.attrs();
+        attrs.put("table", table);
+        attrs.put("column", core.baseName(column));
+        core.add(StructuredParseEventType.DDL_COLUMN, ctx, attrs);
+    }
+
     public static List<StructuredSqlEvent> ddlEvents(List<StructuredSqlEvent> events) {
         return events.stream()
                 .filter(event -> event.type().name().startsWith("DDL_"))

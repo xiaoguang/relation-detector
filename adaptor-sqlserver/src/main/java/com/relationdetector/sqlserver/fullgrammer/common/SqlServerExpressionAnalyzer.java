@@ -11,4 +11,8 @@ import com.relationdetector.core.fullgrammer.FullGrammerExpressionAnalyzer;
  * trees without reading raw SQL text.</p>
  */
 public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnalyzer {
+    @Override
+    protected boolean isCoalesceFunction(String value) {
+        return super.isCoalesceFunction(value) || "isnull".equals(value);
+    }
 }

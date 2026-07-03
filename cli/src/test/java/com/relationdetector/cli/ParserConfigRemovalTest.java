@@ -242,6 +242,7 @@ class ParserConfigRemovalTest {
                   minConfidence: 0.42
                   includeEvidence: false
                   includeWarnings: true
+                  includeObservationCounts: false
                   ignoredFutureKey:
                     nested: value
                 """);
@@ -258,6 +259,7 @@ class ParserConfigRemovalTest {
         assertEquals(0.42d, config.minConfidence);
         assertEquals(false, config.includeEvidence);
         assertEquals(true, config.includeWarnings);
+        assertEquals(false, config.includeObservationCounts);
     }
 
     @Test

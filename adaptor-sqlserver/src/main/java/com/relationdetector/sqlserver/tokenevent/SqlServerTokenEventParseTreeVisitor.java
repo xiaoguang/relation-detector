@@ -294,6 +294,15 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
     }
 
     @Override
+    public Void visitCreate_or_alter_trigger(SqlServerRelationSqlParser.Create_or_alter_triggerContext ctx) {
+        List<SqlServerRelationSqlParser.Full_table_nameContext> names = ctx.full_table_name();
+        String targetTable = names.size() < 2 ? "" : qualifiedName(names.get(1));
+        emitTriggerPseudoRowset(ctx, "inserted", targetTable);
+        emitTriggerPseudoRowset(ctx, "deleted", targetTable);
+        return visitChildren(ctx);
+    }
+
+    @Override
     public Void visitCreate_table(SqlServerRelationSqlParser.Create_tableContext ctx) {
         String table = baseName(qualifiedName(ctx.table_name().full_table_name()));
         ddlTables.push(table);
@@ -453,6 +462,13 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
             attrs.put("mappingKind", "MERGE_INSERT");
             add(StructuredParseEventType.MERGE_WRITE_MAPPING, values.get(index), attrs);
         }
+    }
+
+    private void emitTriggerPseudoRowset(ParserRuleContext ctx, String name, String targetTable) {
+        Map<String, Object> attrs = attrs();
+        attrs.put("name", name);
+        attrs.put("targetTable", clean(targetTable));
+        add(StructuredParseEventType.TRIGGER_PSEUDO_ROWSET, ctx, attrs);
     }
 
     private ColumnRead singleSelectColumn(SqlServerRelationSqlParser.Select_statementContext select) {

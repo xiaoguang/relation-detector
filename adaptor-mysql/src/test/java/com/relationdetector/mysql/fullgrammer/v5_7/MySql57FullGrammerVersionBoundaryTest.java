@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.core.fullgrammer.FullGrammerDialectModule;
 import com.relationdetector.core.fullgrammer.SqlGrammarProfile;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
@@ -46,6 +47,24 @@ class MySql57FullGrammerVersionBoundaryTest {
                 .map(relation -> endpointPair(relation.source().displayName(), relation.target().displayName()))
                 .collect(Collectors.toSet());
         assertTrue(relations.contains(endpointPair("orders.customer_id", "customers.id")), relations::toString);
+    }
+
+    @Test
+    void structuredDdlEmitsColumnInventoryForNamingEvidence() {
+        var result = module.structuredDdlParser().parseDdl("""
+                CREATE TABLE orders (
+                  id BIGINT PRIMARY KEY,
+                  customer_id BIGINT,
+                  CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(id)
+                ) ENGINE=InnoDB;
+                """, "mysql57-ddl-column-inventory.sql", null);
+
+        assertTrue(result.events().stream().anyMatch(event ->
+                        event.type() == StructuredParseEventType.DDL_COLUMN
+                                && "orders".equals(event.attributes().get("table"))
+                                && "customer_id".equals(event.attributes().get("column"))),
+                () -> "MySQL 5.7 full-grammer DDL should emit DDL_COLUMN inventory events: "
+                        + result.events());
     }
 
     @Test

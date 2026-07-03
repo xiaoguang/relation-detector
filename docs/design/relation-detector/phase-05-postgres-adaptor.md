@@ -126,23 +126,23 @@ PostgreSQL adaptor 负责：
   - 独立 `.g4`、generated lexer/parser package、version binding、dialect module；
   - typed visitor 只做“从该版本 grammar context 提取结构字段并交给 common core”的薄桥接；
   - 版本差异通过 version policy/hook 表达，例如 v18 temporal constraint 结构。
-- `postgres.fullgrammer.routine`
-  - 解析 full-grammer 已确认的 PL/pgSQL dollar-quoted routine body；
-  - 使用 full-grammer 本地 `PostgresFullGrammerRoutineBodySql.g4` 与 typed visitor；
-  - 不 import、不 new、不调用 `postgres.tokenevent` parser，避免 full-grammer 和 token-event 事件来源混用。
+- `postgres.routine`
+  - 解析已确认的 PL/pgSQL dollar-quoted routine body；
+  - 使用方言级 `PostgresRoutineBodySql.g4` 与 typed visitor；
+  - token-event 与 full-grammer 都可调用该 routine 层；它不 import、不 new、不调用 `postgres.tokenevent` parser，避免 full-grammer 和 token-event 事件来源混用。
 
 full-grammer module 由 `META-INF/services/com.relationdetector.core.fullgrammer.FullGrammerDialectModule` 注册。core 只按 profile 选择 module，不直接 import `v16`、`v17`、`v18` 类。
 
 ## PostgreSQL versioned correctness golden
 
-PostgreSQL 目前有四组 correctness 资产。当前统计以 `fingerprints` 字段为准，不按 JSON 顶层字段数统计：
+PostgreSQL 目前有四组 correctness 资产。当前统计以 `fingerprints` 字段为准；`Rel NAMING_MATCH` 是 relationship evidence 引用数，`Top-level namingEvidence` 是独立命名证据池数量。
 
 | 路径 | Fixture | Parser/profile | Fingerprints | 说明 |
 | --- | ---: | --- | ---: | --- |
-| `test-fixtures/correctness/postgres` | 100 | token-event baseline | relation 890 / lineage 52 / NAMING_MATCH 162 | 历史兼容基线，不移动到某个大版本目录。 |
-| `test-fixtures/correctness/postgres/v16` | 100 | `parserMode: full-grammer`, `grammarProfile: postgresql/16` | relation 1237 / lineage 68 / NAMING_MATCH 329 | PostgreSQL 16.x 严格语法 golden。 |
-| `test-fixtures/correctness/postgres/v17` | 102 | `parserMode: full-grammer`, `grammarProfile: postgresql/17` | relation 1240 / lineage 90 / NAMING_MATCH 330 | 加入 PostgreSQL 17 专属 SQL/JSON、`JSON_TABLE`、MERGE 扩展 fixture。 |
-| `test-fixtures/correctness/postgres/v18` | 103 | `parserMode: full-grammer`, `grammarProfile: postgresql/18` | relation 1240 / lineage 89 / NAMING_MATCH 329 | 加入 PostgreSQL 18 `RETURNING old/new`、virtual generated column、temporal constraint fixture。 |
+| `test-fixtures/correctness/postgres` | 111 | token-event baseline | relation 1401 / lineage 332 / Rel NAMING_MATCH 394 / top-level namingEvidence 394 | 历史兼容基线，不移动到某个大版本目录。 |
+| `test-fixtures/correctness/postgres/v16` | 111 | `parserMode: full-grammer`, `grammarProfile: postgresql/16` | relation 1474 / lineage 351 / Rel NAMING_MATCH 419 / top-level namingEvidence 419 | PostgreSQL 16.x 严格语法 golden。 |
+| `test-fixtures/correctness/postgres/v17` | 113 | `parserMode: full-grammer`, `grammarProfile: postgresql/17` | relation 1478 / lineage 364 / Rel NAMING_MATCH 420 / top-level namingEvidence 420 | 加入 PostgreSQL 17 专属 SQL/JSON、`JSON_TABLE`、MERGE 扩展 fixture。 |
+| `test-fixtures/correctness/postgres/v18` | 114 | `parserMode: full-grammer`, `grammarProfile: postgresql/18` | relation 1477 / lineage 362 / Rel NAMING_MATCH 419 / top-level namingEvidence 419 | 加入 PostgreSQL 18 `RETURNING old/new`、virtual generated column、temporal constraint fixture。 |
 
 每个版本目录都有自己的 `expected-relations.json` / `expected-lineage.json` / `expected-diagnostics.json`。版本目录不允许 silent fallback 到 token-event；profile 缺失、版本不匹配或 full-grammer hard failure 都应让对应 correctness 测试失败。
 

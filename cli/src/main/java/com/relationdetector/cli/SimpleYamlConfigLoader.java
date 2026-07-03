@@ -114,6 +114,7 @@ public final class SimpleYamlConfigLoader {
         setDoubleIfPresent(output, "minConfidence", value -> config.minConfidence = value);
         setBooleanIfPresent(output, "includeEvidence", value -> config.includeEvidence = value);
         setBooleanIfPresent(output, "includeWarnings", value -> config.includeWarnings = value);
+        setBooleanIfPresent(output, "includeObservationCounts", value -> config.includeObservationCounts = value);
     }
 
     private void readParser(ScanConfig config, JsonNode parser) {

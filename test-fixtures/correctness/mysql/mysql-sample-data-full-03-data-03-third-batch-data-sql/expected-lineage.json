@@ -1,12 +1,17 @@
 {
   "fingerprints": [
+    "VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date",
+    "VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount",
     "VALUE:ARITHMETIC:products.retail_price->price_change_logs.old_price",
     "VALUE:COALESCE:employees.manager_id->performance_reviews.reviewer_id",
     "VALUE:COALESCE:projects.start_date,projects.actual_end_date->project_costs.cost_date",
     "VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no",
+    "VALUE:CONCAT_FORMAT:products.sku->serial_numbers.serial_no",
     "VALUE:CONCAT_FORMAT:projects.name->project_costs.description",
+    "VALUE:DIRECT:contracts.id->contract_milestones.contract_id",
     "VALUE:DIRECT:employees.id->performance_reviews.employee_id",
     "VALUE:DIRECT:products.id->price_change_logs.product_id",
+    "VALUE:DIRECT:products.id->serial_numbers.product_id",
     "VALUE:DIRECT:products.retail_price->price_change_logs.new_price",
     "VALUE:DIRECT:projects.id->project_costs.project_id",
     "VALUE:DIRECT:purchase_orders.id->ap_aging_snapshots.order_id",

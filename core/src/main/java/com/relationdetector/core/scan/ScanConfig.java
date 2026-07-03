@@ -46,6 +46,7 @@ public final class ScanConfig {
     public double minConfidence = 0.30d;
     public boolean includeEvidence = true;
     public boolean includeWarnings = true;
+    public boolean includeObservationCounts = true;
     public String parserMode = "auto";
     public String grammarProfile = "";
     public String databaseVersion = "";

@@ -117,6 +117,7 @@ public final class OracleFullGrammerParseTreeEventCollector {
     private void visitColumnDefinition(ParserRuleContext ctx) {
         String table = currentDdlTable();
         String column = name(child(ctx, "column_name"));
+        OracleDdlEventVisitorCore.addColumnEvent(core, ctx, table, column);
         for (ParserRuleContext constraint : children(ctx, "inline_constraint")) {
             if (node(constraint, "PRIMARY") != null) {
                 addIndexEvent(table, column, "TARGET_UNIQUE", "INLINE_PRIMARY_KEY", constraint);

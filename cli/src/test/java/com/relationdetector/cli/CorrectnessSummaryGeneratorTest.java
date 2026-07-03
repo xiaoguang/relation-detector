@@ -22,7 +22,7 @@ class CorrectnessSummaryGeneratorTest {
         assertTrue(markdown.contains("| Total correctness fixtures | 1194 |"));
         assertTrue(markdown.contains("| SQL fixtures | 981 |"));
         assertTrue(markdown.contains("| DDL fixtures | 213 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 435 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 429 |"));
         assertTrue(markdown.contains("| MySQL directory fixtures | 261 |"));
         assertTrue(markdown.contains("| PostgreSQL directory fixtures | 449 |"));
         assertTrue(markdown.contains("| Oracle directory fixtures | 212 |"));

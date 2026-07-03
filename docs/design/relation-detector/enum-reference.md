@@ -109,10 +109,10 @@ public enum RelationSubType {
 | --- | --- | --- | --- | --- |
 | `DECLARED_FK` | `FK_LIKE` | 数据库元数据中明确存在外键。 | `METADATA_FOREIGN_KEY` | MySQL `information_schema` 显示 `orders.user_id` 引用 `users.id`。 |
 | `DDL_DECLARED_FK` | `FK_LIKE` | DDL 文件中明确声明外键。 | `DDL_FOREIGN_KEY` | `FOREIGN KEY (user_id) REFERENCES users(id)`。 |
-| `INFERRED_JOIN_FK` | `FK_LIKE` | JOIN / comma join 谓词加上足够方向证据后得到的推断 FK-like。方向证据可以来自 DDL/metadata/data-profile、“SQL 谓词 + 一侧 unique、一侧 non-unique”，或附着在该 SQL 谓词上的唯一 `NAMING_MATCH` 方向提示。 | `SQL_LOG_JOIN` + `TARGET_UNIQUE`、metadata/index facts、`NAMING_MATCH` | `JOIN users u ON o.user_id = u.id`；若 `users.id` unique，或命名提示唯一指向 `orders.user_id -> users.id`，则输出该方向。 |
-| `SUBQUERY_INFERRED_FK` | `FK_LIKE` | `IN` / `EXISTS` 谓词加上足够方向证据后得到的推断 FK-like。谓词 evidence 保留具体语法来源；命名只能作为已有谓词上的方向提示，不能单独创建关系。 | `SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` + unique/profile facts 或 `NAMING_MATCH` | `o.user_id IN (SELECT id FROM users)`；若 `users.id` unique 或命名方向唯一，则可推导 `orders.user_id -> users.id`。 |
+| `INFERRED_JOIN_FK` | `FK_LIKE` | JOIN / comma join 谓词加上足够方向证据后得到的推断 FK-like。方向证据可以来自 DDL/metadata/data-profile、“SQL 谓词 + 一侧 unique、一侧 non-unique”，或 top-level `namingEvidence` 中被该关系引用的唯一 `NAMING_MATCH` 方向提示。 | `SQL_LOG_JOIN` + `TARGET_UNIQUE`、metadata/index facts、`NAMING_MATCH` evidenceRef | `JOIN users u ON o.user_id = u.id`；若 `users.id` unique，或命名证据唯一指向 `orders.user_id -> users.id`，则输出该方向。 |
+| `SUBQUERY_INFERRED_FK` | `FK_LIKE` | `IN` / `EXISTS` 谓词加上足够方向证据后得到的推断 FK-like。谓词 evidence 保留具体语法来源；命名只能作为已有谓词上的方向提示，不能单独创建关系。 | `SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS` + unique/profile facts 或 `NAMING_MATCH` evidenceRef | `o.user_id IN (SELECT id FROM users)`；若 `users.id` unique 或命名方向唯一，则可推导 `orders.user_id -> users.id`。 |
 | `PROFILE_SUPPORTED_FK` | `FK_LIKE` | 数据画像强支持的推断关系。 | `VALUE_CONTAINMENT_HIGH`、`TARGET_UNIQUE` | 抽样发现 `orders.user_id` 99.5% 都存在于 `users.id`。 |
-| `NAMING_SUPPORTED_FK` | `FK_LIKE` | 命名方向启发式支持的 FK-like；当前实现通常保留 `INFERRED_JOIN_FK` / `SUBQUERY_INFERRED_FK` subtype，并用 `NAMING_MATCH` evidence 标明方向来源。 | 既有 SQL predicate evidence + `NAMING_MATCH` | `user_id` / `id` 这类名称必须先有 JOIN/EXISTS/IN 等 SQL 谓词候选，才能作为方向提示。 |
+| `NAMING_SUPPORTED_FK` | `FK_LIKE` | 命名方向启发式支持的 FK-like；当前实现通常保留 `INFERRED_JOIN_FK` / `SUBQUERY_INFERRED_FK` subtype，并用 `NAMING_MATCH` evidenceRef 标明方向来源。 | 既有 SQL predicate evidence + top-level `namingEvidence` 引用 | `user_id` / `id` 这类名称必须先进入命名证据池，并且同端点已有 JOIN/EXISTS/IN 等 SQL 谓词候选，才能作为方向提示。 |
 | `COLUMN_CO_OCCURRENCE` | `CO_OCCURRENCE` | SQL 给出明确列等值，但无法可靠判断 FK-like 方向。 | `SQL_LOG_COLUMN_CO_OCCURRENCE` | `warehouse_inventory.product_id = order_items.product_id`。 |
 | `TABLE_CO_OCCURRENCE` | `CO_OCCURRENCE` | 只能证明两个表共现，不能证明列级引用。 | `SQL_LOG_TABLE_CO_OCCURRENCE` | `FROM users, audit_logs` 且没有连接条件。 |
 
@@ -286,14 +286,14 @@ attributes.joinKind: IN_SUBQUERY
 
 | 值 | 含义 | 默认分 | 何时产生 |
 | --- | --- | ---: | --- |
-| `NAMING_MATCH` | 命名方向规则匹配。 | 0.20 | 只能附着在已有 SQL predicate candidate 上；attributes 包含 `namingRule`、`suggestedSourceEndpoint`、`suggestedTargetEndpoint`、`matchedColumn`、`matchedTable`、`directionHint=true`。 |
+| `NAMING_MATCH` | 命名方向规则匹配。 | 0.20 | 完整证据保存在 top-level `namingEvidence`；relationship 只能引用它。attributes 包含 `evidenceRef`、`namingRule`、`suggestedSourceEndpoint`、`suggestedTargetEndpoint`、`matchedColumn`、`matchedTable`、`directionHint=true`。 |
 | `VALUE_CONTAINMENT_HIGH` | source 值域高度包含于 target。 | 0.30 | 抽样包含率高于阈值。 |
 | `VALUE_OVERLAP_HIGH` | source 与 target 值重合率较高。 | 0.20 | 抽样重合率高于阈值。 |
 | `NEGATIVE_VALUE_MISMATCH` | 数据画像显示明显不匹配。 | -0.30 | 大量 source 值不在 target 中，或类型/基数明显不合理。 |
 
 维护说明：
 
-- `NAMING_MATCH` 不能单独生成关系；它只能给已有 SQL predicate candidate 加分，并在方向唯一时参与 FK-like 方向推导。
+- `NAMING_MATCH` 不能单独生成关系；它先作为 top-level naming evidence 进入证据池，relationship 只能通过 `evidenceRef` 引用它，并在方向唯一时参与 FK-like 方向推导。
 - `VALUE_CONTAINMENT_HIGH` 是强辅助证据，但仍受采样限制，detail 必须写明样本规模。
 - `NEGATIVE_VALUE_MISMATCH` 是负向证据，会降低最终分数，而不是删除关系。
 - EvidenceType 的默认分值、定分理由、合并公式和完整 SQL 算例，以 [Phase 2：核心模型和评分详细设计](phase-02-core-model-scoring.md) 的“置信度计算”章节为准。维护枚举时必须同步检查该章节，避免 enum 文档和评分模型出现两套解释。
