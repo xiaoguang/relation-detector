@@ -1,0 +1,8 @@
+{
+  "fingerprints": [
+    "TABLE_ID:accounts.user_id->users.id:NAMING_MATCH",
+    "TABLE_ID:order_staging.order_id->orders.id:NAMING_MATCH",
+    "TABLE_ID:order_staging.user_id->users.id:NAMING_MATCH",
+    "TABLE_ID:staging_orders.order_id->orders.id:NAMING_MATCH"
+  ]
+}

@@ -428,6 +428,49 @@ scripts/run-cli.sh scan \
 cat target/example-result.json
 ```
 
+### 4.5.1 目录输入配置
+
+文件型输入既支持显式 `files`，也支持 `paths + include`。`paths` 可以指向目录或单个文件；目录会按 `include` glob 递归展开，并按路径排序后进入现有 `ddlFiles`、`objectFiles`、`logFiles`。
+
+```yaml
+database:
+  type: mysql
+  schema: erp_sample
+
+parser:
+  mode: full-grammer
+  grammarProfile: mysql/5.7
+  databaseVersion: 5.7
+
+sources:
+  metadata:
+    enabled: false
+  ddl:
+    enabled: true
+    fromDatabase: false
+    paths:
+      - sample-data/mysql/5.7/01-schema
+    include:
+      - "**/*.sql"
+  objects:
+    enabled: true
+    fromDatabase: false
+    paths:
+      - sample-data/mysql/5.7/02-procedures
+    include:
+      - "**/*.sql"
+  logs:
+    enabled: true
+    filterSystemQueries: false
+    paths:
+      - sample-data/mysql/5.7/03-data
+      - sample-data/mysql/5.7/04-queries
+    include:
+      - "**/*.sql"
+  dataProfile:
+    enabled: false
+```
+
 ### 4.6 连接真实数据库的配置示例
 
 MySQL：

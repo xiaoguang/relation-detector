@@ -1,10 +1,15 @@
 package com.relationdetector.cli;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
@@ -77,6 +82,7 @@ public final class SimpleYamlConfigLoader {
             setScalar(config, section, subsection, key, resolveEnv(unquote(value)));
         }
 
+        expandConfiguredPaths(config);
         validate(config);
         return config;
     }
@@ -128,14 +134,80 @@ public final class SimpleYamlConfigLoader {
             case "filters.includeTables" -> config.includeTables.add(value);
             case "filters.excludeTables" -> config.excludeTables.add(value);
             case "sources.ddl.files" -> config.ddlFiles.add(Path.of(value));
+            case "sources.ddl.paths" -> config.ddlPaths.add(Path.of(value));
+            case "sources.ddl.include" -> config.ddlIncludes.add(value);
             case "sources.objects.files" -> config.objectFiles.add(Path.of(value));
+            case "sources.objects.paths" -> config.objectPaths.add(Path.of(value));
+            case "sources.objects.include" -> config.objectIncludes.add(value);
             case "sources.logs.files" -> config.logFiles.add(Path.of(value));
+            case "sources.logs.paths" -> config.logPaths.add(Path.of(value));
+            case "sources.logs.include" -> config.logIncludes.add(value);
             case "sources.logs.systemSchemas" -> config.logSystemSchemas.add(value);
             case "sources.logs.metadataQueryMarkers" -> config.logMetadataQueryMarkers.add(value);
             default -> {
                 // Ignore list values under unknown sections.
             }
         }
+    }
+
+    private void expandConfiguredPaths(ScanConfig config) throws IOException {
+        config.ddlFiles = merge(config.ddlFiles, expand(config.ddlPaths, config.ddlIncludes));
+        config.objectFiles = merge(config.objectFiles, expand(config.objectPaths, config.objectIncludes));
+        config.logFiles = merge(config.logFiles, expand(config.logPaths, config.logIncludes));
+    }
+
+    private List<Path> merge(List<Path> explicit, List<Path> expanded) {
+        Set<Path> merged = new LinkedHashSet<>();
+        explicit.forEach(merged::add);
+        expanded.forEach(merged::add);
+        return new ArrayList<>(merged);
+    }
+
+    private List<Path> expand(List<Path> roots, List<String> includes) throws IOException {
+        if (roots.isEmpty()) {
+            return List.of();
+        }
+        List<String> patterns = includes.isEmpty() ? List.of("**/*.sql") : includes;
+        List<Path> files = new ArrayList<>();
+        for (Path root : roots) {
+            if (!Files.exists(root)) {
+                throw new IllegalArgumentException("source path does not exist: " + root);
+            }
+            if (Files.isRegularFile(root)) {
+                Path name = root.getFileName();
+                if (name != null && matchesAny(name, patterns)) {
+                    files.add(root);
+                }
+                continue;
+            }
+            try (var stream = Files.walk(root)) {
+                stream.filter(Files::isRegularFile)
+                        .filter(file -> matchesAny(root.relativize(file), patterns))
+                        .sorted(Comparator.comparing(Path::toString))
+                        .forEach(files::add);
+            }
+        }
+        return files;
+    }
+
+    private boolean matchesAny(Path relative, List<String> patterns) {
+        for (String pattern : patterns) {
+            if (matches(relative, pattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean matches(Path relative, String pattern) {
+        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
+        if (matcher.matches(relative)) {
+            return true;
+        }
+        if (pattern.startsWith("**/")) {
+            return FileSystems.getDefault().getPathMatcher("glob:" + pattern.substring(3)).matches(relative);
+        }
+        return false;
     }
 
     private void validate(ScanConfig config) {

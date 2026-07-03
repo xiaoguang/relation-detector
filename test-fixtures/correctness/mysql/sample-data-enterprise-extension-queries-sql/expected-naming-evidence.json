@@ -1,0 +1,16 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:payment_receipt_allocations.receipt_id->payment_receipts.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:payment_receipts.party_id->customers.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:period_close_jobs.period_id->accounting_periods.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:stock_transfer_items.transfer_id->stock_transfers.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:stock_transfers.from_warehouse_id->warehouses.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:stock_transfers.to_warehouse_id->warehouses.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:stocktakes.warehouse_id->warehouses.id:NAMING_MATCH",
+    "TABLE_ID:accounting_periods.ledger_book_id->ledger_books.id:NAMING_MATCH",
+    "TABLE_ID:customer_addresses.customer_id->customers.id:NAMING_MATCH",
+    "TABLE_ID:stock_transfer_items.product_id->products.id:NAMING_MATCH",
+    "TABLE_ID:stocktake_items.product_id->products.id:NAMING_MATCH",
+    "TABLE_ID:stocktake_items.stocktake_id->stocktakes.id:NAMING_MATCH"
+  ]
+}

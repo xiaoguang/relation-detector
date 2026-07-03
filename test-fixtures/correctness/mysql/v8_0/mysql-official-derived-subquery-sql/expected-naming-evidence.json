@@ -1,0 +1,10 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:log_permissions.log_id->account_logs.id:NAMING_MATCH",
+    "TABLE_ID:account_logs.account_id->accounts.id:NAMING_MATCH",
+    "TABLE_ID:material_places.material_id->materials.id:NAMING_MATCH",
+    "TABLE_ID:orders.customer_id->customers.id:NAMING_MATCH",
+    "TABLE_ID:shipments.customer_id->customers.id:NAMING_MATCH",
+    "TABLE_ID:shipments.order_id->orders.id:NAMING_MATCH"
+  ]
+}

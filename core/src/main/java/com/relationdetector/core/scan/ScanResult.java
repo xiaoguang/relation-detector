@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.relationdetector.contracts.model.DataLineageCandidate;
+import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.WarningMessage;
 
@@ -15,6 +16,7 @@ public final class ScanResult {
     private final Instant generatedAt;
     private final List<RelationshipCandidate> relationships = new ArrayList<>();
     private final List<DataLineageCandidate> dataLineages = new ArrayList<>();
+    private final List<NamingEvidenceCandidate> namingEvidence = new ArrayList<>();
     private final List<WarningMessage> warnings = new ArrayList<>();
     private final List<String> sources = new ArrayList<>();
 
@@ -42,6 +44,10 @@ public final class ScanResult {
 
     public List<DataLineageCandidate> dataLineages() {
         return dataLineages;
+    }
+
+    public List<NamingEvidenceCandidate> namingEvidence() {
+        return namingEvidence;
     }
 
     public List<WarningMessage> warnings() {

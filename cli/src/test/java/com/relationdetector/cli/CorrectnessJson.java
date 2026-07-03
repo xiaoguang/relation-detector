@@ -40,6 +40,12 @@ final class CorrectnessJson {
                 + "}\n";
     }
 
+    static String expectedNamingEvidenceJson(List<String> fingerprints) {
+        return "{\n"
+                + "  \"fingerprints\": " + stringArrayJson(fingerprints) + "\n"
+                + "}\n";
+    }
+
     static String stringField(String json, String field) {
         Matcher matcher = Pattern.compile("\"" + Pattern.quote(field) + "\"\\s*:\\s*\"([^\"]*)\"")
                 .matcher(json);

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -107,6 +108,66 @@ class ParserConfigRemovalTest {
         ScanConfig config = new SimpleYamlConfigLoader().load(file);
 
         assertEquals(false, config.ddlFromDatabase);
+    }
+
+    @Test
+    void yamlConfigExpandsSourcePathsWithIncludeGlobs() throws Exception {
+        Path root = Files.createTempDirectory("relation-detector-source-paths");
+        Path schema = Files.createDirectories(root.resolve("schema/nested"));
+        Path procedures = Files.createDirectories(root.resolve("procedures"));
+        Path queries = Files.createDirectories(root.resolve("queries"));
+        Path data = Files.createDirectories(root.resolve("data"));
+        Path ddlRoot = root.resolve("schema");
+
+        Path table = ddlRoot.resolve("01-tables.sql");
+        Path nestedTable = schema.resolve("02-nested.sql");
+        Path ignoredText = ddlRoot.resolve("notes.txt");
+        Path proc = procedures.resolve("01-procedures.sql");
+        Path query = queries.resolve("01-query.sql");
+        Path dataSql = data.resolve("01-data.sql");
+        Files.writeString(table, "CREATE TABLE customers(id INT);\n");
+        Files.writeString(nestedTable, "CREATE TABLE orders(id INT);\n");
+        Files.writeString(ignoredText, "ignore me\n");
+        Files.writeString(proc, "CREATE PROCEDURE p() SELECT 1;\n");
+        Files.writeString(query, "SELECT * FROM customers;\n");
+        Files.writeString(dataSql, "INSERT INTO customers(id) VALUES(1);\n");
+
+        Path file = root.resolve("config.yml");
+        Files.writeString(file, """
+                database:
+                  type: mysql
+                sources:
+                  metadata:
+                    enabled: false
+                  ddl:
+                    enabled: true
+                    fromDatabase: false
+                    paths:
+                      - %s
+                    include:
+                      - "**/*.sql"
+                  objects:
+                    enabled: true
+                    fromDatabase: false
+                    paths:
+                      - %s
+                    include:
+                      - "*.sql"
+                  logs:
+                    enabled: true
+                    filterSystemQueries: false
+                    paths:
+                      - %s
+                      - %s
+                    include:
+                      - "*.sql"
+                """.formatted(ddlRoot, procedures, data, queries));
+
+        ScanConfig config = new SimpleYamlConfigLoader().load(file);
+
+        assertEquals(List.of(table, nestedTable), config.ddlFiles);
+        assertEquals(List.of(proc), config.objectFiles);
+        assertEquals(List.of(dataSql, query), config.logFiles);
     }
 
     @Test

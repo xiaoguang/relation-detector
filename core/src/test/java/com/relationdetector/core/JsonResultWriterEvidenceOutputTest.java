@@ -22,6 +22,7 @@ import com.relationdetector.contracts.model.DataLineageEvidence;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
+import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
@@ -82,6 +83,40 @@ class JsonResultWriterEvidenceOutputTest {
         assertTrue(json.contains("\"transformType\": \"AGGREGATE\""), "Lineage transform should be serialized");
         assertTrue(json.contains("\"table\": \"orders\""), "Lineage source table should be serialized");
         assertTrue(json.contains("\"column\": \"total_spent\""), "Lineage target column should be serialized");
+    }
+
+    @Test
+    void writesTopLevelNamingEvidence() {
+        ScanResult result = new ScanResult("mysql", "public");
+        Endpoint source = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id"));
+        Endpoint target = Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id"));
+        result.namingEvidence().add(new NamingEvidenceCandidate(
+                source,
+                target,
+                new Evidence(EvidenceType.NAMING_MATCH,
+                        BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                        EvidenceSourceType.NAMING_HEURISTIC,
+                        "metadata",
+                        "orders.customer_id matches customers.id",
+                        Map.of(
+                                "namingRule", "TABLE_ID",
+                                "suggestedSourceEndpoint", "orders.customer_id",
+                                "suggestedTargetEndpoint", "customers.id",
+                                "directionHint", true)),
+                "TABLE_ID",
+                true));
+
+        String json = new JsonResultWriter().write(result, true, true);
+
+        assertTrue(json.contains("\"namingEvidenceCount\": 1"), "Summary should include naming evidence count");
+        assertTrue(json.contains("\"namingEvidence\": ["), "JSON should expose top-level namingEvidence");
+        assertTrue(json.contains("\"rule\": \"TABLE_ID\""), "Naming rule should be serialized");
+        assertTrue(json.contains("\"directionHint\": true"), "Direction hint should be serialized");
+        assertTrue(json.contains("\"type\": \"NAMING_MATCH\""), "Naming evidence detail should be serialized");
+
+        String minimized = new JsonResultWriter().write(result, false, true);
+        assertTrue(minimized.contains("\"namingEvidenceCount\": 1"), "Count should not depend on evidence verbosity");
+        assertTrue(minimized.contains("\"evidence\": []"), "Evidence details should honor includeEvidence=false");
     }
 
     private RelationshipCandidate sqlLogJoin(String detail) {

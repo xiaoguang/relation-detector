@@ -1,0 +1,8 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:dbo.inventory.warehouse_id->dbo.warehouses.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:NAMING_MATCH",
+    "TABLE_ID:dbo.inventory.product_id->dbo.products.id:NAMING_MATCH",
+    "TABLE_ID:dbo.purchase_orders.supplier_id->dbo.suppliers.id:NAMING_MATCH"
+  ]
+}

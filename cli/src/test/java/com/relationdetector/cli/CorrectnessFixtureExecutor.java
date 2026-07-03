@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
+import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
@@ -20,7 +21,9 @@ import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
 import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.parser.DdlRelationParserRunner;
+import com.relationdetector.core.parser.DdlParseOutcome;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
+import com.relationdetector.core.relation.NamingEvidenceExtractor;
 import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
 import com.relationdetector.core.relation.RelationshipMerger;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
@@ -43,21 +46,25 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 final class CorrectnessFixtureExecutor {
+    private final NamingEvidenceExtractor namingEvidenceExtractor = new NamingEvidenceExtractor();
+
     void runFixture(CorrectnessFixture fixture) throws Exception {
         String input = Files.readString(fixture.inputFile());
         ExpectedRelations expectedRelations = expectedRelations(fixture);
         ExpectedDiagnostics expectedDiagnostics = expectedDiagnostics(fixture);
         ExpectedLineage expectedLineage = ExpectedLineage.readIfPresent(fixture.expectedLineageFile());
+        ExpectedNamingEvidence expectedNamingEvidence =
+                ExpectedNamingEvidence.readIfPresent(fixture.expectedNamingEvidenceFile());
         if (!Boolean.getBoolean("updateCorrectnessGold") && shouldAssertFixtureHash(fixture)) {
             assertEquals(expectedDiagnostics.fixtureSha256(), sha256(input), fixture.id() + " fixture hash");
         }
 
         if (fixture.parserTarget().equals("SQL")) {
-            runSqlFixture(fixture, expectedRelations, expectedDiagnostics, expectedLineage);
+            runSqlFixture(fixture, expectedRelations, expectedDiagnostics, expectedLineage, expectedNamingEvidence);
             return;
         }
         if (fixture.parserTarget().equals("DDL")) {
-            runDdlFixture(fixture, input, expectedRelations, expectedDiagnostics);
+            runDdlFixture(fixture, input, expectedRelations, expectedDiagnostics, expectedNamingEvidence);
             return;
         }
         throw new IllegalArgumentException("Unknown parserTarget " + fixture.parserTarget() + " in " + fixture.path());
@@ -81,7 +88,8 @@ final class CorrectnessFixtureExecutor {
             CorrectnessFixture fixture,
             ExpectedRelations expectedRelations,
             ExpectedDiagnostics expectedDiagnostics,
-            ExpectedLineage expectedLineage
+            ExpectedLineage expectedLineage,
+            ExpectedNamingEvidence expectedNamingEvidence
     ) throws Exception {
         DatabaseAdaptor adaptor = adaptor(fixture.databaseType());
         ScanConfig config = config(fixture);
@@ -90,6 +98,7 @@ final class CorrectnessFixtureExecutor {
         List<SqlStatementRecord> statements = sqlStatements(fixture, inputOf(fixture), warnings);
         List<RelationshipCandidate> relationships = new ArrayList<>();
         List<DataLineageCandidate> lineages = new ArrayList<>();
+        List<NamingEvidenceCandidate> namingEvidence = new ArrayList<>();
         if (isCommonTokenEventFixture(fixture)) {
             StructuredSqlParser parser = new CommonTokenEventStructuredSqlParser();
             TokenEventRelationExtractor relationExtractor = new TokenEventRelationExtractor();
@@ -98,13 +107,17 @@ final class CorrectnessFixtureExecutor {
             for (SqlStatementRecord statement : statements) {
                 StructuredParseResult structured = parser.parseSql(statement, context);
                 List<RelationshipCandidate> extracted = relationExtractor.extract(statement, structured);
-                namingMatchEvidenceEnhancer.enhance(extracted);
+                List<NamingEvidenceCandidate> extractedNaming =
+                        namingEvidenceExtractor.extractFromRelationshipCandidates(extracted);
+                namingEvidence.addAll(extractedNaming);
+                namingMatchEvidenceEnhancer.enhance(extracted, extractedNaming);
                 relationships.addAll(extracted);
                 lineages.addAll(lineageExtractor.extract(statement, structured));
             }
             assertRelations(fixture, expectedRelations, relationships);
             assertLineage(fixture, expectedLineage,
                     new DataLineageMerger().merge(lineages).stream().map(this::lineageFingerprint).toList());
+            assertNamingEvidence(fixture, expectedNamingEvidence, namingEvidence);
             assertWarningCodes(fixture, expectedDiagnostics, warnings);
             return;
         }
@@ -114,12 +127,14 @@ final class CorrectnessFixtureExecutor {
             SqlRelationParserRunner.ParsedSqlRelations parsed =
                     runner.parseStructuredAndRelations(adaptor, config, statement, context);
             relationships.addAll(parsed.relationships());
+            namingEvidence.addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(parsed.relationships()));
             parsed.structured()
                     .ifPresent(structured -> lineages.addAll(lineageExtractor.extract(statement, structured)));
         }
         assertRelations(fixture, expectedRelations, relationships);
         assertLineage(fixture, expectedLineage,
                 new DataLineageMerger().merge(lineages).stream().map(this::lineageFingerprint).toList());
+        assertNamingEvidence(fixture, expectedNamingEvidence, namingEvidence);
         assertWarningCodes(fixture, expectedDiagnostics, warnings);
     }
 
@@ -127,22 +142,25 @@ final class CorrectnessFixtureExecutor {
             CorrectnessFixture fixture,
             String input,
             ExpectedRelations expectedRelations,
-            ExpectedDiagnostics expectedDiagnostics
+            ExpectedDiagnostics expectedDiagnostics,
+            ExpectedNamingEvidence expectedNamingEvidence
     ) throws Exception {
         DatabaseAdaptor adaptor = adaptor(fixture.databaseType());
         ScanConfig config = config(fixture);
         List<WarningMessage> warnings = new ArrayList<>();
         AdaptorContext context = context(fixture, warnings);
         DdlRelationParserRunner runner = new DdlRelationParserRunner();
-        List<RelationshipCandidate> relationships = isCommonTokenEventFixture(fixture)
-                ? runner.parseText(
+        DdlParseOutcome parsed = isCommonTokenEventFixture(fixture)
+                ? runner.parseTextWithEvidence(
                         new TokenEventStructuredDdlParser(SqlDialect.GENERIC),
                         input,
                         fixture.id() + ".ddl.sql",
                         fixture.evidenceSourceType(),
                         context)
-                : runner.parseText(adaptor, config, input, fixture.id() + ".ddl.sql", fixture.evidenceSourceType(), context);
-        assertRelations(fixture, expectedRelations, relationships);
+                : runner.parseTextWithEvidence(adaptor, config, input, fixture.id() + ".ddl.sql",
+                        fixture.evidenceSourceType(), context);
+        assertRelations(fixture, expectedRelations, parsed.relationships());
+        assertNamingEvidence(fixture, expectedNamingEvidence, parsed.namingEvidence());
         assertWarningCodes(fixture, expectedDiagnostics, warnings);
     }
 
@@ -246,6 +264,31 @@ final class CorrectnessFixtureExecutor {
         }
     }
 
+    private void assertNamingEvidence(
+            CorrectnessFixture fixture,
+            ExpectedNamingEvidence expected,
+            List<NamingEvidenceCandidate> actual
+    ) throws Exception {
+        Set<String> actualFingerprints = actual.stream()
+                .map(this::namingEvidenceFingerprint)
+                .collect(Collectors.toCollection(TreeSet::new));
+        if (Boolean.getBoolean("updateCorrectnessGold")
+                && (expected.exists() || !actualFingerprints.isEmpty())) {
+            Files.writeString(fixture.expectedNamingEvidenceFile(),
+                    CorrectnessJson.expectedNamingEvidenceJson(actualFingerprints.stream().toList()));
+            return;
+        }
+        if (!expected.exists()) {
+            assertTrue(actualFingerprints.isEmpty(),
+                    () -> fixture.id() + " has naming evidence but no "
+                            + fixture.expectedNamingEvidenceFile().getFileName()
+                            + " golden. Actual=" + actualFingerprints);
+            return;
+        }
+        assertEquals(new TreeSet<>(expected.fingerprints()), actualFingerprints,
+                () -> fixture.id() + " naming evidence fingerprints");
+    }
+
     private boolean isCommonTokenEventFixture(CorrectnessFixture fixture) {
         return fixture.structuredParser().equals("common-token-event");
     }
@@ -321,6 +364,12 @@ final class CorrectnessFixtureExecutor {
                         .map(com.relationdetector.contracts.model.Endpoint::displayName)
                         .collect(Collectors.joining(","))
                 + "->" + lineage.target().displayName();
+    }
+
+    private String namingEvidenceFingerprint(NamingEvidenceCandidate candidate) {
+        return candidate.rule() + ":"
+                + candidate.source().displayName() + "->" + candidate.target().displayName()
+                + ":" + candidate.evidence().type().name();
     }
 
     private static String sha256(String text) throws Exception {

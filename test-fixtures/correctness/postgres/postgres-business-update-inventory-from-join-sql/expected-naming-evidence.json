@@ -1,0 +1,5 @@
+{
+  "fingerprints": [
+    "TABLE_ID:inventory.supplier_id->suppliers.id:NAMING_MATCH"
+  ]
+}

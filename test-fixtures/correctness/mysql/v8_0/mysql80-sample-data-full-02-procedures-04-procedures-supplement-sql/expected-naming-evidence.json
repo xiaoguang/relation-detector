@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:sales_order_items.order_id->sales_orders.id:NAMING_MATCH",
+    "TABLE_ID:sales_order_items.product_id->products.id:NAMING_MATCH"
+  ]
+}

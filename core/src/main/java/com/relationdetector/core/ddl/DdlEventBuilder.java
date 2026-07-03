@@ -50,4 +50,12 @@ public final class DdlEventBuilder {
         events.add(new StructuredSqlEvent(StructuredParseEventType.DDL_INDEX, sourceName, line,
                 Map.of("table", table, "column", column, "role", role, "kind", kind)));
     }
+
+    public void addColumn(String table, String column, long line) {
+        if (table == null || table.isBlank() || column == null || column.isBlank()) {
+            return;
+        }
+        events.add(new StructuredSqlEvent(StructuredParseEventType.DDL_COLUMN, sourceName, line,
+                Map.of("table", table, "column", column)));
+    }
 }

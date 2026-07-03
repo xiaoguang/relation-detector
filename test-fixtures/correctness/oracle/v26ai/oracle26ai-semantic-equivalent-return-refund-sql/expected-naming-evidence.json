@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:payments.order_id->sales_orders.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:sales_returns.order_id->sales_orders.id:NAMING_MATCH"
+  ]
+}

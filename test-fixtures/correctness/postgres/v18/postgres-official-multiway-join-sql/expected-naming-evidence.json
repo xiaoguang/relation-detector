@@ -1,0 +1,14 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:order_items.order_id->order_roots.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:payments.order_id->order_roots.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:refunds.order_id->order_roots.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:shipments.order_id->order_roots.id:NAMING_MATCH",
+    "TABLE_ID:orders.tenant_id->tenants.id:NAMING_MATCH",
+    "TABLE_ID:orders.user_id->users.id:NAMING_MATCH",
+    "TABLE_ID:payments.invoice_id->invoices.id:NAMING_MATCH",
+    "TABLE_ID:shipments.carrier_id->carriers.id:NAMING_MATCH",
+    "TABLE_ID:shipments.order_id->orders.id:NAMING_MATCH",
+    "TABLE_ID:users.tenant_id->tenants.id:NAMING_MATCH"
+  ]
+}

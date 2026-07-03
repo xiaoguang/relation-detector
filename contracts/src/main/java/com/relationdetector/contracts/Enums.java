@@ -156,6 +156,7 @@ public final class Enums {
         EXPRESSION_SOURCE,
         DDL_FOREIGN_KEY,
         DDL_INDEX,
+        DDL_COLUMN,
         DYNAMIC_SQL
     }
 

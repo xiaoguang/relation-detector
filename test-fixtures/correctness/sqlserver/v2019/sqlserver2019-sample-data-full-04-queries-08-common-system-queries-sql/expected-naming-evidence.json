@@ -1,0 +1,12 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:dbo.mrp_run_items.component_product_id->dbo.products.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:dbo.production_plans.warehouse_id->dbo.warehouses.id:NAMING_MATCH",
+    "TABLE_ID:dbo.employee_shift_assignments.employee_id->dbo.employees.id:NAMING_MATCH",
+    "TABLE_ID:dbo.production_plans.product_id->dbo.products.id:NAMING_MATCH"
+  ]
+}

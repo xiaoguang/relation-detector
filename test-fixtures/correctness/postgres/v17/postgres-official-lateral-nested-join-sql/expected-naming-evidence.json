@@ -1,0 +1,7 @@
+{
+  "fingerprints": [
+    "TABLE_ID:audit_events.order_id->orders.id:NAMING_MATCH",
+    "TABLE_ID:line_items.order_id->orders.id:NAMING_MATCH",
+    "TABLE_ID:line_items.product_id->products.id:NAMING_MATCH"
+  ]
+}

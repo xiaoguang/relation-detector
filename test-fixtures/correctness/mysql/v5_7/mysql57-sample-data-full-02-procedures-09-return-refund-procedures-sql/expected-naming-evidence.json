@@ -1,0 +1,5 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:sales_return_items.return_id->sales_returns.id:NAMING_MATCH"
+  ]
+}

@@ -6,7 +6,9 @@ import java.util.Map;
 
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.DataLineageEvidence;
+import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
+import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.core.scan.ScanResult;
@@ -36,6 +38,7 @@ public final class JsonResultWriter {
         out.append("  \"generatedAt\": \"").append(result.generatedAt()).append("\",\n");
         out.append("  \"summary\": { \"relationshipCount\": ").append(result.relationships().size())
                 .append(", \"dataLineageCount\": ").append(result.dataLineages().size())
+                .append(", \"namingEvidenceCount\": ").append(result.namingEvidence().size())
                 .append(", \"warningCount\": ").append(result.warnings().size()).append(", \"sources\": ");
         writeStringArray(out, result.sources());
         out.append(" },\n");
@@ -52,6 +55,15 @@ public final class JsonResultWriter {
         for (int i = 0; i < result.dataLineages().size(); i++) {
             writeDataLineage(out, result.dataLineages().get(i), includeEvidence);
             if (i + 1 < result.dataLineages().size()) {
+                out.append(",");
+            }
+            out.append("\n");
+        }
+        out.append("  ],\n");
+        out.append("  \"namingEvidence\": [\n");
+        for (int i = 0; i < result.namingEvidence().size(); i++) {
+            writeNamingEvidence(out, result.namingEvidence().get(i), includeEvidence);
+            if (i + 1 < result.namingEvidence().size()) {
                 out.append(",");
             }
             out.append("\n");
@@ -130,6 +142,30 @@ public final class JsonResultWriter {
         out.append(",\n      \"attributes\": ");
         writeAttributes(out, lineage.attributes());
         out.append("\n    }");
+    }
+
+    private void writeNamingEvidence(StringBuilder out, NamingEvidenceCandidate naming, boolean includeEvidence) {
+        out.append("    {\n");
+        out.append("      \"source\": ");
+        writeEndpoint(out, naming.source());
+        out.append(",\n      \"target\": ");
+        writeEndpoint(out, naming.target());
+        out.append(",\n");
+        out.append("      \"rule\": \"").append(escape(naming.rule())).append("\",\n");
+        out.append("      \"directionHint\": ").append(naming.directionHint()).append(",\n");
+        out.append("      \"evidence\": ");
+        if (includeEvidence) {
+            writeEvidence(out, java.util.List.of(naming.evidence()));
+        } else {
+            out.append("[]");
+        }
+        out.append("\n    }");
+    }
+
+    private void writeEndpoint(StringBuilder out, Endpoint endpoint) {
+        out.append("{ \"table\": \"").append(escape(endpoint.table().displayName())).append("\", \"column\": ");
+        writeNullable(out, endpoint.isColumnLevel() ? endpoint.column().columnName() : null);
+        out.append(" }");
     }
 
     private void writeEvidence(StringBuilder out, java.util.List<Evidence> evidence) {

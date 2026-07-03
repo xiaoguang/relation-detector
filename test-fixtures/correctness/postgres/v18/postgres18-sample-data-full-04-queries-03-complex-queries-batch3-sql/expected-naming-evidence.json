@@ -1,0 +1,22 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:approval_instances.workflow_id->approval_workflows.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:approval_records.instance_id->approval_instances.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:approval_records.node_id->approval_nodes.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:products.category_id->product_categories.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:promotion_usages.order_id->sales_orders.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:sales_order_items.order_id->sales_orders.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:serial_numbers.return_id->sales_returns.id:NAMING_MATCH",
+    "TABLE_ID:attendance.employee_id->employees.id:NAMING_MATCH",
+    "TABLE_ID:employees.department_id->departments.id:NAMING_MATCH",
+    "TABLE_ID:leave_records.employee_id->employees.id:NAMING_MATCH",
+    "TABLE_ID:performance_reviews.employee_id->employees.id:NAMING_MATCH",
+    "TABLE_ID:project_costs.project_id->projects.id:NAMING_MATCH",
+    "TABLE_ID:sales_order_items.product_id->products.id:NAMING_MATCH",
+    "TABLE_ID:sales_orders.customer_id->customers.id:NAMING_MATCH",
+    "TABLE_ID:serial_number_logs.serial_number_id->serial_numbers.id:NAMING_MATCH",
+    "TABLE_ID:serial_numbers.product_id->products.id:NAMING_MATCH",
+    "TABLE_ID:serial_numbers.purchase_receipt_id->purchase_receipts.id:NAMING_MATCH",
+    "TABLE_ID:serial_numbers.sales_order_id->sales_orders.id:NAMING_MATCH"
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "fingerprints": [
+    "TABLE_ID:salary_payments.employee_id->employees.id:NAMING_MATCH"
+  ]
+}

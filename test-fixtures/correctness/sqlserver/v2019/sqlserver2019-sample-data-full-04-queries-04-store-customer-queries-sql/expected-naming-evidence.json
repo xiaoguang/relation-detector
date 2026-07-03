@@ -1,0 +1,9 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:dbo.cashier_journals.cashier_id->dbo.employees.id:NAMING_MATCH",
+    "TABLE_ID:dbo.cashier_journals.account_id->dbo.accounts.id:NAMING_MATCH",
+    "TABLE_ID:dbo.payments.customer_id->dbo.customers.id:NAMING_MATCH",
+    "TABLE_ID:dbo.salary_payments.employee_id->dbo.employees.id:NAMING_MATCH",
+    "TABLE_ID:dbo.salary_payments.voucher_id->dbo.vouchers.id:NAMING_MATCH"
+  ]
+}

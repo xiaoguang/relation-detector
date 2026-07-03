@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:inventory.batch_id->product_batches.id:NAMING_MATCH",
+    "TABLE_ID:product_batches.product_id->products.id:NAMING_MATCH"
+  ]
+}

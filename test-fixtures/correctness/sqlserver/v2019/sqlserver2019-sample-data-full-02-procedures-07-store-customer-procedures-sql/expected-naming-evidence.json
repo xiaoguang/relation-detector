@@ -1,0 +1,14 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:dbo.purchase_receipt_items.batch_id->dbo.product_batches.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:dbo.sales_order_items.batch_id->dbo.product_batches.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:dbo.sales_order_items.order_id->dbo.sales_orders.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:dbo.sales_orders.salesperson_id->dbo.employees.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:dbo.sales_orders.warehouse_id->dbo.warehouses.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:dbo.sales_returns.order_id->dbo.sales_orders.id:NAMING_MATCH",
+    "ID_SUFFIX_TO_ID:dbo.sales_returns.warehouse_id->dbo.warehouses.id:NAMING_MATCH",
+    "TABLE_ID:dbo.sales_order_items.product_id->dbo.products.id:NAMING_MATCH",
+    "TABLE_ID:dbo.sales_orders.customer_id->dbo.customers.id:NAMING_MATCH",
+    "TABLE_ID:dbo.sales_returns.customer_id->dbo.customers.id:NAMING_MATCH"
+  ]
+}

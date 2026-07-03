@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:consignment_consumptions.consignment_id->consignment_inventory.id:NAMING_MATCH",
+    "TABLE_ID:sales_orders.customer_id->customers.id:NAMING_MATCH"
+  ]
+}

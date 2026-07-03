@@ -1,0 +1,5 @@
+{
+  "fingerprints": [
+    "TABLE_ID:staging_orders.order_id->orders.id:NAMING_MATCH"
+  ]
+}

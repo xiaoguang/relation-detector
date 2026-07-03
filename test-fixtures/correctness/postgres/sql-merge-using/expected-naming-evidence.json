@@ -1,0 +1,5 @@
+{
+  "fingerprints": [
+    "TABLE_ID:target_orders.source_order_id->source_orders.id:NAMING_MATCH"
+  ]
+}

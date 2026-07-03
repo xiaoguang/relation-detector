@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "SELF_ROLE_ID:categories.parent_id->categories.id:NAMING_MATCH",
+    "SELF_ROLE_ID:employees.manager_id->employees.id:NAMING_MATCH"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "fingerprints": [
+    "ID_SUFFIX_TO_ID:dbo.payments.order_id->dbo.sales_orders.id:NAMING_MATCH",
+    "TABLE_ID:dbo.ap_invoices.supplier_id->dbo.suppliers.id:NAMING_MATCH",
+    "TABLE_ID:dbo.attendance.employee_id->dbo.employees.id:NAMING_MATCH",
+    "TABLE_ID:dbo.employees.department_id->dbo.departments.id:NAMING_MATCH",
+    "TABLE_ID:dbo.sales_orders.customer_id->dbo.customers.id:NAMING_MATCH"
+  ]
+}

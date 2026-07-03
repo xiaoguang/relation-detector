@@ -23,11 +23,17 @@ public final class ScanConfig {
     public boolean ddlEnabled;
     public boolean ddlFromDatabase = true;
     public List<Path> ddlFiles = new ArrayList<>();
+    public List<Path> ddlPaths = new ArrayList<>();
+    public List<String> ddlIncludes = new ArrayList<>();
     public boolean objectsEnabled;
     public boolean objectsFromDatabase;
     public List<Path> objectFiles = new ArrayList<>();
+    public List<Path> objectPaths = new ArrayList<>();
+    public List<String> objectIncludes = new ArrayList<>();
     public boolean logsEnabled;
     public List<Path> logFiles = new ArrayList<>();
+    public List<Path> logPaths = new ArrayList<>();
+    public List<String> logIncludes = new ArrayList<>();
     public LogFormatHint logFormatHint = LogFormatHint.AUTO;
     public boolean logsFilterSystemQueries = true;
     public List<String> logSystemSchemas = new ArrayList<>();

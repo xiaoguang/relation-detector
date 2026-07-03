@@ -1,0 +1,10 @@
+{
+  "fingerprints": [
+    "TABLE_ID:invoices.customer_id->customers.id:NAMING_MATCH",
+    "TABLE_ID:invoices.payment_id->payments.id:NAMING_MATCH",
+    "TABLE_ID:order_items.order_id->orders.id:NAMING_MATCH",
+    "TABLE_ID:orders.customer_id->customers.id:NAMING_MATCH",
+    "TABLE_ID:returns.order_id->orders.id:NAMING_MATCH",
+    "TABLE_ID:shipments.carrier_id->carriers.id:NAMING_MATCH"
+  ]
+}

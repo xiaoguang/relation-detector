@@ -350,6 +350,7 @@ public final class CommonTokenEventParseTreeVisitor extends CommonRelationSqlBas
     public Void visitColumnDefinition(CommonRelationSqlParser.ColumnDefinitionContext ctx) {
         String table = currentDdlTable();
         String column = clean(ctx.identifier().getText());
+        addDdlColumnEvent(table, column, ctx);
         for (CommonRelationSqlParser.ColumnDefinitionPartContext part : ctx.columnDefinitionPart()) {
             CommonRelationSqlParser.InlineColumnConstraintContext constraint = part.inlineColumnConstraint();
             if (constraint == null) {
@@ -437,6 +438,16 @@ public final class CommonTokenEventParseTreeVisitor extends CommonRelationSqlBas
         attrs.put("role", role);
         attrs.put("kind", kind);
         add(StructuredParseEventType.DDL_INDEX, ctx, attrs);
+    }
+
+    private void addDdlColumnEvent(String table, String column, ParserRuleContext ctx) {
+        if (table.isBlank() || column.isBlank()) {
+            return;
+        }
+        Map<String, Object> attrs = attrs();
+        attrs.put("table", table);
+        attrs.put("column", column);
+        add(StructuredParseEventType.DDL_COLUMN, ctx, attrs);
     }
 
     private String currentDdlTable() {

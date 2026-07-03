@@ -19,12 +19,15 @@ import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
 import com.relationdetector.core.parser.DdlRelationParserRunner;
+import com.relationdetector.core.parser.DdlParseOutcome;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
+import com.relationdetector.core.relation.NamingEvidenceExtractor;
 
 final class StatementParsePipeline {
     private final SqlRelationParserRunner sqlParserRunner = new SqlRelationParserRunner();
     private final DdlRelationParserRunner ddlParserRunner = new DdlRelationParserRunner();
     private final TokenEventDataLineageExtractor dataLineageExtractor = new TokenEventDataLineageExtractor();
+    private final NamingEvidenceExtractor namingEvidenceExtractor = new NamingEvidenceExtractor();
 
     List<RelationshipCandidate> parseDdlFile(
             DatabaseAdaptor adaptor,
@@ -34,7 +37,9 @@ final class StatementParsePipeline {
             ScanResult result
     ) {
         try {
-            return ddlParserRunner.parse(adaptor, config, file, context);
+            DdlParseOutcome parsed = ddlParserRunner.parseWithEvidence(adaptor, config, file, context);
+            result.namingEvidence().addAll(parsed.namingEvidence());
+            return parsed.relationships();
         } catch (Exception ex) {
             result.warnings().add(DiagnosticWarnings.ddlParseFailed(file, ex));
             return List.of();
@@ -49,9 +54,10 @@ final class StatementParsePipeline {
             ScanResult result
     ) {
         try {
-            List<RelationshipCandidate> parsed = ddlParserRunner.parseText(adaptor, config,
+            DdlParseOutcome parsed = ddlParserRunner.parseTextWithEvidence(adaptor, config,
                     definition.ddl(), definition.source(), EvidenceSourceType.DATABASE_DDL, context);
-            return qualifyDatabaseDdlCandidates(parsed, definition.schema());
+            result.namingEvidence().addAll(parsed.namingEvidence());
+            return qualifyDatabaseDdlCandidates(parsed.relationships(), definition.schema());
         } catch (Exception ex) {
             result.warnings().add(DiagnosticWarnings.ddlTextParseFailed(definition.source(), definition.ddl(), ex));
             return List.of();
@@ -71,6 +77,7 @@ final class StatementParsePipeline {
             var parsed = sqlParserRunner.parseStructuredAndRelations(adaptor, config, statement, context);
             parsed.structured().ifPresent(structured ->
                     dataLineageCandidates.addAll(dataLineageExtractor.extract(statement, structured, knownPhysicalTables)));
+            result.namingEvidence().addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(parsed.relationships()));
             return parsed.relationships();
         } catch (Exception ex) {
             result.warnings().add(DiagnosticWarnings.sqlParseFailed(statement, ex));
