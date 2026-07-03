@@ -1,12 +1,12 @@
 {
   "fingerprints": [
-    "ID_SUFFIX_TO_ID:dbo.cashier_journals.cashier_id->dbo.employees.id:NAMING_MATCH",
-    "TABLE_ID:dbo.cashier_journals.account_id->dbo.accounts.id:NAMING_MATCH",
-    "TABLE_ID:dbo.cashier_journals.voucher_id->dbo.vouchers.id:NAMING_MATCH",
-    "TABLE_ID:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:NAMING_MATCH",
-    "TABLE_ID:dbo.reconciliations.account_id->dbo.accounts.id:NAMING_MATCH",
-    "TABLE_ID:dbo.salary_payments.employee_id->dbo.employees.id:NAMING_MATCH",
-    "TABLE_ID:dbo.salary_payments.voucher_id->dbo.vouchers.id:NAMING_MATCH",
-    "TABLE_ID:dbo.settlements.voucher_id->dbo.vouchers.id:NAMING_MATCH"
+    "naming:dbo.cashier_journals.account_id->dbo.accounts.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.cashier_journals.cashier_id->dbo.employees.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.cashier_journals.voucher_id->dbo.vouchers.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.reconciliations.account_id->dbo.accounts.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.salary_payments.employee_id->dbo.employees.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.salary_payments.voucher_id->dbo.vouchers.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.settlements.voucher_id->dbo.vouchers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

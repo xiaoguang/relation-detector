@@ -1,8 +1,8 @@
 {
   "fingerprints": [
-    "TABLE_ID:order_items.order_id->orders.id:NAMING_MATCH",
-    "TABLE_ID:order_items.product_id->products.id:NAMING_MATCH",
-    "TABLE_ID:orders.customer_id->customers.id:NAMING_MATCH",
-    "TABLE_ID:orders.user_id->users.id:NAMING_MATCH"
+    "naming:order_items.order_id->orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:order_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
+    "naming:orders.user_id->users.id:TABLE_ID:NAMING_MATCH"
   ]
 }

@@ -1,19 +1,19 @@
 {
   "fingerprints": [
-    "ID_SUFFIX_TO_ID:stocktakes.warehouse_id->warehouses.id:NAMING_MATCH",
-    "TABLE_ID:employees.department_id->departments.id:NAMING_MATCH",
-    "TABLE_ID:employees.position_id->positions.id:NAMING_MATCH",
-    "TABLE_ID:inventory.product_id->products.id:NAMING_MATCH",
-    "TABLE_ID:invoices.customer_id->customers.id:NAMING_MATCH",
-    "TABLE_ID:purchase_orders.supplier_id->suppliers.id:NAMING_MATCH",
-    "TABLE_ID:purchase_receipts.purchase_order_id->purchase_orders.id:NAMING_MATCH",
-    "TABLE_ID:role_permissions.permission_id->permissions.id:NAMING_MATCH",
-    "TABLE_ID:sales_order_items.sales_order_id->sales_orders.id:NAMING_MATCH",
-    "TABLE_ID:sales_orders.customer_id->customers.id:NAMING_MATCH",
-    "TABLE_ID:sales_returns.sales_order_id->sales_orders.id:NAMING_MATCH",
-    "TABLE_ID:shipments.sales_order_id->sales_orders.id:NAMING_MATCH",
-    "TABLE_ID:supplier_products.supplier_id->suppliers.id:NAMING_MATCH",
-    "TABLE_ID:voucher_items.account_id->accounts.id:NAMING_MATCH",
-    "TABLE_ID:work_orders.product_id->products.id:NAMING_MATCH"
+    "naming:employees.department_id->departments.id:TABLE_ID:NAMING_MATCH",
+    "naming:employees.position_id->positions.id:TABLE_ID:NAMING_MATCH",
+    "naming:inventory.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:invoices.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
+    "naming:purchase_orders.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
+    "naming:purchase_receipts.purchase_order_id->purchase_orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:role_permissions.permission_id->permissions.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_order_items.sales_order_id->sales_orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_returns.sales_order_id->sales_orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:shipments.sales_order_id->sales_orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:stocktakes.warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:supplier_products.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
+    "naming:voucher_items.account_id->accounts.id:TABLE_ID:NAMING_MATCH",
+    "naming:work_orders.product_id->products.id:TABLE_ID:NAMING_MATCH"
   ]
 }

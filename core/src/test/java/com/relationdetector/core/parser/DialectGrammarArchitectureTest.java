@@ -261,6 +261,28 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
+    void namingMatchEnhancerConsumesOnlyTopLevelNamingEvidencePool() throws IOException {
+        Path root = repoRoot();
+        Path enhancer = root.resolve("core/src/main/java/com/relationdetector/core/relation/NamingMatchEvidenceEnhancer.java");
+        String text = Files.readString(enhancer);
+
+        assertTrue(text.contains("List<NamingEvidenceCandidate> namingEvidence"),
+                "NamingMatchEvidenceEnhancer must require the top-level naming evidence pool");
+        assertFalse(text.contains("NamingMatchRules"),
+                "NamingMatchEvidenceEnhancer must not recompute naming rules locally");
+        assertFalse(text.contains("NamingEvidenceExtractor"),
+                "NamingMatchEvidenceEnhancer must not create naming evidence locally");
+        assertFalse(text.contains("void enhance(List<RelationshipCandidate> candidates)"),
+                "NamingMatchEvidenceEnhancer must not expose a no-pool overload");
+        assertFalse(text.contains("addToPool"),
+                "Relationship enhancement must not mutate or backfill the naming evidence pool");
+
+        Path sqlRunner = root.resolve("core/src/main/java/com/relationdetector/core/parser/SqlRelationParserRunner.java");
+        assertFalse(Files.readString(sqlRunner).contains("NamingMatchEvidenceEnhancer"),
+                "Low-level SQL parser runner must not attach NAMING_MATCH outside the scan evidence pool");
+    }
+
+    @Test
     void databaseAdaptorMainClassesDoNotOwnCollectorImplementations() throws IOException {
         Path root = repoRoot();
         List<Path> adaptorMainClasses = List.of(

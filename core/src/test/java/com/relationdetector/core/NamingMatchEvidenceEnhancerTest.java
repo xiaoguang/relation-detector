@@ -17,62 +17,82 @@ import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
+import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
+import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
 
 class NamingMatchEvidenceEnhancerTest {
     @Test
-    void tableIdRuleMatchesCustomerIdToCustomersId() {
+    void doesNotCreateNamingMatchWithoutEvidencePool() {
         RelationshipCandidate candidate = sqlCoOccurrence("orders", "customer_id", "customers", "id");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate));
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of());
 
-        Evidence naming = evidence(candidate, EvidenceType.NAMING_MATCH);
-        assertEquals("TABLE_ID", naming.attributes().get("namingRule"));
-        assertEquals("orders.customer_id", naming.attributes().get("suggestedSourceEndpoint"));
-        assertEquals("customers.id", naming.attributes().get("suggestedTargetEndpoint"));
-        assertEquals("customer_id", naming.attributes().get("matchedColumn"));
-        assertEquals("customers", naming.attributes().get("matchedTable"));
-        assertEquals(true, naming.attributes().get("directionHint"));
+        assertFalse(hasEvidence(candidate, EvidenceType.NAMING_MATCH),
+                "relationship enhancer must not recompute NAMING_MATCH outside the top-level evidence pool");
     }
 
     @Test
-    void tableIdRuleMatchesUserIdToUsersId() {
-        RelationshipCandidate candidate = sqlCoOccurrence("orders", "user_id", "users", "id");
+    void tableIdRuleReusesTopLevelEvidenceByReference() {
+        RelationshipCandidate candidate = sqlCoOccurrence("orders", "customer_id", "customers", "id");
+        NamingEvidenceCandidate pooled = namingEvidence("orders", "customer_id", "customers", "id", "TABLE_ID");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate));
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of(pooled));
 
         Evidence naming = evidence(candidate, EvidenceType.NAMING_MATCH);
+        assertEquals(pooled.id(), naming.attributes().get("evidenceRef"));
+        assertEquals("TABLE_ID", naming.attributes().get("namingRule"));
+        assertEquals("orders.customer_id", naming.attributes().get("suggestedSourceEndpoint"));
+        assertEquals("customers.id", naming.attributes().get("suggestedTargetEndpoint"));
+        assertEquals(true, naming.attributes().get("directionHint"));
+        assertFalse(naming.attributes().containsKey("count"),
+                "relationship should only carry a lightweight reference, not grouped top-level raw evidence");
+    }
+
+    @Test
+    void userIdRuleReusesTopLevelEvidenceByReference() {
+        RelationshipCandidate candidate = sqlCoOccurrence("orders", "user_id", "users", "id");
+        NamingEvidenceCandidate pooled = namingEvidence("orders", "user_id", "users", "id", "TABLE_ID");
+
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of(pooled));
+
+        Evidence naming = evidence(candidate, EvidenceType.NAMING_MATCH);
+        assertEquals(pooled.id(), naming.attributes().get("evidenceRef"));
         assertEquals("TABLE_ID", naming.attributes().get("namingRule"));
         assertEquals("orders.user_id", naming.attributes().get("suggestedSourceEndpoint"));
         assertEquals("users.id", naming.attributes().get("suggestedTargetEndpoint"));
     }
 
     @Test
-    void idSuffixRuleMatchesParentIdToId() {
+    void idSuffixRuleReusesTopLevelEvidenceByReference() {
         RelationshipCandidate candidate = sqlCoOccurrence("child", "parent_id", "parent", "id");
+        NamingEvidenceCandidate pooled = namingEvidence("child", "parent_id", "parent", "id", "ID_SUFFIX_TO_ID");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate));
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of(pooled));
 
         Evidence naming = evidence(candidate, EvidenceType.NAMING_MATCH);
+        assertEquals(pooled.id(), naming.attributes().get("evidenceRef"));
         assertEquals("ID_SUFFIX_TO_ID", naming.attributes().get("namingRule"));
         assertEquals("child.parent_id", naming.attributes().get("suggestedSourceEndpoint"));
         assertEquals("parent.id", naming.attributes().get("suggestedTargetEndpoint"));
     }
 
     @Test
-    void selfRoleIdRuleMatchesManagerIdToIdOnSelfJoin() {
+    void selfRoleIdRuleReusesTopLevelEvidenceByReference() {
         RelationshipCandidate candidate = sqlCoOccurrence(
                 "employees",
                 "id",
                 "employees",
                 "manager_id",
                 Map.of("joinKind", "INNER", "selfJoinRole", true, "leftAlias", "m", "rightAlias", "e"));
+        NamingEvidenceCandidate pooled = namingEvidence("employees", "manager_id", "employees", "id", "SELF_ROLE_ID");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate));
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of(pooled));
 
         Evidence naming = evidence(candidate, EvidenceType.NAMING_MATCH);
+        assertEquals(pooled.id(), naming.attributes().get("evidenceRef"));
         assertEquals("SELF_ROLE_ID", naming.attributes().get("namingRule"));
         assertEquals("employees.manager_id", naming.attributes().get("suggestedSourceEndpoint"));
         assertEquals("employees.id", naming.attributes().get("suggestedTargetEndpoint"));
@@ -82,7 +102,7 @@ class NamingMatchEvidenceEnhancerTest {
     void sameIdToSameIdDoesNotAddNamingMatch() {
         RelationshipCandidate candidate = sqlCoOccurrence("accounts", "id", "users", "id");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate));
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of());
 
         assertFalse(hasEvidence(candidate, EvidenceType.NAMING_MATCH));
     }
@@ -91,9 +111,20 @@ class NamingMatchEvidenceEnhancerTest {
     void twoIdSuffixColumnsDoNotAddNamingMatch() {
         RelationshipCandidate candidate = sqlCoOccurrence("orders", "customer_id", "payments", "order_id");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate));
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of());
 
         assertFalse(hasEvidence(candidate, EvidenceType.NAMING_MATCH));
+    }
+
+    @Test
+    void mismatchedPoolDoesNotCreateLocalNamingMatch() {
+        RelationshipCandidate candidate = sqlCoOccurrence("orders", "customer_id", "customers", "id");
+        NamingEvidenceCandidate unrelated = namingEvidence("orders", "user_id", "users", "id", "TABLE_ID");
+
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of(unrelated));
+
+        assertFalse(hasEvidence(candidate, EvidenceType.NAMING_MATCH),
+                "relationship enhancer must not invent a local NAMING_MATCH when the pool has no matching id");
     }
 
     private RelationshipCandidate sqlCoOccurrence(String leftTable, String leftColumn, String rightTable, String rightColumn) {
@@ -131,5 +162,32 @@ class NamingMatchEvidenceEnhancerTest {
 
     private boolean hasEvidence(RelationshipCandidate candidate, EvidenceType type) {
         return candidate.evidence().stream().anyMatch(evidence -> evidence.type() == type);
+    }
+
+    private NamingEvidenceCandidate namingEvidence(
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn,
+            String rule
+    ) {
+        Endpoint source = Endpoint.column(ColumnRef.of(TableId.of(null, sourceTable), sourceColumn));
+        Endpoint target = Endpoint.column(ColumnRef.of(TableId.of(null, targetTable), targetColumn));
+        return new NamingEvidenceCandidate(
+                source,
+                target,
+                new Evidence(
+                        EvidenceType.NAMING_MATCH,
+                        BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                        EvidenceSourceType.NAMING_HEURISTIC,
+                        "unit-test",
+                        source.displayName() + " matches " + target.displayName(),
+                        Map.of(
+                                "namingRule", rule,
+                                "suggestedSourceEndpoint", source.displayName(),
+                                "suggestedTargetEndpoint", target.displayName(),
+                                "directionHint", true)),
+                rule,
+                true);
     }
 }

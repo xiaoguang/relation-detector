@@ -124,6 +124,7 @@ public final class JsonResultWriter {
 
     private ObjectNode namingEvidenceNode(NamingEvidenceCandidate naming, boolean includeEvidence) {
         ObjectNode node = JSON.createObjectNode();
+        node.put("id", naming.id());
         node.set("source", endpointNode(naming.source()));
         node.set("target", endpointNode(naming.target()));
         node.put("rule", safe(naming.rule()));
@@ -157,6 +158,9 @@ public final class JsonResultWriter {
             node.put("score", item.score());
             node.put("source", safe(item.source()));
             node.put("detail", safe(item.detail()));
+            if (item.attributes().containsKey("evidenceRef")) {
+                node.put("evidenceRef", String.valueOf(item.attributes().get("evidenceRef")));
+            }
             node.set("attributes", attributesNode(item.attributes()));
         });
         return array;

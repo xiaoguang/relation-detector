@@ -47,4 +47,8 @@ public record NamingEvidenceCandidate(
             rawEvidence = List.copyOf(rawEvidence);
         }
     }
+
+    public String id() {
+        return "naming:" + source.normalizedKey() + "->" + target.normalizedKey() + ":" + rule;
+    }
 }

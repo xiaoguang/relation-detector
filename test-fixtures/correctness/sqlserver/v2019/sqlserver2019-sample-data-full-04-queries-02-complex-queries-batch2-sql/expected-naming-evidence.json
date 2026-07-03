@@ -1,9 +1,9 @@
 {
   "fingerprints": [
-    "ID_SUFFIX_TO_ID:dbo.payments.order_id->dbo.sales_orders.id:NAMING_MATCH",
-    "TABLE_ID:dbo.ap_invoices.supplier_id->dbo.suppliers.id:NAMING_MATCH",
-    "TABLE_ID:dbo.attendance.employee_id->dbo.employees.id:NAMING_MATCH",
-    "TABLE_ID:dbo.employees.department_id->dbo.departments.id:NAMING_MATCH",
-    "TABLE_ID:dbo.sales_orders.customer_id->dbo.customers.id:NAMING_MATCH"
+    "naming:dbo.ap_invoices.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.attendance.employee_id->dbo.employees.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.employees.department_id->dbo.departments.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.payments.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.sales_orders.customer_id->dbo.customers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

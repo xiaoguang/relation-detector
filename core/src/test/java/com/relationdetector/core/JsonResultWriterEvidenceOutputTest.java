@@ -154,6 +154,8 @@ class JsonResultWriterEvidenceOutputTest {
                 "Summary should include naming evidence count");
         assertTrue(root.path("namingEvidence").isArray(), "JSON should expose top-level namingEvidence");
         JsonNode namingNode = root.path("namingEvidence").get(0);
+        assertTrue("naming:orders.customer_id->customers.id:TABLE_ID".equals(namingNode.path("id").asText()),
+                "Naming evidence should expose a stable id for relationship evidenceRef");
         assertTrue("TABLE_ID".equals(namingNode.path("rule").asText()), "Naming rule should be serialized");
         assertTrue(namingNode.path("directionHint").asBoolean(), "Direction hint should be serialized");
         assertTrue("NAMING_MATCH".equals(namingNode.path("evidence").get(0).path("type").asText()),
@@ -163,8 +165,52 @@ class JsonResultWriterEvidenceOutputTest {
         JsonNode minimizedRoot = readTree(minimized);
         assertTrue(minimizedRoot.path("summary").path("namingEvidenceCount").asInt() == 1,
                 "Count should not depend on evidence verbosity");
+        assertTrue("naming:orders.customer_id->customers.id:TABLE_ID"
+                        .equals(minimizedRoot.path("namingEvidence").get(0).path("id").asText()),
+                "Naming evidence id should not depend on evidence verbosity");
         assertTrue(minimizedRoot.path("namingEvidence").get(0).path("evidence").isEmpty(),
                 "Evidence details should honor includeEvidence=false");
+    }
+
+    @Test
+    void relationshipNamingMatchReferencesTopLevelNamingEvidence() {
+        ScanResult result = new ScanResult("mysql", "public");
+        Endpoint source = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id"));
+        Endpoint target = Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id"));
+        NamingEvidenceCandidate naming = namingEvidence(source, target, "line 10: orders.customer_id = customers.id");
+        RelationshipCandidate relationship = new RelationshipCandidate(source, target,
+                RelationType.FK_LIKE, RelationSubType.NAMING_SUPPORTED_FK);
+        relationship.evidence().add(new Evidence(EvidenceType.SQL_LOG_JOIN,
+                BigDecimal.valueOf(DefaultEvidenceScores.SQL_LOG_JOIN),
+                EvidenceSourceType.PLAIN_SQL,
+                "query.sql",
+                "orders.customer_id = customers.id",
+                Map.of()));
+        relationship.evidence().add(new Evidence(EvidenceType.NAMING_MATCH,
+                BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                EvidenceSourceType.NAMING_HEURISTIC,
+                naming.id(),
+                "Naming evidence " + naming.id(),
+                Map.of(
+                        "evidenceRef", naming.id(),
+                        "namingRule", "TABLE_ID",
+                        "suggestedSourceEndpoint", "orders.customer_id",
+                        "suggestedTargetEndpoint", "customers.id",
+                        "directionHint", true)));
+        result.relationships().add(relationship);
+        result.namingEvidence().add(naming);
+
+        String json = new JsonResultWriter().write(result, true, true);
+        JsonNode root = readTree(json);
+
+        String namingId = root.path("namingEvidence").get(0).path("id").asText();
+        JsonNode relationshipNaming = evidenceOfType(root.path("relationships").get(0).path("evidence"), "NAMING_MATCH");
+        assertTrue(namingId.equals(relationshipNaming.path("evidenceRef").asText()),
+                "Relationship NAMING_MATCH should reference top-level namingEvidence");
+        assertTrue(relationshipNaming.path("rawEvidence").isMissingNode(),
+                "Relationship evidence should not duplicate top-level naming raw observations");
+        assertTrue(root.path("namingEvidence").get(0).path("rawEvidence").size() == 1,
+                "Top-level namingEvidence keeps the raw observation");
     }
 
     @Test
@@ -251,5 +297,14 @@ class JsonResultWriterEvidenceOutputTest {
             }
         }
         return false;
+    }
+
+    private JsonNode evidenceOfType(JsonNode evidence, String type) {
+        for (JsonNode item : evidence) {
+            if (type.equals(item.path("type").asText())) {
+                return item;
+            }
+        }
+        throw new AssertionError("Missing evidence type " + type + " in " + evidence);
     }
 }

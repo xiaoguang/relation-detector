@@ -1,7 +1,7 @@
 {
   "fingerprints": [
-    "TABLE_ID:coupon_redemptions.coupon_id->coupons.id:NAMING_MATCH",
-    "TABLE_ID:coupons.merchant_id->merchants.id:NAMING_MATCH",
-    "TABLE_ID:user_coupons.coupon_id->coupons.id:NAMING_MATCH"
+    "naming:coupon_redemptions.coupon_id->coupons.id:TABLE_ID:NAMING_MATCH",
+    "naming:coupons.merchant_id->merchants.id:TABLE_ID:NAMING_MATCH",
+    "naming:user_coupons.coupon_id->coupons.id:TABLE_ID:NAMING_MATCH"
   ]
 }

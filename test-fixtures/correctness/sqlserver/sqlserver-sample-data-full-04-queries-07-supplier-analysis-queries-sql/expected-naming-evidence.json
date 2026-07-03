@@ -1,7 +1,7 @@
 {
   "fingerprints": [
-    "TABLE_ID:dbo.ap_invoices.supplier_id->dbo.suppliers.id:NAMING_MATCH",
-    "TABLE_ID:dbo.product_batches.product_id->dbo.products.id:NAMING_MATCH",
-    "TABLE_ID:dbo.product_batches.supplier_id->dbo.suppliers.id:NAMING_MATCH"
+    "naming:dbo.ap_invoices.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.product_batches.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.product_batches.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

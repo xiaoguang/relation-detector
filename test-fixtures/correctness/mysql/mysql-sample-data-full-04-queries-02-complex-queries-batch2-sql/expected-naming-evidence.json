@@ -1,9 +1,9 @@
 {
   "fingerprints": [
-    "TABLE_ID:attendance.employee_id->employees.id:NAMING_MATCH",
-    "TABLE_ID:employees.department_id->departments.id:NAMING_MATCH",
-    "TABLE_ID:purchase_orders.department_id->departments.id:NAMING_MATCH",
-    "TABLE_ID:salary_payments.employee_id->employees.id:NAMING_MATCH",
-    "TABLE_ID:shipping_tracks.shipment_id->shipments.id:NAMING_MATCH"
+    "naming:attendance.employee_id->employees.id:TABLE_ID:NAMING_MATCH",
+    "naming:employees.department_id->departments.id:TABLE_ID:NAMING_MATCH",
+    "naming:purchase_orders.department_id->departments.id:TABLE_ID:NAMING_MATCH",
+    "naming:salary_payments.employee_id->employees.id:TABLE_ID:NAMING_MATCH",
+    "naming:shipping_tracks.shipment_id->shipments.id:TABLE_ID:NAMING_MATCH"
   ]
 }

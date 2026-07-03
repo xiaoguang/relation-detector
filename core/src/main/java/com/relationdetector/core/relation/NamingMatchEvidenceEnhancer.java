@@ -1,6 +1,8 @@
 package com.relationdetector.core.relation;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.relationdetector.contracts.Enums.EvidenceType;
@@ -17,52 +19,18 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
  * 创建 relationship。它只读取已解析 endpoint 的 table/column 名称，不参与 SQL 结构判断。
  *
  * <p>EN: Naming evidence only enriches existing column-level SQL predicate
- * candidates. It never creates relationships from names alone and does not parse
- * SQL structure; it only inspects already-resolved table/column endpoints.
+ * candidates. It never creates relationships from names alone and never
+ * recomputes naming rules locally; the top-level namingEvidence pool is the
+ * single source of truth.
  */
 public final class NamingMatchEvidenceEnhancer {
-    public void enhance(List<RelationshipCandidate> candidates) {
-        enhance(candidates, List.of());
-    }
-
     public void enhance(List<RelationshipCandidate> candidates, List<NamingEvidenceCandidate> namingEvidence) {
         for (RelationshipCandidate candidate : candidates) {
             if (!isEligible(candidate) || hasNamingMatch(candidate)) {
                 continue;
             }
             Optional<NamingEvidenceCandidate> pooled = matchingPoolEvidence(candidate, namingEvidence);
-            if (pooled.isPresent()) {
-                candidate.evidence().add(pooled.get().evidence());
-                continue;
-            }
-            NamingMatchRules.match(candidate.source(), candidate.target(), hasSelfJoinRole(candidate))
-                    .ifPresent(match -> {
-                        NamingEvidenceCandidate local = new NamingEvidenceCandidate(
-                                match.source(),
-                                match.target(),
-                                NamingEvidenceExtractor.evidenceFor(
-                                        match,
-                                        "naming heuristic",
-                                        match.source().displayName() + " matches " + match.target().displayName()),
-                                match.rule(),
-                                Boolean.TRUE.equals(match.attributes().get("directionHint")));
-                        candidate.evidence().add(local.evidence());
-                        addToPoolIfPossible(namingEvidence, local);
-                    });
-        }
-    }
-
-    private void addToPoolIfPossible(List<NamingEvidenceCandidate> namingEvidence, NamingEvidenceCandidate local) {
-        if (namingEvidence.stream().anyMatch(existing -> sameEndpoint(existing.source(), local.source())
-                && sameEndpoint(existing.target(), local.target())
-                && existing.rule().equals(local.rule()))) {
-            return;
-        }
-        try {
-            namingEvidence.add(local);
-        } catch (UnsupportedOperationException ignored) {
-            // The no-pool overload passes an immutable empty list. Relationship enrichment
-            // still works; runtime ScanEngine passes the mutable top-level evidence pool.
+            pooled.ifPresent(item -> candidate.evidence().add(referenceEvidence(item)));
         }
     }
 
@@ -86,19 +54,43 @@ public final class NamingMatchEvidenceEnhancer {
         return candidate.evidence().stream().anyMatch(evidence -> evidence.type() == EvidenceType.NAMING_MATCH);
     }
 
-    private boolean hasSelfJoinRole(RelationshipCandidate candidate) {
-        return candidate.evidence().stream()
-                .anyMatch(evidence -> Boolean.TRUE.equals(evidence.attributes().get("selfJoinRole")));
-    }
-
     private Optional<NamingEvidenceCandidate> matchingPoolEvidence(
             RelationshipCandidate candidate,
             List<NamingEvidenceCandidate> namingEvidence
     ) {
         return namingEvidence.stream()
-                .filter(item -> sameEndpoint(item.source(), candidate.source())
-                        && sameEndpoint(item.target(), candidate.target()))
+                .filter(item -> sameEndpointPair(item, candidate))
                 .findFirst();
+    }
+
+    private Evidence referenceEvidence(NamingEvidenceCandidate naming) {
+        Evidence evidence = naming.evidence();
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        attributes.put("evidenceRef", naming.id());
+        copyAttribute(evidence, attributes, "namingRule");
+        copyAttribute(evidence, attributes, "suggestedSourceEndpoint");
+        copyAttribute(evidence, attributes, "suggestedTargetEndpoint");
+        copyAttribute(evidence, attributes, "matchedColumn");
+        copyAttribute(evidence, attributes, "matchedTable");
+        attributes.put("directionHint", naming.directionHint());
+        return new Evidence(
+                evidence.type(),
+                evidence.score(),
+                evidence.sourceType(),
+                naming.id(),
+                "Naming evidence " + naming.id(),
+                attributes);
+    }
+
+    private void copyAttribute(Evidence evidence, Map<String, Object> attributes, String name) {
+        if (evidence.attributes().containsKey(name)) {
+            attributes.put(name, evidence.attributes().get(name));
+        }
+    }
+
+    private boolean sameEndpointPair(NamingEvidenceCandidate item, RelationshipCandidate candidate) {
+        return (sameEndpoint(item.source(), candidate.source()) && sameEndpoint(item.target(), candidate.target()))
+                || (sameEndpoint(item.source(), candidate.target()) && sameEndpoint(item.target(), candidate.source()));
     }
 
     private boolean sameEndpoint(com.relationdetector.contracts.model.Endpoint left,

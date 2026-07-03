@@ -1,5 +1,5 @@
 {
   "fingerprints": [
-    "TABLE_ID:transaction_ledgers.user_id->users.id:NAMING_MATCH"
+    "naming:transaction_ledgers.user_id->users.id:TABLE_ID:NAMING_MATCH"
   ]
 }

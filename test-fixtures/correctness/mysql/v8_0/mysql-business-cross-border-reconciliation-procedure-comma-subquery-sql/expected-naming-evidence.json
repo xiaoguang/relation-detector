@@ -1,5 +1,5 @@
 {
   "fingerprints": [
-    "ID_SUFFIX_TO_ID:orders.customer_id->customer_profiles.id:NAMING_MATCH"
+    "naming:orders.customer_id->customer_profiles.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
   ]
 }

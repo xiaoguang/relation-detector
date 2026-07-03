@@ -1,14 +1,14 @@
 {
   "fingerprints": [
-    "ID_SUFFIX_TO_ID:dbo.promotion_products.category_id->dbo.product_categories.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:dbo.promotion_usages.order_id->dbo.sales_orders.id:NAMING_MATCH",
-    "TABLE_ID:dbo.invoices.customer_id->dbo.customers.id:NAMING_MATCH",
-    "TABLE_ID:dbo.invoices.supplier_id->dbo.suppliers.id:NAMING_MATCH",
-    "TABLE_ID:dbo.promotion_products.product_id->dbo.products.id:NAMING_MATCH",
-    "TABLE_ID:dbo.promotion_usages.customer_id->dbo.customers.id:NAMING_MATCH",
-    "TABLE_ID:dbo.promotion_usages.promotion_id->dbo.promotions.id:NAMING_MATCH",
-    "TABLE_ID:dbo.three_way_matching.invoice_id->dbo.invoices.id:NAMING_MATCH",
-    "TABLE_ID:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:NAMING_MATCH",
-    "TABLE_ID:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:NAMING_MATCH"
+    "naming:dbo.invoices.customer_id->dbo.customers.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.invoices.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.promotion_products.category_id->dbo.product_categories.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.promotion_products.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.promotion_usages.customer_id->dbo.customers.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.promotion_usages.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.promotion_usages.promotion_id->dbo.promotions.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.three_way_matching.invoice_id->dbo.invoices.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:TABLE_ID:NAMING_MATCH"
   ]
 }

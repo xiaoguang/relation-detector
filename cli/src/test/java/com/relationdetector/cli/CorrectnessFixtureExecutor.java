@@ -100,10 +100,10 @@ final class CorrectnessFixtureExecutor {
         List<RelationshipCandidate> relationships = new ArrayList<>();
         List<DataLineageCandidate> lineages = new ArrayList<>();
         List<NamingEvidenceCandidate> namingEvidence = new ArrayList<>();
+        NamingMatchEvidenceEnhancer namingMatchEvidenceEnhancer = new NamingMatchEvidenceEnhancer();
         if (isCommonTokenEventFixture(fixture)) {
             StructuredSqlParser parser = new CommonTokenEventStructuredSqlParser();
             TokenEventRelationExtractor relationExtractor = new TokenEventRelationExtractor();
-            NamingMatchEvidenceEnhancer namingMatchEvidenceEnhancer = new NamingMatchEvidenceEnhancer();
             TokenEventDataLineageExtractor lineageExtractor = new TokenEventDataLineageExtractor();
             for (SqlStatementRecord statement : statements) {
                 StructuredParseResult structured = parser.parseSql(statement, context);
@@ -111,10 +111,10 @@ final class CorrectnessFixtureExecutor {
                 List<NamingEvidenceCandidate> extractedNaming =
                         namingEvidenceExtractor.extractFromRelationshipCandidates(extracted);
                 namingEvidence.addAll(extractedNaming);
-                namingMatchEvidenceEnhancer.enhance(extracted, extractedNaming);
                 relationships.addAll(extracted);
                 lineages.addAll(lineageExtractor.extract(statement, structured));
             }
+            namingMatchEvidenceEnhancer.enhance(relationships, namingEvidence);
             assertRelations(fixture, expectedRelations, relationships);
             assertLineage(fixture, expectedLineage,
                     new DataLineageMerger().merge(lineages).stream().map(this::lineageFingerprint).toList());
@@ -132,6 +132,7 @@ final class CorrectnessFixtureExecutor {
             parsed.structured()
                     .ifPresent(structured -> lineages.addAll(lineageExtractor.extract(statement, structured)));
         }
+        namingMatchEvidenceEnhancer.enhance(relationships, namingEvidence);
         assertRelations(fixture, expectedRelations, relationships);
         assertLineage(fixture, expectedLineage,
                 new DataLineageMerger().merge(lineages).stream().map(this::lineageFingerprint).toList());
@@ -368,9 +369,7 @@ final class CorrectnessFixtureExecutor {
     }
 
     private String namingEvidenceFingerprint(NamingEvidenceCandidate candidate) {
-        return candidate.rule() + ":"
-                + candidate.source().displayName() + "->" + candidate.target().displayName()
-                + ":" + candidate.evidence().type().name();
+        return candidate.id() + ":" + candidate.evidence().type().name();
     }
 
     private static String sha256(String text) throws Exception {

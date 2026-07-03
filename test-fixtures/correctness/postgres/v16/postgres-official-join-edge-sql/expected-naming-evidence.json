@@ -1,9 +1,9 @@
 {
   "fingerprints": [
-    "TABLE_ID:invoices.order_id->orders.id:NAMING_MATCH",
-    "TABLE_ID:orders.user_id->users.id:NAMING_MATCH",
-    "TABLE_ID:payments.order_id->orders.id:NAMING_MATCH",
-    "TABLE_ID:refunds.order_id->orders.id:NAMING_MATCH",
-    "TABLE_ID:shipments.order_id->orders.id:NAMING_MATCH"
+    "naming:invoices.order_id->orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:orders.user_id->users.id:TABLE_ID:NAMING_MATCH",
+    "naming:payments.order_id->orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:refunds.order_id->orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:shipments.order_id->orders.id:TABLE_ID:NAMING_MATCH"
   ]
 }

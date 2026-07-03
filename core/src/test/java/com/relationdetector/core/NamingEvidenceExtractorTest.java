@@ -41,6 +41,7 @@ class NamingEvidenceExtractorTest {
         assertEndpoint("orders", "customer_id", match.source());
         assertEndpoint("customers", "id", match.target());
         assertEquals("TABLE_ID", match.rule());
+        assertEquals("naming:orders.customer_id->customers.id:TABLE_ID", match.id());
         assertTrue(match.directionHint());
         assertEquals(EvidenceType.NAMING_MATCH, match.evidence().type());
     }
@@ -65,6 +66,7 @@ class NamingEvidenceExtractorTest {
         assertEndpoint("orders", "customer_id", evidence.get(0).source());
         assertEndpoint("customers", "id", evidence.get(0).target());
         assertEquals("TABLE_ID", evidence.get(0).rule());
+        assertEquals("naming:orders.customer_id->customers.id:TABLE_ID", evidence.get(0).id());
     }
 
     @Test
@@ -76,7 +78,9 @@ class NamingEvidenceExtractorTest {
         assertEquals(1, evidence.size());
         assertEquals("TABLE_ID", evidence.get(0).rule());
         new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), evidence);
-        assertTrue(candidate.evidence().stream().anyMatch(item -> item.type() == EvidenceType.NAMING_MATCH));
+        assertTrue(candidate.evidence().stream()
+                .anyMatch(item -> item.type() == EvidenceType.NAMING_MATCH
+                        && evidence.get(0).id().equals(item.attributes().get("evidenceRef"))));
     }
 
     @Test

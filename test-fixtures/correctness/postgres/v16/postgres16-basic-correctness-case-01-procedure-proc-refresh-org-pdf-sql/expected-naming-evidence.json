@@ -1,5 +1,5 @@
 {
   "fingerprints": [
-    "SELF_ROLE_ID:jsh_organization.parent_id->jsh_organization.id:NAMING_MATCH"
+    "naming:jsh_organization.parent_id->jsh_organization.id:SELF_ROLE_ID:NAMING_MATCH"
   ]
 }

@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "ID_SUFFIX_TO_ID:jsh_depot_head.organ_id->jsh_supplier.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:jsh_depot_item.header_id->jsh_depot_head.id:NAMING_MATCH"
+    "naming:jsh_depot_head.organ_id->jsh_supplier.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:jsh_depot_item.header_id->jsh_depot_head.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
   ]
 }

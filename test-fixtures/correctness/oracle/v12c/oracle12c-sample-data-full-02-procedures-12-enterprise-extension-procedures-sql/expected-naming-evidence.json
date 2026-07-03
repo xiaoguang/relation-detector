@@ -1,5 +1,5 @@
 {
   "fingerprints": [
-    "TABLE_ID:stocktake_items.stocktake_id->stocktakes.id:NAMING_MATCH"
+    "naming:stocktake_items.stocktake_id->stocktakes.id:TABLE_ID:NAMING_MATCH"
   ]
 }

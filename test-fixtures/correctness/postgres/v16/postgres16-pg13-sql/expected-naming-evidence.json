@@ -1,5 +1,5 @@
 {
   "fingerprints": [
-    "SELF_ROLE_ID:categories.parent_id->categories.id:NAMING_MATCH"
+    "naming:categories.parent_id->categories.id:SELF_ROLE_ID:NAMING_MATCH"
   ]
 }

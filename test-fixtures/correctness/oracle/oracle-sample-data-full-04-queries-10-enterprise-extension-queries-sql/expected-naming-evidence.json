@@ -1,18 +1,18 @@
 {
   "fingerprints": [
-    "ID_SUFFIX_TO_ID:payment_receipts.party_id->customers.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:period_close_jobs.period_id->accounting_periods.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:production_operations.route_id->production_routes.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:stock_transfer_items.transfer_id->stock_transfers.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:stock_transfers.from_warehouse_id->warehouses.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:stock_transfers.to_warehouse_id->warehouses.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:stocktakes.warehouse_id->warehouses.id:NAMING_MATCH",
-    "SELF_ROLE_ID:production_operations.predecessor_operation_id->production_operations.id:NAMING_MATCH",
-    "TABLE_ID:accounting_periods.ledger_book_id->ledger_books.id:NAMING_MATCH",
-    "TABLE_ID:customer_addresses.customer_id->customers.id:NAMING_MATCH",
-    "TABLE_ID:production_routes.product_id->products.id:NAMING_MATCH",
-    "TABLE_ID:stock_transfer_items.product_id->products.id:NAMING_MATCH",
-    "TABLE_ID:stocktake_items.product_id->products.id:NAMING_MATCH",
-    "TABLE_ID:stocktake_items.stocktake_id->stocktakes.id:NAMING_MATCH"
+    "naming:accounting_periods.ledger_book_id->ledger_books.id:TABLE_ID:NAMING_MATCH",
+    "naming:customer_addresses.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
+    "naming:payment_receipts.party_id->customers.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:period_close_jobs.period_id->accounting_periods.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:production_operations.predecessor_operation_id->production_operations.id:SELF_ROLE_ID:NAMING_MATCH",
+    "naming:production_operations.route_id->production_routes.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:production_routes.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:stock_transfer_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:stock_transfer_items.transfer_id->stock_transfers.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:stock_transfers.from_warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:stock_transfers.to_warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:stocktake_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:stocktake_items.stocktake_id->stocktakes.id:TABLE_ID:NAMING_MATCH",
+    "naming:stocktakes.warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
   ]
 }

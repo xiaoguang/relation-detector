@@ -1,17 +1,17 @@
 {
   "fingerprints": [
-    "ID_SUFFIX_TO_ID:material_issue_items.issue_id->material_issues.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:mrp_runs.plan_id->production_plans.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:payments.order_id->sales_orders.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:sales_order_items.order_id->sales_orders.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:sales_orders.warehouse_id->warehouses.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:sales_returns.order_id->sales_orders.id:NAMING_MATCH",
-    "TABLE_ID:material_issues.work_order_id->work_orders.id:NAMING_MATCH",
-    "TABLE_ID:operation_reports.work_order_operation_id->work_order_operations.id:NAMING_MATCH",
-    "TABLE_ID:purchase_orders.supplier_id->suppliers.id:NAMING_MATCH",
-    "TABLE_ID:repair_order_parts.repair_order_id->repair_orders.id:NAMING_MATCH",
-    "TABLE_ID:sales_order_items.product_id->products.id:NAMING_MATCH",
-    "TABLE_ID:sales_orders.customer_id->customers.id:NAMING_MATCH",
-    "TABLE_ID:work_order_operations.work_order_id->work_orders.id:NAMING_MATCH"
+    "naming:material_issue_items.issue_id->material_issues.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:material_issues.work_order_id->work_orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:mrp_runs.plan_id->production_plans.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:operation_reports.work_order_operation_id->work_order_operations.id:TABLE_ID:NAMING_MATCH",
+    "naming:payments.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:purchase_orders.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
+    "naming:repair_order_parts.repair_order_id->repair_orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_order_items.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:sales_order_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_orders.warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:sales_returns.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:work_order_operations.work_order_id->work_orders.id:TABLE_ID:NAMING_MATCH"
   ]
 }

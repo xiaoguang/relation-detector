@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "TABLE_ID:account_balances.user_id->users.id:NAMING_MATCH",
-    "TABLE_ID:transaction_ledgers.user_id->users.id:NAMING_MATCH"
+    "naming:account_balances.user_id->users.id:TABLE_ID:NAMING_MATCH",
+    "naming:transaction_ledgers.user_id->users.id:TABLE_ID:NAMING_MATCH"
   ]
 }

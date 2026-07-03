@@ -1,5 +1,5 @@
 {
   "fingerprints": [
-    "ID_SUFFIX_TO_ID:inventory.batch_id->product_batches.id:NAMING_MATCH"
+    "naming:inventory.batch_id->product_batches.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
   ]
 }

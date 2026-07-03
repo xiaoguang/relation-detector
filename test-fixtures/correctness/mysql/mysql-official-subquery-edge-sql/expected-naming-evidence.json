@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "TABLE_ID:customers.region_id->regions.id:NAMING_MATCH",
-    "TABLE_ID:orders.customer_id->customers.id:NAMING_MATCH"
+    "naming:customers.region_id->regions.id:TABLE_ID:NAMING_MATCH",
+    "naming:orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

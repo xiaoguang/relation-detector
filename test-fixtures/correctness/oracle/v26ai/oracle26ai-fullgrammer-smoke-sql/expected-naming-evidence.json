@@ -1,5 +1,5 @@
 {
   "fingerprints": [
-    "TABLE_ID:orders.customer_id->customers.id:NAMING_MATCH"
+    "naming:orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

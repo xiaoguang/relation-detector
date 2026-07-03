@@ -1,5 +1,5 @@
 {
   "fingerprints": [
-    "TABLE_ID:salary_payments.employee_id->employees.id:NAMING_MATCH"
+    "naming:salary_payments.employee_id->employees.id:TABLE_ID:NAMING_MATCH"
   ]
 }

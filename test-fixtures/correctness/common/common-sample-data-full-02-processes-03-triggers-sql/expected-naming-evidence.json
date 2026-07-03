@@ -1,11 +1,11 @@
 {
   "fingerprints": [
-    "ID_SUFFIX_TO_ID:sales_returns.order_id->sales_orders.id:NAMING_MATCH",
-    "TABLE_ID:employees.department_id->departments.id:NAMING_MATCH",
-    "TABLE_ID:inventory.product_id->products.id:NAMING_MATCH",
-    "TABLE_ID:inventory_transactions.product_id->products.id:NAMING_MATCH",
-    "TABLE_ID:purchase_orders.supplier_id->suppliers.id:NAMING_MATCH",
-    "TABLE_ID:salary_payments.employee_id->employees.id:NAMING_MATCH",
-    "TABLE_ID:sales_orders.customer_id->customers.id:NAMING_MATCH"
+    "naming:employees.department_id->departments.id:TABLE_ID:NAMING_MATCH",
+    "naming:inventory.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:inventory_transactions.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:purchase_orders.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
+    "naming:salary_payments.employee_id->employees.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_returns.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
   ]
 }

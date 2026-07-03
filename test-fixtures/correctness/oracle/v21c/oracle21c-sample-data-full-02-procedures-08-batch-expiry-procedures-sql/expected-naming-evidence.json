@@ -1,10 +1,10 @@
 {
   "fingerprints": [
-    "ID_SUFFIX_TO_ID:inventory.batch_id->product_batches.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:inventory.warehouse_id->warehouses.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:products.category_id->product_categories.id:NAMING_MATCH",
-    "ID_SUFFIX_TO_ID:sales_order_items.order_id->sales_orders.id:NAMING_MATCH",
-    "TABLE_ID:inventory.product_id->products.id:NAMING_MATCH",
-    "TABLE_ID:sales_order_items.product_id->products.id:NAMING_MATCH"
+    "naming:inventory.batch_id->product_batches.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:inventory.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:inventory.warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:products.category_id->product_categories.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:sales_order_items.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:sales_order_items.product_id->products.id:TABLE_ID:NAMING_MATCH"
   ]
 }
