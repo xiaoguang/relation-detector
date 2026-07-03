@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "naming:project_costs.project_id->projects.id:TABLE_ID:NAMING_MATCH",
+    "naming:serial_number_logs.serial_number_id->serial_numbers.id:TABLE_ID:NAMING_MATCH"
+  ]
+}

@@ -41,10 +41,25 @@ public final class JsonResultWriter {
      * <p>EN: Renders ScanResult into the final JSON string.
      */
     public String write(ScanResult result, boolean includeEvidence, boolean includeWarnings) {
+        return write(result, includeEvidence, includeWarnings, true);
+    }
+
+    /**
+     * 将 ScanResult 渲染成最终 JSON 字符串。
+     *
+     * <p>Observation counts are debug-only counters derived from rawEvidence.
+     * They help compare merged facts with their raw observations and can be
+     * disabled by output.includeObservationCounts.
+     *
+     * <p>EN: Renders ScanResult into the final JSON string.
+     */
+    public String write(
+            ScanResult result,
+            boolean includeEvidence,
+            boolean includeWarnings,
+            boolean includeObservationCounts
+    ) {
         List<NamingEvidenceCandidate> namingEvidence = namingEvidenceMerger.merge(result.namingEvidence());
-        int namingEvidenceObservationCount = namingEvidence.stream()
-                .mapToInt(candidate -> candidate.rawEvidence().size())
-                .sum();
 
         ObjectNode root = JSON.createObjectNode();
         ObjectNode database = root.putObject("database");
@@ -56,7 +71,11 @@ public final class JsonResultWriter {
         summary.put("relationshipCount", result.relationships().size());
         summary.put("dataLineageCount", result.dataLineages().size());
         summary.put("namingEvidenceCount", namingEvidence.size());
-        summary.put("namingEvidenceObservationCount", namingEvidenceObservationCount);
+        if (includeObservationCounts) {
+            summary.put("relationshipObservationCount", relationshipObservationCount(result.relationships()));
+            summary.put("dataLineageObservationCount", dataLineageObservationCount(result.dataLineages()));
+            summary.put("namingEvidenceObservationCount", namingEvidenceObservationCount(namingEvidence));
+        }
         summary.put("warningCount", result.warnings().size());
         ArrayNode sources = summary.putArray("sources");
         result.sources().forEach(sources::add);
@@ -84,6 +103,28 @@ public final class JsonResultWriter {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to render scan result JSON", e);
         }
+    }
+
+    private int relationshipObservationCount(List<RelationshipCandidate> relationships) {
+        return relationships.stream()
+                .mapToInt(relation -> relation.rawEvidence().isEmpty()
+                        ? relation.evidence().size()
+                        : relation.rawEvidence().size())
+                .sum();
+    }
+
+    private int dataLineageObservationCount(List<DataLineageCandidate> lineages) {
+        return lineages.stream()
+                .mapToInt(lineage -> lineage.rawEvidence().isEmpty()
+                        ? lineage.evidence().size()
+                        : lineage.rawEvidence().size())
+                .sum();
+    }
+
+    private int namingEvidenceObservationCount(List<NamingEvidenceCandidate> namingEvidence) {
+        return namingEvidence.stream()
+                .mapToInt(candidate -> candidate.rawEvidence().size())
+                .sum();
     }
 
     private ObjectNode relationshipNode(RelationshipCandidate relation, boolean includeEvidence) {

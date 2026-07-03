@@ -1,5 +1,15 @@
 {
   "fingerprints": [
+    "VALUE:COALESCE:dbo.employees.id->sales_commissions.employee_id",
+    "VALUE:COALESCE:dbo.employees.id->settlements.approved_by",
+    "VALUE:COALESCE:dbo.employees.id->settlements.prepared_by",
+    "VALUE:COALESCE:dbo.product_categories.id->commission_rules.product_category_id",
+    "VALUE:COALESCE:dbo.promotions.id->promotion_products.promotion_id",
+    "VALUE:COALESCE:dbo.sales_orders.id->sales_commissions.order_id",
+    "VALUE:COALESCE:dbo.sales_orders.id->shipments.order_id",
+    "VALUE:COALESCE:dbo.settlements.id->settlement_items.settlement_id",
+    "VALUE:COALESCE:dbo.shipments.id->shipping_tracks.shipment_id",
+    "VALUE:COALESCE:dbo.warehouses.id->shipments.warehouse_id",
     "VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id",
     "VALUE:DIRECT:dbo.employees.id->settlements.approved_by",
     "VALUE:DIRECT:dbo.employees.id->settlements.prepared_by",

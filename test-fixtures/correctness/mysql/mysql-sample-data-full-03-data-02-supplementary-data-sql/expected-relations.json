@@ -1,6 +1,7 @@
 {
   "fingerprints": [
-    "FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:shipments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:work_orders.bom_id->boms.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

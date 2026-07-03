@@ -34,6 +34,7 @@
     "FK_LIKE:payments.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:picking_task_items.picking_task_id->picking_tasks.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:picking_tasks.sales_order_id->sales_orders.id:SQL_LOG_EXISTS,NAMING_MATCH",
+    "FK_LIKE:product_categories.parent_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:repair_order_parts.repair_order_id->repair_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN",

@@ -40,6 +40,10 @@ public final class PostgresDdlEventSink {
         builder.addIndex(table, column, role, kind, line);
     }
 
+    public void addColumn(String table, String column, long line) {
+        builder.addColumn(clean(table), clean(column), line);
+    }
+
     public String clean(String value) {
         if (value == null) {
             return "";

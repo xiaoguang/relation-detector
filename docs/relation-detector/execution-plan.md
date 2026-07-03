@@ -33,9 +33,9 @@ orders -> users
 - Java 版本：Java 17。
 - 构建工具：Maven。
 - CLI 框架：当前为轻量手写 CLI；后续可替换为 picocli。
-- 配置文件：当前为轻量 YAML 子集解析；后续可替换为 Jackson YAML。
-- JSON 序列化：当前为手写 JSON writer；后续可替换为 Jackson，但必须保持输出 schema 兼容。
-- SQL/DDL 解析：统一通过 `parser.mode: auto|full-grammer|token-event` 选择。`token-event` 是无版本信息或 profile 不支持时的兜底链路；`full-grammer` 使用 MySQL/PostgreSQL/Oracle adaptor 注册的大版本 grammar profile。ANTLR 是底层 lexer/parser 技术，不是业务 parser 模式名。
+- 配置文件：`SimpleYamlConfigLoader` 保留历史类名，内部使用 Jackson `YAMLMapper`，并保持当前 YAML 配置语义。
+- JSON 序列化：`JsonResultWriter` 使用 Jackson `ObjectMapper`，必须保持输出 schema 兼容。
+- SQL/DDL 解析：统一通过 `parser.mode: auto|full-grammer|token-event` 选择。`token-event` 是无版本信息或 profile 不支持时的兜底链路；`full-grammer` 使用 MySQL/PostgreSQL/Oracle/SQL Server adaptor 注册的大版本 grammar profile。ANTLR 是底层 lexer/parser 技术，不是业务 parser 模式名。
 - 插件发现：Java SPI / `ServiceLoader`。
 - 测试：
   - JUnit 5。
@@ -77,7 +77,7 @@ relation-detector/
 
 - `cli`
   - 当前轻量手写命令行入口；后续可替换为 picocli。
-  - 当前轻量 YAML 子集配置加载；后续可替换为 Jackson YAML。
+  - Jackson YAML 配置加载，类名仍为 `SimpleYamlConfigLoader`。
   - adaptor 加载。
   - JSON/table 输出。
 
@@ -759,6 +759,7 @@ output:
   minConfidence: 0.30
   includeEvidence: true
   includeWarnings: true
+  includeObservationCounts: true
 ```
 
 ## 10. JSON 输出设计
@@ -772,8 +773,19 @@ output:
     "schema": "shop"
   },
   "generatedAt": "2026-06-14T00:00:00Z",
+  "summary": {
+    "relationshipCount": 0,
+    "dataLineageCount": 0,
+    "namingEvidenceCount": 0,
+    "relationshipObservationCount": 0,
+    "dataLineageObservationCount": 0,
+    "namingEvidenceObservationCount": 0,
+    "warningCount": 0,
+    "sources": []
+  },
   "relationships": [],
   "dataLineages": [],
+  "namingEvidence": [],
   "warnings": []
 }
 ```
@@ -793,6 +805,7 @@ output:
   "relationType": "FK_LIKE",
   "relationSubType": "DECLARED_FK",
   "confidence": 0.98,
+  "rawEvidence": [],
   "evidence": [
     {
       "type": "METADATA_FOREIGN_KEY",
@@ -803,6 +816,8 @@ output:
   ]
 }
 ```
+
+`namingEvidence` 是独立命名证据池；relationship 中的 `NAMING_MATCH` evidence 只通过 `evidenceRef` 引用该池，不重复完整 raw observations。
 
 表级关系中 column 允许为空：
 

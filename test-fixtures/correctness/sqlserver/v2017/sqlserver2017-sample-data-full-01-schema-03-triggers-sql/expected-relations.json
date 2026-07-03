@@ -1,13 +1,4 @@
 {
-  "fingerprints": [
-    "FK_LIKE:inserted.department_id->dbo.departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
-    "FK_LIKE:inserted.employee_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
-    "FK_LIKE:inserted.manager_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:inserted.parent_id->dbo.departments.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:inserted.parent_id->dbo.permissions.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:inserted.permission_id->dbo.permissions.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:inserted.position_id->dbo.positions.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:inserted.role_id->dbo.roles.id:SQL_LOG_JOIN,NAMING_MATCH"
-  ],
+  "fingerprints": [],
   "forbiddenTables": []
 }

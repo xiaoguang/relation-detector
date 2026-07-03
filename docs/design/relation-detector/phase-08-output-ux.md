@@ -92,6 +92,7 @@ output:
   minConfidence: 0.30
   includeEvidence: true
   includeWarnings: true
+  includeObservationCounts: true
 ```
 
 配置校验：
@@ -125,13 +126,23 @@ output:
   "generatedAt": "2026-06-14T00:00:00Z",
   "summary": {
     "relationshipCount": 1,
+    "dataLineageCount": 1,
+    "namingEvidenceCount": 1,
+    "relationshipObservationCount": 2,
+    "dataLineageObservationCount": 2,
+    "namingEvidenceObservationCount": 2,
     "warningCount": 0,
     "sources": ["metadata", "ddl", "logs"]
   },
   "relationships": [],
+  "dataLineages": [],
+  "namingEvidence": [],
   "warnings": []
 }
 ```
+
+`relationshipObservationCount`、`dataLineageObservationCount`、`namingEvidenceObservationCount`
+是调试字段，只统计 merged fact 背后的 raw evidence observation 数量，用来解释“一个最终关系/血缘/命名证据由多少次原始出现合并而来”。它们不代表新的业务事实，不参与 confidence 计算；可通过 `output.includeObservationCounts: false` 关闭。
 
 关系：
 
@@ -185,6 +196,21 @@ output:
       }
     },
     {
+      "type": "NAMING_MATCH",
+      "sourceType": "DERIVED",
+      "score": 0.20,
+      "source": "naming:orders.user_id->users.id:ID_SUFFIX_TO_ID",
+      "detail": "Naming evidence naming:orders.user_id->users.id:ID_SUFFIX_TO_ID",
+      "evidenceRef": "naming:orders.user_id->users.id:ID_SUFFIX_TO_ID",
+      "attributes": {
+        "evidenceRef": "naming:orders.user_id->users.id:ID_SUFFIX_TO_ID",
+        "namingRule": "ID_SUFFIX_TO_ID",
+        "suggestedSourceEndpoint": "orders.user_id",
+        "suggestedTargetEndpoint": "users.id",
+        "directionHint": true
+      }
+    },
+    {
       "type": "REPEATED_OBSERVATION",
       "sourceType": "NATIVE_LOG",
       "score": 0.05,
@@ -202,14 +228,57 @@ output:
 }
 ```
 
+命名证据：
+
+```json
+{
+  "id": "naming:orders.user_id->users.id:ID_SUFFIX_TO_ID",
+  "source": {
+    "table": "orders",
+    "column": "user_id"
+  },
+  "target": {
+    "table": "users",
+    "column": "id"
+  },
+  "rule": "ID_SUFFIX_TO_ID",
+  "directionHint": true,
+  "rawEvidence": [],
+  "evidence": []
+}
+```
+
+字段血缘：
+
+```json
+{
+  "sources": [
+    {
+      "table": "orders",
+      "column": "pay_amount"
+    }
+  ],
+  "target": {
+    "table": "users",
+    "column": "total_spent"
+  },
+  "flowKind": "VALUE",
+  "transformType": "AGGREGATE",
+  "confidence": 0.80,
+  "rawEvidence": [],
+  "evidence": []
+}
+```
+
 规则：
 
 - `confidence` 保留两位或四位小数，内部计算用高精度。
 - 表级关系的 `column` 为 `null`。
-- `rawEvidence` 默认输出，除非用户关闭 evidence；它保留归并前每一次观测，适合审计、排错和回放。
+- relationship、data lineage 和 naming evidence 都有 `rawEvidence` / grouped `evidence` 双层模型；`rawEvidence` 保留归并前每一次观测，适合审计、排错和回放。
 - `evidence` 默认输出，除非用户关闭 evidence；它保留归并后的摘要证据，并参与最终 confidence 计算。
+- top-level `namingEvidence` 是完整命名证据池；relationship 中的 `NAMING_MATCH` 只保存 `evidenceRef` 和方向摘要，不重复完整 raw observations。
 - 重复观测不会把同一个基础分无限叠加；摘要 evidence 记录 `count` 和样本 detail，并额外使用 `REPEATED_OBSERVATION` 表示最多 0.10 的递减增益。
-- 输出字段保持稳定，后续新增字段应向后兼容。
+- JSON 输出由 Jackson `ObjectMapper` 生成；输出字段保持稳定，后续新增字段应向后兼容。
 
 ## Table 输出
 
@@ -356,7 +425,7 @@ README 至少包含：
 
 - 用户能根据 README 跑通 MySQL 示例。
 - 用户能根据 README 跑通 PostgreSQL 示例。
-- JSON 输出遵守稳定 schema，可被标准 JSON parser 稳定反序列化；当前实现为手写 writer，后续可替换为 Jackson。
+- JSON 输出遵守稳定 schema，可被标准 JSON parser 稳定反序列化；当前实现由 Jackson `ObjectMapper` 生成。
 - table 输出在窄终端中仍可读。
 - warning 摘要能帮助定位输入问题。
 - 错误码稳定且有文档说明。

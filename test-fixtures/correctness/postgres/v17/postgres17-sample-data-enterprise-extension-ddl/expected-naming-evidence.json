@@ -1,0 +1,7 @@
+{
+  "fingerprints": [
+    "naming:accounting_periods.ledger_book_id->ledger_books.id:TABLE_ID:NAMING_MATCH",
+    "naming:ledger_books.tenant_id->tenants.id:TABLE_ID:NAMING_MATCH",
+    "naming:stocktake_items.stocktake_id->stocktakes.id:TABLE_ID:NAMING_MATCH"
+  ]
+}

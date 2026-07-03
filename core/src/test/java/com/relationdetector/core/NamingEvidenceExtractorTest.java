@@ -70,6 +70,27 @@ class NamingEvidenceExtractorTest {
     }
 
     @Test
+    void ddlColumnInventoryDoesNotMatchEveryIdColumnBySuffixOnly() {
+        String ddl = """
+                CREATE TABLE products (
+                  id INTEGER PRIMARY KEY
+                );
+                CREATE TABLE orders (
+                  id INTEGER PRIMARY KEY,
+                  customer_id INTEGER
+                );
+                """;
+        StructuredParseResult result = new TokenEventStructuredDdlParser(SqlDialect.GENERIC)
+                .parseDdl(ddl, "schema.sql", null);
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromDdlEvents(result.events());
+
+        assertTrue(evidence.isEmpty(),
+                () -> "independent DDL naming evidence must not turn customer_id into every unrelated id column: "
+                        + evidence);
+    }
+
+    @Test
     void extractsSqlPredicateNamingEvidenceAndEnhancerCanReusePool() {
         RelationshipCandidate candidate = sqlPredicate("orders", "customer_id", "customers", "id");
 

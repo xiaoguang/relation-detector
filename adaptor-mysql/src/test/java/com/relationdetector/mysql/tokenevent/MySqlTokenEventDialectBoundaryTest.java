@@ -40,6 +40,11 @@ class MySqlTokenEventDialectBoundaryTest {
         assertEquals("MySqlTokenEventParseTreeVisitor", result.attributes().get("eventBuilder"));
         assertFalse(result.attributes().containsKey("ddlEventVisitor"));
         assertTrue(result.events().stream().anyMatch(event ->
+                event.type() == StructuredParseEventType.DDL_COLUMN
+                        && "orders".equals(event.attributes().get("table"))
+                        && "user_id".equals(event.attributes().get("column"))),
+                () -> "Typed DDL visitor should emit DDL column inventory for naming evidence: " + result.events());
+        assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.DDL_FOREIGN_KEY
                         && "orders".equals(event.attributes().get("sourceTable"))
                         && "user_id".equals(event.attributes().get("sourceColumn"))

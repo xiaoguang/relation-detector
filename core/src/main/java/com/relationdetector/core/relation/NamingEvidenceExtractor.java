@@ -104,13 +104,18 @@ public final class NamingEvidenceExtractor {
                 if (left.table().normalizedName().equals(right.table().normalizedName())) {
                     continue;
                 }
-                NamingMatchRules.match(left, right, false)
+                catalogNamingMatch(left, right)
                         .ifPresent(match -> add(result, seen, candidate(match, source,
                                 detailPrefix + ": " + match.source().displayName()
                                         + " matches " + match.target().displayName())));
             }
         }
         return List.copyOf(result);
+    }
+
+    private java.util.Optional<NamingMatchRules.Match> catalogNamingMatch(Endpoint left, Endpoint right) {
+        return NamingMatchRules.match(left, right, false)
+                .filter(match -> "TABLE_ID".equals(match.rule()));
     }
 
     private List<Endpoint> dedupeEndpoints(List<Endpoint> endpoints) {

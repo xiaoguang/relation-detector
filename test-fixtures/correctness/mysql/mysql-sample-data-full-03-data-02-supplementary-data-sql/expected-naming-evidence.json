@@ -1,5 +1,6 @@
 {
   "fingerprints": [
-    "naming:shipments.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
+    "naming:shipments.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:work_orders.bom_id->boms.id:TABLE_ID:NAMING_MATCH"
   ]
 }

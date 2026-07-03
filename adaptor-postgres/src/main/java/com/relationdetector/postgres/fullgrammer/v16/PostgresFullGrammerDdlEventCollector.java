@@ -64,6 +64,7 @@ final class PostgresFullGrammerDdlEventCollector {
                 return null;
             }
             String column = core.out().clean(ctx.colid() == null ? "" : ctx.colid().getText());
+            core.out().addColumn(core.currentTable(), column, ctx.getStart().getLine());
             if (ctx.colquallist() == null) {
                 return null;
             }

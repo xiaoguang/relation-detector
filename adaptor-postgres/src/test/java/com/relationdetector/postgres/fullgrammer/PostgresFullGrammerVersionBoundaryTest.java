@@ -11,6 +11,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.Enums.StatementSourceType;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
 class PostgresFullGrammerVersionBoundaryTest {
@@ -130,6 +131,26 @@ class PostgresFullGrammerVersionBoundaryTest {
 
         assertFalse(hasUnsupportedSyntaxWarning(result));
         assertFalse(result.events().isEmpty());
+    }
+
+    @Test
+    void fullGrammerDdlEmitsColumnInventoryForNamingEvidence() {
+        var result = new com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerDialectModule()
+                .structuredDdlParser()
+                .parseDdl("""
+                        CREATE TABLE orders (
+                            id bigint PRIMARY KEY,
+                            customer_id bigint,
+                            CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(id)
+                        );
+                        """, "pg-ddl-column-inventory.sql", null);
+
+        assertTrue(result.events().stream().anyMatch(event ->
+                        event.type() == StructuredParseEventType.DDL_COLUMN
+                                && "orders".equals(event.attributes().get("table"))
+                                && "customer_id".equals(event.attributes().get("column"))),
+                () -> "PostgreSQL full-grammer DDL should emit DDL_COLUMN inventory events: "
+                        + result.events());
     }
 
     @Test

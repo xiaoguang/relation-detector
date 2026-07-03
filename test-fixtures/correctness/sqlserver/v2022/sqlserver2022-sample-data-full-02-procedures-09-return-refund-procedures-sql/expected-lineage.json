@@ -1,5 +1,15 @@
 {
   "fingerprints": [
+    "VALUE:COALESCE:dbo.employees.id->damage_reports.approved_by",
+    "VALUE:COALESCE:dbo.employees.id->damage_reports.executed_by",
+    "VALUE:COALESCE:dbo.employees.id->damage_reports.reported_by",
+    "VALUE:COALESCE:dbo.employees.id->purchase_returns.approved_by",
+    "VALUE:COALESCE:dbo.employees.id->purchase_returns.handler_id",
+    "VALUE:COALESCE:dbo.product_batches.id->purchase_return_items.batch_id",
+    "VALUE:COALESCE:dbo.products.id->purchase_return_items.product_id",
+    "VALUE:COALESCE:dbo.purchase_returns.id->purchase_return_items.return_id",
+    "VALUE:COALESCE:dbo.vouchers.id->purchase_returns.refund_voucher_id",
+    "VALUE:COALESCE:dbo.warehouses.id->damage_reports.warehouse_id",
     "VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by",
     "VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by",
     "VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by",

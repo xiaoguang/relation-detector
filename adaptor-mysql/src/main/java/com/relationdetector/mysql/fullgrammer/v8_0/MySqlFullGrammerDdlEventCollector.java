@@ -90,6 +90,9 @@ final class MySqlFullGrammerDdlEventCollector {
                 return null;
             }
             String column = out.clean(ctx.columnName() == null ? "" : ctx.columnName().getText());
+            if (!column.isBlank()) {
+                out.addColumn(currentTable, column, ctx.getStart().getLine());
+            }
             if (hasInlinePrimaryKey(ctx.fieldDefinition())) {
                 out.addIndex(currentTable, column, "TARGET_UNIQUE", "INLINE_PRIMARY_KEY", ctx.getStart().getLine());
             }

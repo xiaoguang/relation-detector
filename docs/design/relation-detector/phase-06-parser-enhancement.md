@@ -44,12 +44,18 @@ core/src/main/java/com/relationdetector/core/relation
   TokenEventSqlRelationParser
   TokenEventRelationExtractor
   DdlRelationExtractionVisitor
+  NamingEvidenceExtractor
+  NamingEvidenceMerger
+  NamingMatchEvidenceEnhancer
   RelationshipMerger
 
 core/src/main/java/com/relationdetector/core/lineage
   TokenEventDataLineageExtractor
+  ProjectionTraceResolver
   DataLineageMerger
-  SqlLineageResolver
+
+core/src/main/java/com/relationdetector/core/lineage/model
+  ProjectionTrace / ExpressionSourceSet / AssignmentMapping / RoutineScope / WriteTarget
 
 core/src/main/java/com/relationdetector/core/ddl
   package-info.java
@@ -62,14 +68,22 @@ adaptor-mysql/src/main/java/com/relationdetector/mysql/tokenevent
   MySqlTokenEventStructuredSqlParser
   MySqlTokenEventStructuredDdlParser
 
+adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer/common
+  MySqlFullGrammerParseSupport
+  AbstractMySqlFullGrammerStructuredSqlParser
+  AbstractMySqlFullGrammerStructuredDdlParser
+  MySqlSqlEventVisitorCore
+  MySqlDdlEventVisitorCore
+
+adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer/v5_7
 adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer/v8_0
-  MySqlFullGrammerDialectModule
+  MySqlFullGrammerDialectModule / MySql57FullGrammerDialectModule
+  MySqlFullGrammerVersionBinding
   MySqlFullGrammerStructuredSqlParser
   MySqlFullGrammerStructuredDdlParser
-  MySqlTokenEventParseTreeVisitor
+  MySqlFullGrammerParseTreeVisitor
   MySqlExpressionAnalyzer
   MySqlFullGrammerDdlEventCollector
-  MySqlGrammarSqlMode / MySqlGrammarSqlModes
 
 adaptor-postgres/src/main/java/com/relationdetector/postgres/tokenevent
   PostgresTokenEventStructuredSqlParser
@@ -79,11 +93,13 @@ adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer/v16
 adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer/v17
 adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer/v18
   PostgresFullGrammerDialectModule
-  PostgresFullGrammerStructuredSqlParser
-  PostgresFullGrammerStructuredDdlParser
-  PostgresTokenEventParseTreeVisitor
-  PostgresExpressionAnalyzer
+  PostgresFullGrammerVersionBinding
+  PostgresFullGrammerParseTreeVisitor
   PostgresFullGrammerDdlEventCollector
+
+adaptor-postgres/src/main/java/com/relationdetector/postgres/routine
+  PostgresRoutineBodyParser
+  PostgresRoutineBodyParseTreeVisitor
 
 adaptor-oracle/src/main/java/com/relationdetector/oracle/tokenevent
   OracleTokenEventStructuredSqlParser
@@ -94,6 +110,22 @@ adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammer/v19c
 adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammer/v21c
 adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammer/v26ai
   OracleFullGrammerDialectModule
+  OracleFullGrammerBinding
+  OracleFullGrammerParseTreeVisitor
+
+adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/tokenevent
+  SqlServerTokenEventStructuredSqlParser
+  SqlServerTokenEventStructuredDdlParser
+
+adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammer/common
+  SqlServerFullGrammerStructuredSqlParser
+  SqlServerFullGrammerStructuredDdlParser
+  SqlServerParseTreeEventCollector
+  SqlServerExpressionAnalyzer
+
+adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammer/v2016|v2017|v2019|v2022|v2025
+  SqlServerFullGrammerBinding
+  SqlServer*FullGrammerDialectModule
 ```
 
 版本由 package 表达，例如 `postgres.fullgrammer.v16`、`mysql.fullgrammer.v8_0`、`oracle.fullgrammer.v19c`。类名不再写 `Postgres16` / `MySql80`。core 只通过 `ServiceLoader<FullGrammerDialectModule>` 加载 adaptor module，不直接 import MySQL/PostgreSQL/Oracle full-grammer 实现。
@@ -114,8 +146,9 @@ adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammer/v26ai
 | `core.parser` | SQL/DDL runner：执行 parser.mode/profile 选择并调用语义 extractor。 |
 | `core.tokenevent` | token-event 事件来源：common typed grammar、方言 typed parser 生命周期和结构事件模型。 |
 | `core.fullgrammer` | full-grammer 通用基础设施：profile/module registry、bundle factory、共享 event helper。 |
-| `core.relation` | relationship 语义：SQL/DDL events -> RelationshipCandidate，以及 relationship merge。 |
+| `core.relation` | relationship 语义：SQL/DDL events -> RelationshipCandidate、top-level naming evidence 抽取/合并，以及 relationship merge。 |
 | `core.lineage` | Data Lineage 语义：write mapping/projection/derived lineage -> DataLineageCandidate。 |
+| `core.lineage.model` | ProjectionTrace、ExpressionSourceSet、AssignmentMapping 等结构化字段血缘中间模型。 |
 | `core.ddl` | DDL 职责边界说明包；当前 token-event DDL parser 实现在 `core.tokenevent`，DDL relationship 转换在 `core.relation`。 |
 | `core.parse` | 通用 ANTLR parse support、syntax diagnostics 和 dialect 标识。 |
 | `core.log` | SQL 文件拆分与 native log 噪声过滤。 |
@@ -124,9 +157,11 @@ adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammer/v26ai
 | `core.diagnostics` | warning 构造工厂。 |
 | `core.scoring` | relationship confidence 计算。 |
 | `cli` | YAML/CLI 参数、adaptor 发现、ScanEngine 调用和输出。 |
-| `mysql` / `postgres` / `oracle` | adaptor 装配：metadata、object/log/DDL collector、token-event parser、full-grammer module。Oracle 当前 metadata/object collector 保守返回空，parser 侧已有初始接入。 |
-| `mysql.tokenevent` / `postgres.tokenevent` / `oracle.tokenevent` | 方言 token-event parser 入口。Oracle 当前使用 adaptor-local `OracleRelationSql.g4` typed grammar。 |
-| `mysql.fullgrammer.v8_0` / `postgres.fullgrammer.v16` / `postgres.fullgrammer.v17` / `postgres.fullgrammer.v18` / `oracle.fullgrammer.v12c` / `oracle.fullgrammer.v19c` / `oracle.fullgrammer.v21c` / `oracle.fullgrammer.v26ai` | 版本化 full-grammer grammar/profile module、typed visitor、expression analyzer 和 DDL collector。Oracle 当前是 `INCOMPLETE_VERSIONED` generated parser，更广泛的 Oracle 官方语法覆盖尚未落地。 |
+| `mysql` / `postgres` / `oracle` / `sqlserver` | adaptor 装配：metadata、object/log/DDL collector、token-event parser、full-grammer module。 |
+| `mysql.tokenevent` / `postgres.tokenevent` / `oracle.tokenevent` / `sqlserver.tokenevent` | 方言 token-event parser 入口。各自使用 adaptor-local typed grammar，不 import full-grammer parser。 |
+| `mysql.routine` / `postgres.routine` / `oracle.routine` / `sqlserver.routine` | 方言 routine scope policy 或 routine body parser；供 token-event 和 full-grammer 调用，不放在 core，也不挂在 full-grammer 专属目录下。 |
+| `mysql.fullgrammer.common` / `postgres.fullgrammer.common` / `oracle.fullgrammer.common` / `sqlserver.fullgrammer.common` | full-grammer 公共 parse support、binding、visitor core、expression analyzer 和 DDL event core。 |
+| `mysql.fullgrammer.v5_7` / `mysql.fullgrammer.v8_0` / `postgres.fullgrammer.v16` / `postgres.fullgrammer.v17` / `postgres.fullgrammer.v18` / `oracle.fullgrammer.v12c` / `oracle.fullgrammer.v19c` / `oracle.fullgrammer.v21c` / `oracle.fullgrammer.v26ai` / `sqlserver.fullgrammer.v2016` / `v2017` / `v2019` / `v2022` / `v2025` | 版本化 full-grammer generated parser binding、profile module 和少量 version policy / bridge。Oracle 当前是 `INCOMPLETE_VERSIONED` generated parser，SQL Server 官方逐版本语法裁剪仍在 backlog。 |
 
 审视结论：当前 package 注释、类级注释、关键函数注释、目录结构和本文职责表一致。core 不直接承载 MySQL/PostgreSQL 版本实现；adaptor 不承载 relationship/lineage semantic extractor；contracts 不依赖 core。
 
@@ -208,7 +243,8 @@ flowchart TD
   ddlFull --> ddlEvents["DDL_FOREIGN_KEY / DDL_INDEX events"]
   ddlToken --> ddlEvents
   ddlEvents --> ddlRel["DdlRelationExtractionVisitor"]
-  ddlRel --> relMerge["RelationshipMerger"]
+  ddlRel --> namingExtract["NamingEvidenceExtractor"]
+  ddlRel --> relCandidates["relationship candidates"]
 
   scan --> sqlInput["SQL logs / objects / routines / plain SQL"]
   sqlInput --> safeSql["safeParseStatement"]
@@ -221,7 +257,12 @@ flowchart TD
   sqlEvents --> lineage["TokenEventDataLineageExtractor"]
   lineage --> lineageMerge["DataLineageMerger"]
   sqlEvents --> sqlRel["TokenEventRelationExtractor"]
-  sqlRel --> relMerge
+  sqlRel --> namingExtract
+  sqlRel --> relCandidates
+  namingExtract --> namingPool["ScanResult.namingEvidence"]
+  namingPool --> namingEnhancer["NamingMatchEvidenceEnhancer"]
+  relCandidates --> namingEnhancer
+  namingEnhancer --> relMerge["RelationshipMerger"]
 ```
 
 当前 `ScanEngine.safeParseStatement(...)` 调用 `SqlRelationParserRunner.parseStructuredAndRelations(...)`，一次结构化解析后同时得到 relationship candidates 和可供 Data Lineage 使用的 `StructuredParseResult`。这让 SQL/DML 的 parser mode、profile selection、fallback warning 和 diagnostics 在同一条语句内保持一致。
@@ -265,13 +306,20 @@ flowchart TD
   sqlParsed --> relationExtractor["TokenEventRelationExtractor"]
   ddlRunner --> ddlExtractor["DdlRelationExtractionVisitor"]
 
-  enhancer --> relMerge["RelationshipMerger"]
-  relationExtractor --> relMerge
-  ddlExtractor --> relMerge
+  enhancer --> namingExtractor["NamingEvidenceExtractor"]
+  relationExtractor --> namingExtractor
+  ddlExtractor --> namingExtractor
+  namingExtractor --> namingPool["ScanResult.namingEvidence"]
+  namingPool --> namingEnhancer["NamingMatchEvidenceEnhancer"]
+  relationExtractor --> namingEnhancer
+  ddlExtractor --> namingEnhancer
+  enhancer --> namingEnhancer
+  namingEnhancer --> relMerge["RelationshipMerger"]
   lineageExtractor --> lineageMerge["DataLineageMerger"]
 
   relMerge --> result["ScanResult.relationships"]
   lineageMerge --> result2["ScanResult.dataLineages"]
+  namingPool --> result3["ScanResult.namingEvidence"]
 ```
 
 关键代码入口：
@@ -322,13 +370,13 @@ sequenceDiagram
   participant SE as ScanEngine
   participant SR as SqlRelationParserRunner
   participant LE as TokenEventDataLineageExtractor
-  participant LR as SqlLineageResolver
+  participant PTR as ProjectionTraceResolver
   participant LM as DataLineageMerger
 
   SE->>SR: parseStructuredAndRelations(SqlStatementRecord, tokens)
   SR-->>SE: StructuredParseResult + relationships
   SE->>LE: extract(parseResult, statement)
-  LE->>LR: resolve CTE/derived/projection lineage
+  LE->>PTR: build ProjectionTrace from StructuredSqlEvent
   LE-->>SE: List<DataLineageCandidate>
   SE->>LM: merge(lineages)
 ```
@@ -543,8 +591,8 @@ PostgreSQL 方言边界示例：
 Oracle 初始边界示例：
 
 - portable `JOIN` / comma join / CTE / `EXISTS` / `IN` / `INSERT SELECT` / basic `UPDATE` / `DELETE`
-- Oracle sample-data 中的 PL/SQL-like object block 先通过 portable event extraction 形成 correctness baseline
-- `CONNECT BY`、`MODEL`、package spec/body、version-specific syntax 和完整 PL/SQL control flow 属于后续 Oracle typed grammar backlog
+- Oracle sample-data 中的 PL/SQL object block 通过 adaptor-local `OracleRelationSql.g4` typed grammar 和 Oracle token-event visitor 形成 root correctness baseline
+- `CONNECT BY`、`MODEL`、package spec/body、更多 version-specific syntax 和完整 PL/SQL control flow 属于后续 Oracle typed grammar / full-grammer backlog
 
 公共语义必须留在 shared extractor：raw equality、`JOIN USING`、correlated `EXISTS`、scalar `IN`、tuple `IN`、FK-like 方向、列级/表级共现、重复证据去重。
 
@@ -555,19 +603,25 @@ full-grammer SQL parser 由 adaptor 版本 module 提供。当前实现：
 ```text
 mysql-5.7
 mysql-8.0
-  -> adaptor-mysql/com.relationdetector.mysql.fullgrammer.v8_0
+  -> adaptor-mysql/com.relationdetector.mysql.fullgrammer.v5_7/v8_0
   -> MySqlFullGrammerStructuredSqlParser
-  -> MySqlTokenEventParseTreeVisitor
+  -> MySqlFullGrammerParseTreeVisitor
   -> MySqlExpressionAnalyzer
 
 postgresql-16 / postgresql-17 / postgresql-18
   -> adaptor-postgres/com.relationdetector.postgres.fullgrammer.v16/v17/v18
   -> PostgresFullGrammerStructuredSqlParser
-  -> PostgresTokenEventParseTreeVisitor
+  -> PostgresFullGrammerParseTreeVisitor
   -> PostgresExpressionAnalyzer
+
+sqlserver-2016 / 2017 / 2019 / 2022 / 2025
+  -> adaptor-sqlserver/com.relationdetector.sqlserver.fullgrammer.v2016/v2017/v2019/v2022/v2025
+  -> SqlServerFullGrammerStructuredSqlParser
+  -> SqlServerParseTreeEventCollector
+  -> SqlServerExpressionAnalyzer
 ```
 
-full-grammer SQL parser 使用 versioned ANTLR `.g4`。MySQL 8.0 当前来自 vendored grammars-v4；PostgreSQL 16/17/18 以官方 `gram.y` / `scan.l` / keywords 为 source-of-truth，仓库 `.g4` 作为按 major version 约束的 ANTLR projection。它运行真实 parser entry rule，typed parse-tree visitor 直接生成同一套 `StructuredSqlEvent`。PostgreSQL full-grammer 解析 PL/pgSQL routine body 时使用 `postgres.fullgrammer.routine.PostgresFullGrammerRoutineBodySql.g4` 与对应 visitor，这是 full-grammer 本地补充 grammar，不 import 或调用 `postgres.tokenevent` parser。当前默认验收只比较关系、血缘、warning 和 JSON 行为；历史迁移期的 native/delegate/bridge 事件来源属性不再作为 correctness 验收入口。
+full-grammer SQL parser 使用 versioned ANTLR `.g4`。MySQL 5.7/8.0 当前来自 vendored grammars-v4 并按官方文档收紧版本边界；PostgreSQL 16/17/18 以官方 `gram.y` / `scan.l` / keywords 为 source-of-truth，仓库 `.g4` 作为按 major version 约束的 ANTLR projection。SQL Server 2016/2017/2019/2022/2025 来自固定 grammars-v4 T-SQL 快照，版本边界最终以 Microsoft Learn T-SQL reference 为准。它们运行真实 parser entry rule，typed parse-tree visitor 直接生成同一套 `StructuredSqlEvent`。PostgreSQL routine body 解析使用 `postgres.routine.PostgresRoutineBodySql.g4` 与对应 visitor，这是方言级 routine 层，token-event 与 full-grammer 都可调用，不 import 或调用 `postgres.tokenevent` parser。当前默认验收只比较关系、血缘、warning、naming evidence 和 JSON 行为；历史迁移期的 native/delegate/bridge 事件来源属性不再作为 correctness 验收入口。
 
 full-grammer 仍只替换“语法结构识别”。它不会改变：
 
@@ -586,34 +640,36 @@ full-grammer SQL 直接通过对应 versioned golden 验收，不再拿 token-ev
 - `test-fixtures/correctness/postgres/v16`
 - `test-fixtures/correctness/postgres/v17`
 - `test-fixtures/correctness/postgres/v18`
+- `test-fixtures/correctness/oracle/v12c|v19c|v21c|v26ai`
+- `test-fixtures/correctness/sqlserver/v2016|v2017|v2019|v2022|v2025`
 
 如果 full-grammer 漏识别或多识别，`CorrectnessFixtureRunnerTest` 会在对应版本 golden 上直接失败。extra relation/lineage 不能自动写入 golden，仍需按 SQL 语义审核。
 
 ### 当前 parser golden 统计与差异审计
 
-当前 correctness 资产按 parser category 统计如下。统计口径是 `expected-relations.json` / `expected-lineage.json` 的 `fingerprints` 数量；`NAMING_MATCH` 计入 relationship fingerprints 中，并单独列出，便于审查命名方向 evidence 的覆盖。
+当前 correctness 资产按 parser category 统计如下。Relationship / Lineage 统计分别来自 `expected-relations.json` 和 `expected-lineage.json` 的 `fingerprints` 数量；`Rel NAMING_MATCH` 是 relationship evidence 中引用的命名证据数量；`Top-level namingEvidence` 来自 `expected-naming-evidence.json`，表示独立命名证据池。relationship 只能引用这个证据池，不能自己重新计算 `NAMING_MATCH`。
 
-| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 223 |
-| MySQL root token-event | 83 | 65 / 18 | 655 | 296 | 0 | 266 |
-| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 300 |
-| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 458 |
-| PostgreSQL root token-event | 111 | 92 / 19 | 1401 | 332 | 0 | 394 |
-| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 419 |
-| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 420 |
-| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 419 |
-| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 |
-| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| SQL Server root token-event | 38 | 32 / 6 | 711 | 257 | 0 | 313 |
-| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
-| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
-| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
-| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
-| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
+| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 223 | 45095 |
+| MySQL root token-event | 83 | 65 / 18 | 655 | 296 | 0 | 266 | 266 |
+| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 300 | 300 |
+| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 458 | 458 |
+| PostgreSQL root token-event | 111 | 92 / 19 | 1401 | 332 | 0 | 394 | 394 |
+| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 419 | 419 |
+| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 420 | 420 |
+| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 419 | 419 |
+| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 | 255 |
+| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 | 289 |
+| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
+| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
+| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
+| SQL Server root token-event | 38 | 32 / 6 | 711 | 257 | 0 | 313 | 313 |
+| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
 
 root token-event 与对应 full-grammer 数量不要求完全一致：token-event 是 fallback typed grammar，目标是宽松兼容和高价值结构覆盖；full-grammer 是有 profile 时的 primary，目标是版本严格。两者都必须能从 SQL/DDL 结构解释自己的 golden。当前跨 parser 差异和 follow-up backlog 统一记录在 `docs/parser-audit/all-golden-semantic-review.md`：
 
@@ -696,7 +752,7 @@ FK-like 方向规则仍优先。无法可靠判断方向时才进入 column co-o
 
 `correlated EXISTS` 是跨方言公共关系语义。公共 extractor 可以处理 EXISTS 外壳和相关谓词；EXISTS 内部如果出现 MySQL/PostgreSQL 专属 rowset/function/hint/`ONLY`/`JSON_TABLE` 等语法，必须由对应方言 event builder 或 full-grammer visitor 负责识别和过滤。
 
-当前 typed SQL parser 不再把 `EXISTS` / `IN` / 普通 equality 直接定向为 FK-like，但必须保留真实语法 evidence：JOIN / comma join 输出 `SQL_LOG_JOIN`，correlated `EXISTS` 输出 `SQL_LOG_EXISTS`，`IN (SELECT ...)` / tuple IN 输出 `SQL_LOG_SUBQUERY_IN`。这些 evidence 证明“SQL 中存在明确列级谓词”，不单独证明 FK-like 方向。FK-like 方向可以由 DDL、metadata、data-profile、“SQL 谓词 + 一侧 unique、一侧 non-unique”，或“SQL 谓词 + 唯一 `NAMING_MATCH` 方向提示”推出；否则输出 `CO_OCCURRENCE`。`NAMING_MATCH` 不解析 SQL，也不凭表名/列名创建关系，只增强已有 SQL predicate candidate。
+当前 typed SQL parser 不再把 `EXISTS` / `IN` / 普通 equality 直接定向为 FK-like，但必须保留真实语法 evidence：JOIN / comma join 输出 `SQL_LOG_JOIN`，correlated `EXISTS` 输出 `SQL_LOG_EXISTS`，`IN (SELECT ...)` / tuple IN 输出 `SQL_LOG_SUBQUERY_IN`。这些 evidence 证明“SQL 中存在明确列级谓词”，不单独证明 FK-like 方向。FK-like 方向可以由 DDL、metadata、data-profile、“SQL 谓词 + 一侧 unique、一侧 non-unique”，或“SQL 谓词 + top-level `namingEvidence` 中的唯一方向提示”推出；否则输出 `CO_OCCURRENCE`。`NAMING_MATCH` 不解析 SQL，也不凭表名/列名创建关系；`NamingEvidenceExtractor` 先生成完整命名证据池，`NamingMatchEvidenceEnhancer` 只消费该证据池并在 relationship evidence 中写入 `evidenceRef`。
 
 ## Data Lineage v1
 
@@ -779,23 +835,25 @@ COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
 
 `knownPhysicalTables` 当前作为 extractor 入参保留，用于未来 metadata-aware lineage。当前 v1 主要依据语法明确的 `LOCAL_TEMP_TABLE_DECLARATION` 过滤本对象 scope 内临时表，不按 `tmp_`、`temp_`、`jsh_temp_` 这类名字猜测临时表。
 
-## SqlLineageResolver 与正式 Data Lineage 的区别
+## ProjectionTraceResolver 与正式 Data Lineage 的区别
 
-`SqlLineageResolver` 是 relationship 抽取内部 helper，只把 CTE/derived/LATERAL 简单投影列回溯到物理列。它不输出 JSON，不计算 lineage confidence。
+`ProjectionTraceResolver` 是 Data Lineage 链路的内部 helper，只把 CTE、derived table 和 projection alias 的结构化投影回溯到物理列或表达式来源。它消费 `StructuredSqlEvent`，不输出 JSON，不计算 lineage confidence，也不重新解析 SQL 文本。
 
-`TokenEventDataLineageExtractor` 是正式 Data Lineage 输出链路。它处理写目标和表达式来源，输出 `DataLineageCandidate`。
+`TokenEventDataLineageExtractor` 是正式 Data Lineage 输出链路。它处理写目标、表达式来源和 transform，输出 `DataLineageCandidate`。
 
-二者可以复用“安全列回溯”思想，但职责不同：
+二者职责不同：
 
 ```text
-SqlLineageResolver:
+ProjectionTraceResolver:
   x.user_id -> orders.user_id
-  用于把 x.user_id = users.id 还原成 orders.user_id -> users.id
+  用于把 INSERT/UPDATE/MERGE 中的 projection alias 还原成物理来源
 
 TokenEventDataLineageExtractor:
   orders.pay_amount -> users.total_spent
   用于输出字段值流向
 ```
+
+当前代码不保留 `SqlLineageResolver`、SQL 文本 regex helper 或 token span fallback。新增字段血缘能力必须从 typed grammar / typed visitor 产出结构事件，再通过 `ProjectionTrace`、`ExpressionSourceSet`、`AssignmentMapping` 进入正式 lineage。
 
 ## DDL token-event 链路
 
@@ -957,7 +1015,7 @@ mvn -pl cli -am -Dtest=CorrectnessFixtureRunnerTest \
   -Dsurefire.failIfNoSpecifiedTests=false test
 ```
 
-可选 profile 包括 `common`、`mysql`、`postgres`、`oracle`、`mysql/v5_7`、`mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`、`oracle/v12c`、`oracle/v19c`、`oracle/v21c`、`oracle/v26ai` 和 `full`。合并前使用 `-DcorrectnessFixtureProfile=full` 跑全量。runner 在非更新模式下按 fixture 并行执行，可用 `-DcorrectnessFixtureParallelism=N` 调整；`-DupdateCorrectnessGold=true` 时强制串行，保证 golden 写入稳定。
+可选 profile 包括 `common`、`mysql`、`postgres`、`oracle`、`sqlserver`、`mysql/v5_7`、`mysql/v8_0`、`postgres/v16`、`postgres/v17`、`postgres/v18`、`oracle/v12c`、`oracle/v19c`、`oracle/v21c`、`oracle/v26ai`、`sqlserver/v2016`、`sqlserver/v2017`、`sqlserver/v2019`、`sqlserver/v2022`、`sqlserver/v2025` 和 `full`。合并前使用 `-DcorrectnessFixtureProfile=full` 跑全量。runner 在非更新模式下按 fixture 并行执行，可用 `-DcorrectnessFixtureParallelism=N` 调整；`-DupdateCorrectnessGold=true` 时强制串行，保证 golden 写入稳定。
 
 生成报告：
 
@@ -983,6 +1041,7 @@ CorrectnessFixtureRunnerTest
   -> oracle/v19c full-grammer `INCOMPLETE_VERSIONED` coverage golden
   -> oracle/v21c full-grammer `INCOMPLETE_VERSIONED` coverage golden
   -> oracle/v26ai full-grammer `INCOMPLETE_VERSIONED` coverage golden
+  -> sqlserver/v2016 / v2017 / v2019 / v2022 / v2025 full-grammer golden
 ```
 
 CLI 端到端：
@@ -1003,30 +1062,30 @@ ParserConfigRemovalTest
 
 当前最近一次文档对齐时的测试资产统计：
 
-| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | NAMING_MATCH |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 1194 | 981 / 213 | 18016 | 5630 | 25 | 7503 |
-| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 223 |
-| MySQL root token-event | 83 | 65 / 18 | 655 | 296 | 0 | 266 |
-| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 300 |
-| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 458 |
-| PostgreSQL root token-event | 111 | 92 / 19 | 1401 | 332 | 0 | 394 |
-| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 419 |
-| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 420 |
-| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 419 |
-| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 |
-| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 |
-| SQL Server root token-event | 38 | 32 / 6 | 711 | 257 | 0 | 313 |
-| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
-| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
-| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
-| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
-| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 |
+| Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 全部 correctness | 1194 | 981 / 213 | 18016 | 5630 | 25 | 7503 | 52375 |
+| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 223 | 45095 |
+| MySQL root token-event | 83 | 65 / 18 | 655 | 296 | 0 | 266 | 266 |
+| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 300 | 300 |
+| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 458 | 458 |
+| PostgreSQL root token-event | 111 | 92 / 19 | 1401 | 332 | 0 | 394 | 394 |
+| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 419 | 419 |
+| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 420 | 420 |
+| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 419 | 419 |
+| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 | 255 |
+| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 | 289 |
+| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
+| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
+| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
+| SQL Server root token-event | 38 | 32 / 6 | 711 | 257 | 0 | 313 | 313 |
+| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
 
-最新验证摘要：`mvn test` 已通过；targeted correctness / versioned full-grammer golden / CLI E2E 测试也已通过。该摘要是对当前手写设计的实现快照；如果后续 fixture/golden 增减，应同步刷新本表、`docs/relation-detector/test-assets-map.md` 和 `docs/design/relation-detector/design-validation-report.md`。
+验证要求：代码或 fixture 变化后应至少运行 full correctness golden；文档或统计变化后应同步刷新本表、`docs/relation-detector/test-assets-map.md` 和 `docs/design/relation-detector/design-validation-report.md`。报告生成器仍需显式运行，不进入普通 `mvn test` 默认重负担路径。
 
 维护规则：
 

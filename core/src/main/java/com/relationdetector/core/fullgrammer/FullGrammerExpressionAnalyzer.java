@@ -338,7 +338,7 @@ public abstract class FullGrammerExpressionAnalyzer {
         if (tree instanceof TerminalNode terminal) {
             String text = terminal.getText();
             String lower = text.toLowerCase(Locale.ROOT);
-            if (isAggregateFunction(lower) || isWindowFunction(lower) || lower.equals("coalesce")
+            if (isAggregateFunction(lower) || isWindowFunction(lower) || isCoalesceFunction(lower)
                     || isConcatOrFormatFunction(lower)) {
                 classifyFunctionName(lower, flags);
             }
@@ -370,7 +370,7 @@ public abstract class FullGrammerExpressionAnalyzer {
             flags.aggregate = true;
         } else if (isWindowFunction(name)) {
             flags.window = true;
-        } else if (name.equals("coalesce")) {
+        } else if (isCoalesceFunction(name)) {
             flags.coalesce = true;
         } else if (isConcatOrFormatFunction(name)) {
             flags.concatFormat = true;
@@ -406,6 +406,10 @@ public abstract class FullGrammerExpressionAnalyzer {
                 || value.equals("ntile")
                 || value.equals("lag")
                 || value.equals("lead");
+    }
+
+    protected boolean isCoalesceFunction(String value) {
+        return value.equals("coalesce");
     }
 
     private boolean isConcatOrFormatFunction(String value) {

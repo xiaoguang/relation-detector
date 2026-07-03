@@ -2,7 +2,7 @@
 
 ## 目标
 
-建立统一领域模型、证据模型、关系归并规则和置信度计算规则。后续 MySQL、PostgreSQL 以及外部 adaptor 都必须输出或转换成这些模型。
+建立统一领域模型、证据模型、命名证据池、关系归并规则和置信度计算规则。后续 MySQL、PostgreSQL、Oracle、SQL Server 以及外部 adaptor 都必须输出或转换成这些模型。
 
 本阶段重点是模型正确性和评分可解释性，不依赖真实数据库。
 
@@ -66,10 +66,45 @@ public final class RelationshipCandidate {
 方向规则：
 
 - 显式 FK：子表/引用列是 source，父表/被引用列是 target。
-- JOIN/谓词推断：SQL 谓词先证明两列存在结构关系；方向只能由 DDL/metadata/data-profile、unique-vs-nonunique，或附着在该 SQL 谓词候选上的 `NAMING_MATCH` 方向提示推出。
-- 命名方向启发式：`customer_id -> customers.id`、`user_id -> users.id`、`parent_id -> id`、self-join 中 `manager_id -> id` 这类 `_id/id` 规则可以在已有 SQL 谓词候选上追加 `NAMING_MATCH`，并参与 FK-like 方向推导；它不能凭空创建关系。
+- JOIN/谓词推断：SQL 谓词先证明两列存在结构关系；方向只能由 DDL/metadata/data-profile、unique-vs-nonunique，或 top-level `namingEvidence` 证据池中可引用的唯一 `NAMING_MATCH` 方向提示推出。
+- 命名方向启发式：`customer_id -> customers.id`、`user_id -> users.id`、`parent_id -> id`、self-join 中 `manager_id -> id` 这类 `_id/id` 规则先进入独立 `NamingEvidenceCandidate` 池。relationship 只能消费这条证据并写入 `evidenceRef`，不能自己重新计算或凭空创建关系。
 - 数据画像：若 A 列值域大部分包含于 B，且 B 唯一或接近唯一，则 A 为 source，B 为 target。
 - 明确列等值但无法可靠判断 FK-like 方向时，输出列级 `CO_OCCURRENCE`；只有没有可靠列端点或只有表共同出现时，才退化为表级 `CO_OCCURRENCE`。
+
+### NamingEvidenceCandidate
+
+命名证据是独立证据池，不是 relationship fact：
+
+```java
+public record NamingEvidenceCandidate(
+    Endpoint source,
+    Endpoint target,
+    Evidence evidence,
+    String rule,
+    boolean directionHint,
+    List<Evidence> rawEvidence
+) {}
+```
+
+当前规则：
+
+- `TABLE_ID`：`orders.customer_id -> customers.id` 这类列名与目标表名 stem 匹配。
+- `ID_SUFFIX_TO_ID`：一侧 `_id` 指向另一侧 `id`。
+- `SELF_ROLE_ID`：self-join 中 `employees.manager_id -> employees.id` 这类角色 id。
+
+稳定 id 由代码生成：
+
+```text
+naming:<source-normalized-key>-><target-normalized-key>:<rule>
+```
+
+输出边界：
+
+- top-level `namingEvidence` 保存完整 grouped `evidence` 和 `rawEvidence`。
+- relationship 里的 `NAMING_MATCH` 只保存轻量摘要和 `evidenceRef`，指向 top-level naming evidence id。
+- `NamingEvidenceCandidate` 可以来自 metadata columns、DDL column inventory 或已有 SQL predicate candidate。
+- name-only hint 不能单独生成 relationship；只有同端点已有 SQL / DDL / metadata / profile relationship candidate 时，才可被 `NamingMatchEvidenceEnhancer` 消费。
+- 不变量：relationship 中的 `NAMING_MATCH.evidenceRef` 必须能在 top-level `namingEvidence.id` 中找到。
 
 ### SQL 谓词关系守卫
 
@@ -253,7 +288,7 @@ relationType
 
 1. 数据库声明强于静态文本，静态文本强于运行日志；运行 SQL 里的列等值只证明共现，不证明 FK 方向。
 2. 能证明方向和列级对应的 DDL/metadata/data-profile 证据，比只能证明 SQL 列共现或表共现的证据强。
-3. 辅助证据只能加固已有候选，不能单独创造关系。例如索引、唯一性、类型兼容、命名匹配都不能凭空证明外键；但“明确 SQL 谓词 + 一侧唯一、一侧非唯一”或“明确 SQL 谓词 + 唯一的 `NAMING_MATCH` 方向提示”可以把方向推导为 source 指向 target。
+3. 辅助证据只能加固已有候选，不能单独创造关系。例如索引、唯一性、类型兼容、命名匹配都不能凭空证明外键；但“明确 SQL 谓词 + 一侧唯一、一侧非唯一”或“明确 SQL 谓词 + top-level `namingEvidence` 中唯一可引用的 `NAMING_MATCH` 方向提示”可以把方向推导为 source 指向 target。
 4. 数据画像可以增强也可以反证，但默认仍低于显式约束，因为抽样数据可能不完整，历史数据也可能暂时“看起来像”外键。
 
 基础分和设计理由：
@@ -270,7 +305,7 @@ relationType
 | `SQL_LOG_EXISTS` | 0.58 | correlated `EXISTS` 明确表达存在性谓词；evidence 保留 EXISTS 语法来源。EXISTS 自身不定向，但可叠加 unique、metadata、profile 或 `NAMING_MATCH` 方向证据。 | `EXISTS (SELECT 1 FROM payments p WHERE p.order_id = o.id)`。 |
 | `SQL_LOG_COLUMN_CO_OCCURRENCE` | 0.40 | 泛化列级共现 evidence。用于历史/外部导入或无法保留具体谓词语法形态的场景；当前 typed SQL path 优先保留 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN`。 | `warehouse_inventory.product_id = order_items.product_id`。 |
 | `SQL_LOG_TABLE_CO_OCCURRENCE` | 0.25 | 只能证明同一条 SQL 中出现多个表，不能证明列级关系，也不能证明方向。它适合提示人工调查，不适合作为高置信关系。 | `SELECT ... FROM orders, users WHERE orders.status = 'PAID' AND users.active = 1;` |
-| `NAMING_MATCH` | 0.20 | 命名方向启发式；只能附着在已有 SQL 谓词候选上，不能单独创建关系。若 attributes 中的 `suggestedSourceEndpoint` / `suggestedTargetEndpoint` 唯一且匹配当前端点，可参与 FK-like 方向推导。 | `customer_id` 与 `customers.id`、`manager_id` 与 self-join alias 的 `id`。 |
+| `NAMING_MATCH` | 0.20 | 命名方向启发式；完整证据先进入 top-level `namingEvidence` 池，relationship 只能通过 `evidenceRef` 引用它，不能单独创建关系或本地重算。若 attributes 中的 `suggestedSourceEndpoint` / `suggestedTargetEndpoint` 唯一且匹配当前端点，可参与 FK-like 方向推导。 | `customer_id` 与 `customers.id`、`manager_id` 与 self-join alias 的 `id`。 |
 | `SOURCE_INDEX` | 0.10 | 子表外键列常有索引，但索引也可能只是为了过滤或排序。只能作为辅助证据。 | `CREATE INDEX idx_orders_user_id ON orders(user_id);` |
 | `TARGET_UNIQUE` | 0.18 | 被引用列通常是 PK/unique；这是比普通索引更强的方向证据，但唯一列不代表一定被引用。 | `users.id` 是 primary key。 |
 | `COLUMN_TYPE_COMPATIBLE` | 0.08 | 类型一致是必要条件之一，但大量无关列都可能同类型，所以只能给很小加分。 | `orders.user_id BIGINT` 与 `users.id BIGINT`。 |
@@ -785,6 +820,8 @@ confidence = 1 - (1 - 0.55) * (1 - 0.18) * (1 - 0.20)
 
 - `rawEvidence`：原始证据审计轨迹，记录每一次观测。
 - `evidence`：归并后的摘要证据，包含计数、样本 detail 和用于评分的 evidence item。
+- top-level `namingEvidence`：完整命名证据池，包含稳定 `id`、grouped `evidence` 和 `rawEvidence`。
+- relationship 中的 `NAMING_MATCH` evidence：只保存 `evidenceRef` 和方向摘要，不重复完整 raw observations。
 - 每个 evidence 的 type。
 - 每个 evidence 的 score。
 - evidence 来源，例如 `metadata`、`ddl-file`、`mysql-slow-log`。
