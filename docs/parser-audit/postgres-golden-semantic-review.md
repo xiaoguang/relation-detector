@@ -6,10 +6,10 @@ This report records the PostgreSQL correctness audit pass for root token-event a
 
 | Fixture group | Fixtures | Relations | Lineage | Notes |
 | --- | ---: | ---: | ---: | --- |
-| PostgreSQL root token-event | 100 | 886 | 52 | Fallback parser golden. |
-| PostgreSQL full-grammer v16 | 100 | 1195 | 68 | Version-strict full-grammer golden. |
-| PostgreSQL full-grammer v17 | 102 | 1198 | 90 | Includes v17-only fixtures. |
-| PostgreSQL full-grammer v18 | 103 | 1198 | 89 | Includes v18-only fixtures. |
+| PostgreSQL root token-event | 111 | 1402 | 332 | Fallback parser golden. |
+| PostgreSQL full-grammer v16 | 111 | 1474 | 351 | Version-strict full-grammer golden. |
+| PostgreSQL full-grammer v17 | 113 | 1478 | 364 | Includes v17-only fixtures. |
+| PostgreSQL full-grammer v18 | 114 | 1477 | 362 | Includes v18-only fixtures. |
 
 ## Decisions
 
@@ -182,7 +182,7 @@ MySQL full-grammer cumulative-projection tests: derived aliases such as
 as lineage sources before projection resolution reached the physical source
 columns.
 
-**Fix.** `TokenEventDataLineageExtractor` now filters ignored rowset tables from
+**Fix.** `StructuredDataLineageExtractor` now filters ignored rowset tables from
 final lineage sources and prefers projection candidates that resolve to stronger
 physical-source evidence. This is a shared semantic-layer guard used by
 token-event and full-grammer events.

@@ -50,7 +50,7 @@ core/src/main/java/com/relationdetector/core/relation
   RelationshipMerger
 
 core/src/main/java/com/relationdetector/core/lineage
-  TokenEventDataLineageExtractor
+  StructuredDataLineageExtractor
   ProjectionTraceResolver
   DataLineageMerger
 
@@ -227,7 +227,7 @@ DDL_INDEX
 DYNAMIC_SQL
 ```
 
-`TokenEventRelationExtractor` 消费的是 `ROWSET_REFERENCE`、`PREDICATE_EQUALITY`、`JOIN_USING_COLUMNS`、`EXISTS_PREDICATE`、`IN_SUBQUERY_PREDICATE`、`TUPLE_IN_SUBQUERY_PREDICATE`、`PROJECTION_ITEM` 和 scope events。`TokenEventDataLineageExtractor` 消费 `WRITE_TARGET`、`UPDATE_ASSIGNMENT`、`INSERT_SELECT_MAPPING`、`MERGE_WRITE_MAPPING`、`PROJECTION_ITEM`、`LOCAL_TEMP_TABLE_DECLARATION` 等事件。`DdlRelationExtractionVisitor` 只消费 `DDL_FOREIGN_KEY` 和 `DDL_INDEX`。
+`TokenEventRelationExtractor` 消费的是 `ROWSET_REFERENCE`、`PREDICATE_EQUALITY`、`JOIN_USING_COLUMNS`、`EXISTS_PREDICATE`、`IN_SUBQUERY_PREDICATE`、`TUPLE_IN_SUBQUERY_PREDICATE`、`PROJECTION_ITEM` 和 scope events。`StructuredDataLineageExtractor` 消费 `WRITE_TARGET`、`UPDATE_ASSIGNMENT`、`INSERT_SELECT_MAPPING`、`MERGE_WRITE_MAPPING`、`PROJECTION_ITEM`、`LOCAL_TEMP_TABLE_DECLARATION` 等事件。`DdlRelationExtractionVisitor` 只消费 `DDL_FOREIGN_KEY` 和 `DDL_INDEX`。
 
 ## 总体调用链
 
@@ -254,7 +254,7 @@ flowchart TD
   sqlBundle --> sqlToken["token-event SQL parser fallback"]
   sqlFull --> sqlEvents["SQL token events"]
   sqlToken --> sqlEvents
-  sqlEvents --> lineage["TokenEventDataLineageExtractor"]
+  sqlEvents --> lineage["StructuredDataLineageExtractor"]
   lineage --> lineageMerge["DataLineageMerger"]
   sqlEvents --> sqlRel["TokenEventRelationExtractor"]
   sqlRel --> namingExtract
@@ -302,7 +302,7 @@ flowchart TD
   ddlSafe --> ddlRunner["DdlRelationParserRunner"]
   sqlSafe --> sqlParsed["SqlRelationParserRunner.parseStructuredAndRelations"]
 
-  sqlParsed --> lineageExtractor["TokenEventDataLineageExtractor"]
+  sqlParsed --> lineageExtractor["StructuredDataLineageExtractor"]
   sqlParsed --> relationExtractor["TokenEventRelationExtractor"]
   ddlRunner --> ddlExtractor["DdlRelationExtractionVisitor"]
 
@@ -369,7 +369,7 @@ sequenceDiagram
 sequenceDiagram
   participant SE as ScanEngine
   participant SR as SqlRelationParserRunner
-  participant LE as TokenEventDataLineageExtractor
+  participant LE as StructuredDataLineageExtractor
   participant PTR as ProjectionTraceResolver
   participant LM as DataLineageMerger
 
@@ -631,7 +631,7 @@ full-grammer 仍只替换“语法结构识别”。它不会改变：
 - confidence 公式
 - JSON schema
 
-这些仍由 `TokenEventRelationExtractor`、`TokenEventDataLineageExtractor`、merger 和 scoring 负责。
+这些仍由 `TokenEventRelationExtractor`、`StructuredDataLineageExtractor`、merger 和 scoring 负责。
 
 full-grammer SQL 直接通过对应 versioned golden 验收，不再拿 token-event baseline 做跨 parser 对照：
 
@@ -651,25 +651,25 @@ full-grammer SQL 直接通过对应 versioned golden 验收，不再拿 token-ev
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 223 | 45095 |
-| MySQL root token-event | 83 | 65 / 18 | 655 | 296 | 0 | 266 | 266 |
-| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 300 | 300 |
-| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 458 | 458 |
-| PostgreSQL root token-event | 111 | 92 / 19 | 1401 | 332 | 0 | 394 | 394 |
-| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 419 | 419 |
-| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 420 | 420 |
-| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 419 | 419 |
-| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 | 255 |
-| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 | 289 |
-| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
-| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
-| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
-| SQL Server root token-event | 38 | 32 / 6 | 711 | 257 | 0 | 313 | 313 |
-| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
-| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
-| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
-| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
-| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 219 | 441 |
+| MySQL root token-event | 83 | 65 / 18 | 659 | 349 | 0 | 252 | 321 |
+| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 257 | 327 |
+| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 421 | 491 |
+| PostgreSQL root token-event | 111 | 92 / 19 | 1402 | 332 | 0 | 353 | 353 |
+| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 374 | 447 |
+| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 375 | 448 |
+| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 374 | 447 |
+| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 241 | 241 |
+| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
+| SQL Server root token-event | 38 | 32 / 6 | 703 | 360 | 0 | 275 | 275 |
+| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
 
 root token-event 与对应 full-grammer 数量不要求完全一致：token-event 是 fallback typed grammar，目标是宽松兼容和高价值结构覆盖；full-grammer 是有 profile 时的 primary，目标是版本严格。两者都必须能从 SQL/DDL 结构解释自己的 golden。当前跨 parser 差异和 follow-up backlog 统一记录在 `docs/parser-audit/all-golden-semantic-review.md`：
 
@@ -763,7 +763,7 @@ Data Lineage 是独立模型，不混入 relationship，也不改变 relationshi
 ```text
 SqlRelationParserRunner.parseStructuredAndRelations(...)
   -> ParsedSqlRelations.structured()
-  -> TokenEventDataLineageExtractor.extract(...)
+  -> StructuredDataLineageExtractor.extract(...)
   -> DataLineageMerger.merge(...)
   -> ScanResult.dataLineages()
   -> JsonResultWriter.dataLineages
@@ -839,7 +839,7 @@ COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
 
 `ProjectionTraceResolver` 是 Data Lineage 链路的内部 helper，只把 CTE、derived table 和 projection alias 的结构化投影回溯到物理列或表达式来源。它消费 `StructuredSqlEvent`，不输出 JSON，不计算 lineage confidence，也不重新解析 SQL 文本。
 
-`TokenEventDataLineageExtractor` 是正式 Data Lineage 输出链路。它处理写目标、表达式来源和 transform，输出 `DataLineageCandidate`。
+`StructuredDataLineageExtractor` 是正式 Data Lineage 输出链路。它处理写目标、表达式来源和 transform，输出 `DataLineageCandidate`。
 
 二者职责不同：
 
@@ -848,7 +848,7 @@ ProjectionTraceResolver:
   x.user_id -> orders.user_id
   用于把 INSERT/UPDATE/MERGE 中的 projection alias 还原成物理来源
 
-TokenEventDataLineageExtractor:
+StructuredDataLineageExtractor:
   orders.pay_amount -> users.total_spent
   用于输出字段值流向
 ```
@@ -1064,26 +1064,26 @@ ParserConfigRemovalTest
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 1194 | 981 / 213 | 18016 | 5630 | 25 | 7503 | 52375 |
-| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 223 | 45095 |
-| MySQL root token-event | 83 | 65 / 18 | 655 | 296 | 0 | 266 | 266 |
-| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 300 | 300 |
-| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 458 | 458 |
-| PostgreSQL root token-event | 111 | 92 / 19 | 1401 | 332 | 0 | 394 | 394 |
-| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 419 | 419 |
-| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 420 | 420 |
-| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 419 | 419 |
-| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 | 255 |
-| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 | 289 |
-| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
-| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
-| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
-| SQL Server root token-event | 38 | 32 / 6 | 711 | 257 | 0 | 313 | 313 |
-| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
-| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
-| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
-| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
-| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| 全部 correctness | 1194 | 981 / 213 | 17973 | 6301 | 25 | 6833 | 8085 |
+| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 219 | 441 |
+| MySQL root token-event | 83 | 65 / 18 | 659 | 349 | 0 | 252 | 321 |
+| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 257 | 327 |
+| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 421 | 491 |
+| PostgreSQL root token-event | 111 | 92 / 19 | 1402 | 332 | 0 | 353 | 353 |
+| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 374 | 447 |
+| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 375 | 448 |
+| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 374 | 447 |
+| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 241 | 241 |
+| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
+| SQL Server root token-event | 38 | 32 / 6 | 703 | 360 | 0 | 275 | 275 |
+| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
 
 验证要求：代码或 fixture 变化后应至少运行 full correctness golden；文档或统计变化后应同步刷新本表、`docs/relation-detector/test-assets-map.md` 和 `docs/design/relation-detector/design-validation-report.md`。报告生成器仍需显式运行，不进入普通 `mvn test` 默认重负担路径。
 

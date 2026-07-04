@@ -4,7 +4,7 @@ This review covers every correctness fixture manifest under `test-fixtures/corre
 
 ## Scope And Status
 
-- Fixture manifests reviewed: `872`.
+- Fixture manifests reviewed: `1194`.
 - SQL/DDL inputs are the fixture `input.sql` files referenced by each manifest.
 - Current review result: no `REVIEW_NEEDED` items are open.
 - Confirmed recent fix: `NAMING_MATCH` is now generated as a direction hint on existing SQL predicate candidates. It supports `TABLE_ID`, `ID_SUFFIX_TO_ID`, and `SELF_ROLE_ID`; it cannot create a relationship by itself.
@@ -17,20 +17,27 @@ This review covers every correctness fixture manifest under `test-fixtures/corre
 
 ## Parser Category Totals
 
-| Category | Fixtures | Relations | Lineage | Naming relation fingerprints | Sample fixtures | Sample relations | Sample lineage |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event | 39 | 759 | 328 | 223 | 15 | 729 | 292 |
-| MySQL token-event root | 83 | 655 | 296 | 266 | 34 | 562 | 208 |
-| MySQL full-grammer v8_0 | 89 | 922 | 398 | 457 | 37 | 784 | 273 |
-| PostgreSQL token-event root | 111 | 1400 | 332 | 394 | 31 | 673 | 218 |
-| PostgreSQL full-grammer v16 | 111 | 1470 | 342 | 418 | 31 | 675 | 219 |
-| PostgreSQL full-grammer v17 | 113 | 1473 | 364 | 419 | 31 | 675 | 219 |
-| PostgreSQL full-grammer v18 | 114 | 1474 | 362 | 418 | 31 | 674 | 218 |
-| Oracle token-event root | 41 | 643 | 247 | 255 | 34 | 629 | 217 |
-| Oracle full-grammer v12c | 42 | 681 | 249 | 289 | 34 | 666 | 217 |
-| Oracle full-grammer v19c | 43 | 681 | 249 | 289 | 34 | 666 | 217 |
-| Oracle full-grammer v21c | 43 | 681 | 249 | 289 | 34 | 666 | 217 |
-| Oracle full-grammer v26ai | 43 | 681 | 249 | 289 | 34 | 666 | 217 |
+| Category | Fixtures | Relations | Lineage | Naming relation fingerprints | Top-level namingEvidence | Sample fixtures | Sample relations | Sample lineage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| common token-event | 39 | 759 | 328 | 219 | 441 | 15 | 729 | 292 |
+| MySQL token-event root | 83 | 659 | 349 | 252 | 321 | 34 | 566 | 261 |
+| MySQL full-grammer v5_7 | 89 | 706 | 414 | 257 | 327 | 37 | 562 | 285 |
+| MySQL full-grammer v8_0 | 89 | 923 | 398 | 421 | 491 | 37 | 785 | 273 |
+| PostgreSQL token-event root | 111 | 1402 | 332 | 353 | 353 | 31 | 674 | 218 |
+| PostgreSQL full-grammer v16 | 111 | 1474 | 351 | 374 | 447 | 31 | 675 | 219 |
+| PostgreSQL full-grammer v17 | 113 | 1478 | 364 | 375 | 448 | 31 | 675 | 219 |
+| PostgreSQL full-grammer v18 | 114 | 1477 | 362 | 374 | 447 | 31 | 674 | 218 |
+| Oracle token-event root | 41 | 643 | 247 | 241 | 241 | 34 | 629 | 217 |
+| Oracle full-grammer v12c | 42 | 681 | 249 | 273 | 341 | 34 | 666 | 217 |
+| Oracle full-grammer v19c | 43 | 681 | 249 | 273 | 341 | 34 | 666 | 217 |
+| Oracle full-grammer v21c | 43 | 681 | 249 | 273 | 341 | 34 | 666 | 217 |
+| Oracle full-grammer v26ai | 43 | 681 | 249 | 273 | 341 | 34 | 666 | 217 |
+| SQL Server token-event root | 38 | 703 | 360 | 275 | 275 | 38 | 703 | 360 |
+| SQL Server full-grammer v2016 | 39 | 1005 | 360 | 520 | 586 | 38 | 709 | 360 |
+| SQL Server full-grammer v2017 | 39 | 1005 | 360 | 520 | 586 | 38 | 709 | 360 |
+| SQL Server full-grammer v2019 | 39 | 1005 | 360 | 520 | 586 | 38 | 709 | 360 |
+| SQL Server full-grammer v2022 | 39 | 1005 | 360 | 520 | 586 | 38 | 709 | 360 |
+| SQL Server full-grammer v2025 | 39 | 1005 | 360 | 520 | 586 | 38 | 709 | 360 |
 
 Correctness was pruned after this review: fixtures with no relationship, no lineage, no diagnostics, and no special syntax / version-boundary purpose were removed from the executable golden set. The semantic totals above are unchanged because the removed fixtures had empty outputs.
 
@@ -54,22 +61,22 @@ This means the naming heuristic can promote an existing SQL predicate `CO_OCCURR
 
 | Type | Count |
 | --- | ---: |
-| `FK_LIKE` | 7027 |
-| `CO_OCCURRENCE` | 1082 |
+| `FK_LIKE` | 14831 |
+| `CO_OCCURRENCE` | 3142 |
 
 ### Lineage Fingerprint Types
 
 | Flow/Transform | Count |
 | --- | ---: |
-| `VALUE:DIRECT` | 1086 |
-| `VALUE:ARITHMETIC` | 208 |
-| `VALUE:AGGREGATE` | 149 |
-| `VALUE:COALESCE` | 117 |
-| `CONTROL:CASE_WHEN` | 88 |
-| `VALUE:CONCAT_FORMAT` | 84 |
-| `VALUE:FUNCTION_CALL` | 34 |
-| `CONTROL:AGGREGATE` | 8 |
-| `VALUE:CUMULATIVE` | 10 |
+| `VALUE:DIRECT` | 3964 |
+| `VALUE:COALESCE` | 847 |
+| `VALUE:ARITHMETIC` | 608 |
+| `VALUE:AGGREGATE` | 288 |
+| `VALUE:CONCAT_FORMAT` | 265 |
+| `CONTROL:CASE_WHEN` | 244 |
+| `VALUE:FUNCTION_CALL` | 63 |
+| `VALUE:CUMULATIVE` | 12 |
+| `CONTROL:AGGREGATE` | 10 |
 
 ## Cross-Parser Difference Classification
 

@@ -85,7 +85,7 @@ relation-detector/
 - `relation/NamingEvidenceExtractor.java`
 - `relation/NamingEvidenceMerger.java`
 - `relation/NamingMatchEvidenceEnhancer.java`
-- `lineage/TokenEventDataLineageExtractor.java`
+- `lineage/StructuredDataLineageExtractor.java`
 - `lineage/ProjectionTraceResolver.java`
 - `lineage/DataLineageMerger.java`
 - `scoring/ConfidenceCalculator.java`
@@ -149,10 +149,10 @@ relation-detector/
 - `TokenEventRelationExtractor` 消费结构事件并负责跨方言关系语义，不应重新承载数据库专属 rowset scanner。新增或修改方言 rowset/DDL 兼容逻辑必须进入对应 token-event typed grammar/visitor，并同时补 correctness fixture、更新 `docs/design/relation-detector/phase-06-parser-enhancement.md`。
 - `SqlLogNoiseFilter` 在 `SqlRelationParserRunner` 之前过滤 native log 噪声。默认按数据库类型过滤系统 catalog 查询，并允许 YAML 通过 `sources.logs.filterSystemQueries`、`sources.logs.systemSchemas`、`sources.logs.metadataQueryMarkers` 覆盖。
 - `TokenEventStructuredDdlParser`、`MySqlTokenEventStructuredDdlParser`、`PostgresTokenEventStructuredDdlParser` 通过 typed DDL grammar context 输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 事件；`DdlRelationExtractionVisitor` 独立把这些事件转换成 DDL FK-like 关系，并用 source index / target unique evidence 增强关系。DDL relationship 结构判断不依赖 DDL cursor/scanner、regex 或名字白名单。
-- `ProjectionTraceResolver` 为 Data Lineage 写入映射提供保守列来源回溯，支持 CTE、派生表、多层嵌套 projection alias 和结构化表达式来源。它消费 `StructuredSqlEvent`，不重新解析 SQL 文本，也不保留 regex / token span fallback。裸列投影（例如 `SELECT user_id FROM orders`）只有在事件作用域和 fixture 覆盖证明安全时才回溯；复杂表达式的完整多源字段血缘由 `TokenEventDataLineageExtractor` 通过 `ExpressionSourceSet`、`AssignmentMapping`、`ProjectionTrace` 输出。新增类似能力必须先说明方言和 SQL 形态边界，并配 correctness fixture。
+- `ProjectionTraceResolver` 为 Data Lineage 写入映射提供保守列来源回溯，支持 CTE、派生表、多层嵌套 projection alias 和结构化表达式来源。它消费 `StructuredSqlEvent`，不重新解析 SQL 文本，也不保留 regex / token span fallback。裸列投影（例如 `SELECT user_id FROM orders`）只有在事件作用域和 fixture 覆盖证明安全时才回溯；复杂表达式的完整多源字段血缘由 `StructuredDataLineageExtractor` 通过 `ExpressionSourceSet`、`AssignmentMapping`、`ProjectionTrace` 输出。新增类似能力必须先说明方言和 SQL 形态边界，并配 correctness fixture。
 - `NamingEvidenceExtractor` 位于 metadata / DDL / SQL predicate 解析之后，负责生成唯一的 top-level `namingEvidence` 证据池。它可以从 metadata columns、DDL column inventory 和已有 SQL predicate candidate 中抽取 `TABLE_ID`、`ID_SUFFIX_TO_ID`、`SELF_ROLE_ID` 三类 name-only hint，但不能生成 relationship。
 - `NamingMatchEvidenceEnhancer` 位于 naming evidence 抽取之后、relationship merge 之前。它只查询 top-level `namingEvidence` 池，并在命中已有列级 SQL predicate candidate 时给 relationship 挂轻量 `NAMING_MATCH` evidence：attributes 包含 `evidenceRef`、`namingRule`、`suggestedSourceEndpoint`、`suggestedTargetEndpoint`、`matchedColumn`、`matchedTable`、`directionHint=true`。relationship 内不重复 raw naming observations。
-- `TokenEventDataLineageExtractor` 是正式 Data Lineage v1 输出链路，独立于 `TokenEventRelationExtractor`。它从 token-event / full-grammer 结构事件中抽取 `UPDATE SET`、`INSERT INTO ... SELECT` 和基础 `MERGE UPDATE/INSERT` 的 `table.column -> table.column` 字段血缘，跳过参数、JSON path、字面量和局部变量。`DataLineageCandidate.confidence` 只解释血缘可信度，不参与 relationship confidence。
+- `StructuredDataLineageExtractor` 是正式 Data Lineage v1 输出链路，独立于 `TokenEventRelationExtractor`。它从 token-event / full-grammer 结构事件中抽取 `UPDATE SET`、`INSERT INTO ... SELECT` 和基础 `MERGE UPDATE/INSERT` 的 `table.column -> table.column` 字段血缘，跳过参数、JSON path、字面量和局部变量。`DataLineageCandidate.confidence` 只解释血缘可信度，不参与 relationship confidence。
 - `DataLineageMerger` 只按 `sources + target + flowKind + transformType` 去重字段血缘，并与 relationship / naming evidence 一样保留 `rawEvidence` 与 grouped `evidence` 双层模型；不要把它接入 `RelationshipMerger`。
 - `mysql.tokenevent.MySqlTokenEventStructuredDdlParser` / `postgres.tokenevent.PostgresTokenEventStructuredDdlParser` 是 adaptor DDL 入口，内部共享 token-event DDL event pipeline。数据库私有 DDL 写法应进入对应方言 `.g4` 和 typed visitor，不应回流为一个跨库万能 parser。
 - `JsonResultWriter` 使用 Jackson `ObjectMapper` 输出稳定 JSON。顶层包含 `relationships`、`dataLineages`、`namingEvidence`、`warnings`；relationship / lineage / naming evidence 都使用 `rawEvidence` + grouped `evidence` 双层结构，`NAMING_MATCH` 在 relationship 里只保存 `evidenceRef` 和轻量摘要。`relationshipObservationCount`、`dataLineageObservationCount`、`namingEvidenceObservationCount` 是可通过 `output.includeObservationCounts` 关闭的调试字段，只统计 raw observation 数量，不参与 confidence 或事实判断。
@@ -546,7 +546,7 @@ sources:
 - `TokenEventStructuredSqlParser`
 - `TokenEventStructuredDdlParser`
 - `TokenEventRelationExtractor`
-- `TokenEventDataLineageExtractor`
+- `StructuredDataLineageExtractor`
 - `DdlRelationExtractionVisitor`
 - `SimpleYamlConfigLoader`
 - `AdaptorRegistry`
@@ -580,7 +580,7 @@ sources:
   - `CliEndToEndGoldenTest` 从 YAML/CLI 参数进入 `Main.MainCommand`、adaptor registry、`ScanEngine`、parser runner、merger 和 JSON writer，并复用现有 fixture golden 比对 CLI JSON 中的 relationship / Data Lineage fingerprints。这是完整系统链路的黑盒正确性测试，不另建重复 golden。
   - routine/function fixture 使用 manifest `statementFormat: OBJECT_BLOCKS`，按 `-- relation-detector-fixture-source` / `-- relation-detector-fixture-end` block 读取一个完整对象定义，不能按普通 SQL 分号拆分过程体。
   - `CorrectnessSummaryGeneratorTest` 从同一批 fixture/golden 生成 `docs/generated/correctness-test-summary.md`，报告只展示 SQL/DDL preview、input 文件路径、expected relationship/data-lineage fingerprints、warning codes 和 forbidden tables。完整 SQL/DDL 保留在对应 fixture 的 `input.sql` 或 `input.ddl.sql` 中。该测试默认跳过；验收时显式传 `-DrunGeneratedReportTests=true`，刷新时传 `-DupdateCorrectnessSummary=true`。
-  - `DataLineageAuditGeneratorTest` 从全部 correctness fixture 和 `TokenEventDataLineageExtractor` 当前输出生成 `docs/parser-audit/data-lineage-full-audit.md`。该报告不是 golden 自动扩容工具，而是人工审核索引：每个 fixture 被归类为 `EXISTING_GOLD`、`SUGGESTED_GOLD`、`PENDING_REVIEW` 或 `NOT_APPLICABLE`，并列出 extractor 候选 fingerprints 和未进入 golden 的原因。该测试默认跳过；验收时显式传 `-DrunGeneratedReportTests=true`，刷新时传 `-DupdateDataLineageAudit=true`。
+  - `DataLineageAuditGeneratorTest` 从全部 correctness fixture 和 `StructuredDataLineageExtractor` 当前输出生成 `docs/parser-audit/data-lineage-full-audit.md`。该报告不是 golden 自动扩容工具，而是人工审核索引：每个 fixture 被归类为 `EXISTING_GOLD`、`SUGGESTED_GOLD`、`PENDING_REVIEW` 或 `NOT_APPLICABLE`，并列出 extractor 候选 fingerprints 和未进入 golden 的原因。该测试默认跳过；验收时显式传 `-DrunGeneratedReportTests=true`，刷新时传 `-DupdateDataLineageAudit=true`。
   - `DialectSqlAssetHygieneTest` 扫描 MySQL / PostgreSQL / Oracle / SQL Server 的 `sample-data` 和 correctness SQL，阻止明显跨方言残留，例如 MySQL 资产里出现 `LANGUAGE plpgsql` / `VARCHAR2`，PostgreSQL 资产里出现 `AUTO_INCREMENT` / `ENGINE=...`，Oracle 资产里出现 `LIMIT` / `::type` / `ON DUPLICATE KEY UPDATE`，SQL Server 资产里出现 `VARCHAR2` / `AUTO_INCREMENT` / `LANGUAGE plpgsql`。该检查只做资产卫生守门，不替代真实数据库装载或完整官方 grammar 验证。
 - MySQL/PostgreSQL/Oracle parser selection 测试必须断言 `attributes.grammar`、`attributes.lexer`、`attributes.parser` 和 `attributes.eventBuilder` 或 profile attributes，证明 adaptor 选择了自己的方言 parser/event builder。
   - fixture 的 `expected-diagnostics.json` 只记录 fixture hash 和 warning code count；不再保存 Simple/ANTLR comparison delta。
@@ -660,7 +660,7 @@ PostgreSQL：
 - JSON snapshot 测试字段兼容性。
 - JSON evidence 输出测试：`rawEvidence` 是未压缩数组，`evidence` 是摘要数组，`attributes.count` 为数字，`attributes.sampleDetails` 为数组。
 - correctness 明细报告同步测试：修改 `test-fixtures/correctness` 后运行 `mvn -pl cli -Dtest=CorrectnessSummaryGeneratorTest -DupdateCorrectnessSummary=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新轻量索引报告 `docs/generated/correctness-test-summary.md`；需要只验收不刷新时运行 `mvn -pl cli -Dtest=CorrectnessSummaryGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`。
-- Data Lineage 全量审核报告同步测试：修改 SQL fixture、`expected-lineage.json` 或 `TokenEventDataLineageExtractor` 后运行 `mvn -pl cli -Dtest=DataLineageAuditGeneratorTest -DupdateDataLineageAudit=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新 `docs/parser-audit/data-lineage-full-audit.md`；需要只验收不刷新时运行 `mvn -pl cli -Dtest=DataLineageAuditGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`。该报告只生成审核清单，不自动写入新的 lineage golden。
+- Data Lineage 全量审核报告同步测试：修改 SQL fixture、`expected-lineage.json` 或 `StructuredDataLineageExtractor` 后运行 `mvn -pl cli -Dtest=DataLineageAuditGeneratorTest -DupdateDataLineageAudit=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新 `docs/parser-audit/data-lineage-full-audit.md`；需要只验收不刷新时运行 `mvn -pl cli -Dtest=DataLineageAuditGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`。该报告只生成审核清单，不自动写入新的 lineage golden。
 - enum 序列化值稳定性测试。
 - warning code 稳定性测试。
 - 置信度数值允许小范围精度变化，但 subtype 和 evidence 不应无故改变。

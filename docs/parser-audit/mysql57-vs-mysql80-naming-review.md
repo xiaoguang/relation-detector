@@ -1,23 +1,31 @@
 # MySQL 5.7 与 MySQL 8.0 NAMING_MATCH 审计
 
-本文记录 `mysql-v5_7-full` 与 `mysql-v8_0-full` 在 sample-data CLI JSON 中的 top-level `namingEvidence` 差异。统计来自：
+本文记录 `mysql-v5_7-full` 与 `mysql-v8_0-full` 在 sample-data correctness golden 中的 top-level `namingEvidence` 差异。
 
-- `target/sample-data-parser-cli/results/mysql-v5_7-full.json`
-- `target/sample-data-parser-cli/results/mysql-v8_0-full.json`
+- `test-fixtures/correctness/mysql/v5_7/**/expected-naming-evidence.json`
+- `test-fixtures/correctness/mysql/v8_0/**/expected-naming-evidence.json`
 
 ## 当前统计
 
 | Parser | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| MySQL full-grammer v5_7 | 38 | 32 / 6 | 346 | 265 | 243 | 0 |
-| MySQL full-grammer v8_0 | 38 | 32 / 6 | 397 | 254 | 245 | 0 |
+| MySQL full-grammer v5_7 sample-data | 37 | 31 / 6 | 562 | 285 | 256 | 0 |
+| MySQL full-grammer v8_0 sample-data | 37 | 31 / 6 | 785 | 273 | 418 | 0 |
+
+上表的 `NAMING_MATCH` 是 sample-data fixture 级 fingerprint 总量。去重为 `source -> target + rule` 后，当前集合大小为：
+
+| Set | Count |
+| --- | ---: |
+| v5_7 top-level namingEvidence unique set | 95 |
+| v8_0 top-level namingEvidence unique set | 164 |
+| intersection | 90 |
 
 ## 集合差异
 
 | 差异 | 数量 | 总体判断 |
 | --- | ---: | --- |
-| v5_7-only namingEvidence | 4 | 来自 5.7 语义改写后的表/列命名，属于 `EXPECTED_VERSION_DELTA` |
-| v8_0-only namingEvidence | 6 | 来自 8.0 自然 SQL 资产中的额外业务谓词，属于 `EXPECTED_VERSION_DELTA` / `ASSET_COVERAGE_DELTA` |
+| v5_7-only namingEvidence | 5 | 来自 5.7 语义改写后的表/列命名，属于 `EXPECTED_VERSION_DELTA` |
+| v8_0-only namingEvidence | 74 | 主要来自 8.0 自然 ERP 资产中更完整的表/列、DDL FK 和业务谓词覆盖，属于 `ASSET_COVERAGE_DELTA`；未确认 parser gap |
 
 ## 本轮处理结论
 
@@ -30,6 +38,7 @@
 
 | Naming evidence | 判断 |
 | --- | --- |
+| `ar_aging_snapshots.customer_id -> customers.id` | 5.7 兼容资产中保留的账龄快照客户维度命名，合理 |
 | `boms.component_product_id -> products.id` | 5.7 改写使用 `component_product_id`，与 8.0 的 `child_product_id` / `parent_product_id` 命名不同 |
 | `boms.product_id -> products.id` | 5.7 兼容 SQL 中保留的直接 product 维度命名，合理 |
 | `mrp_run_items.mrp_run_id -> mrp_runs.id` | 5.7 改写使用 `mrp_run_id`，与 8.0 的 `run_id` 命名不同 |
@@ -37,19 +46,18 @@
 
 ## v8_0-only 样例
 
-剩余 v8_0-only 项都能从 8.0 sample SQL 的额外谓词或业务命名解释：
+剩余 v8_0-only 项数量较多，不再能用“少量自然命名差异”概括。逐类看，它们主要来自 8.0 sample-data 中覆盖更完整的 ERP 深水区对象：
 
-- `employees.manager_id -> employees.id`
-- `production_operations.predecessor_operation_id -> production_operations.id`
-- `purchase_receipt_items.order_item_id -> purchase_order_items.id`
-- `serial_numbers.purchase_receipt_id -> purchase_receipts.id`
-- `serial_numbers.return_id -> sales_returns.id`
-- `serial_numbers.sales_order_id -> sales_orders.id`
+- 应收应付、付款、收款、期间结账：`ap_invoices.*_id`、`ar_invoices.customer_id`、`payment_receipt_allocations.receipt_id`、`period_close_jobs.period_id`。
+- 采购、退货、质检、序列号：`purchase_receipt_items.*_id`、`purchase_return_items.*_id`、`inspection_reports.batch_id`、`serial_numbers.*_id`。
+- 库存、盘点、调拨、拣货：`inventory_transactions.batch_id`、`stock_transfers.*_warehouse_id`、`stocktake_items.product_id`、`picking_task_items.*_id`。
+- 生产、MRP、工艺、工单：`mrp_run_items.*_id`、`production_operations.*_operation_id`、`work_orders.product_id`、`work_order_operations.*_id`。
+- 售后、维修、销售事实：`repair_orders.*_id`、`repair_order_parts.*_id`、`sales_fact.*_id`。
 
-这些不是 5.7 parser gap；5.7 对应业务资产采用了更短或不同的兼容 SQL，因此 top-level naming evidence 集合不要求逐条完全相同。
+这些 v8_0-only 命名证据能从 8.0 SQL/DDL 资产结构解释；当前没有发现“8.0 过宽命中导致应删除”的项。5.7 侧 NAMING_MATCH 明显更低，主要是 5.7 兼容资产没有等量承载这些自然 8.0 深水区对象和谓词，而不是 v5_7 full-grammer visitor 漏解析。
 
 ## 结论
 
-- 5.7 低 NAMING_MATCH 的主要根因已经确认并修复：不是 5.7 grammar 本身无法解析，而是 naming evidence 抽取原先没有从 DDL FK relationship candidate 补全跨文件命名证据。
-- 8.0 的宽 `_id -> id` false positive 已收紧，相关 relationship 不再引用这些噪声 `NAMING_MATCH`。
-- 当前 v5_7 与 v8_0 只剩 4 / 6 条自然资产差异，没有需要用户审核的 `REVIEW_NEEDED`。
+- 5.7 低 NAMING_MATCH 的当前主要原因是 SQL 资产覆盖差异和 5.7 兼容改写差异；不是已确认 parser gap。
+- 8.0 当前 top-level namingEvidence 中没有确认需要收紧的 false positive。
+- 当前 v5_7 与 v8_0 的差异结论是 `ASSET_COVERAGE_DELTA` / `EXPECTED_VERSION_DELTA`，没有需要用户审核的 `REVIEW_NEEDED`。

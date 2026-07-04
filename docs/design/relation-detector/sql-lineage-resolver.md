@@ -14,7 +14,7 @@ core.lineage.ProjectionTraceResolver
 某个 CTE / derived table / projection alias 的输出列，能否安全回溯到物理表字段？
 ```
 
-当前 `token-event` 和 `full-grammer` 都先产生同一组 `StructuredSqlEvent`。`TokenEventDataLineageExtractor` 再从这些事件构建 `ProjectionTrace`、`ExpressionSourceSet`、`AssignmentMapping`，最后生成 `DataLineageCandidate`。这个链路不再保留 SQL 文本 regex helper、token span fallback 或旧 `SqlLineageResolver`。
+当前 `token-event` 和 `full-grammer` 都先产生同一组 `StructuredSqlEvent`。`StructuredDataLineageExtractor` 再从这些事件构建 `ProjectionTrace`、`ExpressionSourceSet`、`AssignmentMapping`，最后生成 `DataLineageCandidate`。这个链路不再保留 SQL 文本 regex helper、token span fallback 或旧 `SqlLineageResolver`。
 
 ## 2. 为什么需要它
 
@@ -71,10 +71,10 @@ orders.customer_id -> order_audit.buyer_id
 alias.column -> physical_table.physical_column
 ```
 
-这些内部模型只服务 `TokenEventDataLineageExtractor`。正式输出仍由：
+这些内部模型只服务 `StructuredDataLineageExtractor`。正式输出仍由：
 
 ```text
-TokenEventDataLineageExtractor
+StructuredDataLineageExtractor
   -> DataLineageMerger
   -> ScanResult.dataLineages
   -> JsonResultWriter.dataLineages
@@ -190,7 +190,7 @@ SELECT row_number() OVER (...) AS rn
 SELECT a.user_id + 1 AS user_id
 ```
 
-这些表达式的字段来源由 `ExpressionSourceSet` 保留，并由 `TokenEventDataLineageExtractor` 根据写入上下文输出 `AGGREGATE`、`COALESCE`、`ARITHMETIC`、`WINDOW_DERIVED` 等 transform。
+这些表达式的字段来源由 `ExpressionSourceSet` 保留，并由 `StructuredDataLineageExtractor` 根据写入上下文输出 `AGGREGATE`、`COALESCE`、`ARITHMETIC`、`WINDOW_DERIVED` 等 transform。
 
 ## 6. 与 Relationship 的边界
 

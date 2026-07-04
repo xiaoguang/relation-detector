@@ -4,7 +4,7 @@
 
 逐条 fixture 明细由代码生成，见 [Correctness Test Summary](../generated/correctness-test-summary.md)。该报告是轻量索引：展示每个 SQL/DDL 的 preview、input 文件路径、expected relationship/data-lineage fingerprints、warning codes 和 forbidden tables；完整 SQL/DDL 以 fixture 的 `input.sql` 或 `input.ddl.sql` 为准。
 
-Data Lineage 的全量审核入口见 [Data Lineage Full Audit](../parser-audit/data-lineage-full-audit.md)。它同样由 Java 测试工具从 fixture 和 `TokenEventDataLineageExtractor` 输出生成，不调用大模型；用于回答“哪些 SQL 已经有 lineage golden、哪些可建议加入、哪些需要人工审核、哪些不适用 v1 字段血缘”。
+Data Lineage 的全量审核入口见 [Data Lineage Full Audit](../parser-audit/data-lineage-full-audit.md)。它同样由 Java 测试工具从 fixture 和 `StructuredDataLineageExtractor` 输出生成，不调用大模型；用于回答“哪些 SQL 已经有 lineage golden、哪些可建议加入、哪些需要人工审核、哪些不适用 v1 字段血缘”。
 
 full-grammer expression transform 的审核记录见 [full-grammer Expression Transform Compatibility Audit](../parser-audit/full-grammer-expression-transform-compatibility-audit.md)。它记录严格表达式分析曾暴露出的 transform 差异，例如疑似过粗的 `AGGREGATE` 判断和 `CASE_WHEN` 的 value/control flow 差异；本轮已按人工审核结论固化到 lineage golden。后续不再用跨 parser 对照机制遮蔽差异，每个 parser 必须直接通过自己的 golden。
 
@@ -28,26 +28,26 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 1194 | 981 / 213 | 18016 | 5630 | 25 | 7503 | 52375 |
-| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 223 | 45095 |
-| MySQL root token-event | 83 | 65 / 18 | 655 | 296 | 0 | 266 | 266 |
-| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 300 | 300 |
-| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 458 | 458 |
-| PostgreSQL root token-event | 111 | 92 / 19 | 1401 | 332 | 0 | 394 | 394 |
-| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 419 | 419 |
-| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 420 | 420 |
-| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 419 | 419 |
-| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 255 | 255 |
-| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 289 | 289 |
-| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
-| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
-| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 289 | 289 |
-| SQL Server root token-event | 38 | 32 / 6 | 711 | 257 | 0 | 313 | 313 |
-| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
-| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
-| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
-| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
-| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1013 | 257 | 0 | 576 | 576 |
+| 全部 correctness | 1194 | 981 / 213 | 17973 | 6301 | 25 | 6833 | 8085 |
+| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 219 | 441 |
+| MySQL root token-event | 83 | 65 / 18 | 659 | 349 | 0 | 252 | 321 |
+| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 257 | 327 |
+| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 421 | 491 |
+| PostgreSQL root token-event | 111 | 92 / 19 | 1402 | 332 | 0 | 353 | 353 |
+| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 374 | 447 |
+| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 375 | 448 |
+| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 374 | 447 |
+| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 241 | 241 |
+| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
+| SQL Server root token-event | 38 | 32 / 6 | 703 | 360 | 0 | 275 | 275 |
+| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
 
 ## 当前默认策略
 

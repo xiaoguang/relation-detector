@@ -10,13 +10,13 @@ Oracle support matrix:
 
 | Profile | Sample-data directory | Correctness directory | Fixture count |
 | --- | --- | --- | ---: |
-| root token-event | `sample-data/oracle/26ai` as root fixture source pattern | `test-fixtures/correctness/oracle` | 33 |
-| `oracle/12c` | `sample-data/oracle/12c` + profile smoke | `test-fixtures/correctness/oracle/v12c` | 30 |
-| `oracle/19c` | `sample-data/oracle/19c` + profile smoke + 19c-only syntax | `test-fixtures/correctness/oracle/v19c` | 31 |
-| `oracle/21c` | `sample-data/oracle/21c` + profile smoke + 21c-only syntax | `test-fixtures/correctness/oracle/v21c` | 31 |
-| `oracle/26ai` | `sample-data/oracle/26ai` + profile smoke + 26ai-only syntax | `test-fixtures/correctness/oracle/v26ai` | 31 |
+| root token-event | `sample-data/oracle/26ai` as root fixture source pattern | `test-fixtures/correctness/oracle` | 41 |
+| `oracle/12c` | `sample-data/oracle/12c` + profile smoke | `test-fixtures/correctness/oracle/v12c` | 42 |
+| `oracle/19c` | `sample-data/oracle/19c` + profile smoke + 19c-only syntax | `test-fixtures/correctness/oracle/v19c` | 43 |
+| `oracle/21c` | `sample-data/oracle/21c` + profile smoke + 21c-only syntax | `test-fixtures/correctness/oracle/v21c` | 43 |
+| `oracle/26ai` | `sample-data/oracle/26ai` + profile smoke + 26ai-only syntax | `test-fixtures/correctness/oracle/v26ai` | 43 |
 
-Total Oracle correctness fixtures: 156.
+Total Oracle correctness fixtures: 212.
 
 Each versioned `sample-data/oracle/<version>` directory still contains the translated ERP SQL assets for future runtime and parser work:
 
@@ -43,28 +43,29 @@ The source `sample-data/oracle/<version>` directories remain complete ERP sample
 
 The versioned full-grammer counts intentionally stay close to root token-event counts because they cover the same sample-data surface, plus profile smoke and version-only syntax fixtures. They prove that each `oracle/<version>` profile uses its own generated lexer/parser and typed visitor for sample-data correctness and the first official grammar boundaries. They no longer reuse the Oracle token-event parser. They still do not prove complete Oracle official SQL/PLSQL coverage.
 
-The sample-data-only cross-parser comparison after the procedure lineage parity fix is:
+The sample-data-only cross-parser comparison is:
 
-| Parser family | Fixture | SQL / DDL | Relation fingerprints | Lineage fingerprints |
-| --- | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 15 | 11 / 4 | 729 | 292 |
-| MySQL token-event root sample-data | 34 | 28 / 6 | 562 | 208 |
-| MySQL full-grammer v8_0 sample-data | 37 | 31 / 6 | 785 | 273 |
-| PostgreSQL token-event root sample-data | 31 | 25 / 6 | 673 | 218 |
-| PostgreSQL full-grammer v16 sample-data | 31 | 25 / 6 | 675 | 219 |
-| PostgreSQL full-grammer v17 sample-data | 31 | 25 / 6 | 675 | 219 |
-| PostgreSQL full-grammer v18 sample-data | 31 | 25 / 6 | 674 | 218 |
-| Oracle token-event root sample-data | 34 | 27 / 7 | 629 | 217 |
-| Oracle full-grammer v12c sample-data | 34 | 27 / 7 | 666 | 217 |
-| Oracle full-grammer v19c sample-data | 34 | 27 / 7 | 666 | 217 |
-| Oracle full-grammer v21c sample-data | 34 | 27 / 7 | 666 | 217 |
-| Oracle full-grammer v26ai sample-data | 34 | 27 / 7 | 666 | 217 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 711 | 257 |
-| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 717 | 257 |
-| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 717 | 257 |
-| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 717 | 257 |
-| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 717 | 257 |
-| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 717 | 257 |
+| Parser family | Fixture | SQL / DDL | Relation fingerprints | Lineage fingerprints | NAMING_MATCH | Diagnostics |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| common token-event sample-data | 15 | 11 / 4 | 729 | 292 | 419 | 0 |
+| MySQL token-event root sample-data | 34 | 28 / 6 | 566 | 261 | 267 | 0 |
+| MySQL full-grammer v5_7 sample-data | 37 | 31 / 6 | 562 | 285 | 256 | 0 |
+| MySQL full-grammer v8_0 sample-data | 37 | 31 / 6 | 785 | 273 | 418 | 0 |
+| PostgreSQL token-event root sample-data | 31 | 25 / 6 | 674 | 218 | 273 | 0 |
+| PostgreSQL full-grammer v16 sample-data | 31 | 25 / 6 | 675 | 219 | 340 | 0 |
+| PostgreSQL full-grammer v17 sample-data | 31 | 25 / 6 | 675 | 219 | 340 | 0 |
+| PostgreSQL full-grammer v18 sample-data | 31 | 25 / 6 | 674 | 218 | 340 | 0 |
+| Oracle token-event root sample-data | 34 | 27 / 7 | 629 | 217 | 232 | 0 |
+| Oracle full-grammer v12c sample-data | 34 | 27 / 7 | 666 | 217 | 330 | 0 |
+| Oracle full-grammer v19c sample-data | 34 | 27 / 7 | 666 | 217 | 330 | 0 |
+| Oracle full-grammer v21c sample-data | 34 | 27 / 7 | 666 | 217 | 330 | 0 |
+| Oracle full-grammer v26ai sample-data | 34 | 27 / 7 | 666 | 217 | 330 | 0 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 703 | 360 | 275 | 0 |
+| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
+| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
+| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
+| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
+| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
 
 The Oracle full-grammer sample-data lineage now covers the previously confirmed root token-event procedure lineage from `02-procedures/13-erp-deep-scenario-procedures.sql`, including sales fact rebuild, MRP planning, picking task generation and repair-part inventory issue mappings. The fix is in typed grammar / generated parse-tree visitor behavior plus one Oracle SQL asset correction from the invalid `(-rop.quantity)(10)` fragment to the Oracle unary expression `-rop.quantity`.
 
