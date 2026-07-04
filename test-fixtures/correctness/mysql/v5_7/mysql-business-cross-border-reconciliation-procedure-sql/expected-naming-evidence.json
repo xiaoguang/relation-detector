@@ -1,7 +1,3 @@
 {
-  "fingerprints": [
-    "naming:reconciliation_input_items.input_order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:reconciliations.reference_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:sales_orders.customer_id->customer_profiles.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
-  ]
+  "fingerprints": []
 }

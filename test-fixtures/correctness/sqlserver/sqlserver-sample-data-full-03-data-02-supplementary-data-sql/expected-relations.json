@@ -1,5 +1,8 @@
 {
   "fingerprints": [
+    "CO_OCCURRENCE:dbo.employees.id->dbo.purchase_orders.purchaser_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:dbo.employees.id->dbo.purchase_receipts.receiver_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:dbo.employees.id->dbo.purchase_requisitions.requester_id:SQL_LOG_JOIN",
     "FK_LIKE:dbo.inventory.batch_id->dbo.product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.inventory.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.inventory.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
@@ -8,18 +11,15 @@
     "FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.purchase_order_items.order_id->dbo.purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.purchase_order_items.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.purchase_orders.purchaser_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.purchase_orders.requisition_id->dbo.purchase_requisitions.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.purchase_orders.supplier_id->dbo.suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.purchase_receipt_items.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.purchase_receipt_items.receipt_id->dbo.purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.purchase_receipts.order_id->dbo.purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.purchase_receipts.receiver_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.purchase_receipts.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

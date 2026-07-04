@@ -1,14 +1,14 @@
 {
   "fingerprints": [
+    "CO_OCCURRENCE:order_items.order_id->order_roots.id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:order_items.tenant_id->order_roots.tenant_id:SQL_LOG_JOIN",
-    "FK_LIKE:order_items.order_id->order_roots.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "CO_OCCURRENCE:order_roots.id->payments.order_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:order_roots.id->refunds.order_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:order_roots.id->shipments.order_id:SQL_LOG_JOIN",
     "FK_LIKE:orders.tenant_id->tenants.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:payments.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:payments.order_id->order_roots.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:refunds.order_id->order_roots.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:shipments.carrier_id->carriers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:shipments.order_id->order_roots.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:shipments.order_id->orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:users.tenant_id->tenants.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],

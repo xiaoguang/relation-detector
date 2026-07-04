@@ -2,12 +2,6 @@
   "fingerprints": [
     "naming:account_metadata.account_id->accounts.id:TABLE_ID:NAMING_MATCH",
     "naming:categories.parent_id->categories.id:SELF_ROLE_ID:NAMING_MATCH",
-    "naming:categories.s_id->sub_labels.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:departments.manager_id->employees.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:family_tree.parent_id->family_tree.id:SELF_ROLE_ID:NAMING_MATCH",
-    "naming:main_catalog.p_id->products.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:products.c_id->categories.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:products.dept_id->departments.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:revisions.doc_id->documents.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
+    "naming:family_tree.parent_id->family_tree.id:SELF_ROLE_ID:NAMING_MATCH"
   ]
 }

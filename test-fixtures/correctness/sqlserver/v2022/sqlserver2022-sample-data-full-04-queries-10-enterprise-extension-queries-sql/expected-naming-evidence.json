@@ -2,7 +2,7 @@
   "fingerprints": [
     "naming:dbo.inventory_location_balances.location_id->dbo.warehouse_locations.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.inventory_location_balances.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.inventory_location_balances.warehouse_id->dbo.warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.inventory_location_balances.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.payment_request_items.request_id->dbo.payment_requests.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.payment_requests.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.tax_invoices.tax_rate_id->dbo.tax_rates.id:TABLE_ID:NAMING_MATCH",

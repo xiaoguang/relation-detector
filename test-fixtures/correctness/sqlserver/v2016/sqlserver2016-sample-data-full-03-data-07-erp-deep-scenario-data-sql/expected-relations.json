@@ -2,6 +2,7 @@
   "fingerprints": [
     "CO_OCCURRENCE:dbo.contracts.approved_by->dbo.employees.id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.contracts.prepared_by->dbo.employees.id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:dbo.employees.id->dbo.inspection_reports.inspector_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.employees.id->dbo.service_tickets.assigned_to:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.employees.id->dbo.tax_filings.prepared_by:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.employees.id->dbo.tax_invoices.verified_by:SQL_LOG_JOIN",
@@ -12,7 +13,6 @@
     "FK_LIKE:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.inspection_reports.batch_id->dbo.product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.inspection_reports.inspector_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.inspection_reports.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.inspection_standards.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",

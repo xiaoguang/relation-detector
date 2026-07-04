@@ -23,6 +23,7 @@ import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.relation.NamingEvidenceExtractor;
 import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
+import com.relationdetector.core.relation.NamingEvidencePool;
 import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
 
 class NamingEvidenceExtractorTest {
@@ -98,10 +99,46 @@ class NamingEvidenceExtractorTest {
 
         assertEquals(1, evidence.size());
         assertEquals("TABLE_ID", evidence.get(0).rule());
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), evidence);
+        NamingEvidencePool pool = new NamingEvidencePool();
+        pool.addAll(evidence);
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), pool);
         assertTrue(candidate.evidence().stream()
                 .anyMatch(item -> item.type() == EvidenceType.NAMING_MATCH
                         && evidence.get(0).id().equals(item.attributes().get("evidenceRef"))));
+    }
+
+    @Test
+    void extractsWarehousePluralTableIdEvidence() {
+        RelationshipCandidate candidate = sqlPredicate("sales_orders", "warehouse_id", "warehouses", "id");
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
+
+        assertEquals(1, evidence.size());
+        assertEquals("TABLE_ID", evidence.get(0).rule());
+        assertEndpoint("sales_orders", "warehouse_id", evidence.get(0).source());
+        assertEndpoint("warehouses", "id", evidence.get(0).target());
+    }
+
+    @Test
+    void extractsNamingEvidenceFromDdlForeignKeyCandidate() {
+        RelationshipCandidate candidate = ddlForeignKey("ap_invoices", "purchase_order_id", "purchase_orders", "id");
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
+
+        assertEquals(1, evidence.size());
+        assertEquals("TABLE_ID", evidence.get(0).rule());
+        assertEndpoint("ap_invoices", "purchase_order_id", evidence.get(0).source());
+        assertEndpoint("purchase_orders", "id", evidence.get(0).target());
+    }
+
+    @Test
+    void doesNotExtractUnrelatedDdlForeignKeyNamingEvidence() {
+        RelationshipCandidate candidate = ddlForeignKey("sales_order_items", "product_id", "positions", "id");
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
+
+        assertTrue(evidence.isEmpty(),
+                () -> "DDL-backed naming evidence still must not turn product_id into positions.id: " + evidence);
     }
 
     @Test
@@ -111,6 +148,52 @@ class NamingEvidenceExtractorTest {
         List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
 
         assertTrue(evidence.isEmpty());
+    }
+
+    @Test
+    void extractsRelatedIdSuffixToIdEvidence() {
+        RelationshipCandidate candidate = sqlPredicate("purchase_order_items", "order_id", "purchase_orders", "id");
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
+
+        assertEquals(1, evidence.size());
+        assertEquals("ID_SUFFIX_TO_ID", evidence.get(0).rule());
+        assertEndpoint("purchase_order_items", "order_id", evidence.get(0).source());
+        assertEndpoint("purchase_orders", "id", evidence.get(0).target());
+    }
+
+    @Test
+    void extractsCompositeRelatedIdSuffixToIdEvidence() {
+        RelationshipCandidate candidate = sqlPredicate("boms", "component_product_id", "products", "id");
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
+
+        assertEquals(1, evidence.size());
+        assertEquals("ID_SUFFIX_TO_ID", evidence.get(0).rule());
+        assertEndpoint("boms", "component_product_id", evidence.get(0).source());
+        assertEndpoint("products", "id", evidence.get(0).target());
+    }
+
+    @Test
+    void doesNotExtractUnrelatedIdSuffixToIdEvidence() {
+        RelationshipCandidate candidate = sqlPredicate("sales_order_items", "product_id", "positions", "id");
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
+
+        assertTrue(evidence.isEmpty(),
+                () -> "product_id must not become name-only evidence for an unrelated positions.id endpoint: "
+                        + evidence);
+    }
+
+    @Test
+    void doesNotExtractPolymorphicReferenceIdSuffixEvidence() {
+        RelationshipCandidate candidate = sqlPredicate("cashier_journals", "reference_id", "purchase_orders", "id");
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
+
+        assertTrue(evidence.isEmpty(),
+                () -> "reference_id is a polymorphic id and must not point to an arbitrary target table by naming alone: "
+                        + evidence);
     }
 
     @Test
@@ -151,6 +234,25 @@ class NamingEvidenceExtractorTest {
                 EvidenceSourceType.PLAIN_SQL,
                 "query.sql",
                 leftTable + "." + leftColumn + " = " + rightTable + "." + rightColumn));
+        return candidate;
+    }
+
+    private RelationshipCandidate ddlForeignKey(
+            String leftTable,
+            String leftColumn,
+            String rightTable,
+            String rightColumn
+    ) {
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(column(leftTable, leftColumn)),
+                Endpoint.column(column(rightTable, rightColumn)),
+                RelationType.FK_LIKE,
+                RelationSubType.DDL_DECLARED_FK);
+        candidate.evidence().add(Evidence.of(EvidenceType.DDL_FOREIGN_KEY,
+                DefaultEvidenceScores.DDL_FOREIGN_KEY,
+                EvidenceSourceType.DDL_FILE,
+                "schema.sql",
+                leftTable + "." + leftColumn + " references " + rightTable + "." + rightColumn));
         return candidate;
     }
 

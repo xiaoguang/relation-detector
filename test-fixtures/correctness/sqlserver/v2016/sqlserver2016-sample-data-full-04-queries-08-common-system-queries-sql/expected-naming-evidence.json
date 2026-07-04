@@ -2,11 +2,11 @@
   "fingerprints": [
     "naming:dbo.employee_shift_assignments.employee_id->dbo.employees.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.employee_shift_assignments.shift_id->dbo.employee_shifts.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.employee_shift_assignments.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.mrp_run_items.component_product_id->dbo.products.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.mrp_run_items.run_id->dbo.mrp_runs.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.mrp_run_items.suggested_supplier_id->dbo.suppliers.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.production_plans.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.production_plans.warehouse_id->dbo.warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
+    "naming:dbo.production_plans.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH"
   ]
 }

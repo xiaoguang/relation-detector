@@ -13,7 +13,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
-import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
 import com.relationdetector.postgres.PostgresDatabaseAdaptor;
@@ -45,7 +45,7 @@ class PostgresTokenEventDialectBoundaryTest {
                 """, StatementSourceType.PROCEDURE, "PROCEDURE:post_stocktake", 1, 1, java.util.Map.of());
 
         var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
-        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor().extract(statement, result).stream()
+        java.util.List<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, result).stream()
                 .map(this::lineageFingerprint)
                 .sorted()
                 .toList();
@@ -90,7 +90,7 @@ class PostgresTokenEventDialectBoundaryTest {
                 """, StatementSourceType.PROCEDURE, "PROCEDURE:sample_routine", 1, 1, java.util.Map.of());
 
         var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
-        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor().extract(statement, result).stream()
+        java.util.List<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, result).stream()
                 .map(this::lineageFingerprint)
                 .sorted()
                 .toList();
@@ -129,7 +129,7 @@ class PostgresTokenEventDialectBoundaryTest {
                 """, StatementSourceType.PLAIN_SQL, "postgres-derived-aggregate-update.sql", 1, 1, java.util.Map.of());
 
         var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
-        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor()
+        java.util.List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, result)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -170,7 +170,7 @@ class PostgresTokenEventDialectBoundaryTest {
                 """, StatementSourceType.PLAIN_SQL, "postgres-cte-update-concat.sql", 1, 1, java.util.Map.of());
 
         var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
-        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor()
+        java.util.List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, result)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -220,7 +220,7 @@ class PostgresTokenEventDialectBoundaryTest {
                 """, StatementSourceType.PLAIN_SQL, "postgres-cte-update-casts.sql", 1, 1, java.util.Map.of());
 
         var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
-        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor()
+        java.util.List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, result)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -261,7 +261,7 @@ class PostgresTokenEventDialectBoundaryTest {
                 """, StatementSourceType.PLAIN_SQL, "postgres-scalar-aggregate-update.sql", 1, 1, java.util.Map.of());
 
         var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
-        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor()
+        java.util.List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, result)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -289,7 +289,7 @@ class PostgresTokenEventDialectBoundaryTest {
                 """, StatementSourceType.PLAIN_SQL, "postgres-merge-insert.sql", 1, 1, java.util.Map.of());
 
         var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
-        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor()
+        java.util.List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, result)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -320,7 +320,7 @@ class PostgresTokenEventDialectBoundaryTest {
                 """, StatementSourceType.PLAIN_SQL, "postgres-window-lineage.sql", 1, 1, java.util.Map.of());
 
         var result = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
-        java.util.List<String> fingerprints = new TokenEventDataLineageExtractor()
+        java.util.List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, result)
                 .stream()
                 .map(this::lineageFingerprint)

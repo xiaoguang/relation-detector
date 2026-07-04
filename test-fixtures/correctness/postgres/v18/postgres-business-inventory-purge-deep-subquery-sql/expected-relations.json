@@ -1,9 +1,9 @@
 {
   "fingerprints": [
+    "CO_OCCURRENCE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:master_skus.sku_ref->supplier_inventory_logs.sku_code:SQL_LOG_JOIN",
     "CO_OCCURRENCE:sales_order_items.product_sku->supplier_inventory_logs.sku_code:SQL_LOG_JOIN",
-    "FK_LIKE:inventory_snapshots.snapshot_id->supplier_inventory_logs.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:supplier_inventory_logs.warehouse_id->warehouse_facilities.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "CO_OCCURRENCE:supplier_inventory_logs.warehouse_id->warehouse_facilities.id:SQL_LOG_JOIN"
   ],
   "forbiddenTables": [
     "sales_summary",

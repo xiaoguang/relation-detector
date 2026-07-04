@@ -1,10 +1,10 @@
 {
   "fingerprints": [
+    "CO_OCCURRENCE:customers.id->payment_receipts.party_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:employees.id->stock_transfers.requested_by:SQL_LOG_JOIN",
     "CO_OCCURRENCE:employees.id->stocktakes.created_by:SQL_LOG_JOIN",
     "FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:customer_addresses.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:payment_receipts.party_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:period_close_jobs.period_id->accounting_periods.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:production_operations.predecessor_operation_id->production_operations.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:production_operations.route_id->production_routes.id:SQL_LOG_JOIN,NAMING_MATCH",

@@ -1,15 +1,15 @@
 {
   "fingerprints": [
+    "CO_OCCURRENCE:categories.id->products.c_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:categories.s_id->sub_labels.id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:departments.id->products.dept_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:departments.manager_id->employees.id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:documents.id->revisions.doc_id:SQL_LOG_SUBQUERY_IN",
+    "CO_OCCURRENCE:main_catalog.p_id->products.id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:side_a.id->side_b.id:SQL_LOG_JOIN",
     "FK_LIKE:account_metadata.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:categories.s_id->sub_labels.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:departments.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:main_catalog.p_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:products.c_id->categories.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:products.dept_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:revisions.doc_id->documents.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH"
+    "FK_LIKE:family_tree.parent_id->family_tree.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": [
     "org_path",

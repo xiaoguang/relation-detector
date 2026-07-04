@@ -16,7 +16,6 @@ import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.WarningMessage;
-import com.relationdetector.core.relation.NamingEvidenceMerger;
 import com.relationdetector.core.scan.ScanResult;
 
 /**
@@ -32,8 +31,6 @@ import com.relationdetector.core.scan.ScanResult;
 public final class JsonResultWriter {
     private static final ObjectMapper JSON = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
-
-    private final NamingEvidenceMerger namingEvidenceMerger = new NamingEvidenceMerger();
 
     /**
      * 将 ScanResult 渲染成最终 JSON 字符串。
@@ -59,7 +56,7 @@ public final class JsonResultWriter {
             boolean includeWarnings,
             boolean includeObservationCounts
     ) {
-        List<NamingEvidenceCandidate> namingEvidence = namingEvidenceMerger.merge(result.namingEvidence());
+        List<NamingEvidenceCandidate> namingEvidence = result.namingEvidence();
 
         ObjectNode root = JSON.createObjectNode();
         ObjectNode database = root.putObject("database");

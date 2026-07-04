@@ -17,16 +17,19 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
-import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.parser.DdlRelationParserRunner;
 import com.relationdetector.core.parser.DdlParseOutcome;
+import com.relationdetector.core.parser.ParserBundle;
+import com.relationdetector.core.parser.ParserBundleSelector;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
 import com.relationdetector.core.relation.NamingEvidenceExtractor;
 
 final class StatementParsePipeline {
     private final SqlRelationParserRunner sqlParserRunner = new SqlRelationParserRunner();
     private final DdlRelationParserRunner ddlParserRunner = new DdlRelationParserRunner();
-    private final TokenEventDataLineageExtractor dataLineageExtractor = new TokenEventDataLineageExtractor();
+    private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
+    private final StructuredDataLineageExtractor dataLineageExtractor = new StructuredDataLineageExtractor();
     private final NamingEvidenceExtractor namingEvidenceExtractor = new NamingEvidenceExtractor();
 
     List<RelationshipCandidate> parseDdlFile(
@@ -34,14 +37,15 @@ final class StatementParsePipeline {
             ScanConfig config,
             Path file,
             AdaptorContext context,
-            ScanResult result
+            ScanPipelineContext scanContext
     ) {
         try {
-            DdlParseOutcome parsed = ddlParserRunner.parseWithEvidence(adaptor, config, file, context);
-            result.namingEvidence().addAll(parsed.namingEvidence());
+            DdlParseOutcome parsed = ddlParserRunner.parseWithEvidence(
+                    parserBundle(adaptor, config, context, scanContext), file, context);
+            scanContext.namingEvidencePool.addAll(parsed.namingEvidence());
             return parsed.relationships();
         } catch (Exception ex) {
-            result.warnings().add(DiagnosticWarnings.ddlParseFailed(file, ex));
+            scanContext.result.warnings().add(DiagnosticWarnings.ddlParseFailed(file, ex));
             return List.of();
         }
     }
@@ -51,15 +55,16 @@ final class StatementParsePipeline {
             ScanConfig config,
             DatabaseDdlDefinition definition,
             AdaptorContext context,
-            ScanResult result
+            ScanPipelineContext scanContext
     ) {
         try {
-            DdlParseOutcome parsed = ddlParserRunner.parseTextWithEvidence(adaptor, config,
+            DdlParseOutcome parsed = ddlParserRunner.parseTextWithEvidence(
+                    parserBundle(adaptor, config, context, scanContext),
                     definition.ddl(), definition.source(), EvidenceSourceType.DATABASE_DDL, context);
-            result.namingEvidence().addAll(parsed.namingEvidence());
+            scanContext.namingEvidencePool.addAll(parsed.namingEvidence());
             return qualifyDatabaseDdlCandidates(parsed.relationships(), definition.schema());
         } catch (Exception ex) {
-            result.warnings().add(DiagnosticWarnings.ddlTextParseFailed(definition.source(), definition.ddl(), ex));
+            scanContext.result.warnings().add(DiagnosticWarnings.ddlTextParseFailed(definition.source(), definition.ddl(), ex));
             return List.of();
         }
     }
@@ -70,19 +75,35 @@ final class StatementParsePipeline {
             SqlStatementRecord statement,
             AdaptorContext context,
             ScanResult result,
+            ScanPipelineContext scanContext,
             List<DataLineageCandidate> dataLineageCandidates,
             Set<TableId> knownPhysicalTables
     ) {
         try {
-            var parsed = sqlParserRunner.parseStructuredAndRelations(adaptor, config, statement, context);
+            var parsed = adaptor.structuredSqlParser().isEmpty()
+                    ? sqlParserRunner.parseStructuredAndRelations(adaptor, config, statement, context)
+                    : sqlParserRunner.parseStructuredAndRelations(
+                            config, statement, context, parserBundle(adaptor, config, context, scanContext));
             parsed.structured().ifPresent(structured ->
                     dataLineageCandidates.addAll(dataLineageExtractor.extract(statement, structured, knownPhysicalTables)));
-            result.namingEvidence().addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(parsed.relationships()));
+            scanContext.namingEvidencePool.addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(parsed.relationships()));
             return parsed.relationships();
         } catch (Exception ex) {
             result.warnings().add(DiagnosticWarnings.sqlParseFailed(statement, ex));
             return List.of();
         }
+    }
+
+    private ParserBundle parserBundle(
+            DatabaseAdaptor adaptor,
+            ScanConfig config,
+            AdaptorContext context,
+            ScanPipelineContext scanContext
+    ) {
+        if (scanContext.parserBundle == null) {
+            scanContext.parserBundle = parserBundleSelector.select(adaptor, config, context);
+        }
+        return scanContext.parserBundle;
     }
 
     Set<TableId> knownPhysicalTables(MetadataSnapshot metadataSnapshot) {

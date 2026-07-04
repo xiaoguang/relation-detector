@@ -1,9 +1,9 @@
 {
   "fingerprints": [
+    "CO_OCCURRENCE:dbo.employees.id->dbo.fixed_assets.custodian_id:SQL_LOG_JOIN",
     "FK_LIKE:dbo.boms.child_product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.fixed_assets.custodian_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",

@@ -12,7 +12,7 @@ import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
-import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
 
@@ -246,7 +246,7 @@ class MySqlTokenEventDialectBoundaryTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-cte-update.sql", 1, 1, java.util.Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        java.util.Set<String> fingerprints = new TokenEventDataLineageExtractor().extract(statement, structured).stream()
+        java.util.Set<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, structured).stream()
                 .map(this::fingerprint)
                 .collect(java.util.stream.Collectors.toSet());
 
@@ -291,7 +291,7 @@ class MySqlTokenEventDialectBoundaryTest {
                 """, StatementSourceType.PROCEDURE, "mysql-update-join-derived-cte.sql", 1, 1, java.util.Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        java.util.Set<String> fingerprints = new TokenEventDataLineageExtractor().extract(statement, structured).stream()
+        java.util.Set<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, structured).stream()
                 .map(this::fingerprint)
                 .collect(java.util.stream.Collectors.toSet());
 

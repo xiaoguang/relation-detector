@@ -18,7 +18,7 @@ import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
 class MySqlTokenEventProcedureRelationBehaviorTest {
@@ -39,7 +39,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PROCEDURE, "PROCEDURE:rebuild_customer_rollup", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor()
+        List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -65,7 +65,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-date-add.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor()
+        List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -95,7 +95,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-derived-aggregate.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor()
+        List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -129,7 +129,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-insert-derived-aggregate.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor()
+        List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -190,7 +190,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-insert-derived-nested-functions.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor()
+        List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -224,7 +224,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-work-order-materials.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor()
+        List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -257,7 +257,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-scalar-aggregate.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor()
+        List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -296,7 +296,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor()
+        List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -335,7 +335,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.TRIGGER, "TRIGGER:trg_sales_order_delivered", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor()
+        List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, structured, Set.of(
                         TableId.of(null, "inventory"),
                         TableId.of(null, "inventory_transactions"),
@@ -366,7 +366,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-aggregate-case-control.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor()
+        List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -388,7 +388,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 "ROUTINE:erp_system.sp_run_mrp_for_plan", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor()
+        List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::lineageFingerprint)
@@ -422,7 +422,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 "ROUTINE:erp_system.sp_refresh_semantic_dimensions", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor()
+        List<String> fingerprints = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
                 .map(this::lineageFingerprint)

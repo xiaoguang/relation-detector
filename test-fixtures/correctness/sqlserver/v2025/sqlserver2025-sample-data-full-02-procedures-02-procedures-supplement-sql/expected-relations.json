@@ -1,6 +1,7 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:dbo.employees.id->dbo.employees.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
+    "CO_OCCURRENCE:dbo.employees.id->dbo.warehouses.manager_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.permissions.id->dbo.permissions.id:SQL_LOG_SUBQUERY_IN",
     "CO_OCCURRENCE:dbo.product_categories.id->dbo.product_categories.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
     "CO_OCCURRENCE:dbo.products.id->dbo.products.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
@@ -14,8 +15,7 @@
     "FK_LIKE:dbo.products.category_id->dbo.product_categories.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.role_permissions.permission_id->dbo.permissions.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.supplier_products.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.warehouses.manager_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:dbo.supplier_products.supplier_id->dbo.suppliers.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

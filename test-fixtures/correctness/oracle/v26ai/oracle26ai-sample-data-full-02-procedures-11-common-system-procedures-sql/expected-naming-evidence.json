@@ -4,7 +4,7 @@
     "naming:inventory.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_order_items.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_order_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
-    "naming:sales_orders.warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:sales_returns.warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
+    "naming:sales_orders.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_returns.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH"
   ]
 }

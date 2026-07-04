@@ -174,6 +174,17 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
+    void structuredLineageExtractorDoesNotMergePerStatement() throws IOException {
+        Path root = repoRoot();
+        Path extractor = root.resolve(
+                "core/src/main/java/com/relationdetector/core/lineage/StructuredDataLineageExtractor.java");
+        String text = Files.readString(extractor);
+
+        assertFalse(text.contains("DataLineageMerger"),
+                "StructuredDataLineageExtractor must emit candidates; merge belongs to result assembly or correctness assertions");
+    }
+
+    @Test
     void jsonResultWriterUsesJacksonObjectModel() throws IOException {
         Path root = repoRoot();
         Path writer = root.resolve("core/src/main/java/com/relationdetector/core/output/JsonResultWriter.java");
@@ -266,7 +277,7 @@ class DialectGrammarArchitectureTest {
         Path enhancer = root.resolve("core/src/main/java/com/relationdetector/core/relation/NamingMatchEvidenceEnhancer.java");
         String text = Files.readString(enhancer);
 
-        assertTrue(text.contains("List<NamingEvidenceCandidate> namingEvidence"),
+        assertTrue(text.contains("NamingEvidencePool namingEvidence"),
                 "NamingMatchEvidenceEnhancer must require the top-level naming evidence pool");
         assertFalse(text.contains("NamingMatchRules"),
                 "NamingMatchEvidenceEnhancer must not recompute naming rules locally");
@@ -274,6 +285,8 @@ class DialectGrammarArchitectureTest {
                 "NamingMatchEvidenceEnhancer must not create naming evidence locally");
         assertFalse(text.contains("void enhance(List<RelationshipCandidate> candidates)"),
                 "NamingMatchEvidenceEnhancer must not expose a no-pool overload");
+        assertFalse(text.contains("List<NamingEvidenceCandidate> namingEvidence"),
+                "NamingMatchEvidenceEnhancer must not expose a list-based compatibility overload");
         assertFalse(text.contains("addToPool"),
                 "Relationship enhancement must not mutate or backfill the naming evidence pool");
 

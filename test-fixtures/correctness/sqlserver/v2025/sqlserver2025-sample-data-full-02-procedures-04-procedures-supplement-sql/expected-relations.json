@@ -2,6 +2,7 @@
   "fingerprints": [
     "CO_OCCURRENCE:dbo.departments.id->dbo.departments.id:SQL_LOG_SUBQUERY_IN",
     "CO_OCCURRENCE:dbo.employees.id->dbo.employees.id:SQL_LOG_SUBQUERY_IN",
+    "CO_OCCURRENCE:dbo.employees.id->dbo.purchase_requisitions.requester_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.product_batches.id->dbo.product_batches.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
     "CO_OCCURRENCE:dbo.products.id->dbo.products.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
     "CO_OCCURRENCE:dbo.purchase_requisitions.id->dbo.purchase_requisitions.id:SQL_LOG_SUBQUERY_IN",
@@ -14,8 +15,7 @@
     "FK_LIKE:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.purchase_requisition_items.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.purchase_requisitions.requester_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:dbo.purchase_requisitions.department_id->dbo.departments.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

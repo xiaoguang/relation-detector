@@ -7,7 +7,6 @@
     "naming:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.contract_milestones.contract_id->dbo.contracts.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.inspection_reports.batch_id->dbo.product_batches.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.inspection_reports.inspector_id->dbo.employees.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.inspection_reports.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.inspection_standards.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",

@@ -14,7 +14,7 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
-import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
@@ -145,7 +145,7 @@ class PostgresFullGrammerExpressionAnalyzerTest {
                 """);
 
         var structured = new PostgresFullGrammerDialectModule().sqlParser().parseSql(statement, null);
-        List<String> fingerprints = new TokenEventDataLineageExtractor().extract(statement, structured).stream()
+        List<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, structured).stream()
                 .map(PostgresFullGrammerExpressionAnalyzerTest::lineageFingerprint)
                 .sorted()
                 .toList();

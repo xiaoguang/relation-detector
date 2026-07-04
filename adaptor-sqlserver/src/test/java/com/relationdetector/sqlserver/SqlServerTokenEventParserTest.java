@@ -19,7 +19,7 @@ import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.log.ObjectSqlFileExtractor;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser;
 
@@ -109,7 +109,7 @@ class SqlServerTokenEventParserTest {
         assertTrue(transforms.contains("COALESCE"),
                 () -> "Expected COALESCE MERGE_WRITE_MAPPING, transforms=" + transforms + ", events=" + result.events());
 
-        var lineages = new TokenEventDataLineageExtractor().extract(
+        var lineages = new StructuredDataLineageExtractor().extract(
                 statement,
                 result,
                 Set.of(TableId.of("dbo", "departments")));
@@ -131,7 +131,7 @@ class SqlServerTokenEventParserTest {
                 .orElseThrow();
 
         StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
-        var lineages = new TokenEventDataLineageExtractor().extract(
+        var lineages = new StructuredDataLineageExtractor().extract(
                 statement,
                 result,
                 Set.of(TableId.of("dbo", "departments")));

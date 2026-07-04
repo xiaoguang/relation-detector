@@ -1,10 +1,10 @@
 {
   "fingerprints": [
     "naming:dbo.finished_goods_receipts.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.finished_goods_receipts.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.finished_goods_receipts.work_order_id->dbo.work_orders.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.inventory_valuation_snapshots.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.inventory_valuation_snapshots.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.standard_costs.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH"
   ]
 }

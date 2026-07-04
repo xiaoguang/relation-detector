@@ -1,7 +1,7 @@
 {
   "fingerprints": [
     "naming:dbo.inventory.batch_id->dbo.product_batches.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.inventory.warehouse_id->dbo.warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.inventory.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.product_batches.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.purchase_returns.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH",

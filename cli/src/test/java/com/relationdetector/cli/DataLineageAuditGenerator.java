@@ -28,7 +28,7 @@ import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.core.parser.ParserBundleSelector;
-import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.lineage.DataLineageMerger;
 import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.scan.ScanConfig;
@@ -385,7 +385,7 @@ final class DataLineageAuditGenerator {
         List<SqlStatementRecord> statements = statementFormat.equalsIgnoreCase("OBJECT_BLOCKS")
                 ? parseObjectBlockStatements(inputText, sourceType, input.toString(), databaseType, objectSourceFilter)
                 : new PlainSqlLogExtractor().extract(input, sourceType, warning -> { }).toList();
-        TokenEventDataLineageExtractor extractor = new TokenEventDataLineageExtractor();
+        StructuredDataLineageExtractor extractor = new StructuredDataLineageExtractor();
         StructuredSqlParser parser = structuredSqlParser(
                 databaseType,
                 structuredParser,

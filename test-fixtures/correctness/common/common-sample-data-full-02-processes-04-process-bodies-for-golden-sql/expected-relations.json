@@ -4,6 +4,7 @@
     "CO_OCCURRENCE:departments.id->departments.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
     "CO_OCCURRENCE:employees.id->tax_filings.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN",
     "CO_OCCURRENCE:employees.id->vouchers.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
+    "CO_OCCURRENCE:employees.id->warehouses.manager_id:SQL_LOG_JOIN",
     "FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
     "FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN",
@@ -32,7 +33,6 @@
     "FK_LIKE:stocktakes.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
     "FK_LIKE:supplier_products.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
     "FK_LIKE:three_way_matching.invoice_id->invoices.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:work_order_materials.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []

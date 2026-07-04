@@ -23,7 +23,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
 import com.relationdetector.core.fullgrammer.FullGrammerDialectModule;
-import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.relation.TokenEventSqlRelationParser;
 import com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule;
 
@@ -769,7 +769,7 @@ class OracleAdaptorParserTest {
     }
 
     private Set<String> lineage(SqlStatementRecord statement, com.relationdetector.contracts.parse.StructuredParseResult result) {
-        return new TokenEventDataLineageExtractor().extract(statement, result).stream()
+        return new StructuredDataLineageExtractor().extract(statement, result).stream()
                 .map(this::lineageFingerprint)
                 .collect(Collectors.toCollection(java.util.TreeSet::new));
     }

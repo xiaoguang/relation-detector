@@ -53,8 +53,23 @@ final class NamingMatchRules {
         if (!isId(target) || !endsWithIdSuffix(source.column().columnName())) {
             return Optional.empty();
         }
+        String sourceStem = singularStem(idPrefix(source.column().columnName()));
+        String targetStem = singularStem(target.table().tableName());
+        if (!relatedIdStem(sourceStem, targetStem)) {
+            return Optional.empty();
+        }
         return Optional.of(match("ID_SUFFIX_TO_ID", source, target, source.column().columnName(),
                 target.table().tableName()));
+    }
+
+    private static boolean relatedIdStem(String sourceStem, String targetStem) {
+        if (sourceStem.isBlank() || targetStem.isBlank()) {
+            return false;
+        }
+        if (sourceStem.equals(targetStem)) {
+            return true;
+        }
+        return sourceStem.endsWith("_" + targetStem) || targetStem.endsWith("_" + sourceStem);
     }
 
     private static Optional<Match> selfRoleId(Endpoint left, Endpoint right) {
@@ -109,7 +124,7 @@ final class NamingMatchRules {
         if (value.endsWith("ies") && value.length() > 3) {
             return value.substring(0, value.length() - 3) + "y";
         }
-        if (value.endsWith("ses") || value.endsWith("xes") || value.endsWith("zes")
+        if (value.endsWith("sses") || value.endsWith("xes") || value.endsWith("zes")
                 || value.endsWith("ches") || value.endsWith("shes")) {
             return value.substring(0, value.length() - 2);
         }

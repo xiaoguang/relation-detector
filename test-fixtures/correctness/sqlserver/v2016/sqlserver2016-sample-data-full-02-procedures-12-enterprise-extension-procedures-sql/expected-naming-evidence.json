@@ -6,7 +6,7 @@
     "naming:dbo.sales_commissions.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.settlement_items.settlement_id->dbo.settlements.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.shipments.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.shipments.warehouse_id->dbo.warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.shipments.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.shipping_tracks.shipment_id->dbo.shipments.id:TABLE_ID:NAMING_MATCH"
   ]
 }

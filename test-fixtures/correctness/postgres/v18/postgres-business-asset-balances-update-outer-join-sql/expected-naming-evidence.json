@@ -1,6 +1,3 @@
 {
-  "fingerprints": [
-    "naming:account_extensions.assigned_staff_id->staff_assignments.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:ledger_system_a.account_id->account_extensions.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
-  ]
+  "fingerprints": []
 }

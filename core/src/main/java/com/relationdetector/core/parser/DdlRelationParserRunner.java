@@ -60,9 +60,16 @@ public final class DdlRelationParserRunner {
             Path file,
             AdaptorContext context
     ) {
+        return parseWithEvidence(parserBundleSelector.select(adaptor, config, context), file, context);
+    }
+
+    public DdlParseOutcome parseWithEvidence(
+            ParserBundle bundle,
+            Path file,
+            AdaptorContext context
+    ) {
         String ddl = read(file);
-        StructuredParseResult structured = parserBundleSelector.select(adaptor, config, context).ddlParser()
-                .parseDdl(ddl, file.toString(), context);
+        StructuredParseResult structured = bundle.ddlParser().parseDdl(ddl, file.toString(), context);
         forwardWarnings(context, structured);
         return new DdlParseOutcome(
                 visitor.extract(ddl, file.toString(), structured),
@@ -102,6 +109,16 @@ public final class DdlRelationParserRunner {
     ) {
         StructuredDdlParser parser = parserBundleSelector.select(adaptor, config, context).ddlParser();
         return parseTextWithEvidence(parser, ddl, sourceName, sourceType, context);
+    }
+
+    public DdlParseOutcome parseTextWithEvidence(
+            ParserBundle bundle,
+            String ddl,
+            String sourceName,
+            EvidenceSourceType sourceType,
+            AdaptorContext context
+    ) {
+        return parseTextWithEvidence(bundle.ddlParser(), ddl, sourceName, sourceType, context);
     }
 
     /**

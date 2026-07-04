@@ -11,7 +11,7 @@
     "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_returns.sales_order_id->sales_orders.id:TABLE_ID:NAMING_MATCH",
     "naming:shipments.sales_order_id->sales_orders.id:TABLE_ID:NAMING_MATCH",
-    "naming:stocktakes.warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:stocktakes.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH",
     "naming:supplier_products.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
     "naming:voucher_items.account_id->accounts.id:TABLE_ID:NAMING_MATCH",
     "naming:work_orders.product_id->products.id:TABLE_ID:NAMING_MATCH"

@@ -1,9 +1,6 @@
 {
   "fingerprints": [
-    "naming:consignment_consumptions.consignment_id->consignment_inventory.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:contract_milestones.contract_id->contracts.id:TABLE_ID:NAMING_MATCH",
-    "naming:contracts.party_id->customers.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:contracts.party_id->suppliers.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

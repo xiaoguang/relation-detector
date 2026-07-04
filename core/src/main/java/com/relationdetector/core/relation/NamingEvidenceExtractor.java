@@ -10,8 +10,6 @@ import java.util.Set;
 
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
-import com.relationdetector.contracts.Enums.RelationSubType;
-import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
@@ -78,7 +76,7 @@ public final class NamingEvidenceExtractor {
         List<NamingEvidenceCandidate> result = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         for (RelationshipCandidate candidate : candidates) {
-            if (!isEligibleSqlPredicate(candidate)) {
+            if (!isEligibleRelationshipCandidate(candidate)) {
                 continue;
             }
             NamingMatchRules.match(candidate.source(), candidate.target(), hasSelfJoinRole(candidate))
@@ -159,18 +157,17 @@ public final class NamingEvidenceExtractor {
         }
     }
 
-    private boolean isEligibleSqlPredicate(RelationshipCandidate candidate) {
+    private boolean isEligibleRelationshipCandidate(RelationshipCandidate candidate) {
         return candidate != null
                 && candidate.source().isColumnLevel()
                 && candidate.target().isColumnLevel()
-                && candidate.relationType() == RelationType.CO_OCCURRENCE
-                && candidate.relationSubType() == RelationSubType.COLUMN_CO_OCCURRENCE
-                && hasSqlPredicateEvidence(candidate);
+                && hasStructuralEndpointEvidence(candidate);
     }
 
-    private boolean hasSqlPredicateEvidence(RelationshipCandidate candidate) {
+    private boolean hasStructuralEndpointEvidence(RelationshipCandidate candidate) {
         return candidate.evidence().stream().anyMatch(evidence -> switch (evidence.type()) {
-            case SQL_LOG_JOIN, SQL_LOG_SUBQUERY_IN, SQL_LOG_EXISTS, SQL_LOG_COLUMN_CO_OCCURRENCE,
+            case DDL_FOREIGN_KEY, METADATA_FOREIGN_KEY,
+                    SQL_LOG_JOIN, SQL_LOG_SUBQUERY_IN, SQL_LOG_EXISTS, SQL_LOG_COLUMN_CO_OCCURRENCE,
                     VIEW_JOIN, PROCEDURE_JOIN, TRIGGER_REFERENCE -> true;
             default -> false;
         });

@@ -8,7 +8,7 @@ common 不是数据库方言 adaptor，不能通过 CLI 的 `databaseType=mysql/
 
 | Parser | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics | 来源 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| common-token-event sample-data | 15 | 11 / 4 | 729 | 292 | 397 | 0 | `test-fixtures/correctness/common` |
+| common-token-event sample-data | 15 | 11 / 4 | 729 | 292 | 419 | 0 | `test-fixtures/correctness/common` |
 
 ## 为什么 common 数量看起来高
 

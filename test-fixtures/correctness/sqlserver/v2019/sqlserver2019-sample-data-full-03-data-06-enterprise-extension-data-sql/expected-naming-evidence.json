@@ -3,7 +3,6 @@
     "naming:dbo.boms.child_product_id->dbo.products.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.boms.parent_product_id->dbo.products.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.fixed_assets.custodian_id->dbo.employees.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.fixed_assets.department_id->dbo.departments.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.invoices.customer_id->dbo.customers.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.invoices.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH",
@@ -19,6 +18,6 @@
     "naming:dbo.work_order_materials.work_order_id->dbo.work_orders.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.work_orders.bom_id->dbo.boms.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.work_orders.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.work_orders.warehouse_id->dbo.warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
+    "naming:dbo.work_orders.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH"
   ]
 }

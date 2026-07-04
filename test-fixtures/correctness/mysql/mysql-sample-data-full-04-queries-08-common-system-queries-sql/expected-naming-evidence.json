@@ -4,13 +4,11 @@
     "naming:attendance.employee_id->employees.id:TABLE_ID:NAMING_MATCH",
     "naming:audit_log.employee_id->employees.id:TABLE_ID:NAMING_MATCH",
     "naming:employees.department_id->departments.id:TABLE_ID:NAMING_MATCH",
-    "naming:invoices.reference_id->purchase_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:purchase_orders.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
     "naming:purchase_receipts.order_id->purchase_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_order_items.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_return_items.return_id->sales_returns.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:three_way_matching.purchase_order_id->purchase_orders.id:TABLE_ID:NAMING_MATCH",
-    "naming:warehouses.manager_id->employees.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
+    "naming:three_way_matching.purchase_order_id->purchase_orders.id:TABLE_ID:NAMING_MATCH"
   ]
 }

@@ -37,7 +37,7 @@ import com.relationdetector.core.lineage.model.ExpressionSourceSet;
  * database-internal field lineage. It does not perform parameter binding and
  * does not treat parameters, literals, JSON paths, or local variables as sources.
  */
-public final class TokenEventDataLineageExtractor {
+public final class StructuredDataLineageExtractor {
     /**
      * 从结构化 SQL events 抽取字段血缘。
      *
@@ -114,7 +114,7 @@ public final class TokenEventDataLineageExtractor {
                     attributes));
             candidates.add(candidate);
         }
-        return new DataLineageMerger().merge(candidates);
+        return candidates;
     }
 
     private AssignmentMapping assignmentMapping(

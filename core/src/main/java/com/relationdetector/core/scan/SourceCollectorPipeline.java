@@ -40,7 +40,7 @@ final class SourceCollectorPipeline {
             ctx.result.sources().add("database-ddl");
             for (DatabaseDdlDefinition definition : collectDatabaseDdl(connection, ctx)) {
                 ctx.relationshipCandidates.addAll(statementParser.parseDatabaseDdl(
-                        ctx.adaptor, ctx.config, definition, ctx.adaptorContext, ctx.result));
+                        ctx.adaptor, ctx.config, definition, ctx.adaptorContext, ctx));
             }
         }
 
@@ -54,6 +54,7 @@ final class SourceCollectorPipeline {
                         objectStatement(definition),
                         ctx.adaptorContext,
                         ctx.result,
+                        ctx,
                         ctx.lineageCandidates,
                         databaseKnownPhysicalTables));
             }
@@ -78,7 +79,7 @@ final class SourceCollectorPipeline {
             ctx.result.sources().add("ddl");
             for (Path file : ctx.config.ddlFiles) {
                 ctx.relationshipCandidates.addAll(statementParser.parseDdlFile(
-                        ctx.adaptor, ctx.config, file, ctx.adaptorContext, ctx.result));
+                        ctx.adaptor, ctx.config, file, ctx.adaptorContext, ctx));
             }
         }
 
@@ -90,6 +91,7 @@ final class SourceCollectorPipeline {
                                 ctx.result.warnings()::add)
                         .forEach(statement -> ctx.relationshipCandidates.addAll(statementParser.parseStatement(
                                 ctx.adaptor, ctx.config, statement, ctx.adaptorContext, ctx.result,
+                                ctx,
                                 ctx.lineageCandidates, fileKnownPhysicalTables)));
             }
         }
@@ -101,6 +103,7 @@ final class SourceCollectorPipeline {
                 extractLog(file, ctx)
                         .forEach(statement -> ctx.relationshipCandidates.addAll(statementParser.parseStatement(
                                 ctx.adaptor, ctx.config, statement, ctx.adaptorContext, ctx.result,
+                                ctx,
                                 ctx.lineageCandidates, logKnownPhysicalTables)));
             }
         }

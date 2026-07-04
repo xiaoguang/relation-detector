@@ -1,7 +1,9 @@
 {
   "fingerprints": [
+    "CO_OCCURRENCE:category_dim.id->sales_fact.category_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:employee_roles.role_id->role_permissions.role_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_fact.fiscal_date:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:region_dim.id->sales_fact.region_id:SQL_LOG_JOIN",
     "FK_LIKE:boms.component_product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:boms.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:employee_roles.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
@@ -10,8 +12,6 @@
     "FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:role_permissions.permission_id->permissions.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:sales_fact.category_id->category_dim.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:sales_fact.region_id->region_dim.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",

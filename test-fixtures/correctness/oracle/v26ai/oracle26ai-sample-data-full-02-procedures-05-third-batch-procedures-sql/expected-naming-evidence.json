@@ -1,6 +1,5 @@
 {
   "fingerprints": [
-    "naming:consignment_consumptions.consignment_id->consignment_inventory.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

@@ -1,5 +1,3 @@
 {
-  "fingerprints": [
-    "naming:pg12_orders.customer_id->pg12_complex_schema.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
-  ]
+  "fingerprints": []
 }

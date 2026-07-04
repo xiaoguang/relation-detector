@@ -1,5 +1,7 @@
 {
   "fingerprints": [
+    "CO_OCCURRENCE:employees.id->purchase_orders.purchaser_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:employees.id->sales_orders.salesperson_id:SQL_LOG_JOIN",
     "FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN",
     "FK_LIKE:employees.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH",
@@ -9,11 +11,9 @@
     "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:purchase_order_items.order_id->purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:purchase_orders.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:purchase_orders.purchaser_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:purchase_orders.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:voucher_items.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:voucher_items.voucher_id->vouchers.id:SQL_LOG_JOIN,NAMING_MATCH"

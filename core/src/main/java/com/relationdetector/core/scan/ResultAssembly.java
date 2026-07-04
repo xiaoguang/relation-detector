@@ -12,6 +12,8 @@ final class ResultAssembly {
                 ctx.relationshipCandidates,
                 ctx.config.minConfidence));
         ctx.result.dataLineages().addAll(dataLineageMerger.merge(ctx.lineageCandidates));
+        ctx.result.namingEvidence().clear();
+        ctx.result.namingEvidence().addAll(ctx.namingEvidencePool.merged());
         return ctx.result;
     }
 }

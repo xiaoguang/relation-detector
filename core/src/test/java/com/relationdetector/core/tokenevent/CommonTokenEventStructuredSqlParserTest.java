@@ -16,7 +16,7 @@ import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
-import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
 class CommonTokenEventStructuredSqlParserTest {
@@ -150,7 +150,7 @@ class CommonTokenEventStructuredSqlParserTest {
     }
 
     private Set<String> lineage(SqlStatementRecord statement, StructuredParseResult structured) {
-        return new TokenEventDataLineageExtractor().extract(statement, structured).stream()
+        return new StructuredDataLineageExtractor().extract(statement, structured).stream()
                 .map(this::fingerprint)
                 .collect(Collectors.toCollection(TreeSet::new));
     }

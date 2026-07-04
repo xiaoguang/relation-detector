@@ -1,7 +1,7 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:pg12_complex_schema.id->pg12_complex_schema.id:SQL_LOG_JOIN",
-    "FK_LIKE:pg12_orders.customer_id->pg12_complex_schema.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH,SQL_LOG_EXISTS,SQL_LOG_SUBQUERY_IN"
+    "CO_OCCURRENCE:pg12_complex_schema.id->pg12_orders.customer_id:SQL_LOG_JOIN,REPEATED_OBSERVATION,SQL_LOG_EXISTS,SQL_LOG_SUBQUERY_IN"
   ],
   "forbiddenTables": []
 }

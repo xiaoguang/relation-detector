@@ -9,8 +9,8 @@
 
 | Parser | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| MySQL token-event root | 38 | 32 / 6 | 349 | 240 | 145 | 0 |
-| MySQL full-grammer v8_0 | 38 | 32 / 6 | 397 | 254 | 184 | 0 |
+| MySQL token-event root | 38 | 32 / 6 | 349 | 240 | 238 | 0 |
+| MySQL full-grammer v8_0 | 38 | 32 / 6 | 397 | 254 | 245 | 0 |
 
 ## 本轮已修复
 
@@ -20,6 +20,7 @@
 | select-list boolean expression lineage | `YEAR(d.calendar_date) = 2026 AS is_current_fiscal_year`、`pc.name = '女装' OR ... AS is_womenwear` | MySQL token-event visitor 将 select-list 谓词作为表达式来源追踪，不把它当 relationship predicate |
 | function keyword expression | `CONCAT('MRP-', ..., REPLACE(...))` | 将 `REPLACE` 纳入 MySQL token-event function identifier 范围，恢复 `mrp_runs.run_no` 的表达式来源 |
 | DDL column inventory | MySQL token-event DDL 文件 | MySQL token-event DDL visitor 输出 `DDL_COLUMN` inventory，使 top-level `namingEvidence` 不再只依赖 SQL predicate |
+| DDL FK endpoint naming evidence | 跨 DDL 文件的 FK endpoints | top-level `namingEvidence` 现在也从已确认的 `DDL_FOREIGN_KEY` relationship candidate 抽取，不要求 source/target column inventory 出现在同一个 DDL 文件中 |
 
 ## Lineage 差异审计
 
@@ -59,21 +60,24 @@
 
 | 差异 | 数量 | 判断 |
 | --- | ---: | --- |
-| token-event 独有 namingEvidence | 0 | 本轮 DDL_COLUMN inventory 没有发明 token-event-only 命名证据 |
-| v8_0 独有 namingEvidence | 39 | 全部来自 v8_0 SQL predicate / full-grammer 更宽覆盖，不是 DDL inventory 缺失 |
+| token-event 独有 namingEvidence | 0 | token-event 没有发明额外命名证据 |
+| v8_0 独有 namingEvidence | 7 | 来自 v8_0 更宽 SQL predicate 覆盖和自然资产表达差异，不是 DDL inventory 缺失 |
 
-需要谨慎的 v8_0-only 命中包括：
+剩余 v8_0-only 命中包括：
 
-- `sales_order_items.product_id -> positions.id`
-- `employees.position_id -> products.id`
-- `sales_orders.customer_id -> contracts.id`
-- `voucher_items.voucher_id -> customers.id`
+- `customers.employee_id -> employees.id`
+- `employees.manager_id -> employees.id`
+- `production_operations.predecessor_operation_id -> production_operations.id`
+- `purchase_receipt_items.order_item_id -> purchase_order_items.id`
+- `serial_numbers.purchase_receipt_id -> purchase_receipts.id`
+- `serial_numbers.return_id -> sales_returns.id`
+- `serial_numbers.sales_order_id -> sales_orders.id`
 
-这些是 `_id -> id` 命名规则在复杂 SQL predicate 上的宽命中，不能直接倒灌进 token-event。后续如果这些 evidence 被 relationship 使用，应继续按 SQL 上下文审计是否过宽。
+前面那些 `_id -> 任意 id` 的宽命中已经被收紧删除。剩余 7 条能从 8.0 SQL 上下文解释，不再按 token-event parser gap 处理。
 
 ## 结论
 
 - MySQL token-event 已补上本轮确认的 high-value parser gap：routine `UNION` / `ON DUPLICATE`、boolean select item、keyword function、DDL column inventory。
 - token-event 独有 14 条 lineage 未确认 false positive，暂时保留。
-- 剩余 v8_0-only lineage / namingEvidence 不全部等于 token-event bug；其中一部分是 v8_0 source set 更宽或命名规则过宽，需要后续按具体 SQL 收敛。
+- 剩余 v8_0-only lineage / namingEvidence 不全部等于 token-event bug；其中一部分是 v8_0 source set 更宽或自然 SQL 资产覆盖差异。
 - 当前没有 `REVIEW_NEEDED`。

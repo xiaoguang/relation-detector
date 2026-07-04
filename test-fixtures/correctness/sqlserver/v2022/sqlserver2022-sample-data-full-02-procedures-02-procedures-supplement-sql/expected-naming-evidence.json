@@ -8,7 +8,6 @@
     "naming:dbo.products.category_id->dbo.product_categories.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.role_permissions.permission_id->dbo.permissions.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.supplier_products.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.supplier_products.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.warehouses.manager_id->dbo.employees.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
+    "naming:dbo.supplier_products.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

@@ -4,7 +4,7 @@
     "naming:approval_instances.workflow_id->approval_workflows.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:attendance.employee_id->employees.id:TABLE_ID:NAMING_MATCH",
     "naming:cashier_journals.account_id->accounts.id:TABLE_ID:NAMING_MATCH",
-    "naming:damage_reports.warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:damage_reports.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH",
     "naming:departments.parent_id->departments.id:SELF_ROLE_ID:NAMING_MATCH",
     "naming:employees.department_id->departments.id:TABLE_ID:NAMING_MATCH",
     "naming:inventory.product_id->products.id:TABLE_ID:NAMING_MATCH",
@@ -22,10 +22,9 @@
     "naming:settlements.voucher_id->vouchers.id:TABLE_ID:NAMING_MATCH",
     "naming:shipments.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:stock_transfers.from_warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:stocktakes.warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:stocktakes.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH",
     "naming:supplier_products.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
     "naming:three_way_matching.invoice_id->invoices.id:TABLE_ID:NAMING_MATCH",
-    "naming:warehouses.manager_id->employees.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:work_order_materials.work_order_id->work_orders.id:TABLE_ID:NAMING_MATCH"
   ]
 }

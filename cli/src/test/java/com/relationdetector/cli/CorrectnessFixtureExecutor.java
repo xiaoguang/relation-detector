@@ -17,15 +17,15 @@ import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.core.lineage.DataLineageMerger;
-import com.relationdetector.core.lineage.TokenEventDataLineageExtractor;
+import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.parser.DdlRelationParserRunner;
 import com.relationdetector.core.parser.DdlParseOutcome;
 import com.relationdetector.core.parser.SqlRelationParserRunner;
 import com.relationdetector.core.relation.NamingEvidenceExtractor;
+import com.relationdetector.core.relation.NamingEvidencePool;
 import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
-import com.relationdetector.core.relation.NamingEvidenceMerger;
 import com.relationdetector.core.relation.RelationshipMerger;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 import com.relationdetector.core.scan.ScanConfig;
@@ -99,44 +99,42 @@ final class CorrectnessFixtureExecutor {
         List<SqlStatementRecord> statements = sqlStatements(fixture, inputOf(fixture), warnings);
         List<RelationshipCandidate> relationships = new ArrayList<>();
         List<DataLineageCandidate> lineages = new ArrayList<>();
-        List<NamingEvidenceCandidate> namingEvidence = new ArrayList<>();
+        NamingEvidencePool namingEvidencePool = new NamingEvidencePool();
         NamingMatchEvidenceEnhancer namingMatchEvidenceEnhancer = new NamingMatchEvidenceEnhancer();
         if (isCommonTokenEventFixture(fixture)) {
             StructuredSqlParser parser = new CommonTokenEventStructuredSqlParser();
             TokenEventRelationExtractor relationExtractor = new TokenEventRelationExtractor();
-            TokenEventDataLineageExtractor lineageExtractor = new TokenEventDataLineageExtractor();
+            StructuredDataLineageExtractor lineageExtractor = new StructuredDataLineageExtractor();
             for (SqlStatementRecord statement : statements) {
                 StructuredParseResult structured = parser.parseSql(statement, context);
                 List<RelationshipCandidate> extracted = relationExtractor.extract(statement, structured);
-                List<NamingEvidenceCandidate> extractedNaming =
-                        namingEvidenceExtractor.extractFromRelationshipCandidates(extracted);
-                namingEvidence.addAll(extractedNaming);
+                namingEvidencePool.addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(extracted));
                 relationships.addAll(extracted);
                 lineages.addAll(lineageExtractor.extract(statement, structured));
             }
-            namingMatchEvidenceEnhancer.enhance(relationships, namingEvidence);
+            namingMatchEvidenceEnhancer.enhance(relationships, namingEvidencePool);
             assertRelations(fixture, expectedRelations, relationships);
             assertLineage(fixture, expectedLineage,
                     new DataLineageMerger().merge(lineages).stream().map(this::lineageFingerprint).toList());
-            assertNamingEvidence(fixture, expectedNamingEvidence, namingEvidence);
+            assertNamingEvidence(fixture, expectedNamingEvidence, namingEvidencePool.merged());
             assertWarningCodes(fixture, expectedDiagnostics, warnings);
             return;
         }
         SqlRelationParserRunner runner = new SqlRelationParserRunner();
-        TokenEventDataLineageExtractor lineageExtractor = new TokenEventDataLineageExtractor();
+        StructuredDataLineageExtractor lineageExtractor = new StructuredDataLineageExtractor();
         for (SqlStatementRecord statement : statements) {
             SqlRelationParserRunner.ParsedSqlRelations parsed =
                     runner.parseStructuredAndRelations(adaptor, config, statement, context);
             relationships.addAll(parsed.relationships());
-            namingEvidence.addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(parsed.relationships()));
+            namingEvidencePool.addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(parsed.relationships()));
             parsed.structured()
                     .ifPresent(structured -> lineages.addAll(lineageExtractor.extract(statement, structured)));
         }
-        namingMatchEvidenceEnhancer.enhance(relationships, namingEvidence);
+        namingMatchEvidenceEnhancer.enhance(relationships, namingEvidencePool);
         assertRelations(fixture, expectedRelations, relationships);
         assertLineage(fixture, expectedLineage,
                 new DataLineageMerger().merge(lineages).stream().map(this::lineageFingerprint).toList());
-        assertNamingEvidence(fixture, expectedNamingEvidence, namingEvidence);
+        assertNamingEvidence(fixture, expectedNamingEvidence, namingEvidencePool.merged());
         assertWarningCodes(fixture, expectedDiagnostics, warnings);
     }
 
@@ -161,8 +159,10 @@ final class CorrectnessFixtureExecutor {
                         context)
                 : runner.parseTextWithEvidence(adaptor, config, input, fixture.id() + ".ddl.sql",
                         fixture.evidenceSourceType(), context);
+        NamingEvidencePool namingEvidencePool = new NamingEvidencePool();
+        namingEvidencePool.addAll(parsed.namingEvidence());
         assertRelations(fixture, expectedRelations, parsed.relationships());
-        assertNamingEvidence(fixture, expectedNamingEvidence, parsed.namingEvidence());
+        assertNamingEvidence(fixture, expectedNamingEvidence, namingEvidencePool.merged());
         assertWarningCodes(fixture, expectedDiagnostics, warnings);
     }
 
@@ -271,7 +271,7 @@ final class CorrectnessFixtureExecutor {
             ExpectedNamingEvidence expected,
             List<NamingEvidenceCandidate> actual
     ) throws Exception {
-        Set<String> actualFingerprints = new NamingEvidenceMerger().merge(actual).stream()
+        Set<String> actualFingerprints = actual.stream()
                 .map(this::namingEvidenceFingerprint)
                 .collect(Collectors.toCollection(TreeSet::new));
         if (Boolean.getBoolean("updateCorrectnessGold")

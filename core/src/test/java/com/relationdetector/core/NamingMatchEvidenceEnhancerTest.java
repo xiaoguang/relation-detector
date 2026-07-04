@@ -21,6 +21,7 @@ import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
+import com.relationdetector.core.relation.NamingEvidencePool;
 import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
 
 class NamingMatchEvidenceEnhancerTest {
@@ -28,7 +29,7 @@ class NamingMatchEvidenceEnhancerTest {
     void doesNotCreateNamingMatchWithoutEvidencePool() {
         RelationshipCandidate candidate = sqlCoOccurrence("orders", "customer_id", "customers", "id");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of());
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), pool());
 
         assertFalse(hasEvidence(candidate, EvidenceType.NAMING_MATCH),
                 "relationship enhancer must not recompute NAMING_MATCH outside the top-level evidence pool");
@@ -39,7 +40,7 @@ class NamingMatchEvidenceEnhancerTest {
         RelationshipCandidate candidate = sqlCoOccurrence("orders", "customer_id", "customers", "id");
         NamingEvidenceCandidate pooled = namingEvidence("orders", "customer_id", "customers", "id", "TABLE_ID");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of(pooled));
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), pool(pooled));
 
         Evidence naming = evidence(candidate, EvidenceType.NAMING_MATCH);
         assertEquals(pooled.id(), naming.attributes().get("evidenceRef"));
@@ -56,7 +57,7 @@ class NamingMatchEvidenceEnhancerTest {
         RelationshipCandidate candidate = sqlCoOccurrence("orders", "user_id", "users", "id");
         NamingEvidenceCandidate pooled = namingEvidence("orders", "user_id", "users", "id", "TABLE_ID");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of(pooled));
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), pool(pooled));
 
         Evidence naming = evidence(candidate, EvidenceType.NAMING_MATCH);
         assertEquals(pooled.id(), naming.attributes().get("evidenceRef"));
@@ -70,7 +71,7 @@ class NamingMatchEvidenceEnhancerTest {
         RelationshipCandidate candidate = sqlCoOccurrence("child", "parent_id", "parent", "id");
         NamingEvidenceCandidate pooled = namingEvidence("child", "parent_id", "parent", "id", "ID_SUFFIX_TO_ID");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of(pooled));
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), pool(pooled));
 
         Evidence naming = evidence(candidate, EvidenceType.NAMING_MATCH);
         assertEquals(pooled.id(), naming.attributes().get("evidenceRef"));
@@ -89,7 +90,7 @@ class NamingMatchEvidenceEnhancerTest {
                 Map.of("joinKind", "INNER", "selfJoinRole", true, "leftAlias", "m", "rightAlias", "e"));
         NamingEvidenceCandidate pooled = namingEvidence("employees", "manager_id", "employees", "id", "SELF_ROLE_ID");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of(pooled));
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), pool(pooled));
 
         Evidence naming = evidence(candidate, EvidenceType.NAMING_MATCH);
         assertEquals(pooled.id(), naming.attributes().get("evidenceRef"));
@@ -102,7 +103,7 @@ class NamingMatchEvidenceEnhancerTest {
     void sameIdToSameIdDoesNotAddNamingMatch() {
         RelationshipCandidate candidate = sqlCoOccurrence("accounts", "id", "users", "id");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of());
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), pool());
 
         assertFalse(hasEvidence(candidate, EvidenceType.NAMING_MATCH));
     }
@@ -111,7 +112,7 @@ class NamingMatchEvidenceEnhancerTest {
     void twoIdSuffixColumnsDoNotAddNamingMatch() {
         RelationshipCandidate candidate = sqlCoOccurrence("orders", "customer_id", "payments", "order_id");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of());
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), pool());
 
         assertFalse(hasEvidence(candidate, EvidenceType.NAMING_MATCH));
     }
@@ -121,7 +122,7 @@ class NamingMatchEvidenceEnhancerTest {
         RelationshipCandidate candidate = sqlCoOccurrence("orders", "customer_id", "customers", "id");
         NamingEvidenceCandidate unrelated = namingEvidence("orders", "user_id", "users", "id", "TABLE_ID");
 
-        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), List.of(unrelated));
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), pool(unrelated));
 
         assertFalse(hasEvidence(candidate, EvidenceType.NAMING_MATCH),
                 "relationship enhancer must not invent a local NAMING_MATCH when the pool has no matching id");
@@ -189,5 +190,11 @@ class NamingMatchEvidenceEnhancerTest {
                                 "directionHint", true)),
                 rule,
                 true);
+    }
+
+    private NamingEvidencePool pool(NamingEvidenceCandidate... evidence) {
+        NamingEvidencePool pool = new NamingEvidencePool();
+        pool.addAll(List.of(evidence));
+        return pool;
     }
 }

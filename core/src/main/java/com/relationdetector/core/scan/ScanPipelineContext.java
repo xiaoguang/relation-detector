@@ -8,6 +8,8 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.core.parser.ParserBundle;
+import com.relationdetector.core.relation.NamingEvidencePool;
 
 final class ScanPipelineContext {
     final ScanConfig config;
@@ -17,6 +19,8 @@ final class ScanPipelineContext {
     final AdaptorContext adaptorContext;
     final List<RelationshipCandidate> relationshipCandidates;
     final List<DataLineageCandidate> lineageCandidates;
+    final NamingEvidencePool namingEvidencePool;
+    ParserBundle parserBundle;
     MetadataSnapshot metadataSnapshot;
 
     ScanPipelineContext(
@@ -35,5 +39,6 @@ final class ScanPipelineContext {
         this.adaptorContext = adaptorContext;
         this.relationshipCandidates = relationshipCandidates;
         this.lineageCandidates = lineageCandidates;
+        this.namingEvidencePool = new NamingEvidencePool();
     }
 }

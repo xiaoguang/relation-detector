@@ -4,7 +4,7 @@
     "naming:invoices.payment_id->payments.id:TABLE_ID:NAMING_MATCH",
     "naming:order_items.order_id->orders.id:TABLE_ID:NAMING_MATCH",
     "naming:orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
-    "naming:orders.warehouse_id->warehouses.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:orders.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH",
     "naming:returns.order_id->orders.id:TABLE_ID:NAMING_MATCH",
     "naming:shipments.carrier_id->carriers.id:TABLE_ID:NAMING_MATCH"
   ]

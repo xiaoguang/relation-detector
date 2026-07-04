@@ -3,7 +3,6 @@ package com.relationdetector.core.relation;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
@@ -24,13 +23,13 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
  * single source of truth.
  */
 public final class NamingMatchEvidenceEnhancer {
-    public void enhance(List<RelationshipCandidate> candidates, List<NamingEvidenceCandidate> namingEvidence) {
+    public void enhance(List<RelationshipCandidate> candidates, NamingEvidencePool namingEvidence) {
         for (RelationshipCandidate candidate : candidates) {
             if (!isEligible(candidate) || hasNamingMatch(candidate)) {
                 continue;
             }
-            Optional<NamingEvidenceCandidate> pooled = matchingPoolEvidence(candidate, namingEvidence);
-            pooled.ifPresent(item -> candidate.evidence().add(referenceEvidence(item)));
+            namingEvidence.findFor(candidate)
+                    .ifPresent(item -> candidate.evidence().add(referenceEvidence(item)));
         }
     }
 
@@ -52,15 +51,6 @@ public final class NamingMatchEvidenceEnhancer {
 
     private boolean hasNamingMatch(RelationshipCandidate candidate) {
         return candidate.evidence().stream().anyMatch(evidence -> evidence.type() == EvidenceType.NAMING_MATCH);
-    }
-
-    private Optional<NamingEvidenceCandidate> matchingPoolEvidence(
-            RelationshipCandidate candidate,
-            List<NamingEvidenceCandidate> namingEvidence
-    ) {
-        return namingEvidence.stream()
-                .filter(item -> sameEndpointPair(item, candidate))
-                .findFirst();
     }
 
     private Evidence referenceEvidence(NamingEvidenceCandidate naming) {
@@ -88,13 +78,4 @@ public final class NamingMatchEvidenceEnhancer {
         }
     }
 
-    private boolean sameEndpointPair(NamingEvidenceCandidate item, RelationshipCandidate candidate) {
-        return (sameEndpoint(item.source(), candidate.source()) && sameEndpoint(item.target(), candidate.target()))
-                || (sameEndpoint(item.source(), candidate.target()) && sameEndpoint(item.target(), candidate.source()));
-    }
-
-    private boolean sameEndpoint(com.relationdetector.contracts.model.Endpoint left,
-                                 com.relationdetector.contracts.model.Endpoint right) {
-        return left.normalizedKey().equals(right.normalizedKey());
-    }
 }

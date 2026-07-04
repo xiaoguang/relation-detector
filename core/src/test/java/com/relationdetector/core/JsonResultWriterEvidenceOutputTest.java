@@ -1,6 +1,7 @@
 package com.relationdetector.core;
 
 import com.relationdetector.core.output.JsonResultWriter;
+import com.relationdetector.core.relation.NamingEvidencePool;
 import com.relationdetector.core.scan.ScanResult;
 import com.relationdetector.core.lineage.*;
 import com.relationdetector.core.parser.*;
@@ -222,8 +223,10 @@ class JsonResultWriterEvidenceOutputTest {
         ScanResult result = new ScanResult("mysql", "public");
         Endpoint source = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id"));
         Endpoint target = Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id"));
-        result.namingEvidence().add(namingEvidence(source, target, "line 10: orders.customer_id = customers.id"));
-        result.namingEvidence().add(namingEvidence(source, target, "line 42: orders.customer_id = customers.id"));
+        NamingEvidencePool pool = new NamingEvidencePool();
+        pool.add(namingEvidence(source, target, "line 10: orders.customer_id = customers.id"));
+        pool.add(namingEvidence(source, target, "line 42: orders.customer_id = customers.id"));
+        result.namingEvidence().addAll(pool.merged());
 
         String json = new JsonResultWriter().write(result, true, true);
         JsonNode root = readTree(json);

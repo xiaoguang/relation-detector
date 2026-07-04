@@ -310,7 +310,7 @@ class FullGrammerSqlBehaviorTest {
         for (String version : List.of("16.4", "17.5", "18.1")) {
             StructuredParseResult result = parse(DatabaseType.POSTGRESQL, version, SqlDialect.POSTGRES, statement);
 
-            List<String> fingerprints = new TokenEventDataLineageExtractor().extract(statement, result).stream()
+            List<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, result).stream()
                     .map(FullGrammerSqlBehaviorTest::lineageFingerprint)
                     .sorted()
                     .toList();
@@ -421,7 +421,7 @@ class FullGrammerSqlBehaviorTest {
                 .map(FullGrammerSqlBehaviorTest::relationFingerprint)
                 .sorted()
                 .toList();
-        Set<String> lineages = new TokenEventDataLineageExtractor().extract(statement, result).stream()
+        Set<String> lineages = new StructuredDataLineageExtractor().extract(statement, result).stream()
                 .map(FullGrammerSqlBehaviorTest::lineageFingerprint)
                 .collect(Collectors.toSet());
 
@@ -641,7 +641,7 @@ class FullGrammerSqlBehaviorTest {
 
         StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
 
-        Set<String> lineages = new TokenEventDataLineageExtractor().extract(statement, result).stream()
+        Set<String> lineages = new StructuredDataLineageExtractor().extract(statement, result).stream()
                 .map(FullGrammerSqlBehaviorTest::lineageFingerprint)
                 .collect(Collectors.toSet());
 
@@ -694,7 +694,7 @@ class FullGrammerSqlBehaviorTest {
 
         StructuredParseResult result = parse(DatabaseType.MYSQL, "8.0.36", SqlDialect.MYSQL, statement);
 
-        Set<String> lineages = new TokenEventDataLineageExtractor().extract(statement, result).stream()
+        Set<String> lineages = new StructuredDataLineageExtractor().extract(statement, result).stream()
                 .map(FullGrammerSqlBehaviorTest::lineageFingerprint)
                 .collect(Collectors.toSet());
 

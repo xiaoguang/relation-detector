@@ -1,6 +1,8 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:employees.id->employees.id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:employees.id->sales_orders.salesperson_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:employees.id->warehouses.manager_id:SQL_LOG_SUBQUERY_IN",
     "CO_OCCURRENCE:inventory.product_id->inventory_transactions.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:inventory.warehouse_id->inventory_transactions.warehouse_id:SQL_LOG_JOIN",
@@ -19,11 +21,9 @@
     "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
-    "FK_LIKE:sales_orders.salesperson_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:shipments.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:shipping_tracks.shipment_id->shipments.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:warehouses.manager_id->employees.id:SQL_LOG_SUBQUERY_IN,NAMING_MATCH"
+    "FK_LIKE:supplier_products.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

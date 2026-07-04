@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:employees.id->R_projects.manager_id:SQL_LOG_JOIN,NAMING_MATCH",
+    "CO_OCCURRENCE:employees.id->R_projects.manager_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:role_permissions.role_id->user_roles_mapping.role_id:SQL_LOG_EXISTS",
     "CO_OCCURRENCE:system_logs.triggered_by->user_preferences.user_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:workflow_tasks.predecessor_id->workflow_tasks.task_id:SQL_LOG_JOIN",

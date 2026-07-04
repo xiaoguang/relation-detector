@@ -76,6 +76,26 @@ public final class SqlRelationParserRunner {
             return new ParsedSqlRelations(java.util.Optional.empty(), parser.parse(effectiveStatement, context));
         }
         ParserBundle bundle = parserBundleSelector.select(adaptor, config, context);
+        return parseStructuredAndRelations(effectiveStatement, context, bundle);
+    }
+
+    public ParsedSqlRelations parseStructuredAndRelations(
+            ScanConfig config,
+            SqlStatementRecord statement,
+            AdaptorContext context,
+            ParserBundle bundle
+    ) {
+        if (SqlLogNoiseFilter.shouldSkip(config, statement)) {
+            return ParsedSqlRelations.empty();
+        }
+        return parseStructuredAndRelations(withParserPolicyAttributes(config, statement), context, bundle);
+    }
+
+    public ParsedSqlRelations parseStructuredAndRelations(
+            SqlStatementRecord effectiveStatement,
+            AdaptorContext context,
+            ParserBundle bundle
+    ) {
         StructuredParseResult structured = bundle.sqlParser().parseSql(effectiveStatement, context);
         forwardWarnings(context, structured);
         List<RelationshipCandidate> relationships = relationExtractor.extract(effectiveStatement, structured);

@@ -2,6 +2,7 @@
   "fingerprints": [
     "CO_OCCURRENCE:dbo.employees.id->dbo.employees.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
     "CO_OCCURRENCE:dbo.employees.id->dbo.sales_returns.approved_by:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:dbo.employees.id->dbo.sales_returns.handler_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.product_batches.id->dbo.product_batches.id:SQL_LOG_SUBQUERY_IN",
     "CO_OCCURRENCE:dbo.products.id->dbo.products.id:SQL_LOG_SUBQUERY_IN",
     "CO_OCCURRENCE:dbo.purchase_orders.id->dbo.purchase_orders.id:SQL_LOG_SUBQUERY_IN",
@@ -17,7 +18,6 @@
     "FK_LIKE:dbo.sales_return_items.batch_id->dbo.product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.sales_return_items.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.sales_returns.handler_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.sales_returns.refund_voucher_id->dbo.vouchers.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []

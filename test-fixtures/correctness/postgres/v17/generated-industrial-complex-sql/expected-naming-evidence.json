@@ -1,6 +1,5 @@
 {
   "fingerprints": [
-    "naming:R_projects.manager_id->employees.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:infrastructure_nodes.parent_id->infrastructure_nodes.id:SELF_ROLE_ID:NAMING_MATCH",
     "naming:profiles.user_id->users.id:TABLE_ID:NAMING_MATCH",
     "naming:user_roles.role_id->roles.id:TABLE_ID:NAMING_MATCH",
