@@ -18174,7 +18174,7 @@ _Preview truncated; see input file for full content._
 **Expected Relation Fingerprints**
 
 - `FK_LIKE:accounting_periods.closed_by->employees.id:DDL_FOREIGN_KEY`
-- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:accounting_periods.ledger_book_id->ledger_books.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:customer_addresses.customer_id->customers.id:DDL_FOREIGN_KEY,SOURCE_INDEX`
 - `FK_LIKE:employee_shift_assignments.employee_id->employees.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:employee_shift_assignments.shift_id->employee_shifts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
@@ -18182,6 +18182,7 @@ _Preview truncated; see input file for full content._
 - `FK_LIKE:inventory_reservations.batch_id->product_batches.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.product_id->products.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:inventory_reservations.warehouse_id->warehouses.id:DDL_FOREIGN_KEY`
+- `FK_LIKE:ledger_books.tenant_id->tenants.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_receipt_allocations.receipt_id->payment_receipts.id:DDL_FOREIGN_KEY,TARGET_UNIQUE`
 - `FK_LIKE:payment_receipts.account_id->accounts.id:DDL_FOREIGN_KEY`
 - `FK_LIKE:payment_receipts.handled_by->employees.id:DDL_FOREIGN_KEY`

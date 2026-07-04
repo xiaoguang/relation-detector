@@ -326,6 +326,7 @@ columnDefinitionParenToken
     | AND
     | OR
     | IS
+    | BETWEEN
     | literal
     | TYPECAST
     | COMMA
