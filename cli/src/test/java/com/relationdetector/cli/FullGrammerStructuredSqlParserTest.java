@@ -28,7 +28,7 @@ class FullGrammerStructuredSqlParserTest {
                 SET p.audit_shop_id = s.id
                 """, StatementSourceType.PLAIN_SQL, "fixture.sql", 1, 3, java.util.Map.of());
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
+        StructuredParseResult result = FullGrammerStructuredSqlParserFactory.create(
                         DatabaseType.MYSQL,
                         "8.0.36",
                         new TokenEventStructuredSqlParser(SqlDialect.MYSQL))
@@ -56,7 +56,7 @@ class FullGrammerStructuredSqlParserTest {
                 JOIN users u ON o.user_id = u.id
                 """, StatementSourceType.PLAIN_SQL, "fixture.sql", 1, 4, java.util.Map.of());
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
+        StructuredParseResult result = FullGrammerStructuredSqlParserFactory.create(
                         DatabaseType.MYSQL,
                         "8.0.36",
                         new TokenEventStructuredSqlParser(SqlDialect.MYSQL))
@@ -77,7 +77,7 @@ class FullGrammerStructuredSqlParserTest {
                 1,
                 java.util.Map.of());
 
-        StructuredParseResult result = FullGrammerTokenEventParserFactory.create(
+        StructuredParseResult result = FullGrammerStructuredSqlParserFactory.create(
                         DatabaseType.MYSQL,
                         "8.0.36",
                         new TokenEventStructuredSqlParser(SqlDialect.MYSQL))

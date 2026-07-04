@@ -101,7 +101,6 @@ class DialectSqlAssetHygieneTest {
             forbidden("PostgreSQL cast operator", "::[A-Za-z_][A-Za-z0-9_]*(?:\\([^)]*\\))?"),
             forbidden("PostgreSQL WITH RECURSIVE", "\\bWITH\\s+RECURSIVE\\b"),
             forbidden("PostgreSQL RETURN QUERY statement", "\\bRETURN\\s+QUERY\\b"),
-            forbidden("PostgreSQL string_agg function", "\\bstring_agg\\s*\\("),
             forbidden("PostgreSQL date_trunc function", "\\bdate_trunc\\s*\\("),
             forbidden("PostgreSQL/MySQL LIMIT clause", "\\bLIMIT\\b"),
             forbidden("MySQL AUTO_INCREMENT", "\\bAUTO_INCREMENT\\b"),

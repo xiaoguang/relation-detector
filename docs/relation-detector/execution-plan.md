@@ -4,7 +4,7 @@
 
 构建一个 Java 17 + Maven 的 CLI 命令行工具，用于自动探测数据库中的表关系，并为每条关系输出置信度、证据来源和解释信息。
 
-v1 成熟支持 MySQL 和 PostgreSQL；Oracle 已接入初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammer；SQL Server 已接入 adaptor、token-event baseline 和 2016/2017/2019/2022/2025 versioned full-grammer sample-data golden。系统架构继续保留数据库 adaptor 扩展接口，后续可以持续补强 Oracle 官方严格 grammar、SQL Server 官方逐版本 T-SQL 边界和真实数据库 runtime smoke。
+v1 成熟支持 MySQL 和 PostgreSQL；Oracle 已接入初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammer；SQL Server 已接入 adaptor、token-event baseline、2016/2017/2019/2022/2025 versioned full-grammer sample-data golden，以及首批 grammar-level 官方版本边界。系统架构继续保留数据库 adaptor 扩展接口，后续可以持续补强 Oracle 官方严格 grammar、更多 SQL Server 官方逐版本 T-SQL family 和真实数据库 runtime smoke。
 
 本工具同时是后续语义层系统的事实采集与证据生成子系统。更上层的 Evidence-Grounded Semantic Layer 负责把 relationship、Data Lineage、metadata、SQL source 和注释组织成可审核的业务语义对象，用于自然语言问答、SQL draft 生成和指标候选审核。整体设计见 [Evidence-Grounded Semantic Layer 整体设计](../design/semantic-layer-overall-design.md)。当前语义层仍是总体设计；v1 优先落 evidence catalog、semantic search、question plan 和 SQL draft validation outline，不替代 relation-detector 的事实判断，也不自动执行 SQL。LLM 只能基于 evidence 做语义解释、同义词扩展和问题规划，不能创造数据库事实。
 
@@ -107,7 +107,7 @@ relation-detector/
   - SQL Server adaptor。
   - SQL Server token-event fallback，使用 adaptor-local compact `SqlServerRelationSql.g4` typed grammar。
   - SQL Server 2016/2017/2019/2022/2025 full-grammer profile，当前覆盖对应版本 sample-data golden，并使用各自 generated parser。
-  - 当前 sample-data 使用 SQL Server 2016-compatible 保守 T-SQL 子集；Microsoft 官方逐版本 T-SQL 边界和真实 SQL Server runtime smoke 属于后续补强。
+  - 当前 sample-data 使用 SQL Server 2016-compatible 保守 T-SQL 子集；2017 `STRING_AGG`、2022 `DATETRUNC` / `GENERATE_SERIES`、2025 `VECTOR(...)` 已作为 version-only fixture 和 grammar-level boundary 验收。更多 Microsoft 官方逐版本 T-SQL family 和真实 SQL Server runtime smoke 属于后续补强。
 
 - `test-fixtures`
   - 样例 schema。

@@ -4270,6 +4270,7 @@ rowset_function
         OPENROWSET LR_BRACKET provider_name = STRING COMMA connectionString = STRING COMMA sql = STRING RR_BRACKET
     )
     | (OPENROWSET '(' BULK data_file = STRING ',' (bulk_option (',' bulk_option)* | id_) ')')
+    | GENERATE_SERIES '(' start = expression ',' stop = expression (',' step = expression)? ')'
     ;
 
 // runtime check.

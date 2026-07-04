@@ -4614,7 +4614,7 @@ built_in_functions
         seconds = expression ',' fractions = expression ',' hour_offset = expression ',' minute_offset = expression ',' precision = DECIMAL ')' #
         DATETIMEOFFSETFROMPARTS
     // https://learn.microsoft.com/en-us/sql/t-sql/functions/datetrunc-transact-sql?view=sql-server-ver16
-    | DATETRUNC '(' datepart = dateparts_datetrunc ',' date = expression ')' # DATETRUNC
+    | {false}? DATETRUNC '(' datepart = dateparts_datetrunc ',' date = expression ')' # DATETRUNC
     // https://learn.microsoft.com/en-us/sql/t-sql/functions/day-transact-sql?view=sql-server-ver16
     | DAY '(' date = expression ')' # DAY
     // https://learn.microsoft.com/en-us/sql/t-sql/functions/eomonth-transact-sql?view=sql-server-ver16
@@ -6206,7 +6206,6 @@ keyword
     | DATETIME2FROMPARTS
     | DATETIMEFROMPARTS
     | DATETIMEOFFSETFROMPARTS
-    | DATETRUNC
     | DAY
     | EOMONTH
     | ISDATE

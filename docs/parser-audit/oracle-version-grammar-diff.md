@@ -121,6 +121,35 @@ PL/SQL production in the official manuals. Future work should continue replacing
 packages, advanced PL/SQL, hierarchical queries, model clauses, JSON, XML,
 analytic SQL, and full Oracle DDL options.
 
+## Statement Family Coverage Matrix
+
+The table below is the current source-backed coverage claim. `Covered for
+fixtures` means the checked-in full-grammer can parse and emit the relationship
+/ lineage / DDL events needed by current Oracle correctness fixtures. It does
+not mean every clause in the official manual family is fully converted.
+
+| Statement family | Current coverage | Evidence / tests | Remaining hardening |
+| --- | --- | --- | --- |
+| Basic `SELECT`, joins, predicates, CTE | Covered for fixtures | Oracle sample-data query golden and parser behavior tests. | Broader hierarchical query, model clause, flashback query, and advanced subquery factoring options. |
+| DML `INSERT`, `UPDATE`, `DELETE`, `MERGE` | Covered for fixtures | Oracle sample-data procedure/query golden, including `INSERT SELECT` and `MERGE UPDATE SET` lineage. | Wider `RETURNING`, multi-table insert variants, and edge-case merge clauses. |
+| DDL `CREATE/ALTER TABLE`, PK/FK/UNIQUE/index | Covered for fixtures | Oracle sample-data DDL golden and DDL behavior tests. | Partitioning, domain indexes, advanced storage, editioning, and full object option coverage. |
+| PL/SQL procedure/function/trigger bodies | Covered for fixtures | Oracle sample-data procedure/function/trigger object blocks and routine lineage tests. | Packages, cursors, exception blocks, advanced collection types, autonomous transactions, and full PL/SQL control-flow variants. |
+| JSON / XML / analytic SQL | Partial | Fixture expressions parse through bounded expression/function contexts. | Convert more official JSON/XML/analytic productions to typed rules and visitor logic. |
+| Version-only syntax | Covered for first probes | 19c `MEMOPTIMIZE`, 21c `SQL_MACRO`, 26ai `VECTOR`. | Add new version boundaries only with official source and positive/negative fixtures. |
+
+Upgrade gate to `OFFICIAL_VERSION_SCOPED`:
+
+1. Each covered family must have a source-backed grammar section and at least
+   one behavior or correctness fixture proving parser output.
+2. Version-only syntax must have positive fixtures in the owning version and
+   grammar-level rejection in lower versions.
+3. The audit must contain no confirmed parser gap for the declared family.
+4. Token-event must remain independent fallback and cannot be used as proof of
+   full-grammer coverage.
+
+These gates are not all satisfied yet, so the runtime attribute remains
+`grammarCoverage=INCOMPLETE_VERSIONED`.
+
 The current versioned full-grammer no longer accepts known non-Oracle structural
 syntax by grammar fallback. The Oracle full-grammer lexer/parser files do not
 declare PostgreSQL/MySQL constructs such as `LIMIT`, `UNLOGGED`, `CONCURRENTLY`,

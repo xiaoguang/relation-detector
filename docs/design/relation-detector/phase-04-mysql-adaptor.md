@@ -160,9 +160,9 @@ parser.mode = auto | full-grammer | token-event
 
 当前 MySQL correctness golden 分三类：
 
-- root MySQL correctness：`test-fixtures/correctness/mysql`，83 个 fixture，SQL/DDL 为 65/18，覆盖 MySQL metadata/DDL/log/object/procedure/business SQL 和 sample-data 切片，是正式 token-event baseline；当前 relation 655、lineage 296、relationship `NAMING_MATCH` 266、top-level namingEvidence 266。
-- MySQL 5.7 full-grammer：`test-fixtures/correctness/mysql/v5_7`，89 个 fixture，SQL/DDL 为 71/18，manifest 强制 `parserMode: full-grammer`、`grammarProfile: mysql/5.7`，是 MySQL 5.7 strict version golden；当前 relation 706、lineage 414、relationship `NAMING_MATCH` 300、top-level namingEvidence 300。它从 MySQL 8.0 fixture 迁移而来，分为原样兼容、5.7 语义等价改写和 8.0-only 版本边界负向 fixture。
-- MySQL 8.0 full-grammer：`test-fixtures/correctness/mysql/v8_0`，89 个 fixture，SQL/DDL 为 71/18，manifest 强制 `parserMode: full-grammer`、`grammarProfile: mysql/8.0`，是 MySQL 8.0 strict version golden；当前 relation 923、lineage 398、relationship `NAMING_MATCH` 458、top-level namingEvidence 458。
+- root MySQL correctness：`test-fixtures/correctness/mysql`，83 个 fixture，SQL/DDL 为 65/18，覆盖 MySQL metadata/DDL/log/object/procedure/business SQL 和 sample-data 切片，是正式 token-event baseline；当前 relation 659、lineage 349、relationship `NAMING_MATCH` 252、top-level namingEvidence 321。
+- MySQL 5.7 full-grammer：`test-fixtures/correctness/mysql/v5_7`，89 个 fixture，SQL/DDL 为 71/18，manifest 强制 `parserMode: full-grammer`、`grammarProfile: mysql/5.7`，是 MySQL 5.7 strict version golden；当前 relation 706、lineage 414、relationship `NAMING_MATCH` 257、top-level namingEvidence 327。它从 MySQL 8.0 fixture 迁移而来，分为原样兼容、5.7 语义等价改写和 8.0-only 版本边界负向 fixture。
+- MySQL 8.0 full-grammer：`test-fixtures/correctness/mysql/v8_0`，89 个 fixture，SQL/DDL 为 71/18，manifest 强制 `parserMode: full-grammer`、`grammarProfile: mysql/8.0`，是 MySQL 8.0 strict version golden；当前 relation 923、lineage 398、relationship `NAMING_MATCH` 421、top-level namingEvidence 491。
 
 当前 MySQL 5.7 / 8.0 full-grammer 都有独立 versioned golden，不再由 root token-event baseline 兜底。full-grammer 相对 token-event 能识别更多 procedure body、复杂 business query、sample-data DDL/SQL、derived projection、INSERT/UPDATE 写入映射和表达式来源；MySQL 8.0 还覆盖 CTE、window、`JSON_TABLE`、invisible index 等高版本语法。参数、literal、局部变量、JSON path、动态 SQL 和显式临时表仍不进入 v1 physical lineage。
 

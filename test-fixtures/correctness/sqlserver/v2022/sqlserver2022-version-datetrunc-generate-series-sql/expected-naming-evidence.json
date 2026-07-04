@@ -1,0 +1,5 @@
+{
+  "fingerprints": [
+    "naming:dbo.sales_orders.customer_id->dbo.customers.id:TABLE_ID:NAMING_MATCH"
+  ]
+}

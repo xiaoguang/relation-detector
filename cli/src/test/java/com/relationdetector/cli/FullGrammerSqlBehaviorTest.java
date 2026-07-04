@@ -775,7 +775,7 @@ class FullGrammerSqlBehaviorTest {
             SqlDialect dialect,
             SqlStatementRecord statement
     ) {
-        return FullGrammerTokenEventParserFactory.create(
+        return FullGrammerStructuredSqlParserFactory.create(
                         databaseType,
                         version,
                         new TokenEventStructuredSqlParser(dialect))

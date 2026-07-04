@@ -134,6 +134,26 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
+    void fullGrammerSqlParserFactoryIsNotNamedTokenEvent() throws IOException {
+        Path root = repoRoot();
+        String legacyFactoryName = "FullGrammer" + "TokenEventParserFactory";
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java")
+                            || path.toString().endsWith(".md"))
+                    .filter(path -> !path.toString().contains("/target/"))
+                    .filter(path -> !path.toString().contains("/.git/"))
+                    .filter(path -> containsAny(path, List.of(legacyFactoryName)))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "full-grammer SQL parser factory must not use legacy token-event naming, offenders="
+                            + offenders);
+        }
+    }
+
+    @Test
     void mysqlFullGrammerVisitorsDoNotCarryPostgresRowsetSentinels() throws IOException {
         Path root = repoRoot();
         Path mysqlFullGrammer = root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer");

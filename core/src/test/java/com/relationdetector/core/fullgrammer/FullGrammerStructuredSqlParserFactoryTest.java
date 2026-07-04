@@ -17,11 +17,11 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
-class FullGrammerTokenEventParserFactoryTest {
+class FullGrammerStructuredSqlParserFactoryTest {
     @Test
     void createsSelectedFullGrammerParserWithProfileDiagnostic() {
-        FullGrammerTokenEventParserFactory.CreatedParser created =
-                FullGrammerTokenEventParserFactory.create(
+        FullGrammerStructuredSqlParserFactory.CreatedParser created =
+                FullGrammerStructuredSqlParserFactory.create(
                         FullGrammerProfileRequest.builder()
                                 .databaseType(DatabaseType.MYSQL)
                                 .configuredVersion("9.0")

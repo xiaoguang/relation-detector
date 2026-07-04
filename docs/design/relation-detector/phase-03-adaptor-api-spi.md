@@ -2,7 +2,7 @@
 
 ## 目标
 
-定义可扩展数据库 adaptor API，并通过 Java SPI 支持内置 adaptor 和外部 jar adaptor。当前内置 MySQL、PostgreSQL 与初始 Oracle adaptor；后续新增 SQL Server 或补强 Oracle 官方严格 grammar 时，不需要修改 core 和 CLI 的主要逻辑。
+定义可扩展数据库 adaptor API，并通过 Java SPI 支持内置 adaptor 和外部 jar adaptor。当前内置 MySQL、PostgreSQL、Oracle 与 SQL Server adaptor；后续补强某个方言的大版本 grammar、metadata collector 或 profiling 能力时，不需要修改 core 和 CLI 的主要逻辑。
 
 ## 总体原则
 
@@ -15,7 +15,7 @@
 
 ## DatabaseAdaptor 接口
 
-当前接口：
+当前接口分为两层：新的 grouped capability 是 core 生产代码的主入口；旧方法仍保留为兼容桥，方便第三方 adaptor 渐进迁移。
 
 ```java
 public interface DatabaseAdaptor {
@@ -24,14 +24,28 @@ public interface DatabaseAdaptor {
   Set<DatabaseType> supportedDatabaseTypes();
   Set<AdaptorCapability> capabilities();
   IdentifierRules identifierRules();
+
+  default AdaptorCollectors collectors() { ... }
+  default AdaptorParsers parsers() { ... }
+  default AdaptorProfiling profiling() { ... }
+
+  @Deprecated(forRemoval = false)
   MetadataCollector metadataCollector();
+  @Deprecated(forRemoval = false)
   ObjectDefinitionCollector objectDefinitionCollector();
+  @Deprecated(forRemoval = false)
   Optional<DatabaseDdlCollector> databaseDdlCollector();
+  @Deprecated(forRemoval = false)
   SqlLogExtractor sqlLogExtractor();
+  @Deprecated(forRemoval = false)
   SqlRelationParser sqlRelationParser();
+  @Deprecated(forRemoval = false)
   Optional<StructuredSqlParser> structuredSqlParser();
+  @Deprecated(forRemoval = false)
   Optional<StructuredDdlParser> structuredDdlParser();
+  @Deprecated(forRemoval = false)
   Optional<DataProfiler> dataProfiler();
+  @Deprecated(forRemoval = false)
   EvidenceWeightAdjuster evidenceWeightAdjuster();
 }
 ```
@@ -41,6 +55,10 @@ public interface DatabaseAdaptor {
 - `id()` 例如 `mysql`、`postgresql`。
 - `supportedDatabaseTypes()` 用于匹配 YAML 中的 `database.type`。
 - `capabilities()` 声明该 adaptor 支持哪些来源和功能。
+- `collectors()` 聚合 metadata、object definition、database DDL 和 SQL log extractor。
+- `parsers()` 聚合 legacy SQL relation parser、structured SQL parser 和 structured DDL parser。
+- `profiling()` 聚合 data profiler 和 evidence weight adjuster。
+- `metadataCollector()`、`structuredSqlParser()` 等旧方法是兼容层；core 新代码应通过 grouped capability 访问，不再直接依赖旧方法。
 
 ## 采集器接口
 

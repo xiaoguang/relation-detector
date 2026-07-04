@@ -4270,6 +4270,7 @@ rowset_function
         OPENROWSET LR_BRACKET provider_name = STRING COMMA connectionString = STRING COMMA sql = STRING RR_BRACKET
     )
     | (OPENROWSET '(' BULK data_file = STRING ',' (bulk_option (',' bulk_option)* | id_) ')')
+    | GENERATE_SERIES '(' start = expression ',' stop = expression (',' step = expression)? ')'
     ;
 
 // runtime check.
@@ -5258,12 +5259,17 @@ send_conversation
 // TODO: implement runtime check or add new tokens.
 
 data_type
-    : scaled = (VARCHAR | NVARCHAR | BINARY_KEYWORD | VARBINARY_KEYWORD | SQUARE_BRACKET_ID) '(' MAX ')'
+    : vector_data_type
+    | scaled = (VARCHAR | NVARCHAR | BINARY_KEYWORD | VARBINARY_KEYWORD | SQUARE_BRACKET_ID) '(' MAX ')'
     | ext_type = id_ '(' scale = DECIMAL ',' prec = DECIMAL ')'
     | ext_type = id_ '(' scale = DECIMAL ')'
     | ext_type = id_ IDENTITY ('(' seed = DECIMAL ',' inc = DECIMAL ')')?
     | double_prec = DOUBLE PRECISION?
     | unscaled_type = id_
+    ;
+
+vector_data_type
+    : VECTOR '(' dimensions = DECIMAL (',' base_type = id_)? ')'
     ;
 
 // https://msdn.microsoft.com/en-us/library/ms179899.aspx

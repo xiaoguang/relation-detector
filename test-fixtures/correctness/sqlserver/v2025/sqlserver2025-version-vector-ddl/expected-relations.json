@@ -1,0 +1,6 @@
+{
+  "fingerprints": [
+    "FK_LIKE:product_embeddings.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE"
+  ],
+  "forbiddenTables": []
+}

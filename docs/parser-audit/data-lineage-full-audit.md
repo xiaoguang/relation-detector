@@ -8,11 +8,11 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 
 | Classification | Count |
 | --- | ---: |
-| TOTAL | 1194 |
+| TOTAL | 1197 |
 | EXISTING_GOLD | 429 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 765 |
+| NOT_APPLICABLE | 768 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -36416,6 +36416,39 @@ CREATE TABLE [dbo].[production_plans] (
     [id] BIGINT IDENTITY(1,1) NOT NULL,
 ```
 
+## `sqlserver2025-version-vector-ddl`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DDL does not write target column values in Data Lineage v1 |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Input | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-version-vector-ddl/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.product_embeddings (
+    id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    embedding VECTOR(3) NULL,
+    CONSTRAINT pk_product_embeddings PRIMARY KEY (id),
+    CONSTRAINT fk_product_embeddings_product
+        FOREIGN KEY (product_id) REFERENCES dbo.products(id)
+);
+```
+
 ## `sqlserver-sample-data-full-01-schema-03-triggers-sql`
 
 | Field | Value |
@@ -40676,6 +40709,39 @@ SELECT p.[id]
 -- SQL Server ERP sample data translated from MySQL 8.0 business sample.
 ```
 
+## `sqlserver2017-version-string-agg-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-version-string-agg-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT
+    c.id,
+    STRING_AGG(CONVERT(NVARCHAR(MAX), so.order_number), ',')
+        WITHIN GROUP (ORDER BY so.order_number) AS order_numbers
+FROM dbo.customers c
+JOIN dbo.sales_orders so
+    ON so.customer_id = c.id
+GROUP BY c.id;
+```
+
 ## `sqlserver2019-sample-data-full-01-schema-03-triggers-sql`
 
 | Field | Value |
@@ -43536,6 +43602,39 @@ SELECT p.[id]
 
 -- ============================================================
 -- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+```
+
+## `sqlserver2022-version-datetrunc-generate-series-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-version-datetrunc-generate-series-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT
+    c.id,
+    DATETRUNC(month, so.order_date) AS order_month,
+    COUNT(*) AS order_count
+FROM dbo.customers c
+JOIN dbo.sales_orders so
+    ON so.customer_id = c.id
+CROSS APPLY GENERATE_SERIES(1, 12) AS gs
 ```
 
 ## `sqlserver2025-sample-data-full-01-schema-03-triggers-sql`

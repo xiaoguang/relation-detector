@@ -20,8 +20,8 @@ import com.relationdetector.contracts.Enums.DatabaseType;
  * parser-selection fallback; it does not merge token-event events into a
  * selected full-grammer parser.
  */
-public final class FullGrammerTokenEventParserFactory {
-    private FullGrammerTokenEventParserFactory() {
+public final class FullGrammerStructuredSqlParserFactory {
+    private FullGrammerStructuredSqlParserFactory() {
     }
 
     public static CreatedParser create(

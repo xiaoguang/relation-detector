@@ -19,11 +19,11 @@ class DataLineageAuditGeneratorTest {
         String markdown = DataLineageAuditGenerator.generate(WORKSPACE);
 
         assertTrue(markdown.contains("# Data Lineage Full Audit"));
-        assertTrue(markdown.contains("| TOTAL | 1194 |"));
+        assertTrue(markdown.contains("| TOTAL | 1197 |"));
         assertTrue(markdown.contains("| EXISTING_GOLD | 429 |"));
         assertTrue(markdown.contains("| SUGGESTED_GOLD | 0 |"));
         assertTrue(markdown.contains("| PENDING_REVIEW | 0 |"));
-        assertTrue(markdown.contains("| NOT_APPLICABLE | 765 |"));
+        assertTrue(markdown.contains("| NOT_APPLICABLE | 768 |"));
         assertTrue(markdown.contains("| Classification | `EXISTING_GOLD` |"));
         assertTrue(markdown.contains("| Classification | `NOT_APPLICABLE` |"));
         assertTrue(markdown.contains("mysql-user-spending-left-join-update-sql"));

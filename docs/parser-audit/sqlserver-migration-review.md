@@ -50,7 +50,7 @@ Current limitations:
 
 | Area | Limitation |
 | --- | --- |
-| Version strictness | The five version grammars currently start from the same pinned T-SQL grammar snapshot. The sample-data SQL is written as a conservative SQL Server 2016-compatible subset so it can run across all five versions. Official version-only grammar pruning is still backlog. |
+| Version strictness | The five version grammars start from the same pinned T-SQL grammar snapshot, but the first Microsoft-documented version boundaries are now encoded in `.g4`: 2017 `STRING_AGG`, 2022 `DATETRUNC` / `GENERATE_SERIES`, and 2025 `VECTOR(...)`. Broader official T-SQL family coverage remains incremental backlog. |
 | Runtime validation | Correctness proves parser output, not live SQL Server execution. Runtime smoke against SQL Server instances remains future work. |
 | JDBC collectors | metadata / object / profiling collectors are conservative placeholders. |
 
@@ -81,6 +81,14 @@ Translation rules used:
 
 The migration intentionally uses a SQL Server 2016-compatible T-SQL subset for shared ERP semantics. Later version-only SQL should be added as separate boundary fixtures, not mixed into the cross-version sample-data baseline.
 
+Version-only fixtures currently added outside the ERP sample-data baseline:
+
+| Fixture | Profile | SQL feature | Expected semantic output |
+| --- | --- | --- | --- |
+| `sqlserver2017-version-string-agg-sql` | `sqlserver/2017` | `STRING_AGG(...) WITHIN GROUP (...)` | One SQL join relationship: `sales_orders.customer_id -> customers.id`; no lineage. |
+| `sqlserver2022-version-datetrunc-generate-series-sql` | `sqlserver/2022` | `DATETRUNC(...)` and `GENERATE_SERIES(...)` rowset function | One physical SQL join relationship: `sales_orders.customer_id -> customers.id`; generated-series rowset is not emitted as a physical table relation; no lineage. |
+| `sqlserver2025-version-vector-ddl` | `sqlserver/2025` | `VECTOR(...)` data type | One DDL FK relationship: `product_embeddings.product_id -> products.id`; no lineage. |
+
 ## 5. Current Golden Statistics
 
 Current SQL Server sample-data correctness output:
@@ -88,11 +96,11 @@ Current SQL Server sample-data correctness output:
 | Golden group | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | SQL Server root token-event | 38 | 32 / 6 | 703 | 360 | 275 | 0 |
-| SQL Server full-grammer v2016 | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
-| SQL Server full-grammer v2017 | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
-| SQL Server full-grammer v2019 | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
-| SQL Server full-grammer v2022 | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
-| SQL Server full-grammer v2025 | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
+| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1005 | 360 | 586 | 0 |
+| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1005 | 360 | 586 | 0 |
+| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1005 | 360 | 586 | 0 |
+| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1005 | 360 | 586 | 0 |
+| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1005 | 360 | 586 | 0 |
 
 SQL Server sample-data now keeps natural ERP business SQL at a density comparable to the other dialects; the high-density JOIN/EXISTS/IN relation-probe corpus lives under semantic-equivalent benchmark. Root token-event and versioned full-grammer produce the same lineage count; full-grammer produces more relationship and `NAMING_MATCH` evidence because the generated T-SQL parser exposes richer DDL and predicate context than the compact token-event fallback grammar. The five versioned full-grammer profiles match because the sample-data baseline intentionally uses a SQL Server 2016-compatible T-SQL subset.
 
@@ -101,24 +109,24 @@ Cross-dialect sample-data comparison:
 | Parser category | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | common token-event sample-data | 15 | 11 / 4 | 729 | 292 | 419 | 0 |
-| MySQL token-event root sample-data | 34 | 28 / 6 | 566 | 261 | 267 | 0 |
-| MySQL full-grammer v5_7 sample-data | 37 | 31 / 6 | 562 | 285 | 256 | 0 |
-| MySQL full-grammer v8_0 sample-data | 37 | 31 / 6 | 785 | 273 | 418 | 0 |
-| PostgreSQL token-event root sample-data | 31 | 25 / 6 | 674 | 218 | 273 | 0 |
-| PostgreSQL full-grammer v16 sample-data | 31 | 25 / 6 | 675 | 219 | 340 | 0 |
-| PostgreSQL full-grammer v17 sample-data | 31 | 25 / 6 | 675 | 219 | 340 | 0 |
-| PostgreSQL full-grammer v18 sample-data | 31 | 25 / 6 | 674 | 218 | 340 | 0 |
-| Oracle token-event root sample-data | 34 | 27 / 7 | 629 | 217 | 232 | 0 |
-| Oracle full-grammer v12c sample-data | 34 | 27 / 7 | 666 | 217 | 330 | 0 |
-| Oracle full-grammer v19c sample-data | 34 | 27 / 7 | 666 | 217 | 330 | 0 |
-| Oracle full-grammer v21c sample-data | 34 | 27 / 7 | 666 | 217 | 330 | 0 |
-| Oracle full-grammer v26ai sample-data | 34 | 27 / 7 | 666 | 217 | 330 | 0 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 703 | 360 | 275 | 0 |
-| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
-| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
-| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
-| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
-| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 709 | 360 | 345 | 0 |
+| MySQL token-event root sample-data | 38 | 32 / 6 | 349 | 240 | 238 | 0 |
+| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 346 | 265 | 243 | 0 |
+| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 397 | 254 | 245 | 0 |
+| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 369 | 205 | 241 | 0 |
+| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 371 | 206 | 241 | 0 |
+| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 371 | 206 | 241 | 0 |
+| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 370 | 205 | 241 | 0 |
+| Oracle token-event root sample-data | 38 | 32 / 6 | 373 | 212 | 238 | 0 |
+| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
+| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
+| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
+| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 498 | 250 | 380 | 0 |
+| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
+| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
+| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
+| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
+| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
 
 The earlier low-count SQL Server surface was a sample-data asset gap: the directories had 38 files but only a thin subset of the ERP semantics. The current SQL Server sample-data now carries full schema, FK, procedure, trigger, natural query, data-generation and analytic coverage. Remaining cross-dialect count differences are parser coverage and dialect expression differences, not missing SQL Server ERP sample-data coverage.
 
@@ -144,6 +152,6 @@ No `REVIEW_NEEDED` item remains for the current SQL Server sample-data migration
 Remaining implementation backlog:
 
 - Keep SQL Server sample-data as natural ERP SQL; add high-density relation probes only to semantic-equivalent benchmark scenarios.
-- Add Microsoft-documented version-only positive/negative fixtures and encode version-specific grammar differences in `.g4`.
+- Continue adding Microsoft-documented version-only positive/negative fixtures and encode each version-specific difference in `.g4`; do not use Java blacklist checks for version boundaries.
 - Add runtime smoke against real SQL Server instances.
 - Add metadata / object / profiler collectors.

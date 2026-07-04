@@ -8,22 +8,22 @@ Lightweight index report. Full SQL/DDL is available in each input file.
 
 | Metric | Count |
 | --- | ---: |
-| Total correctness fixtures | 1194 |
-| SQL fixtures | 981 |
-| DDL fixtures | 213 |
+| Total correctness fixtures | 1197 |
+| SQL fixtures | 983 |
+| DDL fixtures | 214 |
 | Fixtures with expected lineage | 429 |
 | Common directory fixtures | 39 |
 | MySQL directory fixtures | 261 |
 | PostgreSQL directory fixtures | 449 |
 | Oracle directory fixtures | 212 |
-| SQL Server directory fixtures | 233 |
+| SQL Server directory fixtures | 236 |
 
 | Database type | Total | SQL | DDL |
 | --- | ---: | ---: | ---: |
 | MYSQL | 300 | 241 | 59 |
 | ORACLE | 212 | 172 | 40 |
 | POSTGRESQL | 449 | 371 | 78 |
-| SQLSERVER | 233 | 197 | 36 |
+| SQLSERVER | 236 | 199 | 37 |
 
 ## Common Fixtures
 
@@ -60121,6 +60121,49 @@ CREATE TABLE [dbo].[production_plans] (
 ```
 _Preview truncated; see input file for full content._
 
+### `sqlserver2025-version-vector-ddl`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `DDL` |
+| Source type | `DDL_FILE` |
+| Schema | `dbo` |
+| Input | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-version-vector-ddl/input.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-version-vector-ddl/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2025/sqlserver2025-version-vector-ddl/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:product_embeddings.product_id->products.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE dbo.product_embeddings (
+    id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    embedding VECTOR(3) NULL,
+    CONSTRAINT pk_product_embeddings PRIMARY KEY (id),
+    CONSTRAINT fk_product_embeddings_product
+        FOREIGN KEY (product_id) REFERENCES dbo.products(id)
+);
+```
+_Preview truncated; see input file for full content._
+
 ### `sqlserver-sample-data-full-01-schema-03-triggers-sql`
 
 | Field | Value |
@@ -67091,6 +67134,49 @@ _Preview truncated; see input file for full content._
 ```
 _Preview truncated; see input file for full content._
 
+### `sqlserver2017-version-string-agg-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-version-string-agg-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-version-string-agg-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2017/sqlserver2017-version-string-agg-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT
+    c.id,
+    STRING_AGG(CONVERT(NVARCHAR(MAX), so.order_number), ',')
+        WITHIN GROUP (ORDER BY so.order_number) AS order_numbers
+FROM dbo.customers c
+JOIN dbo.sales_orders so
+    ON so.customer_id = c.id
+GROUP BY c.id;
+```
+_Preview truncated; see input file for full content._
+
 ### `sqlserver2019-sample-data-full-01-schema-03-triggers-sql`
 
 | Field | Value |
@@ -71964,6 +72050,49 @@ _Preview truncated; see input file for full content._
 
 -- ============================================================
 -- SQL Server ERP sample data translated from MySQL 8.0 business sample.
+```
+_Preview truncated; see input file for full content._
+
+### `sqlserver2022-version-datetrunc-generate-series-sql`
+
+| Field | Value |
+| --- | --- |
+| Database | `SQLSERVER` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Schema | `dbo` |
+| Input | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-version-datetrunc-generate-series-sql/input.sql` |
+| Expected relations | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-version-datetrunc-generate-series-sql/expected-relations.json` |
+| Expected lineage | None |
+| Expected diagnostics | `test-fixtures/correctness/sqlserver/v2022/sqlserver2022-version-datetrunc-generate-series-sql/expected-diagnostics.json` |
+
+**Expected Relation Fingerprints**
+
+- `FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:SQL_LOG_JOIN,NAMING_MATCH`
+
+**Expected Data Lineage Fingerprints**
+
+- None
+
+**Forbidden Tables**
+
+- None
+
+**Expected Warning Codes**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT
+    c.id,
+    DATETRUNC(month, so.order_date) AS order_month,
+    COUNT(*) AS order_count
+FROM dbo.customers c
+JOIN dbo.sales_orders so
+    ON so.customer_id = c.id
+CROSS APPLY GENERATE_SERIES(1, 12) AS gs
 ```
 _Preview truncated; see input file for full content._
 
