@@ -69,10 +69,10 @@ public final class SqlRelationParserRunner {
             return ParsedSqlRelations.empty();
         }
         SqlStatementRecord effectiveStatement = withParserPolicyAttributes(config, statement);
-        if (adaptor.structuredSqlParser().isEmpty()) {
+        if (adaptor.parsers().structuredSql().isEmpty()) {
             warn(context, statement, "PARSER_MODE_FALLBACK",
                     "Adaptor has no structured SQL parser; using adaptor SQL relation parser");
-            SqlRelationParser parser = adaptor.sqlRelationParser();
+            SqlRelationParser parser = adaptor.parsers().sqlRelations();
             return new ParsedSqlRelations(java.util.Optional.empty(), parser.parse(effectiveStatement, context));
         }
         ParserBundle bundle = parserBundleSelector.select(adaptor, config, context);

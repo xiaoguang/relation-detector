@@ -60,7 +60,7 @@ class ParserBundleSelectorTest {
         assertEquals("full-grammer", bundle.selection().selectedMode());
         assertEquals("postgresql-18", bundle.selection().selectedGrammarProfile());
         StructuredParseResult sql = bundle.sqlParser().parseSql(statement(), null);
-        assertEquals("FULL_GRAMMAR_TOKEN_EVENT_PRIMARY", sql.backend());
+        assertEquals("FULL_GRAMMER_PROFILE_PRIMARY", sql.backend());
         assertEquals("postgresql-18", sql.attributes().get("selectedGrammarProfile"));
         assertEquals("pg18-ddl", bundle.ddlParser().parseDdl("CREATE TABLE t(id int)", "ddl.sql", null).backend());
     }
@@ -75,7 +75,7 @@ class ParserBundleSelectorTest {
         assertEquals("full-grammer", bundle.selection().selectedMode());
         assertEquals("oracle-26ai", bundle.selection().selectedGrammarProfile());
         StructuredParseResult sql = bundle.sqlParser().parseSql(statement(), null);
-        assertEquals("FULL_GRAMMAR_TOKEN_EVENT_PRIMARY", sql.backend());
+        assertEquals("FULL_GRAMMER_PROFILE_PRIMARY", sql.backend());
         assertEquals("oracle-26ai", sql.attributes().get("selectedGrammarProfile"));
         assertEquals("oracle26-ddl", bundle.ddlParser().parseDdl("CREATE TABLE t(id number)", "ddl.sql", null).backend());
     }

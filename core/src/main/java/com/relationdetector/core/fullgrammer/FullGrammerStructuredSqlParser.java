@@ -15,12 +15,12 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
  * Token-event fallback is selected by the parser factory before this wrapper is
  * created; it is not used here to fill full-grammer events.
  */
-public final class FullGrammerTokenEventStructuredSqlParser implements StructuredSqlParser {
+public final class FullGrammerStructuredSqlParser implements StructuredSqlParser {
     private final SqlGrammarProfileSelection profileSelection;
     private final StructuredSqlParser fullGrammerParser;
     private final String implementation;
 
-    public FullGrammerTokenEventStructuredSqlParser(
+    public FullGrammerStructuredSqlParser(
             SqlGrammarProfile profile,
             StructuredSqlParser fullGrammerParser
     ) {
@@ -29,7 +29,7 @@ public final class FullGrammerTokenEventStructuredSqlParser implements Structure
                 "FULL_GRAMMER_PROFILE_PARSER");
     }
 
-    public FullGrammerTokenEventStructuredSqlParser(
+    public FullGrammerStructuredSqlParser(
             SqlGrammarProfile profile,
             StructuredSqlParser fullGrammerParser,
             String implementation
@@ -37,7 +37,7 @@ public final class FullGrammerTokenEventStructuredSqlParser implements Structure
         this(new SqlGrammarProfileSelection(profile, false, "", "", "CONFIG"), fullGrammerParser, implementation);
     }
 
-    public FullGrammerTokenEventStructuredSqlParser(
+    public FullGrammerStructuredSqlParser(
             SqlGrammarProfileSelection profileSelection,
             StructuredSqlParser fullGrammerParser,
             String implementation
@@ -76,7 +76,7 @@ public final class FullGrammerTokenEventStructuredSqlParser implements Structure
         attributes.put("fullGrammerPrimary", true);
         attributes.put("fullGrammerImplementation", implementation);
         return new StructuredParseResult(
-                "FULL_GRAMMAR_TOKEN_EVENT_PRIMARY",
+                "FULL_GRAMMER_PROFILE_PRIMARY",
                 result.dialect(),
                 result.sourceName(),
                 result.events(),

@@ -1,9 +1,6 @@
 package com.relationdetector.core.fullgrammer;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -11,7 +8,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -32,22 +28,22 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
  * locations, and emits the existing token-event event shape.
  */
 public final class FullGrammerTypedSqlEventSink {
-    private final SqlStatementRecord statement;
     private final FullGrammerExpressionAnalyzer expressionAnalyzer;
-    private final List<StructuredSqlEvent> events = new ArrayList<>();
-    private final ArrayDeque<String> projectionOwners = new ArrayDeque<>();
-    private final ArrayDeque<Integer> projectionRowsetBases = new ArrayDeque<>();
-    private final ArrayDeque<Integer> selectRowsetBases = new ArrayDeque<>();
-    private final ArrayDeque<String> writeTargets = new ArrayDeque<>();
-    private final Set<String> eventKeys = new LinkedHashSet<>();
-    private final Set<String> ignoredNames = new LinkedHashSet<>();
-    private final Set<String> functionRowsetNames = new LinkedHashSet<>();
-    private final Map<String, String> aliasToTable = new LinkedHashMap<>();
-    private final List<String> rowsetTables = new ArrayList<>();
+    private final SourceLocationSupport source;
+    private final FullGrammerEventRecorder recorder;
+    private final RowsetScopeSink rowsets;
+    private final ProjectionEventSink projectionEvents;
+    private final WriteMappingSink writeMappings;
+    private final PredicateEventSink predicateEvents;
 
     public FullGrammerTypedSqlEventSink(SqlStatementRecord statement, FullGrammerExpressionAnalyzer expressionAnalyzer) {
-        this.statement = statement;
         this.expressionAnalyzer = expressionAnalyzer;
+        this.source = new SourceLocationSupport(statement);
+        this.recorder = new FullGrammerEventRecorder(statement, source);
+        this.rowsets = new RowsetScopeSink(source);
+        this.projectionEvents = new ProjectionEventSink(source, rowsets, recorder, expressionAnalyzer);
+        this.writeMappings = new WriteMappingSink(source, rowsets, recorder, expressionAnalyzer, projectionEvents);
+        this.predicateEvents = new PredicateEventSink(source, recorder);
     }
 
     /**
@@ -56,7 +52,7 @@ public final class FullGrammerTypedSqlEventSink {
      * <p>EN: Returns structured events collected by the visitor.
      */
     public List<StructuredSqlEvent> events() {
-        return events;
+        return recorder.events();
     }
 
     /**
@@ -65,20 +61,7 @@ public final class FullGrammerTypedSqlEventSink {
      * <p>EN: Visits a subtree while binding projection ownership for derived/CTE scopes.
      */
     public void withProjectionOwner(String owner, Runnable visitor) {
-        if (owner == null || owner.isBlank()) {
-            visitor.run();
-            return;
-        }
-        int rowsetMark = rowsetTables.size();
-        projectionOwners.push(clean(owner));
-        projectionRowsetBases.push(rowsetMark);
-        try {
-            visitor.run();
-        } finally {
-            restoreRowsetScope(rowsetMark);
-            projectionRowsetBases.pop();
-            projectionOwners.pop();
-        }
+        rowsets.withProjectionOwner(owner, visitor);
     }
 
     /**
@@ -87,16 +70,7 @@ public final class FullGrammerTypedSqlEventSink {
      * <p>EN: Visits a subtree while binding the current write target scope.
      */
     public void withWriteTarget(String tableOrAlias, Runnable visitor) {
-        if (tableOrAlias == null || tableOrAlias.isBlank()) {
-            visitor.run();
-            return;
-        }
-        writeTargets.push(clean(tableOrAlias));
-        try {
-            visitor.run();
-        } finally {
-            writeTargets.pop();
-        }
+        rowsets.withWriteTarget(tableOrAlias, visitor);
     }
 
     /**
@@ -105,35 +79,23 @@ public final class FullGrammerTypedSqlEventSink {
      * <p>EN: Visits a subtree inside a SELECT scope to bound default projection rowsets.
      */
     public void withSelectScope(Runnable visitor) {
-        int rowsetMark = rowsetTables.size();
-        selectRowsetBases.push(rowsetMark);
-        try {
-            visitor.run();
-        } finally {
-            restoreRowsetScope(rowsetMark);
-            selectRowsetBases.pop();
-        }
+        rowsets.withSelectScope(visitor);
     }
 
     public String currentProjectionOwner() {
-        return projectionOwners.isEmpty() ? "" : projectionOwners.peek();
+        return rowsets.currentProjectionOwner();
     }
 
     public String currentWriteTarget() {
-        return writeTargets.isEmpty() ? "" : writeTargets.peek();
+        return rowsets.currentWriteTarget();
     }
 
     public int rowsetScopeMark() {
-        return rowsetTables.size();
+        return rowsets.rowsetScopeMark();
     }
 
     public void restoreRowsetScope(int mark) {
-        if (mark < 0 || mark > rowsetTables.size()) {
-            return;
-        }
-        while (rowsetTables.size() > mark) {
-            rowsetTables.remove(rowsetTables.size() - 1);
-        }
+        rowsets.restoreRowsetScope(mark);
     }
 
     public void rowset(ParserRuleContext ctx, String keyword, String qualifiedTable, String alias) {
@@ -147,11 +109,7 @@ public final class FullGrammerTypedSqlEventSink {
         attributes.put("table", table);
         attributes.put("alias", clean(alias));
         add(ctx, StructuredParseEventType.ROWSET_REFERENCE, attributes);
-        aliasToTable.put(baseName(qualifiedTable).toLowerCase(Locale.ROOT), baseName(qualifiedTable));
-        rowsetTables.add(clean(alias).isBlank() ? baseName(qualifiedTable) : clean(alias));
-        if (!clean(alias).isBlank()) {
-            aliasToTable.put(clean(alias).toLowerCase(Locale.ROOT), baseName(qualifiedTable));
-        }
+        rowsets.registerRowset(qualifiedTable, alias);
     }
 
     public void ignoredRowset(ParserRuleContext ctx, String name, String reason) {
@@ -159,12 +117,7 @@ public final class FullGrammerTypedSqlEventSink {
         if (cleanName.isBlank()) {
             return;
         }
-        ignoredNames.add(cleanName.toLowerCase(Locale.ROOT));
-        ignoredNames.add(baseName(cleanName).toLowerCase(Locale.ROOT));
-        if ("FUNCTION_ROWSET".equals(reason)) {
-            functionRowsetNames.add(cleanName.toLowerCase(Locale.ROOT));
-            functionRowsetNames.add(baseName(cleanName).toLowerCase(Locale.ROOT));
-        }
+        rowsets.markIgnoredRowset(cleanName, reason);
         Map<String, Object> attributes = nativeAttributes();
         attributes.put("name", cleanName);
         attributes.put("table", cleanName);
@@ -232,103 +185,23 @@ public final class FullGrammerTypedSqlEventSink {
     }
 
     public void updateAssignment(ParserRuleContext ctx, String targetAlias, String targetTable, String targetColumn, ParseTree expression) {
-        addWriteMapping(ctx, StructuredParseEventType.UPDATE_ASSIGNMENT, "UPDATE_SET",
-                targetAlias, targetTable, targetColumn, expression);
+        writeMappings.updateAssignment(ctx, targetAlias, targetTable, targetColumn, expression);
     }
 
     public void mergeUpdate(ParserRuleContext ctx, String targetAlias, String targetTable, String targetColumn, ParseTree expression) {
-        addWriteMapping(ctx, StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_UPDATE",
-                targetAlias, targetTable, targetColumn, expression);
+        writeMappings.mergeUpdate(ctx, targetAlias, targetTable, targetColumn, expression);
     }
 
     public void mergeInsert(ParserRuleContext ctx, String targetAlias, String targetTable, String targetColumn, ParseTree expression) {
-        addWriteMapping(ctx, StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_INSERT",
-                targetAlias, targetTable, targetColumn, expression);
+        writeMappings.mergeInsert(ctx, targetAlias, targetTable, targetColumn, expression);
     }
 
     public void insertSelect(ParserRuleContext ctx, String targetAlias, String targetTable, String targetColumn, ParseTree expression) {
-        addWriteMapping(ctx, StructuredParseEventType.INSERT_SELECT_MAPPING, "INSERT_SELECT",
-                targetAlias, targetTable, targetColumn, expression);
-    }
-
-    private void addWriteMapping(
-            ParserRuleContext ctx,
-            StructuredParseEventType type,
-            String mappingKind,
-            String targetAlias,
-            String targetTable,
-            String targetColumn,
-            ParseTree expression
-    ) {
-        String cleanColumn = clean(targetColumn);
-        if (cleanColumn.isBlank()) {
-            return;
-        }
-        FullGrammerExpressionAnalysis analysis = expressionAnalyzer.analyze(expression);
-        if (isNestedCaseWhen(expression, analysis)) {
-            addNestedCaseWhenMappings(ctx, type, mappingKind, targetAlias, targetTable, cleanColumn, expression);
-        } else {
-            Map<String, Object> attributes = nativeAttributes();
-            attributes.put("mappingKind", mappingKind);
-            attributes.put("targetAlias", clean(targetAlias));
-            attributes.put("targetTable", clean(targetTable));
-            attributes.put("targetColumn", cleanColumn);
-            attributes.put("sourceAliases", analysis.sourceAliases());
-            attributes.put("sourceColumns", analysis.sourceColumns());
-            attributes.put("transformType", analysis.transformType());
-            attributes.put("flowKind", analysis.flowKind());
-            add(ctx, type, attributes);
-        }
-        expressionSource(ctx, analysis);
-    }
-
-    private boolean isNestedCaseWhen(ParseTree expression, FullGrammerExpressionAnalysis analysis) {
-        return "CASE_WHEN".equals(analysis.transformType())
-                && !expressionAnalyzer.isTopLevelCaseExpression(expression);
-    }
-
-    private void addNestedCaseWhenMappings(
-            ParserRuleContext ctx,
-            StructuredParseEventType type,
-            String mappingKind,
-            String targetAlias,
-            String targetTable,
-            String targetColumn,
-            ParseTree expression
-    ) {
-        for (FullGrammerExpressionAnalysis analysis : expressionAnalyzer.caseExpressionAnalyses(expression, defaultProjectionQualifier())) {
-            if (!analysis.hasSources()) {
-                continue;
-            }
-            Map<String, Object> attributes = nativeAttributes();
-            attributes.put("mappingKind", mappingKind);
-            attributes.put("targetAlias", clean(targetAlias));
-            attributes.put("targetTable", clean(targetTable));
-            attributes.put("targetColumn", targetColumn);
-            attributes.put("sourceAliases", analysis.sourceAliases());
-            attributes.put("sourceColumns", analysis.sourceColumns());
-            attributes.put("transformType", analysis.transformType());
-            attributes.put("flowKind", analysis.flowKind());
-            add(ctx, type, attributes);
-        }
+        writeMappings.insertSelect(ctx, targetAlias, targetTable, targetColumn, expression);
     }
 
     public void projection(ParserRuleContext ctx, String outputAlias, String outputColumn, ParseTree expression) {
-        String cleanOutputAlias = clean(outputAlias);
-        String cleanOutputColumn = clean(outputColumn);
-        if (cleanOutputAlias.isBlank() || cleanOutputColumn.isBlank()) {
-            return;
-        }
-        FullGrammerExpressionAnalysis analysis = expressionAnalyzer.analyze(expression, defaultProjectionQualifier());
-        Map<String, Object> attributes = nativeAttributes();
-        attributes.put("outputAlias", cleanOutputAlias);
-        attributes.put("outputColumn", cleanOutputColumn);
-        attributes.put("sourceAliases", analysis.sourceAliases());
-        attributes.put("sourceColumns", analysis.sourceColumns());
-        attributes.put("transformType", analysis.transformType());
-        attributes.put("flowKind", analysis.flowKind());
-        add(ctx, StructuredParseEventType.PROJECTION_ITEM, attributes);
-        expressionSource(ctx, analysis);
+        projectionEvents.projection(ctx, outputAlias, outputColumn, expression);
     }
 
     public void predicateEqualities(ParserRuleContext ctx, ParseTree predicate, String joinKind) {
@@ -384,21 +257,14 @@ public final class FullGrammerTypedSqlEventSink {
             ExpressionColumn right,
             String joinKind
     ) {
-        if (sameQualifier(left, right)) {
-            return;
-        }
-        Map<String, Object> attributes = nativeAttributes();
-        attributes.put("leftAlias", left.qualifier());
-        attributes.put("leftColumn", left.column());
-        attributes.put("rightAlias", right.qualifier());
-        attributes.put("rightColumn", right.column());
-        attributes.put("joinKind", blankTo(joinKind, "WHERE_OR_UNKNOWN"));
-        add(ctx, eventType, attributes);
-    }
-
-    private boolean sameQualifier(ExpressionColumn left, ExpressionColumn right) {
-        return !clean(left.qualifier()).isBlank()
-                && clean(left.qualifier()).equalsIgnoreCase(clean(right.qualifier()));
+        predicateEvents.predicateEvent(
+                ctx,
+                eventType,
+                left.qualifier(),
+                left.column(),
+                right.qualifier(),
+                right.column(),
+                joinKind);
     }
 
     public void inSubqueryPredicate(ParserRuleContext ctx, ParseTree outerExpression, ParseTree subquery) {
@@ -411,43 +277,11 @@ public final class FullGrammerTypedSqlEventSink {
     }
 
     public void joinUsing(ParserRuleContext ctx, String leftAlias, String rightAlias, List<String> columns) {
-        if (clean(leftAlias).isBlank() || clean(rightAlias).isBlank() || columns.isEmpty()) {
-            return;
-        }
-        Map<String, Object> attributes = nativeAttributes();
-        attributes.put("leftAlias", clean(leftAlias));
-        attributes.put("rightAlias", clean(rightAlias));
-        attributes.put("usingColumns", columns.stream().map(this::clean).filter(s -> !s.isBlank()).toList());
-        add(ctx, StructuredParseEventType.JOIN_USING_COLUMNS, attributes);
-    }
-
-    private void expressionSource(ParserRuleContext ctx, FullGrammerExpressionAnalysis analysis) {
-        if (!analysis.hasSources()) {
-            return;
-        }
-        Map<String, Object> attributes = nativeAttributes();
-        attributes.put("sourceAliases", analysis.sourceAliases());
-        attributes.put("sourceColumns", analysis.sourceColumns());
-        attributes.put("transformType", analysis.transformType());
-        attributes.put("flowKind", analysis.flowKind());
-        add(ctx, StructuredParseEventType.EXPRESSION_SOURCE, attributes);
+        predicateEvents.joinUsing(ctx, leftAlias, rightAlias, columns);
     }
 
     private String defaultProjectionQualifier() {
-        Integer base = selectRowsetBases.peek();
-        if (base == null) {
-            base = projectionRowsetBases.peek();
-        }
-        if (base == null) {
-            return "";
-        }
-        List<String> physicalRowsets = rowsetTables.subList(base, rowsetTables.size()).stream()
-                .filter(rowset -> !functionRowsetNames.contains(clean(rowset).toLowerCase(Locale.ROOT)))
-                .toList();
-        if (physicalRowsets.size() == 1) {
-            return physicalRowsets.get(0);
-        }
-        return "";
+        return rowsets.defaultProjectionQualifier();
     }
 
     private List<ColumnPair> equalityPairs(ParseTree tree) {
@@ -533,11 +367,7 @@ public final class FullGrammerTypedSqlEventSink {
     }
 
     private String tableFor(String aliasOrTable) {
-        String clean = clean(aliasOrTable);
-        if (clean.isBlank()) {
-            return "";
-        }
-        return aliasToTable.getOrDefault(clean.toLowerCase(Locale.ROOT), clean);
+        return rowsets.tableFor(aliasOrTable);
     }
 
     public String tableForAlias(String aliasOrTable) {
@@ -688,11 +518,13 @@ public final class FullGrammerTypedSqlEventSink {
                 || className.equals("Full_column_nameContext"))) {
             return Optional.empty();
         }
-        List<String> parts = splitQualifiedName(clean(current.getText())).stream()
+        List<String> parts = source.splitQualifiedName(clean(current.getText())).stream()
                 .map(this::clean)
                 .filter(part -> !part.isBlank())
                 .toList();
-        if (parts.size() >= 2 && isIdentifier(parts.get(parts.size() - 2)) && isIdentifier(parts.get(parts.size() - 1))) {
+        if (parts.size() >= 2
+                && source.isIdentifier(parts.get(parts.size() - 2))
+                && source.isIdentifier(parts.get(parts.size() - 1))) {
             String qualifier = parts.get(parts.size() - 2);
             String column = parts.get(parts.size() - 1);
             if (expressionAnalyzer.isNonColumnIdentifier(qualifier)
@@ -701,7 +533,7 @@ public final class FullGrammerTypedSqlEventSink {
             }
             return Optional.of(new ExpressionColumn(qualifier, column));
         }
-        if (parts.size() == 1 && isIdentifier(parts.get(0))) {
+        if (parts.size() == 1 && source.isIdentifier(parts.get(0))) {
             String column = parts.get(0);
             if (!defaultQualifier.isBlank() && !expressionAnalyzer.isNonColumnIdentifier(column)) {
                 return Optional.of(new ExpressionColumn(defaultQualifier, column));
@@ -919,146 +751,35 @@ public final class FullGrammerTypedSqlEventSink {
     }
 
     private void add(ParserRuleContext ctx, StructuredParseEventType type, Map<String, Object> attributes) {
-        StructuredSqlEvent event = new StructuredSqlEvent(type, statement.sourceName(), line(ctx), attributes);
-        String key = type.name() + "|" + event.line() + "|" + attributes;
-        if (eventKeys.add(key)) {
-            events.add(event);
-        }
+        recorder.add(ctx, type, attributes);
     }
 
     private Map<String, Object> nativeAttributes() {
-        Map<String, Object> attributes = new LinkedHashMap<>();
-        attributes.put("tokenEventNative", true);
-        attributes.put("fullGrammerNative", true);
-        return attributes;
-    }
-
-    private int line(ParserRuleContext ctx) {
-        Token start = ctx == null ? null : ctx.getStart();
-        long line = start == null ? statement.startLine() : statement.startLine() + Math.max(0, start.getLine() - 1);
-        return Math.toIntExact(line);
+        return source.nativeAttributes();
     }
 
     public String clean(String raw) {
-        if (raw == null) {
-            return "";
-        }
-        String text = raw.trim();
-        if (text.indexOf('.') >= 0) {
-            List<String> cleanParts = new ArrayList<>();
-            for (String part : splitQualifiedName(text)) {
-                String cleanPart = stripIdentifierQuotes(part.trim());
-                if (!cleanPart.isBlank()) {
-                    cleanParts.add(cleanPart);
-                }
-            }
-            return String.join(".", cleanParts);
-        }
-        return stripIdentifierQuotes(text);
-    }
-
-    private List<String> splitQualifiedName(String text) {
-        List<String> parts = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        for (int index = 0; index < text.length(); index++) {
-            char ch = text.charAt(index);
-            if (ch == '.') {
-                parts.add(current.toString());
-                current.setLength(0);
-            } else {
-                current.append(ch);
-            }
-        }
-        parts.add(current.toString());
-        return parts;
-    }
-
-    private String stripIdentifierQuotes(String raw) {
-        String text = raw.trim();
-        while ((text.startsWith("`") && text.endsWith("`"))
-                || (text.startsWith("\"") && text.endsWith("\""))
-                || (text.startsWith("'") && text.endsWith("'"))
-                || (text.startsWith("[") && text.endsWith("]"))) {
-            if (text.length() < 2) {
-                return "";
-            }
-            text = text.substring(1, text.length() - 1).trim();
-        }
-        return text;
+        return source.clean(raw);
     }
 
     public String baseName(String raw) {
-        String text = clean(raw);
-        int dot = text.lastIndexOf('.');
-        return dot >= 0 ? clean(text.substring(dot + 1)) : text;
+        return source.baseName(raw);
     }
 
     public String firstIdentifier(ParseTree tree) {
-        return identifiers(tree).stream().findFirst().orElse("");
+        return source.firstIdentifier(tree);
     }
 
     public List<String> identifiers(ParseTree tree) {
-        List<String> result = new ArrayList<>();
-        collectIdentifierLeaves(tree, result);
-        return result.stream().map(this::clean).filter(s -> !s.isBlank()).toList();
+        return source.identifiers(tree);
     }
 
     public Optional<String> aliasAfter(ParseTree tree, String marker) {
-        List<String> identifiers = identifiers(tree);
-        if (identifiers.isEmpty()) {
-            return Optional.empty();
-        }
-        String first = identifiers.get(0);
-        String last = identifiers.get(identifiers.size() - 1);
-        if (!last.equals(first) && !last.equalsIgnoreCase(marker)) {
-            return Optional.of(last);
-        }
-        return Optional.empty();
-    }
-
-    private void collectIdentifierLeaves(ParseTree tree, List<String> result) {
-        if (tree == null) {
-            return;
-        }
-        if (tree instanceof TerminalNode terminal) {
-            String text = clean(terminal.getText());
-            if (isIdentifier(text)) {
-                result.add(text);
-            }
-            return;
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectIdentifierLeaves(tree.getChild(index), result);
-        }
-    }
-
-    private boolean isIdentifier(String value) {
-        if (value == null || value.isBlank()) {
-            return false;
-        }
-        String lower = value.toLowerCase(Locale.ROOT);
-        if (Set.of("select", "from", "join", "inner", "left", "right", "full", "outer", "where", "on",
-                "using", "with", "as", "update", "set", "insert", "into", "values", "merge", "when",
-                "then", "case", "else", "end", "and", "or", "not", "in", "exists", "null", "true", "false", "only",
-                "tablesample", "system", "materialized", "returning", "group", "by", "order", "having",
-                "limit", "default").contains(lower)) {
-            return false;
-        }
-        char first = value.charAt(0);
-        if (!(Character.isLetter(first) || first == '_')) {
-            return false;
-        }
-        for (int index = 1; index < value.length(); index++) {
-            char ch = value.charAt(index);
-            if (!(Character.isLetterOrDigit(ch) || ch == '_' || ch == '$')) {
-                return false;
-            }
-        }
-        return true;
+        return source.aliasAfter(tree, marker);
     }
 
     private String blankTo(String value, String fallback) {
-        return value == null || value.isBlank() ? fallback : value;
+        return source.blankTo(value, fallback);
     }
 
     private record ExpressionColumn(String qualifier, String column) {

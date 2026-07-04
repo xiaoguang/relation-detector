@@ -93,46 +93,55 @@ public abstract class AbstractDatabaseAdaptor implements DatabaseAdaptor {
     }
 
     @Override
+    @Deprecated(forRemoval = false)
     public final MetadataCollector metadataCollector() {
         return collectors.metadata();
     }
 
     @Override
+    @Deprecated(forRemoval = false)
     public final ObjectDefinitionCollector objectDefinitionCollector() {
         return collectors.objects();
     }
 
     @Override
+    @Deprecated(forRemoval = false)
     public final Optional<DatabaseDdlCollector> databaseDdlCollector() {
         return collectors.databaseDdl();
     }
 
     @Override
+    @Deprecated(forRemoval = false)
     public final SqlLogExtractor sqlLogExtractor() {
         return collectors.logs();
     }
 
     @Override
+    @Deprecated(forRemoval = false)
     public final SqlRelationParser sqlRelationParser() {
         return parsers.sqlRelations();
     }
 
     @Override
+    @Deprecated(forRemoval = false)
     public final Optional<StructuredSqlParser> structuredSqlParser() {
         return parsers.structuredSql();
     }
 
     @Override
+    @Deprecated(forRemoval = false)
     public final Optional<StructuredDdlParser> structuredDdlParser() {
         return parsers.structuredDdl();
     }
 
     @Override
+    @Deprecated(forRemoval = false)
     public final Optional<DataProfiler> dataProfiler() {
         return profiling.dataProfiler();
     }
 
     @Override
+    @Deprecated(forRemoval = false)
     public final EvidenceWeightAdjuster evidenceWeightAdjuster() {
         return profiling.evidenceWeightAdjuster();
     }

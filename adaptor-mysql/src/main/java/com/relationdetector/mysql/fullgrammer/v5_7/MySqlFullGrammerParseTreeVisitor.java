@@ -7,6 +7,8 @@ import java.util.Map;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.mysql.fullgrammer.common.MySqlSqlEventVisitorCore;
+import com.relationdetector.mysql.fullgrammer.common.MySqlSqlEventVisitorCore.ColumnParts;
 import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.CommonTableExpressionContext;
 import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.CaseValueExpressionContext;
 import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.CreateTableContext;
@@ -50,13 +52,12 @@ import org.antlr.v4.runtime.tree.RuleNode;
 final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseVisitor<Void> {
     private final SqlStatementRecord statement;
     private final FullGrammerTypedSqlEventSink sink;
-    private final com.relationdetector.mysql.fullgrammer.common.MySqlSqlEventVisitorCore core;
-    private int existsDepth;
+    private final MySqlSqlEventVisitorCore core;
 
     MySqlFullGrammerParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
         this.statement = statement;
         this.sink = new FullGrammerTypedSqlEventSink(statement, new MySqlExpressionAnalyzer());
-        this.core = new com.relationdetector.mysql.fullgrammer.common.MySqlSqlEventVisitorCore(sink);
+        this.core = new MySqlSqlEventVisitorCore(sink);
     }
 
     /**
@@ -207,11 +208,11 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
         if (ctx.EXISTS_SYMBOL() == null) {
             return visitChildren(ctx);
         }
-        existsDepth++;
+        core.enterExists();
         try {
             return visitChildren(ctx);
         } finally {
-            existsDepth--;
+            core.leaveExists();
         }
     }
 
@@ -231,7 +232,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
     @Override
     public Void visitPrimaryExprCompare(PrimaryExprCompareContext ctx) {
         if (ctx.compOp() != null && "=".equals(ctx.compOp().getText())) {
-            if (existsDepth > 0) {
+            if (core.inExists()) {
                 sink.existsPredicateEquality(ctx, ctx.boolPri(), ctx.predicate());
             } else {
                 sink.predicateEquality(ctx, ctx.boolPri(), ctx.predicate(), "WHERE_OR_UNKNOWN");
@@ -244,7 +245,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
     public Void visitChildren(RuleNode node) {
         Void result = super.visitChildren(node);
         if (node instanceof ParserRuleContext ctx && isExpressionContext(ctx)) {
-            if (existsDepth > 0) {
+            if (core.inExists()) {
                 sink.existsPredicateEqualities(ctx, ctx);
             } else {
                 sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
@@ -462,8 +463,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
     }
 
     private String projectedColumnName(ParseTree expression) {
-        List<String> identifiers = sink.identifiers(expression);
-        return identifiers.isEmpty() ? "" : identifiers.get(identifiers.size() - 1);
+        return core.projectedColumnName(expression);
     }
 
     private void rememberNonColumnParameter(FunctionParameterContext ctx) {
@@ -482,25 +482,10 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
     }
 
     private ColumnParts columnParts(String raw) {
-        String clean = sink.clean(raw);
-        int dot = clean.lastIndexOf('.');
-        if (dot < 0) {
-            return new ColumnParts("", clean);
-        }
-        return new ColumnParts(sink.clean(clean.substring(0, dot)), sink.clean(clean.substring(dot + 1)));
-    }
-
-    private record ColumnParts(String qualifier, String column) {
+        return core.columnParts(raw);
     }
 
     private boolean isExpressionContext(ParserRuleContext ctx) {
-        String name = ctx.getClass().getSimpleName();
-        return name.startsWith("Expr")
-                || name.startsWith("PrimaryExpr")
-                || name.startsWith("PredicateExpr")
-                || name.startsWith("SimpleExpr")
-                || name.equals("PredicateContext")
-                || name.equals("BoolPriContext")
-                || name.equals("BitExprContext");
+        return core.isExpressionContext(ctx);
     }
 }

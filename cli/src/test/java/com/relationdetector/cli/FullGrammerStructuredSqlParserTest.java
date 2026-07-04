@@ -19,7 +19,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
-class FullGrammerTokenEventStructuredSqlParserTest {
+class FullGrammerStructuredSqlParserTest {
     @Test
     void primaryParserCarriesGrammarProfileAndKeepsTokenEventShape() {
         SqlStatementRecord statement = new SqlStatementRecord("""
@@ -35,7 +35,7 @@ class FullGrammerTokenEventStructuredSqlParserTest {
                 .parser()
                 .parseSql(statement, null);
 
-        assertEquals("FULL_GRAMMAR_TOKEN_EVENT_PRIMARY", result.backend());
+        assertEquals("FULL_GRAMMER_PROFILE_PRIMARY", result.backend());
         assertEquals("mysql-8.0", result.attributes().get("grammarProfile"));
         assertEquals(true, result.attributes().get("fullGrammerPrimary"));
         assertEquals("MYSQL_FULL_GRAMMAR_PARSE_TREE_VISITOR", result.attributes().get("fullGrammerImplementation"));
@@ -63,7 +63,7 @@ class FullGrammerTokenEventStructuredSqlParserTest {
                 .parser()
                 .parseSql(statement, null);
 
-        assertEquals("FULL_GRAMMAR_TOKEN_EVENT_PRIMARY", result.backend());
+        assertEquals("FULL_GRAMMER_PROFILE_PRIMARY", result.backend());
         assertTrue(result.events().stream().anyMatch(event -> event.type().name().equals("PREDICATE_EQUALITY")));
     }
 

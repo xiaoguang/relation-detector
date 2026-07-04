@@ -2,7 +2,6 @@ package com.relationdetector.postgres.tokenevent;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -18,6 +17,7 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
 import com.relationdetector.postgres.tokenevent.PostgresRelationSqlBaseVisitor;
 import com.relationdetector.postgres.tokenevent.PostgresRelationSqlParser;
 import com.relationdetector.postgres.routine.PostgresRoutineBodyParser;
@@ -35,6 +35,7 @@ import com.relationdetector.postgres.routine.PostgresRoutineBodyParser;
  */
 public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSqlBaseVisitor<Void> {
     private final SqlStatementRecord statement;
+    private final TokenEventEventEmitter emitter;
     private final List<StructuredSqlEvent> events = new ArrayList<>();
     private final Set<String> cteNames = new LinkedHashSet<>();
     private final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
@@ -45,6 +46,7 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
 
     public PostgresTokenEventParseTreeVisitor(SqlStatementRecord statement) {
         this.statement = statement;
+        this.emitter = new TokenEventEventEmitter(statement);
     }
 
     public List<StructuredSqlEvent> collect(PostgresRelationSqlParser.ScriptContext root) {
@@ -847,13 +849,11 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
     }
 
     private Map<String, Object> attrs() {
-        Map<String, Object> attrs = new LinkedHashMap<>();
-        attrs.put("tokenEventNative", true);
-        return attrs;
+        return emitter.attrs();
     }
 
     private void add(StructuredParseEventType type, ParserRuleContext ctx, Map<String, Object> attrs) {
-        events.add(new StructuredSqlEvent(type, statement.sourceName(), line(ctx), attrs));
+        emitter.add(events, type, ctx, attrs);
     }
 
     private void collectRoutineBody(String quotedBody, int tokenLine) {
@@ -883,13 +883,6 @@ public final class PostgresTokenEventParseTreeVisitor extends PostgresRelationSq
             return "";
         }
         return raw.substring(tag.length(), raw.length() - tag.length());
-    }
-
-    private long line(ParserRuleContext ctx) {
-        if (ctx == null || ctx.getStart() == null) {
-            return statement.startLine();
-        }
-        return statement.startLine() + Math.max(0, ctx.getStart().getLine() - 1);
     }
 
     private String targetAlias(PostgresRelationSqlParser.TablePrimaryContext primary) {

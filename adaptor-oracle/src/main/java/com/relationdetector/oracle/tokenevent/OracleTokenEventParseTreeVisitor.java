@@ -2,7 +2,6 @@ package com.relationdetector.oracle.tokenevent;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -16,6 +15,7 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 import com.relationdetector.oracle.tokenevent.OracleRelationSqlBaseVisitor;
 import com.relationdetector.oracle.tokenevent.OracleRelationSqlParser;
@@ -33,6 +33,7 @@ import com.relationdetector.oracle.tokenevent.OracleRelationSqlParser;
  */
 public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBaseVisitor<Void> {
     private final SqlStatementRecord statement;
+    private final TokenEventEventEmitter emitter;
     private final List<StructuredSqlEvent> events = new ArrayList<>();
     private final Set<String> cteNames = new LinkedHashSet<>();
     private final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
@@ -44,6 +45,7 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
 
     public OracleTokenEventParseTreeVisitor(SqlStatementRecord statement) {
         this.statement = statement;
+        this.emitter = new TokenEventEventEmitter(statement);
     }
 
     public List<StructuredSqlEvent> collect(OracleRelationSqlParser.ScriptContext root) {
@@ -733,20 +735,11 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
     }
 
     private Map<String, Object> attrs() {
-        Map<String, Object> attrs = new LinkedHashMap<>();
-        attrs.put("tokenEventNative", true);
-        return attrs;
+        return emitter.attrs();
     }
 
     private void add(StructuredParseEventType type, ParserRuleContext ctx, Map<String, Object> attrs) {
-        events.add(new StructuredSqlEvent(type, statement.sourceName(), line(ctx), attrs));
-    }
-
-    private long line(ParserRuleContext ctx) {
-        if (ctx == null || ctx.getStart() == null) {
-            return statement.startLine();
-        }
-        return statement.startLine() + Math.max(0, ctx.getStart().getLine() - 1);
+        emitter.add(events, type, ctx, attrs);
     }
 
     private String targetAlias(OracleRelationSqlParser.TablePrimaryContext primary) {

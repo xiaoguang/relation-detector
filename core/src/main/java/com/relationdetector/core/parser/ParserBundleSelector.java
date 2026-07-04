@@ -42,9 +42,9 @@ public final class ParserBundleSelector {
     }
 
     public ParserBundle select(DatabaseAdaptor adaptor, ScanConfig config, AdaptorContext context) {
-        StructuredSqlParser tokenSql = adaptor.structuredSqlParser()
+        StructuredSqlParser tokenSql = adaptor.parsers().structuredSql()
                 .orElseGet(() -> unavailableSqlParser(adaptor));
-        StructuredDdlParser tokenDdl = adaptor.structuredDdlParser()
+        StructuredDdlParser tokenDdl = adaptor.parsers().structuredDdl()
                 .orElseGet(() -> unavailableDdlParser(adaptor));
 
         String requestedMode = parserMode(config);

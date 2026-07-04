@@ -44,7 +44,7 @@ public final class FullGrammerParserBundleFactory {
             SqlGrammarProfileSelection selection,
             FullGrammerDialectModule module
     ) {
-        StructuredSqlParser sqlParser = new FullGrammerTokenEventStructuredSqlParser(
+        StructuredSqlParser sqlParser = new FullGrammerStructuredSqlParser(
                 selection,
                 module.sqlParser(),
                 module.implementationName());

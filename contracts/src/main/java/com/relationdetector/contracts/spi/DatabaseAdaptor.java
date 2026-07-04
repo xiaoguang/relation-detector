@@ -58,27 +58,81 @@ public interface DatabaseAdaptor {
                 evidenceWeightAdjuster());
     }
 
+    /**
+     * Compatibility bridge for older adaptor implementations.
+     *
+     * @deprecated New code should use {@link #collectors()}.
+     */
+    @Deprecated(forRemoval = false)
     MetadataCollector metadataCollector();
 
+    /**
+     * Compatibility bridge for older adaptor implementations.
+     *
+     * @deprecated New code should use {@link #collectors()}.
+     */
+    @Deprecated(forRemoval = false)
     ObjectDefinitionCollector objectDefinitionCollector();
 
+    /**
+     * Compatibility bridge for older adaptor implementations.
+     *
+     * @deprecated New code should use {@link #collectors()}.
+     */
+    @Deprecated(forRemoval = false)
     default Optional<DatabaseDdlCollector> databaseDdlCollector() {
         return Optional.empty();
     }
 
+    /**
+     * Compatibility bridge for older adaptor implementations.
+     *
+     * @deprecated New code should use {@link #collectors()}.
+     */
+    @Deprecated(forRemoval = false)
     SqlLogExtractor sqlLogExtractor();
 
+    /**
+     * Compatibility bridge for older adaptor implementations.
+     *
+     * @deprecated New code should use {@link #parsers()}.
+     */
+    @Deprecated(forRemoval = false)
     SqlRelationParser sqlRelationParser();
 
+    /**
+     * Compatibility bridge for older adaptor implementations.
+     *
+     * @deprecated New code should use {@link #parsers()}.
+     */
+    @Deprecated(forRemoval = false)
     default Optional<StructuredSqlParser> structuredSqlParser() {
         return Optional.empty();
     }
 
+    /**
+     * Compatibility bridge for older adaptor implementations.
+     *
+     * @deprecated New code should use {@link #parsers()}.
+     */
+    @Deprecated(forRemoval = false)
     default Optional<StructuredDdlParser> structuredDdlParser() {
         return Optional.empty();
     }
 
+    /**
+     * Compatibility bridge for older adaptor implementations.
+     *
+     * @deprecated New code should use {@link #profiling()}.
+     */
+    @Deprecated(forRemoval = false)
     Optional<DataProfiler> dataProfiler();
 
+    /**
+     * Compatibility bridge for older adaptor implementations.
+     *
+     * @deprecated New code should use {@link #profiling()}.
+     */
+    @Deprecated(forRemoval = false)
     EvidenceWeightAdjuster evidenceWeightAdjuster();
 }

@@ -36,7 +36,7 @@ core/src/main/java/com/relationdetector/core/fullgrammer
   FullGrammerParserBundleFactory
   FullGrammerTokenEventParserFactory
   FullGrammerDdlParserFactory
-  FullGrammerTokenEventStructuredSqlParser
+  FullGrammerStructuredSqlParser
   FullGrammerTypedSqlEventSink
   FullGrammerExpressionAnalyzer / FullGrammerExpressionAnalysis
 

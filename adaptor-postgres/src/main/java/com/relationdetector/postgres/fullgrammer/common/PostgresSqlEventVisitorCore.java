@@ -1,5 +1,6 @@
 package com.relationdetector.postgres.fullgrammer.common;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,8 +27,10 @@ public final class PostgresSqlEventVisitorCore {
     private final SqlStatementRecord statement;
     private final FullGrammerTypedSqlEventSink sink;
     private final List<String> rowsetAliases = new ArrayList<>();
+    private final ArrayDeque<InsertSelectTarget> insertSelectTargets = new ArrayDeque<>();
     private String mergeTarget = "";
     private String mergeSource = "";
+    private int existsDepth;
 
     public PostgresSqlEventVisitorCore(SqlStatementRecord statement) {
         this.statement = statement;
@@ -87,6 +90,42 @@ public final class PostgresSqlEventVisitorCore {
 
     public void mergeSource(String mergeSource) {
         this.mergeSource = mergeSource;
+    }
+
+    public void pushInsertSelectTarget(String targetTable, List<String> targetColumns) {
+        insertSelectTargets.push(new InsertSelectTarget(targetTable, targetColumns, 0));
+    }
+
+    public void popInsertSelectTarget() {
+        insertSelectTargets.pop();
+    }
+
+    public boolean hasInsertSelectTarget() {
+        return !insertSelectTargets.isEmpty();
+    }
+
+    public InsertSelectTarget currentInsertSelectTarget() {
+        return insertSelectTargets.peek();
+    }
+
+    public void advanceInsertSelectTarget() {
+        InsertSelectTarget current = insertSelectTargets.pop();
+        insertSelectTargets.push(new InsertSelectTarget(
+                current.targetTable(),
+                current.targetColumns(),
+                current.index() + 1));
+    }
+
+    public void enterExists() {
+        existsDepth++;
+    }
+
+    public void leaveExists() {
+        existsDepth--;
+    }
+
+    public boolean inExists() {
+        return existsDepth > 0;
     }
 
     public List<ParseTree> expressionChildren(ParseTree tree) {
@@ -161,5 +200,8 @@ public final class PostgresSqlEventVisitorCore {
     @FunctionalInterface
     public interface RoutineBodyEventExtractor {
         List<StructuredSqlEvent> extract(SqlStatementRecord nestedStatement);
+    }
+
+    public record InsertSelectTarget(String targetTable, List<String> targetColumns, int index) {
     }
 }

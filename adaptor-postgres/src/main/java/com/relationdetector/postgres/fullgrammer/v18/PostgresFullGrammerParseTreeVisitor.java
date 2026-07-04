@@ -1,7 +1,6 @@
 package com.relationdetector.postgres.fullgrammer.v18;
 
 import com.relationdetector.core.fullgrammer.*;
-import java.util.ArrayDeque;
 import java.util.List;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
@@ -48,8 +47,6 @@ final class PostgresFullGrammerParseTreeVisitor extends PostgresFullGrammerParse
     private final SqlStatementRecord statement;
     private final PostgresSqlEventVisitorCore core;
     private final FullGrammerTypedSqlEventSink sink;
-    private final ArrayDeque<InsertSelectState> insertSelectTargets = new ArrayDeque<>();
-    private int existsDepth;
 
     PostgresFullGrammerParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
         this.statement = statement;
@@ -213,11 +210,11 @@ final class PostgresFullGrammerParseTreeVisitor extends PostgresFullGrammerParse
         }
         String targetTable = ctx.insert_target().qualified_name().getText();
         List<String> targetColumns = sink.identifiers(ctx.insert_rest().insert_column_list());
-        insertSelectTargets.push(new InsertSelectState(targetTable, targetColumns));
+        core.pushInsertSelectTarget(targetTable, targetColumns);
         try {
             visit(ctx.insert_rest().selectstmt());
         } finally {
-            insertSelectTargets.pop();
+            core.popInsertSelectTarget();
         }
         return null;
     }
@@ -234,7 +231,7 @@ final class PostgresFullGrammerParseTreeVisitor extends PostgresFullGrammerParse
 
     @Override
     public Void visitA_expr(A_exprContext ctx) {
-        if (existsDepth > 0) {
+        if (core.inExists()) {
             sink.existsPredicateEqualities(ctx, ctx);
         } else {
             sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
@@ -252,11 +249,11 @@ final class PostgresFullGrammerParseTreeVisitor extends PostgresFullGrammerParse
 
     @Override
     public Void visitC_expr_exists(C_expr_existsContext ctx) {
-        existsDepth++;
+        core.enterExists();
         try {
             return visitChildren(ctx);
         } finally {
-            existsDepth--;
+            core.leaveExists();
         }
     }
 
@@ -264,7 +261,7 @@ final class PostgresFullGrammerParseTreeVisitor extends PostgresFullGrammerParse
     public Void visitChildren(RuleNode node) {
         Void result = super.visitChildren(node);
         if (node instanceof ParserRuleContext ctx && isExpressionContext(ctx)) {
-            if (existsDepth > 0) {
+            if (core.inExists()) {
                 sink.existsPredicateEqualities(ctx, ctx);
             } else {
                 sink.predicateEqualities(ctx, ctx, "WHERE_OR_UNKNOWN");
@@ -275,12 +272,12 @@ final class PostgresFullGrammerParseTreeVisitor extends PostgresFullGrammerParse
 
     @Override
     public Void visitTarget_label(Target_labelContext ctx) {
-        if (ctx.a_expr() != null && !insertSelectTargets.isEmpty()) {
-            InsertSelectState state = insertSelectTargets.peek();
-            if (state.index < state.targetColumns.size()) {
-                sink.insertSelect(ctx, "", state.targetTable, state.targetColumns.get(state.index), ctx.a_expr());
+        if (ctx.a_expr() != null && core.hasInsertSelectTarget()) {
+            PostgresSqlEventVisitorCore.InsertSelectTarget state = core.currentInsertSelectTarget();
+            if (state.index() < state.targetColumns().size()) {
+                sink.insertSelect(ctx, "", state.targetTable(), state.targetColumns().get(state.index()), ctx.a_expr());
             }
-            state.index++;
+            core.advanceInsertSelectTarget();
         }
         if (ctx.a_expr() == null || sink.currentProjectionOwner().isBlank()) {
             return visitChildren(ctx);
@@ -387,14 +384,4 @@ final class PostgresFullGrammerParseTreeVisitor extends PostgresFullGrammerParse
         return core.isExpressionContext(ctx);
     }
 
-    private static final class InsertSelectState {
-        private final String targetTable;
-        private final List<String> targetColumns;
-        private int index;
-
-        private InsertSelectState(String targetTable, List<String> targetColumns) {
-            this.targetTable = targetTable;
-            this.targetColumns = targetColumns;
-        }
-    }
 }

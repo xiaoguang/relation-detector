@@ -2,7 +2,6 @@ package com.relationdetector.sqlserver.tokenevent;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -14,6 +13,7 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
 
 /**
  * SQL Server token-event parse-tree visitor.
@@ -25,6 +25,7 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelationSqlBaseVisitor<Void> {
     private final SqlStatementRecord statement;
     private final boolean ddlOnly;
+    private final TokenEventEventEmitter emitter;
     private final List<StructuredSqlEvent> events = new ArrayList<>();
     private final ArrayDeque<String> projectionOwners = new ArrayDeque<>();
     private final ArrayDeque<String> ddlTables = new ArrayDeque<>();
@@ -38,6 +39,10 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
     public SqlServerTokenEventParseTreeVisitor(SqlStatementRecord statement, boolean ddlOnly) {
         this.statement = statement;
         this.ddlOnly = ddlOnly;
+        this.emitter = new TokenEventEventEmitter(statement,
+                type -> !ddlOnly
+                        || type == StructuredParseEventType.DDL_FOREIGN_KEY
+                        || type == StructuredParseEventType.DDL_INDEX);
     }
 
     public List<StructuredSqlEvent> collect(SqlServerRelationSqlParser.Tsql_fileContext root) {
@@ -672,23 +677,11 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
     }
 
     private Map<String, Object> attrs() {
-        Map<String, Object> attrs = new LinkedHashMap<>();
-        attrs.put("tokenEventNative", true);
-        return attrs;
+        return emitter.attrs();
     }
 
     private void add(StructuredParseEventType type, ParserRuleContext ctx, Map<String, Object> attrs) {
-        if (ddlOnly && type != StructuredParseEventType.DDL_FOREIGN_KEY && type != StructuredParseEventType.DDL_INDEX) {
-            return;
-        }
-        events.add(new StructuredSqlEvent(type, statement.sourceName(), line(ctx), attrs));
-    }
-
-    private long line(ParserRuleContext ctx) {
-        if (ctx == null || ctx.getStart() == null) {
-            return statement.startLine();
-        }
-        return statement.startLine() + Math.max(0, ctx.getStart().getLine() - 1);
+        emitter.add(events, type, ctx, attrs);
     }
 
     private String currentDdlTable() {

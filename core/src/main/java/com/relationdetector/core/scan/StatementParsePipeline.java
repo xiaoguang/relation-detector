@@ -17,20 +17,12 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
-import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.parser.DdlRelationParserRunner;
-import com.relationdetector.core.parser.DdlParseOutcome;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.parser.ParserBundleSelector;
-import com.relationdetector.core.parser.SqlRelationParserRunner;
-import com.relationdetector.core.relation.NamingEvidenceExtractor;
 
 final class StatementParsePipeline {
-    private final SqlRelationParserRunner sqlParserRunner = new SqlRelationParserRunner();
-    private final DdlRelationParserRunner ddlParserRunner = new DdlRelationParserRunner();
+    private final StatementExecutionService statementExecutionService = new StatementExecutionService();
     private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
-    private final StructuredDataLineageExtractor dataLineageExtractor = new StructuredDataLineageExtractor();
-    private final NamingEvidenceExtractor namingEvidenceExtractor = new NamingEvidenceExtractor();
 
     List<RelationshipCandidate> parseDdlFile(
             DatabaseAdaptor adaptor,
@@ -40,10 +32,10 @@ final class StatementParsePipeline {
             ScanPipelineContext scanContext
     ) {
         try {
-            DdlParseOutcome parsed = ddlParserRunner.parseWithEvidence(
+            StatementExecutionOutcome outcome = statementExecutionService.executeDdlFile(
                     parserBundle(adaptor, config, context, scanContext), file, context);
-            scanContext.namingEvidencePool.addAll(parsed.namingEvidence());
-            return parsed.relationships();
+            scanContext.namingEvidencePool.addAll(outcome.namingEvidence());
+            return outcome.relationshipCandidates();
         } catch (Exception ex) {
             scanContext.result.warnings().add(DiagnosticWarnings.ddlParseFailed(file, ex));
             return List.of();
@@ -58,11 +50,11 @@ final class StatementParsePipeline {
             ScanPipelineContext scanContext
     ) {
         try {
-            DdlParseOutcome parsed = ddlParserRunner.parseTextWithEvidence(
+            StatementExecutionOutcome outcome = statementExecutionService.executeDdlText(
                     parserBundle(adaptor, config, context, scanContext),
                     definition.ddl(), definition.source(), EvidenceSourceType.DATABASE_DDL, context);
-            scanContext.namingEvidencePool.addAll(parsed.namingEvidence());
-            return qualifyDatabaseDdlCandidates(parsed.relationships(), definition.schema());
+            scanContext.namingEvidencePool.addAll(outcome.namingEvidence());
+            return qualifyDatabaseDdlCandidates(outcome.relationshipCandidates(), definition.schema());
         } catch (Exception ex) {
             scanContext.result.warnings().add(DiagnosticWarnings.ddlTextParseFailed(definition.source(), definition.ddl(), ex));
             return List.of();
@@ -80,14 +72,16 @@ final class StatementParsePipeline {
             Set<TableId> knownPhysicalTables
     ) {
         try {
-            var parsed = adaptor.structuredSqlParser().isEmpty()
-                    ? sqlParserRunner.parseStructuredAndRelations(adaptor, config, statement, context)
-                    : sqlParserRunner.parseStructuredAndRelations(
-                            config, statement, context, parserBundle(adaptor, config, context, scanContext));
-            parsed.structured().ifPresent(structured ->
-                    dataLineageCandidates.addAll(dataLineageExtractor.extract(statement, structured, knownPhysicalTables)));
-            scanContext.namingEvidencePool.addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(parsed.relationships()));
-            return parsed.relationships();
+            StatementExecutionOutcome outcome = statementExecutionService.executeSql(
+                    adaptor,
+                    config,
+                    statement,
+                    context,
+                    knownPhysicalTables,
+                    parserBundle(adaptor, config, context, scanContext));
+            dataLineageCandidates.addAll(outcome.lineageCandidates());
+            scanContext.namingEvidencePool.addAll(outcome.namingEvidence());
+            return outcome.relationshipCandidates();
         } catch (Exception ex) {
             result.warnings().add(DiagnosticWarnings.sqlParseFailed(statement, ex));
             return List.of();

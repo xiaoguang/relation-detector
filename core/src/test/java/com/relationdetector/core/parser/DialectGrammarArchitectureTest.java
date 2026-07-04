@@ -59,7 +59,8 @@ class DialectGrammarArchitectureTest {
         List<String> forbiddenImports = List.of(
                 "com.relationdetector.mysql.tokenevent",
                 "com.relationdetector.postgres.tokenevent",
-                "com.relationdetector.oracle.tokenevent");
+                "com.relationdetector.oracle.tokenevent",
+                "com.relationdetector.sqlserver.tokenevent");
 
         try (Stream<Path> stream = Files.walk(root)) {
             List<Path> offenders = stream
@@ -115,6 +116,24 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
+    void fullGrammerStructuredParserWrapperIsNotNamedTokenEvent() throws IOException {
+        Path root = repoRoot();
+        Path fullGrammerRoot = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammer");
+        try (Stream<Path> stream = Files.walk(fullGrammerRoot)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.getFileName().toString().equals("FullGrammerTokenEventStructuredSqlParser.java")
+                            || containsAny(path, List.of("FullGrammerTokenEventStructuredSqlParser",
+                                    "FULL_GRAMMAR_TOKEN_EVENT_PRIMARY")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "full-grammer profile parser wrapper must not mention token-event, offenders=" + offenders);
+        }
+    }
+
+    @Test
     void mysqlFullGrammerVisitorsDoNotCarryPostgresRowsetSentinels() throws IOException {
         Path root = repoRoot();
         Path mysqlFullGrammer = root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer");
@@ -150,6 +169,32 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
+    void mysqlAndPostgresFullGrammerVersionVisitorsKeepSharedStateInCommon() throws IOException {
+        Path root = repoRoot();
+        List<Path> roots = List.of(
+                root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer"),
+                root.resolve("adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer"));
+        for (Path fullGrammerRoot : roots) {
+            try (Stream<Path> stream = Files.walk(fullGrammerRoot)) {
+                List<Path> offenders = stream
+                        .filter(path -> path.getFileName().toString().endsWith("FullGrammerParseTreeVisitor.java"))
+                        .filter(path -> path.toString().contains("/fullgrammer/v"))
+                        .filter(path -> containsAny(path, List.of(
+                                "existsDepth",
+                                "InsertSelectState",
+                                "ArrayDeque<InsertSelect",
+                                "record ColumnParts")))
+                        .map(root::relativize)
+                        .toList();
+
+                assertTrue(offenders.isEmpty(),
+                        "Version full-grammer visitors should keep reusable state/helpers in fullgrammer/common, offenders="
+                                + offenders);
+            }
+        }
+    }
+
+    @Test
     void productionLineageDoesNotKeepRegexSqlLineageResolver() throws IOException {
         Path root = repoRoot();
         assertFalse(Files.exists(root.resolve("core/src/main/java/com/relationdetector/core/lineage/SqlLineageResolver.java")),
@@ -170,6 +215,34 @@ class DialectGrammarArchitectureTest {
             assertTrue(offenders.isEmpty(),
                     "Lineage must use StructuredSqlEvent / ProjectionTrace, not regex or text fallback, offenders="
                             + offenders);
+        }
+    }
+
+    @Test
+    void productionRegexUsageIsAllowlistedAndNonStructural() throws IOException {
+        Path root = repoRoot();
+        Set<Path> allowed = Set.of(
+                Path.of("core/src/main/java/com/relationdetector/core/fullgrammer/SqlGrammarProfileRegistry.java"),
+                Path.of("core/src/main/java/com/relationdetector/core/log/SqlLogNoiseFilter.java"),
+                Path.of("adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer/PostgresFullGrammerVersionSyntaxGuard.java"));
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> containsAny(path, List.of("Pattern.compile", "java.util.regex")))
+                    .map(root::relativize)
+                    .filter(path -> !allowed.contains(path))
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Production regex use must stay in version/config/log-noise boundaries, offenders=" + offenders);
+        }
+
+        for (Path path : allowed) {
+            String text = Files.readString(root.resolve(path));
+            assertFalse(text.contains("new RelationshipCandidate") || text.contains("DataLineageCandidate")
+                            || text.contains("StructuredSqlEvent"),
+                    "Regex allowlist file must not create relationship/lineage/structured events: " + path);
         }
     }
 
@@ -293,6 +366,148 @@ class DialectGrammarArchitectureTest {
         Path sqlRunner = root.resolve("core/src/main/java/com/relationdetector/core/parser/SqlRelationParserRunner.java");
         assertFalse(Files.readString(sqlRunner).contains("NamingMatchEvidenceEnhancer"),
                 "Low-level SQL parser runner must not attach NAMING_MATCH outside the scan evidence pool");
+    }
+
+    @Test
+    void namingMatchRulesAreOnlyCalledByNamingEvidenceExtractor() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root.resolve("core/src/main/java"))) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> containsAny(path, List.of("NamingMatchRules.match")))
+                    .map(root::relativize)
+                    .filter(path -> !path.equals(Path.of(
+                            "core/src/main/java/com/relationdetector/core/relation/NamingEvidenceExtractor.java")))
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Only NamingEvidenceExtractor may call naming rules; relationships consume the evidence pool, offenders="
+                            + offenders);
+        }
+    }
+
+    @Test
+    void correctnessExecutorReusesStatementExecutionService() throws IOException {
+        Path root = repoRoot();
+        Path executor = root.resolve("cli/src/test/java/com/relationdetector/cli/CorrectnessFixtureExecutor.java");
+        Path executionEngine = root.resolve("cli/src/test/java/com/relationdetector/cli/FixtureExecutionEngine.java");
+        String executorText = Files.readString(executor);
+        String engineText = Files.readString(executionEngine);
+
+        assertTrue(engineText.contains("StatementExecutionService"),
+                "Correctness execution engine must reuse the production statement execution service");
+        assertTrue(engineText.contains("EvidenceEnhancementService"),
+                "Correctness execution engine must reuse the shared evidence enhancement service for SQL fixtures");
+        assertFalse(executorText.contains("StatementExecutionService"),
+                "CorrectnessFixtureExecutor should stay a coordinator; execution belongs in FixtureExecutionEngine");
+        assertFalse(executorText.contains("EvidenceEnhancementService"),
+                "CorrectnessFixtureExecutor should stay a coordinator; enhancement belongs in FixtureExecutionEngine");
+        String combinedText = executorText + "\n" + engineText;
+        assertFalse(combinedText.contains("new SqlRelationParserRunner"),
+                "Correctness executor must not assemble SQL parser runners directly");
+        assertFalse(combinedText.contains("new DdlRelationParserRunner"),
+                "Correctness executor must not assemble DDL parser runners directly");
+        assertFalse(combinedText.contains("new StructuredDataLineageExtractor"),
+                "Correctness executor must not extract lineage outside StatementExecutionService");
+        assertFalse(combinedText.contains("new NamingMatchEvidenceEnhancer"),
+                "Correctness executor must not attach NAMING_MATCH outside EvidenceEnhancementService");
+        assertFalse(combinedText.contains("new TokenEventRelationExtractor"),
+                "Correctness executor must not bypass StatementExecutionService for common fixtures");
+    }
+
+    @Test
+    void correctnessExecutorIsOnlyFixtureCoordinator() throws IOException {
+        Path root = repoRoot();
+        Path executor = root.resolve("cli/src/test/java/com/relationdetector/cli/CorrectnessFixtureExecutor.java");
+        String text = Files.readString(executor);
+
+        for (String collaborator : List.of("FixtureInputLoader", "FixtureExecutionEngine",
+                "GoldenAssertion")) {
+            assertTrue(text.contains(collaborator),
+                    "CorrectnessFixtureExecutor should delegate to " + collaborator);
+        }
+        assertTrue(Files.exists(root.resolve("cli/src/test/java/com/relationdetector/cli/GoldenWriter.java")),
+                "GoldenWriter should own correctness golden write operations");
+        assertTrue(Files.readString(root.resolve("cli/src/test/java/com/relationdetector/cli/GoldenAssertion.java"))
+                        .contains("GoldenWriter"),
+                "GoldenAssertion should delegate updateCorrectnessGold writes to GoldenWriter");
+        assertFalse(text.contains("Files.readString"),
+                "Fixture input and expected JSON reads belong in FixtureInputLoader");
+        assertFalse(text.contains("Files.writeString"),
+                "Golden writes belong in GoldenWriter");
+        assertFalse(text.contains("new StatementExecutionService"),
+                "Statement execution belongs in FixtureExecutionEngine");
+        assertFalse(text.contains("new EvidenceEnhancementService"),
+                "Evidence enhancement belongs in FixtureExecutionEngine");
+        assertFalse(text.contains("assertEquals"),
+                "Golden comparisons belong in GoldenAssertion");
+    }
+
+    @Test
+    void coreUsesGroupedDatabaseAdaptorCapabilities() throws IOException {
+        Path root = repoRoot();
+        Set<String> oldSpiCalls = Set.of(
+                "adaptor.metadataCollector(",
+                "adaptor.objectDefinitionCollector(",
+                "adaptor.databaseDdlCollector(",
+                "adaptor.sqlLogExtractor(",
+                "adaptor.sqlRelationParser(",
+                "adaptor.structuredSqlParser(",
+                "adaptor.structuredDdlParser(",
+                "adaptor.dataProfiler(",
+                "adaptor.evidenceWeightAdjuster(");
+        try (Stream<Path> stream = Files.walk(root.resolve("core/src/main/java"))) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> containsAny(path, oldSpiCalls.stream().toList()))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Core production code must consume adaptor.collectors()/parsers()/profiling(), offenders="
+                            + offenders);
+        }
+    }
+
+    @Test
+    void fullGrammerTypedSinkDelegatesToFocusedHelpers() throws IOException {
+        Path root = repoRoot();
+        Path sink = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammer/FullGrammerTypedSqlEventSink.java");
+        String text = Files.readString(sink);
+
+        for (String helper : List.of("RowsetScopeSink", "ProjectionEventSink",
+                "PredicateEventSink", "WriteMappingSink", "SourceLocationSupport")) {
+            assertTrue(text.contains(helper),
+                    "FullGrammerTypedSqlEventSink should delegate " + helper + " responsibilities");
+        }
+        assertFalse(text.contains("new StructuredSqlEvent"),
+                "StructuredSqlEvent creation belongs in FullGrammerEventRecorder");
+        assertFalse(text.contains("eventKeys"),
+                "Event de-duplication belongs in FullGrammerEventRecorder");
+    }
+
+    @Test
+    void tokenEventVisitorsUseSharedEventEmitter() throws IOException {
+        Path root = repoRoot();
+        List<Path> visitors = List.of(
+                root.resolve("core/src/main/java/com/relationdetector/core/tokenevent/CommonTokenEventParseTreeVisitor.java"),
+                root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/tokenevent/MySqlTokenEventParseTreeVisitor.java"),
+                root.resolve("adaptor-postgres/src/main/java/com/relationdetector/postgres/tokenevent/PostgresTokenEventParseTreeVisitor.java"),
+                root.resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle/tokenevent/OracleTokenEventParseTreeVisitor.java"),
+                root.resolve("adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/tokenevent/SqlServerTokenEventParseTreeVisitor.java"));
+
+        for (Path visitor : visitors) {
+            String text = Files.readString(visitor);
+            assertTrue(text.contains("TokenEventEventEmitter"),
+                    "Token-event visitors should delegate event/source emission to TokenEventEventEmitter: "
+                            + root.relativize(visitor));
+            assertFalse(text.contains("new StructuredSqlEvent"),
+                    "Token-event visitors should not construct StructuredSqlEvent directly: "
+                            + root.relativize(visitor));
+            assertFalse(text.contains("\"tokenEventNative\""),
+                    "tokenEventNative attribute creation belongs in TokenEventEventEmitter: "
+                            + root.relativize(visitor));
+        }
     }
 
     @Test

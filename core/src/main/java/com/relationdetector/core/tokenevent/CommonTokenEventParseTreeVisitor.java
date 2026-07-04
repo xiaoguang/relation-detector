@@ -2,7 +2,6 @@ package com.relationdetector.core.tokenevent;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -32,6 +31,7 @@ import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
  */
 public final class CommonTokenEventParseTreeVisitor extends CommonRelationSqlBaseVisitor<Void> {
     private final SqlStatementRecord statement;
+    private final TokenEventEventEmitter emitter;
     private final List<StructuredSqlEvent> events = new ArrayList<>();
     private final Set<String> cteNames = new LinkedHashSet<>();
     private final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
@@ -41,6 +41,7 @@ public final class CommonTokenEventParseTreeVisitor extends CommonRelationSqlBas
 
     public CommonTokenEventParseTreeVisitor(SqlStatementRecord statement) {
         this.statement = statement;
+        this.emitter = new TokenEventEventEmitter(statement);
     }
 
     public List<StructuredSqlEvent> collect(CommonRelationSqlParser.ScriptContext root) {
@@ -657,20 +658,11 @@ public final class CommonTokenEventParseTreeVisitor extends CommonRelationSqlBas
     }
 
     private Map<String, Object> attrs() {
-        Map<String, Object> attrs = new LinkedHashMap<>();
-        attrs.put("tokenEventNative", true);
-        return attrs;
+        return emitter.attrs();
     }
 
     private void add(StructuredParseEventType type, ParserRuleContext ctx, Map<String, Object> attrs) {
-        events.add(new StructuredSqlEvent(type, statement.sourceName(), line(ctx), attrs));
-    }
-
-    private long line(ParserRuleContext ctx) {
-        if (ctx == null || ctx.getStart() == null) {
-            return statement.startLine();
-        }
-        return statement.startLine() + Math.max(0, ctx.getStart().getLine() - 1);
+        emitter.add(events, type, ctx, attrs);
     }
 
     private String targetAlias(CommonRelationSqlParser.TablePrimaryContext primary) {
