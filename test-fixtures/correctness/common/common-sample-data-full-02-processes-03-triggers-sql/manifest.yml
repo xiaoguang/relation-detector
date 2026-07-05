@@ -1,5 +1,5 @@
 id: commonsample-data-full-02-processes-03-triggers-sql
-databaseType: MYSQL
+databaseType: COMMON
 parserTarget: SQL
 parserMode: token-event
 structuredParser: common-token-event

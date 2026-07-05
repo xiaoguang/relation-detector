@@ -17,6 +17,7 @@ public final class Enums {
 
     /** Database selected by YAML database.type and used for adaptor matching. */
     public enum DatabaseType {
+        COMMON,
         MYSQL,
         POSTGRESQL,
         SQLSERVER,
@@ -88,6 +89,7 @@ public final class Enums {
         VALUE_CONTAINMENT_HIGH,
         VALUE_OVERLAP_HIGH,
         NEGATIVE_VALUE_MISMATCH,
+        TRANSITIVE_PATH,
         REPEATED_OBSERVATION
     }
 
@@ -100,7 +102,14 @@ public final class Enums {
         NATIVE_LOG,
         PLAIN_SQL,
         DATA_PROFILE,
-        NAMING_HEURISTIC
+        NAMING_HEURISTIC,
+        INFERENCE
+    }
+
+    /** Derived path output family. */
+    public enum DerivedPathKind {
+        RELATIONSHIP,
+        DATA_LINEAGE
     }
 
     /** Source category for a SQL statement entering the parser. */

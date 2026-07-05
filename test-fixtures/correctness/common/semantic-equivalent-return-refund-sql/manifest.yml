@@ -1,5 +1,5 @@
 id: common-semantic-equivalent-return-refund-sql
-databaseType: MYSQL
+databaseType: COMMON
 parserTarget: SQL
 parserMode: token-event
 structuredParser: common-token-event

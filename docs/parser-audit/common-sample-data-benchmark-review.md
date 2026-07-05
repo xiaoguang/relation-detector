@@ -4,15 +4,16 @@
 
 ## 当前统计
 
-common 不是数据库方言 adaptor，不能通过 CLI 的 `databaseType=mysql/postgres/oracle/sqlserver` 扫描自然方言目录。当前统计来自 correctness 中的 portable benchmark fixture：
+common 现在是正式 CLI parser category：配置 `database.type: common` 时由 `CommonDatabaseAdaptor` 接管，使用 common portable typed grammar 跑 file DDL、object files、plain SQL logs、naming evidence、lineage 和 derived path。它不是 MySQL/PostgreSQL/Oracle/SQL Server 的方言 fallback，也不连接 live catalog metadata。当前 correctness 统计仍来自 portable benchmark fixture；sample-data CLI 统计则来自 `sample-data/portable` 的真实 CLI 扫描结果。
 
 | Parser | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics | 来源 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | common-token-event sample-data | 15 | 11 / 4 | 729 | 292 | 419 | 0 | `test-fixtures/correctness/common` |
+| common-token-event sample-data CLI | 13 | 10 / 3 | 317 | 152 | 248 | 0 | `sample-data/portable` via `database.type: common` |
 
 ## 为什么 common 数量看起来高
 
-common 行不是 38 个自然业务 SQL 文件的直接扫描结果，而是高密度 portable benchmark：
+common correctness 行不是 38 个自然业务 SQL 文件的直接扫描结果，而是高密度 portable benchmark。sample-data CLI 行则是 `sample-data/portable` 目录的真实扫描结果，两者统计口径不同：
 
 - SQL 被压缩成跨方言 portable subset，用来集中覆盖 join、CTE、derived table、DML lineage、DDL column inventory。
 - 同一个 fixture 往往承载多个业务语义点，因此单位 fixture 的 relationship / lineage / namingEvidence 密度更高。

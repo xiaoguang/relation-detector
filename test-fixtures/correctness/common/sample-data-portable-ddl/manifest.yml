@@ -1,5 +1,5 @@
 id: common-sample-data-portable-ddl
-databaseType: MYSQL
+databaseType: COMMON
 parserTarget: DDL
 parserMode: token-event
 structuredParser: common-token-event

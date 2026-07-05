@@ -116,6 +116,12 @@ class DialectSqlAssetHygieneTest {
             forbidden("Oracle LISTAGG function", "\\bLISTAGG\\s*\\("),
             forbidden("Oracle CONNECT BY clause", "\\bCONNECT\\s+BY\\b"));
 
+    private static final List<ForbiddenSqlPattern> SQLSERVER_CANONICAL_TABLE_REFERENCES = List.of(
+            forbidden("unqualified [table] reference mixes SQL Server sample-data canonical table identity",
+                    "\\b(?:FROM|JOIN|INTO|UPDATE|REFERENCES)\\s+\\[[^\\]]+\\](?!\\s*\\.)"),
+            forbidden("unqualified DDL [table] reference mixes SQL Server sample-data canonical table identity",
+                    "\\b(?:CREATE\\s+TABLE|ALTER\\s+TABLE|DELETE\\s+FROM)\\s+\\[[^\\]]+\\](?!\\s*\\.)"));
+
     @Test
     void mysqlSqlAssetsDoNotContainPostgresOrOracleDialectResidue() throws IOException {
         assertNoForbiddenDialectResidue("MySQL", List.of(
@@ -148,6 +154,15 @@ class DialectSqlAssetHygieneTest {
         assertNoForbiddenDialectResidue("SQL Server", List.of(
                 repoRoot().resolve("sample-data/sqlserver"),
                 repoRoot().resolve("test-fixtures/correctness/sqlserver")), SQLSERVER_FORBIDDEN);
+    }
+
+    @Test
+    void sqlServerSqlAssetsUseCanonicalSchemaQualifiedTableReferences() throws IOException {
+        assertNoSqlAssetFindings(
+                "SQL Server sample-data/correctness intentionally uses [schema].[table] as the canonical table reference form; unqualified [table] would mix table identity within the same asset set",
+                List.of(
+                repoRoot().resolve("sample-data/sqlserver"),
+                repoRoot().resolve("test-fixtures/correctness/sqlserver")), SQLSERVER_CANONICAL_TABLE_REFERENCES);
     }
 
     @Test
@@ -232,6 +247,35 @@ class DialectSqlAssetHygieneTest {
     }
 
     @Test
+    void sqlServerDeepScenarioIncludesInventoryMrpAndCostFlowProcedures() throws IOException {
+        Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
+        List<String> findings = new ArrayList<>();
+        List<String> requiredProcedures = List.of(
+                "sp_run_mrp_for_plan",
+                "sp_calculate_work_order_actual_cost",
+                "sp_post_finished_goods_receipt",
+                "sp_post_cogs_for_sales_order",
+                "sp_generate_picking_task_for_order",
+                "sp_issue_repair_order_parts");
+
+        try (Stream<Path> versions = Files.list(sampleRoot)) {
+            for (Path versionDir : versions.filter(Files::isDirectory).toList()) {
+                Path deepScenario = versionDir.resolve("02-procedures/13-erp-deep-scenario-procedures.sql");
+                String sql = Files.exists(deepScenario) ? Files.readString(deepScenario) : "";
+                for (String procedure : requiredProcedures) {
+                    if (!Pattern.compile("\\b" + procedure + "\\b", Pattern.CASE_INSENSITIVE).matcher(sql).find()) {
+                        findings.add(versionDir.getFileName() + " missing " + procedure);
+                    }
+                }
+            }
+        }
+
+        assertTrue(findings.isEmpty(),
+                "SQL Server deep scenario sample-data must carry the same inventory/MRP/cost VALUE-flow routines as MySQL/PostgreSQL/Oracle: "
+                        + findings);
+    }
+
+    @Test
     void sqlServerSampleDataDoesNotCarryRelationProbeBenchmarkTemplates() throws IOException {
         Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
         List<String> findings = new ArrayList<>();
@@ -265,14 +309,24 @@ class DialectSqlAssetHygieneTest {
             List<Path> roots,
             List<ForbiddenSqlPattern> forbiddenPatterns
     ) throws IOException {
+        assertNoSqlAssetFindings(
+                dialect + " SQL assets must not contain obvious cross-dialect syntax residue",
+                roots,
+                forbiddenPatterns);
+    }
+
+    private static void assertNoSqlAssetFindings(
+            String message,
+            List<Path> roots,
+            List<ForbiddenSqlPattern> forbiddenPatterns
+    ) throws IOException {
         List<String> findings = new ArrayList<>();
         for (Path root : roots) {
             findings.addAll(forbiddenDialectFindings(root, forbiddenPatterns));
         }
 
         assertTrue(findings.isEmpty(),
-                dialect + " SQL assets must not contain obvious cross-dialect syntax residue. Offenders="
-                        + findings.stream().limit(100).toList());
+                message + ". Offenders=" + findings.stream().limit(100).toList());
     }
 
     private static List<String> forbiddenDialectFindings(

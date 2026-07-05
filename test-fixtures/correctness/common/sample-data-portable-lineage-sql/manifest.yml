@@ -1,5 +1,5 @@
 id: common-sample-data-portable-lineage-sql
-databaseType: MYSQL
+databaseType: COMMON
 parserTarget: SQL
 parserMode: token-event
 structuredParser: common-token-event

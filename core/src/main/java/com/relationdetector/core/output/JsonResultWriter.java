@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.DataLineageEvidence;
+import com.relationdetector.contracts.model.DerivedPathCandidate;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
 import com.relationdetector.contracts.model.NamingEvidenceCandidate;
@@ -67,10 +68,14 @@ public final class JsonResultWriter {
         ObjectNode summary = root.putObject("summary");
         summary.put("relationshipCount", result.relationships().size());
         summary.put("dataLineageCount", result.dataLineages().size());
+        summary.put("derivedRelationshipCount", result.derivedRelationships().size());
+        summary.put("derivedDataLineageCount", result.derivedDataLineages().size());
         summary.put("namingEvidenceCount", namingEvidence.size());
         if (includeObservationCounts) {
             summary.put("relationshipObservationCount", relationshipObservationCount(result.relationships()));
             summary.put("dataLineageObservationCount", dataLineageObservationCount(result.dataLineages()));
+            summary.put("derivedRelationshipObservationCount", derivedPathObservationCount(result.derivedRelationships()));
+            summary.put("derivedDataLineageObservationCount", derivedPathObservationCount(result.derivedDataLineages()));
             summary.put("namingEvidenceObservationCount", namingEvidenceObservationCount(namingEvidence));
         }
         summary.put("warningCount", result.warnings().size());
@@ -84,6 +89,14 @@ public final class JsonResultWriter {
         ArrayNode dataLineages = root.putArray("dataLineages");
         result.dataLineages().forEach(lineage ->
                 dataLineages.add(dataLineageNode(lineage, includeEvidence)));
+
+        ArrayNode derivedRelationships = root.putArray("derivedRelationships");
+        result.derivedRelationships().forEach(candidate ->
+                derivedRelationships.add(derivedPathNode(candidate, includeEvidence)));
+
+        ArrayNode derivedDataLineages = root.putArray("derivedDataLineages");
+        result.derivedDataLineages().forEach(candidate ->
+                derivedDataLineages.add(derivedPathNode(candidate, includeEvidence)));
 
         ArrayNode naming = root.putArray("namingEvidence");
         namingEvidence.forEach(candidate ->
@@ -121,6 +134,14 @@ public final class JsonResultWriter {
     private int namingEvidenceObservationCount(List<NamingEvidenceCandidate> namingEvidence) {
         return namingEvidence.stream()
                 .mapToInt(candidate -> candidate.rawEvidence().size())
+                .sum();
+    }
+
+    private int derivedPathObservationCount(List<DerivedPathCandidate> candidates) {
+        return candidates.stream()
+                .mapToInt(candidate -> candidate.rawEvidence().isEmpty()
+                        ? candidate.evidence().size()
+                        : candidate.rawEvidence().size())
                 .sum();
     }
 
@@ -173,6 +194,25 @@ public final class JsonResultWriter {
         node.set("rawEvidence", includeEvidence
                 ? evidenceNode(naming.rawEvidence())
                 : JSON.createArrayNode());
+        return node;
+    }
+
+    private ObjectNode derivedPathNode(DerivedPathCandidate candidate, boolean includeEvidence) {
+        ObjectNode node = JSON.createObjectNode();
+        node.put("kind", candidate.kind().name());
+        node.set("source", endpointNode(candidate.source()));
+        node.set("target", endpointNode(candidate.target()));
+        node.put("pathLength", candidate.pathLength());
+        node.put("confidence", candidate.confidence().setScale(4, RoundingMode.HALF_UP));
+        ArrayNode path = node.putArray("path");
+        candidate.path().forEach(endpoint -> path.add(endpointNode(endpoint)));
+        node.set("rawEvidence", includeEvidence
+                ? evidenceNode(candidate.rawEvidence().isEmpty() ? candidate.evidence() : candidate.rawEvidence())
+                : JSON.createArrayNode());
+        node.set("evidence", includeEvidence
+                ? evidenceNode(candidate.evidence())
+                : JSON.createArrayNode());
+        node.set("attributes", attributesNode(candidate.attributes()));
         return node;
     }
 

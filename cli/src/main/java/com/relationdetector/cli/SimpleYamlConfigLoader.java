@@ -52,6 +52,7 @@ public final class SimpleYamlConfigLoader {
         readSources(config, root.path("sources"));
         readFilters(config, root.path("filters"));
         readOutput(config, root.path("output"));
+        readDerivedPaths(config, root.path("derivedPaths"));
         readParser(config, root.path("parser"));
 
         expandConfiguredPaths(config);
@@ -129,6 +130,20 @@ public final class SimpleYamlConfigLoader {
         setBooleanIfPresent(output, "includeEvidence", value -> config.includeEvidence = value);
         setBooleanIfPresent(output, "includeWarnings", value -> config.includeWarnings = value);
         setBooleanIfPresent(output, "includeObservationCounts", value -> config.includeObservationCounts = value);
+    }
+
+    private void readDerivedPaths(ScanConfig config, JsonNode derivedPaths) {
+        setBooleanIfPresent(derivedPaths, "enabled", value -> config.derivedPathsEnabled = value);
+        setBooleanIfPresent(derivedPaths, "relationships", value -> config.derivedRelationshipsEnabled = value);
+        setBooleanIfPresent(derivedPaths, "dataLineage", value -> config.derivedDataLineageEnabled = value);
+        setBooleanIfPresent(derivedPaths, "namingEvidence", value -> config.derivedNamingEvidenceEnabled = value);
+        setBooleanIfPresent(derivedPaths, "includeNamingEdgesInRelationshipPaths",
+                value -> config.derivedIncludeNamingEdgesInRelationshipPaths = value);
+        setIntIfPresent(derivedPaths, "maxPathLength", value -> config.derivedMaxPathLength = value);
+        setIntIfPresent(derivedPaths, "maxPathsPerPair", value -> config.derivedMaxPathsPerPair = value);
+        setIntIfPresent(derivedPaths, "maxFacts", value -> config.derivedMaxFacts = value);
+        setDoubleIfPresent(derivedPaths, "confidenceDecay", value -> config.derivedConfidenceDecay = value);
+        setDoubleIfPresent(derivedPaths, "minConfidence", value -> config.derivedMinConfidence = value);
     }
 
     private void readParser(ScanConfig config, JsonNode parser) {
@@ -286,6 +301,14 @@ public final class SimpleYamlConfigLoader {
         if (config.offlineSampleCompleteness == null) {
             throw new IllegalArgumentException("dataProfile offlineSampleCompleteness is required");
         }
+        if (config.derivedMaxPathLength <= 0) {
+            throw new IllegalArgumentException("derivedPaths maxPathLength must be positive");
+        }
+        if (config.derivedMaxPathsPerPair < 0 || config.derivedMaxFacts < 0) {
+            throw new IllegalArgumentException("derivedPaths maxPathsPerPair and maxFacts must be non-negative");
+        }
+        validateRatio(config.derivedConfidenceDecay, "derivedPaths confidenceDecay");
+        validateRatio(config.derivedMinConfidence, "derivedPaths minConfidence");
         config.parserMode = normalizeParserMode(config.parserMode);
     }
 

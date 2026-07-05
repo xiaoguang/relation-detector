@@ -93,6 +93,18 @@ output:
   includeEvidence: true
   includeWarnings: true
   includeObservationCounts: true
+
+derivedPaths:
+  enabled: false
+  relationships: true
+  dataLineage: true
+  namingEvidence: true
+  includeNamingEdgesInRelationshipPaths: true
+  maxPathLength: 5
+  maxPathsPerPair: 0
+  maxFacts: 0
+  confidenceDecay: 0.75
+  minConfidence: 0.10
 ```
 
 配置校验：
@@ -110,6 +122,7 @@ output:
 - `sources.logs.filterSystemQueries` 默认 `true`。开启时，native log 中仅访问系统 catalog/schema 的 metadata 查询会被跳过，不记录 parse warning。
 - `sources.logs.systemSchemas` 可覆盖当前数据库类型的默认系统 schema。MySQL 默认 `information_schema/performance_schema/mysql/sys`；PostgreSQL 默认 `pg_catalog/information_schema/pg_toast`。
 - `sources.logs.metadataQueryMarkers` 可配置日志文本标记，例如 `ApplicationName=DBeaver`、`DatabaseMetaData`，用于跳过工具或 JDBC metadata 查询。
+- `derivedPaths.enabled` 默认 `false`。开启后输出传递推导视图：`derivedRelationships`、`derivedDataLineages`，并可向 top-level `namingEvidence` 增加 `TRANSITIVE_NAMING_PATH`。`maxPathLength` 默认 `5`；`maxPathsPerPair=0` 和 `maxFacts=0` 表示不限制。
 - 启用 JDBC source 时 jdbcUrl、username、password 必须可解析。
 - `sampleRows`、`timeoutSeconds` 必须为正数。
 
@@ -136,13 +149,15 @@ output:
   },
   "relationships": [],
   "dataLineages": [],
+  "derivedRelationships": [],
+  "derivedDataLineages": [],
   "namingEvidence": [],
   "warnings": []
 }
 ```
 
 `relationshipObservationCount`、`dataLineageObservationCount`、`namingEvidenceObservationCount`
-是调试字段，只统计 merged fact 背后的 raw evidence observation 数量，用来解释“一个最终关系/血缘/命名证据由多少次原始出现合并而来”。它们不代表新的业务事实，不参与 confidence 计算；可通过 `output.includeObservationCounts: false` 关闭。
+以及 derived path 对应的 observation count 是调试字段，只统计 merged fact 背后的 raw evidence observation 数量，用来解释“一个最终关系/血缘/命名证据/推导路径由多少次原始出现合并而来”。它们不代表新的业务事实，不参与 confidence 计算；可通过 `output.includeObservationCounts: false` 关闭。
 
 关系：
 

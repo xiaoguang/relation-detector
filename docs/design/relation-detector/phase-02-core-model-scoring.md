@@ -253,6 +253,7 @@ public record Evidence(
 - `VALUE_CONTAINMENT_HIGH`
 - `VALUE_OVERLAP_HIGH`
 - `NEGATIVE_VALUE_MISMATCH`
+- `TRANSITIVE_PATH`
 - `REPEATED_OBSERVATION`
 
 当前实现状态：
@@ -276,6 +277,7 @@ public record Evidence(
 | `VALUE_CONTAINMENT_HIGH` | 已产出（live DB opt-in） | MySQL/PostgreSQL/Oracle/SQL Server live profiler 在 `dataProfile.enabled=true` 且候选、权限、样本和阈值 gate 满足时产出；correctness fixture 默认不依赖 live DB。 |
 | `VALUE_OVERLAP_HIGH` | 已产出（live DB opt-in） | 同一 live profiler 在包含率未达强条件但 overlap 达阈值时产出；只输出统计量，不输出业务值。 |
 | `NEGATIVE_VALUE_MISMATCH` | 已产出（live DB opt-in） | 负向 evidence 只在 live sample 非 partial、distinct/row 数和 missing ratio gate 满足时产出；降低 confidence，不删除显式关系。 |
+| `TRANSITIVE_PATH` | 已产出（opt-in derived path） | `derivedPaths.enabled=true` 时由 `DerivedPathInferenceService` 从已定向关系、`VALUE` lineage 或 namingEvidence 图推导；默认关闭，不修改直接 relationship / lineage。 |
 | `REPEATED_OBSERVATION` | 已派生产出 | 只能由 `RelationshipMerger` 在同组可重复观测 evidence 的 `count > 1` 时生成，不由 parser、metadata collector 或 profiler 直接产出。 |
 
 兼容 evidence 与当前替代关系：
@@ -851,6 +853,8 @@ confidence = 1 - (1 - 0.55) * (1 - 0.18) * (1 - 0.20)
 - `evidence`：归并后的摘要证据，包含计数、样本 detail 和用于评分的 evidence item。
 - top-level `namingEvidence`：完整命名证据池，包含稳定 `id`、grouped `evidence` 和 `rawEvidence`。
 - relationship 中的 `NAMING_MATCH` evidence：只保存 `evidenceRef` 和方向摘要，不重复完整 raw observations。
+- `derivedRelationships` / `derivedDataLineages`：开启 `derivedPaths` 后的推导视图，必须保存完整 path、`TRANSITIVE_PATH` grouped evidence 和 raw observations；它们不是直接物理事实。
+- derived `namingEvidence`：使用 `rule=TRANSITIVE_NAMING_PATH`，仍然在 top-level `namingEvidence` 池中输出，并带 `derived=true`、`path`、`pathEvidenceRefs`。
 - 每个 evidence 的 type。
 - 每个 evidence 的 score。
 - evidence 来源，例如 `metadata`、`ddl-file`、`mysql-slow-log`。

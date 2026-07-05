@@ -1,5 +1,5 @@
 id: common-sql-common-tuple-in
-databaseType: MYSQL
+databaseType: COMMON
 parserTarget: SQL
 parserMode: token-event
 structuredParser: common-token-event

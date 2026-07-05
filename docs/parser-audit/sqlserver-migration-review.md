@@ -108,7 +108,7 @@ Cross-dialect sample-data comparison:
 
 | Parser category | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 15 | 11 / 4 | 729 | 292 | 419 | 0 |
+| common token-event sample-data | 13 | 10 / 3 | 317 | 152 | 248 | 0 |
 | MySQL token-event root sample-data | 38 | 32 / 6 | 349 | 240 | 238 | 0 |
 | MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 346 | 265 | 243 | 0 |
 | MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 397 | 254 | 245 | 0 |
@@ -121,12 +121,12 @@ Cross-dialect sample-data comparison:
 | Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
 | Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
 | Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 498 | 250 | 380 | 0 |
-| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
-| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
-| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
-| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
-| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 335 | 287 | 246 | 0 |
+| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
+| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
+| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
+| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
+| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
 
 The earlier low-count SQL Server surface was a sample-data asset gap: the directories had 38 files but only a thin subset of the ERP semantics. The current SQL Server sample-data now carries full schema, FK, procedure, trigger, natural query, data-generation and analytic coverage. Remaining cross-dialect count differences are parser coverage and dialect expression differences, not missing SQL Server ERP sample-data coverage.
 

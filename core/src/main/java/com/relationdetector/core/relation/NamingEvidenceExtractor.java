@@ -61,7 +61,7 @@ public final class NamingEvidenceExtractor {
             if (table.isBlank() || column.isBlank()) {
                 continue;
             }
-            endpoints.add(Endpoint.column(ColumnRef.of(TableId.of(null, table), column)));
+            endpoints.add(Endpoint.column(ColumnRef.of(tableId(table), column)));
             if (event.sourceName() != null && !event.sourceName().isBlank()) {
                 source = event.sourceName();
             }
@@ -130,6 +130,63 @@ public final class NamingEvidenceExtractor {
         return result;
     }
 
+    private TableId tableId(String raw) {
+        List<String> parts = identifierParts(raw);
+        if (parts.isEmpty()) {
+            return TableId.of(null, clean(raw));
+        }
+        String table = parts.get(parts.size() - 1);
+        String schema = parts.size() > 1 ? parts.get(parts.size() - 2) : null;
+        return TableId.of(schema, table);
+    }
+
+    private List<String> identifierParts(String identifier) {
+        List<String> parts = new ArrayList<>();
+        if (identifier == null || identifier.isBlank()) {
+            return parts;
+        }
+        StringBuilder current = new StringBuilder();
+        char quote = 0;
+        int bracketDepth = 0;
+        for (int i = 0; i < identifier.length(); i++) {
+            char c = identifier.charAt(i);
+            if (quote == 0 && bracketDepth == 0 && (c == '"' || c == '`')) {
+                quote = c;
+                current.append(c);
+                continue;
+            }
+            if (quote != 0 && c == quote) {
+                quote = 0;
+                current.append(c);
+                continue;
+            }
+            if (quote == 0 && c == '[') {
+                bracketDepth++;
+                current.append(c);
+                continue;
+            }
+            if (quote == 0 && c == ']' && bracketDepth > 0) {
+                bracketDepth--;
+                current.append(c);
+                continue;
+            }
+            if (c == '.' && quote == 0 && bracketDepth == 0) {
+                String part = clean(current.toString());
+                if (!part.isBlank()) {
+                    parts.add(part);
+                }
+                current.setLength(0);
+                continue;
+            }
+            current.append(c);
+        }
+        String part = clean(current.toString());
+        if (!part.isBlank()) {
+            parts.add(part);
+        }
+        return parts;
+    }
+
     private NamingEvidenceCandidate candidate(NamingMatchRules.Match match, String source, String detail) {
         return new NamingEvidenceCandidate(match.source(), match.target(), evidenceFor(match, source, detail),
                 match.rule(), true);
@@ -181,5 +238,18 @@ public final class NamingEvidenceExtractor {
     private String text(Map<String, Object> attributes, String key) {
         Object value = attributes.get(key);
         return value == null ? "" : String.valueOf(value);
+    }
+
+    private String clean(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String text = raw.trim();
+        while ((text.startsWith("[") && text.endsWith("]"))
+                || (text.startsWith("\"") && text.endsWith("\""))
+                || (text.startsWith("`") && text.endsWith("`"))) {
+            text = text.substring(1, text.length() - 1).trim();
+        }
+        return text;
     }
 }

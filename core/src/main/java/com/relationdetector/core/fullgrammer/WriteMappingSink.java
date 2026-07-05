@@ -62,21 +62,41 @@ final class WriteMappingSink {
             return;
         }
         FullGrammerExpressionAnalysis analysis = expressionAnalyzer.analyze(expression);
+        var caseAnalyses = expressionAnalyzer.caseWriteAnalyses(expression, rowsets.defaultProjectionQualifier());
+        if (!caseAnalyses.isEmpty()) {
+            for (FullGrammerExpressionAnalysis caseAnalysis : caseAnalyses) {
+                addMappingEvent(ctx, type, mappingKind, targetAlias, targetTable, cleanColumn, caseAnalysis);
+                projectionEvents.expressionSource(ctx, caseAnalysis);
+            }
+            return;
+        }
         if (isNestedCaseWhen(expression, analysis)) {
             addNestedCaseWhenMappings(ctx, type, mappingKind, targetAlias, targetTable, cleanColumn, expression);
         } else {
-            Map<String, Object> attributes = source.nativeAttributes();
-            attributes.put("mappingKind", mappingKind);
-            attributes.put("targetAlias", source.clean(targetAlias));
-            attributes.put("targetTable", source.clean(targetTable));
-            attributes.put("targetColumn", cleanColumn);
-            attributes.put("sourceAliases", analysis.sourceAliases());
-            attributes.put("sourceColumns", analysis.sourceColumns());
-            attributes.put("transformType", analysis.transformType());
-            attributes.put("flowKind", analysis.flowKind());
-            recorder.add(ctx, type, attributes);
+            addMappingEvent(ctx, type, mappingKind, targetAlias, targetTable, cleanColumn, analysis);
         }
         projectionEvents.expressionSource(ctx, analysis);
+    }
+
+    private void addMappingEvent(
+            ParserRuleContext ctx,
+            StructuredParseEventType type,
+            String mappingKind,
+            String targetAlias,
+            String targetTable,
+            String targetColumn,
+            FullGrammerExpressionAnalysis analysis
+    ) {
+        Map<String, Object> attributes = source.nativeAttributes();
+        attributes.put("mappingKind", mappingKind);
+        attributes.put("targetAlias", source.clean(targetAlias));
+        attributes.put("targetTable", source.clean(targetTable));
+        attributes.put("targetColumn", targetColumn);
+        attributes.put("sourceAliases", analysis.sourceAliases());
+        attributes.put("sourceColumns", analysis.sourceColumns());
+        attributes.put("transformType", analysis.transformType());
+        attributes.put("flowKind", analysis.flowKind());
+        recorder.add(ctx, type, attributes);
     }
 
     private boolean isNestedCaseWhen(ParseTree expression, FullGrammerExpressionAnalysis analysis) {

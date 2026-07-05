@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.DataLineageEvidence;
+import com.relationdetector.contracts.model.DerivedPathCandidate;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.Evidence;
@@ -30,6 +31,7 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
+import com.relationdetector.contracts.Enums.DerivedPathKind;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.RelationSubType;
@@ -276,6 +278,67 @@ class JsonResultWriterEvidenceOutputTest {
                 "Debug naming observation count should be configurable");
         assertTrue(summary.path("relationshipCount").asInt() == 1,
                 "Stable fact counts should remain available when debug counts are disabled");
+    }
+
+    @Test
+    void writesDerivedPathFactsWithRawAndGroupedEvidence() {
+        ScanResult result = new ScanResult("mysql", "public");
+        Endpoint a = Endpoint.column(ColumnRef.of(TableId.of(null, "a"), "r"));
+        Endpoint b = Endpoint.column(ColumnRef.of(TableId.of(null, "b"), "s"));
+        Endpoint c = Endpoint.column(ColumnRef.of(TableId.of(null, "c"), "t"));
+        DerivedPathCandidate relationship = new DerivedPathCandidate(
+                DerivedPathKind.RELATIONSHIP,
+                a,
+                c,
+                List.of(a, b, c));
+        relationship.confidence(BigDecimal.valueOf(0.45d));
+        relationship.evidence().add(new Evidence(EvidenceType.TRANSITIVE_PATH,
+                BigDecimal.valueOf(0.45d),
+                EvidenceSourceType.INFERENCE,
+                "derived-path",
+                "a.r -> b.s -> c.t",
+                Map.of("pathLength", 2)));
+        relationship.rawEvidence().add(new Evidence(EvidenceType.TRANSITIVE_PATH,
+                BigDecimal.valueOf(0.45d),
+                EvidenceSourceType.INFERENCE,
+                "derived-path",
+                "raw path a.r -> b.s -> c.t",
+                Map.of("pathLength", 2)));
+        result.derivedRelationships().add(relationship);
+
+        DerivedPathCandidate lineage = new DerivedPathCandidate(
+                DerivedPathKind.DATA_LINEAGE,
+                a,
+                c,
+                List.of(a, b, c));
+        lineage.confidence(BigDecimal.valueOf(0.44d));
+        lineage.evidence().add(new Evidence(EvidenceType.TRANSITIVE_PATH,
+                BigDecimal.valueOf(0.44d),
+                EvidenceSourceType.INFERENCE,
+                "derived-path",
+                "lineage a.r -> b.s -> c.t",
+                Map.of("pathLength", 2)));
+        lineage.rawEvidence().addAll(lineage.evidence());
+        result.derivedDataLineages().add(lineage);
+
+        String json = new JsonResultWriter().write(result, true, true);
+        JsonNode root = readTree(json);
+
+        assertTrue(root.path("summary").path("derivedRelationshipCount").asInt() == 1,
+                "Summary should count derived relationships");
+        assertTrue(root.path("summary").path("derivedDataLineageCount").asInt() == 1,
+                "Summary should count derived lineage facts");
+        assertTrue(root.path("summary").path("derivedRelationshipObservationCount").asInt() == 1,
+                "Debug summary should count derived relationship observations");
+        JsonNode derivedRelationship = root.path("derivedRelationships").get(0);
+        assertTrue("RELATIONSHIP".equals(derivedRelationship.path("kind").asText()),
+                "Derived relationship kind should be serialized");
+        assertTrue(derivedRelationship.path("path").size() == 3,
+                "Derived path should expose every endpoint in order");
+        assertTrue("TRANSITIVE_PATH".equals(derivedRelationship.path("evidence").get(0).path("type").asText()),
+                "Derived evidence should explain transitive inference");
+        assertTrue(root.path("derivedDataLineages").get(0).path("rawEvidence").size() == 1,
+                "Derived lineage should expose raw evidence separately");
     }
 
     private RelationshipCandidate sqlLogJoin(String detail) {

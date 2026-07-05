@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
@@ -141,6 +142,76 @@ class SqlServerTokenEventParserTest {
                         + ", events=" + result.events());
     }
 
+    @Test
+    void tokenEventParserExtractsBusinessFieldChainFromSqlServerSampleData() {
+        Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
+        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
+                .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
+
+        assertBusinessLineage(statements, "sqlserver.sp_post_sales_cashier_journals_business",
+                "customers", "name", "cashier_journals", "counterparty");
+        assertBusinessLineage(statements, "sqlserver.sp_post_reconciliation_items_business",
+                "cashier_journals", "counterparty", "reconciliation_items", "description");
+    }
+
+    @Test
+    void tokenEventParserEntersParameterizedProcedureBodyForInsertSelectLineage() {
+        Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
+        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
+                .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
+
+        assertBusinessLineage(statements, "sqlserver.sp_post_finished_goods_receipt",
+                "finished_goods_receipts", "product_id", "inventory_cost_layers", "product_id");
+        assertBusinessLineage(statements, "sqlserver.sp_post_finished_goods_receipt",
+                "finished_goods_receipts", "received_qty", "inventory_cost_layers", "remaining_qty");
+    }
+
+    @Test
+    void tokenEventParserEntersParameterizedProcedureBodyForMergeSourceProjectionLineage() {
+        Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
+        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
+                .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
+
+        assertBusinessLineage(statements, "sqlserver.sp_calculate_work_order_actual_cost",
+                "material_issue_items", "issued_qty", "work_order_costs", "material_cost");
+        assertBusinessLineage(statements, "sqlserver.sp_calculate_work_order_actual_cost",
+                "operation_reports", "labor_minutes", "work_order_costs", "labor_cost");
+    }
+
+    @Test
+    void tokenEventParserClassifiesConcatAsConcatFormatLineage() {
+        Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
+        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
+                .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
+
+        assertBusinessLineage(statements, "sqlserver.sp_generate_picking_task_for_order",
+                "sales_orders", "order_no", "picking_tasks", "task_no", LineageTransformType.CONCAT_FORMAT);
+    }
+
+    @Test
+    void tokenEventParserEmitsControlLineageForCaseConditions() {
+        Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
+        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
+                .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
+
+        assertBusinessLineage(statements, "sqlserver.sp_post_reconciliation_items_business",
+                "cashier_journals", "journal_type", "reconciliation_items", "debit_amount", LineageFlowKind.CONTROL);
+        assertBusinessLineage(statements, "sqlserver.sp_post_reconciliation_items_business",
+                "cashier_journals", "journal_type", "reconciliation_items", "credit_amount", LineageFlowKind.CONTROL);
+    }
+
+    @Test
+    void tokenEventParserHandlesUnaryMinusExpressionSources() {
+        Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
+        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
+                .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
+
+        assertBusinessLineage(statements, "sqlserver.sp_issue_repair_order_parts",
+                "repair_order_parts", "quantity", "inventory_transactions", "quantity_change", LineageTransformType.ARITHMETIC);
+        assertBusinessLineage(statements, "sqlserver.sp_issue_repair_order_parts",
+                "repair_order_parts", "quantity", "inventory_transactions", "after_qty", LineageTransformType.ARITHMETIC);
+    }
+
     private boolean isExpectedInSubquery(StructuredSqlEvent event) {
         return event.type() == StructuredParseEventType.IN_SUBQUERY_PREDICATE
                 && "o".equals(event.attributes().get("outerAlias"))
@@ -156,6 +227,96 @@ class SqlServerTokenEventParserTest {
                 "departments".equals(source.table().tableName()) && "id".equals(source.column().columnName()))
                 && "departments".equals(lineage.target().table().tableName())
                 && "parent_id".equals(lineage.target().column().columnName());
+    }
+
+    private void assertBusinessLineage(
+            List<SqlStatementRecord> statements,
+            String sourceName,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn
+    ) {
+        SqlStatementRecord statement = statements.stream()
+                .filter(record -> record.sourceName().equals(sourceName))
+                .findFirst()
+                .orElseThrow();
+        StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        var lineages = new StructuredDataLineageExtractor().extract(
+                statement,
+                result,
+                Set.of(TableId.of("dbo", sourceTable), TableId.of("dbo", targetTable)));
+
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.sources().stream().anyMatch(source ->
+                                sourceTable.equals(source.table().tableName())
+                                        && sourceColumn.equals(source.column().columnName()))
+                                && targetTable.equals(lineage.target().table().tableName())
+                                && targetColumn.equals(lineage.target().column().columnName())),
+                () -> "Expected " + sourceTable + "." + sourceColumn + " -> "
+                        + targetTable + "." + targetColumn + ", lineages=" + lineages
+                        + ", events=" + result.events());
+    }
+
+    private void assertBusinessLineage(
+            List<SqlStatementRecord> statements,
+            String sourceName,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn,
+            LineageTransformType transformType
+    ) {
+        assertBusinessLineage(statements, sourceName, sourceTable, sourceColumn, targetTable, targetColumn,
+                null, transformType);
+    }
+
+    private void assertBusinessLineage(
+            List<SqlStatementRecord> statements,
+            String sourceName,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn,
+            LineageFlowKind flowKind
+    ) {
+        assertBusinessLineage(statements, sourceName, sourceTable, sourceColumn, targetTable, targetColumn,
+                flowKind, null);
+    }
+
+    private void assertBusinessLineage(
+            List<SqlStatementRecord> statements,
+            String sourceName,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn,
+            LineageFlowKind flowKind,
+            LineageTransformType transformType
+    ) {
+        SqlStatementRecord statement = statements.stream()
+                .filter(record -> record.sourceName().equals(sourceName))
+                .findFirst()
+                .orElseThrow();
+        StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        var lineages = new StructuredDataLineageExtractor().extract(
+                statement,
+                result,
+                Set.of(TableId.of("dbo", sourceTable), TableId.of("dbo", targetTable)));
+
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        (flowKind == null || lineage.flowKind() == flowKind)
+                                && (transformType == null || lineage.transformType() == transformType)
+                                && lineage.sources().stream().anyMatch(source ->
+                                sourceTable.equals(source.table().tableName())
+                                        && sourceColumn.equals(source.column().columnName()))
+                                && targetTable.equals(lineage.target().table().tableName())
+                                && targetColumn.equals(lineage.target().column().columnName())),
+                () -> "Expected " + sourceTable + "." + sourceColumn + " -> "
+                        + targetTable + "." + targetColumn
+                        + (flowKind == null ? "" : " flow=" + flowKind)
+                        + (transformType == null ? "" : " transform=" + transformType)
+                        + ", lineages=" + lineages + ", events=" + result.events());
     }
 
     private String readFixture(Path file) {

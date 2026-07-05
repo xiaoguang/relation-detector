@@ -1,5 +1,6 @@
 package com.relationdetector.core.fullgrammer;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -85,6 +86,138 @@ public abstract class FullGrammerExpressionAnalyzer {
         java.util.ArrayList<FullGrammerExpressionAnalysis> analyses = new java.util.ArrayList<>();
         collectCaseExpressionAnalyses(expression, defaultQualifier, analyses);
         return analyses;
+    }
+
+    public List<FullGrammerExpressionAnalysis> caseWriteAnalyses(ParseTree expression, String defaultQualifier) {
+        ParseTree caseNode = singleCaseContext(expression);
+        if (!isCaseContext(caseNode)) {
+            return List.of();
+        }
+        List<ParseTree> controlExpressions = new ArrayList<>();
+        List<ParseTree> valueExpressions = new ArrayList<>();
+        boolean elseValue = false;
+        boolean sawSwitchSection = false;
+        for (int index = 0; index < caseNode.getChildCount(); index++) {
+            ParseTree child = caseNode.getChild(index);
+            String terminal = terminalText(child);
+            if ("CASE".equals(terminal) || "END".equals(terminal)) {
+                continue;
+            }
+            if ("ELSE".equals(terminal)) {
+                elseValue = true;
+                continue;
+            }
+            if (elseValue) {
+                valueExpressions.add(child);
+                continue;
+            }
+            if (isSwitchSectionContext(child)) {
+                sawSwitchSection = true;
+                collectSwitchSectionExpressions(child, controlExpressions, valueExpressions);
+                continue;
+            }
+            if (!sawSwitchSection && !(child instanceof TerminalNode)) {
+                controlExpressions.add(child);
+            }
+        }
+        List<FullGrammerExpressionAnalysis> result = new ArrayList<>();
+        FullGrammerExpressionAnalysis value = caseAnalysis(valueExpressions, defaultQualifier, "VALUE");
+        if (value.hasSources()) {
+            result.add(value);
+        }
+        FullGrammerExpressionAnalysis control = caseAnalysis(controlExpressions, defaultQualifier, "CONTROL");
+        if (control.hasSources()) {
+            result.add(control);
+        }
+        return result;
+    }
+
+    private ParseTree singleCaseContext(ParseTree expression) {
+        ParseTree unwrapped = unwrapSingleChildContexts(expression);
+        if (isCaseContext(unwrapped)) {
+            return unwrapped;
+        }
+        List<ParseTree> caseContexts = new ArrayList<>();
+        collectCaseContexts(expression, caseContexts);
+        return caseContexts.size() == 1 ? caseContexts.get(0) : null;
+    }
+
+    private void collectCaseContexts(ParseTree tree, List<ParseTree> result) {
+        if (tree == null) {
+            return;
+        }
+        if (isCaseContext(tree)) {
+            result.add(tree);
+            return;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            collectCaseContexts(tree.getChild(index), result);
+        }
+    }
+
+    private void collectSwitchSectionExpressions(
+            ParseTree section,
+            List<ParseTree> controlExpressions,
+            List<ParseTree> valueExpressions
+    ) {
+        boolean thenValue = false;
+        for (int index = 0; index < section.getChildCount(); index++) {
+            ParseTree child = section.getChild(index);
+            String terminal = terminalText(child);
+            if ("WHEN".equals(terminal)) {
+                continue;
+            }
+            if ("THEN".equals(terminal)) {
+                thenValue = true;
+                continue;
+            }
+            if (child instanceof TerminalNode) {
+                continue;
+            }
+            if (thenValue) {
+                valueExpressions.add(child);
+            } else {
+                controlExpressions.add(child);
+            }
+        }
+    }
+
+    private FullGrammerExpressionAnalysis caseAnalysis(
+            List<ParseTree> expressions,
+            String defaultQualifier,
+            String flowKind
+    ) {
+        List<String> aliases = new ArrayList<>();
+        List<String> columns = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (ParseTree expression : expressions) {
+            FullGrammerExpressionAnalysis analysis = analyze(expression, defaultQualifier);
+            for (int index = 0; index < Math.min(analysis.sourceAliases().size(), analysis.sourceColumns().size()); index++) {
+                String alias = analysis.sourceAliases().get(index);
+                String column = analysis.sourceColumns().get(index);
+                String key = alias + "\u0000" + column;
+                if (seen.add(key)) {
+                    aliases.add(alias);
+                    columns.add(column);
+                }
+            }
+        }
+        return new FullGrammerExpressionAnalysis(aliases, columns, "CASE_WHEN", flowKind);
+    }
+
+    private boolean isSwitchSectionContext(ParseTree tree) {
+        if (tree == null) {
+            return false;
+        }
+        String contextName = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+        return contextName.contains("switch") && contextName.contains("section");
+    }
+
+    private String terminalText(ParseTree tree) {
+        if (tree instanceof TerminalNode terminal) {
+            return terminal.getText().toUpperCase(Locale.ROOT);
+        }
+        return "";
     }
 
     private void collectCaseExpressionAnalyses(

@@ -136,6 +136,8 @@ search_condition
 predicate
     : EXISTS LPAREN subquery RPAREN
     | expression IN LPAREN subquery RPAREN
+    | expression IN LPAREN expression_list_ RPAREN
+    | expression BETWEEN expression AND expression
     | expression comparison_operator expression
     | expression IS NOT? NULL
     | expression
@@ -197,7 +199,15 @@ delete_statement
     ;
 
 create_or_alter_procedure
-    : CREATE OR ALTER PROCEDURE full_table_name AS BEGIN statement* END
+    : CREATE OR ALTER PROCEDURE full_table_name procedure_parameter_list? AS BEGIN statement* END
+    ;
+
+procedure_parameter_list
+    : procedure_parameter (COMMA procedure_parameter)*
+    ;
+
+procedure_parameter
+    : LOCAL_ID data_type (EQ expression)? id_*
     ;
 
 create_or_alter_function
@@ -304,7 +314,8 @@ expression
     ;
 
 expression_atom
-    : function_call
+    : (PLUS | MINUS) expression_atom
+    | function_call
     | full_column_name
     | case_expression
     | CAST LPAREN expression AS data_type RPAREN
@@ -347,7 +358,7 @@ binary_operator
 
 loose_token
     : SELECT | WITH | AS | FROM | WHERE | JOIN | INNER | LEFT | RIGHT | FULL | OUTER | CROSS | APPLY
-    | ON | AND | OR | NOT | EXISTS | IN | GROUP | BY | HAVING | ORDER | ASC | DESC | TOP | FETCH
+    | ON | AND | OR | NOT | EXISTS | IN | BETWEEN | GROUP | BY | HAVING | ORDER | ASC | DESC | TOP | FETCH
     | FIRST | NEXT | ROWS | ONLY | INSERT | INTO | VALUES | UPDATE | SET | DELETE | MERGE | USING
     | WHEN | MATCHED | THEN | CREATE | ALTER | PROCEDURE | FUNCTION | RETURNS | RETURN | TRIGGER | AFTER | BEGIN | TABLE | INDEX | UNIQUE | CLUSTERED | NONCLUSTERED
     | CONSTRAINT | FOREIGN | KEY | REFERENCES | PRIMARY | NULL | IDENTITY | DEFAULT | CASE | WHEN
@@ -382,6 +393,7 @@ OR: 'OR';
 NOT: 'NOT';
 EXISTS: 'EXISTS';
 IN: 'IN';
+BETWEEN: 'BETWEEN';
 GROUP: 'GROUP';
 BY: 'BY';
 HAVING: 'HAVING';
@@ -447,7 +459,7 @@ LOCAL_ID: '@' [A-Z_#] [A-Z_0-9#$@]*;
 TEMP_ID: '#' [A-Z_#] [A-Z_0-9#$@]*;
 ID: [A-Z_] [A-Z_0-9@$#]*;
 DECIMAL_LITERAL: [0-9]+ ('.' [0-9]+)?;
-STRING: '\'' ( '\'\'' | ~'\'' )* '\'';
+STRING: 'N'? '\'' ( '\'\'' | ~'\'' )* '\'';
 
 SEMI: ';';
 COMMA: ',';

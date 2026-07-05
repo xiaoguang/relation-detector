@@ -1,5 +1,5 @@
 id: commonsample-data-full-01-schema-01-tables-ddl
-databaseType: MYSQL
+databaseType: COMMON
 parserTarget: DDL
 parserMode: token-event
 structuredParser: common-token-event

@@ -1,0 +1,5 @@
+{
+  "fingerprints": [
+    "naming:public.orders.user_id->public.users.id:TABLE_ID:NAMING_MATCH"
+  ]
+}

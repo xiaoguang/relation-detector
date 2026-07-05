@@ -18,6 +18,7 @@
 
 ```java
 public enum DatabaseType {
+  COMMON,
   MYSQL,
   POSTGRESQL,
   SQLSERVER,
@@ -27,6 +28,7 @@ public enum DatabaseType {
 
 | 值 | 含义 | v1 状态 | 示例配置 |
 | --- | --- | --- | --- |
+| `COMMON` | 跨方言 portable SQL parser category。只使用 common token-event typed grammar，不连接具体数据库 catalog。 | 正式 CLI category / portable sample-data 可运行 | `type: common` |
 | `MYSQL` | MySQL 数据库。覆盖 MySQL 5.7/8.0+。 | 完整实现 | `type: mysql` |
 | `POSTGRESQL` | PostgreSQL 数据库。覆盖 PostgreSQL 12+。 | 完整实现 | `type: postgresql` |
 | `SQLSERVER` | Microsoft SQL Server。 | sample-data parser golden 已接入 | `type: sqlserver` |
@@ -35,6 +37,7 @@ public enum DatabaseType {
 维护说明：
 
 - 配置中可以允许小写别名，例如 `mysql`，但内部统一转成 `MYSQL`。
+- `COMMON` 是 portable parser category，不是某个方言的 fallback facade。CLI 配置 `database.type: common` 时由 core 的 `CommonDatabaseAdaptor` 接管，只跑 common token-event SQL/DDL parser、file DDL、object files 和 plain SQL logs；不做 live metadata、database object collection 或 data profiling。
 - 当前 `MYSQL`、`POSTGRESQL` 是成熟支持；`ORACLE` 已有初始 adaptor、Oracle token-event fallback 和 `INCOMPLETE_VERSIONED` versioned full-grammer；`SQLSERVER` 已有 adaptor、token-event fallback 和 SQL Server 2016/2017/2019/2022/2025 versioned full-grammer sample-data golden。
 - 用户选择 `SQLSERVER` 时，应由 `adaptor-sqlserver` 接管；如果该模块未在 classpath 中，应返回“adaptor 未找到”错误，不应偷偷降级到其他数据库。用户选择 `ORACLE` 时，应由 `adaptor-oracle` 接管；如果该模块未在 classpath 中，同样应返回 adaptor 未找到。
 
@@ -217,6 +220,7 @@ public enum EvidenceType {
   VALUE_CONTAINMENT_HIGH,
   VALUE_OVERLAP_HIGH,
   NEGATIVE_VALUE_MISMATCH,
+  TRANSITIVE_PATH,
   REPEATED_OBSERVATION
 }
 ```
@@ -293,6 +297,7 @@ attributes.joinKind: IN_SUBQUERY
 | `VALUE_CONTAINMENT_HIGH` | source 值域高度包含于 target。 | 0.30 | 抽样包含率高于阈值。 |
 | `VALUE_OVERLAP_HIGH` | source 与 target 值重合率较高。 | 0.20 | 抽样重合率高于阈值。 |
 | `NEGATIVE_VALUE_MISMATCH` | 数据画像显示明显不匹配。 | -0.30 | 大量 source 值不在 target 中，或类型/基数明显不合理。 |
+| `TRANSITIVE_PATH` | 已确认有向证据图上的传递路径推导。 | 路径置信度 | `derivedPaths.enabled=true` 时由 core 推导产生；不表示直接物理 FK 或直接字段写入。 |
 
 维护说明：
 
@@ -301,6 +306,7 @@ attributes.joinKind: IN_SUBQUERY
 - `VALUE_OVERLAP_HIGH` 当前也由四个 live profiler 产出；它表示值域重合较高，但不如 `VALUE_CONTAINMENT_HIGH` 强。
 - `NEGATIVE_VALUE_MISMATCH` 是负向证据，会降低最终分数，而不是删除关系；当前只在 live sample 非 partial、样本规模和 missing ratio gate 满足时产出。
 - 离线 seed `INSERT` 画像仍等待 typed literal `INSERT ... VALUES` sample event；生产代码不得用 regex/token span 扫描 SQL 伪造该 evidence。
+- `TRANSITIVE_PATH` 只出现在 `derivedRelationships` / `derivedDataLineages`，或作为 derived `namingEvidence` 的推导说明；默认关闭，不参与直接 relationship / lineage 的 correctness golden。
 - EvidenceType 的默认分值、定分理由、合并公式和完整 SQL 算例，以 [Phase 2：核心模型和评分详细设计](phase-02-core-model-scoring.md) 的“置信度计算”章节为准。维护枚举时必须同步检查该章节，避免 enum 文档和评分模型出现两套解释。
 
 ## 8. EvidenceSourceType
@@ -318,7 +324,8 @@ public enum EvidenceSourceType {
   NATIVE_LOG,
   PLAIN_SQL,
   DATA_PROFILE,
-  NAMING_HEURISTIC
+  NAMING_HEURISTIC,
+  INFERENCE
 }
 ```
 
@@ -332,6 +339,7 @@ public enum EvidenceSourceType {
 | `PLAIN_SQL` | 清洗后的纯 SQL 文本文件。 | `app-sql.sql` |
 | `DATA_PROFILE` | 数据画像查询结果。 | `99.5% sampled values matched` |
 | `NAMING_HEURISTIC` | 命名规则推断。 | `user_id` -> `users.id` |
+| `INFERENCE` | core 在已有证据图上做的传递推导。 | `a.r -> b.s -> c.t` |
 
 维护说明：
 

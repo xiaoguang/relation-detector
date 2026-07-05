@@ -1,5 +1,5 @@
 id: commonsample-data-full-04-queries-01-business-queries-sql
-databaseType: MYSQL
+databaseType: COMMON
 parserTarget: SQL
 parserMode: token-event
 structuredParser: common-token-event

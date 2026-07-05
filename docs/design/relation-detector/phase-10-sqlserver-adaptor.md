@@ -38,6 +38,7 @@ SQL Server 当前已经完成 **ERP sample-data correctness 全量接入**：有
 - sample-data：`sample-data/sqlserver/2016|2017|2019|2022|2025`，每版 38 个 SQL 文件。
 - correctness golden：root token-event 覆盖 `sample-data/sqlserver/2025` 的 38 个文件；五个 versioned full-grammer profile 各覆盖对应版本目录的 38 个文件，另有 version-only fixture 锁定 2017/2022/2025 的首批边界。
 - asset hygiene：SQL Server sample-data 与 correctness input 会拒绝 MySQL/PostgreSQL/Oracle 残留语法。
+- endpoint schema fidelity：SQL Server parser 支持 `[schema].[table]` 和 `[table]` 两种输入形态。输入显式写 `[dbo].[employees]` 时，SQL/DDL relationship、DDL column inventory 和 top-level `namingEvidence` 都保留 `dbo.employees`；输入只写 `[employees]` 时输出 `employees`，不自动补 `dbo`。SQL Server sample-data 当前选择 `[dbo].[table]` 作为资产内 canonical 形式，这是资产一致性规则，不是所有数据库都必须 schema-qualified 的全局规则。
 
 当前有意保留的缺口：
 

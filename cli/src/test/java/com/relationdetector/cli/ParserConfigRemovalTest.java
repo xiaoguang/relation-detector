@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.core.scan.ScanConfig;
 
 class ParserConfigRemovalTest {
@@ -220,6 +221,29 @@ class ParserConfigRemovalTest {
     }
 
     @Test
+    void yamlConfigCanSelectCommonPortableParserCategory() throws Exception {
+        Path file = Files.createTempFile("relation-detector-common-category", ".yml");
+        Files.writeString(file, """
+                database:
+                  type: common
+                sources:
+                  metadata:
+                    enabled: false
+                  logs:
+                    enabled: true
+                    files:
+                      - app.sql
+                parser:
+                  mode: token-event
+                """);
+
+        ScanConfig config = new SimpleYamlConfigLoader().load(file);
+
+        assertEquals(DatabaseType.COMMON, config.databaseType);
+        assertEquals("token-event", config.parserMode);
+    }
+
+    @Test
     void yamlConfigUsesJacksonYamlLoaderAndKeepsNestedValues() throws Exception {
         Path file = Files.createTempFile("relation-detector-jackson-yaml", ".yml");
         Files.writeString(file, """
@@ -257,6 +281,17 @@ class ParserConfigRemovalTest {
                   includeObservationCounts: false
                   ignoredFutureKey:
                     nested: value
+                derivedPaths:
+                  enabled: true
+                  relationships: false
+                  dataLineage: true
+                  namingEvidence: true
+                  includeNamingEdgesInRelationshipPaths: false
+                  maxPathLength: 5
+                  maxPathsPerPair: 0
+                  maxFacts: 0
+                  confidenceDecay: 0.70
+                  minConfidence: 0.11
                 """);
 
         ScanConfig config = new SimpleYamlConfigLoader().load(file);
@@ -284,6 +319,45 @@ class ParserConfigRemovalTest {
         assertEquals(false, config.includeEvidence);
         assertEquals(true, config.includeWarnings);
         assertEquals(false, config.includeObservationCounts);
+        assertEquals(true, config.derivedPathsEnabled);
+        assertEquals(false, config.derivedRelationshipsEnabled);
+        assertEquals(true, config.derivedDataLineageEnabled);
+        assertEquals(true, config.derivedNamingEvidenceEnabled);
+        assertEquals(false, config.derivedIncludeNamingEdgesInRelationshipPaths);
+        assertEquals(5, config.derivedMaxPathLength);
+        assertEquals(0, config.derivedMaxPathsPerPair);
+        assertEquals(0, config.derivedMaxFacts);
+        assertEquals(0.70d, config.derivedConfidenceDecay);
+        assertEquals(0.11d, config.derivedMinConfidence);
+    }
+
+    @Test
+    void defaultDerivedPathsAreDisabledButConfiguredWithSafeDefaults() throws Exception {
+        Path file = Files.createTempFile("relation-detector-derived-path-default", ".yml");
+        Files.writeString(file, """
+                database:
+                  type: mysql
+                sources:
+                  metadata:
+                    enabled: false
+                  logs:
+                    enabled: true
+                    files:
+                      - app.sql
+                """);
+
+        ScanConfig config = new SimpleYamlConfigLoader().load(file);
+
+        assertEquals(false, config.derivedPathsEnabled);
+        assertEquals(true, config.derivedRelationshipsEnabled);
+        assertEquals(true, config.derivedDataLineageEnabled);
+        assertEquals(true, config.derivedNamingEvidenceEnabled);
+        assertEquals(true, config.derivedIncludeNamingEdgesInRelationshipPaths);
+        assertEquals(5, config.derivedMaxPathLength);
+        assertEquals(0, config.derivedMaxPathsPerPair);
+        assertEquals(0, config.derivedMaxFacts);
+        assertEquals(0.75d, config.derivedConfidenceDecay);
+        assertEquals(0.10d, config.derivedMinConfidence);
     }
 
     @Test

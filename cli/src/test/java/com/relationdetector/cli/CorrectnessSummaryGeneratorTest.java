@@ -27,7 +27,8 @@ class CorrectnessSummaryGeneratorTest {
         assertTrue(markdown.contains("| PostgreSQL directory fixtures | 449 |"));
         assertTrue(markdown.contains("| Oracle directory fixtures | 212 |"));
         assertTrue(markdown.contains("| SQL Server directory fixtures | 236 |"));
-        assertTrue(markdown.contains("| MYSQL | 300 | 241 | 59 |"));
+        assertTrue(markdown.contains("| COMMON | 39 | 34 | 5 |"));
+        assertTrue(markdown.contains("| MYSQL | 261 | 207 | 54 |"));
         assertTrue(markdown.contains("| POSTGRESQL | 449 | 371 | 78 |"));
         assertTrue(markdown.contains("| ORACLE | 212 | 172 | 40 |"));
         assertTrue(markdown.contains("| SQLSERVER | 236 | 199 | 37 |"));

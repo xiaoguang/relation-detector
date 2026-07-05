@@ -69,6 +69,8 @@ public final class SqlLogNoiseFilter {
             return normalizeSet(List.of("information_schema", "performance_schema", "mysql", "sys", "pg_catalog", "pg_toast"));
         }
         return switch (databaseType) {
+            case COMMON -> normalizeSet(List.of(
+                    "information_schema", "performance_schema", "mysql", "sys", "pg_catalog", "pg_toast"));
             case MYSQL -> normalizeSet(List.of("information_schema", "performance_schema", "mysql", "sys"));
             case POSTGRESQL -> normalizeSet(List.of("pg_catalog", "information_schema", "pg_toast"));
             case SQLSERVER -> normalizeSet(List.of("sys", "information_schema"));

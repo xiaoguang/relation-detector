@@ -39,6 +39,9 @@ write_config() {
   local sample_dir="$6"
   local schema_dir="$sample_dir/01-schema"
   local procedure_dir="$sample_dir/02-procedures"
+  if [[ ! -d "$procedure_dir" && -d "$sample_dir/02-processes" ]]; then
+    procedure_dir="$sample_dir/02-processes"
+  fi
   local trigger_file="$schema_dir/03-triggers.sql"
   local object_pattern='CREATE[[:space:]]+(OR[[:space:]]+(REPLACE|ALTER)[[:space:]]+)?(PROCEDURE|FUNCTION|TRIGGER|PACKAGE)'
 
@@ -147,6 +150,8 @@ run_case() {
 mvn -q -pl core,adaptor-mysql,adaptor-postgres,adaptor-oracle,adaptor-sqlserver,cli -am -Dmaven.test.skip=true package
 "$ROOT/scripts/check-no-jls-bad-classes.sh" "$ROOT"
 
+run_case common-token-event-sample-data COMMON token-event "" "" sample-data/portable
+
 run_case mysql-token-event-root MYSQL token-event "" "" sample-data/mysql/8.0
 run_case mysql-v5_7-full MYSQL full-grammer mysql/5.7 5.7 sample-data/mysql/5.7
 run_case mysql-v8_0-full MYSQL full-grammer mysql/8.0 8.0 sample-data/mysql/8.0
@@ -181,7 +186,6 @@ config_dir = Path(sys.argv[2])
 summary_path = Path(sys.argv[3])
 warnings_path = Path(sys.argv[4])
 requested_cases = [item for item in sys.argv[5].split(",") if item]
-root = Path.cwd()
 
 def list_items(lines, section_name):
     values = []
@@ -255,9 +259,12 @@ def file_counts(config_path):
 summary_rows = []
 warning_rows = []
 for path in sorted(result_dir.glob("*.json")):
-    if path.stem == "common-token-event-sample-data":
+    if path.stem.endswith("-derived") or path.stem.endswith("-refresh"):
         continue
     if requested_cases and path.stem not in requested_cases:
+        continue
+    config_path = config_dir / f"{path.stem}.yml"
+    if not config_path.exists():
         continue
     data = json.loads(path.read_text(encoding="utf-8"))
     summary = data.get("summary", {})
@@ -265,7 +272,7 @@ for path in sorted(result_dir.glob("*.json")):
     codes = Counter(w.get("code", "UNKNOWN") for w in warnings)
     sources = summary.get("sources") or data.get("sources") or []
     source_text = ",".join(sources) if isinstance(sources, list) else str(sources)
-    fixtures, sql_files, ddl_files = file_counts(config_dir / f"{path.stem}.yml")
+    fixtures, sql_files, ddl_files = file_counts(config_path)
     summary_rows.append([
         path.stem,
         str(fixtures),
@@ -282,90 +289,6 @@ for path in sorted(result_dir.glob("*.json")):
     else:
         for code, count in sorted(codes.items()):
             warning_rows.append([path.stem, code, str(count)])
-
-def should_include_common_row():
-    return not requested_cases or "common-token-event-sample-data" in requested_cases
-
-def json_count(path):
-    if not path.exists():
-        return 0
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return len(data.get("fingerprints") or [])
-
-def fingerprint_items(path, key, fixture):
-    if not path.exists():
-        return []
-    data = json.loads(path.read_text(encoding="utf-8"))
-    items = []
-    for fingerprint in data.get("fingerprints") or []:
-        item = {
-            "fingerprint": fingerprint,
-            "fixture": fixture.name,
-            "source": str(fixture),
-        }
-        if key == "namingEvidence" and fingerprint.endswith(":NAMING_MATCH"):
-            item["id"] = fingerprint.rsplit(":", 1)[0]
-        items.append(item)
-    return items
-
-def manifest_target(path):
-    text = (path / "manifest.yml").read_text(encoding="utf-8")
-    return "DDL" if "parserTarget: DDL" in text else "SQL"
-
-if should_include_common_row():
-    common_root = root / "test-fixtures" / "correctness" / "common"
-    common_fixtures = sorted(
-        item for item in common_root.iterdir()
-        if item.is_dir() and "sample-data" in item.name
-    )
-    sql_count = sum(1 for fixture in common_fixtures if manifest_target(fixture) == "SQL")
-    ddl_count = sum(1 for fixture in common_fixtures if manifest_target(fixture) == "DDL")
-    relation_count = sum(json_count(fixture / "expected-relations.json") for fixture in common_fixtures)
-    lineage_count = sum(json_count(fixture / "expected-lineage.json") for fixture in common_fixtures)
-    naming_count = sum(json_count(fixture / "expected-naming-evidence.json") for fixture in common_fixtures)
-    diagnostic_count = sum(json_count(fixture / "expected-diagnostics.json") for fixture in common_fixtures)
-    common_relationships = []
-    common_lineages = []
-    common_naming = []
-    common_warnings = []
-    for fixture in common_fixtures:
-        common_relationships.extend(fingerprint_items(fixture / "expected-relations.json", "relationships", fixture))
-        common_lineages.extend(fingerprint_items(fixture / "expected-lineage.json", "dataLineages", fixture))
-        common_naming.extend(fingerprint_items(fixture / "expected-naming-evidence.json", "namingEvidence", fixture))
-        common_warnings.extend(fingerprint_items(fixture / "expected-diagnostics.json", "warnings", fixture))
-    common_output = result_dir / "common-token-event-sample-data.json"
-    common_output.write_text(json.dumps({
-        "database": {
-            "type": "COMMON",
-            "parserMode": "token-event",
-            "structuredParser": "common-token-event",
-        },
-        "generatedBy": "sample-data-parser-cli common benchmark aggregator",
-        "summary": {
-            "relationshipCount": relation_count,
-            "dataLineageCount": lineage_count,
-            "namingEvidenceCount": naming_count,
-            "warningCount": diagnostic_count,
-            "sources": ["correctness-common-portable-benchmark"],
-        },
-        "relationships": common_relationships,
-        "dataLineages": common_lineages,
-        "namingEvidence": common_naming,
-        "warnings": common_warnings,
-    }, ensure_ascii=False, indent=2, sort_keys=False) + "\n", encoding="utf-8")
-    summary_rows.insert(0, [
-        "common-token-event-sample-data",
-        str(len(common_fixtures)),
-        f"{sql_count} / {ddl_count}",
-        str(relation_count),
-        str(lineage_count),
-        str(naming_count),
-        str(diagnostic_count),
-        "correctness-common-portable-benchmark",
-        str(common_output),
-    ])
-    warning_rows.insert(0, ["common-token-event-sample-data", "NONE" if diagnostic_count == 0 else "EXPECTED_DIAGNOSTICS",
-                            str(diagnostic_count)])
 
 summary_path.write_text(
     "parser\tfixtures\tSQL / DDL\trelations\tlineage\tnamingEvidence\twarnings\tsources\tjson\n"

@@ -61,6 +61,16 @@ public final class ScanConfig {
     public boolean includeEvidence = true;
     public boolean includeWarnings = true;
     public boolean includeObservationCounts = true;
+    public boolean derivedPathsEnabled;
+    public boolean derivedRelationshipsEnabled = true;
+    public boolean derivedDataLineageEnabled = true;
+    public boolean derivedNamingEvidenceEnabled = true;
+    public boolean derivedIncludeNamingEdgesInRelationshipPaths = true;
+    public int derivedMaxPathLength = 5;
+    public int derivedMaxPathsPerPair;
+    public int derivedMaxFacts;
+    public double derivedConfidenceDecay = 0.75d;
+    public double derivedMinConfidence = 0.10d;
     public String parserMode = "auto";
     public String grammarProfile = "";
     public String databaseVersion = "";

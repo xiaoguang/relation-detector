@@ -72,7 +72,7 @@ class DataLineageAuditGeneratorTest {
         assertTrue(markdown.contains("sqlserver2025-sample-data-full-04-queries-09-real-world-scenarios-sql"));
         assertTrue(markdown.contains(
                 "test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json"));
-        assertTrue(markdown.contains("VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id"));
+        assertTrue(markdown.contains("VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id"));
         assertTrue(markdown.contains("VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note"));
         assertTrue(markdown.contains(
                 "VALUE:ARITHMETIC:account_balances.balance,transaction_ledgers.amount->account_balances.balance"));

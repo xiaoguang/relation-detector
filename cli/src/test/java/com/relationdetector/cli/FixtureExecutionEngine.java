@@ -17,6 +17,7 @@ import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
 import com.relationdetector.contracts.spi.ScanScope;
+import com.relationdetector.core.common.CommonDatabaseAdaptor;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.relation.NamingEvidencePool;
 import com.relationdetector.core.scan.EvidenceEnhancementService;
@@ -123,11 +124,11 @@ final class FixtureExecutionEngine {
 
     private DatabaseAdaptor adaptor(DatabaseType databaseType) {
         return switch (databaseType) {
+            case COMMON -> new CommonDatabaseAdaptor();
             case MYSQL -> new MySqlDatabaseAdaptor();
             case POSTGRESQL -> new PostgresDatabaseAdaptor();
             case ORACLE -> new OracleDatabaseAdaptor();
             case SQLSERVER -> new SqlServerDatabaseAdaptor();
-            default -> throw new IllegalArgumentException("No correctness adaptor for " + databaseType);
         };
     }
 

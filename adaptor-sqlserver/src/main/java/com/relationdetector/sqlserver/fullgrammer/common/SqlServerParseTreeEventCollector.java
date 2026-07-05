@@ -194,7 +194,7 @@ public final class SqlServerParseTreeEventCollector {
             visitChildren(ctx);
             return;
         }
-        sqlSink.writeTarget(ctx, baseName(targetTable), "");
+        sqlSink.writeTarget(ctx, qualifiedTable(targetTable), "");
         List<String> columns = firstDirect(ctx, "insert_column_name_list")
                 .map(this::identifierList)
                 .orElse(List.of());
@@ -215,7 +215,7 @@ public final class SqlServerParseTreeEventCollector {
         for (int i = 0; i < count; i++) {
             ParserRuleContext item = items.get(i);
             String column = columns.get(i);
-            String target = baseName(targetTable);
+            String target = qualifiedTable(targetTable);
             firstDescendant(item, "expression").ifPresent(expression ->
                     sqlSink.insertSelect(item, "", target, column, expression));
         }
@@ -231,12 +231,13 @@ public final class SqlServerParseTreeEventCollector {
         String resolvedTarget = tableSources
                 .flatMap(sources -> tableForAlias(sources, targetTable))
                 .orElse(targetTable);
-        sqlSink.writeTarget(ctx, baseName(resolvedTarget), "");
-        sqlSink.withWriteTarget(baseName(resolvedTarget), () -> {
+        String qualifiedTarget = qualifiedTable(resolvedTarget);
+        sqlSink.writeTarget(ctx, qualifiedTarget, "");
+        sqlSink.withWriteTarget(qualifiedTarget, () -> {
             tableSources.ifPresent(this::visit);
             firstDirect(ctx, "search_condition").ifPresent(this::visit);
             for (ParserRuleContext element : directChildren(ctx, "update_elem")) {
-                emitUpdateElement(element, resolvedTarget, false);
+                emitUpdateElement(element, qualifiedTarget, false);
             }
         });
     }
@@ -245,7 +246,7 @@ public final class SqlServerParseTreeEventCollector {
         String targetTable = firstDirectText(ctx, "ddl_object").orElse("");
         String targetAlias = firstDirect(ctx, "as_table_alias").flatMap(this::lastIdText).orElse("");
         if (!targetTable.isBlank() && !isLocalTemp(targetTable)) {
-            sqlSink.writeTarget(ctx, baseName(targetTable), targetAlias);
+            sqlSink.writeTarget(ctx, qualifiedTable(targetTable), targetAlias);
         }
         firstDirect(ctx, "table_sources").ifPresent(this::visit);
         firstDirect(ctx, "search_condition").ifPresent(condition ->
@@ -260,7 +261,7 @@ public final class SqlServerParseTreeEventCollector {
                     .orElse(List.of());
             int count = Math.min(columns.size(), values.size());
             for (int i = 0; i < count; i++) {
-                sqlSink.mergeInsert(notMatched, targetAlias, baseName(targetTable), columns.get(i), values.get(i));
+                sqlSink.mergeInsert(notMatched, targetAlias, qualifiedTable(targetTable), columns.get(i), values.get(i));
             }
         }
         visitChildren(ctx);
@@ -282,9 +283,9 @@ public final class SqlServerParseTreeEventCollector {
         String targetColumn = lastIdentifier(columns.get(0).getText());
         ParserRuleContext expression = expressions.get(expressions.size() - 1);
         if (merge) {
-            sqlSink.mergeUpdate(element, "", baseName(targetTable), targetColumn, expression);
+            sqlSink.mergeUpdate(element, "", qualifiedTable(targetTable), targetColumn, expression);
         } else {
-            sqlSink.updateAssignment(element, "", baseName(targetTable), targetColumn, expression);
+            sqlSink.updateAssignment(element, "", qualifiedTable(targetTable), targetColumn, expression);
         }
     }
 
@@ -298,18 +299,18 @@ public final class SqlServerParseTreeEventCollector {
             if (columnName.isBlank()) {
                 continue;
             }
-            ddlBuilder.addColumn(baseName(table), columnName, line(column));
+            ddlBuilder.addColumn(qualifiedTable(table), columnName, line(column));
             if (containsDirectKeyword(column, "PRIMARY") || containsDirectKeyword(column, "UNIQUE")) {
-                ddlBuilder.addIndex(baseName(table), columnName, "TARGET_UNIQUE", "INLINE_CONSTRAINT", line(column));
+                ddlBuilder.addIndex(qualifiedTable(table), columnName, "TARGET_UNIQUE", "INLINE_CONSTRAINT", line(column));
             }
             firstDescendant(column, "foreign_key_options").ifPresent(fk -> {
                 String targetTable = firstDirectText(fk, "table_name").orElse("");
                 List<String> targetColumns = firstDirect(fk, "column_name_list").map(this::identifierList).orElse(List.of());
                 if (!targetTable.isBlank() && !targetColumns.isEmpty()) {
-                    ddlBuilder.addForeignKey(baseName(table), List.of(columnName), baseName(targetTable), targetColumns, line(fk));
-                    ddlBuilder.addIndex(baseName(table), columnName, "SOURCE_INDEX", "IMPLICIT_FK_SOURCE", line(fk));
+                    ddlBuilder.addForeignKey(qualifiedTable(table), List.of(columnName), qualifiedTable(targetTable), targetColumns, line(fk));
+                    ddlBuilder.addIndex(qualifiedTable(table), columnName, "SOURCE_INDEX", "IMPLICIT_FK_SOURCE", line(fk));
                     targetColumns.forEach(targetColumn ->
-                            ddlBuilder.addIndex(baseName(targetTable), targetColumn, "TARGET_UNIQUE", "REFERENCED_KEY", line(fk)));
+                            ddlBuilder.addIndex(qualifiedTable(targetTable), targetColumn, "TARGET_UNIQUE", "REFERENCED_KEY", line(fk)));
                 }
             });
         }
@@ -323,15 +324,15 @@ public final class SqlServerParseTreeEventCollector {
                         .map(this::identifierList)
                         .orElse(List.of());
                 if (!targetTable.isBlank() && !sourceColumns.isEmpty() && !targetColumns.isEmpty()) {
-                    ddlBuilder.addForeignKey(baseName(table), sourceColumns, baseName(targetTable), targetColumns, line(constraint));
+                    ddlBuilder.addForeignKey(qualifiedTable(table), sourceColumns, qualifiedTable(targetTable), targetColumns, line(constraint));
                     sourceColumns.forEach(sourceColumn ->
-                            ddlBuilder.addIndex(baseName(table), sourceColumn, "SOURCE_INDEX", "FK_SOURCE", line(constraint)));
+                            ddlBuilder.addIndex(qualifiedTable(table), sourceColumn, "SOURCE_INDEX", "FK_SOURCE", line(constraint)));
                     targetColumns.forEach(targetColumn ->
-                            ddlBuilder.addIndex(baseName(targetTable), targetColumn, "TARGET_UNIQUE", "REFERENCED_KEY", line(constraint)));
+                            ddlBuilder.addIndex(qualifiedTable(targetTable), targetColumn, "TARGET_UNIQUE", "REFERENCED_KEY", line(constraint)));
                 }
             } else if (containsDirectKeyword(constraint, "PRIMARY") || containsDirectKeyword(constraint, "UNIQUE")) {
                 firstDirect(constraint, "column_name_list_with_order").map(this::identifierList).orElse(List.of())
-                        .forEach(column -> ddlBuilder.addIndex(baseName(table), column, "TARGET_UNIQUE", "TABLE_CONSTRAINT", line(constraint)));
+                        .forEach(column -> ddlBuilder.addIndex(qualifiedTable(table), column, "TARGET_UNIQUE", "TABLE_CONSTRAINT", line(constraint)));
             }
         }
     }
@@ -345,7 +346,7 @@ public final class SqlServerParseTreeEventCollector {
         for (ParserRuleContext column : descendants(ctx, "column_definition")) {
             String columnName = firstDirectText(column, "id_").orElse("");
             if (!columnName.isBlank()) {
-                ddlBuilder.addColumn(baseName(table), columnName, line(column));
+                ddlBuilder.addColumn(qualifiedTable(table), columnName, line(column));
             }
         }
         visitChildren(ctx);
@@ -358,7 +359,7 @@ public final class SqlServerParseTreeEventCollector {
         }
         String role = containsDirectKeyword(ctx, "UNIQUE") ? "TARGET_UNIQUE" : "SOURCE_INDEX";
         firstDirect(ctx, "column_name_list_with_order").map(this::identifierList).orElse(List.of())
-                .forEach(column -> ddlBuilder.addIndex(baseName(table), column, role, "CREATE_INDEX", line(ctx)));
+                .forEach(column -> ddlBuilder.addIndex(qualifiedTable(table), column, role, "CREATE_INDEX", line(ctx)));
     }
 
     private Optional<String> aliasForProjection(ParserRuleContext item) {
@@ -563,6 +564,10 @@ public final class SqlServerParseTreeEventCollector {
         String value = clean(raw);
         int dot = value.lastIndexOf('.');
         return dot >= 0 ? value.substring(dot + 1) : value;
+    }
+
+    private String qualifiedTable(String raw) {
+        return clean(raw);
     }
 
     private String lastIdentifier(String raw) {

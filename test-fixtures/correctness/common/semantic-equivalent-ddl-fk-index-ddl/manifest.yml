@@ -1,5 +1,5 @@
 id: common-semantic-equivalent-ddl-fk-index-ddl
-databaseType: MYSQL
+databaseType: COMMON
 parserTarget: DDL
 parserMode: token-event
 structuredParser: common-token-event

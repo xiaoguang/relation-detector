@@ -67,6 +67,10 @@ CREATE TABLE [dbo].[employees] (
     CONSTRAINT [fk_emp_manager] FOREIGN KEY ([manager_id]) REFERENCES [dbo].[employees] ([id])
 );
 
+ALTER TABLE [dbo].[departments]
+ADD CONSTRAINT [fk_dept_manager]
+FOREIGN KEY ([manager_id]) REFERENCES [dbo].[employees] ([id]) ON DELETE SET NULL;
+
 CREATE TABLE [dbo].[employee_salary_log] (
     [id] BIGINT IDENTITY(1,1) NOT NULL,
     [employee_id] BIGINT NOT NULL,

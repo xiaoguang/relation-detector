@@ -79,6 +79,83 @@ class CliEndToEndGoldenTest {
                 Set.of("PARSER_MODE_FALLBACK"));
     }
 
+    @Test
+    void commonPortableParserRunsThroughCliScanEngine() throws Exception {
+        Path ddl = tempDir.resolve("schema.sql");
+        Path sql = tempDir.resolve("queries.sql");
+        Path output = tempDir.resolve("common-output.json");
+        Path config = tempDir.resolve("common.yml");
+        Files.writeString(ddl, """
+                CREATE TABLE customers (
+                  id INTEGER PRIMARY KEY,
+                  name VARCHAR(100)
+                );
+
+                CREATE TABLE orders (
+                  id INTEGER PRIMARY KEY,
+                  customer_id INTEGER,
+                  total_amount DECIMAL(12, 2),
+                  CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(id)
+                );
+                """);
+        Files.writeString(sql, """
+                INSERT INTO customer_order_summary (customer_id, total_amount)
+                SELECT c.id, SUM(o.total_amount)
+                FROM customers c
+                JOIN orders o ON o.customer_id = c.id
+                GROUP BY c.id;
+                """);
+        Files.writeString(config, """
+                database:
+                  type: common
+                  schema: portable
+                sources:
+                  metadata:
+                    enabled: false
+                  ddl:
+                    enabled: true
+                    fromDatabase: false
+                    files:
+                      - %s
+                  logs:
+                    enabled: true
+                    filterSystemQueries: false
+                    format: plain_sql
+                    files:
+                      - %s
+                output:
+                  format: json
+                  minConfidence: 0.0
+                  includeEvidence: true
+                  includeWarnings: true
+                parser:
+                  mode: token-event
+                derivedPaths:
+                  enabled: true
+                """.formatted(ddl, sql));
+
+        int exitCode = new Main.MainCommand().run(new String[] {
+                "scan",
+                "--config",
+                config.toString(),
+                "--output",
+                output.toString()
+        });
+
+        assertEquals(0, exitCode, "common CLI scan should succeed");
+        String json = Files.readString(output);
+        assertTrue(json.contains("\"type\" : \"COMMON\""), json);
+        assertTrue(relationshipFingerprints(json).stream()
+                        .anyMatch(fingerprint -> fingerprint.contains("orders.customer_id->customers.id")),
+                json);
+        assertTrue(lineageFingerprints(json).stream()
+                        .anyMatch(fingerprint -> fingerprint.contains("orders.total_amount")
+                                && fingerprint.contains("customer_order_summary.total_amount")),
+                json);
+        assertTrue(json.contains("\"namingEvidence\""), json);
+        assertTrue(json.contains("\"derivedRelationships\""), json);
+    }
+
     private void assertCliGolden(
             Path fixtureDir,
             String parserMode,
@@ -124,8 +201,7 @@ class CliEndToEndGoldenTest {
             SourceKind sourceKind,
             Path output
     ) throws Exception {
-        String databaseType = manifestValue(fixtureDir.resolve("manifest.yml"), "databaseType")
-                .equals("POSTGRESQL") ? "postgresql" : "mysql";
+        String databaseType = manifestValue(fixtureDir.resolve("manifest.yml"), "databaseType").toLowerCase();
         String input = manifestValue(fixtureDir.resolve("manifest.yml"), "input");
         Path inputFile = fixtureDir.resolve(input).toAbsolutePath();
         Path config = tempDir.resolve(fixtureDir.getFileName() + ".yml");

@@ -32,6 +32,7 @@ import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.lineage.DataLineageMerger;
 import com.relationdetector.core.log.PlainSqlLogExtractor;
 import com.relationdetector.core.scan.ScanConfig;
+import com.relationdetector.core.common.CommonDatabaseAdaptor;
 import com.relationdetector.core.tokenevent.CommonTokenEventStructuredSqlParser;
 import com.relationdetector.mysql.MySqlDatabaseAdaptor;
 import com.relationdetector.oracle.OracleDatabaseAdaptor;
@@ -434,11 +435,11 @@ final class DataLineageAuditGenerator {
 
     private static DatabaseAdaptor adaptor(DatabaseType databaseType) {
         return switch (databaseType) {
+            case COMMON -> new CommonDatabaseAdaptor();
             case MYSQL -> new MySqlDatabaseAdaptor();
             case POSTGRESQL -> new PostgresDatabaseAdaptor();
             case ORACLE -> new OracleDatabaseAdaptor();
             case SQLSERVER -> new SqlServerDatabaseAdaptor();
-            default -> throw new IllegalArgumentException("No Data Lineage parser for " + databaseType);
         };
     }
 

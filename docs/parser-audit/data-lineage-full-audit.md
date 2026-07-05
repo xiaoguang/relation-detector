@@ -20,7 +20,7 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
 | Reason | DDL does not write target column values in Data Lineage v1 |
-| Database | `MYSQL` |
+| Database | `COMMON` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Input | `test-fixtures/correctness/common/sample-data-portable-ddl/input.ddl.sql` |
@@ -53,7 +53,7 @@ CREATE TABLE departments (
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
 | Reason | DDL does not write target column values in Data Lineage v1 |
-| Database | `MYSQL` |
+| Database | `COMMON` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Input | `test-fixtures/semantic-equivalent/ddl-fk-index/input.sql` |
@@ -86,7 +86,7 @@ CREATE TABLE sales_orders (
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
 | Reason | DDL does not write target column values in Data Lineage v1 |
-| Database | `MYSQL` |
+| Database | `COMMON` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Input | `sample-data/portable/01-schema/01-tables.sql` |
@@ -119,7 +119,7 @@ CREATE TABLE departments (
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
 | Reason | DDL does not write target column values in Data Lineage v1 |
-| Database | `MYSQL` |
+| Database | `COMMON` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Input | `sample-data/portable/01-schema/02-views.sql` |
@@ -152,7 +152,7 @@ CREATE VIEW v_dept_headcount AS
 | --- | --- |
 | Classification | `NOT_APPLICABLE` |
 | Reason | DDL does not write target column values in Data Lineage v1 |
-| Database | `MYSQL` |
+| Database | `COMMON` |
 | Parser target | `DDL` |
 | Source type | `DDL_FILE` |
 | Input | `sample-data/portable/01-schema/03-erp-deep-scenario-tables.sql` |
@@ -177,6 +177,1384 @@ CREATE VIEW v_dept_headcount AS
 -- ============================================================
 
 CREATE TABLE production_plans (
+```
+
+## `common-sample-data-portable-data-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sample-data-portable-data-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Portable seed data targets, expressed as INSERT ... SELECT for common parser compatibility.
+
+INSERT INTO departments (id)
+SELECT 1;
+
+INSERT INTO positions (id)
+SELECT 2;
+```
+
+## `common-sample-data-portable-lineage-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sample-data-portable-lineage-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/sample-data-portable-lineage-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:customers.id->invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.id->invoices.id`
+- `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- hr_employee_department
+SELECT employees.id, departments.id
+FROM employees
+JOIN departments ON employees.department_id = departments.id
+WHERE EXISTS (
+  SELECT 1
+  FROM departments
+  WHERE departments.id = employees.department_id
+```
+
+## `common-sample-data-portable-process-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sample-data-portable-process-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/sample-data-portable-process-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:accounts.id->cashier_journals.account_id`
+- `VALUE:DIRECT:accounts.id->cashier_journals.id`
+- `VALUE:DIRECT:accounts.id->reconciliations.account_id`
+- `VALUE:DIRECT:accounts.id->reconciliations.id`
+- `VALUE:DIRECT:approval_workflows.id->approval_instances.id`
+- `VALUE:DIRECT:approval_workflows.id->approval_instances.workflow_id`
+- `VALUE:DIRECT:customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:customers.id->sales_orders.id`
+- `VALUE:DIRECT:customers.id->service_tickets.customer_id`
+- `VALUE:DIRECT:customers.id->service_tickets.id`
+- `VALUE:DIRECT:departments.id->departments.id`
+- `VALUE:DIRECT:departments.id->departments.parent_id`
+- `VALUE:DIRECT:departments.id->employees.department_id`
+- `VALUE:DIRECT:departments.id->employees.id`
+- `VALUE:DIRECT:departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:departments.id->purchase_requisitions.id`
+- `VALUE:DIRECT:employees.id->attendance.employee_id`
+- `VALUE:DIRECT:employees.id->attendance.id`
+- `VALUE:DIRECT:employees.id->audit_log.id`
+- `VALUE:DIRECT:employees.id->contracts.id`
+- `VALUE:DIRECT:employees.id->contracts.prepared_by`
+- `VALUE:DIRECT:employees.id->customers.id`
+- `VALUE:DIRECT:employees.id->departments.id`
+- `VALUE:DIRECT:employees.id->inventory.id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.id`
+- `VALUE:DIRECT:employees.id->products.id`
+- `VALUE:DIRECT:employees.id->purchase_orders.id`
+- `VALUE:DIRECT:employees.id->sales_orders.id`
+- `VALUE:DIRECT:employees.id->suppliers.id`
+- `VALUE:DIRECT:employees.id->tax_filings.id`
+- `VALUE:DIRECT:employees.id->tax_filings.prepared_by`
+- `VALUE:DIRECT:employees.id->vouchers.id`
+- `VALUE:DIRECT:employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:employees.id->warehouses.id`
+- `VALUE:DIRECT:employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:invoices.id->three_way_matching.id`
+- `VALUE:DIRECT:invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:ledger_books.id->accounting_periods.id`
+- `VALUE:DIRECT:ledger_books.id->accounting_periods.ledger_book_id`
+- `VALUE:DIRECT:product_categories.id->products.category_id`
+- `VALUE:DIRECT:product_categories.id->products.id`
+- `VALUE:DIRECT:products.id->inventory.id`
+- `VALUE:DIRECT:products.id->inventory.product_id`
+- `VALUE:DIRECT:products.id->serial_numbers.id`
+- `VALUE:DIRECT:products.id->serial_numbers.product_id`
+- `VALUE:DIRECT:promotion_products.promotion_id->promotions.id`
+- `VALUE:DIRECT:purchase_orders.id->purchase_returns.id`
+- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:sales_orders.customer_id->customers.id`
+- `VALUE:DIRECT:sales_orders.id->sales_returns.id`
+- `VALUE:DIRECT:sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:supplier_products.supplier_id->suppliers.id`
+- `VALUE:DIRECT:suppliers.id->purchase_orders.id`
+- `VALUE:DIRECT:suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:vouchers.id->settlements.id`
+- `VALUE:DIRECT:vouchers.id->settlements.voucher_id`
+- `VALUE:DIRECT:warehouses.id->damage_reports.id`
+- `VALUE:DIRECT:warehouses.id->damage_reports.warehouse_id`
+- `VALUE:DIRECT:warehouses.id->stock_transfers.from_warehouse_id`
+- `VALUE:DIRECT:warehouses.id->stock_transfers.id`
+- `VALUE:DIRECT:warehouses.id->stocktakes.id`
+- `VALUE:DIRECT:warehouses.id->stocktakes.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:portable.sp_approve_requisition
+INSERT INTO audit_log (id)
+SELECT employees.id
+FROM employees;
+-- relation-detector-fixture-end
+
+-- relation-detector-fixture-source: PROCEDURE:portable.sp_approve_sales_return
+INSERT INTO sales_returns (id, order_id)
+```
+
+## `common-sample-data-portable-relations-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sample-data-portable-relations-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/sample-data-portable-relations-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:customers.id->invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.id->invoices.id`
+- `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- hr_employee_department
+SELECT employees.id, departments.id
+FROM employees
+JOIN departments ON employees.department_id = departments.id
+WHERE EXISTS (
+  SELECT 1
+  FROM departments
+  WHERE departments.id = employees.department_id
+```
+
+## `common-semantic-equivalent-batch-expiry-analysis-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: batch expiry analysis relation query.
+SELECT
+    pb.id,
+    p.id AS product_id,
+    i.batch_id
+FROM product_batches pb
+JOIN products p ON pb.product_id = p.id
+JOIN inventory i ON i.batch_id = pb.id
+```
+
+## `common-semantic-equivalent-inventory-posting-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
+- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
+- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
+- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: post inventory transaction from shipped order items.
+INSERT INTO inventory_transactions (
+    product_id,
+    warehouse_id,
+    quantity_delta,
+    before_quantity,
+    after_quantity,
+    source_order_id
+```
+
+## `common-semantic-equivalent-mrp-run-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-mrp-run-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
+INSERT INTO mrp_run_items (
+    plan_id,
+    parent_product_id,
+    component_product_id,
+    required_qty,
+    available_purchase_qty
+)
+```
+
+## `common-semantic-equivalent-picking-task-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-picking-task-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
+- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: generate picking task items for an order.
+INSERT INTO picking_task_items (
+    task_id,
+    order_id,
+    product_id,
+    requested_qty,
+    available_qty,
+    location_id
+```
+
+## `common-semantic-equivalent-return-refund-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-return-refund-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
+- `VALUE:DIRECT:payments.id->refund_records.payment_id`
+- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
+- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
+- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: create refund records from sales returns and payments.
+INSERT INTO refund_records (
+    return_id,
+    order_id,
+    customer_id,
+    payment_id,
+    refund_amount,
+    original_paid_amount
+```
+
+## `common-semantic-equivalent-sales-fact-rebuild-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
+INSERT INTO sales_fact (
+    customer_id,
+    product_id,
+    order_id,
+    sales_amount,
+    quantity_sold,
+    warehouse_id,
+```
+
+## `common-sql-basic-join`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-basic-join/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT *
+FROM orders o
+JOIN users u ON o.user_id = u.id;
+```
+
+## `common-sql-common-aggregate-in-negative`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-aggregate-in-negative/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT o.customer_id
+FROM orders o
+WHERE o.total_amount IN (
+  SELECT SUM(p.amount)
+  FROM payments p
+);
+```
+
+## `common-sql-common-case-update-lineage`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-case-update-lineage/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/sql-common-case-update-lineage/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `CONTROL:CASE_WHEN:customer_scores.score,customer_scores.base_score->customer_scores.score_bucket`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE customer_scores cs
+SET score_bucket = CASE
+  WHEN cs.score > 90 THEN cs.score
+  ELSE cs.base_score
+END;
+```
+
+## `common-sql-common-comma-join`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-comma-join/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT o.id, c.name
+FROM orders o, customers c
+WHERE o.customer_id = c.id;
+```
+
+## `common-sql-common-cte-exists-in`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-cte-exists-in/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+WITH active_customers AS (
+  SELECT c.id, c.region_id
+  FROM customers c
+  WHERE EXISTS (
+    SELECT 1
+    FROM customer_flags f
+    WHERE f.customer_id = c.id
+  )
+```
+
+## `common-sql-common-cte-insert-lineage`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-cte-insert-lineage/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/sql-common-cte-insert-lineage/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:customers.id->customer_region_rollup.customer_id`
+- `VALUE:DIRECT:customers.region_id->customer_region_rollup.region_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO customer_region_rollup (customer_id, region_id)
+WITH active_customers AS (
+  SELECT c.id, c.region_id
+  FROM customers c
+)
+SELECT ac.id, ac.region_id
+FROM active_customers ac;
+```
+
+## `common-sql-common-delete-exists`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | DELETE does not write target column values in Data Lineage v1 |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-delete-exists/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+DELETE FROM orders o
+WHERE EXISTS (
+  SELECT 1
+  FROM customers c
+  WHERE c.id = o.customer_id
+);
+```
+
+## `common-sql-common-derived-table`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-derived-table/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT o.id, dc.id AS customer_id
+FROM orders o
+JOIN (
+  SELECT c.id
+  FROM customers c
+) dc ON o.customer_id = dc.id;
+```
+
+## `common-sql-common-function-equality-negative`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-function-equality-negative/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT c.id, u.id
+FROM customers c
+JOIN users u ON lower(c.email) = u.email;
+```
+
+## `common-sql-common-insert-select-lineage`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-insert-select-lineage/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/sql-common-insert-select-lineage/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:orders.customer_id->customer_rollup.customer_id`
+- `VALUE:DIRECT:orders.total_amount->customer_rollup.total_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+INSERT INTO customer_rollup (customer_id, total_amount)
+SELECT o.customer_id, o.total_amount
+FROM orders o;
+```
+
+## `common-sql-common-literal-in-like-negative`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-literal-in-like-negative/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT c.id
+FROM customers c
+WHERE c.status IN ('ACTIVE', 'VIP')
+  AND c.name LIKE 'A%';
+```
+
+## `common-sql-common-multi-join`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-multi-join/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT o.id, c.name, p.sku
+FROM orders o
+JOIN customers c ON o.customer_id = c.id
+JOIN order_items oi ON oi.order_id = o.id
+JOIN products p ON oi.product_id = p.id;
+```
+
+## `common-sql-common-scalar-in`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-scalar-in/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT o.id
+FROM orders o
+WHERE o.customer_id IN (
+  SELECT c.id
+  FROM customers c
+);
+```
+
+## `common-sql-common-self-join`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-self-join/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT e.id, m.id AS manager_id
+FROM employees e
+JOIN employees m ON e.manager_id = m.id;
+```
+
+## `common-sql-common-tuple-in`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-tuple-in/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT o.id
+FROM orders o
+WHERE (o.region_id, o.customer_id) IN (
+  SELECT cr.region_id, cr.customer_id
+  FROM customer_regions cr
+);
+```
+
+## `common-sql-common-update-set-lineage`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-common-update-set-lineage/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/sql-common-update-set-lineage/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:customer_rollup.total_amount,orders.total_amount->customer_rollup.total_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+UPDATE customer_rollup cr
+SET total_amount = cr.total_amount + (
+  SELECT o.total_amount
+  FROM orders o
+  WHERE o.customer_id = cr.customer_id
+);
+```
+
+## `common-sql-join-using`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/common/sql-join-using/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+SELECT *
+FROM orders o
+JOIN order_tags ot USING (order_id);
+```
+
+## `commonsample-data-full-01-schema-02-views-views-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `VIEW` |
+| Input | `test-fixtures/correctness/common/common-sample-data-full-01-schema-02-views-views-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-01-schema-02-views-views-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: VIEW:portable.v_account_balance
+SELECT accounts.id
+FROM accounts
+JOIN vouchers ON accounts.id = vouchers.id
+-- relation-detector-fixture-end
+
+-- relation-detector-fixture-source: VIEW:portable.v_dept_headcount
+SELECT departments.id
+```
+
+## `commonsample-data-full-02-processes-01-procedures-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/common/common-sample-data-full-02-processes-01-procedures-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-02-processes-01-procedures-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:accounts.id->cashier_journals.account_id`
+- `VALUE:DIRECT:accounts.id->cashier_journals.id`
+- `VALUE:DIRECT:accounts.id->reconciliations.account_id`
+- `VALUE:DIRECT:accounts.id->reconciliations.id`
+- `VALUE:DIRECT:approval_workflows.id->approval_instances.id`
+- `VALUE:DIRECT:approval_workflows.id->approval_instances.workflow_id`
+- `VALUE:DIRECT:customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:customers.id->sales_orders.id`
+- `VALUE:DIRECT:customers.id->service_tickets.customer_id`
+- `VALUE:DIRECT:customers.id->service_tickets.id`
+- `VALUE:DIRECT:departments.id->departments.id`
+- `VALUE:DIRECT:departments.id->departments.parent_id`
+- `VALUE:DIRECT:departments.id->employees.department_id`
+- `VALUE:DIRECT:departments.id->employees.id`
+- `VALUE:DIRECT:departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:departments.id->purchase_requisitions.id`
+- `VALUE:DIRECT:employees.id->attendance.employee_id`
+- `VALUE:DIRECT:employees.id->attendance.id`
+- `VALUE:DIRECT:employees.id->audit_log.id`
+- `VALUE:DIRECT:employees.id->contracts.id`
+- `VALUE:DIRECT:employees.id->contracts.prepared_by`
+- `VALUE:DIRECT:employees.id->customers.id`
+- `VALUE:DIRECT:employees.id->departments.id`
+- `VALUE:DIRECT:employees.id->inventory.id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.id`
+- `VALUE:DIRECT:employees.id->products.id`
+- `VALUE:DIRECT:employees.id->purchase_orders.id`
+- `VALUE:DIRECT:employees.id->sales_orders.id`
+- `VALUE:DIRECT:employees.id->suppliers.id`
+- `VALUE:DIRECT:employees.id->tax_filings.id`
+- `VALUE:DIRECT:employees.id->tax_filings.prepared_by`
+- `VALUE:DIRECT:employees.id->vouchers.id`
+- `VALUE:DIRECT:employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:employees.id->warehouses.id`
+- `VALUE:DIRECT:employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:invoices.id->three_way_matching.id`
+- `VALUE:DIRECT:invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:ledger_books.id->accounting_periods.id`
+- `VALUE:DIRECT:ledger_books.id->accounting_periods.ledger_book_id`
+- `VALUE:DIRECT:product_categories.id->products.category_id`
+- `VALUE:DIRECT:product_categories.id->products.id`
+- `VALUE:DIRECT:products.id->inventory.id`
+- `VALUE:DIRECT:products.id->inventory.product_id`
+- `VALUE:DIRECT:products.id->serial_numbers.id`
+- `VALUE:DIRECT:products.id->serial_numbers.product_id`
+- `VALUE:DIRECT:promotion_products.promotion_id->promotions.id`
+- `VALUE:DIRECT:purchase_orders.id->purchase_returns.id`
+- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:sales_orders.customer_id->customers.id`
+- `VALUE:DIRECT:sales_orders.id->sales_returns.id`
+- `VALUE:DIRECT:sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:supplier_products.supplier_id->suppliers.id`
+- `VALUE:DIRECT:suppliers.id->purchase_orders.id`
+- `VALUE:DIRECT:suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:vouchers.id->settlements.id`
+- `VALUE:DIRECT:vouchers.id->settlements.voucher_id`
+- `VALUE:DIRECT:warehouses.id->damage_reports.id`
+- `VALUE:DIRECT:warehouses.id->damage_reports.warehouse_id`
+- `VALUE:DIRECT:warehouses.id->stock_transfers.from_warehouse_id`
+- `VALUE:DIRECT:warehouses.id->stock_transfers.id`
+- `VALUE:DIRECT:warehouses.id->stocktakes.id`
+- `VALUE:DIRECT:warehouses.id->stocktakes.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: ROUTINE:portable.sp_approve_requisition
+CREATE PROCEDURE sp_approve_requisition()
+BEGIN ATOMIC
+  INSERT INTO audit_log (id)
+  SELECT employees.id
+  FROM employees;
+END;
+-- relation-detector-fixture-end
+```
+
+## `commonsample-data-full-02-processes-03-triggers-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/common/common-sample-data-full-02-processes-03-triggers-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-02-processes-03-triggers-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:employees.id->audit_log.id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: TRIGGER:portable.trg_audit_employee_insert
+CREATE TRIGGER trg_audit_employee_insert
+AFTER INSERT ON employees
+REFERENCING NEW ROW AS new_row
+FOR EACH ROW
+BEGIN ATOMIC
+  SELECT employees.id, departments.id
+  FROM employees
+```
+
+## `commonsample-data-full-02-processes-04-process-bodies-for-golden-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `test-fixtures/correctness/common/common-sample-data-full-02-processes-04-process-bodies-for-golden-sql/input.sql` |
+| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-02-processes-04-process-bodies-for-golden-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:accounts.id->cashier_journals.account_id`
+- `VALUE:DIRECT:accounts.id->cashier_journals.id`
+- `VALUE:DIRECT:accounts.id->reconciliations.account_id`
+- `VALUE:DIRECT:accounts.id->reconciliations.id`
+- `VALUE:DIRECT:approval_workflows.id->approval_instances.id`
+- `VALUE:DIRECT:approval_workflows.id->approval_instances.workflow_id`
+- `VALUE:DIRECT:customers.id->sales_orders.customer_id`
+- `VALUE:DIRECT:customers.id->sales_orders.id`
+- `VALUE:DIRECT:customers.id->service_tickets.customer_id`
+- `VALUE:DIRECT:customers.id->service_tickets.id`
+- `VALUE:DIRECT:departments.id->departments.id`
+- `VALUE:DIRECT:departments.id->departments.parent_id`
+- `VALUE:DIRECT:departments.id->employees.department_id`
+- `VALUE:DIRECT:departments.id->employees.id`
+- `VALUE:DIRECT:departments.id->purchase_requisitions.department_id`
+- `VALUE:DIRECT:departments.id->purchase_requisitions.id`
+- `VALUE:DIRECT:employees.id->attendance.employee_id`
+- `VALUE:DIRECT:employees.id->attendance.id`
+- `VALUE:DIRECT:employees.id->audit_log.id`
+- `VALUE:DIRECT:employees.id->contracts.id`
+- `VALUE:DIRECT:employees.id->contracts.prepared_by`
+- `VALUE:DIRECT:employees.id->customers.id`
+- `VALUE:DIRECT:employees.id->departments.id`
+- `VALUE:DIRECT:employees.id->inventory.id`
+- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:employees.id->performance_reviews.id`
+- `VALUE:DIRECT:employees.id->products.id`
+- `VALUE:DIRECT:employees.id->purchase_orders.id`
+- `VALUE:DIRECT:employees.id->sales_orders.id`
+- `VALUE:DIRECT:employees.id->suppliers.id`
+- `VALUE:DIRECT:employees.id->tax_filings.id`
+- `VALUE:DIRECT:employees.id->tax_filings.prepared_by`
+- `VALUE:DIRECT:employees.id->vouchers.id`
+- `VALUE:DIRECT:employees.id->vouchers.prepared_by`
+- `VALUE:DIRECT:employees.id->warehouses.id`
+- `VALUE:DIRECT:employees.id->warehouses.manager_id`
+- `VALUE:DIRECT:invoices.id->three_way_matching.id`
+- `VALUE:DIRECT:invoices.id->three_way_matching.invoice_id`
+- `VALUE:DIRECT:ledger_books.id->accounting_periods.id`
+- `VALUE:DIRECT:ledger_books.id->accounting_periods.ledger_book_id`
+- `VALUE:DIRECT:product_categories.id->products.category_id`
+- `VALUE:DIRECT:product_categories.id->products.id`
+- `VALUE:DIRECT:products.id->inventory.id`
+- `VALUE:DIRECT:products.id->inventory.product_id`
+- `VALUE:DIRECT:products.id->serial_numbers.id`
+- `VALUE:DIRECT:products.id->serial_numbers.product_id`
+- `VALUE:DIRECT:promotion_products.promotion_id->promotions.id`
+- `VALUE:DIRECT:purchase_orders.id->purchase_returns.id`
+- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:sales_orders.customer_id->customers.id`
+- `VALUE:DIRECT:sales_orders.id->sales_returns.id`
+- `VALUE:DIRECT:sales_orders.id->sales_returns.order_id`
+- `VALUE:DIRECT:sales_orders.id->shipments.id`
+- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
+- `VALUE:DIRECT:supplier_products.supplier_id->suppliers.id`
+- `VALUE:DIRECT:suppliers.id->purchase_orders.id`
+- `VALUE:DIRECT:suppliers.id->purchase_orders.supplier_id`
+- `VALUE:DIRECT:vouchers.id->settlements.id`
+- `VALUE:DIRECT:vouchers.id->settlements.voucher_id`
+- `VALUE:DIRECT:warehouses.id->damage_reports.id`
+- `VALUE:DIRECT:warehouses.id->damage_reports.warehouse_id`
+- `VALUE:DIRECT:warehouses.id->stock_transfers.from_warehouse_id`
+- `VALUE:DIRECT:warehouses.id->stock_transfers.id`
+- `VALUE:DIRECT:warehouses.id->stocktakes.id`
+- `VALUE:DIRECT:warehouses.id->stocktakes.warehouse_id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.id`
+- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- relation-detector-fixture-source: PROCEDURE:portable.sp_approve_requisition
+INSERT INTO audit_log (id)
+SELECT employees.id
+FROM employees;
+-- relation-detector-fixture-end
+
+-- relation-detector-fixture-source: PROCEDURE:portable.sp_approve_sales_return
+INSERT INTO sales_returns (id, order_id)
+```
+
+## `commonsample-data-full-02-processes-06-erp-deep-scenario-process-bodies-for-golden-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PROCEDURE` |
+| Input | `sample-data/portable/02-processes/06-erp-deep-scenario-process-bodies-for-golden.sql` |
+| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-02-processes-06-erp-deep-scenario-process-bodies-for-golden-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:ARITHMETIC:sales_order_items.amount,products.purchase_price->sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
+- `VALUE:DIRECT:accounts.id->payment_receipts.account_id`
+- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
+- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
+- `VALUE:DIRECT:employees.id->audit_log.employee_id`
+- `VALUE:DIRECT:employees.id->audit_log.target_id`
+- `VALUE:DIRECT:employees.id->employee_roles.employee_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
+- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:DIRECT:material_issue_items.unit_cost->work_order_costs.material_cost`
+- `VALUE:DIRECT:mrp_runs.id->mrp_run_items.run_id`
+- `VALUE:DIRECT:operation_reports.labor_minutes->work_order_costs.labor_cost`
+- `VALUE:DIRECT:operation_reports.machine_minutes->work_order_costs.overhead_cost`
+- `VALUE:DIRECT:payment_receipts.amount->payments.amount`
+- `VALUE:DIRECT:payment_receipts.currency->payments.currency`
+- `VALUE:DIRECT:payment_receipts.id->payments.id`
+- `VALUE:DIRECT:payment_receipts.id->payments.order_id`
+- `VALUE:DIRECT:payment_receipts.id->payments.receipt_id`
+- `VALUE:DIRECT:payment_receipts.party_id->payments.customer_id`
+- `VALUE:DIRECT:payment_receipts.receipt_date->payments.payment_date`
+- `VALUE:DIRECT:payment_receipts.receipt_no->payments.payment_no`
+- `VALUE:DIRECT:payments.amount->sales_fact.paid_amount`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:picking_tasks.id->picking_task_items.picking_task_id`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.id`
+- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
+- `VALUE:DIRECT:production_plans.planner_id->mrp_runs.created_by`
+- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
+- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
+- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
+- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
+- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
+- `VALUE:DIRECT:repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:DIRECT:roles.id->employee_roles.role_id`
+- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
+- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
+- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
+- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.id`
+- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
+- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
+- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
+- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
+- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.customer_id->payment_receipts.party_id`
+- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
+- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->payment_receipts.id`
+- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
+- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
+- `VALUE:DIRECT:sales_orders.order_date->payment_receipts.receipt_date`
+- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
+- `VALUE:DIRECT:sales_orders.order_no->payment_receipts.receipt_no`
+- `VALUE:DIRECT:sales_orders.paid_amount->payment_receipts.amount`
+- `VALUE:DIRECT:sales_orders.salesperson_id->payment_receipts.handled_by`
+- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
+- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
+- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
+- `VALUE:DIRECT:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:DIRECT:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:DIRECT:warehouses.city->region_dim.city`
+- `VALUE:DIRECT:warehouses.code->region_dim.region_code`
+- `VALUE:DIRECT:warehouses.district->region_dim.district`
+- `VALUE:DIRECT:warehouses.id->region_dim.id`
+- `VALUE:DIRECT:warehouses.name->region_dim.region_name`
+- `VALUE:DIRECT:warehouses.province->region_dim.province`
+- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- Parser-ready process bodies for the ERP deep scenario extension.
+
+-- relation-detector-fixture-source: PROCEDURE:portable.sp_run_mrp_for_plan
+INSERT INTO mrp_runs (id, plan_id, created_by)
+SELECT production_plans.id, production_plans.id, production_plans.planner_id
+FROM production_plans;
+
+INSERT INTO mrp_run_items (run_id, parent_product_id, component_product_id, suggested_supplier_id)
+```
+
+## `commonsample-data-full-04-queries-01-business-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `EXISTING_GOLD` |
+| Reason | fixture already has expected-lineage.json |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/portable/04-queries/01-business-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-04-queries-01-business-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- `VALUE:DIRECT:customers.id->invoices.customer_id`
+- `VALUE:DIRECT:sales_orders.id->invoices.id`
+- `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- hr_employee_department
+SELECT employees.id, departments.id
+FROM employees
+JOIN departments ON employees.department_id = departments.id
+WHERE EXISTS (
+  SELECT 1
+  FROM departments
+  WHERE departments.id = employees.department_id
+```
+
+## `commonsample-data-full-04-queries-02-erp-deep-scenario-queries-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
+| Database | `COMMON` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `sample-data/portable/04-queries/02-erp-deep-scenario-queries.sql` |
+| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-04-queries-02-erp-deep-scenario-queries-sql/expected-lineage.json` |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+-- ============================================================
+-- ERP深业务场景分析查询
+-- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
+--       预算执行、主数据治理、销售毛利和生产效率
+-- SQL dialect: portable common subset
+-- ============================================================
+
 ```
 
 ## `mysql-basic-correctness-case-01-ddl`
@@ -2155,1384 +3533,6 @@ BEGIN
 BEGIN
     -- [1. 局部控制变量声明]
     DECLARE i INT DEFAULT 0;
-```
-
-## `common-sample-data-portable-data-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | write statement has no physical table.column source in Data Lineage v1 |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sample-data-portable-data-sql/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- Portable seed data targets, expressed as INSERT ... SELECT for common parser compatibility.
-
-INSERT INTO departments (id)
-SELECT 1;
-
-INSERT INTO positions (id)
-SELECT 2;
-```
-
-## `common-sample-data-portable-lineage-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sample-data-portable-lineage-sql/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/sample-data-portable-lineage-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:DIRECT:customers.id->invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.id->invoices.id`
-- `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- hr_employee_department
-SELECT employees.id, departments.id
-FROM employees
-JOIN departments ON employees.department_id = departments.id
-WHERE EXISTS (
-  SELECT 1
-  FROM departments
-  WHERE departments.id = employees.department_id
-```
-
-## `common-sample-data-portable-process-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sample-data-portable-process-sql/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/sample-data-portable-process-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:DIRECT:accounts.id->cashier_journals.account_id`
-- `VALUE:DIRECT:accounts.id->cashier_journals.id`
-- `VALUE:DIRECT:accounts.id->reconciliations.account_id`
-- `VALUE:DIRECT:accounts.id->reconciliations.id`
-- `VALUE:DIRECT:approval_workflows.id->approval_instances.id`
-- `VALUE:DIRECT:approval_workflows.id->approval_instances.workflow_id`
-- `VALUE:DIRECT:customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:customers.id->sales_orders.id`
-- `VALUE:DIRECT:customers.id->service_tickets.customer_id`
-- `VALUE:DIRECT:customers.id->service_tickets.id`
-- `VALUE:DIRECT:departments.id->departments.id`
-- `VALUE:DIRECT:departments.id->departments.parent_id`
-- `VALUE:DIRECT:departments.id->employees.department_id`
-- `VALUE:DIRECT:departments.id->employees.id`
-- `VALUE:DIRECT:departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:departments.id->purchase_requisitions.id`
-- `VALUE:DIRECT:employees.id->attendance.employee_id`
-- `VALUE:DIRECT:employees.id->attendance.id`
-- `VALUE:DIRECT:employees.id->audit_log.id`
-- `VALUE:DIRECT:employees.id->contracts.id`
-- `VALUE:DIRECT:employees.id->contracts.prepared_by`
-- `VALUE:DIRECT:employees.id->customers.id`
-- `VALUE:DIRECT:employees.id->departments.id`
-- `VALUE:DIRECT:employees.id->inventory.id`
-- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
-- `VALUE:DIRECT:employees.id->performance_reviews.id`
-- `VALUE:DIRECT:employees.id->products.id`
-- `VALUE:DIRECT:employees.id->purchase_orders.id`
-- `VALUE:DIRECT:employees.id->sales_orders.id`
-- `VALUE:DIRECT:employees.id->suppliers.id`
-- `VALUE:DIRECT:employees.id->tax_filings.id`
-- `VALUE:DIRECT:employees.id->tax_filings.prepared_by`
-- `VALUE:DIRECT:employees.id->vouchers.id`
-- `VALUE:DIRECT:employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:employees.id->warehouses.id`
-- `VALUE:DIRECT:employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:invoices.id->three_way_matching.id`
-- `VALUE:DIRECT:invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:ledger_books.id->accounting_periods.id`
-- `VALUE:DIRECT:ledger_books.id->accounting_periods.ledger_book_id`
-- `VALUE:DIRECT:product_categories.id->products.category_id`
-- `VALUE:DIRECT:product_categories.id->products.id`
-- `VALUE:DIRECT:products.id->inventory.id`
-- `VALUE:DIRECT:products.id->inventory.product_id`
-- `VALUE:DIRECT:products.id->serial_numbers.id`
-- `VALUE:DIRECT:products.id->serial_numbers.product_id`
-- `VALUE:DIRECT:promotion_products.promotion_id->promotions.id`
-- `VALUE:DIRECT:purchase_orders.id->purchase_returns.id`
-- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:sales_orders.customer_id->customers.id`
-- `VALUE:DIRECT:sales_orders.id->sales_returns.id`
-- `VALUE:DIRECT:sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:sales_orders.id->shipments.id`
-- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:supplier_products.supplier_id->suppliers.id`
-- `VALUE:DIRECT:suppliers.id->purchase_orders.id`
-- `VALUE:DIRECT:suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:vouchers.id->settlements.id`
-- `VALUE:DIRECT:vouchers.id->settlements.voucher_id`
-- `VALUE:DIRECT:warehouses.id->damage_reports.id`
-- `VALUE:DIRECT:warehouses.id->damage_reports.warehouse_id`
-- `VALUE:DIRECT:warehouses.id->stock_transfers.from_warehouse_id`
-- `VALUE:DIRECT:warehouses.id->stock_transfers.id`
-- `VALUE:DIRECT:warehouses.id->stocktakes.id`
-- `VALUE:DIRECT:warehouses.id->stocktakes.warehouse_id`
-- `VALUE:DIRECT:work_orders.id->work_order_materials.id`
-- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- relation-detector-fixture-source: PROCEDURE:portable.sp_approve_requisition
-INSERT INTO audit_log (id)
-SELECT employees.id
-FROM employees;
--- relation-detector-fixture-end
-
--- relation-detector-fixture-source: PROCEDURE:portable.sp_approve_sales_return
-INSERT INTO sales_returns (id, order_id)
-```
-
-## `common-sample-data-portable-relations-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sample-data-portable-relations-sql/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/sample-data-portable-relations-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:DIRECT:customers.id->invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.id->invoices.id`
-- `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- hr_employee_department
-SELECT employees.id, departments.id
-FROM employees
-JOIN departments ON employees.department_id = departments.id
-WHERE EXISTS (
-  SELECT 1
-  FROM departments
-  WHERE departments.id = employees.department_id
-```
-
-## `common-semantic-equivalent-batch-expiry-analysis-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/semantic-equivalent/batch-expiry-analysis/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-batch-expiry-analysis-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- Semantic equivalent scenario: batch expiry analysis relation query.
-SELECT
-    pb.id,
-    p.id AS product_id,
-    i.batch_id
-FROM product_batches pb
-JOIN products p ON pb.product_id = p.id
-JOIN inventory i ON i.batch_id = pb.id
-```
-
-## `common-semantic-equivalent-inventory-posting-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/semantic-equivalent/inventory-posting/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-inventory-posting-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_quantity`
-- `VALUE:DIRECT:inventory.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:inventory.quantity->inventory_transactions.before_quantity`
-- `VALUE:DIRECT:inventory.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_delta`
-- `VALUE:DIRECT:sales_orders.id->inventory_transactions.source_order_id`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- Semantic equivalent scenario: post inventory transaction from shipped order items.
-INSERT INTO inventory_transactions (
-    product_id,
-    warehouse_id,
-    quantity_delta,
-    before_quantity,
-    after_quantity,
-    source_order_id
-```
-
-## `common-semantic-equivalent-mrp-run-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/semantic-equivalent/mrp-run/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-mrp-run-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:ARITHMETIC:boms.quantity,production_plans.planned_quantity->mrp_run_items.required_qty`
-- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
-- `VALUE:DIRECT:production_plans.id->mrp_run_items.plan_id`
-- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:purchase_order_items.quantity->mrp_run_items.available_purchase_qty`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- Semantic equivalent scenario: generate MRP run items from production plan and BOM.
-INSERT INTO mrp_run_items (
-    plan_id,
-    parent_product_id,
-    component_product_id,
-    required_qty,
-    available_purchase_qty
-)
-```
-
-## `common-semantic-equivalent-picking-task-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/semantic-equivalent/picking-task/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-picking-task-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:DIRECT:inventory_location_balances.available_quantity->picking_task_items.available_qty`
-- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:DIRECT:picking_tasks.id->picking_task_items.task_id`
-- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->picking_task_items.requested_qty`
-- `VALUE:DIRECT:sales_orders.id->picking_task_items.order_id`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- Semantic equivalent scenario: generate picking task items for an order.
-INSERT INTO picking_task_items (
-    task_id,
-    order_id,
-    product_id,
-    requested_qty,
-    available_qty,
-    location_id
-```
-
-## `common-semantic-equivalent-return-refund-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/semantic-equivalent/return-refund/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-return-refund-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:DIRECT:payments.amount->refund_records.original_paid_amount`
-- `VALUE:DIRECT:payments.id->refund_records.payment_id`
-- `VALUE:DIRECT:sales_orders.customer_id->refund_records.customer_id`
-- `VALUE:DIRECT:sales_orders.id->refund_records.order_id`
-- `VALUE:DIRECT:sales_returns.id->refund_records.return_id`
-- `VALUE:DIRECT:sales_returns.refund_amount->refund_records.refund_amount`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- Semantic equivalent scenario: create refund records from sales returns and payments.
-INSERT INTO refund_records (
-    return_id,
-    order_id,
-    customer_id,
-    payment_id,
-    refund_amount,
-    original_paid_amount
-```
-
-## `common-semantic-equivalent-sales-fact-rebuild-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/semantic-equivalent/sales-fact-rebuild/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/semantic-equivalent-sales-fact-rebuild-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:ARITHMETIC:sales_order_items.amount->sales_fact.tax_amount`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- Semantic equivalent scenario: rebuild sales_fact from sales order facts.
-INSERT INTO sales_fact (
-    customer_id,
-    product_id,
-    order_id,
-    sales_amount,
-    quantity_sold,
-    warehouse_id,
-```
-
-## `common-sql-basic-join`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-basic-join/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-SELECT *
-FROM orders o
-JOIN users u ON o.user_id = u.id;
-```
-
-## `common-sql-common-aggregate-in-negative`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-aggregate-in-negative/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-SELECT o.customer_id
-FROM orders o
-WHERE o.total_amount IN (
-  SELECT SUM(p.amount)
-  FROM payments p
-);
-```
-
-## `common-sql-common-case-update-lineage`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-case-update-lineage/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/sql-common-case-update-lineage/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `CONTROL:CASE_WHEN:customer_scores.score,customer_scores.base_score->customer_scores.score_bucket`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-UPDATE customer_scores cs
-SET score_bucket = CASE
-  WHEN cs.score > 90 THEN cs.score
-  ELSE cs.base_score
-END;
-```
-
-## `common-sql-common-comma-join`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-comma-join/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-SELECT o.id, c.name
-FROM orders o, customers c
-WHERE o.customer_id = c.id;
-```
-
-## `common-sql-common-cte-exists-in`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-cte-exists-in/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-WITH active_customers AS (
-  SELECT c.id, c.region_id
-  FROM customers c
-  WHERE EXISTS (
-    SELECT 1
-    FROM customer_flags f
-    WHERE f.customer_id = c.id
-  )
-```
-
-## `common-sql-common-cte-insert-lineage`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-cte-insert-lineage/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/sql-common-cte-insert-lineage/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:DIRECT:customers.id->customer_region_rollup.customer_id`
-- `VALUE:DIRECT:customers.region_id->customer_region_rollup.region_id`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-INSERT INTO customer_region_rollup (customer_id, region_id)
-WITH active_customers AS (
-  SELECT c.id, c.region_id
-  FROM customers c
-)
-SELECT ac.id, ac.region_id
-FROM active_customers ac;
-```
-
-## `common-sql-common-delete-exists`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | DELETE does not write target column values in Data Lineage v1 |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-delete-exists/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-DELETE FROM orders o
-WHERE EXISTS (
-  SELECT 1
-  FROM customers c
-  WHERE c.id = o.customer_id
-);
-```
-
-## `common-sql-common-derived-table`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-derived-table/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-SELECT o.id, dc.id AS customer_id
-FROM orders o
-JOIN (
-  SELECT c.id
-  FROM customers c
-) dc ON o.customer_id = dc.id;
-```
-
-## `common-sql-common-function-equality-negative`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-function-equality-negative/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-SELECT c.id, u.id
-FROM customers c
-JOIN users u ON lower(c.email) = u.email;
-```
-
-## `common-sql-common-insert-select-lineage`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-insert-select-lineage/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/sql-common-insert-select-lineage/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:DIRECT:orders.customer_id->customer_rollup.customer_id`
-- `VALUE:DIRECT:orders.total_amount->customer_rollup.total_amount`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-INSERT INTO customer_rollup (customer_id, total_amount)
-SELECT o.customer_id, o.total_amount
-FROM orders o;
-```
-
-## `common-sql-common-literal-in-like-negative`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-literal-in-like-negative/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-SELECT c.id
-FROM customers c
-WHERE c.status IN ('ACTIVE', 'VIP')
-  AND c.name LIKE 'A%';
-```
-
-## `common-sql-common-multi-join`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-multi-join/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-SELECT o.id, c.name, p.sku
-FROM orders o
-JOIN customers c ON o.customer_id = c.id
-JOIN order_items oi ON oi.order_id = o.id
-JOIN products p ON oi.product_id = p.id;
-```
-
-## `common-sql-common-scalar-in`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-scalar-in/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-SELECT o.id
-FROM orders o
-WHERE o.customer_id IN (
-  SELECT c.id
-  FROM customers c
-);
-```
-
-## `common-sql-common-self-join`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-self-join/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-SELECT e.id, m.id AS manager_id
-FROM employees e
-JOIN employees m ON e.manager_id = m.id;
-```
-
-## `common-sql-common-tuple-in`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-tuple-in/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-SELECT o.id
-FROM orders o
-WHERE (o.region_id, o.customer_id) IN (
-  SELECT cr.region_id, cr.customer_id
-  FROM customer_regions cr
-);
-```
-
-## `common-sql-common-update-set-lineage`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-common-update-set-lineage/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/sql-common-update-set-lineage/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:ARITHMETIC:customer_rollup.total_amount,orders.total_amount->customer_rollup.total_amount`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-UPDATE customer_rollup cr
-SET total_amount = cr.total_amount + (
-  SELECT o.total_amount
-  FROM orders o
-  WHERE o.customer_id = cr.customer_id
-);
-```
-
-## `common-sql-join-using`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `test-fixtures/correctness/common/sql-join-using/input.sql` |
-| Expected lineage | None |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
-SELECT *
-FROM orders o
-JOIN order_tags ot USING (order_id);
-```
-
-## `commonsample-data-full-01-schema-02-views-views-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `VIEW` |
-| Input | `test-fixtures/correctness/common/common-sample-data-full-01-schema-02-views-views-sql/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-01-schema-02-views-views-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- relation-detector-fixture-source: VIEW:portable.v_account_balance
-SELECT accounts.id
-FROM accounts
-JOIN vouchers ON accounts.id = vouchers.id
--- relation-detector-fixture-end
-
--- relation-detector-fixture-source: VIEW:portable.v_dept_headcount
-SELECT departments.id
-```
-
-## `commonsample-data-full-02-processes-01-procedures-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PROCEDURE` |
-| Input | `test-fixtures/correctness/common/common-sample-data-full-02-processes-01-procedures-sql/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-02-processes-01-procedures-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:DIRECT:accounts.id->cashier_journals.account_id`
-- `VALUE:DIRECT:accounts.id->cashier_journals.id`
-- `VALUE:DIRECT:accounts.id->reconciliations.account_id`
-- `VALUE:DIRECT:accounts.id->reconciliations.id`
-- `VALUE:DIRECT:approval_workflows.id->approval_instances.id`
-- `VALUE:DIRECT:approval_workflows.id->approval_instances.workflow_id`
-- `VALUE:DIRECT:customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:customers.id->sales_orders.id`
-- `VALUE:DIRECT:customers.id->service_tickets.customer_id`
-- `VALUE:DIRECT:customers.id->service_tickets.id`
-- `VALUE:DIRECT:departments.id->departments.id`
-- `VALUE:DIRECT:departments.id->departments.parent_id`
-- `VALUE:DIRECT:departments.id->employees.department_id`
-- `VALUE:DIRECT:departments.id->employees.id`
-- `VALUE:DIRECT:departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:departments.id->purchase_requisitions.id`
-- `VALUE:DIRECT:employees.id->attendance.employee_id`
-- `VALUE:DIRECT:employees.id->attendance.id`
-- `VALUE:DIRECT:employees.id->audit_log.id`
-- `VALUE:DIRECT:employees.id->contracts.id`
-- `VALUE:DIRECT:employees.id->contracts.prepared_by`
-- `VALUE:DIRECT:employees.id->customers.id`
-- `VALUE:DIRECT:employees.id->departments.id`
-- `VALUE:DIRECT:employees.id->inventory.id`
-- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
-- `VALUE:DIRECT:employees.id->performance_reviews.id`
-- `VALUE:DIRECT:employees.id->products.id`
-- `VALUE:DIRECT:employees.id->purchase_orders.id`
-- `VALUE:DIRECT:employees.id->sales_orders.id`
-- `VALUE:DIRECT:employees.id->suppliers.id`
-- `VALUE:DIRECT:employees.id->tax_filings.id`
-- `VALUE:DIRECT:employees.id->tax_filings.prepared_by`
-- `VALUE:DIRECT:employees.id->vouchers.id`
-- `VALUE:DIRECT:employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:employees.id->warehouses.id`
-- `VALUE:DIRECT:employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:invoices.id->three_way_matching.id`
-- `VALUE:DIRECT:invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:ledger_books.id->accounting_periods.id`
-- `VALUE:DIRECT:ledger_books.id->accounting_periods.ledger_book_id`
-- `VALUE:DIRECT:product_categories.id->products.category_id`
-- `VALUE:DIRECT:product_categories.id->products.id`
-- `VALUE:DIRECT:products.id->inventory.id`
-- `VALUE:DIRECT:products.id->inventory.product_id`
-- `VALUE:DIRECT:products.id->serial_numbers.id`
-- `VALUE:DIRECT:products.id->serial_numbers.product_id`
-- `VALUE:DIRECT:promotion_products.promotion_id->promotions.id`
-- `VALUE:DIRECT:purchase_orders.id->purchase_returns.id`
-- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:sales_orders.customer_id->customers.id`
-- `VALUE:DIRECT:sales_orders.id->sales_returns.id`
-- `VALUE:DIRECT:sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:sales_orders.id->shipments.id`
-- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:supplier_products.supplier_id->suppliers.id`
-- `VALUE:DIRECT:suppliers.id->purchase_orders.id`
-- `VALUE:DIRECT:suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:vouchers.id->settlements.id`
-- `VALUE:DIRECT:vouchers.id->settlements.voucher_id`
-- `VALUE:DIRECT:warehouses.id->damage_reports.id`
-- `VALUE:DIRECT:warehouses.id->damage_reports.warehouse_id`
-- `VALUE:DIRECT:warehouses.id->stock_transfers.from_warehouse_id`
-- `VALUE:DIRECT:warehouses.id->stock_transfers.id`
-- `VALUE:DIRECT:warehouses.id->stocktakes.id`
-- `VALUE:DIRECT:warehouses.id->stocktakes.warehouse_id`
-- `VALUE:DIRECT:work_orders.id->work_order_materials.id`
-- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- relation-detector-fixture-source: ROUTINE:portable.sp_approve_requisition
-CREATE PROCEDURE sp_approve_requisition()
-BEGIN ATOMIC
-  INSERT INTO audit_log (id)
-  SELECT employees.id
-  FROM employees;
-END;
--- relation-detector-fixture-end
-```
-
-## `commonsample-data-full-02-processes-03-triggers-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PROCEDURE` |
-| Input | `test-fixtures/correctness/common/common-sample-data-full-02-processes-03-triggers-sql/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-02-processes-03-triggers-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:DIRECT:employees.id->audit_log.id`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- relation-detector-fixture-source: TRIGGER:portable.trg_audit_employee_insert
-CREATE TRIGGER trg_audit_employee_insert
-AFTER INSERT ON employees
-REFERENCING NEW ROW AS new_row
-FOR EACH ROW
-BEGIN ATOMIC
-  SELECT employees.id, departments.id
-  FROM employees
-```
-
-## `commonsample-data-full-02-processes-04-process-bodies-for-golden-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PROCEDURE` |
-| Input | `test-fixtures/correctness/common/common-sample-data-full-02-processes-04-process-bodies-for-golden-sql/input.sql` |
-| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-02-processes-04-process-bodies-for-golden-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:DIRECT:accounts.id->cashier_journals.account_id`
-- `VALUE:DIRECT:accounts.id->cashier_journals.id`
-- `VALUE:DIRECT:accounts.id->reconciliations.account_id`
-- `VALUE:DIRECT:accounts.id->reconciliations.id`
-- `VALUE:DIRECT:approval_workflows.id->approval_instances.id`
-- `VALUE:DIRECT:approval_workflows.id->approval_instances.workflow_id`
-- `VALUE:DIRECT:customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:customers.id->sales_orders.id`
-- `VALUE:DIRECT:customers.id->service_tickets.customer_id`
-- `VALUE:DIRECT:customers.id->service_tickets.id`
-- `VALUE:DIRECT:departments.id->departments.id`
-- `VALUE:DIRECT:departments.id->departments.parent_id`
-- `VALUE:DIRECT:departments.id->employees.department_id`
-- `VALUE:DIRECT:departments.id->employees.id`
-- `VALUE:DIRECT:departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:departments.id->purchase_requisitions.id`
-- `VALUE:DIRECT:employees.id->attendance.employee_id`
-- `VALUE:DIRECT:employees.id->attendance.id`
-- `VALUE:DIRECT:employees.id->audit_log.id`
-- `VALUE:DIRECT:employees.id->contracts.id`
-- `VALUE:DIRECT:employees.id->contracts.prepared_by`
-- `VALUE:DIRECT:employees.id->customers.id`
-- `VALUE:DIRECT:employees.id->departments.id`
-- `VALUE:DIRECT:employees.id->inventory.id`
-- `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
-- `VALUE:DIRECT:employees.id->performance_reviews.id`
-- `VALUE:DIRECT:employees.id->products.id`
-- `VALUE:DIRECT:employees.id->purchase_orders.id`
-- `VALUE:DIRECT:employees.id->sales_orders.id`
-- `VALUE:DIRECT:employees.id->suppliers.id`
-- `VALUE:DIRECT:employees.id->tax_filings.id`
-- `VALUE:DIRECT:employees.id->tax_filings.prepared_by`
-- `VALUE:DIRECT:employees.id->vouchers.id`
-- `VALUE:DIRECT:employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:employees.id->warehouses.id`
-- `VALUE:DIRECT:employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:invoices.id->three_way_matching.id`
-- `VALUE:DIRECT:invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:ledger_books.id->accounting_periods.id`
-- `VALUE:DIRECT:ledger_books.id->accounting_periods.ledger_book_id`
-- `VALUE:DIRECT:product_categories.id->products.category_id`
-- `VALUE:DIRECT:product_categories.id->products.id`
-- `VALUE:DIRECT:products.id->inventory.id`
-- `VALUE:DIRECT:products.id->inventory.product_id`
-- `VALUE:DIRECT:products.id->serial_numbers.id`
-- `VALUE:DIRECT:products.id->serial_numbers.product_id`
-- `VALUE:DIRECT:promotion_products.promotion_id->promotions.id`
-- `VALUE:DIRECT:purchase_orders.id->purchase_returns.id`
-- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:sales_orders.customer_id->customers.id`
-- `VALUE:DIRECT:sales_orders.id->sales_returns.id`
-- `VALUE:DIRECT:sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:sales_orders.id->shipments.id`
-- `VALUE:DIRECT:sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:supplier_products.supplier_id->suppliers.id`
-- `VALUE:DIRECT:suppliers.id->purchase_orders.id`
-- `VALUE:DIRECT:suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:vouchers.id->settlements.id`
-- `VALUE:DIRECT:vouchers.id->settlements.voucher_id`
-- `VALUE:DIRECT:warehouses.id->damage_reports.id`
-- `VALUE:DIRECT:warehouses.id->damage_reports.warehouse_id`
-- `VALUE:DIRECT:warehouses.id->stock_transfers.from_warehouse_id`
-- `VALUE:DIRECT:warehouses.id->stock_transfers.id`
-- `VALUE:DIRECT:warehouses.id->stocktakes.id`
-- `VALUE:DIRECT:warehouses.id->stocktakes.warehouse_id`
-- `VALUE:DIRECT:work_orders.id->work_order_materials.id`
-- `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- relation-detector-fixture-source: PROCEDURE:portable.sp_approve_requisition
-INSERT INTO audit_log (id)
-SELECT employees.id
-FROM employees;
--- relation-detector-fixture-end
-
--- relation-detector-fixture-source: PROCEDURE:portable.sp_approve_sales_return
-INSERT INTO sales_returns (id, order_id)
-```
-
-## `commonsample-data-full-02-processes-06-erp-deep-scenario-process-bodies-for-golden-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PROCEDURE` |
-| Input | `sample-data/portable/02-processes/06-erp-deep-scenario-process-bodies-for-golden.sql` |
-| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-02-processes-06-erp-deep-scenario-process-bodies-for-golden-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:ARITHMETIC:sales_order_items.amount,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:ARITHMETIC:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
-- `VALUE:DIRECT:accounts.id->payment_receipts.account_id`
-- `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
-- `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
-- `VALUE:DIRECT:employees.id->audit_log.employee_id`
-- `VALUE:DIRECT:employees.id->audit_log.target_id`
-- `VALUE:DIRECT:employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_cost_layers.source_id`
-- `VALUE:DIRECT:finished_goods_receipts.id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_cost_layers.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
-- `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:DIRECT:material_issue_items.unit_cost->work_order_costs.material_cost`
-- `VALUE:DIRECT:mrp_runs.id->mrp_run_items.run_id`
-- `VALUE:DIRECT:operation_reports.labor_minutes->work_order_costs.labor_cost`
-- `VALUE:DIRECT:operation_reports.machine_minutes->work_order_costs.overhead_cost`
-- `VALUE:DIRECT:payment_receipts.amount->payments.amount`
-- `VALUE:DIRECT:payment_receipts.currency->payments.currency`
-- `VALUE:DIRECT:payment_receipts.id->payments.id`
-- `VALUE:DIRECT:payment_receipts.id->payments.order_id`
-- `VALUE:DIRECT:payment_receipts.id->payments.receipt_id`
-- `VALUE:DIRECT:payment_receipts.party_id->payments.customer_id`
-- `VALUE:DIRECT:payment_receipts.receipt_date->payments.payment_date`
-- `VALUE:DIRECT:payment_receipts.receipt_no->payments.payment_no`
-- `VALUE:DIRECT:payments.amount->sales_fact.paid_amount`
-- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:picking_tasks.id->picking_task_items.picking_task_id`
-- `VALUE:DIRECT:production_plans.id->mrp_runs.id`
-- `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
-- `VALUE:DIRECT:production_plans.planner_id->mrp_runs.created_by`
-- `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
-- `VALUE:DIRECT:purchase_orders.supplier_id->ap_invoices.supplier_id`
-- `VALUE:DIRECT:region_dim.id->sales_fact.region_dim_id`
-- `VALUE:DIRECT:repair_order_parts.batch_id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:repair_order_parts.issued_from_warehouse_id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:repair_order_parts.product_id->inventory_transactions.product_id`
-- `VALUE:DIRECT:repair_order_parts.repair_order_id->inventory_transactions.reference_id`
-- `VALUE:DIRECT:repair_order_parts.unit_cost->repair_orders.actual_cost`
-- `VALUE:DIRECT:roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:sales_order_items.amount->sales_fact.sales_amount`
-- `VALUE:DIRECT:sales_order_items.batch_id->cogs_entries.batch_id`
-- `VALUE:DIRECT:sales_order_items.batch_id->picking_task_items.batch_id`
-- `VALUE:DIRECT:sales_order_items.id->cogs_entries.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->picking_task_items.sales_order_item_id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.id`
-- `VALUE:DIRECT:sales_order_items.id->sales_fact.order_item_id`
-- `VALUE:DIRECT:sales_order_items.product_id->cogs_entries.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->picking_task_items.product_id`
-- `VALUE:DIRECT:sales_order_items.product_id->sales_fact.product_id`
-- `VALUE:DIRECT:sales_order_items.quantity->sales_fact.quantity_sold`
-- `VALUE:DIRECT:sales_orders.customer_id->ar_invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.customer_id->payment_receipts.party_id`
-- `VALUE:DIRECT:sales_orders.customer_id->sales_fact.customer_id`
-- `VALUE:DIRECT:sales_orders.id->ar_invoices.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->cogs_entries.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->payment_receipts.id`
-- `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
-- `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
-- `VALUE:DIRECT:sales_orders.order_date->payment_receipts.receipt_date`
-- `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
-- `VALUE:DIRECT:sales_orders.order_no->payment_receipts.receipt_no`
-- `VALUE:DIRECT:sales_orders.paid_amount->payment_receipts.amount`
-- `VALUE:DIRECT:sales_orders.salesperson_id->payment_receipts.handled_by`
-- `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
-- `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
-- `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
-- `VALUE:DIRECT:sales_returns.refund_amount->sales_fact.refund_amount`
-- `VALUE:DIRECT:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
-- `VALUE:DIRECT:warehouses.city->region_dim.city`
-- `VALUE:DIRECT:warehouses.code->region_dim.region_code`
-- `VALUE:DIRECT:warehouses.district->region_dim.district`
-- `VALUE:DIRECT:warehouses.id->region_dim.id`
-- `VALUE:DIRECT:warehouses.name->region_dim.region_name`
-- `VALUE:DIRECT:warehouses.province->region_dim.province`
-- `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- Parser-ready process bodies for the ERP deep scenario extension.
-
--- relation-detector-fixture-source: PROCEDURE:portable.sp_run_mrp_for_plan
-INSERT INTO mrp_runs (id, plan_id, created_by)
-SELECT production_plans.id, production_plans.id, production_plans.planner_id
-FROM production_plans;
-
-INSERT INTO mrp_run_items (run_id, parent_product_id, component_product_id, suggested_supplier_id)
-```
-
-## `commonsample-data-full-04-queries-01-business-queries-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/portable/04-queries/01-business-queries.sql` |
-| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-04-queries-01-business-queries-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- `VALUE:DIRECT:customers.id->invoices.customer_id`
-- `VALUE:DIRECT:sales_orders.id->invoices.id`
-- `VALUE:DIRECT:sales_orders.total_amount->invoices.total_amount`
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- hr_employee_department
-SELECT employees.id, departments.id
-FROM employees
-JOIN departments ON employees.department_id = departments.id
-WHERE EXISTS (
-  SELECT 1
-  FROM departments
-  WHERE departments.id = employees.department_id
-```
-
-## `commonsample-data-full-04-queries-02-erp-deep-scenario-queries-sql`
-
-| Field | Value |
-| --- | --- |
-| Classification | `NOT_APPLICABLE` |
-| Reason | no UPDATE, INSERT SELECT, or MERGE target column write |
-| Database | `MYSQL` |
-| Parser target | `SQL` |
-| Source type | `PLAIN_SQL` |
-| Input | `sample-data/portable/04-queries/02-erp-deep-scenario-queries.sql` |
-| Expected lineage | `test-fixtures/correctness/common/common-sample-data-full-04-queries-02-erp-deep-scenario-queries-sql/expected-lineage.json` |
-
-**Expected Lineage Fingerprints**
-
-- None
-
-**Extractor Candidate Fingerprints**
-
-- None
-
-**Input Preview**
-
-```sql
--- ============================================================
--- ERP深业务场景分析查询
--- 覆盖: MRP短缺、工单成本、库存估值、AR/AP、WMS、维修、
---       预算执行、主数据治理、销售毛利和生产效率
--- SQL dialect: portable common subset
--- ============================================================
-
 ```
 
 ## `mysql-business-cross-border-reconciliation-procedure-comma-subquery-sql`
@@ -36496,26 +36496,26 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->departments.parent_id`
-- `VALUE:COALESCE:dbo.departments.id->employees.department_id`
-- `VALUE:COALESCE:dbo.departments.id->positions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->attendance.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->employees.manager_id`
-- `VALUE:COALESCE:dbo.employees.id->leave_records.employee_id`
-- `VALUE:COALESCE:dbo.permissions.id->permissions.parent_id`
-- `VALUE:COALESCE:dbo.positions.id->employees.position_id`
-- `VALUE:COALESCE:dbo.roles.id->role_permissions.role_id`
-- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
-- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
-- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
-- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:COALESCE:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:COALESCE:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:COALESCE:dbo.roles.id->dbo.role_permissions.role_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36548,26 +36548,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->warehouses.manager_id`
-- `VALUE:COALESCE:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:COALESCE:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:COALESCE:dbo.product_categories.id->products.category_id`
-- `VALUE:COALESCE:dbo.products.id->product_batches.product_id`
-- `VALUE:COALESCE:dbo.products.id->supplier_products.product_id`
-- `VALUE:COALESCE:dbo.roles.id->employee_roles.role_id`
-- `VALUE:COALESCE:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:COALESCE:dbo.suppliers.id->supplier_products.supplier_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
-- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:COALESCE:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:COALESCE:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36633,26 +36633,26 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:COALESCE:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:COALESCE:dbo.products.id->inventory.product_id`
-- `VALUE:COALESCE:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:COALESCE:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36685,26 +36685,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:COALESCE:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:COALESCE:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:COALESCE:dbo.warehouses.id->purchase_receipts.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36770,26 +36770,26 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:COALESCE:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:COALESCE:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->sales_order_items.product_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:COALESCE:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->sales_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36822,26 +36822,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->sales_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:COALESCE:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:COALESCE:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:COALESCE:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36874,26 +36874,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:COALESCE:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:COALESCE:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->damage_reports.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36926,26 +36926,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->accounts.parent_id`
-- `VALUE:COALESCE:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:COALESCE:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.posted_by`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:COALESCE:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->damage_report_items.product_id`
-- `VALUE:COALESCE:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:COALESCE:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36978,26 +36978,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->cashier_journals.account_id`
-- `VALUE:COALESCE:dbo.accounts.id->reconciliations.account_id`
-- `VALUE:COALESCE:dbo.employees.id->cashier_journals.cashier_id`
-- `VALUE:COALESCE:dbo.employees.id->reconciliations.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->reconciliations.reviewed_by`
-- `VALUE:COALESCE:dbo.employees.id->salary_payments.employee_id`
-- `VALUE:COALESCE:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
-- `VALUE:COALESCE:dbo.vouchers.id->cashier_journals.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->salary_payments.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->settlements.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id`
-- `VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.reconciliations.account_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.prepared_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.reviewed_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.salary_payments.employee_id`
+- `VALUE:COALESCE:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.salary_payments.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.settlements.voucher_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.reconciliations.account_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.settlements.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37030,26 +37030,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->sales_commissions.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->settlements.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->settlements.prepared_by`
-- `VALUE:COALESCE:dbo.product_categories.id->commission_rules.product_category_id`
-- `VALUE:COALESCE:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_commissions.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->shipments.order_id`
-- `VALUE:COALESCE:dbo.settlements.id->settlement_items.settlement_id`
-- `VALUE:COALESCE:dbo.shipments.id->shipping_tracks.shipment_id`
-- `VALUE:COALESCE:dbo.warehouses.id->shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->settlements.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->settlements.prepared_by`
-- `VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id`
-- `VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_commissions.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.prepared_by`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.commission_rules.product_category_id`
+- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.shipments.order_id`
+- `VALUE:COALESCE:dbo.settlements.id->dbo.settlement_items.settlement_id`
+- `VALUE:COALESCE:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.prepared_by`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.shipments.order_id`
+- `VALUE:DIRECT:dbo.settlements.id->dbo.settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.shipments.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37082,26 +37082,103 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->invoices.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:COALESCE:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:COALESCE:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:COALESCE:dbo.products.id->promotion_products.product_id`
-- `VALUE:COALESCE:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:COALESCE:dbo.suppliers.id->invoices.supplier_id`
-- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
+- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `VALUE:AGGREGATE:dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.inventory.locked_quantity->dbo.mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity->dbo.mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.work_orders.planned_quantity,dbo.standard_costs.material_cost,dbo.standard_costs.labor_cost,dbo.standard_costs.overhead_cost->dbo.work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost->dbo.work_order_costs.material_cost`
+- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days->dbo.mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory.quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory.quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.inventory_location_balances.locked_quantity,dbo.picking_task_items.required_qty->dbo.inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate->dbo.mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:dbo.repair_order_parts.quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:COALESCE:dbo.cashier_journals.journal_type,dbo.cashier_journals.counterparty,dbo.cashier_journals.remark->dbo.reconciliation_items.description`
+- `VALUE:COALESCE:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:COALESCE:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:COALESCE:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:COALESCE:dbo.work_order_costs.unit_cost,dbo.finished_goods_receipts.unit_cost->dbo.inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:dbo.finished_goods_receipts.receipt_no->dbo.inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:dbo.production_plans.plan_month,dbo.production_plans.id->dbo.mrp_runs.run_no`
+- `VALUE:CONCAT_FORMAT:dbo.repair_order_parts.id->dbo.inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.boms.child_product_id->dbo.mrp_run_items.component_product_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
+- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_cost_layers.source_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_cost_layers.product_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory.last_stocktake_date`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_run_items.run_id`
+- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_runs.plan_id`
+- `VALUE:DIRECT:dbo.production_plans.product_id->dbo.mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.repair_order_id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.picking_task_items.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.picking_task_items.required_qty`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_task_items.task_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_tasks.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_no->dbo.cashier_journals.remark`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.picking_tasks.warehouse_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37134,26 +37211,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
-- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
-- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
-- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37186,26 +37263,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37238,26 +37315,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37290,26 +37367,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37342,26 +37419,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.approved_by`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipments.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37394,26 +37471,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.boms.id->work_orders.bom_id`
-- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.departments.id->fixed_assets.department_id`
-- `VALUE:DIRECT:dbo.employees.id->fixed_assets.custodian_id`
-- `VALUE:DIRECT:dbo.fixed_assets.id->depreciation_log.asset_id`
-- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->boms.child_product_id`
-- `VALUE:DIRECT:dbo.products.id->boms.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
-- `VALUE:DIRECT:dbo.products.id->three_way_matching.product_id`
-- `VALUE:DIRECT:dbo.products.id->work_orders.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->work_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.work_orders.id->work_order_materials.work_order_id`
+- `VALUE:DIRECT:dbo.boms.id->dbo.work_orders.bom_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.fixed_assets.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.fixed_assets.custodian_id`
+- `VALUE:DIRECT:dbo.fixed_assets.id->dbo.depreciation_log.asset_id`
+- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.boms.child_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.boms.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.three_way_matching.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.work_orders.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.work_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37446,26 +37523,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id`
-- `VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id`
-- `VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->contracts.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->contracts.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id`
-- `VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to`
-- `VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by`
-- `VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inspection_reports.product_id`
-- `VALUE:DIRECT:dbo.products.id->inspection_standards.product_id`
-- `VALUE:DIRECT:dbo.products.id->service_tickets.product_id`
-- `VALUE:DIRECT:dbo.products.id->work_order_materials.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:dbo.approval_workflows.id->dbo.approval_nodes.workflow_id`
+- `VALUE:DIRECT:dbo.contracts.id->dbo.contract_milestones.contract_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.service_tickets.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.inspection_reports.inspector_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.service_tickets.assigned_to`
+- `VALUE:DIRECT:dbo.employees.id->dbo.tax_filings.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.tax_invoices.verified_by`
+- `VALUE:DIRECT:dbo.inspection_standards.id->dbo.inspection_reports.standard_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inspection_reports.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inspection_reports.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inspection_standards.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.service_tickets.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.service_tickets.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.ap_aging_snapshots.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37894,26 +37971,26 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->departments.parent_id`
-- `VALUE:COALESCE:dbo.departments.id->employees.department_id`
-- `VALUE:COALESCE:dbo.departments.id->positions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->attendance.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->employees.manager_id`
-- `VALUE:COALESCE:dbo.employees.id->leave_records.employee_id`
-- `VALUE:COALESCE:dbo.permissions.id->permissions.parent_id`
-- `VALUE:COALESCE:dbo.positions.id->employees.position_id`
-- `VALUE:COALESCE:dbo.roles.id->role_permissions.role_id`
-- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
-- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
-- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
-- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:COALESCE:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:COALESCE:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:COALESCE:dbo.roles.id->dbo.role_permissions.role_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37946,26 +38023,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->warehouses.manager_id`
-- `VALUE:COALESCE:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:COALESCE:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:COALESCE:dbo.product_categories.id->products.category_id`
-- `VALUE:COALESCE:dbo.products.id->product_batches.product_id`
-- `VALUE:COALESCE:dbo.products.id->supplier_products.product_id`
-- `VALUE:COALESCE:dbo.roles.id->employee_roles.role_id`
-- `VALUE:COALESCE:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:COALESCE:dbo.suppliers.id->supplier_products.supplier_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
-- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:COALESCE:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:COALESCE:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38031,26 +38108,26 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:COALESCE:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:COALESCE:dbo.products.id->inventory.product_id`
-- `VALUE:COALESCE:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:COALESCE:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38083,26 +38160,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:COALESCE:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:COALESCE:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:COALESCE:dbo.warehouses.id->purchase_receipts.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38168,26 +38245,26 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:COALESCE:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:COALESCE:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->sales_order_items.product_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:COALESCE:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->sales_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38220,26 +38297,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->sales_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:COALESCE:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:COALESCE:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:COALESCE:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38272,26 +38349,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:COALESCE:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:COALESCE:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->damage_reports.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38324,26 +38401,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->accounts.parent_id`
-- `VALUE:COALESCE:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:COALESCE:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.posted_by`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:COALESCE:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->damage_report_items.product_id`
-- `VALUE:COALESCE:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:COALESCE:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38376,26 +38453,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->cashier_journals.account_id`
-- `VALUE:COALESCE:dbo.accounts.id->reconciliations.account_id`
-- `VALUE:COALESCE:dbo.employees.id->cashier_journals.cashier_id`
-- `VALUE:COALESCE:dbo.employees.id->reconciliations.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->reconciliations.reviewed_by`
-- `VALUE:COALESCE:dbo.employees.id->salary_payments.employee_id`
-- `VALUE:COALESCE:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
-- `VALUE:COALESCE:dbo.vouchers.id->cashier_journals.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->salary_payments.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->settlements.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id`
-- `VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.reconciliations.account_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.prepared_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.reviewed_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.salary_payments.employee_id`
+- `VALUE:COALESCE:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.salary_payments.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.settlements.voucher_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.reconciliations.account_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.settlements.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38428,26 +38505,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->sales_commissions.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->settlements.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->settlements.prepared_by`
-- `VALUE:COALESCE:dbo.product_categories.id->commission_rules.product_category_id`
-- `VALUE:COALESCE:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_commissions.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->shipments.order_id`
-- `VALUE:COALESCE:dbo.settlements.id->settlement_items.settlement_id`
-- `VALUE:COALESCE:dbo.shipments.id->shipping_tracks.shipment_id`
-- `VALUE:COALESCE:dbo.warehouses.id->shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->settlements.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->settlements.prepared_by`
-- `VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id`
-- `VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_commissions.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.prepared_by`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.commission_rules.product_category_id`
+- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.shipments.order_id`
+- `VALUE:COALESCE:dbo.settlements.id->dbo.settlement_items.settlement_id`
+- `VALUE:COALESCE:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.prepared_by`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.shipments.order_id`
+- `VALUE:DIRECT:dbo.settlements.id->dbo.settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.shipments.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38480,26 +38557,103 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->invoices.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:COALESCE:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:COALESCE:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:COALESCE:dbo.products.id->promotion_products.product_id`
-- `VALUE:COALESCE:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:COALESCE:dbo.suppliers.id->invoices.supplier_id`
-- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
+- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `VALUE:AGGREGATE:dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.inventory.locked_quantity->dbo.mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity->dbo.mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.work_orders.planned_quantity,dbo.standard_costs.material_cost,dbo.standard_costs.labor_cost,dbo.standard_costs.overhead_cost->dbo.work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost->dbo.work_order_costs.material_cost`
+- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days->dbo.mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory.quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory.quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.inventory_location_balances.locked_quantity,dbo.picking_task_items.required_qty->dbo.inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate->dbo.mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:dbo.repair_order_parts.quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:COALESCE:dbo.cashier_journals.journal_type,dbo.cashier_journals.counterparty,dbo.cashier_journals.remark->dbo.reconciliation_items.description`
+- `VALUE:COALESCE:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:COALESCE:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:COALESCE:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:COALESCE:dbo.work_order_costs.unit_cost,dbo.finished_goods_receipts.unit_cost->dbo.inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:dbo.finished_goods_receipts.receipt_no->dbo.inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:dbo.production_plans.plan_month,dbo.production_plans.id->dbo.mrp_runs.run_no`
+- `VALUE:CONCAT_FORMAT:dbo.repair_order_parts.id->dbo.inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.boms.child_product_id->dbo.mrp_run_items.component_product_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
+- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_cost_layers.source_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_cost_layers.product_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory.last_stocktake_date`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_run_items.run_id`
+- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_runs.plan_id`
+- `VALUE:DIRECT:dbo.production_plans.product_id->dbo.mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.repair_order_id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.picking_task_items.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.picking_task_items.required_qty`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_task_items.task_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_tasks.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_no->dbo.cashier_journals.remark`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.picking_tasks.warehouse_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38532,26 +38686,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
-- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
-- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
-- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38584,26 +38738,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38636,26 +38790,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38688,26 +38842,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38740,26 +38894,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.approved_by`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipments.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38792,26 +38946,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.boms.id->work_orders.bom_id`
-- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.departments.id->fixed_assets.department_id`
-- `VALUE:DIRECT:dbo.employees.id->fixed_assets.custodian_id`
-- `VALUE:DIRECT:dbo.fixed_assets.id->depreciation_log.asset_id`
-- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->boms.child_product_id`
-- `VALUE:DIRECT:dbo.products.id->boms.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
-- `VALUE:DIRECT:dbo.products.id->three_way_matching.product_id`
-- `VALUE:DIRECT:dbo.products.id->work_orders.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->work_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.work_orders.id->work_order_materials.work_order_id`
+- `VALUE:DIRECT:dbo.boms.id->dbo.work_orders.bom_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.fixed_assets.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.fixed_assets.custodian_id`
+- `VALUE:DIRECT:dbo.fixed_assets.id->dbo.depreciation_log.asset_id`
+- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.boms.child_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.boms.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.three_way_matching.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.work_orders.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.work_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38844,26 +38998,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id`
-- `VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id`
-- `VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->contracts.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->contracts.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id`
-- `VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to`
-- `VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by`
-- `VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inspection_reports.product_id`
-- `VALUE:DIRECT:dbo.products.id->inspection_standards.product_id`
-- `VALUE:DIRECT:dbo.products.id->service_tickets.product_id`
-- `VALUE:DIRECT:dbo.products.id->work_order_materials.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:dbo.approval_workflows.id->dbo.approval_nodes.workflow_id`
+- `VALUE:DIRECT:dbo.contracts.id->dbo.contract_milestones.contract_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.service_tickets.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.inspection_reports.inspector_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.service_tickets.assigned_to`
+- `VALUE:DIRECT:dbo.employees.id->dbo.tax_filings.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.tax_invoices.verified_by`
+- `VALUE:DIRECT:dbo.inspection_standards.id->dbo.inspection_reports.standard_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inspection_reports.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inspection_reports.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inspection_standards.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.service_tickets.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.service_tickets.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.ap_aging_snapshots.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39325,26 +39479,26 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->departments.parent_id`
-- `VALUE:COALESCE:dbo.departments.id->employees.department_id`
-- `VALUE:COALESCE:dbo.departments.id->positions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->attendance.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->employees.manager_id`
-- `VALUE:COALESCE:dbo.employees.id->leave_records.employee_id`
-- `VALUE:COALESCE:dbo.permissions.id->permissions.parent_id`
-- `VALUE:COALESCE:dbo.positions.id->employees.position_id`
-- `VALUE:COALESCE:dbo.roles.id->role_permissions.role_id`
-- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
-- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
-- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
-- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:COALESCE:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:COALESCE:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:COALESCE:dbo.roles.id->dbo.role_permissions.role_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39377,26 +39531,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->warehouses.manager_id`
-- `VALUE:COALESCE:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:COALESCE:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:COALESCE:dbo.product_categories.id->products.category_id`
-- `VALUE:COALESCE:dbo.products.id->product_batches.product_id`
-- `VALUE:COALESCE:dbo.products.id->supplier_products.product_id`
-- `VALUE:COALESCE:dbo.roles.id->employee_roles.role_id`
-- `VALUE:COALESCE:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:COALESCE:dbo.suppliers.id->supplier_products.supplier_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
-- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:COALESCE:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:COALESCE:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39462,26 +39616,26 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:COALESCE:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:COALESCE:dbo.products.id->inventory.product_id`
-- `VALUE:COALESCE:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:COALESCE:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39514,26 +39668,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:COALESCE:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:COALESCE:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:COALESCE:dbo.warehouses.id->purchase_receipts.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39599,26 +39753,26 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:COALESCE:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:COALESCE:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->sales_order_items.product_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:COALESCE:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->sales_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39651,26 +39805,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->sales_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:COALESCE:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:COALESCE:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:COALESCE:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39703,26 +39857,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:COALESCE:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:COALESCE:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->damage_reports.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39755,26 +39909,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->accounts.parent_id`
-- `VALUE:COALESCE:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:COALESCE:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.posted_by`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:COALESCE:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->damage_report_items.product_id`
-- `VALUE:COALESCE:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:COALESCE:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39807,26 +39961,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->cashier_journals.account_id`
-- `VALUE:COALESCE:dbo.accounts.id->reconciliations.account_id`
-- `VALUE:COALESCE:dbo.employees.id->cashier_journals.cashier_id`
-- `VALUE:COALESCE:dbo.employees.id->reconciliations.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->reconciliations.reviewed_by`
-- `VALUE:COALESCE:dbo.employees.id->salary_payments.employee_id`
-- `VALUE:COALESCE:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
-- `VALUE:COALESCE:dbo.vouchers.id->cashier_journals.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->salary_payments.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->settlements.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id`
-- `VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.reconciliations.account_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.prepared_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.reviewed_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.salary_payments.employee_id`
+- `VALUE:COALESCE:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.salary_payments.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.settlements.voucher_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.reconciliations.account_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.settlements.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39859,26 +40013,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->sales_commissions.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->settlements.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->settlements.prepared_by`
-- `VALUE:COALESCE:dbo.product_categories.id->commission_rules.product_category_id`
-- `VALUE:COALESCE:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_commissions.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->shipments.order_id`
-- `VALUE:COALESCE:dbo.settlements.id->settlement_items.settlement_id`
-- `VALUE:COALESCE:dbo.shipments.id->shipping_tracks.shipment_id`
-- `VALUE:COALESCE:dbo.warehouses.id->shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->settlements.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->settlements.prepared_by`
-- `VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id`
-- `VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_commissions.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.prepared_by`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.commission_rules.product_category_id`
+- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.shipments.order_id`
+- `VALUE:COALESCE:dbo.settlements.id->dbo.settlement_items.settlement_id`
+- `VALUE:COALESCE:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.prepared_by`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.shipments.order_id`
+- `VALUE:DIRECT:dbo.settlements.id->dbo.settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.shipments.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39911,26 +40065,103 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->invoices.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:COALESCE:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:COALESCE:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:COALESCE:dbo.products.id->promotion_products.product_id`
-- `VALUE:COALESCE:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:COALESCE:dbo.suppliers.id->invoices.supplier_id`
-- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
+- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `VALUE:AGGREGATE:dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.inventory.locked_quantity->dbo.mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity->dbo.mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.work_orders.planned_quantity,dbo.standard_costs.material_cost,dbo.standard_costs.labor_cost,dbo.standard_costs.overhead_cost->dbo.work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost->dbo.work_order_costs.material_cost`
+- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days->dbo.mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory.quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory.quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.inventory_location_balances.locked_quantity,dbo.picking_task_items.required_qty->dbo.inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate->dbo.mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:dbo.repair_order_parts.quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:COALESCE:dbo.cashier_journals.journal_type,dbo.cashier_journals.counterparty,dbo.cashier_journals.remark->dbo.reconciliation_items.description`
+- `VALUE:COALESCE:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:COALESCE:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:COALESCE:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:COALESCE:dbo.work_order_costs.unit_cost,dbo.finished_goods_receipts.unit_cost->dbo.inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:dbo.finished_goods_receipts.receipt_no->dbo.inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:dbo.production_plans.plan_month,dbo.production_plans.id->dbo.mrp_runs.run_no`
+- `VALUE:CONCAT_FORMAT:dbo.repair_order_parts.id->dbo.inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.boms.child_product_id->dbo.mrp_run_items.component_product_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
+- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_cost_layers.source_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_cost_layers.product_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory.last_stocktake_date`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_run_items.run_id`
+- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_runs.plan_id`
+- `VALUE:DIRECT:dbo.production_plans.product_id->dbo.mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.repair_order_id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.picking_task_items.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.picking_task_items.required_qty`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_task_items.task_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_tasks.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_no->dbo.cashier_journals.remark`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.picking_tasks.warehouse_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39963,26 +40194,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
-- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
-- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
-- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -40015,26 +40246,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -40067,26 +40298,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -40119,26 +40350,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -40171,26 +40402,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.approved_by`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipments.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -40223,26 +40454,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.boms.id->work_orders.bom_id`
-- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.departments.id->fixed_assets.department_id`
-- `VALUE:DIRECT:dbo.employees.id->fixed_assets.custodian_id`
-- `VALUE:DIRECT:dbo.fixed_assets.id->depreciation_log.asset_id`
-- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->boms.child_product_id`
-- `VALUE:DIRECT:dbo.products.id->boms.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
-- `VALUE:DIRECT:dbo.products.id->three_way_matching.product_id`
-- `VALUE:DIRECT:dbo.products.id->work_orders.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->work_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.work_orders.id->work_order_materials.work_order_id`
+- `VALUE:DIRECT:dbo.boms.id->dbo.work_orders.bom_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.fixed_assets.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.fixed_assets.custodian_id`
+- `VALUE:DIRECT:dbo.fixed_assets.id->dbo.depreciation_log.asset_id`
+- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.boms.child_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.boms.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.three_way_matching.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.work_orders.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.work_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -40275,26 +40506,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id`
-- `VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id`
-- `VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->contracts.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->contracts.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id`
-- `VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to`
-- `VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by`
-- `VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inspection_reports.product_id`
-- `VALUE:DIRECT:dbo.products.id->inspection_standards.product_id`
-- `VALUE:DIRECT:dbo.products.id->service_tickets.product_id`
-- `VALUE:DIRECT:dbo.products.id->work_order_materials.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:dbo.approval_workflows.id->dbo.approval_nodes.workflow_id`
+- `VALUE:DIRECT:dbo.contracts.id->dbo.contract_milestones.contract_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.service_tickets.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.inspection_reports.inspector_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.service_tickets.assigned_to`
+- `VALUE:DIRECT:dbo.employees.id->dbo.tax_filings.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.tax_invoices.verified_by`
+- `VALUE:DIRECT:dbo.inspection_standards.id->dbo.inspection_reports.standard_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inspection_reports.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inspection_reports.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inspection_standards.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.service_tickets.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.service_tickets.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.ap_aging_snapshots.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -40789,26 +41020,26 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->departments.parent_id`
-- `VALUE:COALESCE:dbo.departments.id->employees.department_id`
-- `VALUE:COALESCE:dbo.departments.id->positions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->attendance.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->employees.manager_id`
-- `VALUE:COALESCE:dbo.employees.id->leave_records.employee_id`
-- `VALUE:COALESCE:dbo.permissions.id->permissions.parent_id`
-- `VALUE:COALESCE:dbo.positions.id->employees.position_id`
-- `VALUE:COALESCE:dbo.roles.id->role_permissions.role_id`
-- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
-- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
-- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
-- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:COALESCE:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:COALESCE:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:COALESCE:dbo.roles.id->dbo.role_permissions.role_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -40841,26 +41072,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->warehouses.manager_id`
-- `VALUE:COALESCE:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:COALESCE:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:COALESCE:dbo.product_categories.id->products.category_id`
-- `VALUE:COALESCE:dbo.products.id->product_batches.product_id`
-- `VALUE:COALESCE:dbo.products.id->supplier_products.product_id`
-- `VALUE:COALESCE:dbo.roles.id->employee_roles.role_id`
-- `VALUE:COALESCE:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:COALESCE:dbo.suppliers.id->supplier_products.supplier_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
-- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:COALESCE:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:COALESCE:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -40926,26 +41157,26 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:COALESCE:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:COALESCE:dbo.products.id->inventory.product_id`
-- `VALUE:COALESCE:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:COALESCE:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -40978,26 +41209,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:COALESCE:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:COALESCE:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:COALESCE:dbo.warehouses.id->purchase_receipts.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41063,26 +41294,26 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:COALESCE:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:COALESCE:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->sales_order_items.product_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:COALESCE:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->sales_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41115,26 +41346,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->sales_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:COALESCE:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:COALESCE:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:COALESCE:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41167,26 +41398,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:COALESCE:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:COALESCE:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->damage_reports.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41219,26 +41450,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->accounts.parent_id`
-- `VALUE:COALESCE:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:COALESCE:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.posted_by`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:COALESCE:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->damage_report_items.product_id`
-- `VALUE:COALESCE:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:COALESCE:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41271,26 +41502,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->cashier_journals.account_id`
-- `VALUE:COALESCE:dbo.accounts.id->reconciliations.account_id`
-- `VALUE:COALESCE:dbo.employees.id->cashier_journals.cashier_id`
-- `VALUE:COALESCE:dbo.employees.id->reconciliations.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->reconciliations.reviewed_by`
-- `VALUE:COALESCE:dbo.employees.id->salary_payments.employee_id`
-- `VALUE:COALESCE:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
-- `VALUE:COALESCE:dbo.vouchers.id->cashier_journals.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->salary_payments.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->settlements.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id`
-- `VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.reconciliations.account_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.prepared_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.reviewed_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.salary_payments.employee_id`
+- `VALUE:COALESCE:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.salary_payments.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.settlements.voucher_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.reconciliations.account_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.settlements.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41323,26 +41554,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->sales_commissions.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->settlements.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->settlements.prepared_by`
-- `VALUE:COALESCE:dbo.product_categories.id->commission_rules.product_category_id`
-- `VALUE:COALESCE:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_commissions.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->shipments.order_id`
-- `VALUE:COALESCE:dbo.settlements.id->settlement_items.settlement_id`
-- `VALUE:COALESCE:dbo.shipments.id->shipping_tracks.shipment_id`
-- `VALUE:COALESCE:dbo.warehouses.id->shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->settlements.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->settlements.prepared_by`
-- `VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id`
-- `VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_commissions.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.prepared_by`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.commission_rules.product_category_id`
+- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.shipments.order_id`
+- `VALUE:COALESCE:dbo.settlements.id->dbo.settlement_items.settlement_id`
+- `VALUE:COALESCE:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.prepared_by`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.shipments.order_id`
+- `VALUE:DIRECT:dbo.settlements.id->dbo.settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.shipments.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41375,26 +41606,103 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->invoices.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:COALESCE:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:COALESCE:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:COALESCE:dbo.products.id->promotion_products.product_id`
-- `VALUE:COALESCE:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:COALESCE:dbo.suppliers.id->invoices.supplier_id`
-- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
+- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `VALUE:AGGREGATE:dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.inventory.locked_quantity->dbo.mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity->dbo.mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.work_orders.planned_quantity,dbo.standard_costs.material_cost,dbo.standard_costs.labor_cost,dbo.standard_costs.overhead_cost->dbo.work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost->dbo.work_order_costs.material_cost`
+- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days->dbo.mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory.quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory.quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.inventory_location_balances.locked_quantity,dbo.picking_task_items.required_qty->dbo.inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate->dbo.mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:dbo.repair_order_parts.quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:COALESCE:dbo.cashier_journals.journal_type,dbo.cashier_journals.counterparty,dbo.cashier_journals.remark->dbo.reconciliation_items.description`
+- `VALUE:COALESCE:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:COALESCE:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:COALESCE:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:COALESCE:dbo.work_order_costs.unit_cost,dbo.finished_goods_receipts.unit_cost->dbo.inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:dbo.finished_goods_receipts.receipt_no->dbo.inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:dbo.production_plans.plan_month,dbo.production_plans.id->dbo.mrp_runs.run_no`
+- `VALUE:CONCAT_FORMAT:dbo.repair_order_parts.id->dbo.inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.boms.child_product_id->dbo.mrp_run_items.component_product_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
+- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_cost_layers.source_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_cost_layers.product_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory.last_stocktake_date`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_run_items.run_id`
+- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_runs.plan_id`
+- `VALUE:DIRECT:dbo.production_plans.product_id->dbo.mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.repair_order_id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.picking_task_items.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.picking_task_items.required_qty`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_task_items.task_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_tasks.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_no->dbo.cashier_journals.remark`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.picking_tasks.warehouse_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41427,26 +41735,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
-- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
-- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
-- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41479,26 +41787,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41531,26 +41839,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41583,26 +41891,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41635,26 +41943,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.approved_by`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipments.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41687,26 +41995,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.boms.id->work_orders.bom_id`
-- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.departments.id->fixed_assets.department_id`
-- `VALUE:DIRECT:dbo.employees.id->fixed_assets.custodian_id`
-- `VALUE:DIRECT:dbo.fixed_assets.id->depreciation_log.asset_id`
-- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->boms.child_product_id`
-- `VALUE:DIRECT:dbo.products.id->boms.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
-- `VALUE:DIRECT:dbo.products.id->three_way_matching.product_id`
-- `VALUE:DIRECT:dbo.products.id->work_orders.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->work_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.work_orders.id->work_order_materials.work_order_id`
+- `VALUE:DIRECT:dbo.boms.id->dbo.work_orders.bom_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.fixed_assets.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.fixed_assets.custodian_id`
+- `VALUE:DIRECT:dbo.fixed_assets.id->dbo.depreciation_log.asset_id`
+- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.boms.child_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.boms.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.three_way_matching.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.work_orders.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.work_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41739,26 +42047,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id`
-- `VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id`
-- `VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->contracts.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->contracts.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id`
-- `VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to`
-- `VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by`
-- `VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inspection_reports.product_id`
-- `VALUE:DIRECT:dbo.products.id->inspection_standards.product_id`
-- `VALUE:DIRECT:dbo.products.id->service_tickets.product_id`
-- `VALUE:DIRECT:dbo.products.id->work_order_materials.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:dbo.approval_workflows.id->dbo.approval_nodes.workflow_id`
+- `VALUE:DIRECT:dbo.contracts.id->dbo.contract_milestones.contract_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.service_tickets.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.inspection_reports.inspector_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.service_tickets.assigned_to`
+- `VALUE:DIRECT:dbo.employees.id->dbo.tax_filings.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.tax_invoices.verified_by`
+- `VALUE:DIRECT:dbo.inspection_standards.id->dbo.inspection_reports.standard_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inspection_reports.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inspection_reports.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inspection_standards.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.service_tickets.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.service_tickets.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.ap_aging_snapshots.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42220,26 +42528,26 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->departments.parent_id`
-- `VALUE:COALESCE:dbo.departments.id->employees.department_id`
-- `VALUE:COALESCE:dbo.departments.id->positions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->attendance.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->employees.manager_id`
-- `VALUE:COALESCE:dbo.employees.id->leave_records.employee_id`
-- `VALUE:COALESCE:dbo.permissions.id->permissions.parent_id`
-- `VALUE:COALESCE:dbo.positions.id->employees.position_id`
-- `VALUE:COALESCE:dbo.roles.id->role_permissions.role_id`
-- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
-- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
-- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
-- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:COALESCE:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:COALESCE:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:COALESCE:dbo.roles.id->dbo.role_permissions.role_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42272,26 +42580,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->warehouses.manager_id`
-- `VALUE:COALESCE:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:COALESCE:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:COALESCE:dbo.product_categories.id->products.category_id`
-- `VALUE:COALESCE:dbo.products.id->product_batches.product_id`
-- `VALUE:COALESCE:dbo.products.id->supplier_products.product_id`
-- `VALUE:COALESCE:dbo.roles.id->employee_roles.role_id`
-- `VALUE:COALESCE:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:COALESCE:dbo.suppliers.id->supplier_products.supplier_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
-- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:COALESCE:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:COALESCE:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42357,26 +42665,26 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:COALESCE:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:COALESCE:dbo.products.id->inventory.product_id`
-- `VALUE:COALESCE:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:COALESCE:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42409,26 +42717,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:COALESCE:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:COALESCE:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:COALESCE:dbo.warehouses.id->purchase_receipts.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42494,26 +42802,26 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:COALESCE:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:COALESCE:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->sales_order_items.product_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:COALESCE:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->sales_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42546,26 +42854,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->sales_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:COALESCE:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:COALESCE:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:COALESCE:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42598,26 +42906,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:COALESCE:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:COALESCE:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->damage_reports.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42650,26 +42958,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->accounts.parent_id`
-- `VALUE:COALESCE:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:COALESCE:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.posted_by`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:COALESCE:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->damage_report_items.product_id`
-- `VALUE:COALESCE:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:COALESCE:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42702,26 +43010,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->cashier_journals.account_id`
-- `VALUE:COALESCE:dbo.accounts.id->reconciliations.account_id`
-- `VALUE:COALESCE:dbo.employees.id->cashier_journals.cashier_id`
-- `VALUE:COALESCE:dbo.employees.id->reconciliations.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->reconciliations.reviewed_by`
-- `VALUE:COALESCE:dbo.employees.id->salary_payments.employee_id`
-- `VALUE:COALESCE:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
-- `VALUE:COALESCE:dbo.vouchers.id->cashier_journals.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->salary_payments.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->settlements.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id`
-- `VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.reconciliations.account_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.prepared_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.reviewed_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.salary_payments.employee_id`
+- `VALUE:COALESCE:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.salary_payments.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.settlements.voucher_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.reconciliations.account_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.settlements.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42754,26 +43062,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->sales_commissions.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->settlements.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->settlements.prepared_by`
-- `VALUE:COALESCE:dbo.product_categories.id->commission_rules.product_category_id`
-- `VALUE:COALESCE:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_commissions.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->shipments.order_id`
-- `VALUE:COALESCE:dbo.settlements.id->settlement_items.settlement_id`
-- `VALUE:COALESCE:dbo.shipments.id->shipping_tracks.shipment_id`
-- `VALUE:COALESCE:dbo.warehouses.id->shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->settlements.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->settlements.prepared_by`
-- `VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id`
-- `VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_commissions.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.prepared_by`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.commission_rules.product_category_id`
+- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.shipments.order_id`
+- `VALUE:COALESCE:dbo.settlements.id->dbo.settlement_items.settlement_id`
+- `VALUE:COALESCE:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.prepared_by`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.shipments.order_id`
+- `VALUE:DIRECT:dbo.settlements.id->dbo.settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.shipments.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42806,26 +43114,103 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->invoices.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:COALESCE:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:COALESCE:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:COALESCE:dbo.products.id->promotion_products.product_id`
-- `VALUE:COALESCE:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:COALESCE:dbo.suppliers.id->invoices.supplier_id`
-- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
+- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `VALUE:AGGREGATE:dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.inventory.locked_quantity->dbo.mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity->dbo.mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.work_orders.planned_quantity,dbo.standard_costs.material_cost,dbo.standard_costs.labor_cost,dbo.standard_costs.overhead_cost->dbo.work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost->dbo.work_order_costs.material_cost`
+- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days->dbo.mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory.quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory.quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.inventory_location_balances.locked_quantity,dbo.picking_task_items.required_qty->dbo.inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate->dbo.mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:dbo.repair_order_parts.quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:COALESCE:dbo.cashier_journals.journal_type,dbo.cashier_journals.counterparty,dbo.cashier_journals.remark->dbo.reconciliation_items.description`
+- `VALUE:COALESCE:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:COALESCE:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:COALESCE:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:COALESCE:dbo.work_order_costs.unit_cost,dbo.finished_goods_receipts.unit_cost->dbo.inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:dbo.finished_goods_receipts.receipt_no->dbo.inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:dbo.production_plans.plan_month,dbo.production_plans.id->dbo.mrp_runs.run_no`
+- `VALUE:CONCAT_FORMAT:dbo.repair_order_parts.id->dbo.inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.boms.child_product_id->dbo.mrp_run_items.component_product_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
+- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_cost_layers.source_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_cost_layers.product_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory.last_stocktake_date`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_run_items.run_id`
+- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_runs.plan_id`
+- `VALUE:DIRECT:dbo.production_plans.product_id->dbo.mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.repair_order_id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.picking_task_items.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.picking_task_items.required_qty`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_task_items.task_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_tasks.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_no->dbo.cashier_journals.remark`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.picking_tasks.warehouse_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42858,26 +43243,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
-- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
-- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
-- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42910,26 +43295,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42962,26 +43347,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -43014,26 +43399,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -43066,26 +43451,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.approved_by`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipments.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -43118,26 +43503,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.boms.id->work_orders.bom_id`
-- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.departments.id->fixed_assets.department_id`
-- `VALUE:DIRECT:dbo.employees.id->fixed_assets.custodian_id`
-- `VALUE:DIRECT:dbo.fixed_assets.id->depreciation_log.asset_id`
-- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->boms.child_product_id`
-- `VALUE:DIRECT:dbo.products.id->boms.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
-- `VALUE:DIRECT:dbo.products.id->three_way_matching.product_id`
-- `VALUE:DIRECT:dbo.products.id->work_orders.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->work_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.work_orders.id->work_order_materials.work_order_id`
+- `VALUE:DIRECT:dbo.boms.id->dbo.work_orders.bom_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.fixed_assets.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.fixed_assets.custodian_id`
+- `VALUE:DIRECT:dbo.fixed_assets.id->dbo.depreciation_log.asset_id`
+- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.boms.child_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.boms.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.three_way_matching.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.work_orders.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.work_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -43170,26 +43555,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id`
-- `VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id`
-- `VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->contracts.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->contracts.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id`
-- `VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to`
-- `VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by`
-- `VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inspection_reports.product_id`
-- `VALUE:DIRECT:dbo.products.id->inspection_standards.product_id`
-- `VALUE:DIRECT:dbo.products.id->service_tickets.product_id`
-- `VALUE:DIRECT:dbo.products.id->work_order_materials.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:dbo.approval_workflows.id->dbo.approval_nodes.workflow_id`
+- `VALUE:DIRECT:dbo.contracts.id->dbo.contract_milestones.contract_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.service_tickets.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.inspection_reports.inspector_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.service_tickets.assigned_to`
+- `VALUE:DIRECT:dbo.employees.id->dbo.tax_filings.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.tax_invoices.verified_by`
+- `VALUE:DIRECT:dbo.inspection_standards.id->dbo.inspection_reports.standard_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inspection_reports.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inspection_reports.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inspection_standards.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.service_tickets.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.service_tickets.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.ap_aging_snapshots.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -43684,26 +44069,26 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->departments.parent_id`
-- `VALUE:COALESCE:dbo.departments.id->employees.department_id`
-- `VALUE:COALESCE:dbo.departments.id->positions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->attendance.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->employees.manager_id`
-- `VALUE:COALESCE:dbo.employees.id->leave_records.employee_id`
-- `VALUE:COALESCE:dbo.permissions.id->permissions.parent_id`
-- `VALUE:COALESCE:dbo.positions.id->employees.position_id`
-- `VALUE:COALESCE:dbo.roles.id->role_permissions.role_id`
-- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
-- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
-- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
-- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:COALESCE:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:COALESCE:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:COALESCE:dbo.roles.id->dbo.role_permissions.role_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -43736,26 +44121,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->warehouses.manager_id`
-- `VALUE:COALESCE:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:COALESCE:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:COALESCE:dbo.product_categories.id->products.category_id`
-- `VALUE:COALESCE:dbo.products.id->product_batches.product_id`
-- `VALUE:COALESCE:dbo.products.id->supplier_products.product_id`
-- `VALUE:COALESCE:dbo.roles.id->employee_roles.role_id`
-- `VALUE:COALESCE:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:COALESCE:dbo.suppliers.id->supplier_products.supplier_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
-- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:COALESCE:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:COALESCE:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -43821,26 +44206,26 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:COALESCE:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:COALESCE:dbo.products.id->inventory.product_id`
-- `VALUE:COALESCE:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:COALESCE:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
+- `VALUE:COALESCE:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -43873,26 +44258,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:COALESCE:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:COALESCE:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:COALESCE:dbo.warehouses.id->purchase_receipts.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -43958,26 +44343,26 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:COALESCE:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:COALESCE:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->sales_order_items.product_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:COALESCE:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->sales_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44010,26 +44395,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->sales_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:COALESCE:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:COALESCE:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:COALESCE:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44062,26 +44447,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:COALESCE:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:COALESCE:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:COALESCE:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->damage_reports.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:COALESCE:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44114,26 +44499,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->accounts.parent_id`
-- `VALUE:COALESCE:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:COALESCE:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.posted_by`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:COALESCE:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->damage_report_items.product_id`
-- `VALUE:COALESCE:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:COALESCE:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:COALESCE:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44166,26 +44551,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->cashier_journals.account_id`
-- `VALUE:COALESCE:dbo.accounts.id->reconciliations.account_id`
-- `VALUE:COALESCE:dbo.employees.id->cashier_journals.cashier_id`
-- `VALUE:COALESCE:dbo.employees.id->reconciliations.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->reconciliations.reviewed_by`
-- `VALUE:COALESCE:dbo.employees.id->salary_payments.employee_id`
-- `VALUE:COALESCE:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
-- `VALUE:COALESCE:dbo.vouchers.id->cashier_journals.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->salary_payments.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->settlements.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.accounts.id->reconciliations.account_id`
-- `VALUE:DIRECT:dbo.employees.id->cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.employees.id->reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.employees.id->salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.reconciliations.id->reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.vouchers.id->cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->settlements.voucher_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:COALESCE:dbo.accounts.id->dbo.reconciliations.account_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.prepared_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.reviewed_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.salary_payments.employee_id`
+- `VALUE:COALESCE:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.salary_payments.voucher_id`
+- `VALUE:COALESCE:dbo.vouchers.id->dbo.settlements.voucher_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.reconciliations.account_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.settlements.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44218,26 +44603,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->sales_commissions.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->settlements.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->settlements.prepared_by`
-- `VALUE:COALESCE:dbo.product_categories.id->commission_rules.product_category_id`
-- `VALUE:COALESCE:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->sales_commissions.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->shipments.order_id`
-- `VALUE:COALESCE:dbo.settlements.id->settlement_items.settlement_id`
-- `VALUE:COALESCE:dbo.shipments.id->shipping_tracks.shipment_id`
-- `VALUE:COALESCE:dbo.warehouses.id->shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->settlements.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->settlements.prepared_by`
-- `VALUE:DIRECT:dbo.product_categories.id->commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:dbo.settlements.id->settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.shipments.id->shipping_tracks.shipment_id`
-- `VALUE:DIRECT:dbo.warehouses.id->shipments.warehouse_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.sales_commissions.employee_id`
+- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.approved_by`
+- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.prepared_by`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.commission_rules.product_category_id`
+- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.shipments.order_id`
+- `VALUE:COALESCE:dbo.settlements.id->dbo.settlement_items.settlement_id`
+- `VALUE:COALESCE:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
+- `VALUE:COALESCE:dbo.warehouses.id->dbo.shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.prepared_by`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.shipments.order_id`
+- `VALUE:DIRECT:dbo.settlements.id->dbo.settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.shipments.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44270,26 +44655,103 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->invoices.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:COALESCE:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:COALESCE:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:COALESCE:dbo.products.id->promotion_products.product_id`
-- `VALUE:COALESCE:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:COALESCE:dbo.suppliers.id->invoices.supplier_id`
-- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
+- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
+- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `VALUE:AGGREGATE:dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.inventory.locked_quantity->dbo.mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity->dbo.mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.work_orders.planned_quantity,dbo.standard_costs.material_cost,dbo.standard_costs.labor_cost,dbo.standard_costs.overhead_cost->dbo.work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost->dbo.work_order_costs.material_cost`
+- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.labor_cost`
+- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
+- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days->dbo.mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory.quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory.quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.inventory_location_balances.locked_quantity,dbo.picking_task_items.required_qty->dbo.inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate->dbo.mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:dbo.repair_order_parts.quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:COALESCE:dbo.cashier_journals.journal_type,dbo.cashier_journals.counterparty,dbo.cashier_journals.remark->dbo.reconciliation_items.description`
+- `VALUE:COALESCE:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:COALESCE:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:COALESCE:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:COALESCE:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:COALESCE:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:COALESCE:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
+- `VALUE:COALESCE:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:COALESCE:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:COALESCE:dbo.work_order_costs.unit_cost,dbo.finished_goods_receipts.unit_cost->dbo.inventory_cost_layers.unit_cost`
+- `VALUE:CONCAT_FORMAT:dbo.finished_goods_receipts.receipt_no->dbo.inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:dbo.production_plans.plan_month,dbo.production_plans.id->dbo.mrp_runs.run_no`
+- `VALUE:CONCAT_FORMAT:dbo.repair_order_parts.id->dbo.inventory_transactions.remark`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.boms.child_product_id->dbo.mrp_run_items.component_product_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
+- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_cost_layers.source_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_cost_layers.product_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory.last_stocktake_date`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory_cost_layers.receipt_date`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.original_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_cost_layers.warehouse_id`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_run_items.run_id`
+- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_runs.plan_id`
+- `VALUE:DIRECT:dbo.production_plans.product_id->dbo.mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.repair_order_id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.picking_task_items.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.picking_task_items.required_qty`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_task_items.task_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_tasks.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_no->dbo.cashier_journals.remark`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.picking_tasks.warehouse_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44322,26 +44784,26 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->leave_records.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->permissions.parent_id`
-- `VALUE:DIRECT:dbo.permissions.id->role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.positions.id->employees.position_id`
-- `VALUE:DIRECT:dbo.product_categories.id->product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->products.category_id`
-- `VALUE:DIRECT:dbo.products.id->product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->employee_roles.role_id`
-- `VALUE:DIRECT:dbo.roles.id->role_permissions.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->supplier_products.supplier_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
+- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
+- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44374,26 +44836,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.employees.id->purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_receipts.warehouse_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
+- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44426,26 +44888,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.customers.id->sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->sales_returns.order_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->sales_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44478,26 +44940,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.accounts.id->accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->damage_reports.warehouse_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44530,26 +44992,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.promotions.id->cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.promotions.id->salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.approved_by`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->settlements.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipments.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.promotions.id->shipping_tracks.shipment_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44582,26 +45044,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.boms.id->work_orders.bom_id`
-- `VALUE:DIRECT:dbo.customers.id->invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.departments.id->fixed_assets.department_id`
-- `VALUE:DIRECT:dbo.employees.id->fixed_assets.custodian_id`
-- `VALUE:DIRECT:dbo.fixed_assets.id->depreciation_log.asset_id`
-- `VALUE:DIRECT:dbo.invoices.id->three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->boms.child_product_id`
-- `VALUE:DIRECT:dbo.products.id->boms.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->promotion_products.product_id`
-- `VALUE:DIRECT:dbo.products.id->three_way_matching.product_id`
-- `VALUE:DIRECT:dbo.products.id->work_orders.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->invoices.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->work_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.work_orders.id->work_order_materials.work_order_id`
+- `VALUE:DIRECT:dbo.boms.id->dbo.work_orders.bom_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
+- `VALUE:DIRECT:dbo.departments.id->dbo.fixed_assets.department_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.fixed_assets.custodian_id`
+- `VALUE:DIRECT:dbo.fixed_assets.id->dbo.depreciation_log.asset_id`
+- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.boms.child_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.boms.parent_product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.three_way_matching.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.work_orders.product_id`
+- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.work_orders.warehouse_id`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44634,26 +45096,26 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.approval_workflows.id->approval_nodes.workflow_id`
-- `VALUE:DIRECT:dbo.contracts.id->contract_milestones.contract_id`
-- `VALUE:DIRECT:dbo.customers.id->ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->service_tickets.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->contracts.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->contracts.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->inspection_reports.inspector_id`
-- `VALUE:DIRECT:dbo.employees.id->service_tickets.assigned_to`
-- `VALUE:DIRECT:dbo.employees.id->tax_filings.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->tax_invoices.verified_by`
-- `VALUE:DIRECT:dbo.inspection_standards.id->inspection_reports.standard_id`
-- `VALUE:DIRECT:dbo.product_batches.id->inspection_reports.batch_id`
-- `VALUE:DIRECT:dbo.products.id->inspection_reports.product_id`
-- `VALUE:DIRECT:dbo.products.id->inspection_standards.product_id`
-- `VALUE:DIRECT:dbo.products.id->service_tickets.product_id`
-- `VALUE:DIRECT:dbo.products.id->work_order_materials.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->service_tickets.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->ap_aging_snapshots.supplier_id`
+- `VALUE:DIRECT:dbo.approval_workflows.id->dbo.approval_nodes.workflow_id`
+- `VALUE:DIRECT:dbo.contracts.id->dbo.contract_milestones.contract_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.ar_aging_snapshots.customer_id`
+- `VALUE:DIRECT:dbo.customers.id->dbo.service_tickets.customer_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.approved_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.inspection_reports.inspector_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.service_tickets.assigned_to`
+- `VALUE:DIRECT:dbo.employees.id->dbo.tax_filings.prepared_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.tax_invoices.verified_by`
+- `VALUE:DIRECT:dbo.inspection_standards.id->dbo.inspection_reports.standard_id`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inspection_reports.batch_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inspection_reports.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.inspection_standards.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.service_tickets.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_aging_snapshots.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.service_tickets.order_id`
+- `VALUE:DIRECT:dbo.suppliers.id->dbo.ap_aging_snapshots.supplier_id`
 
 **Extractor Candidate Fingerprints**
 
