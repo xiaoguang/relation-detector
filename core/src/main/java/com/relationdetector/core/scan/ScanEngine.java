@@ -28,6 +28,7 @@ public final class ScanEngine {
     private final StatementParsePipeline statementParsePipeline = new StatementParsePipeline();
     private final SourceCollectorPipeline sourceCollectorPipeline = new SourceCollectorPipeline(statementParsePipeline);
     private final EvidenceEnhancementPipeline evidenceEnhancementPipeline = new EvidenceEnhancementPipeline();
+    private final DataProfilePipeline dataProfilePipeline = new DataProfilePipeline();
     private final ResultAssembly resultAssembly = new ResultAssembly();
 
     /**
@@ -51,7 +52,9 @@ public final class ScanEngine {
                 candidates,
                 dataLineageCandidates);
 
-        try (Connection connection = openConnection(config)) {
+        Connection connection = null;
+        try {
+            connection = openConnection(config);
             populateJdbcDatabaseVersion(config, connection);
             sourceCollectorPipeline.collectJdbcSources(connection, pipelineContext);
         } catch (Exception ex) {
@@ -59,9 +62,15 @@ public final class ScanEngine {
                     "DB_SCAN_FAILED", ex.getMessage(), config.jdbcUrl, 0));
         }
 
-        sourceCollectorPipeline.collectFileSources(pipelineContext);
-        evidenceEnhancementPipeline.enhance(pipelineContext);
-        return resultAssembly.assemble(pipelineContext);
+        try {
+            sourceCollectorPipeline.collectFileSources(pipelineContext);
+            evidenceEnhancementPipeline.enhance(pipelineContext);
+            dataProfilePipeline.profile(connection, pipelineContext);
+            evidenceEnhancementPipeline.enhance(pipelineContext);
+            return resultAssembly.assemble(pipelineContext);
+        } finally {
+            closeQuietly(connection);
+        }
     }
 
     private Connection openConnection(ScanConfig config) throws Exception {
@@ -69,6 +78,16 @@ public final class ScanEngine {
             return null;
         }
         return DriverManager.getConnection(config.jdbcUrl, config.username, config.password);
+    }
+
+    private void closeQuietly(Connection connection) {
+        if (connection == null) {
+            return;
+        }
+        try {
+            connection.close();
+        } catch (Exception ignored) {
+        }
     }
 
     private void populateJdbcDatabaseVersion(ScanConfig config, Connection connection) {

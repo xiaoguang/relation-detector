@@ -531,6 +531,26 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
+    void dialectDataProfilersDelegateJdbcWorkToCoreTemplate() throws IOException {
+        Path root = repoRoot();
+        List<Path> profilers = List.of(
+                root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/profile/MySqlDataProfiler.java"),
+                root.resolve("adaptor-postgres/src/main/java/com/relationdetector/postgres/profile/PostgresDataProfiler.java"),
+                root.resolve("adaptor-oracle/src/main/java/com/relationdetector/oracle/profile/OracleDataProfiler.java"),
+                root.resolve("adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/profile/SqlServerDataProfiler.java"));
+
+        for (Path profiler : profilers) {
+            String text = Files.readString(profiler);
+            assertTrue(text.contains("JdbcDataProfilerTemplate"),
+                    "Dialect profilers should delegate JDBC execution and metrics building to the core template: "
+                            + root.relativize(profiler));
+            assertFalse(text.contains("createStatement(") || text.contains("executeQuery(")
+                            || text.contains("DataProfileEvidenceBuilder"),
+                    "Dialect profilers should only render dialect SQL and source labels: " + root.relativize(profiler));
+        }
+    }
+
+    @Test
     void databaseAdaptorMainClassesDoNotOwnCollectorImplementations() throws IOException {
         Path root = repoRoot();
         List<Path> adaptorMainClasses = List.of(

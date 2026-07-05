@@ -435,7 +435,7 @@ evidence: SQL_LOG_SUBQUERY_IN
 confidence: 0.58
 ```
 
-共现例子：
+兼容保留的表级共现例子：
 
 ```sql
 SELECT *
@@ -443,7 +443,14 @@ FROM users u, audit_logs l
 WHERE l.action = 'LOGIN';
 ```
 
-如果没有明确 JOIN 条件，只输出弱表级关系：
+当前生产 typed parser 默认不因“同一 SQL 中出现多张表但没有列级谓词”主动生成正式 relationship evidence，避免报表、审计和临时分析 SQL 造成 false positive。`SQL_LOG_TABLE_CO_OCCURRENCE` 仅作为 `RESERVED_COMPATIBILITY / NOT_PRODUCED` 证据保留，可用于历史结果、外部 adaptor 导入或未来显式 opt-in 审计模式。
+
+这里的替代关系需要区分两种情况：
+
+- 列级谓词共现不是被丢弃，而是被更具体的 predicate evidence 替代：`JOIN` / comma join / `JOIN USING` 使用 `SQL_LOG_JOIN`，correlated `EXISTS` 使用 `SQL_LOG_EXISTS`，scalar / tuple `IN (SELECT ...)` 使用 `SQL_LOG_SUBQUERY_IN`。这些 evidence 覆盖了原来泛化 `SQL_LOG_COLUMN_CO_OCCURRENCE` 想表达的“列级关联出现过”，同时保留 SQL 语法来源。
+- 纯表级共现没有等价替代。没有列级谓词时，当前生产 parser 不生成正式 relationship；只有历史结果、外部导入或未来显式 opt-in 审计模式才可能使用 `SQL_LOG_TABLE_CO_OCCURRENCE`。
+
+兼容导入时的弱表级关系形态如下：
 
 ```text
 users -> audit_logs
@@ -575,6 +582,7 @@ PREPARE stmt FROM @sql;
 - `SQL_LOG_JOIN`: 0.55
 - `SQL_LOG_SUBQUERY_IN`: 0.58
 - `SQL_LOG_EXISTS`: 0.58
+- `SQL_LOG_COLUMN_CO_OCCURRENCE`: 0.40
 - `SQL_LOG_TABLE_CO_OCCURRENCE`: 0.25
 - `NAMING_MATCH`: 0.20
 - `SOURCE_INDEX`: 0.10
@@ -584,7 +592,9 @@ PREPARE stmt FROM @sql;
 - `VALUE_OVERLAP_HIGH`: 0.20
 - `NEGATIVE_VALUE_MISMATCH`: -0.30
 
-详细解释见 [Phase 2：核心模型和评分详细设计](../design/relation-detector/phase-02-core-model-scoring.md) 的“置信度计算”章节。该章节逐项说明了每个 EvidenceType 为什么取该分值，并给出 metadata、DDL、日志 JOIN、存储过程、`IN` 子查询、表共现和负向数据画像的完整 SQL 算例。
+另外，`REPEATED_OBSERVATION` 是 core merge 阶段派生出来的重复观测增益，分值范围为 `0.00-0.10`，不是 parser、metadata collector 或 profiler 直接产出的原始证据源。
+
+详细解释见 [Phase 2：核心模型和评分详细设计](../design/relation-detector/phase-02-core-model-scoring.md) 的“置信度计算”章节。该章节逐项说明了每个 EvidenceType 为什么取该分值，并给出 metadata、DDL、日志 JOIN、存储过程、`IN` 子查询、表共现、重复观测和负向数据画像的完整 SQL 算例。
 
 分数设计的核心原则：
 

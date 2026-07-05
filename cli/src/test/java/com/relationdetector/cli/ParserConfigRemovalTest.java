@@ -234,6 +234,18 @@ class ParserConfigRemovalTest {
                     sampleRows: 25
                     timeoutSeconds: 12
                     maxCandidatePairs: 77
+                    maxDistinctValues: 33
+                    maxTargetsPerSourceColumn: 2
+                    minContainmentRatio: 0.97
+                    minOverlapRatio: 0.73
+                    maxMismatchRatio: 0.44
+                    minDistinctValues: 9
+                    minRowsForNegative: 88
+                    verifyDeclaredForeignKeys: true
+                    discoverFromNamingEvidence: true
+                    useOfflineInsertSamples: false
+                    offlineSampleCompleteness: COMPLETE
+                    skipUnindexedLargeTargets: false
                   logs:
                     enabled: true
                     files:
@@ -256,6 +268,18 @@ class ParserConfigRemovalTest {
         assertEquals(25, config.sampleRows);
         assertEquals(12, config.timeoutSeconds);
         assertEquals(77, config.maxCandidatePairs);
+        assertEquals(33, config.maxDistinctValues);
+        assertEquals(2, config.maxTargetsPerSourceColumn);
+        assertEquals(0.97d, config.minContainmentRatio);
+        assertEquals(0.73d, config.minOverlapRatio);
+        assertEquals(0.44d, config.maxMismatchRatio);
+        assertEquals(9, config.minDistinctValues);
+        assertEquals(88, config.minRowsForNegative);
+        assertEquals(true, config.verifyDeclaredForeignKeys);
+        assertEquals(true, config.discoverFromNamingEvidence);
+        assertEquals(false, config.useOfflineInsertSamples);
+        assertEquals("COMPLETE", config.offlineSampleCompleteness.name());
+        assertEquals(false, config.skipUnindexedLargeTargets);
         assertEquals(0.42d, config.minConfidence);
         assertEquals(false, config.includeEvidence);
         assertEquals(true, config.includeWarnings);

@@ -108,6 +108,20 @@ class TokenEventStructuredSqlParserTest {
     }
 
     @Test
+    void unsupportedTokenEventStatementIsReportedAsSkipped() {
+        String sql = "LOCK TABLES orders WRITE";
+
+        StructuredParseResult result = new TokenEventStructuredSqlParser(SqlDialect.MYSQL)
+                .parseSql(record(sql, StatementSourceType.NATIVE_LOG), null);
+
+        WarningMessage warning = result.warnings().stream()
+                .filter(w -> w.code().equals("TOKEN_EVENT_UNKNOWN_STATEMENT_SKIPPED"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("expected unknown statement warning"));
+        assertEquals(1, warning.attributes().get("unknownStatementCount"));
+    }
+
+    @Test
     void antlrSqlRelationParserReturnsRelationExtractorOutputDirectly() {
         String sql = "SELECT * FROM orders o JOIN users u ON o.user_id = u.id";
         SqlStatementRecord statement = record(sql, StatementSourceType.NATIVE_LOG);

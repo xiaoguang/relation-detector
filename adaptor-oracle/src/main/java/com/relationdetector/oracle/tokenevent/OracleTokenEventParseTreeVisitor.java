@@ -450,29 +450,11 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
             List<String> targetColumns,
             ParserRuleContext ctx
     ) {
-        int count = Math.min(sourceColumns.size(), targetColumns.size());
-        for (int index = 0; index < count; index++) {
-            Map<String, Object> attrs = attrs();
-            attrs.put("sourceTable", sourceTable);
-            attrs.put("sourceColumn", sourceColumns.get(index));
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumns.get(index));
-            attrs.put("compositePosition", index + 1);
-            attrs.put("compositeSize", count);
-            add(StructuredParseEventType.DDL_FOREIGN_KEY, ctx, attrs);
-        }
+        emitter.addForeignKeyEvents(events, ctx, sourceTable, sourceColumns, targetTable, targetColumns);
     }
 
     private void addIndexEvent(String table, String column, String role, String kind, ParserRuleContext ctx) {
-        if (table.isBlank() || column.isBlank()) {
-            return;
-        }
-        Map<String, Object> attrs = attrs();
-        attrs.put("table", table);
-        attrs.put("column", column);
-        attrs.put("role", role);
-        attrs.put("kind", kind);
-        add(StructuredParseEventType.DDL_INDEX, ctx, attrs);
+        emitter.addIndexEvent(events, ctx, table, column, role, kind);
     }
 
     private void emitWriteTarget(

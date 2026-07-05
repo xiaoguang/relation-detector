@@ -65,6 +65,9 @@ public abstract class TypedDialectTokenEventStructuredSqlParser<R extends Parser
                 : List.of();
 
         antlrSupport.detectDynamicSql(statement).ifPresent(warnings::add);
+        if (errors.count() == 0) {
+            warnings.addAll(TokenEventUnknownStatementDiagnostics.warnings(statement, parsed.root(), typedEvents));
+        }
         warnings.forEach(warning -> {
             if (context != null) {
                 context.warn(warning);

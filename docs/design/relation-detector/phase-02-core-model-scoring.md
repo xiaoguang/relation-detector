@@ -244,8 +244,8 @@ public record Evidence(
 - `DDL_FOREIGN_KEY`
 - `VIEW_JOIN` / `PROCEDURE_JOIN` / `TRIGGER_REFERENCE`（对象定义中的谓词/引用证据；不能单独证明 FK-like 方向）
 - `SQL_LOG_JOIN` / `SQL_LOG_SUBQUERY_IN` / `SQL_LOG_EXISTS`（当前 typed SQL parser 对明确 SQL 谓词保留的语法 evidence；不能单独证明 FK-like 方向）
-- `SQL_LOG_COLUMN_CO_OCCURRENCE`（泛化列级共现 evidence；用于历史/外部导入或无法保留具体谓词形态的场景）
-- `SQL_LOG_TABLE_CO_OCCURRENCE`
+- `SQL_LOG_COLUMN_CO_OCCURRENCE`（`RESERVED_COMPATIBILITY / NOT_PRODUCED`；泛化列级共现 evidence，用于历史/外部导入或无法保留具体谓词形态的兼容场景，当前生产 typed parser 不主动产出）
+- `SQL_LOG_TABLE_CO_OCCURRENCE`（`RESERVED_COMPATIBILITY / NOT_PRODUCED`；表级共现 evidence，用于历史/外部导入或显式 opt-in 审计场景，当前生产 typed parser 不主动产出）
 - `NAMING_MATCH`
 - `SOURCE_INDEX`
 - `TARGET_UNIQUE`
@@ -254,6 +254,35 @@ public record Evidence(
 - `VALUE_OVERLAP_HIGH`
 - `NEGATIVE_VALUE_MISMATCH`
 - `REPEATED_OBSERVATION`
+
+当前实现状态：
+
+| EvidenceType | 当前状态 | 说明 |
+| --- | --- | --- |
+| `METADATA_FOREIGN_KEY` | 已产出 | MySQL/PostgreSQL live metadata collector 会从 catalog 外键生成；其它 adaptor 需要等 live metadata collector 补齐后自然接入。 |
+| `DDL_FOREIGN_KEY` | 已产出 | typed DDL parser / DDL relation extraction 会从 `CREATE TABLE`、`ALTER TABLE` 等 DDL 生成。 |
+| `VIEW_JOIN` | 未独立产出 | enum、分数、merger 和 subtype 都支持；当前对象 SQL 解析通常仍产出具体 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN`，尚未按 `StatementSourceType.VIEW` 改写为 view 专属 evidence。 |
+| `PROCEDURE_JOIN` | 未独立产出 | enum、分数、merger 和 subtype 都支持；当前 procedure/function/routine body 中的谓词仍复用 SQL predicate evidence。 |
+| `TRIGGER_REFERENCE` | 未独立产出 | enum、分数、merger 和 subtype 都支持；当前 trigger body 中可解析的物理表谓词仍复用 SQL predicate evidence，`NEW/OLD` pseudo rowset 不作为物理 endpoint。 |
+| `SQL_LOG_JOIN` | 已产出 | typed SQL parser 对 `JOIN ... ON`、comma join、`JOIN USING` 等明确列级谓词生成。 |
+| `SQL_LOG_SUBQUERY_IN` | 已产出 | typed SQL parser 对 scalar / tuple `IN (SELECT ...)` 且能确认两侧都是列端点时生成。 |
+| `SQL_LOG_EXISTS` | 已产出 | typed SQL parser 对 correlated `EXISTS` / `NOT EXISTS` 内部明确列级关联谓词生成。 |
+| `SQL_LOG_COLUMN_CO_OCCURRENCE` | `RESERVED_COMPATIBILITY / NOT_PRODUCED` | enum、分数、merger 兼容逻辑保留；当前 typed SQL path 优先保留具体 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN`，不主动产出该泛化 evidence。 |
+| `SQL_LOG_TABLE_CO_OCCURRENCE` | `RESERVED_COMPATIBILITY / NOT_PRODUCED` | enum、分数、merger 兼容逻辑保留；当前 parser 不因“同一 SQL 里出现多表但没有列谓词”自动生成正式 relationship evidence。 |
+| `NAMING_MATCH` | 已产出 | `NamingEvidenceExtractor` 生成 top-level `namingEvidence` 池；relationship 只能通过 `evidenceRef` 引用，不能本地重算或凭空创建关系。 |
+| `SOURCE_INDEX` | 已产出 | typed DDL parser / metadata enhancer 可从普通索引、FK source-side index 生成。 |
+| `TARGET_UNIQUE` | 已产出 | typed DDL parser / metadata enhancer 可从 PK、unique constraint、unique index 生成。 |
+| `COLUMN_TYPE_COMPATIBLE` | 已产出 | metadata enhancer 在已有关系候选上按两端 column facts 增强。 |
+| `VALUE_CONTAINMENT_HIGH` | 已产出（live DB opt-in） | MySQL/PostgreSQL/Oracle/SQL Server live profiler 在 `dataProfile.enabled=true` 且候选、权限、样本和阈值 gate 满足时产出；correctness fixture 默认不依赖 live DB。 |
+| `VALUE_OVERLAP_HIGH` | 已产出（live DB opt-in） | 同一 live profiler 在包含率未达强条件但 overlap 达阈值时产出；只输出统计量，不输出业务值。 |
+| `NEGATIVE_VALUE_MISMATCH` | 已产出（live DB opt-in） | 负向 evidence 只在 live sample 非 partial、distinct/row 数和 missing ratio gate 满足时产出；降低 confidence，不删除显式关系。 |
+| `REPEATED_OBSERVATION` | 已派生产出 | 只能由 `RelationshipMerger` 在同组可重复观测 evidence 的 `count > 1` 时生成，不由 parser、metadata collector 或 profiler 直接产出。 |
+
+兼容 evidence 与当前替代关系：
+
+- `SQL_LOG_COLUMN_CO_OCCURRENCE` 没有被“无声抛弃”。在当前 typed parser 能识别具体 SQL 结构时，它被更可审计的语法 evidence 取代：`JOIN` / comma join / `JOIN USING` 产出 `SQL_LOG_JOIN`，correlated `EXISTS` 产出 `SQL_LOG_EXISTS`，scalar / tuple `IN (SELECT ...)` 产出 `SQL_LOG_SUBQUERY_IN`。这些 evidence 表达的是同一类“列级谓词证明”，但保留了来源语法，因此优先级高于泛化 column co-occurrence。未来如果按对象来源细分，view / procedure / trigger 中的同类谓词可进一步使用预留的 `VIEW_JOIN`、`PROCEDURE_JOIN`、`TRIGGER_REFERENCE`。
+- `SQL_LOG_COLUMN_CO_OCCURRENCE` 只在历史结果、外部 adaptor 导入、或确实无法保留具体谓词形态的兼容输入中仍可被 merger/score 理解；生产 parser / extractor 不主动降级生成它。
+- `SQL_LOG_TABLE_CO_OCCURRENCE` 对“同一 SQL 出现多张表但没有列级谓词”的场景没有现役替代 evidence。当前实现选择不产出 relationship，因为这种表级共现无法证明列关系和方向，false positive 风险高。如果 SQL 中存在明确 JOIN / EXISTS / IN 谓词，则不会走表级共现，而是产出上面的具体列级 predicate evidence。
 
 ## 归并规则
 
@@ -277,7 +306,7 @@ relationType
 - `rawEvidence` 保留归并前的原始证据，每一次日志、对象定义、DDL 或画像命中都保留一条，便于审计和排查。
 - `evidence` 保留归并后的摘要证据，用于置信度计算和常规展示。聚合后的 evidence 保留原始 score 一次，并在 `attributes.count` 中记录出现次数。
 - 当 `count > 1` 时，聚合 evidence 还应记录 `firstDetail`、`lastDetail`、`sampleDetails` 和 `sampleTruncated`。`sampleDetails` 默认最多保留 5 条代表性 detail，避免日志证据爆炸。
-- 对可重复观测类证据，例如 `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS`、`VIEW_JOIN`、`PROCEDURE_JOIN`、`TRIGGER_REFERENCE`、`SQL_LOG_TABLE_CO_OCCURRENCE`，重复出现会额外生成一条 `REPEATED_OBSERVATION` evidence。
+- 对可重复观测类证据，例如 `SQL_LOG_JOIN`、`SQL_LOG_SUBQUERY_IN`、`SQL_LOG_EXISTS`、`VIEW_JOIN`、`PROCEDURE_JOIN`、`TRIGGER_REFERENCE`、`SQL_LOG_COLUMN_CO_OCCURRENCE`、`SQL_LOG_TABLE_CO_OCCURRENCE`，重复出现会额外生成一条 `REPEATED_OBSERVATION` evidence。
 - `REPEATED_OBSERVATION` 是小幅排序/加固证据，不替代基础证据。它的分数使用递减增益并带绝对上限：`score = 0.10 * (1 - 1 / count)`。因此重复 2 次加 0.05，重复 3 次加 0.0667，重复 100 次加 0.099；它只会接近 0.10，永远不会达到或超过 0.10。
 
 ## 置信度计算
@@ -303,8 +332,8 @@ relationType
 | `SQL_LOG_JOIN` | 0.55 | SQL 明确给出 JOIN / comma join 等值谓词；它证明列级谓词关系，但没有方向证据时输出 `CO_OCCURRENCE`。 | `orders.customer_id = customers.id`。 |
 | `SQL_LOG_SUBQUERY_IN` | 0.58 | `IN (SELECT ...)` / tuple IN 明确表达外层列与子查询列的谓词关系；方向仍由唯一性、DDL、metadata 或画像决定。 | `o.customer_id IN (SELECT c.id FROM customers c)`。 |
 | `SQL_LOG_EXISTS` | 0.58 | correlated `EXISTS` 明确表达存在性谓词；evidence 保留 EXISTS 语法来源。EXISTS 自身不定向，但可叠加 unique、metadata、profile 或 `NAMING_MATCH` 方向证据。 | `EXISTS (SELECT 1 FROM payments p WHERE p.order_id = o.id)`。 |
-| `SQL_LOG_COLUMN_CO_OCCURRENCE` | 0.40 | 泛化列级共现 evidence。用于历史/外部导入或无法保留具体谓词语法形态的场景；当前 typed SQL path 优先保留 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN`。 | `warehouse_inventory.product_id = order_items.product_id`。 |
-| `SQL_LOG_TABLE_CO_OCCURRENCE` | 0.25 | 只能证明同一条 SQL 中出现多个表，不能证明列级关系，也不能证明方向。它适合提示人工调查，不适合作为高置信关系。 | `SELECT ... FROM orders, users WHERE orders.status = 'PAID' AND users.active = 1;` |
+| `SQL_LOG_COLUMN_CO_OCCURRENCE` | 0.40 | `RESERVED_COMPATIBILITY / NOT_PRODUCED`。泛化列级共现 evidence，仅为历史/外部导入或无法保留具体谓词语法形态的兼容场景保留；当前 typed SQL path 优先保留 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN`。 | 外部 adaptor 只能告诉 core `warehouse_inventory.product_id` 与 `order_items.product_id` 有列级共现，但不能区分 JOIN / EXISTS / IN。 |
+| `SQL_LOG_TABLE_CO_OCCURRENCE` | 0.25 | `RESERVED_COMPATIBILITY / NOT_PRODUCED`。表级共现只能证明同一 SQL 中出现多个表，不能证明列级关系，也不能证明方向；当前生产 parser 不主动输出，避免报表/分析 SQL 带来 false positive。 | 外部导入或显式 opt-in 审计场景报告 `orders` 与 `users` 同 SQL 出现。 |
 | `NAMING_MATCH` | 0.20 | 命名方向启发式；完整证据先进入 top-level `namingEvidence` 池，relationship 只能通过 `evidenceRef` 引用它，不能单独创建关系或本地重算。若 attributes 中的 `suggestedSourceEndpoint` / `suggestedTargetEndpoint` 唯一且匹配当前端点，可参与 FK-like 方向推导。 | `customer_id` 与 `customers.id`、`manager_id` 与 self-join alias 的 `id`。 |
 | `SOURCE_INDEX` | 0.10 | 子表外键列常有索引，但索引也可能只是为了过滤或排序。只能作为辅助证据。 | `CREATE INDEX idx_orders_user_id ON orders(user_id);` |
 | `TARGET_UNIQUE` | 0.18 | 被引用列通常是 PK/unique；这是比普通索引更强的方向证据，但唯一列不代表一定被引用。 | `users.id` 是 primary key。 |

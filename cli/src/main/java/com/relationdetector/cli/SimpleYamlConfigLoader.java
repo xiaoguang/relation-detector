@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
+import com.relationdetector.contracts.Enums.OfflineSampleCompleteness;
 import com.relationdetector.contracts.Enums.OutputFormat;
 import com.relationdetector.core.scan.ScanConfig;
 
@@ -102,6 +103,19 @@ public final class SimpleYamlConfigLoader {
         setIntIfPresent(dataProfile, "sampleRows", value -> config.sampleRows = value);
         setIntIfPresent(dataProfile, "timeoutSeconds", value -> config.timeoutSeconds = value);
         setIntIfPresent(dataProfile, "maxCandidatePairs", value -> config.maxCandidatePairs = value);
+        setIntIfPresent(dataProfile, "maxDistinctValues", value -> config.maxDistinctValues = value);
+        setIntIfPresent(dataProfile, "maxTargetsPerSourceColumn", value -> config.maxTargetsPerSourceColumn = value);
+        setDoubleIfPresent(dataProfile, "minContainmentRatio", value -> config.minContainmentRatio = value);
+        setDoubleIfPresent(dataProfile, "minOverlapRatio", value -> config.minOverlapRatio = value);
+        setDoubleIfPresent(dataProfile, "maxMismatchRatio", value -> config.maxMismatchRatio = value);
+        setIntIfPresent(dataProfile, "minDistinctValues", value -> config.minDistinctValues = value);
+        setIntIfPresent(dataProfile, "minRowsForNegative", value -> config.minRowsForNegative = value);
+        setBooleanIfPresent(dataProfile, "verifyDeclaredForeignKeys", value -> config.verifyDeclaredForeignKeys = value);
+        setBooleanIfPresent(dataProfile, "discoverFromNamingEvidence", value -> config.discoverFromNamingEvidence = value);
+        setBooleanIfPresent(dataProfile, "useOfflineInsertSamples", value -> config.useOfflineInsertSamples = value);
+        setIfPresent(dataProfile, "offlineSampleCompleteness", value ->
+                config.offlineSampleCompleteness = OfflineSampleCompleteness.valueOf(value.toUpperCase()));
+        setBooleanIfPresent(dataProfile, "skipUnindexedLargeTargets", value -> config.skipUnindexedLargeTargets = value);
     }
 
     private void readFilters(ScanConfig config, JsonNode filters) {
@@ -261,10 +275,24 @@ public final class SimpleYamlConfigLoader {
         if (!atLeastOneSource) {
             throw new IllegalArgumentException("at least one source among metadata, ddl, objects, logs must be enabled");
         }
-        if (config.sampleRows <= 0 || config.timeoutSeconds <= 0) {
-            throw new IllegalArgumentException("dataProfile sampleRows and timeoutSeconds must be positive");
+        if (config.sampleRows <= 0 || config.timeoutSeconds <= 0 || config.maxCandidatePairs <= 0
+                || config.maxDistinctValues <= 0 || config.maxTargetsPerSourceColumn <= 0
+                || config.minDistinctValues <= 0 || config.minRowsForNegative <= 0) {
+            throw new IllegalArgumentException("dataProfile numeric limits must be positive");
+        }
+        validateRatio(config.minContainmentRatio, "dataProfile minContainmentRatio");
+        validateRatio(config.minOverlapRatio, "dataProfile minOverlapRatio");
+        validateRatio(config.maxMismatchRatio, "dataProfile maxMismatchRatio");
+        if (config.offlineSampleCompleteness == null) {
+            throw new IllegalArgumentException("dataProfile offlineSampleCompleteness is required");
         }
         config.parserMode = normalizeParserMode(config.parserMode);
+    }
+
+    private void validateRatio(double value, String name) {
+        if (Double.isNaN(value) || value < 0.0d || value > 1.0d) {
+            throw new IllegalArgumentException(name + " must be between 0 and 1");
+        }
     }
 
     private String normalizeParserMode(String value) {

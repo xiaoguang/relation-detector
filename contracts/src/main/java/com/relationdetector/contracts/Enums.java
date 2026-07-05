@@ -169,6 +169,12 @@ public final class Enums {
         POSTGRES_STATEMENT_LOG
     }
 
+    /** Completeness assertion for offline INSERT-derived data-profile samples. */
+    public enum OfflineSampleCompleteness {
+        PARTIAL,
+        COMPLETE
+    }
+
     /** Parser confidence about source -> target direction before final scoring. */
     public enum DirectionConfidence {
         CERTAIN,

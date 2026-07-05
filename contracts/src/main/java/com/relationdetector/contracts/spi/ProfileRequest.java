@@ -13,6 +13,18 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 public record ProfileRequest(
         RelationshipCandidate candidate,
         int sampleRows,
-        int timeoutSeconds
+        int timeoutSeconds,
+        DataProfileOptions options
 ) {
+    public ProfileRequest(RelationshipCandidate candidate, int sampleRows, int timeoutSeconds) {
+        this(candidate, sampleRows, timeoutSeconds,
+                DataProfileOptions.defaults(sampleRows, timeoutSeconds, 1_000));
+    }
+
+    public ProfileRequest(RelationshipCandidate candidate, DataProfileOptions options) {
+        this(candidate,
+                options == null ? DataProfileOptions.defaults().sampleRows() : options.sampleRows(),
+                options == null ? DataProfileOptions.defaults().timeoutSeconds() : options.timeoutSeconds(),
+                options == null ? DataProfileOptions.defaults() : options);
+    }
 }

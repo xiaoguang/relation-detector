@@ -8,13 +8,11 @@ import java.util.stream.Stream;
 
 import com.relationdetector.contracts.Enums.DatabaseObjectType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
-import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
 import com.relationdetector.contracts.parse.DatabaseObjectDefinition;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.contracts.spi.ProfileRequest;
 import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 import com.relationdetector.core.log.ObjectSqlFileExtractor;
 import com.relationdetector.core.log.PlainSqlLogExtractor;
@@ -60,18 +58,6 @@ final class SourceCollectorPipeline {
             }
         }
 
-        if (ctx.config.dataProfileEnabled && connection != null) {
-            ctx.result.sources().add("data-profile");
-            int profiled = 0;
-            for (RelationshipCandidate candidate : new java.util.ArrayList<>(ctx.relationshipCandidates)) {
-                if (profiled++ >= ctx.config.maxCandidatePairs) {
-                    break;
-                }
-                ctx.adaptor.profiling().dataProfiler().ifPresent(profiler ->
-                        candidate.evidence().addAll(profiler.profile(connection,
-                                new ProfileRequest(candidate, ctx.config.sampleRows, ctx.config.timeoutSeconds))));
-            }
-        }
     }
 
     void collectFileSources(ScanPipelineContext ctx) {

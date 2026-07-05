@@ -2,18 +2,103 @@
 
 ## 目标
 
-实现可选数据画像能力，用真实数据统计增强或削弱关系置信度。
+数据画像用于回答一个问题：在已经有结构、SQL、DDL、命名或对象定义线索的前提下，真实数据是否支持或反驳这条候选关系。
 
-数据画像默认关闭，只有用户显式配置 `sources.dataProfile.enabled: true` 时才运行。该能力必须严格受采样、超时和候选范围限制，避免对生产库造成不可控压力。
+本阶段重点设计三类 evidence：
+
+- `VALUE_CONTAINMENT_HIGH`：source 列的非空取值高度包含于 target 列，强支持“source 引用 target”。
+- `VALUE_OVERLAP_HIGH`：两列取值有较高重合，弱支持两列有关。
+- `NEGATIVE_VALUE_MISMATCH`：对已有候选关系，真实数据明显不匹配，降低置信度。
+
+当前代码事实：
+
+- live DB profiling 已实现为显式 opt-in 能力：`dataProfile.enabled=true` 且有 JDBC connection 时，MySQL、PostgreSQL、Oracle、SQL Server profiler 都会对受限候选执行 bounded distinct containment query。
+- `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH`、`NEGATIVE_VALUE_MISMATCH` 均可由 live profiler 产出，并带 `profileMode=LIVE_DATABASE`、比例、阈值、样本规模、timeout/permission flags 等 attributes。
+- 候选生成不会做全库列两两比较；只选择已有结构候选，或在 `discoverFromNamingEvidence=true` 时选择 top-level `namingEvidence` + target unique + type compatible 的命名候选。
+- 离线 seed `INSERT` 样本尚未进入生产链路。当前 structured event 只稳定覆盖 `INSERT SELECT`、`UPDATE`、`MERGE` 等写入映射，没有 typed literal `INSERT ... VALUES` sample event；因此不能用 regex/token span 扫描 SQL 伪造 offline sample。
+
+因此本文档同时记录当前 live profiling 实现和后续 offline sample 设计边界。
 
 ## 设计原则
 
-- 默认不读取业务数据。
-- 只对已有候选关系运行，不做全库列组合扫描。
-- 所有查询必须受 `sampleRows` 和 `timeoutSeconds` 控制。
-- 画像结果只作为 evidence，不直接覆盖显式 FK。
-- 画像可以增强关系，也可以提供负向证据降低置信度。
-- 输出中必须说明样本规模、命中率、阈值和限制。
+- 默认不读取业务数据，必须显式开启。
+- 不做全库任意列两两比较；画像只服务候选关系或强约束候选。
+- 数据画像只能产生 evidence，不能覆盖显式 FK。
+- 数据画像可以增强关系，也可以反证关系，但反证不能直接删除关系。
+- 不输出真实业务值，不输出采样值，也不输出可逆 hash；只输出统计量、阈值、样本规模和跳过原因。
+- 所有查询必须受候选数量、采样行数、distinct 数量、超时和权限控制。
+- 生产库读权限不足时必须降级为 skip/warning，不影响静态关系抽取。
+
+## 输入场景
+
+### 1. 只有 SQL / DDL / 对象定义，没有数据库连接
+
+系统只能使用静态证据：
+
+- DDL FK / PK / UNIQUE / INDEX。
+- DDL column inventory。
+- view / procedure / trigger / query 中的 JOIN / EXISTS / IN。
+- top-level `namingEvidence`。
+
+此时不产生 `VALUE_CONTAINMENT_HIGH` 或 `NEGATIVE_VALUE_MISMATCH`，除非输入文件中还包含可解析的 seed/sample `INSERT`，见下一节。
+
+### 2. DDL 或 migration 文件里带 `INSERT`
+
+许多 migration 文件会同时包含 `CREATE TABLE` 和 seed/reference data，例如：
+
+```sql
+CREATE TABLE regions(id BIGINT PRIMARY KEY, code VARCHAR(32));
+CREATE TABLE customers(id BIGINT PRIMARY KEY, region_id BIGINT);
+
+INSERT INTO regions(id, code) VALUES (1, 'NE'), (2, 'SW');
+INSERT INTO customers(id, region_id) VALUES (100, 1), (101, 2), (102, 2);
+```
+
+设计上把这些 literal `INSERT` 当成离线样本，而不当成线上真实数据全量。
+
+可用范围：
+
+- `INSERT INTO table(col, ...) VALUES (...)`：可以抽取列值样本。
+- 多行 `VALUES`：可以抽取多条样本。
+- `INSERT INTO ... SELECT ...`：只有当 SELECT 端是可完全解析的 literal/CTE seed 数据时，才可作为样本；否则只作为 lineage，不作为数据画像样本。
+- `LOAD DATA`、`COPY FROM file`、动态 SQL、过程变量生成的数据：不作为可验证样本。
+
+离线样本 evidence 规则：
+
+- 只有 source 和 target 两侧都有样本，且 source distinct 样本数达到 `minOfflineDistinctValues`，才允许产出 `VALUE_CONTAINMENT_HIGH`。
+- 只有在输入 manifest 或配置明确声明样本覆盖完整，例如 `dataProfile.offlineSampleCompleteness: COMPLETE`，才允许产出 `NEGATIVE_VALUE_MISMATCH`。
+- 默认情况下，DDL/migration 中的 seed insert 不足以产生负向 evidence，因为文件可能只包含部分数据。
+- 输出 attributes 必须标记 `profileMode=OFFLINE_INSERT_SAMPLE`、`sampleCompleteness=PARTIAL|COMPLETE`。
+
+### 3. 有数据库连接，但没有业务数据读取权限
+
+如果只能读取 catalog / metadata，不能读取业务表：
+
+- 继续产出 metadata / DDL / naming / SQL predicate evidence。
+- 不产出 `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH`、`NEGATIVE_VALUE_MISMATCH`。
+- 输出 warning 或 info：`DATA_PROFILE_SKIPPED_NO_PERMISSION`，attributes 包含 table/column 和失败摘要，不包含 SQL 参数或敏感信息。
+
+### 4. 有数据库连接，并且有只读数据权限
+
+这是完整数据画像路径。
+
+系统可以对候选关系执行受限聚合查询，但仍不能扫描任意列组合。查询只返回 count / ratio，不返回值。
+
+### 5. 混合输入
+
+常见情况是：
+
+- metadata 来自 live DB。
+- DDL 来自文件。
+- SQL/object definitions 来自仓库。
+- seed insert 来自 migration。
+- 数据画像来自 live DB。
+
+优先级：
+
+1. live DB 数据画像优先于 offline insert sample。
+2. offline insert sample 只能作为辅助 evidence，不能覆盖 live metadata FK。
+3. 同一关系若同时有 live profile 与 offline sample，evidence 分开记录，source/detail/attributes 必须可区分。
 
 ## 配置
 
@@ -22,219 +107,458 @@ sources:
   dataProfile:
     enabled: false
     sampleRows: 10000
+    maxDistinctValues: 5000
     timeoutSeconds: 30
-    minContainmentRatio: 0.95
-    minOverlapRatio: 0.80
     maxCandidatePairs: 1000
+    maxTargetsPerSourceColumn: 3
+    minContainmentRatio: 0.98
+    minOverlapRatio: 0.80
+    maxMismatchRatio: 0.50
+    minDistinctValues: 20
+    minRowsForNegative: 100
     verifyDeclaredForeignKeys: false
+    discoverFromNamingEvidence: false
+    useOfflineInsertSamples: true
+    offlineSampleCompleteness: PARTIAL
+    skipUnindexedLargeTargets: true
 ```
 
 字段说明：
 
-- `sampleRows`：每个候选关系最多抽样 distinct source 值数量。
+- `enabled`：默认 false。关闭时不查询业务数据。
+- `sampleRows`：每个候选最多采样 source 行数。
+- `maxDistinctValues`：每个候选最多采样 source distinct 非空值数量。
 - `timeoutSeconds`：单个画像查询最大执行时间。
-- `minContainmentRatio`：值域包含强证据阈值。
-- `minOverlapRatio`：值重合辅助证据阈值。
 - `maxCandidatePairs`：本次扫描最多画像的候选关系数量。
-- `verifyDeclaredForeignKeys`：是否也对显式 FK 做画像验证，默认 false。
+- `maxTargetsPerSourceColumn`：同一个 source column 最多尝试几个 target。
+- `minContainmentRatio`：产生 `VALUE_CONTAINMENT_HIGH` 的阈值。
+- `minOverlapRatio`：产生 `VALUE_OVERLAP_HIGH` 的阈值。
+- `maxMismatchRatio`：产生 `NEGATIVE_VALUE_MISMATCH` 的 missing ratio 阈值。
+- `minDistinctValues`：正向强包含 evidence 的最小 distinct 样本规模。
+- `minRowsForNegative`：负向 evidence 的最小 source 非空行样本规模。
+- `verifyDeclaredForeignKeys`：是否验证显式 FK，默认 false。开启后即使发现 mismatch，也只降低 confidence 并输出 evidence，不删除 FK。
+- `discoverFromNamingEvidence`：是否允许从 top-level namingEvidence + profile 发现新关系，默认 false。
+- `useOfflineInsertSamples`：配置字段已保留；生产链路等待 typed literal insert sample event 后启用，当前不做 regex/text fallback。
+- `offlineSampleCompleteness`：`PARTIAL` 或 `COMPLETE`。默认 `PARTIAL`，不产生负向 evidence。
+- `skipUnindexedLargeTargets`：当 metadata 中存在 index facts 且 target column 无可见索引时跳过，避免昂贵 target lookup。
 
-## 候选选择
+尚未实现但可后续加入的预算字段：
 
-画像候选来源：
+- `mode`：当前等价于 `CANDIDATES_ONLY`；未来可增加显式 `DISCOVERY_ASSISTED`。
+- `maxCandidatesPerTable`：当前已有 `maxCandidatePairs` 和 `maxTargetsPerSourceColumn`，尚未按 table 维度限流。
+- `emitSkippedCandidates`：当前 profiler 失败/跳过保持静默，不输出真实 SQL 或敏感值；未来可增加安全 diagnostic。
 
-- JOIN 推断关系。
-- 子查询推断关系。
-- 命名 + 索引/unique 支持的关系。
-- 表级共现中存在强命名候选列的关系。
+## 候选生成：避免全库列组合扫描
 
-默认跳过：
+核心约束：不能对每一列两两查数据。画像候选必须来自便宜、结构化、可解释的前置线索。
 
-- 已经是 `DECLARED_FK` 的关系。
-- 无任何列级候选的纯表级共现关系。
-- 类型明显不兼容的列。
-- 被 include/exclude 过滤排除的表。
+### 候选分层
 
-排序优先级：
+#### A. 确定关系候选
 
-1. 已有 JOIN/子查询 evidence 的候选。
-2. 有 target unique 的候选。
-3. 有 source index 的候选。
-4. 命名匹配候选。
-5. 共现中派生的候选。
+这些候选已经是 relationship candidate，画像只是增强或反证：
 
-## 画像指标
+- `METADATA_FOREIGN_KEY`
+- `DDL_FOREIGN_KEY`
+- `SQL_LOG_JOIN`
+- `SQL_LOG_EXISTS`
+- `SQL_LOG_SUBQUERY_IN`
+- `VIEW_JOIN` / `PROCEDURE_JOIN` / `TRIGGER_REFERENCE`，当未来独立产出时
+- relationship 中引用了 top-level `NAMING_MATCH` 的候选
 
-### 列定义相似
+默认只对 A 层画像。
 
-检查：
+#### B. 强结构候选
 
-- 数据类型兼容。
-- 长度兼容。
-- precision/scale 兼容。
-- 字符集或排序规则兼容。
-- nullable 形态合理。
+这些候选还不一定是 relationship，但有足够便宜的结构线索，可以在 `discoverFromNamingEvidence=true` 时进入画像队列：
 
-输出 evidence：
+- source column 与 target PK/UNIQUE column 类型兼容。
+- top-level `namingEvidence` 给出唯一方向，例如 `orders.customer_id -> customers.id`。
+- target 端有 `TARGET_UNIQUE`，source 端有 `SOURCE_INDEX` 或同表/同 schema 业务上下文。
+- DDL column inventory 或 metadata 显示两端都存在，且不属于临时表、pseudo rowset、参数或局部变量。
+
+B 层不能仅靠命名生成 relationship。只有画像产生 `VALUE_CONTAINMENT_HIGH`，并且 target unique / type compatible 等结构 evidence 同时存在时，才可生成 `PROFILE_SUPPORTED_FK` 候选。
+
+#### C. 弱候选
+
+这些默认不画像：
+
+- 纯表级共现。
+- 只有相同列名，例如两个表都有 `status`、`type`、`tenant_id`。
+- 没有 target unique / PK / naming direction 的任意同类型列。
+- JSON/CLOB/TEXT/BLOB/XML 等大对象列。
+- 高变动时间戳、金额、描述、备注列。
+
+如果未来要支持 C 层，必须是显式 opt-in 审计模式，并有更低预算。
+
+### 候选剪枝
+
+画像前先做零成本或低成本剪枝：
+
+- 表/列必须存在于 metadata 或 DDL column inventory。
+- source 和 target 必须都是物理列 endpoint。
+- 排除临时表、CTE、derived table、`NEW/OLD`、`EXCLUDED`、局部变量、参数。
+- 类型族必须兼容，例如 numeric-to-numeric、string-to-string、uuid-to-uuid。
+- target 优先必须是 PK/UNIQUE 或近似唯一候选。
+- source 与 target 不能是同一个 endpoint。
+- 单表自关联必须有 role 或列差异，例如 `manager_id -> id`。
+- 如果 target 是大表且 target 列无索引，并且没有显式 FK/DDL 强证据，则跳过。
+
+### 候选排序
+
+当候选超过预算时，按以下优先级排序：
+
+1. 显式 SQL predicate + target unique。
+2. DDL/metadata FK 且 `verifyDeclaredForeignKeys=true`。
+3. SQL predicate + `NAMING_MATCH`。
+4. procedure/view/trigger 中反复出现的 predicate。
+5. namingEvidence + target unique + source index。
+6. 其它 B 层强结构候选。
+
+## Live DB 画像指标
+
+对每个候选 `sourceTable.sourceColumn -> targetTable.targetColumn`，计算：
 
 ```text
-COLUMN_TYPE_COMPATIBLE
-score: 0.08
+sourceNonNullRowsSampled
+sourceDistinctValuesSampled
+matchedDistinctSourceValues
+missingDistinctSourceValues
+containmentRatio = matchedDistinctSourceValues / sourceDistinctValuesSampled
+missingRatio = missingDistinctSourceValues / sourceDistinctValuesSampled
+overlapRatio = matchedDistinctSourceValues / min(sourceDistinctValuesSampled, targetDistinctValuesSampled or sourceDistinctValuesSampled)
+sourceNullRatio
 ```
 
-类型明显不兼容时输出负向 evidence。
+### `VALUE_CONTAINMENT_HIGH`
 
-### 目标唯一性
+产生条件：
 
-判断 target 列是否：
+- `sourceDistinctValuesSampled >= minDistinctValues`
+- `containmentRatio >= minContainmentRatio`
+- source/target 类型兼容
+- target 有 PK/UNIQUE，或候选本身来自 SQL/DDL/metadata 强证据
+- 查询未超时，样本未被权限错误截断
 
-- primary key。
-- unique constraint。
-- unique index。
-- 抽样近似唯一。
-
-输出 evidence：
-
-```text
-TARGET_UNIQUE
-score: 0.18
-```
-
-### 源列索引
-
-判断 source 列是否有普通索引或复合索引前缀。
-
-输出 evidence：
+输出：
 
 ```text
-SOURCE_INDEX
-score: 0.10
-```
-
-### 值域包含
-
-计算 source distinct 非空值中，能在 target 列命中的比例。
-
-```text
-containmentRatio = matchedDistinctSourceValues / sampledDistinctSourceValues
-```
-
-当 `containmentRatio >= minContainmentRatio`：
-
-```text
-VALUE_CONTAINMENT_HIGH
+EvidenceType: VALUE_CONTAINMENT_HIGH
+EvidenceSourceType: DATA_PROFILE
 score: 0.30
+attributes:
+  profileMode: LIVE_DATABASE
+  containmentRatio: 0.995
+  matchedDistinctSourceValues: 995
+  sourceDistinctValuesSampled: 1000
+  sampleRows: 10000
+  minContainmentRatio: 0.98
+  minDistinctValues: 20
+  targetUnique: true
+  queryTimedOut: false
 ```
 
-当比例很低，例如小于 0.50：
+### `VALUE_OVERLAP_HIGH`
+
+产生条件：
+
+- `matchedDistinctSourceValues > 0`
+- `overlapRatio >= minOverlapRatio`
+- 没达到 `VALUE_CONTAINMENT_HIGH` 的强条件，或 target 唯一性不足
+
+输出较弱 evidence，用于提示值域有关，但不能强定向。
+
+### `NEGATIVE_VALUE_MISMATCH`
+
+负向 evidence 风险更高，必须更保守。
+
+产生条件：
+
+- 关系候选来自 A 层，或者 B 层已具备 naming + target unique + type compatible。
+- `sourceDistinctValuesSampled >= minDistinctValues`
+- `sourceNonNullRowsSampled >= minRowsForNegative`
+- `missingRatio >= maxMismatchRatio`
+- 不存在已知过滤上下文会导致自然缺失，例如 tenant 分区、软删除、时间窗口、归档表、权限行过滤。
+- 对显式 FK 默认不验证；只有 `verifyDeclaredForeignKeys=true` 时才输出。
+
+不产生条件：
+
+- 样本太小。
+- source 大量为 null。
+- SQL predicate 带强过滤条件但画像无法复现过滤条件。
+- target 表是历史快照、分区表、归档表、软删除过滤未应用。
+- 输入只是 migration/seed 的 partial insert sample。
+
+输出：
 
 ```text
-NEGATIVE_VALUE_MISMATCH
+EvidenceType: NEGATIVE_VALUE_MISMATCH
+EvidenceSourceType: DATA_PROFILE
 score: -0.30
+attributes:
+  profileMode: LIVE_DATABASE
+  missingRatio: 0.72
+  missingDistinctSourceValues: 720
+  sourceDistinctValuesSampled: 1000
+  sourceNonNullRowsSampled: 5000
+  maxMismatchRatio: 0.50
+  negativeGatesSatisfied: true
 ```
-
-### 值重合率
-
-用于辅助判断，不如值域包含强。
-
-```text
-overlapRatio = matchedValues / sampledRows
-```
-
-当 `overlapRatio >= minOverlapRatio`：
-
-```text
-VALUE_OVERLAP_HIGH
-score: 0.20
-```
-
-### 基数形态
-
-典型外键形态：
-
-- source distinct 值数量小于 source 总行数。
-- target distinct 值数量接近 target 总行数。
-- source 多行可指向同一个 target。
-
-基数形态作为 attributes 记录，v1 不单独给高分，避免统计误导。
-
-### 空值比例
-
-计算 source null ratio：
-
-- 高空值比例表示可选关系。
-- 不直接否定关系。
-- 写入 evidence attributes。
 
 ## 查询策略
 
-必须满足：
+### 通用逻辑
 
-- 只读查询。
-- 只抽样候选列。
-- 不取出敏感值到输出。
-- 输出只包含统计结果，不输出实际业务值。
+所有方言都应渲染为只读聚合查询，返回统计量，不返回值。
 
-抽样方式：
+伪 SQL：
 
-- 优先抽 distinct source 值。
-- 每个候选最多 `sampleRows`。
-- 大表由数据库执行 limit。
-- 每个查询设置超时。
+```sql
+WITH sampled_source AS (
+  SELECT DISTINCT source_col AS v
+  FROM source_table
+  WHERE source_col IS NOT NULL
+  FETCH FIRST :maxDistinctValues ROWS ONLY
+),
+matched AS (
+  SELECT s.v
+  FROM sampled_source s
+  JOIN target_table t ON t.target_col = s.v
+)
+SELECT
+  (SELECT COUNT(*) FROM sampled_source) AS source_distinct,
+  (SELECT COUNT(DISTINCT v) FROM matched) AS matched_distinct;
+```
+
+方言差异：
+
+- MySQL 5.7/8.0 使用 `LIMIT`。
+- PostgreSQL 使用 `LIMIT`，可选 `TABLESAMPLE` 只在明确配置时使用。
+- Oracle 使用 `FETCH FIRST n ROWS ONLY` 或 `ROWNUM <= n`，按版本能力选择。
+- SQL Server 使用 `TOP (n)` 或 `OFFSET/FETCH`，按版本能力选择。
+
+### 采样方式
+
+默认不使用随机采样，因为 `ORDER BY RAND()` / `ORDER BY random()` 对大表代价高。
+
+优先顺序：
+
+1. 如果 source 列有索引，使用 index-friendly distinct limit。
+2. 如果数据库支持低成本 block sampling，且配置允许，使用 `TABLESAMPLE`。
+3. 否则使用普通 distinct limit，并受 timeout 保护。
+
+### 批处理优化
+
+为了避免候选多时一条一条慢查询，可以做两层优化：
+
+- 同一 source table/source column 对多个 target 的候选，先 materialize sampled source CTE，再分别 join target。
+- 同一 target table/target column 被多个 source 使用时，复用 target metadata/unique/index facts，不重复查询 target distinct。
+
+第一版可以保守地逐候选执行；但必须保留 `maxCandidatePairs` 和 timeout。
+
+## Offline insert sample 设计
+
+新增内部模型：
+
+```text
+ColumnValueSample
+  table
+  column
+  sourceFile
+  sourceLine
+  nonNullCount
+  distinctCount
+  sampleCompleteness
+  valuesInternalOnly
+```
+
+注意：`valuesInternalOnly` 表示值只存在内存中用于集合比较，不进入 JSON 输出。
+
+抽取规则：
+
+- 使用 typed SQL parser 解析 `INSERT`，不能用 regex 扫描 SQL。
+- 只记录 literal values、typed null 和简单 cast literal。
+- 表达式、函数、变量、sequence、subquery、dynamic SQL 不进入 value sample。
+- 多文件样本按 table/column 合并，但保留 raw observation count。
+
+离线 containment：
+
+```text
+offlineContainmentRatio = sourceSampleDistinctContainedByTargetSample / sourceSampleDistinct
+```
+
+只有当 source/target 样本都达到阈值且 `offlineSampleCompleteness` 合适时才产出 evidence。
+
+## 与 relationship / namingEvidence 的关系
+
+数据画像不是 parser，不发现 SQL 结构，也不重新计算 naming match。
+
+流程：
+
+```text
+parse SQL / DDL / metadata
+  -> relationships + DDL_COLUMN inventory + namingEvidence
+  -> DataProfileCandidateGenerator 选择少量候选
+  -> DataProfiler 执行 live DB profile
+  -> evidence 合并到已有 relationship 或生成 profile-supported candidate
+  -> RelationshipMerger 统一评分
+```
+
+约束：
+
+- `NAMING_MATCH` 仍由 top-level `namingEvidence` 单一来源提供。
+- 数据画像可以消费 namingEvidence 来排序候选，但不能自己生成 NAMING_MATCH。
+- 默认不允许纯 profile 创建 relationship。
+- 如果开启 `discoverFromNamingEvidence=true`，也必须满足 naming + unique/type + high containment，不允许全列扫描发现关系。
 
 ## 与评分模型关系
 
 画像 evidence 进入 Phase 2 的统一评分模型：
 
-- 增强：`COLUMN_TYPE_COMPATIBLE`、`TARGET_UNIQUE`、`VALUE_CONTAINMENT_HIGH`。
-- 降低：`NEGATIVE_VALUE_MISMATCH`。
+- 增强：`VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH`。
+- 反证：`NEGATIVE_VALUE_MISMATCH`。
 
 subtype 规则：
 
-- 如果关系原本是 `DECLARED_FK`，保持 `DECLARED_FK`。
-- 如果关系原本是 `DDL_DECLARED_FK`，保持 `DDL_DECLARED_FK`。
-- 如果关系原本是 JOIN/命名推断，并且画像强支持，则可提升为 `PROFILE_SUPPORTED_FK`。
-- 如果画像反证强，降低 confidence，但保留 evidence 说明原因。
+- `METADATA_FOREIGN_KEY` 保持 `DECLARED_FK`。
+- `DDL_FOREIGN_KEY` 保持 `DDL_DECLARED_FK`。
+- SQL predicate / naming / unique 候选叠加 `VALUE_CONTAINMENT_HIGH` 后可变成 `PROFILE_SUPPORTED_FK`。
+- `NEGATIVE_VALUE_MISMATCH` 降低 confidence，但不删除关系，不改变 explicit FK subtype。
 
-## 安全与性能
+## 安全与权限
 
 安全要求：
 
-- 不输出采样到的具体值。
-- password 不进入日志。
-- 查询错误只记录表/列名和错误摘要。
+- 不输出真实值。
+- 不输出 SQL 参数值。
+- 不记录完整 profiling SQL，除非 debug 模式且脱敏。
+- 权限错误只记录 table/column 和错误类型。
+- 默认不读取业务数据。
 
-性能要求：
+权限策略：
 
-- 总候选数量受 `maxCandidatePairs` 限制。
-- 单候选查询受 `timeoutSeconds` 限制。
-- 可通过 CLI 输出画像被跳过的原因。
+- 如果连接不可用：skip。
+- 如果 catalog 可读但数据不可读：skip profile，保留 metadata。
+- 如果部分表可读：只 profile 可读候选，其它候选输出 skip reason。
+- 如果查询超时：该候选输出 warning，不影响整体 scan。
 
-跳过原因示例：
+## 性能控制
 
-- `candidate limit exceeded`
-- `incompatible column type`
-- `missing target column`
-- `profile disabled`
-- `query timeout`
+必须有硬上限：
+
+- `maxCandidatePairs`
+- `maxCandidatesPerTable`
+- `maxTargetsPerSourceColumn`
+- `sampleRows`
+- `maxDistinctValues`
+- `timeoutSeconds`
+
+复杂度目标：
+
+```text
+O(profiledCandidatePairs)
+```
+
+而不是：
+
+```text
+O(allTables * allColumns * allTables * allColumns)
+```
+
+任何实现如果绕过候选生成器做全库列组合扫描，都应被架构测试禁止。
+
+## 组件设计
+
+当前组件：
+
+- `DataProfileCandidateGenerator`
+  - 输入 relationships、namingEvidence、metadata/DDL column inventory。
+  - 输出 bounded profile candidates。
+- `DataProfilePipeline`
+  - 在 production scan 中复用 relationship candidates、metadata、top-level naming evidence，选择 bounded live DB profile 候选。
+- `DataProfileEvidenceBuilder`
+  - 根据 metrics 和阈值生成 `VALUE_CONTAINMENT_HIGH`、`VALUE_OVERLAP_HIGH`、`NEGATIVE_VALUE_MISMATCH`。
+- `MySqlDataProfiler` / `PostgresDataProfiler` / `OracleDataProfiler` / `SqlServerDataProfiler`
+  - 分别渲染受限聚合 SQL，只返回 count / ratio 所需指标，不返回真实业务值。
+
+后续组件：
+
+- `OfflineInsertSampleExtractor`
+  - 等 typed literal `INSERT ... VALUES` sample event 补齐后，从 structured event 生成内部 value sample；不得用 regex 或 token span 扫描 SQL。
+
+SPI 演进：
+
+当前接口：
+
+```java
+List<Evidence> profile(Connection connection, ProfileRequest request);
+```
+
+建议兼容扩展：
+
+```java
+default List<ProfileResult> profileBatch(Connection connection, List<ProfileRequest> requests) {
+  return requests.stream().flatMap(r -> profile(connection, r).stream()).toList();
+}
+```
+
+第一版可以继续逐候选执行；后续方言 adaptor 可覆盖 batch 以减少重复查询。
+
+## 测试设计
+
+### 单元测试
+
+- candidate generator 不做全列组合扫描。
+- namingEvidence + target unique + type compatible 能进入 B 层候选。
+- 纯同名 `status/type/code` 不进入画像候选。
+- offline insert sample 只从 typed literal insert 产生；当前生产 parser 尚未产出该 typed sample event，因此 offline evidence 不应出现在输出里。
+- partial offline sample 不产生 `NEGATIVE_VALUE_MISMATCH`。
+- containment ratio 达阈值产生 `VALUE_CONTAINMENT_HIGH`。
+- overlap 达阈值但 containment 不达阈值产生 `VALUE_OVERLAP_HIGH`。
+- negative gates 满足时产生 `NEGATIVE_VALUE_MISMATCH`。
+- 样本太小、权限失败、超时不产生误导 evidence。
+
+### 集成测试
+
+- MySQL/PostgreSQL/Oracle/SQL Server live profiler 使用小型 in-memory/fake JDBC result 测试验证 containment / overlap / mismatch。
+- correctness fixture 不默认依赖 live DB；offline insert sample golden 等 typed literal insert sample event 补齐后再加入。
+
+### 性能测试
+
+- 构造 100 张表、1000 列 metadata，验证 candidate 数量受上限控制。
+- 构造大量 namingEvidence，验证 `maxTargetsPerSourceColumn` 生效。
+- 构造超时 profiler，验证整体 scan 不失败。
+
+### JSON 验收
+
+`rawEvidence` 和 `evidence` 中只出现统计指标：
+
+```json
+{
+  "type": "VALUE_CONTAINMENT_HIGH",
+  "sourceType": "DATA_PROFILE",
+  "score": 0.30,
+  "attributes": {
+    "profileMode": "LIVE_DATABASE",
+    "containmentRatio": 0.995,
+    "matchedDistinctSourceValues": 995,
+    "sourceDistinctValuesSampled": 1000,
+    "sampleRows": 10000,
+    "minContainmentRatio": 0.98
+  }
+}
+```
+
+不得出现真实业务值数组。
 
 ## 验收标准
 
 - 默认配置不执行任何业务数据查询。
-- 开启画像后只对候选关系查询。
-- 高值域包含率能增加置信度。
-- 明显值不匹配能降低置信度。
-- 超时不会中断整体扫描。
+- 开启画像后只对 bounded candidates 查询。
+- 不做全库列组合扫描。
+- 有 live data 权限时，高值域包含率能产生 `VALUE_CONTAINMENT_HIGH`。
+- 明显值不匹配且满足负向 gate 时能产生 `NEGATIVE_VALUE_MISMATCH`。
+- DDL/migration 中的 insert sample 只有在 typed literal insert sample event 补齐后才可以产生保守正向 evidence；默认不产生负向 evidence。
+- 权限不足、超时、样本不足都不会中断整体 scan。
 - 输出不包含真实业务值。
-
-## 测试设计
-
-- profile disabled 测试。
-- candidate selection 测试。
-- type compatible evidence 测试。
-- target unique evidence 测试。
-- high containment evidence 测试。
-- negative mismatch evidence 测试。
-- timeout warning 测试。
-- maxCandidatePairs 限制测试。
-- 不输出真实值测试。
-
+- correctness/golden 暂不覆盖 live DB profiling；profiler 用独立单测验收。offline sample correctness 等 typed literal insert sample event 补齐后再加入。

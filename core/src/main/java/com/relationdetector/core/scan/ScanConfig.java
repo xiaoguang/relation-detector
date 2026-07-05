@@ -6,7 +6,9 @@ import java.util.List;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
+import com.relationdetector.contracts.Enums.OfflineSampleCompleteness;
 import com.relationdetector.contracts.Enums.OutputFormat;
+import com.relationdetector.contracts.spi.DataProfileOptions;
 
 /** Runtime configuration after YAML and CLI overrides are resolved. */
 public final class ScanConfig {
@@ -42,6 +44,18 @@ public final class ScanConfig {
     public int sampleRows = 10_000;
     public int timeoutSeconds = 30;
     public int maxCandidatePairs = 1_000;
+    public int maxDistinctValues = 5_000;
+    public int maxTargetsPerSourceColumn = 3;
+    public double minContainmentRatio = 0.98d;
+    public double minOverlapRatio = 0.80d;
+    public double maxMismatchRatio = 0.50d;
+    public int minDistinctValues = 20;
+    public int minRowsForNegative = 100;
+    public boolean verifyDeclaredForeignKeys;
+    public boolean discoverFromNamingEvidence;
+    public boolean useOfflineInsertSamples = true;
+    public OfflineSampleCompleteness offlineSampleCompleteness = OfflineSampleCompleteness.PARTIAL;
+    public boolean skipUnindexedLargeTargets = true;
     public OutputFormat outputFormat = OutputFormat.JSON;
     public double minConfidence = 0.30d;
     public boolean includeEvidence = true;
@@ -51,4 +65,23 @@ public final class ScanConfig {
     public String grammarProfile = "";
     public String databaseVersion = "";
     public String databaseVersionSource = "UNKNOWN";
+
+    public DataProfileOptions dataProfileOptions() {
+        return new DataProfileOptions(
+                sampleRows,
+                timeoutSeconds,
+                maxCandidatePairs,
+                maxDistinctValues,
+                maxTargetsPerSourceColumn,
+                minContainmentRatio,
+                minOverlapRatio,
+                maxMismatchRatio,
+                minDistinctValues,
+                minRowsForNegative,
+                verifyDeclaredForeignKeys,
+                discoverFromNamingEvidence,
+                useOfflineInsertSamples,
+                offlineSampleCompleteness,
+                skipUnindexedLargeTargets);
+    }
 }
