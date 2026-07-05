@@ -21,6 +21,9 @@ final class ResultAssembly {
                 ctx.result.dataLineages(),
                 ctx.result.namingEvidence(),
                 ctx.config);
+        ctx.namingEvidencePool.addAll(derived.derivedNamingEvidence());
+        ctx.result.namingEvidence().clear();
+        ctx.result.namingEvidence().addAll(ctx.namingEvidencePool.merged());
         ctx.result.derivedRelationships().clear();
         ctx.result.derivedRelationships().addAll(derived.derivedRelationships());
         ctx.result.derivedDataLineages().clear();

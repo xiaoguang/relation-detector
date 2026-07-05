@@ -38,8 +38,14 @@ Outputs are written to:
 target/sample-data-parser-cli/configs/
 target/sample-data-parser-cli/results/
 target/sample-data-parser-cli/summary.tsv
+target/sample-data-parser-cli/summary-with-derived.tsv
 target/sample-data-parser-cli/warning-codes.tsv
 ```
+
+By default the script also runs `*-derived-fresh` variants with `derivedPaths.enabled=true`.
+Set `SAMPLE_DATA_PARSER_CLI_INCLUDE_DERIVED=false` to run only the direct parser outputs.
+`summary.tsv` contains direct outputs only; `summary-with-derived.tsv` adds `DerRel`,
+`DerLin`, and `DerName` for the derived-enabled outputs.
 
 The common benchmark output is:
 

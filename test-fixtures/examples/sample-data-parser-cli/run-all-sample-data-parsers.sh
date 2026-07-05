@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 OUT_DIR="${SAMPLE_DATA_PARSER_CLI_OUT:-$ROOT/target/sample-data-parser-cli}"
 CONFIG_DIR="$OUT_DIR/configs"
 RESULT_DIR="$OUT_DIR/results"
+INCLUDE_DERIVED="${SAMPLE_DATA_PARSER_CLI_INCLUDE_DERIVED:-true}"
 
 cd "$ROOT"
 
@@ -37,6 +38,7 @@ write_config() {
   local grammar_profile="$4"
   local database_version="$5"
   local sample_dir="$6"
+  local derived_enabled="${7:-false}"
   local schema_dir="$sample_dir/01-schema"
   local procedure_dir="$sample_dir/02-procedures"
   if [[ ! -d "$procedure_dir" && -d "$sample_dir/02-processes" ]]; then
@@ -122,6 +124,20 @@ write_config() {
     printf '  includeEvidence: true\n'
     printf '  includeWarnings: true\n'
     printf '  includeObservationCounts: true\n'
+    if [[ "$derived_enabled" == "true" ]]; then
+      printf '\n'
+      printf 'derivedPaths:\n'
+      printf '  enabled: true\n'
+      printf '  relationships: true\n'
+      printf '  dataLineage: true\n'
+      printf '  namingEvidence: true\n'
+      printf '  includeNamingEdgesInRelationshipPaths: true\n'
+      printf '  maxPathLength: 5\n'
+      printf '  maxPathsPerPair: 0\n'
+      printf '  maxFacts: 0\n'
+      printf '  confidenceDecay: 0.75\n'
+      printf '  minConfidence: 0.10\n'
+    fi
   } > "$config"
 }
 
@@ -139,12 +155,23 @@ run_case() {
 
   local config="$CONFIG_DIR/$name.yml"
   local output="$RESULT_DIR/$name.json"
-  write_config "$config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir"
+  write_config "$config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir" false
   echo "==> $name"
   RELATION_DETECTOR_SKIP_PACKAGE=true "$ROOT/scripts/run-cli.sh" scan \
     --config "$config" \
     --format json \
     --output "$output"
+  if [[ "$INCLUDE_DERIVED" == "true" ]]; then
+    local derived_name="$name-derived-fresh"
+    local derived_config="$CONFIG_DIR/$derived_name.yml"
+    local derived_output="$RESULT_DIR/$derived_name.json"
+    write_config "$derived_config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir" true
+    echo "==> $derived_name"
+    RELATION_DETECTOR_SKIP_PACKAGE=true "$ROOT/scripts/run-cli.sh" scan \
+      --config "$derived_config" \
+      --format json \
+      --output "$derived_output"
+  fi
 }
 
 mvn -q -pl core,adaptor-mysql,adaptor-postgres,adaptor-oracle,adaptor-sqlserver,cli -am -Dmaven.test.skip=true package
@@ -175,7 +202,7 @@ run_case sqlserver-v2022-full SQLSERVER full-grammer sqlserver/2022 2022 sample-
 run_case sqlserver-v2025-full SQLSERVER full-grammer sqlserver/2025 2025 sample-data/sqlserver/2025
 
 REQUESTED_CASES_CSV="$(IFS=,; echo "${REQUESTED_CASES[*]-}")"
-python3 - "$RESULT_DIR" "$CONFIG_DIR" "$OUT_DIR/summary.tsv" "$OUT_DIR/warning-codes.tsv" "$REQUESTED_CASES_CSV" <<'PY'
+python3 - "$RESULT_DIR" "$CONFIG_DIR" "$OUT_DIR/summary.tsv" "$OUT_DIR/summary-with-derived.tsv" "$OUT_DIR/warning-codes.tsv" "$REQUESTED_CASES_CSV" <<'PY'
 import json
 import sys
 from collections import Counter
@@ -184,8 +211,9 @@ from pathlib import Path
 result_dir = Path(sys.argv[1])
 config_dir = Path(sys.argv[2])
 summary_path = Path(sys.argv[3])
-warnings_path = Path(sys.argv[4])
-requested_cases = [item for item in sys.argv[5].split(",") if item]
+derived_summary_path = Path(sys.argv[4])
+warnings_path = Path(sys.argv[5])
+requested_cases = [item for item in sys.argv[6].split(",") if item]
 
 def list_items(lines, section_name):
     values = []
@@ -257,9 +285,10 @@ def file_counts(config_path):
     return ddl + sql, sql, ddl
 
 summary_rows = []
+derived_rows = []
 warning_rows = []
 for path in sorted(result_dir.glob("*.json")):
-    if path.stem.endswith("-derived") or path.stem.endswith("-refresh"):
+    if path.stem.endswith("-derived") or path.stem.endswith("-derived-fresh") or path.stem.endswith("-refresh"):
         continue
     if requested_cases and path.stem not in requested_cases:
         continue
@@ -289,6 +318,26 @@ for path in sorted(result_dir.glob("*.json")):
     else:
         for code, count in sorted(codes.items()):
             warning_rows.append([path.stem, code, str(count)])
+    derived_path = result_dir / f"{path.stem}-derived-fresh.json"
+    if derived_path.exists():
+        derived_data = json.loads(derived_path.read_text(encoding="utf-8"))
+        derived_summary = derived_data.get("summary", {})
+        derived_name_count = sum(
+            1 for item in derived_data.get("namingEvidence") or []
+            if item.get("rule") == "TRANSITIVE_NAMING_PATH"
+        )
+        derived_rows.append([
+            path.stem,
+            str(fixtures),
+            f"{sql_files} / {ddl_files}",
+            str(derived_summary.get("relationshipCount", len(derived_data.get("relationships") or []))),
+            str(derived_summary.get("dataLineageCount", len(derived_data.get("dataLineages") or []))),
+            str(derived_summary.get("namingEvidenceCount", len(derived_data.get("namingEvidence") or []))),
+            str(derived_summary.get("warningCount", len(derived_data.get("warnings") or []))),
+            str(derived_summary.get("derivedRelationshipCount", len(derived_data.get("derivedRelationships") or []))),
+            str(derived_summary.get("derivedDataLineageCount", len(derived_data.get("derivedDataLineages") or []))),
+            str(derived_name_count),
+        ])
 
 summary_path.write_text(
     "parser\tfixtures\tSQL / DDL\trelations\tlineage\tnamingEvidence\twarnings\tsources\tjson\n"
@@ -302,9 +351,16 @@ warnings_path.write_text(
     + "\n",
     encoding="utf-8",
 )
+derived_summary_path.write_text(
+    "Parser\tFix\tSQL/DDL\tRel\tLin\tName\tDiag\tDerRel\tDerLin\tDerName\n"
+    + "\n".join("\t".join(row) for row in derived_rows)
+    + "\n",
+    encoding="utf-8",
+)
 PY
 
 echo
 echo "Summary: $OUT_DIR/summary.tsv"
+echo "Summary with derived: $OUT_DIR/summary-with-derived.tsv"
 echo "Warnings: $OUT_DIR/warning-codes.tsv"
 echo "Results: $RESULT_DIR"

@@ -853,7 +853,7 @@ confidence = 1 - (1 - 0.55) * (1 - 0.18) * (1 - 0.20)
 - `evidence`：归并后的摘要证据，包含计数、样本 detail 和用于评分的 evidence item。
 - top-level `namingEvidence`：完整命名证据池，包含稳定 `id`、grouped `evidence` 和 `rawEvidence`。
 - relationship 中的 `NAMING_MATCH` evidence：只保存 `evidenceRef` 和方向摘要，不重复完整 raw observations。
-- `derivedRelationships` / `derivedDataLineages`：开启 `derivedPaths` 后的推导视图，必须保存完整 path、`TRANSITIVE_PATH` grouped evidence 和 raw observations；它们不是直接物理事实。
+- `derivedRelationships` / `derivedDataLineages`：开启 `derivedPaths` 后的推导视图，必须保存完整 path、`TRANSITIVE_PATH` grouped evidence 和 raw observations；它们不是直接物理事实。derived relationship 内部按 referenced-by 反向遍历，但输出 source/target 保持 FK-like 正向，并用 `traversalPath` 保留内部遍历顺序。
 - derived `namingEvidence`：使用 `rule=TRANSITIVE_NAMING_PATH`，仍然在 top-level `namingEvidence` 池中输出，并带 `derived=true`、`path`、`pathEvidenceRefs`。
 - 每个 evidence 的 type。
 - 每个 evidence 的 score。

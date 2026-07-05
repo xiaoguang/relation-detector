@@ -25,7 +25,7 @@ This document separates three questions that used to be mixed together:
 | Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
 | Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
 | Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 335 | 287 | 246 | 0 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 341 | 324 | 246 | 0 |
 | SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
 | SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
 | SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
@@ -37,8 +37,36 @@ Interpretation:
 - MySQL token-event and MySQL 5.7/8.0 full-grammer now cover the same sample-data surface. Their remaining differences come from natural 5.7/8.0 SQL rewrites, versioned DDL/routine coverage, and parser capability differences. The semantic-equivalent benchmark is the equality check; this table is a broad capability snapshot.
 - PostgreSQL token-event and PostgreSQL full-grammer are close on sample-data lineage. Full-grammer emits more top-level naming evidence from DDL inventory, while relation/lineage deltas are small.
 - Oracle full-grammer now matches Oracle token-event on lineage for the retained sample-data surface and emits additional DDL/name evidence. Broader official Oracle grammar hardening remains backlog, not a `REVIEW_NEEDED` business decision.
-- SQL Server sample-data is now fully represented. SQL Server full-grammer is ahead of token-event on relationship and lineage coverage; top-level naming evidence is aligned after schema/bare endpoint canonicalization.
+- SQL Server sample-data is now fully represented. SQL Server full-grammer is slightly ahead of token-event on relationship coverage; lineage and top-level naming evidence are aligned after schema/bare endpoint canonicalization and token-event routine coverage fixes.
 - `sample-data` counts should not be used as a semantic equality score because each dialect has native syntax and version-specific assets.
+
+### Derived-enabled Snapshot
+
+This table uses the same sample-data CLI inputs with `derivedPaths.enabled=true`. `DerRel` is derived relationship count, `DerLin` is derived value-lineage count, and `DerName` is top-level `TRANSITIVE_NAMING_PATH` count. Direct `Rel/Lin/Name` columns are repeated from the derived-enabled JSON output.
+
+| Parser category | Fixtures | SQL / DDL | Rel | Lin | Name | Diag | DerRel | DerLin | DerName |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| common token-event sample-data | 13 | 10 / 3 | 317 | 152 | 964 | 0 | 1078 | 314 | 716 |
+| MySQL token-event root sample-data | 38 | 32 / 6 | 349 | 240 | 940 | 0 | 1004 | 73 | 702 |
+| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 346 | 265 | 978 | 0 | 1100 | 80 | 735 |
+| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 397 | 254 | 1031 | 0 | 1136 | 79 | 786 |
+| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 369 | 205 | 970 | 0 | 1061 | 51 | 729 |
+| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 371 | 206 | 970 | 0 | 1061 | 51 | 729 |
+| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 371 | 206 | 970 | 0 | 1061 | 51 | 729 |
+| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 370 | 205 | 970 | 0 | 1061 | 51 | 729 |
+| Oracle token-event root sample-data | 38 | 32 / 6 | 373 | 212 | 933 | 0 | 997 | 60 | 695 |
+| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 375 | 217 | 950 | 0 | 1009 | 60 | 711 |
+| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 375 | 217 | 950 | 0 | 1009 | 60 | 711 |
+| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 375 | 217 | 950 | 0 | 1009 | 60 | 711 |
+| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 375 | 217 | 950 | 0 | 1009 | 60 | 711 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 341 | 324 | 942 | 0 | 984 | 57 | 696 |
+| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 347 | 324 | 943 | 0 | 984 | 57 | 697 |
+| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 347 | 324 | 943 | 0 | 984 | 57 | 697 |
+| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 347 | 324 | 943 | 0 | 984 | 57 | 697 |
+| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 347 | 324 | 943 | 0 | 984 | 57 | 697 |
+| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 347 | 324 | 943 | 0 | 984 | 57 | 697 |
+
+Derived relationship now uses reverse referenced-by traversal internally and still emits FK-like forward output. The large SQL Server derived relationship inflation caused by earlier forward FK + identity bridge traversal is removed; derived naming evidence is now visible as `TRANSITIVE_NAMING_PATH`.
 
 ## 2. semantic-equivalent Benchmark
 
@@ -74,7 +102,7 @@ SQL Server currently has an additional `relation-probe` semantic-equivalent scen
 | MySQL token-event vs MySQL full-grammer on broad sample-data | root `349 / 240`; v8_0 `397 / 254` | `TOKEN_EVENT_TYPED_VISITOR_COVERAGE` | Continue adding MySQL-native typed token-event visitor support only when a concrete SQL fixture shows a confirmed miss. Do not restore scanner or regex fallback. |
 | PostgreSQL token-event vs PostgreSQL full-grammer on broad sample-data | root `369 / 205`; v18 `370 / 205` | `NAMING_EVIDENCE_INVENTORY_DELTA` | Lineage is aligned for v18; full-grammer has a small relationship edge from versioned DDL/predicate coverage while naming evidence is aligned on the current CLI sample-data surface. |
 | Oracle full-grammer vs Oracle token-event on broad sample-data | root `373 / 212`; full-grammer `375 / 217` | `ORACLE_RELATION_NAMING_COVERAGE` | Continue auditing relation/naming/lineage deltas through typed visitor / evidence aggregation, not SQL text heuristics. Oracle full-grammer remains versioned but official full syntax coverage is still backlog. |
-| SQL Server full-grammer vs token-event on broad sample-data | root `335 / 287`; full-grammer `347 / 324` | `SQLSERVER_TOKEN_EVENT_TYPED_VISITOR_COVERAGE` | Keep token-event compact. Confirmed T-SQL relation/lineage gaps should be fixed in typed token-event grammar/visitor, not by copying full grammar. |
+| SQL Server full-grammer vs token-event on broad sample-data | root `341 / 324`; full-grammer `347 / 324` | `SQLSERVER_TOKEN_EVENT_TYPED_VISITOR_COVERAGE` | Keep token-event compact. Confirmed T-SQL relation gaps should be fixed in typed token-event grammar/visitor, not by copying full grammar. |
 | Cross-dialect semantic-equivalent scenarios | all scenarios are `MATCHED` | `NO_CONFIRMED_GAP` | Use this benchmark as the primary proof that equivalent SQL can converge across parser categories. |
 | Dynamic SQL, parameters, local variables, temporary tables, pseudo rowsets | excluded by design in lineage audit | `EXPECTED_FILTERED_SCOPE` | Do not add these to physical relation / lineage golden unless a future design changes the semantic boundary. |
 

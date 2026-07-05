@@ -152,6 +152,95 @@ class DerivedPathInferenceServiceTest {
     }
 
     @Test
+    void relationshipPathTraversesReferencedByButOutputsForwardFkLikeDirection() {
+        ScanConfig config = enabledConfig();
+        Endpoint cashierAccountId = col("cashier_journals", "account_id");
+        Endpoint accountsId = col("accounts", "id");
+        Endpoint reconciliationCashierJournalId = col("reconciliation_items", "cashier_journal_id");
+        Endpoint cashierJournalsId = col("cashier_journals", "id");
+
+        DerivedPathInferenceResult result = service.infer(List.of(
+                fk(cashierAccountId, accountsId),
+                fk(reconciliationCashierJournalId, cashierJournalsId)
+        ), List.of(), List.of(), config);
+
+        DerivedPathCandidate derived = result.derivedRelationships().stream()
+                .filter(candidate -> candidate.source().equals(reconciliationCashierJournalId)
+                        && candidate.target().equals(accountsId))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(List.of(reconciliationCashierJournalId, cashierJournalsId, cashierAccountId, accountsId),
+                derived.path(),
+                "Output path should be FK-like forward even though traversal walked referenced-by internally");
+        assertEquals("REVERSE_REFERENCED_BY", derived.attributes().get("traversalMode"));
+        assertEquals("FK_LIKE_FORWARD", derived.attributes().get("outputDirection"));
+        assertTrue(derived.attributes().containsKey("traversalPath"),
+                "Auditing should preserve the internal referenced-by traversal path");
+        assertTrue(result.derivedRelationships().stream().noneMatch(candidate ->
+                        candidate.source().equals(accountsId)
+                                && candidate.target().equals(reconciliationCashierJournalId)),
+                "Derived relationship output must not expose downstream/referenced-by direction");
+    }
+
+    @Test
+    void directRelationshipIsNotRepeatedAsDerivedRelationship() {
+        ScanConfig config = enabledConfig();
+        Endpoint cashierAccountId = col("cashier_journals", "account_id");
+        Endpoint accountsId = col("accounts", "id");
+
+        DerivedPathInferenceResult result = service.infer(List.of(
+                fk(cashierAccountId, accountsId)
+        ), List.of(), List.of(), config);
+
+        assertTrue(result.derivedRelationships().isEmpty(),
+                "A direct FK-like edge should not be emitted again as a derived relationship");
+    }
+
+    @Test
+    void relationshipPathCreatesDerivedNamingEvidenceAndRelationshipReference() {
+        ScanConfig config = enabledConfig();
+        Endpoint cashierAccountId = col("cashier_journals", "account_id");
+        Endpoint accountsId = col("accounts", "id");
+        Endpoint reconciliationCashierJournalId = col("reconciliation_items", "cashier_journal_id");
+        Endpoint cashierJournalsId = col("cashier_journals", "id");
+
+        NamingEvidencePool namingPool = new NamingEvidencePool();
+        namingPool.add(naming(cashierAccountId, accountsId));
+        namingPool.add(naming(reconciliationCashierJournalId, cashierJournalsId));
+        RelationshipCandidate cashierToAccount = fk(cashierAccountId, accountsId);
+        RelationshipCandidate reconciliationToCashier = fk(reconciliationCashierJournalId, cashierJournalsId);
+        new EvidenceEnhancementService().enhance(
+                List.of(cashierToAccount, reconciliationToCashier),
+                namingPool,
+                null,
+                config);
+
+        DerivedPathInferenceResult result = service.infer(
+                List.of(cashierToAccount, reconciliationToCashier),
+                List.of(),
+                namingPool.merged(),
+                config);
+
+        NamingEvidenceCandidate derivedNaming = result.derivedNamingEvidence().stream()
+                .filter(candidate -> candidate.source().equals(reconciliationCashierJournalId)
+                        && candidate.target().equals(accountsId))
+                .findFirst()
+                .orElseThrow();
+        DerivedPathCandidate derivedRelationship = result.derivedRelationships().stream()
+                .filter(candidate -> candidate.source().equals(reconciliationCashierJournalId)
+                        && candidate.target().equals(accountsId))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals("TRANSITIVE_NAMING_PATH", derivedNaming.rule());
+        assertTrue(derivedRelationship.evidence().stream().anyMatch(evidence ->
+                        evidence.type() == EvidenceType.NAMING_MATCH
+                                && derivedNaming.id().equals(evidence.attributes().get("evidenceRef"))),
+                "Derived relationship should reference the top-level derived naming evidence");
+    }
+
+    @Test
     void relationshipCanReferenceDerivedNamingEvidenceFromTopLevelPool() {
         ScanConfig config = enabledConfig();
         Endpoint a = col("a", "r");
