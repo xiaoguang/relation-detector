@@ -35,7 +35,7 @@ full-grammer:
 - MySQL/PostgreSQL 是当前成熟支持目标。
 - Oracle 是当前初始支持目标：已有 adaptor、Oracle token-event fallback、root correctness golden 和 `INCOMPLETE_VERSIONED` versioned full-grammer，但更广泛的 Oracle 官方语法覆盖仍是 backlog，当前状态为 `INCOMPLETE_VERSIONED`。
 - SQL Server 已接入 adaptor、root token-event baseline 和 `sqlserver/2016|2017|2019|2022|2025` versioned full-grammer sample-data golden；sample-data 已收敛为自然 ERP 业务 SQL；高密度关系探针迁入 semantic-equivalent benchmark。首批 Microsoft 官方逐版本 T-SQL 边界已经进入 `.g4`、version-only fixture 和 architecture test；更多 T-SQL family、version-only fixture 和 JDBC collectors 仍是 backlog。
-- core 不直接 import MySQL/PostgreSQL/Oracle full-grammer 实现；版本化 module 由 adaptor 注册。
+- core 不直接 import MySQL/PostgreSQL/Oracle/SQL Server full-grammer 实现；版本化 module 由 adaptor 注册。
 - Relationship 与 Data Lineage 是两个独立输出模型。
 - Simple SQL/DDL parser 和旧 SQL/DDL parser mode 配置不再是当前能力。
 - correctness fixture 以当前 parser golden 为正式基线；root token-event 与 versioned full-grammer 分别直接比对自己的 golden，不再用 token-event fallback 保护 full-grammer。
@@ -68,7 +68,7 @@ oracle / oracle.tokenevent / oracle.fullgrammer.common / oracle.fullgrammer.v12c
 - `core.tokenevent` 与 `core.fullgrammer` 是事件来源基础设施；relationship / lineage 语义被隔离在 `core.relation` 与 `core.lineage`。
 - `core.ddl` 是 token-event DDL event 支撑；DDL relationship 转换仍在 `core.relation.DdlRelationExtractionVisitor`。
 - `adaptor-mysql` / `adaptor-postgres` / `adaptor-oracle` 根包只做 adaptor 装配；token-event parser 位于各自 `tokenevent` 子包，版本化 full-grammer 位于 `fullgrammer/v8_0`、PostgreSQL `fullgrammer/v16|v17|v18` 或 Oracle `fullgrammer/v12c|v19c|v21c|v26ai`，PostgreSQL/Oracle 公共抽象位于 `fullgrammer/common`。
-- 没有发现 core 直接 import MySQL/PostgreSQL/Oracle full-grammer implementation 的职责倒置。
+- 没有发现 core 直接 import MySQL/PostgreSQL/Oracle/SQL Server full-grammer implementation 的职责倒置。
 - 没有发现 adaptor 侧重复实现 relationship / lineage semantic extractor。
 - 没有发现 contracts 反向依赖 core 的设计破坏。
 

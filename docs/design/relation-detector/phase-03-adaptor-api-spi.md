@@ -160,8 +160,10 @@ DDL 不再通过旧 `DdlParser` SPI 暴露。adaptor 通过 `structuredDdlParser
 
 方言拆分规则：
 
-- MySQL/PostgreSQL DDL 均走 token-event DDL pipeline。MySQL 专属写法，例如反引号标识符、`KEY`/`INDEX` 选项、prefix index、invisible index、storage engine/table options、`SHOW CREATE TABLE` 格式，应在 `MySqlRelationSql.g4` / `MySqlTokenEventParseTreeVisitor` 或 `mysql.tokenevent.MySqlTokenEventStructuredDdlParser` 中处理。
+- MySQL/PostgreSQL/Oracle/SQL Server DDL 均走 token-event DDL pipeline。MySQL 专属写法，例如反引号标识符、`KEY`/`INDEX` 选项、prefix index、invisible index、storage engine/table options、`SHOW CREATE TABLE` 格式，应在 `MySqlRelationSql.g4` / `MySqlTokenEventParseTreeVisitor` 或 `mysql.tokenevent.MySqlTokenEventStructuredDdlParser` 中处理。
 - PostgreSQL 专属写法，例如 `ALTER TABLE ONLY`、`NOT VALID`、`CREATE INDEX CONCURRENTLY/IF NOT EXISTS`、`INCLUDE`、partial/expression index、opclass、partition/inheritance，应在 `PostgresRelationSql.g4` / `PostgresTokenEventParseTreeVisitor` 或 `postgres.tokenevent.PostgresTokenEventStructuredDdlParser` 中处理。
+- Oracle 专属写法，例如 `VARCHAR2` / `NUMBER` / `CLOB` / `XMLTYPE`、`COMMENT ON`、PL/SQL object DDL 和 Oracle identity/sequence 写法，应在 `OracleRelationSql.g4` / `OracleTokenEventParseTreeVisitor` 或 `oracle.tokenevent.OracleTokenEventStructuredDdlParser` 中处理。
+- SQL Server 专属写法，例如 bracket identifier、`IDENTITY`、`CREATE OR ALTER`、schema-qualified `[dbo].[table]`、`WITH (...)` table/index options，应在 `SqlServerRelationSql.g4` / `SqlServerTokenEventParseTreeVisitor` 或 `sqlserver.tokenevent.SqlServerTokenEventStructuredDdlParser` 中处理。
 - adaptor parser 的输出仍必须是统一的 `RelationshipCandidate` 和 `Evidence`，不能绕过 core 的合并与置信度计算。
 - 方言 parser 应有自己的单元测试，并包含正向和反向负向用例。这样可以证明某个数据库的语法增强不会悄悄改变其他数据库的解析行为。
 
@@ -212,11 +214,12 @@ default Optional<StructuredDdlParser> structuredDdlParser() {
 - MySQL adaptor 根包只保留 `MySqlDatabaseAdaptor` 装配入口；token-event parser 位于 `com.relationdetector.mysql.tokenevent`，暴露 `MySqlTokenEventStructuredSqlParser` / `MySqlTokenEventStructuredDdlParser`。
 - PostgreSQL adaptor 根包只保留 `PostgresDatabaseAdaptor` 装配入口；token-event parser 位于 `com.relationdetector.postgres.tokenevent`，暴露 `PostgresTokenEventStructuredSqlParser` / `PostgresTokenEventStructuredDdlParser`。
 - Oracle adaptor 根包只保留 `OracleDatabaseAdaptor` 装配入口；token-event parser 位于 `com.relationdetector.oracle.tokenevent`，暴露 `OracleTokenEventStructuredSqlParser` / `OracleTokenEventStructuredDdlParser`。当前 Oracle token-event 使用 adaptor-local `OracleRelationSql.g4` typed structural grammar。
+- SQL Server adaptor 根包只保留 `SqlServerDatabaseAdaptor` 装配入口；token-event parser 位于 `com.relationdetector.sqlserver.tokenevent`，暴露 `SqlServerTokenEventStructuredSqlParser` / `SqlServerTokenEventStructuredDdlParser`。当前 SQL Server token-event 使用 adaptor-local compact `SqlServerRelationSql.g4` typed structural grammar。
 - SQL/DDL parser 由 `ParserBundleSelector` 按 `parser.mode: auto|full-grammer|token-event` 统一选择，并一次性返回同一模式下的 SQL parser 与 DDL parser。profile/version/JDBC metadata 足够时可通过 adaptor 注册的 `FullGrammerDialectModule` 使用 full-grammer；无合理配置、profile 不支持或 full-grammer hard failure 时 fallback 到 adaptor token-event parser 并记录 warning。profile 已选中后的 syntax warning / partial result 属于 full-grammer 结果，不在 event 层委托 token-event 补齐。`parser.sql.mode`、`parser.ddl.mode` 和 simple/shadow fallback 已移除。
 - `SqlRelationParserRunner` 与 `DdlRelationParserRunner` 都从 `ParserBundle` 取 parser，不再分别重复 profile selection。SQL runner 还会复用同一个 `StructuredParseResult` 供 relationship 与 Data Lineage 抽取使用。
 - 第三方 adaptor 可以只实现 `structuredSqlParser()` 或只实现 `structuredDdlParser()`，但缺失的一侧不应再由 core simple parser 假装支持；应明确作为 future capability 或返回空/ warning。
 - 新增大版本 full-grammer 支持时，应在对应 adaptor 内新增 version package 和 `FullGrammerDialectModule`，由 core registry 通过 `ServiceLoader` 注入；core 不直接 import 方言实现类。
-- `FullGrammerDialectModule` 不属于 `DatabaseAdaptor` 接口本身；它是同一 adaptor jar 中的版本化 grammar module，通过 `META-INF/services/com.relationdetector.core.fullgrammer.FullGrammerDialectModule` 注册。这样 core 可以做统一 profile selection，而具体 grammar、generated parser、parse-tree visitor 和 expression analyzer 仍归属 MySQL/PostgreSQL/Oracle adaptor。
+- `FullGrammerDialectModule` 不属于 `DatabaseAdaptor` 接口本身；它是同一 adaptor jar 中的版本化 grammar module，通过 `META-INF/services/com.relationdetector.core.fullgrammer.FullGrammerDialectModule` 注册。这样 core 可以做统一 profile selection，而具体 grammar、generated parser、parse-tree visitor 和 expression analyzer 仍归属 MySQL/PostgreSQL/Oracle/SQL Server adaptor。
 - 版本化 full-grammer module 与 token-event parser 的职责不同：token-event 是 adaptor 暴露的宽松生产 parser / fallback；full-grammer 是 adaptor jar 额外注册的严格版本 grammar profile。parser selection 可以在两者之间选择，但 full-grammer parser 内部不再委托 token-event 生成事件。
 
 ### DatabaseDdlCollector
@@ -333,7 +336,7 @@ relation-detector scan --config mock.yml --plugin-dir target/mock-plugins
 
 ## 验收标准
 
-- 内置 MySQL/PostgreSQL/Oracle adaptor 可以通过 Java SPI 被发现。
+- 内置 MySQL/PostgreSQL/Oracle/SQL Server adaptor 可以通过 Java SPI 被发现。
 - 外部 mock adaptor jar 可以通过 `--plugin-dir` 被发现。
 - `database.type` 可以匹配到唯一 adaptor。
 - adaptor id 冲突时 CLI 给出明确错误。

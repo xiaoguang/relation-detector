@@ -138,7 +138,7 @@ relation-detector 输出事实，语义层消费事实。两者边界如下：
 auto | full-grammer | token-event
 ```
 
-- `token-event`：宽松兼容链路。无方言时使用 core portable typed grammar；MySQL/PostgreSQL/Oracle 使用各自 adaptor-local typed structural grammar。它适合作为未知版本、无 profile、unsupported version 或 full-grammer failure 的 fallback，最终 relationship / lineage / DDL 语义仍由 Java semantic extractor 处理。
+- `token-event`：宽松兼容链路。无方言时使用 core portable typed grammar；MySQL/PostgreSQL/Oracle/SQL Server 使用各自 adaptor-local typed structural grammar。它适合作为未知版本、无 profile、unsupported version 或 full-grammer failure 的 fallback，最终 relationship / lineage / DDL 语义仍由 Java semantic extractor 处理。
 - `full-grammer`：严格版本链路。它由数据库 adaptor 注册 `FullGrammerDialectModule`，使用对应大版本 vendored grammar 和 typed parse-tree visitor 生成同一组 `StructuredSqlEvent` / DDL events。
 - `auto`：默认模式。能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选中 full-grammer profile 时优先使用 full-grammer，否则使用 token-event。
 
