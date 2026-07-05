@@ -30,6 +30,7 @@ import com.relationdetector.core.scan.ScanResult;
  * so concurrent service or test calls do not share mutable output state.
  */
 public final class JsonResultWriter {
+    private static final String TRANSITIVE_NAMING_PATH = "TRANSITIVE_NAMING_PATH";
     private static final ObjectMapper JSON = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
 
@@ -58,6 +59,18 @@ public final class JsonResultWriter {
             boolean includeObservationCounts
     ) {
         List<NamingEvidenceCandidate> namingEvidence = result.namingEvidence();
+        List<NamingEvidenceCandidate> derivedNamingEvidence = namingEvidence.stream()
+                .filter(this::isDerivedNamingEvidence)
+                .toList();
+        List<NamingEvidenceCandidate> directNamingEvidence = namingEvidence.stream()
+                .filter(candidate -> !isDerivedNamingEvidence(candidate))
+                .toList();
+        int directRelationshipCount = result.relationships().size();
+        int derivedRelationshipCount = result.derivedRelationships().size();
+        int directDataLineageCount = result.dataLineages().size();
+        int derivedDataLineageCount = result.derivedDataLineages().size();
+        int directNamingEvidenceCount = directNamingEvidence.size();
+        int derivedNamingEvidenceCount = derivedNamingEvidence.size();
 
         ObjectNode root = JSON.createObjectNode();
         ObjectNode database = root.putObject("database");
@@ -66,17 +79,39 @@ public final class JsonResultWriter {
         root.put("generatedAt", String.valueOf(result.generatedAt()));
 
         ObjectNode summary = root.putObject("summary");
-        summary.put("relationshipCount", result.relationships().size());
-        summary.put("dataLineageCount", result.dataLineages().size());
-        summary.put("derivedRelationshipCount", result.derivedRelationships().size());
-        summary.put("derivedDataLineageCount", result.derivedDataLineages().size());
+        summary.put("relationshipCount", directRelationshipCount);
+        summary.put("directRelationshipCount", directRelationshipCount);
+        summary.put("derivedRelationshipCount", derivedRelationshipCount);
+        summary.put("totalRelationshipCount", directRelationshipCount + derivedRelationshipCount);
+        summary.put("dataLineageCount", directDataLineageCount);
+        summary.put("directDataLineageCount", directDataLineageCount);
+        summary.put("derivedDataLineageCount", derivedDataLineageCount);
+        summary.put("totalDataLineageCount", directDataLineageCount + derivedDataLineageCount);
         summary.put("namingEvidenceCount", namingEvidence.size());
+        summary.put("directNamingEvidenceCount", directNamingEvidenceCount);
+        summary.put("derivedNamingEvidenceCount", derivedNamingEvidenceCount);
+        summary.put("totalNamingEvidenceCount", directNamingEvidenceCount + derivedNamingEvidenceCount);
         if (includeObservationCounts) {
-            summary.put("relationshipObservationCount", relationshipObservationCount(result.relationships()));
-            summary.put("dataLineageObservationCount", dataLineageObservationCount(result.dataLineages()));
-            summary.put("derivedRelationshipObservationCount", derivedPathObservationCount(result.derivedRelationships()));
-            summary.put("derivedDataLineageObservationCount", derivedPathObservationCount(result.derivedDataLineages()));
-            summary.put("namingEvidenceObservationCount", namingEvidenceObservationCount(namingEvidence));
+            int directRelationshipObservations = relationshipObservationCount(result.relationships());
+            int derivedRelationshipObservations = derivedPathObservationCount(result.derivedRelationships());
+            int directDataLineageObservations = dataLineageObservationCount(result.dataLineages());
+            int derivedDataLineageObservations = derivedPathObservationCount(result.derivedDataLineages());
+            int directNamingObservations = namingEvidenceObservationCount(directNamingEvidence);
+            int derivedNamingObservations = namingEvidenceObservationCount(derivedNamingEvidence);
+            summary.put("relationshipObservationCount", directRelationshipObservations);
+            summary.put("directRelationshipObservationCount", directRelationshipObservations);
+            summary.put("derivedRelationshipObservationCount", derivedRelationshipObservations);
+            summary.put("totalRelationshipObservationCount",
+                    directRelationshipObservations + derivedRelationshipObservations);
+            summary.put("dataLineageObservationCount", directDataLineageObservations);
+            summary.put("directDataLineageObservationCount", directDataLineageObservations);
+            summary.put("derivedDataLineageObservationCount", derivedDataLineageObservations);
+            summary.put("totalDataLineageObservationCount",
+                    directDataLineageObservations + derivedDataLineageObservations);
+            summary.put("namingEvidenceObservationCount", directNamingObservations + derivedNamingObservations);
+            summary.put("directNamingEvidenceObservationCount", directNamingObservations);
+            summary.put("derivedNamingEvidenceObservationCount", derivedNamingObservations);
+            summary.put("totalNamingEvidenceObservationCount", directNamingObservations + derivedNamingObservations);
         }
         summary.put("warningCount", result.warnings().size());
         ArrayNode sources = summary.putArray("sources");
@@ -101,6 +136,10 @@ public final class JsonResultWriter {
         ArrayNode naming = root.putArray("namingEvidence");
         namingEvidence.forEach(candidate ->
                 naming.add(namingEvidenceNode(candidate, includeEvidence)));
+
+        ArrayNode derivedNaming = root.putArray("derivedNamingEvidence");
+        derivedNamingEvidence.forEach(candidate ->
+                derivedNaming.add(lightweightNamingEvidenceNode(candidate)));
 
         if (includeWarnings) {
             root.set("warnings", warningsNode(result.warnings()));
@@ -143,6 +182,10 @@ public final class JsonResultWriter {
                         ? candidate.evidence().size()
                         : candidate.rawEvidence().size())
                 .sum();
+    }
+
+    private boolean isDerivedNamingEvidence(NamingEvidenceCandidate candidate) {
+        return TRANSITIVE_NAMING_PATH.equals(candidate.rule());
     }
 
     private ObjectNode relationshipNode(RelationshipCandidate relation, boolean includeEvidence) {
@@ -194,6 +237,16 @@ public final class JsonResultWriter {
         node.set("rawEvidence", includeEvidence
                 ? evidenceNode(naming.rawEvidence())
                 : JSON.createArrayNode());
+        return node;
+    }
+
+    private ObjectNode lightweightNamingEvidenceNode(NamingEvidenceCandidate naming) {
+        ObjectNode node = JSON.createObjectNode();
+        node.put("id", naming.id());
+        node.set("source", endpointNode(naming.source()));
+        node.set("target", endpointNode(naming.target()));
+        node.put("rule", safe(naming.rule()));
+        node.put("directionHint", naming.directionHint());
         return node;
     }
 

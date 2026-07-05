@@ -159,7 +159,19 @@ class JsonResultWriterEvidenceOutputTest {
 
         assertTrue(root.path("summary").path("namingEvidenceCount").asInt() == 1,
                 "Summary should include naming evidence count");
+        assertTrue(root.path("summary").path("directNamingEvidenceCount").asInt() == 1,
+                "Summary should count direct naming evidence separately");
+        assertTrue(root.path("summary").path("derivedNamingEvidenceCount").asInt() == 0,
+                "Summary should show no derived naming evidence for direct output");
+        assertTrue(root.path("summary").path("totalNamingEvidenceCount").asInt() == 1,
+                "Summary should expose total naming evidence count with the same direct/derived/total shape");
+        assertTrue(root.path("summary").path("directNamingEvidenceObservationCount").asInt() == 1,
+                "Summary should count direct naming evidence observations separately");
+        assertTrue(root.path("summary").path("derivedNamingEvidenceObservationCount").asInt() == 0,
+                "Summary should show no derived naming observations for direct output");
         assertTrue(root.path("namingEvidence").isArray(), "JSON should expose top-level namingEvidence");
+        assertTrue(root.path("derivedNamingEvidence").isArray() && root.path("derivedNamingEvidence").isEmpty(),
+                "Derived naming evidence view should be present and empty when no transitive naming exists");
         JsonNode namingNode = root.path("namingEvidence").get(0);
         assertTrue("naming:orders.customer_id->customers.id:TABLE_ID".equals(namingNode.path("id").asText()),
                 "Naming evidence should expose a stable id for relationship evidenceRef");
@@ -172,11 +184,72 @@ class JsonResultWriterEvidenceOutputTest {
         JsonNode minimizedRoot = readTree(minimized);
         assertTrue(minimizedRoot.path("summary").path("namingEvidenceCount").asInt() == 1,
                 "Count should not depend on evidence verbosity");
+        assertTrue(minimizedRoot.path("summary").path("derivedNamingEvidenceCount").asInt() == 0,
+                "Derived naming count should not depend on evidence verbosity");
         assertTrue("naming:orders.customer_id->customers.id:TABLE_ID"
                         .equals(minimizedRoot.path("namingEvidence").get(0).path("id").asText()),
                 "Naming evidence id should not depend on evidence verbosity");
         assertTrue(minimizedRoot.path("namingEvidence").get(0).path("evidence").isEmpty(),
                 "Evidence details should honor includeEvidence=false");
+    }
+
+    @Test
+    void writesDerivedNamingEvidenceAsLightweightReferences() {
+        ScanResult result = new ScanResult("mysql", "public");
+        Endpoint directSource = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id"));
+        Endpoint directTarget = Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id"));
+        Endpoint derivedSource = Endpoint.column(ColumnRef.of(TableId.of(null, "order_items"), "order_id"));
+        Endpoint derivedTarget = Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id"));
+        result.namingEvidence().add(namingEvidence(directSource, directTarget,
+                "line 10: orders.customer_id = customers.id"));
+        result.namingEvidence().add(new NamingEvidenceCandidate(
+                derivedSource,
+                derivedTarget,
+                new Evidence(EvidenceType.NAMING_MATCH,
+                        BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                        EvidenceSourceType.INFERENCE,
+                        "derived:naming",
+                        "order_items.order_id -> orders.id -> orders.customer_id -> customers.id",
+                        Map.of(
+                                "derived", true,
+                                "namingRule", "TRANSITIVE_NAMING_PATH",
+                                "suggestedSourceEndpoint", "order_items.order_id",
+                                "suggestedTargetEndpoint", "customers.id",
+                                "directionHint", true)),
+                "TRANSITIVE_NAMING_PATH",
+                true));
+
+        String json = new JsonResultWriter().write(result, true, true);
+        JsonNode root = readTree(json);
+        String derivedId = "naming:order_items.order_id->customers.id:TRANSITIVE_NAMING_PATH";
+
+        assertTrue(root.path("summary").path("namingEvidenceCount").asInt() == 2,
+                "Total naming evidence count should still include direct and derived evidence");
+        assertTrue(root.path("summary").path("directNamingEvidenceCount").asInt() == 1,
+                "Summary should count direct naming evidence separately");
+        assertTrue(root.path("summary").path("derivedNamingEvidenceCount").asInt() == 1,
+                "Summary should count TRANSITIVE_NAMING_PATH evidence separately");
+        assertTrue(root.path("summary").path("totalNamingEvidenceCount").asInt() == 2,
+                "Summary should expose total naming evidence count with the same direct/derived/total shape");
+        assertTrue(root.path("summary").path("directNamingEvidenceObservationCount").asInt() == 1,
+                "Direct naming observation count should exclude derived observations");
+        assertTrue(root.path("summary").path("derivedNamingEvidenceObservationCount").asInt() == 1,
+                "Derived naming observation count should count only transitive naming observations");
+        assertTrue(root.path("summary").path("totalNamingEvidenceObservationCount").asInt() == 2,
+                "Total naming observation count should include direct and derived observations");
+        assertTrue(root.path("derivedNamingEvidence").size() == 1,
+                "A lightweight derived naming evidence view should be emitted");
+        JsonNode lightweight = root.path("derivedNamingEvidence").get(0);
+        assertTrue(derivedId.equals(lightweight.path("id").asText()),
+                "Lightweight derived naming item should expose the same id as top-level namingEvidence");
+        assertTrue("TRANSITIVE_NAMING_PATH".equals(lightweight.path("rule").asText()),
+                "Lightweight derived naming item should expose the rule");
+        assertTrue(lightweight.path("directionHint").asBoolean(),
+                "Lightweight derived naming item should expose directionHint");
+        assertTrue(lightweight.path("rawEvidence").isMissingNode() && lightweight.path("evidence").isMissingNode(),
+                "Lightweight derived naming item must not duplicate complete evidence payload");
+        assertTrue(root.path("namingEvidence").findValuesAsText("id").contains(derivedId),
+                "Derived naming evidence id must resolve inside top-level namingEvidence");
     }
 
     @Test
@@ -286,6 +359,8 @@ class JsonResultWriterEvidenceOutputTest {
         Endpoint a = Endpoint.column(ColumnRef.of(TableId.of(null, "a"), "r"));
         Endpoint b = Endpoint.column(ColumnRef.of(TableId.of(null, "b"), "s"));
         Endpoint c = Endpoint.column(ColumnRef.of(TableId.of(null, "c"), "t"));
+        result.relationships().add(sqlLogJoin("line 10: orders.user_id = users.id"));
+        result.dataLineages().add(aggregateLineage("line 10: SUM(p.amount)"));
         DerivedPathCandidate relationship = new DerivedPathCandidate(
                 DerivedPathKind.RELATIONSHIP,
                 a,
@@ -324,12 +399,34 @@ class JsonResultWriterEvidenceOutputTest {
         String json = new JsonResultWriter().write(result, true, true);
         JsonNode root = readTree(json);
 
+        assertTrue(root.path("summary").path("relationshipCount").asInt() == 1,
+                "Legacy relationshipCount should remain the direct relationship count");
+        assertTrue(root.path("summary").path("directRelationshipCount").asInt() == 1,
+                "Summary should expose direct relationship count explicitly");
         assertTrue(root.path("summary").path("derivedRelationshipCount").asInt() == 1,
                 "Summary should count derived relationships");
+        assertTrue(root.path("summary").path("totalRelationshipCount").asInt() == 2,
+                "Summary should expose total relationship count with the same direct/derived/total shape");
+        assertTrue(root.path("summary").path("dataLineageCount").asInt() == 1,
+                "Legacy dataLineageCount should remain the direct lineage count");
+        assertTrue(root.path("summary").path("directDataLineageCount").asInt() == 1,
+                "Summary should expose direct lineage count explicitly");
         assertTrue(root.path("summary").path("derivedDataLineageCount").asInt() == 1,
                 "Summary should count derived lineage facts");
+        assertTrue(root.path("summary").path("totalDataLineageCount").asInt() == 2,
+                "Summary should expose total lineage count with the same direct/derived/total shape");
+        assertTrue(root.path("summary").path("directRelationshipObservationCount").asInt() == 1,
+                "Summary should expose direct relationship observation count explicitly");
         assertTrue(root.path("summary").path("derivedRelationshipObservationCount").asInt() == 1,
                 "Debug summary should count derived relationship observations");
+        assertTrue(root.path("summary").path("totalRelationshipObservationCount").asInt() == 2,
+                "Total relationship observations should include direct and derived observations");
+        assertTrue(root.path("summary").path("directDataLineageObservationCount").asInt() == 1,
+                "Summary should expose direct lineage observation count explicitly");
+        assertTrue(root.path("summary").path("derivedDataLineageObservationCount").asInt() == 1,
+                "Debug summary should count derived lineage observations");
+        assertTrue(root.path("summary").path("totalDataLineageObservationCount").asInt() == 2,
+                "Total lineage observations should include direct and derived observations");
         JsonNode derivedRelationship = root.path("derivedRelationships").get(0);
         assertTrue("RELATIONSHIP".equals(derivedRelationship.path("kind").asText()),
                 "Derived relationship kind should be serialized");

@@ -873,7 +873,7 @@ COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
 
 - `derivedRelationships`：只以列级 `FK_LIKE` relationship 为主边，可用 top-level `namingEvidence` 作为辅助边；纯 naming path 不能生成 relationship。内部按 referenced-by 方向反向遍历 `parent/referenced -> child/dependent`，但输出保持 FK-like 正向 `child/dependent -> parent/referenced`，并在 attributes 中记录 `traversalMode=REVERSE_REFERENCED_BY`、`outputDirection=FK_LIKE_FORWARD` 和 `traversalPath`。
 - `derivedDataLineages`：只从 `LineageFlowKind.VALUE` 的字段血缘边推导；`CONTROL` 和 `NAMING_MATCH` 不参与数据流推导。
-- derived `namingEvidence`：direct namingEvidence 的有向链可生成 `rule=TRANSITIVE_NAMING_PATH` 的 top-level naming evidence，relationship 仍只能通过 `evidenceRef` 引用这个池。
+- derived `namingEvidence`：direct namingEvidence 的有向链可生成 `rule=TRANSITIVE_NAMING_PATH` 的 top-level naming evidence，relationship 仍只能通过 `evidenceRef` 引用这个池。JSON 顶层的 `derivedNamingEvidence` 只是轻量阅读视图，方便按 derived name 统计；完整证据仍只在 top-level `namingEvidence` 中维护。
 
 路径推导不会修改直接 relationship / lineage，不参与 parser fallback，也不使用 SQL regex、token span 或名字白名单。默认 `maxPathLength=5`；`maxPathsPerPair=0` 和 `maxFacts=0` 表示不限制，但仍做循环检测和自环过滤。
 

@@ -322,10 +322,12 @@ for path in sorted(result_dir.glob("*.json")):
     if derived_path.exists():
         derived_data = json.loads(derived_path.read_text(encoding="utf-8"))
         derived_summary = derived_data.get("summary", {})
-        derived_name_count = sum(
-            1 for item in derived_data.get("namingEvidence") or []
-            if item.get("rule") == "TRANSITIVE_NAMING_PATH"
-        )
+        derived_name_count = derived_summary.get("derivedNamingEvidenceCount")
+        if derived_name_count is None:
+            derived_name_count = sum(
+                1 for item in derived_data.get("namingEvidence") or []
+                if item.get("rule") == "TRANSITIVE_NAMING_PATH"
+            )
         derived_rows.append([
             path.stem,
             str(fixtures),
