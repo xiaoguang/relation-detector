@@ -79,15 +79,12 @@ public final class JsonResultWriter {
         root.put("generatedAt", String.valueOf(result.generatedAt()));
 
         ObjectNode summary = root.putObject("summary");
-        summary.put("relationshipCount", directRelationshipCount);
         summary.put("directRelationshipCount", directRelationshipCount);
         summary.put("derivedRelationshipCount", derivedRelationshipCount);
         summary.put("totalRelationshipCount", directRelationshipCount + derivedRelationshipCount);
-        summary.put("dataLineageCount", directDataLineageCount);
         summary.put("directDataLineageCount", directDataLineageCount);
         summary.put("derivedDataLineageCount", derivedDataLineageCount);
         summary.put("totalDataLineageCount", directDataLineageCount + derivedDataLineageCount);
-        summary.put("namingEvidenceCount", namingEvidence.size());
         summary.put("directNamingEvidenceCount", directNamingEvidenceCount);
         summary.put("derivedNamingEvidenceCount", derivedNamingEvidenceCount);
         summary.put("totalNamingEvidenceCount", directNamingEvidenceCount + derivedNamingEvidenceCount);
@@ -98,17 +95,14 @@ public final class JsonResultWriter {
             int derivedDataLineageObservations = derivedPathObservationCount(result.derivedDataLineages());
             int directNamingObservations = namingEvidenceObservationCount(directNamingEvidence);
             int derivedNamingObservations = namingEvidenceObservationCount(derivedNamingEvidence);
-            summary.put("relationshipObservationCount", directRelationshipObservations);
             summary.put("directRelationshipObservationCount", directRelationshipObservations);
             summary.put("derivedRelationshipObservationCount", derivedRelationshipObservations);
             summary.put("totalRelationshipObservationCount",
                     directRelationshipObservations + derivedRelationshipObservations);
-            summary.put("dataLineageObservationCount", directDataLineageObservations);
             summary.put("directDataLineageObservationCount", directDataLineageObservations);
             summary.put("derivedDataLineageObservationCount", derivedDataLineageObservations);
             summary.put("totalDataLineageObservationCount",
                     directDataLineageObservations + derivedDataLineageObservations);
-            summary.put("namingEvidenceObservationCount", directNamingObservations + derivedNamingObservations);
             summary.put("directNamingEvidenceObservationCount", directNamingObservations);
             summary.put("derivedNamingEvidenceObservationCount", derivedNamingObservations);
             summary.put("totalNamingEvidenceObservationCount", directNamingObservations + derivedNamingObservations);

@@ -61,8 +61,9 @@ class JsonResultWriterEvidenceOutputTest {
         JsonNode root = readTree(json);
 
         JsonNode relation = root.path("relationships").get(0);
-        assertTrue(root.path("summary").path("relationshipObservationCount").asInt() == 2,
+        assertTrue(root.path("summary").path("directRelationshipObservationCount").asInt() == 2,
                 "Debug summary should count relationship raw observations");
+        assertLegacySummaryFieldsMissing(root.path("summary"));
         assertTrue(relation.path("rawEvidence").size() == 2,
                 "JSON should expose the original uncompressed evidence");
         assertTrue(relation.path("evidence").isArray(),
@@ -92,8 +93,9 @@ class JsonResultWriterEvidenceOutputTest {
         String json = new JsonResultWriter().write(result, true, true);
         JsonNode root = readTree(json);
 
-        assertTrue(root.path("summary").path("dataLineageCount").asInt() == 1,
+        assertTrue(root.path("summary").path("directDataLineageCount").asInt() == 1,
                 "Summary should include lineage count");
+        assertLegacySummaryFieldsMissing(root.path("summary"));
         assertTrue(root.path("dataLineages").isArray(), "JSON should expose top-level dataLineages");
         JsonNode lineageNode = root.path("dataLineages").get(0);
         assertTrue("VALUE".equals(lineageNode.path("flowKind").asText()), "Lineage flow kind should be serialized");
@@ -118,10 +120,11 @@ class JsonResultWriterEvidenceOutputTest {
         String json = new JsonResultWriter().write(result, true, true);
         JsonNode root = readTree(json);
 
-        assertTrue(root.path("summary").path("dataLineageCount").asInt() == 1,
+        assertTrue(root.path("summary").path("directDataLineageCount").asInt() == 1,
                 "Summary should count one merged lineage");
-        assertTrue(root.path("summary").path("dataLineageObservationCount").asInt() == 2,
+        assertTrue(root.path("summary").path("directDataLineageObservationCount").asInt() == 2,
                 "Debug summary should count lineage raw observations");
+        assertLegacySummaryFieldsMissing(root.path("summary"));
         assertTrue(root.path("dataLineages").get(0).path("rawEvidence").size() == 2,
                 "Lineage rawEvidence should keep both observations as JSON nodes");
         assertTrue(root.path("dataLineages").get(0).path("evidence").get(0).path("attributes").path("count").asInt() == 2,
@@ -157,8 +160,7 @@ class JsonResultWriterEvidenceOutputTest {
         String json = new JsonResultWriter().write(result, true, true);
         JsonNode root = readTree(json);
 
-        assertTrue(root.path("summary").path("namingEvidenceCount").asInt() == 1,
-                "Summary should include naming evidence count");
+        assertLegacySummaryFieldsMissing(root.path("summary"));
         assertTrue(root.path("summary").path("directNamingEvidenceCount").asInt() == 1,
                 "Summary should count direct naming evidence separately");
         assertTrue(root.path("summary").path("derivedNamingEvidenceCount").asInt() == 0,
@@ -182,8 +184,7 @@ class JsonResultWriterEvidenceOutputTest {
 
         String minimized = new JsonResultWriter().write(result, false, true);
         JsonNode minimizedRoot = readTree(minimized);
-        assertTrue(minimizedRoot.path("summary").path("namingEvidenceCount").asInt() == 1,
-                "Count should not depend on evidence verbosity");
+        assertLegacySummaryFieldsMissing(minimizedRoot.path("summary"));
         assertTrue(minimizedRoot.path("summary").path("derivedNamingEvidenceCount").asInt() == 0,
                 "Derived naming count should not depend on evidence verbosity");
         assertTrue("naming:orders.customer_id->customers.id:TABLE_ID"
@@ -223,8 +224,7 @@ class JsonResultWriterEvidenceOutputTest {
         JsonNode root = readTree(json);
         String derivedId = "naming:order_items.order_id->customers.id:TRANSITIVE_NAMING_PATH";
 
-        assertTrue(root.path("summary").path("namingEvidenceCount").asInt() == 2,
-                "Total naming evidence count should still include direct and derived evidence");
+        assertLegacySummaryFieldsMissing(root.path("summary"));
         assertTrue(root.path("summary").path("directNamingEvidenceCount").asInt() == 1,
                 "Summary should count direct naming evidence separately");
         assertTrue(root.path("summary").path("derivedNamingEvidenceCount").asInt() == 1,
@@ -306,12 +306,13 @@ class JsonResultWriterEvidenceOutputTest {
         String json = new JsonResultWriter().write(result, true, true);
         JsonNode root = readTree(json);
 
-        assertTrue(root.path("summary").path("namingEvidenceCount").asInt() == 1,
+        assertTrue(root.path("summary").path("totalNamingEvidenceCount").asInt() == 1,
                 "Summary should count unique source-target-rule naming evidence");
         assertTrue(root.path("namingEvidence").get(0).path("rawEvidence").size() == 2,
                 "Naming evidence rawEvidence should keep both observations as JSON nodes");
-        assertTrue(root.path("summary").path("namingEvidenceObservationCount").asInt() == 2,
+        assertTrue(root.path("summary").path("totalNamingEvidenceObservationCount").asInt() == 2,
                 "Summary should expose naming raw observation count as a number");
+        assertLegacySummaryFieldsMissing(root.path("summary"));
         assertTrue(root.path("namingEvidence").get(0).path("evidence").get(0)
                         .path("attributes").path("count").asInt() == 2,
                 "Grouped naming evidence should carry merged evidence attributes");
@@ -343,13 +344,9 @@ class JsonResultWriterEvidenceOutputTest {
         String json = new JsonResultWriter().write(result, true, true, false);
         JsonNode summary = readTree(json).path("summary");
 
-        assertTrue(summary.path("relationshipObservationCount").isMissingNode(),
-                "Debug relationship observation count should be configurable");
-        assertTrue(summary.path("dataLineageObservationCount").isMissingNode(),
-                "Debug lineage observation count should be configurable");
-        assertTrue(summary.path("namingEvidenceObservationCount").isMissingNode(),
-                "Debug naming observation count should be configurable");
-        assertTrue(summary.path("relationshipCount").asInt() == 1,
+        assertObservationCountFieldsMissing(summary);
+        assertLegacySummaryFieldsMissing(summary);
+        assertTrue(summary.path("directRelationshipCount").asInt() == 1,
                 "Stable fact counts should remain available when debug counts are disabled");
     }
 
@@ -399,16 +396,13 @@ class JsonResultWriterEvidenceOutputTest {
         String json = new JsonResultWriter().write(result, true, true);
         JsonNode root = readTree(json);
 
-        assertTrue(root.path("summary").path("relationshipCount").asInt() == 1,
-                "Legacy relationshipCount should remain the direct relationship count");
+        assertLegacySummaryFieldsMissing(root.path("summary"));
         assertTrue(root.path("summary").path("directRelationshipCount").asInt() == 1,
                 "Summary should expose direct relationship count explicitly");
         assertTrue(root.path("summary").path("derivedRelationshipCount").asInt() == 1,
                 "Summary should count derived relationships");
         assertTrue(root.path("summary").path("totalRelationshipCount").asInt() == 2,
                 "Summary should expose total relationship count with the same direct/derived/total shape");
-        assertTrue(root.path("summary").path("dataLineageCount").asInt() == 1,
-                "Legacy dataLineageCount should remain the direct lineage count");
         assertTrue(root.path("summary").path("directDataLineageCount").asInt() == 1,
                 "Summary should expose direct lineage count explicitly");
         assertTrue(root.path("summary").path("derivedDataLineageCount").asInt() == 1,
@@ -436,6 +430,42 @@ class JsonResultWriterEvidenceOutputTest {
                 "Derived evidence should explain transitive inference");
         assertTrue(root.path("derivedDataLineages").get(0).path("rawEvidence").size() == 1,
                 "Derived lineage should expose raw evidence separately");
+    }
+
+    private void assertLegacySummaryFieldsMissing(JsonNode summary) {
+        assertTrue(summary.path("relationshipCount").isMissingNode(),
+                "Legacy relationshipCount should not be emitted");
+        assertTrue(summary.path("dataLineageCount").isMissingNode(),
+                "Legacy dataLineageCount should not be emitted");
+        assertTrue(summary.path("namingEvidenceCount").isMissingNode(),
+                "Legacy namingEvidenceCount should not be emitted");
+        assertTrue(summary.path("relationshipObservationCount").isMissingNode(),
+                "Legacy relationshipObservationCount should not be emitted");
+        assertTrue(summary.path("dataLineageObservationCount").isMissingNode(),
+                "Legacy dataLineageObservationCount should not be emitted");
+        assertTrue(summary.path("namingEvidenceObservationCount").isMissingNode(),
+                "Legacy namingEvidenceObservationCount should not be emitted");
+    }
+
+    private void assertObservationCountFieldsMissing(JsonNode summary) {
+        assertTrue(summary.path("directRelationshipObservationCount").isMissingNode(),
+                "Direct relationship observation count should be configurable");
+        assertTrue(summary.path("derivedRelationshipObservationCount").isMissingNode(),
+                "Derived relationship observation count should be configurable");
+        assertTrue(summary.path("totalRelationshipObservationCount").isMissingNode(),
+                "Total relationship observation count should be configurable");
+        assertTrue(summary.path("directDataLineageObservationCount").isMissingNode(),
+                "Direct lineage observation count should be configurable");
+        assertTrue(summary.path("derivedDataLineageObservationCount").isMissingNode(),
+                "Derived lineage observation count should be configurable");
+        assertTrue(summary.path("totalDataLineageObservationCount").isMissingNode(),
+                "Total lineage observation count should be configurable");
+        assertTrue(summary.path("directNamingEvidenceObservationCount").isMissingNode(),
+                "Direct naming observation count should be configurable");
+        assertTrue(summary.path("derivedNamingEvidenceObservationCount").isMissingNode(),
+                "Derived naming observation count should be configurable");
+        assertTrue(summary.path("totalNamingEvidenceObservationCount").isMissingNode(),
+                "Total naming observation count should be configurable");
     }
 
     private RelationshipCandidate sqlLogJoin(String detail) {

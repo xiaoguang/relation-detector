@@ -138,27 +138,21 @@ derivedPaths:
   },
   "generatedAt": "2026-06-14T00:00:00Z",
   "summary": {
-    "relationshipCount": 1,
     "directRelationshipCount": 1,
     "derivedRelationshipCount": 0,
     "totalRelationshipCount": 1,
-    "dataLineageCount": 1,
     "directDataLineageCount": 1,
     "derivedDataLineageCount": 0,
     "totalDataLineageCount": 1,
-    "namingEvidenceCount": 1,
     "directNamingEvidenceCount": 1,
     "derivedNamingEvidenceCount": 0,
     "totalNamingEvidenceCount": 1,
-    "relationshipObservationCount": 2,
     "directRelationshipObservationCount": 2,
     "derivedRelationshipObservationCount": 0,
     "totalRelationshipObservationCount": 2,
-    "dataLineageObservationCount": 2,
     "directDataLineageObservationCount": 2,
     "derivedDataLineageObservationCount": 0,
     "totalDataLineageObservationCount": 2,
-    "namingEvidenceObservationCount": 2,
     "directNamingEvidenceObservationCount": 2,
     "derivedNamingEvidenceObservationCount": 0,
     "totalNamingEvidenceObservationCount": 2,
@@ -175,9 +169,9 @@ derivedPaths:
 }
 ```
 
-`relationshipCount`、`dataLineageCount`、`namingEvidenceCount` 是兼容字段：前两者继续表示 direct 数组数量，`namingEvidenceCount` 继续表示完整命名证据池数量。规范读取建议使用三段式字段：`direct*Count`、`derived*Count`、`total*Count`，三类事实保持一致。
+summary 只保留三段式字段：`direct*Count`、`derived*Count`、`total*Count`，relationship、dataLineage、namingEvidence 三类事实保持一致。
 
-`relationshipObservationCount`、`dataLineageObservationCount`、`namingEvidenceObservationCount` 也是兼容字段。规范读取建议使用 `direct*ObservationCount`、`derived*ObservationCount`、`total*ObservationCount`。这些 observation count 是调试字段，只统计 merged fact 背后的 raw evidence observation 数量，用来解释“一个最终关系/血缘/命名证据/推导路径由多少次原始出现合并而来”。它们不代表新的业务事实，不参与 confidence 计算；可通过 `output.includeObservationCounts: false` 关闭。`derivedNamingEvidence` 是 `rule=TRANSITIVE_NAMING_PATH` 的轻量索引数组，只含 `id/source/target/rule/directionHint`，不重复完整 evidence；完整证据必须通过相同 `id` 到 `namingEvidence` 查询。
+Observation count 也只保留三段式字段：`direct*ObservationCount`、`derived*ObservationCount`、`total*ObservationCount`。这些 observation count 是调试字段，只统计 merged fact 背后的 raw evidence observation 数量，用来解释“一个最终关系/血缘/命名证据/推导路径由多少次原始出现合并而来”。它们不代表新的业务事实，不参与 confidence 计算；可通过 `output.includeObservationCounts: false` 关闭。`derivedNamingEvidence` 是 `rule=TRANSITIVE_NAMING_PATH` 的轻量索引数组，只含 `id/source/target/rule/directionHint`，不重复完整 evidence；完整证据必须通过相同 `id` 到 `namingEvidence` 查询。
 
 关系：
 
