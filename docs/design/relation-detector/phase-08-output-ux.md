@@ -302,7 +302,7 @@ derivedPaths:
 ```text
 SOURCE              TARGET        TYPE     SUBTYPE              CONF  EVIDENCE
 orders.user_id      users.id      FK_LIKE  DECLARED_FK          0.98  METADATA_FOREIGN_KEY
-users               audit_logs    CO_OCCURRENCE  TABLE_CO_OCCURRENCE  0.25  SQL_LOG_TABLE_CO_OCCURRENCE
+orders.customer_id  customers.id  FK_LIKE  INFERRED_JOIN_FK     0.65  SQL_LOG_JOIN,NAMING_MATCH
 
 Warnings: 2
 - mysql-slow.log:128 parse failed: unsupported syntax
@@ -315,6 +315,7 @@ Warnings: 2
 - 同分时按 source table、target table 排序。
 - `--verbose` 时显示更多 evidence detail。
 - table 输出仍受 `minConfidence` 过滤。
+- `SQL_LOG_TABLE_CO_OCCURRENCE` / `SQL_LOG_COLUMN_CO_OCCURRENCE` 是兼容保留 evidence；当前生产 parser 默认不主动输出，普通 table 输出示例不再把它们作为现行关系来源展示。
 
 ## Warning 设计
 

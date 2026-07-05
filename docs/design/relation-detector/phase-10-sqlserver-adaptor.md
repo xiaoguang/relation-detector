@@ -123,12 +123,12 @@ flowchart TD
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| SQL Server root token-event | 38 | 32 / 6 | 703 | 360 | 0 | 275 | 275 |
-| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
-| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
-| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
-| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
-| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| SQL Server root token-event | 38 | 32 / 6 | 727 | 437 | 0 | 283 | 349 |
+| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1035 | 437 | 0 | 529 | 595 |
+| SQL Server full-grammer v2017 | 40 | 34 / 6 | 1036 | 437 | 0 | 530 | 596 |
+| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1035 | 437 | 0 | 529 | 595 |
+| SQL Server full-grammer v2022 | 40 | 34 / 6 | 1036 | 437 | 0 | 530 | 596 |
+| SQL Server full-grammer v2025 | 40 | 33 / 7 | 1036 | 437 | 0 | 529 | 595 |
 
 当前 fixture 语义：
 

@@ -122,7 +122,8 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 结果：通过。
 
 - `RelationType` 仍只保留 `FK_LIKE` 和 `CO_OCCURRENCE`。
-- 列级弱共现使用 `RelationSubType.COLUMN_CO_OCCURRENCE` 与 `EvidenceType.SQL_LOG_COLUMN_CO_OCCURRENCE`。
+- 列级弱共现使用 `RelationSubType.COLUMN_CO_OCCURRENCE`；evidence 保留具体 SQL 谓词来源，例如 `SQL_LOG_JOIN`、`SQL_LOG_EXISTS` 或 `SQL_LOG_SUBQUERY_IN`。
+- `SQL_LOG_COLUMN_CO_OCCURRENCE` / `SQL_LOG_TABLE_CO_OCCURRENCE` 仍作为 enum、score 和 merger 兼容项保留，但当前生产 parser / extractor 不主动产出。前者由具体 SQL predicate evidence 替代；后者没有等价现役替代，纯表级同现默认不生成正式 relationship。
 - 同表不同 alias 的 self-join 允许输出列级弱共现；同 alias 行内比较不输出关系。
 
 ### Data Lineage 模型

@@ -31,8 +31,8 @@ Oracle 当前处于“adaptor + token-event baseline + `INCOMPLETE_VERSIONED` fu
 - token-event SQL：`OracleTokenEventStructuredSqlParser`，使用 `adaptor-oracle` 自己的 `OracleRelationSql.g4` 与 typed visitor。
 - token-event DDL：`OracleTokenEventStructuredDdlParser`，同样通过 Oracle token-event grammar 的 typed DDL context 生成 DDL events。
 - full-grammer module：`oracle/12c`、`oracle/19c`、`oracle/21c`、`oracle/26ai` 通过 `FullGrammerDialectModule` 注册；每个版本使用自己的 split lexer/parser grammar，并带有首批官方版本边界差异，运行属性 `grammarCoverage=INCOMPLETE_VERSIONED`。
-- sample-data：`sample-data/oracle/12c|19c|21c|26ai`，每版 37 个 SQL 文件。
-- correctness golden：root token-event 保留 37 个 sample-data fixture；四个 versioned full-grammer 目录覆盖对应 `sample-data/oracle/<version>` 的 37 个 SQL 文件，并保留 profile smoke / version-only fixture。
+- sample-data：`sample-data/oracle/12c|19c|21c|26ai`，每版 38 个 SQL 文件。
+- correctness golden：root token-event 保留会产生 relationship / lineage / diagnostics、或承载 Oracle DDL / 版本边界语法的 sample-data fixture；四个 versioned full-grammer 目录覆盖对应 `sample-data/oracle/<version>` 的保留 fixture，并保留 profile smoke / version-only fixture。
 
 已实现的官方版本边界：
 
@@ -164,7 +164,7 @@ sample-data/oracle/26ai
 
 - `01-schema`：7 个 schema / view / index 文件。
 - `02-procedures`：13 个 procedure / trigger / package-like logic 文件。
-- `03-data`：5 个 seed / business data 文件。
+- `03-data`：6 个 seed / business data 文件。
 - `04-queries`：12 个业务查询和写入样例。
 
 Oracle correctness 当前统计：
@@ -183,7 +183,7 @@ Oracle correctness 当前统计：
 
 | Parser family | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 15 | 11 / 4 | 729 | 292 | 419 | 0 |
+| common token-event sample-data | 13 | 10 / 3 | 317 | 152 | 248 | 0 |
 | MySQL token-event root sample-data | 38 | 32 / 6 | 349 | 240 | 238 | 0 |
 | MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 346 | 265 | 243 | 0 |
 | MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 397 | 254 | 245 | 0 |
@@ -196,12 +196,12 @@ Oracle correctness 当前统计：
 | Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
 | Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
 | Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 498 | 250 | 380 | 0 |
-| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
-| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
-| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
-| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
-| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 500 | 250 | 384 | 0 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 341 | 324 | 246 | 0 |
+| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
+| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
+| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
+| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
+| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
 
 ## 后续收口
 

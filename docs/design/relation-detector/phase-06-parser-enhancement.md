@@ -733,20 +733,21 @@ root token-event 与对应 full-grammer 数量不要求完全一致：token-even
 PREDICATE_EQUALITY
   -> resolve left/right alias.column
   -> FK-like 判断优先
-  -> 若 FK-like 不成立，且两侧为不同物理表，输出 COLUMN_CO_OCCURRENCE
-  -> 若同一物理表但不同 SQL alias 且物理列不同，也输出 COLUMN_CO_OCCURRENCE
+  -> 若 FK-like 不成立，且两侧为不同物理表，输出 RelationSubType.COLUMN_CO_OCCURRENCE
+  -> 若同一物理表但不同 SQL alias 且物理列不同，也输出 RelationSubType.COLUMN_CO_OCCURRENCE
+  -> evidence 保留具体语法来源，例如 SQL_LOG_JOIN
   -> 同一 alias 行内比较不输出 self co-occurrence
 
 EXISTS_PREDICATE
-  -> 输出 SQL_LOG_COLUMN_CO_OCCURRENCE
+  -> 输出 SQL_LOG_EXISTS
   -> attributes.joinKind = EXISTS
 
 JOIN_USING_COLUMNS
-  -> 输出列级弱共现
+  -> 输出列级弱共现，evidence 使用 SQL_LOG_JOIN
   -> 不直接升级 FK-like
 
 IN_SUBQUERY_PREDICATE / TUPLE_IN_SUBQUERY_PREDICATE
-  -> 输出 SQL_LOG_COLUMN_CO_OCCURRENCE
+  -> 输出 SQL_LOG_SUBQUERY_IN
   -> attributes.joinKind = IN_SUBQUERY
 ```
 
@@ -759,7 +760,7 @@ same physical table
 + explicit equality predicate
 ```
 
-因此这些可以输出 `SQL_LOG_COLUMN_CO_OCCURRENCE`：
+因此这些可以输出 `RelationSubType.COLUMN_CO_OCCURRENCE`，但 evidence 仍保留具体谓词来源，例如 `SQL_LOG_JOIN`：
 
 ```sql
 FROM hr_employees e
@@ -773,11 +774,13 @@ FROM accounts a
 WHERE a.left_col = a.right_col
 ```
 
-FK-like 方向规则仍优先。无法可靠判断方向时才进入 column co-occurrence；没有列端点时才退化为 table co-occurrence。
+FK-like 方向规则仍优先。无法可靠判断方向时才进入 column co-occurrence。当前生产 typed parser 不因为“同一 SQL 中出现多张表但没有列级谓词”主动生成 table co-occurrence relationship；`SQL_LOG_TABLE_CO_OCCURRENCE` 仅作为历史/外部导入兼容 evidence 保留。
 
 `correlated EXISTS` 是跨方言公共关系语义。公共 extractor 可以处理 EXISTS 外壳和相关谓词；EXISTS 内部如果出现 MySQL/PostgreSQL 专属 rowset/function/hint/`ONLY`/`JSON_TABLE` 等语法，必须由对应方言 event builder 或 full-grammer visitor 负责识别和过滤。
 
 当前 typed SQL parser 不再把 `EXISTS` / `IN` / 普通 equality 直接定向为 FK-like，但必须保留真实语法 evidence：JOIN / comma join 输出 `SQL_LOG_JOIN`，correlated `EXISTS` 输出 `SQL_LOG_EXISTS`，`IN (SELECT ...)` / tuple IN 输出 `SQL_LOG_SUBQUERY_IN`。这些 evidence 证明“SQL 中存在明确列级谓词”，不单独证明 FK-like 方向。FK-like 方向可以由 DDL、metadata、data-profile、“SQL 谓词 + 一侧 unique、一侧 non-unique”，或“SQL 谓词 + top-level `namingEvidence` 中的唯一方向提示”推出；否则输出 `CO_OCCURRENCE`。`NAMING_MATCH` 不解析 SQL，也不凭表名/列名创建关系；`NamingEvidenceExtractor` 先生成完整命名证据池，`NamingMatchEvidenceEnhancer` 只消费该证据池并在 relationship evidence 中写入 `evidenceRef`。
+
+`SQL_LOG_COLUMN_CO_OCCURRENCE` 和 `SQL_LOG_TABLE_CO_OCCURRENCE` 仍保留 enum、score 和 merger 兼容逻辑，但当前生产 parser / extractor 不主动产出。列级谓词共现由更具体的 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN` 代替；纯表级共现没有等价现役替代，默认不生成正式 relationship。
 
 ## Data Lineage v1
 
