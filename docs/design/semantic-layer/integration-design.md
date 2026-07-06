@@ -8,6 +8,8 @@
 - **跨模块契约**：模块间传递的精确数据形态
 - **端到端验收场景**：从输入到输出的完整测试用例
 
+当前代码实现边界：已实现 `semantic build --input <scan-result.json> --output <dir>`，链路为 `ScanResultReader -> SemanticEvidenceBuilder -> NoopSemanticEnricher -> SemanticKgBuilder -> JSON artifacts`。本文后续关于真实 LLM Enricher、Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator、SQL Validator 和 Answer Composer 的内容是目标设计，不是当前已落地 API。
+
 ## 2. LLM 依赖决策
 
 ### 2.1 决策原则
@@ -85,38 +87,30 @@ scan-result.json
 
         ↓ [Scan Result Reader: 纯规则，无 LLM]
 
-Step 2: ScanBundle（内存对象）
+Step 2: ScanBundle（当前内存对象）
 ─────────────────────────────────────────
 ScanBundle {
-  database: {type: "mysql", schema: "shop"},
-  relationships: [
-    NormalizedRelationship {
-      id: "FK_LIKE:orders.customer_id->customers.id",
-      source: Endpoint(table="orders", column="customer_id"),
-      target: Endpoint(table="customers", column="id"),
-      relationType: FK_LIKE,
-      confidence: 0.70,
-      evidence: [Evidence(type=SQL_LOG_JOIN, score=0.55, ...)]
-    }
-  ],
-  relationshipIndex: {
-    bySourceTable: {"orders": [...]},
-    byTargetTable: {"customers": [...]},
-    byColumnPair: {("orders.customer_id","customers.id"): [...]}
-  },
-  metadataIndex: {
-    tables: {"orders": {columns: [id, customer_id, status, ...]}},
-    primaryKeys: {"orders": ["id"], "customers": ["id"]}
-  }
+  databaseType: "mysql",
+  schema: "shop",
+  summary: {directRelationshipCount: 5, ...},
+  sources: ["ddl", "logs"],
+  relationships: [JsonNode, ...],
+  dataLineages: [JsonNode, ...],
+  derivedRelationships: [JsonNode, ...],
+  derivedDataLineages: [JsonNode, ...],
+  namingEvidence: [JsonNode, ...],
+  diagnostics: [JsonNode, ...] // 来自 relation-detector 顶层 warnings
 }
 
         ↓ [Semantic Evidence Builder: 纯算法，无 LLM]
-        ↓ [新增: businessRole 确定性推断 + confidence 确定性计算]
-        ↓ [新增: 冲突规则初筛 → candidateConflict 列表（尽量提高召回率）]
-        ↓ [新增: evidenceFingerprint 统一生成]
+        ↓ [当前: 把 relationship / lineage / naming / derived / diagnostic materialize 为 EvidenceGraph facts]
+        ↓ [当前: 从 rawEvidence / grouped evidence 生成 EvidenceReference]
+        ↓ [未来: businessRole 推断、冲突初筛、compact bundle、catalog/search 索引]
 
-Step 3: EvidenceGraph（内存对象）
+Step 3: EvidenceGraph（目标设计示例；当前代码是更薄的 facts/endpoints/evidenceRefs 模型）
 ─────────────────────────────────────────
+当前代码中的 EvidenceGraph 只包含 `scanBundle`、`endpoints`、`facts`、`evidenceRefs`、`diagnostics` 和 `summary`。下面的 `fieldEvidences`、`joinPathEvidences`、`expressionEvidences` 是后续 enriched catalog/search 目标设计，不是当前 Java API。
+
 EvidenceGraph {
   fieldEvidences: {
     "orders.customer_id": {
@@ -166,7 +160,7 @@ EvidenceGraph {
         ↓ [LLM 任务: 业务名/描述/同义词/实体/指标/join path 解释]
         ↓ [新增: LLM 冲突解释建议（recommendation only）]
 
-Step 4: EnrichmentResult（LLM 输出）
+Step 4: EnrichmentResult（目标设计中的 LLM 输出，当前未实现）
 ─────────────────────────────────────────
 {
   "tables": [
@@ -420,6 +414,25 @@ Step 7: Answer（最终输出）
 
 每个模块的输入和输出都是明确的 Java record 或 JSON schema。模块间通过以下接口契约连接：
 
+**当前已实现契约：**
+
+```
+[relation-detector]
+    ↓ 输出: scan-result.json (JSON 文件)
+[ScanResultReader]
+    ↓ 输出: ScanBundle (内存对象，保留 JSON fact arrays)
+[SemanticEvidenceBuilder]
+    ↓ 输出: EvidenceGraph (内存对象)
+[NoopSemanticEnricher]
+    ↓ 输出: EvidenceGraph (不修改)
+[SemanticKgBuilder]
+    ↓ 输出: SemanticKnowledgeGraph (内存对象)
+[JsonSemanticKgWriter]
+    ↓ 输出: semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
+```
+
+**目标完整链路：**
+
 ```
 [relation-detector]
     ↓ 输出: scan-result.json (JSON 文件)
@@ -537,16 +550,28 @@ Step 7: Answer（最终输出）
 
 **输入：** relation-detector 的 scan-result.json（包含 15 个表、87 个列、24 条关系、8 条 lineage）
 
-**预期全链路输出：**
+**当前代码预期输出：**
 
-1. ScanResultReader → ScanBundle（87 个列的 metadata，24 条关系的索引）
-2. SemanticEvidenceBuilder → EvidenceGraph（87 个 field evidence，8 个 expression evidence，50+ 条 join path）
-3. LLMEnricher → EnrichmentResult（15 个 SemanticTable，87 个 SemanticColumn，8 个 SemanticEntity，8 个 SemanticMetric，24 个 join path explanations，8 个 ReviewItem）
-4. CatalogStore → semantic-catalog/ 目录（7 个 JSON/JSONL 文件）
-5. EmbeddingIndexer → 150+ 条 embedding 记录
-6. LexiconManager → 200+ 条 lexicon 记录
+1. ScanResultReader → ScanBundle（保留 relationships、dataLineages、derived facts、namingEvidence、diagnostics 的 JSON arrays）
+2. SemanticEvidenceBuilder → EvidenceGraph（facts、endpoints、evidenceRefs、diagnostics、summary）
+3. NoopSemanticEnricher → EvidenceGraph（不新增、不修改 semantic fact）
+4. SemanticKgBuilder → SemanticKnowledgeGraph（PhysicalTable/PhysicalColumn/RelationshipFact/LineageFact/NamingEvidenceFact/Diagnostic 等节点和边）
+5. JsonSemanticKgWriter → `semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json`
 
-**验收标准：**
+**目标完整链路输出（后续阶段）：**
+
+1. LLMEnricher → EnrichmentResult（SemanticTable、SemanticColumn、SemanticEntity、SemanticMetric、join path explanations、ReviewItem）
+2. CatalogStore → semantic-catalog/ 目录
+3. EmbeddingIndexer → embedding JSONL
+4. LexiconManager → lexicon JSON
+
+**当前验收标准：**
+- `semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json` 均生成且为合法 JSON
+- KG 中所有 fact / edge 都能回溯到 relation-detector JSON payload 或 evidenceRef
+- `NoopSemanticEnricher` 不创造新 fact
+- 多 input 只允许同一 `database.type` 与 `database.schema` 合并
+
+**目标完整链路验收标准（后续阶段）：**
 - 所有语义对象有 evidenceRefs
 - 所有指标 reviewStatus = SYSTEM_PROPOSED
 - 所有表/列 reviewStatus = EVIDENCE_SUPPORTED 或 SYSTEM_PROPOSED；只有 Review Queue / governance workflow 可以写入 BUSINESS_APPROVED
@@ -558,15 +583,17 @@ Step 7: Answer（最终输出）
 
 ```
 模块内部错误 → 记录 warning/error → 不阻断下游
-  - ScanResultReader: 单条关系无效 → 跳过，记录 warning
-  - EvidenceBuilder: 注释解析失败 → 跳过，记录 warning
-  - LLMEnricher: API 调用失败 → 重试3次，仍失败返回部分结果
-  - SqlValidator: 校验失败 → FAILED，AnswerComposer 不输出 SQL
+  - 当前 EvidenceBuilder: 无法识别的 rawEvidence 片段 → 保留原始 payload，尽量生成 fact / evidenceRef
+  - 目标 EvidenceBuilder: 注释解析失败 → 跳过，记录 warning
+  - 目标 LLMEnricher: API 调用失败 → 重试，仍失败返回部分结果
+  - 目标 SqlValidator: 校验失败 → FAILED，AnswerComposer 不输出 SQL
 
 不可恢复错误 → 抛出异常 → 终止当前链路
-  - ScanResultReader: 文件不存在 → 终止
-  - CatalogStore: 磁盘写入失败 → 终止
-  - SqlGenerator: plan 无表 → 终止
+  - 当前 ScanResultReader: 文件不存在、JSON 非对象、database.type 缺失 → 终止
+  - 当前 ScanResultReader: 多 input 的 database.type/schema 不一致 → 终止
+  - 当前 JsonSemanticKgWriter: 输出目录不可写 → 终止
+  - 目标 CatalogStore: 磁盘写入失败 → 终止
+  - 目标 SqlGenerator: plan 无表 → 终止
 ```
 
 ## 7. 性能预算

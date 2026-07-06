@@ -1,5 +1,7 @@
 # SQL Validator 详细设计
 
+> 当前实现状态：目标设计，尚未落地。当前代码没有 SQL draft validator；relation-detector 的 parser correctness 与这里的语义层 SQL draft guard 是不同模块。
+
 ## 1. 目标与定位
 
 **职责：** 校验 SQL draft 是否仍然受 catalog、evidence 和 governance 约束。Phase 1 validator 是 draft guard，不是完整数据库安全审计器。

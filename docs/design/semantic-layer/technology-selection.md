@@ -32,9 +32,13 @@ Phase 2+: 按服务边界拆分或引入消息队列
 
 ## 3. 模块间通信
 
-Phase 1 采用同进程 Java interface + 构造函数注入：
+当前已实现的 KG artifact 阶段采用同进程 Java interface + 构造函数注入：
 
-- 离线构建：`ScanBundle -> EvidenceGraph -> EnrichmentResult -> CatalogSnapshot`。
+- 离线构建：`ScanBundle -> EvidenceGraph -> NoopSemanticEnricher -> SemanticKnowledgeGraph -> JSON artifacts`。
+- 输出 artifact：`semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json`。
+
+后续完整 Phase 1 目标链路为：
+
 - 在线问答：`QuestionIntent -> SearchResult -> AnswerPlan -> SqlDraft -> ValidationResult -> Answer`。
 - 中间状态可选择写 JSON 文件，用于调试和断点续跑。
 

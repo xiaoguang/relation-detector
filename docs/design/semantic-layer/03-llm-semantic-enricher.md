@@ -4,6 +4,13 @@
 
 **职责：** 基于 `Semantic Evidence Builder` 产出的 evidence bundle，生成业务语义候选：表/字段中文名、描述、同义词、实体候选、指标候选、冲突说明和 join path 解释。
 
+当前代码阶段只落地了扩展点，不调用真实 LLM：
+
+- `LlmSemanticEnricher` 当前接口是 `EvidenceGraph enrich(EvidenceGraph graph)`。
+- 默认实现 `NoopSemanticEnricher` 直接返回原始 `EvidenceGraph`，不创建任何 semantic fact。
+- `semantic-cli` 当前固定使用 `NoopSemanticEnricher`，然后把 evidence graph materialize 为 `semantic-kg.json`。
+- `CompactEvidenceBundle`、`EnrichmentResult`、prompt 模板、review item 生成和真实 LLM 调用仍是后续实现范围。
+
 **硬边界：**
 
 - LLM 不创建正式物理 relationship。
@@ -37,12 +44,13 @@ Semantica 官方 README 将 Semantica 定位为 LLM 旁边的 Context and Accoun
 
 ```text
 Semantic Evidence Builder
-  -> CompactEvidenceBundle
-  -> LLM Semantic Enricher
-  -> EnrichmentResult
-  -> Semantic Catalog Store
-  -> Review Queue
+  -> EvidenceGraph
+  -> NoopSemanticEnricher (当前默认)
+  -> SemanticKgBuilder
+  -> semantic-kg.json / semantic-evidence-graph.json
 ```
+
+目标设计中的真实 LLM Enricher 后续会插入在 EvidenceGraph / CompactEvidenceBundle 与 Catalog Store 之间，但当前不会修改 evidence graph，也不会产生 catalog truth。
 
 输出对象默认状态：
 
@@ -58,15 +66,11 @@ Semantic Evidence Builder
 
 ```java
 public interface LlmSemanticEnricher {
-    EnrichmentResult enrich(CompactEvidenceBundle evidence, EnrichmentConfig config);
-
-    EnrichmentResult enrichIncremental(
-        CompactEvidenceBundle deltaEvidence,
-        SemanticCatalog existingCatalog,
-        EnrichmentConfig config
-    );
+    EvidenceGraph enrich(EvidenceGraph graph);
 }
 ```
+
+下面关于 `EnrichmentResult`、prompt 输入和输出校验的内容是后续真实 LLM Enricher 的目标设计，不是当前已实现 API。
 
 `EnrichmentResult` 必须满足：
 

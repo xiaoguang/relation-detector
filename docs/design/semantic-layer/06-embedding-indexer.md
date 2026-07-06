@@ -1,5 +1,7 @@
 # Embedding Indexer 详细设计
 
+> 当前实现状态：目标设计，尚未落地。当前代码没有调用 Embedding API，也没有生成向量索引或 `semantic-embeddings.jsonl`；当前只输出可审计 KG JSON。
+
 ## 1. 目标与定位
 
 **职责：** 为语义对象构造 embedding 文本并写入向量索引，供 Semantic Search 做语义相似度召回。

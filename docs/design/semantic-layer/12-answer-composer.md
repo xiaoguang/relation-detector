@@ -1,5 +1,7 @@
 # Answer Composer 详细设计
 
+> 当前实现状态：目标设计，尚未落地。当前代码不生成面向用户的回答，也没有在线 Answer API；当前输出是离线 KG JSON artifact。
+
 ## 1. 目标与定位
 
 **职责：** 将 `AnswerPlan`、`SqlDraft` 和 `ValidationResult` 组装为最终响应。Phase 1 使用模板输出，所有事实来自 catalog、plan 和 validator，不在线调用 LLM 改写事实。

@@ -4,7 +4,20 @@
 
 ## 架构概览
 
-### 离线构建链路
+### 当前已实现链路
+
+```text
+Relation Detector
+  -> Scan Result Reader
+  -> Semantic Evidence Builder
+  -> NoopSemanticEnricher
+  -> SemanticKgBuilder
+  -> semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
+```
+
+这条当前链路吸收 Semantica 官方架构中的 `ingest -> raw documents -> parse / normalize -> extract -> conflict / dedup -> KG / provenance / reasoning` 思路，但落地边界更窄：relation-detector scan result / ScanBundle 是本项目的标准 facts/evidence records；当前代码已落地到离线 KG JSON 阶段，即 `semantic-layer/semantic-core` 可以把 scan result 构建为 evidence graph 与可审计 `semantic-kg.json`，`semantic-layer/semantic-cli` 提供 `semantic build` 离线入口。当前 KG 节点范围是 `PhysicalTable`、`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`Diagnostic` 和从 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、supported-by evidence 和 join path step。当前不接入真实 LLM，不写 Semantic Catalog Store，不提供 lexicon、embedding、review queue 或在线问答。
+
+### 目标离线构建链路
 
 ```text
 Relation Detector
@@ -17,9 +30,7 @@ Relation Detector
        -> Review Queue
 ```
 
-Catalog Store 是语义资产中心。Lexicon 和 Embedding 从 catalog 并行构建索引，不是彼此的串行下游。
-
-这条链路吸收 Semantica 官方架构中的 `ingest -> raw documents -> parse / normalize -> extract -> conflict / dedup -> KG / provenance / reasoning` 思路，但落地边界更窄：relation-detector scan result / ScanBundle 是本项目的标准 facts/evidence records；Phase 1 只构建 evidence-backed semantic catalog，不宣称完整 KG、Context Graph 或 ontology 已完成。
+Catalog Store 是后续语义资产中心。Lexicon 和 Embedding 从 catalog 并行构建索引，不是彼此的串行下游。后续 Semantic Catalog Store、Lexicon、Embedding、Review Queue 和在线问答仍是设计/后续实现范围，不宣称完整 Context Graph、ontology reasoning 或自动问答已完成。
 
 ### 在线问答链路
 

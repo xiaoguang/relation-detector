@@ -2,8 +2,8 @@
 
 本文记录本轮对 `mysql-token-event-root` 与 `mysql-v8_0-full` 的 sample-data CLI JSON 对比结论。统计来自：
 
-- `target/sample-data-parser-cli/results/mysql-token-event-root.json`
-- `target/sample-data-parser-cli/results/mysql-v8_0-full.json`
+- `relation-detector/target/sample-data-parser-cli/results/mysql-token-event-root.json`
+- `relation-detector/target/sample-data-parser-cli/results/mysql-v8_0-full.json`
 
 ## 当前统计
 

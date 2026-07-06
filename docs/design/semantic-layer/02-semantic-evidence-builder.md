@@ -2,7 +2,19 @@
 
 ## 1. 目标与定位
 
-**职责：** 将 ScanBundle 中的关系、血缘、命名证据、衍生事实、元数据和 diagnostics 组织成 evidence graph。为每个字段收集所有已知证据，通过 bounded graph search 发现候选 join path，提取注释证据，执行确定性的冲突初筛和去重。
+**职责：** 将 ScanBundle 中的关系、血缘、命名证据、衍生事实和 diagnostics 组织成 evidence graph。
+
+当前代码实现位于 `semantic-layer/semantic-core/src/main/java/com/relationdetector/semantic/graph/SemanticEvidenceBuilder.java`。它已经实现的是离线 KG 阶段的确定性 evidence materialization：
+
+- 从 `relationships` 构建 `RelationshipFact`。
+- 从 `dataLineages` 构建 `LineageFact`。
+- 从 top-level `namingEvidence` 构建 `NamingEvidenceFact`，其中包含 direct 和 derived naming evidence。
+- 从 `derivedRelationships` / `derivedDataLineages` 构建 `DerivedRelationshipFact` / `DerivedLineageFact`。
+- 从 `warnings` 构建 `Diagnostic` fact。
+- 从每条记录的 `rawEvidence` 优先抽取 `EvidenceReference`；没有 `rawEvidence` 时回退 grouped `evidence`。
+- 保存原始 relation-detector JSON payload snapshot，供后续审计和 KG materialization 使用。
+
+尚未实现的目标包括：metadata/comment evidence 索引、bounded graph search 候选 path 发现、冲突初筛、semantic dedup、CompactEvidenceBundle 和 LLM token-budget compact。这些是后续 catalog/search/enricher 阶段能力，不能当成当前代码能力。
 
 **LLM 依赖：** 否。纯图构建和规则提取。bounded graph search、注释提取、冲突初筛和去重都是确定性算法。
 
@@ -18,9 +30,9 @@ Semantica 官方 ARCHITECTURE 在 semantic extract 之后显式设置 conflict d
 
 | Semantica 思路 | 本模块落地 | 边界 |
 | --- | --- | --- |
-| semantic extract 输出结构化知识候选 | 消费 relation-detector 已抽取的 relationship、lineage、namingEvidence、derived facts。 | 不重新解析 SQL，不发明新的物理事实。 |
-| conflict detection | 规则初筛字段含义、指标来源、同义词映射和 join path 冲突。 | 不确认冲突真假，最终状态进入 Review Queue。 |
-| deduplication | 对同 key evidence、field evidence、path evidence 做 fingerprint 去重和 observation 合并。 | 不合并不同 schema 或不同物理对象。 |
+| semantic extract 输出结构化知识候选 | 当前消费 relation-detector 已抽取的 relationship、lineage、namingEvidence、derived facts。 | 不重新解析 SQL，不发明新的物理事实。 |
+| conflict detection | 后续规则初筛字段含义、指标来源、同义词映射和 join path 冲突。 | 当前代码未实现 conflict detection。 |
+| deduplication | 后续对同 key evidence、field evidence、path evidence 做 fingerprint 去重和 observation 合并。 | 当前代码只按 `EvidenceReference.id` 和 KG node/edge id 做轻量去重。 |
 | provenance | 为每个 evidence graph node / edge 保留原始 evidenceRef、source location、payload snapshot。 | compact bundle 可以裁剪文本，但不能丢失可回溯引用。 |
 
 ## 2. 上游与下游
@@ -33,62 +45,30 @@ Semantica 官方 ARCHITECTURE 在 semantic extract 之后显式设置 conflict d
       namingEvidence: [NormalizedNamingEvidence],
       derivedRelationships: [NormalizedDerivedRelationship],
       derivedDataLineages: [NormalizedDerivedLineage],
-      diagnostics: [NormalizedDiagnostic],
-      metadataIndex: MetadataIndex
+      diagnostics: [NormalizedDiagnostic]
     }
   
 [Semantic Evidence Builder]
-  ↓ 输出: EvidenceGraph (完整) + CompactEvidenceBundle (给 LLM)
+  ↓ 当前输出: EvidenceGraph
 
-下游: LLM Semantic Enricher
-  消费: CompactEvidenceBundle (紧凑版，适配 LLM token 预算)
+下游: NoopSemanticEnricher
+  当前实现: 直接返回 EvidenceGraph，不创造事实
   
-下游: Semantic Catalog Store
-  消费: EvidenceGraph (完整版，持久化)
+下游: SemanticKgBuilder
+  消费: EvidenceGraph，输出 JSON-friendly SemanticKnowledgeGraph
 ```
 
 ## 3. 接口契约
 
-### 3.1 主接口
+### 3.1 当前 Java 入口
 
 ```java
-public interface SemanticEvidenceBuilder {
-    /**
-     * 构建完整 evidence graph。
-     *
-     * 前置条件：
-     * - ScanBundle.relationships 非空（至少有空列表）
-     * - ScanBundle.metadataIndex 非空
-     *
-     * 后置条件：
-     * - 每个出现在 relationship 中的字段都有 FieldEvidence
-     * - 每个出现在 metadata 中的字段都有 FieldEvidence
-     * - 所有可达的表对都有 JoinPathEvidence（最多 5 跳）
-     * - 冲突字段已检测并记录
-     */
+public final class SemanticEvidenceBuilder {
     EvidenceGraph build(ScanBundle scanBundle);
-
-    /**
-     * 生成 LLM 可消费的紧凑版 evidence。
-     *
-     * 紧凑规则：
-     * - 每个字段最多保留 maxFieldEvidences 条 evidence（默认 10）
-     * - 每个表达式最多保留 maxExpressionEvidences 条 evidence（默认 5）
-     * - join path 只保留 top 3 条（按 confidence）
-     * - 总 token 预算 < 8000（按 1 token ≈ 3 字符估算）
-     *
-     * 前置条件：
-     * - EvidenceGraph 已构建
-     */
-    CompactEvidenceBundle compact(EvidenceGraph graph, int maxFieldEvidences, int maxExpressionEvidences);
-
-    /**
-     * 通过 evidence fingerprint 反查完整 evidence。
-     * fingerprint 格式: {evidenceType}:{sourceName}:{lineStart}:{lineEnd}
-     */
-    Optional<EvidenceRef> resolveEvidenceRef(String fingerprint);
 }
 ```
+
+当前没有 `compact(...)` 和 `resolveEvidenceRef(...)` Java API；完整 evidence 通过 `semantic-evidence-graph.json` / `semantic-kg.json` 中的 `evidenceRefs` 按 id 查询。
 
 ### 3.2 精确输入 Schema（来自 ScanBundle）
 
@@ -104,20 +84,61 @@ public interface SemanticEvidenceBuilder {
       "evidence": [{"type": "SQL_LOG_JOIN", "score": 0.55, "source": "mysql-slow.log", "detail": "line 10: o.customer_id = u.id"}]
     }
   ],
-  "metadataIndex": {
-    "tables": {
-      "orders": {
-        "columns": {
-          "id": {"columnName": "id", "dataType": "bigint", "nullable": false, "isPrimaryKey": true},
-          "customer_id": {"columnName": "customer_id", "dataType": "bigint", "nullable": false}
-        }
-      }
-    }
-  }
+  "derivedRelationships": [...],
+  "derivedDataLineages": [...],
+  "namingEvidence": [...],
+  "diagnostics": [...]
 }
 ```
 
-### 3.3 精确输出 Schema（EvidenceGraph）
+metadata/comment evidence 未来可进入 ScanBundle 或 Catalog Store，但当前 `ScanBundle` 不携带 `metadataIndex`。
+
+### 3.3 当前输出模型（EvidenceGraph）
+
+当前 `EvidenceGraph` 是较薄的事实图：
+
+```pseudo-json
+{
+  "scanBundle": {"databaseType": "mysql", "schema": "sample_data", "...": "..."},
+  "endpoints": [
+    {"table": "orders", "column": null},
+    {"table": "orders", "column": "customer_id"},
+    {"table": "customers", "column": "id"}
+  ],
+  "facts": [
+    {
+      "id": "relationship:orders.customer_id->customers.id:FK_LIKE:INFERRED_JOIN_FK",
+      "type": "RelationshipFact",
+      "label": "orders.customer_id -> customers.id",
+      "endpoints": [
+        {"table": "orders", "column": "customer_id"},
+        {"table": "customers", "column": "id"}
+      ],
+      "evidenceRefs": ["evidence:relationship:...:0"],
+      "confidence": 0.70,
+      "payload": "{原始 relationship JSON}",
+      "attributes": {"relationType": "FK_LIKE", "relationSubType": "INFERRED_JOIN_FK"}
+    }
+  ],
+  "evidenceRefs": [
+    {
+      "id": "evidence:relationship:...:0",
+      "evidenceType": "SQL_LOG_JOIN",
+      "sourceType": "SQL_LOG",
+      "score": 0.55,
+      "source": "app-sql.sql",
+      "detail": "line 10: o.customer_id = c.id",
+      "attributes": {}
+    }
+  ],
+  "diagnostics": [],
+  "summary": {}
+}
+```
+
+下面的 FieldEvidence、ExpressionEvidence、JoinPathEvidence、CommentEvidence 和 CandidateConflict schema 是后续 enriched catalog/search 目标设计，不是当前 Java API。
+
+### 3.4 目标设计 Schema（未来 Catalog/Search 阶段）
 
 ```pseudo-json
 {
@@ -264,6 +285,8 @@ public interface SemanticEvidenceBuilder {
 ```
 
 ### 3.4 紧凑版输出 Schema（CompactEvidenceBundle）
+
+本节以及后续关于 graph search、comment evidence、candidate conflict、compact bundle 的内容是后续真实 LLM Enricher / Catalog Store 阶段的目标设计。当前代码没有 `CompactEvidenceBundle`，也不会在 `SemanticEvidenceBuilder` 内执行这些推断。
 
 ```pseudo-json
 {

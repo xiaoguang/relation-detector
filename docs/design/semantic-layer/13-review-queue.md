@@ -1,5 +1,7 @@
 # Review Queue 详细设计
 
+> 当前实现状态：目标设计，尚未落地。当前代码没有 Review Queue 状态机、人工审核写回或治理 workflow；所有 KG fact 目前只保留 evidence-backed 来源。
+
 ## 1. 目标与定位
 
 **职责：** 管理需要人工或治理流程确认的 SYSTEM_PROPOSED semantic object，包括指标候选、实体候选、同义词冲突、低置信度对象和冲突解释。
