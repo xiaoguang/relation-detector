@@ -9,13 +9,15 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>contracts</module>
-    <module>core</module>
-    <module>cli</module>
-    <module>adaptor-mysql</module>
-    <module>adaptor-postgres</module>
-    <module>adaptor-oracle</module>
-    <module>adaptor-sqlserver</module>
+    <module>relation-detector/contracts</module>
+    <module>relation-detector/core</module>
+    <module>relation-detector/cli</module>
+    <module>relation-detector/adaptor-mysql</module>
+    <module>relation-detector/adaptor-postgres</module>
+    <module>relation-detector/adaptor-oracle</module>
+    <module>relation-detector/adaptor-sqlserver</module>
+    <module>semantic-layer/semantic-core</module>
+    <module>semantic-layer/semantic-cli</module>
   </modules>
 
   <properties>

@@ -1,5 +1,7 @@
 # Semantic Catalog Store 详细设计
 
+> 当前实现状态：目标设计，尚未落地。当前代码只生成 `semantic-kg.json`、`semantic-evidence-graph.json` 和 `semantic-build-run.json`，没有实现持久化 Catalog Store、review decision 存储或查询 API。
+
 ## 1. 目标与定位
 
 **职责：** 持久化 semantic object、evidence ref、semantic graph edge、review decision 和 build run，使语义层的每个结论都能追溯到 relation-detector scan result 与审核记录。

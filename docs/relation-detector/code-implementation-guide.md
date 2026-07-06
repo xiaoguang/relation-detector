@@ -4,22 +4,37 @@
 
 ## 1. 当前实现状态
 
-当前代码已经落成 Java 17 + Maven 多模块工程：
+当前代码已经落成 Java 17 + Maven 多模块工程。仓库根目录现在按产品边界分成
+`relation-detector/` 与 `semantic-layer/` 两个同级目录；根 `pom.xml` 仍是统一 Maven
+reactor：
 
 ```text
-relation-detector/
+repo-root/
   pom.xml
-  contracts/
-  core/
-  cli/
-  adaptor-mysql/
-  adaptor-postgres/
-  adaptor-oracle/
-  adaptor-sqlserver/
-  test-fixtures/examples/
+  relation-detector/
+    contracts/
+    core/
+    cli/
+    adaptor-mysql/
+    adaptor-postgres/
+    adaptor-oracle/
+    adaptor-sqlserver/
+    sample-data/
+    test-fixtures/
+    scripts/
+  semantic-layer/
+    semantic-core/
+    semantic-cli/
 ```
 
-仓库目录采用短名称以提升本地开发体验；Maven `artifactId` 继续保留 `relation-detector-*` 长名称，例如 `core/` 对应 `relation-detector-core`，`adaptor-mysql/` 对应 `relation-detector-adaptor-mysql`。文档和命令里的 repo 路径使用短目录，外部依赖和 Maven dependency tree 使用长 artifactId。
+`relation-detector/` 内部仍采用短名称以提升本地开发体验；Maven `artifactId` 继续保留
+`relation-detector-*` 长名称，例如 `relation-detector/core/` 对应
+`relation-detector-core`，`relation-detector/adaptor-mysql/` 对应
+`relation-detector-adaptor-mysql`。除非特别说明，本 relation-detector 文档中的模块内路径
+默认相对 `relation-detector/`；从仓库根运行的 Maven / shell 命令必须写完整
+`relation-detector/...` 模块路径。`semantic-layer/semantic-core` 和
+`semantic-layer/semantic-cli` 是独立语义层，只消费 relation-detector JSON，不依赖
+`core`、`cli` 或任何 `adaptor-*`。
 
 已实现能力：
 
@@ -143,7 +158,7 @@ relation-detector/
 - typed token-event visitor 区分 DML `USING table` 与 `JOIN USING (columns)`：前者可以产生 rowset，后者只能基于 `USING` 列名生成经过审核的弱共现证据，不能把列名当作 `ROWSET_REFERENCE`。
 - `TokenEventStructuredSqlParser` / `TypedDialectTokenEventStructuredSqlParser` / `TokenEventStructuredDdlParser` 共同构成 token-event fallback 层：无 profile、unsupported version、full-grammer hard failure 或显式 `parser.mode=token-event` 时使用。common token-event 直接使用 `CommonRelationSql.g4` typed visitor，并且通过 `CommonDatabaseAdaptor` 可被 CLI 显式选择为 `database.type: common`；MySQL/PostgreSQL/Oracle/SQL Server token-event 使用各自 adaptor 的方言 typed visitor。公共 relation、rowset/scope、DML 深水区、Data Lineage 写入映射和 derived aggregate projection 已经迁入 token-event 事件和抽取测试，覆盖 `JOIN USING`、raw equality、correlated `EXISTS`、scalar/tuple `IN`、列级弱共现、CTE/temp/trigger scope、MySQL multi-table `DELETE`、PostgreSQL `UPDATE FROM`、SQL Server `UPDATE FROM` / `APPLY`、`UPDATE SET`、derived aggregate、`INSERT SELECT`、`MERGE`；新增 MySQL/PostgreSQL/Oracle/SQL Server token-event 专属规则必须进入方言 typed grammar/visitor，不得放回公共万能层。
 - `SqlGrammarProfile` / `SqlGrammarProfileRegistry` / `FullGrammerDialectModule` 是版本化 full-grammer 接入点。当前注册 `mysql-5.7`、`mysql-8.0`、`postgresql-16`、`postgresql-17`、`postgresql-18`、`oracle-12c`、`oracle-19c`、`oracle-21c`、`oracle-26ai` module；人工配置 `parser.grammarProfile` 优先，其次可用 `parser.databaseVersion` 或 JDBC `DatabaseMetaData` 选择 profile。同一 major 的 minor 默认复用该 major profile；如果请求版本只比最高已支持版本高 1 个 major，可以临时选择最近低版本 profile 并返回 diagnostic；超过 1 个 major 或没有方言/版本信息时，回退 token-event parser。
-- `FullGrammerParserBundleFactory` / `FullGrammerStructuredSqlParser` 是版本化 full-grammer 接入基础设施。`mysql-5.7`、`mysql-8.0` 与 PostgreSQL full-grammer 已接入 versioned ANTLR `.g4`；MySQL 使用固定 grammars-v4 MySQL 快照，`mysql-5.7` 以 MySQL 5.7 官方文档在 grammar 层收紧 8.0-only 能力。PostgreSQL 的官方 `gram.y` / `scan.l` / keywords 是语法 source-of-truth，仓库 `.g4` 是从固定 grammars-v4 基础生成并按 major version 约束的 ANTLR projection。具体实现分别位于 `adaptor-mysql` 的 `com.relationdetector.mysql.fullgrammer.v5_7` / `v8_0` 和 `adaptor-postgres` 的 `com.relationdetector.postgres.fullgrammer.v16` / `v17` / `v18`。Oracle 当前位于 `adaptor-oracle` 的 `com.relationdetector.oracle.fullgrammer.v12c` / `v19c` / `v21c` / `v26ai`，状态为 `INCOMPLETE_VERSIONED`：四个 profile 各自运行本版本 split lexer/parser、generated parser 和 typed visitor，并通过 Oracle sample-data、profile smoke 与 version-only fixture 锁定首批边界；它尚不是官方 SQL/PLSQL Reference 的完整转换。Oracle full-grammer 不桥接 token-event，也不使用旧桥接生成的 golden。SQL Server 当前位于 `adaptor-sqlserver` 的 `com.relationdetector.sqlserver.fullgrammer.v2016` / `v2017` / `v2019` / `v2022` / `v2025`：五个 profile 各自运行本版本 generated parser，并已通过 grammar-level 测试锁定 2017 `STRING_AGG`、2022 `DATETRUNC` / `GENERATE_SERIES` 和 2025 `VECTOR(...)` 首批版本边界。MySQL 5.7 / 8.0 分别通过 `test-fixtures/correctness/mysql/v5_7` 和 `test-fixtures/correctness/mysql/v8_0` 独立 version golden 锁定；PostgreSQL 16/17/18 通过独立 `.g4`、parser package、profile 与 versioned correctness fixture 锁定选择路径和版本专属语法；Oracle 12c/19c/21c/26ai 通过 sample-data fixture 和官方版本边界 fixture 锁定 generated parser 接线，但不声称已覆盖 Oracle 官方全部语法。低版本 profile 遇到已编码的高版本专属语法会产生 grammar syntax error，不能静默复用更高版本能力。版本由 package 表达，类名保持无版本数字；core 只通过 `ServiceLoader<FullGrammerDialectModule>` 查找 module，不按 `profile.id()` switch 分发，也不直接 import adaptor 类。新增大版本时注册新的 adaptor module 和 fixture。full-grammer parser 调用真实 entry rule 后进入 parse-tree visitor；relationship、lineage、confidence、JSON schema 仍由现有 semantic extractor/merger 决定。
+- `FullGrammerParserBundleFactory` / `FullGrammerStructuredSqlParser` 是版本化 full-grammer 接入基础设施。`mysql-5.7`、`mysql-8.0` 与 PostgreSQL full-grammer 已接入 versioned ANTLR `.g4`；MySQL 使用固定 grammars-v4 MySQL 快照，`mysql-5.7` 以 MySQL 5.7 官方文档在 grammar 层收紧 8.0-only 能力。PostgreSQL 的官方 `gram.y` / `scan.l` / keywords 是语法 source-of-truth，仓库 `.g4` 是从固定 grammars-v4 基础生成并按 major version 约束的 ANTLR projection。具体实现分别位于 `relation-detector/adaptor-mysql` 的 `com.relationdetector.mysql.fullgrammer.v5_7` / `v8_0` 和 `relation-detector/adaptor-postgres` 的 `com.relationdetector.postgres.fullgrammer.v16` / `v17` / `v18`。Oracle 当前位于 `relation-detector/adaptor-oracle` 的 `com.relationdetector.oracle.fullgrammer.v12c` / `v19c` / `v21c` / `v26ai`，状态为 `INCOMPLETE_VERSIONED`：四个 profile 各自运行本版本 split lexer/parser、generated parser 和 typed visitor，并通过 Oracle sample-data、profile smoke 与 version-only fixture 锁定首批边界；它尚不是官方 SQL/PLSQL Reference 的完整转换。Oracle full-grammer 不桥接 token-event，也不使用旧桥接生成的 golden。SQL Server 当前位于 `relation-detector/adaptor-sqlserver` 的 `com.relationdetector.sqlserver.fullgrammer.v2016` / `v2017` / `v2019` / `v2022` / `v2025`：五个 profile 各自运行本版本 generated parser，并已通过 grammar-level 测试锁定 2017 `STRING_AGG`、2022 `DATETRUNC` / `GENERATE_SERIES` 和 2025 `VECTOR(...)` 首批版本边界。MySQL 5.7 / 8.0 分别通过 `relation-detector/test-fixtures/correctness/mysql/v5_7` 和 `relation-detector/test-fixtures/correctness/mysql/v8_0` 独立 version golden 锁定；PostgreSQL 16/17/18 通过独立 `.g4`、parser package、profile 与 versioned correctness fixture 锁定选择路径和版本专属语法；Oracle 12c/19c/21c/26ai 通过 sample-data fixture 和官方版本边界 fixture 锁定 generated parser 接线，但不声称已覆盖 Oracle 官方全部语法。低版本 profile 遇到已编码的高版本专属语法会产生 grammar syntax error，不能静默复用更高版本能力。profile bridge 由 package 表达；generated lexer/parser 类名可以带版本前缀以隔离 ANTLR token vocab，例如 PostgreSQL 使用 `Postgres16FullGrammerLexer/Parser`、`Postgres17FullGrammerLexer/Parser`、`Postgres18FullGrammerLexer/Parser`，避免多个版本同名 grammar 在同一模块生成时覆盖 `.tokens` 文件。core 只通过 `ServiceLoader<FullGrammerDialectModule>` 查找 module，不按 `profile.id()` switch 分发，也不直接 import adaptor 类。新增大版本时注册新的 adaptor module 和 fixture。full-grammer parser 调用真实 entry rule 后进入 parse-tree visitor；relationship、lineage、confidence、JSON schema 仍由现有 semantic extractor/merger 决定。
 - `FullGrammerGeneratedParserSmokeTest` 验证 MySQL/PostgreSQL full-grammer generated lexer/parser 可实例化并解析基础 SQL；Oracle adaptor 由 `OracleAdaptorParserTest` 和 `OracleParserArchitectureTest` 验证 ServiceLoader、Oracle token-event grammar、`INCOMPLETE_VERSIONED` full-grammer generated parser attributes、“不得持有 token-event delegate”和 Oracle SQL 资产卫生边界。full-grammer 行为测试只验证具体 SQL/DDL 的关系、血缘、warning 行为；不再把内部事件来源标签作为默认测试目标，也不再用 token-event baseline 兜底验证 full-grammer。后续 profile 深化 parse-tree visitor 后，missing 必须修 visitor，extra 进入审核，不自动写入 golden。
 - `TokenEventRelationExtractor` 从 `ROWSET_REFERENCE` / `PREDICATE_EQUALITY` / `JOIN_USING_COLUMNS` / `EXISTS_PREDICATE` / `IN_SUBQUERY_PREDICATE` / `TUPLE_IN_SUBQUERY_PREDICATE` 等事件独立构造 FK-like/CO_OCCURRENCE 候选，并使用结构化 projection trace 信息把 CTE / 派生表端点回溯到物理列。公共 extractor 只保留跨方言关系语义；MySQL/PostgreSQL/Oracle/SQL Server 专属 rowset keyword、rowset modifier、CTE modifier 和多表 DML rowset 识别必须通过对应方言 `.g4` 与 typed visitor 实现。明确列等值时保留具体语法 evidence：JOIN / comma join 为 `SQL_LOG_JOIN`，correlated `EXISTS` 为 `SQL_LOG_EXISTS`，`IN (SELECT ...)` / tuple IN 为 `SQL_LOG_SUBQUERY_IN`。这些具体 predicate evidence 是 `SQL_LOG_COLUMN_CO_OCCURRENCE` 在生产路径上的替代，保留了原本“列级关联出现过”的含义，同时避免丢失 SQL 语法来源。同一物理表 self-join 在不同 SQL alias 下保留 role co-occurrence，并在 attributes 记录 alias；同 alias 行内比较不输出。`SQL_LOG_COLUMN_CO_OCCURRENCE` / `SQL_LOG_TABLE_CO_OCCURRENCE` 是 `RESERVED_COMPATIBILITY / NOT_PRODUCED`：enum、score 和 merger 兼容逻辑保留，但生产 typed path 不主动产出。`SQL_LOG_TABLE_CO_OCCURRENCE` 没有等价现役替代；无列谓词的多表同现当前不生成正式 relationship，只有历史/外部导入或显式 opt-in 审计场景可使用。PostgreSQL `ONLY`、`TABLESAMPLE`、`ROWS FROM`、`JOIN USING (...) AS alias` 这类语法必须配套其他方言负向测试，防止被当作物理表或共现证据；MySQL `STRAIGHT_JOIN`、ODBC `{ OJ ... }`、optimizer hints、`PARTITION (...)`、`JSON_TABLE(...)`、multi-table `UPDATE/DELETE` 这类语法也必须配套其他方言负向测试，防止被误抽为关系。
 - `correlated EXISTS` 是公共 SQL 关系语义，新增或维护这类能力时，公共层只能处理跨方言相关谓词抽取，例如 `WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = o.user_id)` 生成 `SQL_LOG_EXISTS` evidence。EXISTS 子查询内部如果出现 MySQL/PostgreSQL/Oracle/SQL Server 专属 rowset、function table、hint、`ONLY`、`JSON_TABLE`、`CONNECT BY`、`APPLY` 等语法，必须下沉到对应方言 visitor，并配套反向负向测试。
@@ -334,19 +349,19 @@ BUILD SUCCESS
 DDL 文件：
 
 ```text
-test-fixtures/examples/schema.sql
+relation-detector/test-fixtures/examples/schema.sql
 ```
 
 SQL 日志文件：
 
 ```text
-test-fixtures/examples/app-sql.sql
+relation-detector/test-fixtures/examples/app-sql.sql
 ```
 
 配置文件：
 
 ```text
-test-fixtures/examples/file-only-config.yml
+relation-detector/test-fixtures/examples/file-only-config.yml
 ```
 
 该配置关闭 JDBC 元数据，开启 DDL 和纯 SQL 文本日志，因此可以在没有数据库的环境里运行。
@@ -361,8 +376,8 @@ test-fixtures/examples/file-only-config.yml
 推荐前置检查：
 
 ```bash
-mvn clean -pl cli -am -DskipTests test-compile
-scripts/check-no-jls-bad-classes.sh
+mvn clean -pl relation-detector/cli -am -DskipTests test-compile
+relation-detector/scripts/check-no-jls-bad-classes.sh
 ```
 
 如果检查失败，先执行 Maven clean build，并在 VS Code 中运行
@@ -373,11 +388,14 @@ scripts/check-no-jls-bad-classes.sh
 classpath：
 
 ```bash
-scripts/run-cli.sh scan --config test-fixtures/examples/file-only-config.yml --format json
+relation-detector/scripts/run-cli.sh scan \
+  --config relation-detector/test-fixtures/examples/file-only-config.yml \
+  --format json
 ```
 
 不建议维护者手工拼接 `*/target/classes` 作为 CLI classpath；如果确实要手工运行，
-必须先完成上述 Maven clean/test-compile 和 `scripts/check-no-jls-bad-classes.sh`。
+必须先完成上述 Maven clean/test-compile 和
+`relation-detector/scripts/check-no-jls-bad-classes.sh`。
 
 预期输出应包含：
 
@@ -410,7 +428,9 @@ scripts/run-cli.sh scan --config test-fixtures/examples/file-only-config.yml --f
 ### 4.4 运行 table 输出
 
 ```bash
-scripts/run-cli.sh scan --config test-fixtures/examples/file-only-config.yml --format table
+relation-detector/scripts/run-cli.sh scan \
+  --config relation-detector/test-fixtures/examples/file-only-config.yml \
+  --format table
 ```
 
 预期输出形态：
@@ -426,8 +446,8 @@ Warnings: 0
 ### 4.5 写入输出文件
 
 ```bash
-scripts/run-cli.sh scan \
-  --config test-fixtures/examples/file-only-config.yml \
+relation-detector/scripts/run-cli.sh scan \
+  --config relation-detector/test-fixtures/examples/file-only-config.yml \
   --format json \
   --output target/example-result.json
 ```
@@ -459,22 +479,22 @@ sources:
     enabled: true
     fromDatabase: false
     paths:
-      - sample-data/mysql/5.7/01-schema
+      - relation-detector/sample-data/mysql/5.7/01-schema
     include:
       - "**/*.sql"
   objects:
     enabled: true
     fromDatabase: false
     paths:
-      - sample-data/mysql/5.7/02-procedures
+      - relation-detector/sample-data/mysql/5.7/02-procedures
     include:
       - "**/*.sql"
   logs:
     enabled: true
     filterSystemQueries: false
     paths:
-      - sample-data/mysql/5.7/03-data
-      - sample-data/mysql/5.7/04-queries
+      - relation-detector/sample-data/mysql/5.7/03-data
+      - relation-detector/sample-data/mysql/5.7/04-queries
     include:
       - "**/*.sql"
   dataProfile:
@@ -581,7 +601,7 @@ sources:
 - correctness fixture：
 - `CorrectnessFixtureRunnerTest` 扫描 `test-fixtures/correctness`，以 `expected-relations.json` 中的当前 parser gold fingerprints 为关系正确性基线；如果 fixture 存在 `expected-lineage.json` 和 `expected-naming-evidence.json`，还会比对 Data Lineage 和 naming evidence fingerprints。测试框架本身拆为 `FixtureInputLoader`、`FixtureExecutionEngine`、`GoldenAssertion`、`GoldenWriter`：读取、执行、断言和更新 golden 分离。`FixtureExecutionEngine` 复用 production `StatementExecutionService` 和 `EvidenceEnhancementService`，避免 correctness 与正式 scan 证据流分叉。默认 `mvn test` 只跑 `smoke` profile 的少量代表 fixture；日常开发按受影响方言显式传 `-DcorrectnessFixtureProfile=common|mysql|postgres|oracle|sqlserver`，合并前传 `-DcorrectnessFixtureProfile=full` 跑全量。root baseline fixture 显式走 token-event；`mysql/v5_7|v8_0`、`postgres/v16|v17|v18`、`oracle/v12c|v19c|v21c|v26ai`、`sqlserver/v2016|v2017|v2019|v2022|v2025` 版本目录显式走 full-grammer。full-grammer 不再通过 token-event 对照兜底；版本化 golden 直接暴露对应 parser 的 missing / extra。
   - correctness runner 在非 golden 更新模式下按 fixture 并行执行，默认并行度为 CPU 数和 8 的较小值，可用 `-DcorrectnessFixtureParallelism=N` 调整。`-DupdateCorrectnessGold=true` 时强制串行，保证 golden 文件写入稳定。
-  - correctness、CLI E2E 和手工 SQL 分析前必须先跑 `mvn clean -pl cli -am -DskipTests test-compile` 与 `scripts/check-no-jls-bad-classes.sh`，确保测试源码可编译且 `target/classes` 没有 JLS/Eclipse 占位坏 class。`package -Dmaven.test.skip=true` 只能作为生成运行 jar/classpath 的临时步骤，不能替代主线验收。
+  - correctness、CLI E2E 和手工 SQL 分析前必须先跑 `mvn clean -pl relation-detector/cli -am -DskipTests test-compile` 与 `relation-detector/scripts/check-no-jls-bad-classes.sh`，确保测试源码可编译且 `target/classes` 没有 JLS/Eclipse 占位坏 class。`package -Dmaven.test.skip=true` 只能作为生成运行 jar/classpath 的临时步骤，不能替代主线验收。
   - `CliEndToEndGoldenTest` 从 YAML/CLI 参数进入 `Main.MainCommand`、adaptor registry、`ScanEngine`、parser runner、merger 和 JSON writer，并复用现有 fixture golden 比对 CLI JSON 中的 relationship / Data Lineage fingerprints。这是完整系统链路的黑盒正确性测试，不另建重复 golden。
   - routine/function fixture 使用 manifest `statementFormat: OBJECT_BLOCKS`，按 `-- relation-detector-fixture-source` / `-- relation-detector-fixture-end` block 读取一个完整对象定义，不能按普通 SQL 分号拆分过程体。
   - `CorrectnessSummaryGeneratorTest` 从同一批 fixture/golden 生成 `docs/generated/correctness-test-summary.md`，报告只展示 SQL/DDL preview、input 文件路径、expected relationship/data-lineage fingerprints、warning codes 和 forbidden tables。完整 SQL/DDL 保留在对应 fixture 的 `input.sql` 或 `input.ddl.sql` 中。该测试默认跳过；验收时显式传 `-DrunGeneratedReportTests=true`，刷新时传 `-DupdateCorrectnessSummary=true`。
@@ -661,11 +681,11 @@ PostgreSQL：
 
 回归测试策略：
 
-- 构建卫生测试：运行 `mvn clean -pl cli -am -DskipTests test-compile` 后执行 `scripts/check-no-jls-bad-classes.sh`。该脚本会扫描 `target/classes` 中的 JLS/Eclipse 占位错误字符串，并检查 MySQL/PostgreSQL/Oracle/SQL Server adaptor class 是否真实实现 `DatabaseAdaptor` SPI。
+- 构建卫生测试：运行 `mvn clean -pl relation-detector/cli -am -DskipTests test-compile` 后执行 `relation-detector/scripts/check-no-jls-bad-classes.sh`。该脚本会扫描 `target/classes` 中的 JLS/Eclipse 占位错误字符串，并检查 MySQL/PostgreSQL/Oracle/SQL Server adaptor class 是否真实实现 `DatabaseAdaptor` SPI。
 - JSON snapshot 测试字段兼容性。
 - JSON evidence 输出测试：`rawEvidence` 是未压缩数组，`evidence` 是摘要数组，`attributes.count` 为数字，`attributes.sampleDetails` 为数组。
-- correctness 明细报告同步测试：修改 `test-fixtures/correctness` 后运行 `mvn -pl cli -Dtest=CorrectnessSummaryGeneratorTest -DupdateCorrectnessSummary=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新轻量索引报告 `docs/generated/correctness-test-summary.md`；需要只验收不刷新时运行 `mvn -pl cli -Dtest=CorrectnessSummaryGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`。
-- Data Lineage 全量审核报告同步测试：修改 SQL fixture、`expected-lineage.json` 或 `StructuredDataLineageExtractor` 后运行 `mvn -pl cli -Dtest=DataLineageAuditGeneratorTest -DupdateDataLineageAudit=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新 `docs/parser-audit/data-lineage-full-audit.md`；需要只验收不刷新时运行 `mvn -pl cli -Dtest=DataLineageAuditGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`。该报告只生成审核清单，不自动写入新的 lineage golden。
+- correctness 明细报告同步测试：修改 `relation-detector/test-fixtures/correctness` 后运行 `mvn -pl relation-detector/cli -Dtest=CorrectnessSummaryGeneratorTest -DupdateCorrectnessSummary=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新轻量索引报告 `docs/generated/correctness-test-summary.md`；需要只验收不刷新时运行 `mvn -pl relation-detector/cli -Dtest=CorrectnessSummaryGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`。
+- Data Lineage 全量审核报告同步测试：修改 SQL fixture、`expected-lineage.json` 或 `StructuredDataLineageExtractor` 后运行 `mvn -pl relation-detector/cli -Dtest=DataLineageAuditGeneratorTest -DupdateDataLineageAudit=true -Dsurefire.failIfNoSpecifiedTests=false test` 刷新 `docs/parser-audit/data-lineage-full-audit.md`；需要只验收不刷新时运行 `mvn -pl relation-detector/cli -Dtest=DataLineageAuditGeneratorTest -DrunGeneratedReportTests=true -Dsurefire.failIfNoSpecifiedTests=false test`。该报告只生成审核清单，不自动写入新的 lineage golden。
 - enum 序列化值稳定性测试。
 - warning code 稳定性测试。
 - 置信度数值允许小范围精度变化，但 subtype 和 evidence 不应无故改变。
@@ -674,7 +694,7 @@ PostgreSQL：
 
 上线前建议按以下清单验证：
 
-- `mvn test` 成功。该命令运行 correctness smoke，不代表全量 golden 验收；合并前还需要运行 `mvn -pl cli -am -Dtest=CorrectnessFixtureRunnerTest -DcorrectnessFixtureProfile=full -Dsurefire.failIfNoSpecifiedTests=false test`。
+- `mvn test` 成功。该命令运行 correctness smoke，不代表全量 golden 验收；合并前还需要运行 `mvn -pl relation-detector/cli -am -Dtest=CorrectnessFixtureRunnerTest -DcorrectnessFixtureProfile=full -DcorrectnessFixtureParallelism=8 -Dsurefire.failIfNoSpecifiedTests=false test`。
 - file-only 示例成功。
 - MySQL 只读账号能读取 metadata。
 - PostgreSQL 只读账号能读取 metadata。

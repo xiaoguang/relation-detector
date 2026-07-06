@@ -2,7 +2,7 @@
 
 ## 1. 概述
 
-本文档提供 Semantic Layer 的完整端到端测试示例，覆盖离线构建链路、在线问答链路、歧义处理、校验失败和增量更新场景。
+本文档提供 Semantic Layer 的端到端测试示例。当前代码已经落地的是离线 KG JSON artifact 构建链路：`relation-detector scan-result.json -> ScanBundle -> EvidenceGraph -> SemanticKnowledgeGraph -> semantic-kg.json`。在线问答、Catalog Store、Embedding、Lexicon 和真实 LLM Enricher 是目标设计示例，不是当前已实现 API。
 
 每个示例包含：
 - 输入数据（来自 relation-detector 的 scan-result.json）
@@ -125,11 +125,11 @@ CREATE TABLE order_items (
 }
 ```
 
-## 3. 端到端示例一：离线构建全链路
+## 3. 端到端示例一：当前离线 KG 构建链路
 
 ### 3.1 目标
 
-验证从 relation-detector 输出到 Catalog 就绪的完整离线链路。
+验证从 relation-detector 输出到可审计 KG JSON artifact 的当前已实现链路。
 
 ### 3.2 逐步验证
 
@@ -141,15 +141,14 @@ CREATE TABLE order_items (
 预期输出: ScanBundle
 - relationships: 5 条
 - dataLineages: 1 条
-- metadataIndex.tables: 5 个表（customers, orders, payments, products, order_items）
-- relationshipIndex.bySourceTable["orders"]: 1 条（orders→customers）
-- relationshipIndex.byTargetTable["customers"]: 2 条（orders→customers, payments→customers）
+- derivedRelationships / derivedDataLineages / namingEvidence / diagnostics: 按输入 JSON 原样进入对应数组
+- summary: 只保留整数统计字段
+- sources: 来自 summary.sources
 
 验收检查点:
-[✓] 5 条关系全部归一化，id 格式正确
-[✓] confidence 在 [0.0, 0.99]
-[✓] 索引构建正确
-[✓] 无 warning
+[✓] database.type 存在
+[✓] 文件不存在、JSON 非对象、database.type 缺失时抛出 IllegalArgumentException
+[✓] reader 不做 relationship/lineage 去重，不做 confidence clamp，不构建 metadataIndex/relationshipIndex
 ```
 
 **Step 2: SemanticEvidenceBuilder**
@@ -158,78 +157,49 @@ CREATE TABLE order_items (
 输入: ScanBundle（5 表，5 关系，1 lineage）
 
 预期输出: EvidenceGraph
-- fieldEvidences: 30 个（5 表 × 约 6 列/表）
-- expressionEvidences: 1 个（paid_amount_30d）
-- joinPathEvidences: 8+ 条（包括多跳路径）
-- 无 conflictEvidences
+- endpoints: 从 relationship / lineage / namingEvidence fact 中出现的 endpoint 提取
+- facts: RelationshipFact、LineageFact、NamingEvidenceFact、DerivedRelationshipFact、DerivedLineageFact、Diagnostic
+- evidenceRefs: 优先来自 rawEvidence，缺失时来自 grouped evidence
+- summary: 继承 ScanBundle summary
 
 验收检查点:
-[✓] 每个字段都有 FieldEvidence
-[✓] join path 包括:
-    - path:customers->orders (1 hop, confidence 0.98)
-    - path:customers->payments (2 hops, confidence 0.98*0.98=0.9604)
-    - path:customers->order_items (2 hops, confidence 0.98*0.98=0.9604)
-    - path:customers->products (3 hops, confidence 0.98*0.98*0.98=0.9412)
-[✓] 无循环路径
-[✓] BFS 最大 5 跳截断（此例中最多 3 跳）
-
-CompactEvidenceBundle:
-[✓] 总 token < 8000（估计 ~3000 tokens）
-[✓] truncated = false
+[✓] 每个 relationship / lineage / namingEvidence 至少生成一个 fact
+[✓] derived relationship / derived lineage 进入独立 fact kind
+[✓] 不生成 CompactEvidenceBundle，不做 BFS join path 搜索，不做 conflict detection
 ```
 
-**Step 3: LLMSemanticEnricher**
+**Step 3: NoopSemanticEnricher**
 
 ```
-输入: CompactEvidenceBundle
+输入: EvidenceGraph
 
-预期输出: EnrichmentResult
-- SemanticTable: 5 个
-  - table:customers → semanticNames 含"客户"
-  - table:orders → semanticNames 含"订单"
-  - table:payments → semanticNames 含"支付"
-  - table:products → semanticNames 含"商品"
-  - table:order_items → semanticNames 含"订单明细"
-- SemanticColumn: 30 个
-  - column:orders.customer_id → businessRole="foreign_key", entityRef="entity:Customer"
-- SemanticEntity: 3 个
-  - entity:Customer（customers）
-  - entity:Order（orders）
-  - entity:Product（products）
-- SemanticMetric: 1 个
-  - metric:customer_total_paid_amount, reviewStatus=SYSTEM_PROPOSED
-- 无 ReviewItem（无冲突）
+预期输出: 同一个 EvidenceGraph，不新增或修改 semantic fact
 
 验收检查点:
-[✓] 所有对象有 evidenceRefs
-[✓] 所有指标 reviewStatus = SYSTEM_PROPOSED
-[✓] 所有表/列 reviewStatus = EVIDENCE_SUPPORTED 或 SYSTEM_PROPOSED；不由 LLM 直接写入 BUSINESS_APPROVED
-[✓] 物理名全部在 evidence 中存在
+[✓] NoopSemanticEnricher 不调用 LLM
+[✓] 输出 graph 与输入 graph 的事实数量一致
 ```
 
-**Step 4: CatalogStore + EmbeddingIndexer + LexiconManager**
+**Step 4: SemanticKgBuilder + JsonSemanticKgWriter**
 
 ```
-CatalogStore 输出:
-  semantic-catalog/semantic-objects.json:
-    objects 数量: 5 + 30 + 3 + 1 = 39 个
+SemanticKgBuilder 输出:
+  SemanticKnowledgeGraph:
+    nodes: PhysicalTable / PhysicalColumn / RelationshipFact / LineageFact / NamingEvidenceFact / Diagnostic
+    edges: table-column / fact-source / fact-target / supported-by / derived-path-step
 
-EmbeddingIndexer 输出:
-  semantic-catalog/semantic-embeddings.jsonl:
-    39 条记录，维度 1536
-
-LexiconManager 输出:
-  semantic-catalog/semantic-lexicon.json:
-    200+ 条记录（表名、列名拆分、注释提取）
+JsonSemanticKgWriter 输出:
+  semantic-kg.json
+  semantic-evidence-graph.json
+  semantic-build-run.json
 
 验收检查点:
-[✓] 所有对象持久化
-[✓] 所有对象有 embedding
-[✓] Lexicon 覆盖所有表和列名
+[✓] 三个 JSON 文件均生成
+[✓] KG fact 和边都可回溯到 evidenceRefs 或原始 relation-detector payload
 [✓] 文件可被 JSON parser 解析
 ```
 
-### 3.3 全链路时序图
+### 3.3 当前链路时序图
 
 <details open>
 <summary>中文</summary>
@@ -239,27 +209,18 @@ sequenceDiagram
     participant RD as relation-detector
     participant SR as 扫描结果读取器
     participant EB as 语义证据构建器
-    participant LLM as LLM 语义增强器
-    participant CS as 语义目录存储
-    participant EI as 向量索引器
-    participant LM as 词库管理器
+    participant NOOP as Noop 语义增强器
+    participant KG as KG 构建器
+    participant JW as JSON 输出器
 
     RD->>SR: scan-result.json
-    SR->>SR: 校验 + 归一化 + 索引构建
-    SR->>EB: 扫描包 (5关系, 1血缘, 5表)
-    EB->>EB: BFS join path发现 + 注释提取
-    EB->>EB: compact() 紧凑化
-    EB->>LLM: 紧凑证据包 (~3000 tokens)
-    LLM->>LLM: 分批调用 LLM API
-    LLM->>CS: 语义增强结果 (39 语义对象)
-    CS->>CS: 持久化 JSON 文件
-    CS->>EI: 语义目录
-    EI->>EI: 构造 embedding 文本
-    EI->>EI: 调用 Embedding API
-    EI->>EI: 持久化 JSONL
-    CS->>LM: 语义目录
-    LM->>LM: 提取列名/表名词条
-    LM->>LM: 持久化 lexicon JSON
+    SR->>SR: 校验 root/database.type + 拷贝 JSON fact arrays
+    SR->>EB: ScanBundle
+    EB->>EB: materialize facts / endpoints / evidenceRefs
+    EB->>NOOP: EvidenceGraph
+    NOOP->>KG: EvidenceGraph unchanged
+    KG->>JW: SemanticKnowledgeGraph
+    JW->>JW: 写 semantic-kg/evidence-graph/build-run JSON
 ```
 
 </details>
@@ -272,32 +233,23 @@ sequenceDiagram
     participant RD as relation-detector
     participant SR as Scan Result Reader
     participant EB as Semantic Evidence Builder
-    participant LLM as LLM Semantic Enricher
-    participant CS as Semantic Catalog Store
-    participant EI as Embedding Indexer
-    participant LM as Lexicon Manager
+    participant NOOP as Noop Semantic Enricher
+    participant KG as KG Builder
+    participant JW as JSON Writer
 
     RD->>SR: scan-result.json
-    SR->>SR: validate + normalize + build indexes
-    SR->>EB: ScanBundle (5 relationships, 1 lineage, 5 tables)
-    EB->>EB: BFS join path discovery + comment extraction
-    EB->>EB: compact()
-    EB->>LLM: CompactEvidenceBundle (~3000 tokens)
-    LLM->>LLM: call LLM API in batches
-    LLM->>CS: EnrichmentResult (39 semantic objects)
-    CS->>CS: persist JSON files
-    CS->>EI: Semantic Catalog
-    EI->>EI: build embedding text
-    EI->>EI: Call Embedding API
-    EI->>EI: persist JSONL
-    CS->>LM: Semantic Catalog
-    LM->>LM: extract column / table terms
-    LM->>LM: persist lexicon JSON
+    SR->>SR: validate root/database.type + copy JSON fact arrays
+    SR->>EB: ScanBundle
+    EB->>EB: materialize facts / endpoints / evidenceRefs
+    EB->>NOOP: EvidenceGraph
+    NOOP->>KG: EvidenceGraph unchanged
+    KG->>JW: SemanticKnowledgeGraph
+    JW->>JW: write semantic-kg/evidence-graph/build-run JSON
 ```
 
 </details>
 
-## 4. 端到端示例二：在线问答全链路（Happy Path）
+## 4. 端到端示例二：在线问答全链路（目标设计，尚未实现）
 
 ### 4.1 目标
 
@@ -558,7 +510,7 @@ sequenceDiagram
 
 </details>
 
-## 5. 端到端示例三：歧义问题（反问）
+## 5. 端到端示例三：歧义问题（目标设计，尚未实现）
 
 ### 5.1 输入
 
@@ -631,7 +583,7 @@ SELECT * FROM customers WHERE status = 'ACTIVE'
 [✓] 提供了可选的 SQL 预览
 ```
 
-## 6. 端到端示例四：SQL 校验失败
+## 6. 端到端示例四：SQL 校验失败（目标设计，尚未实现）
 
 ### 6.1 目标
 
@@ -682,7 +634,7 @@ GROUP BY c.id, c.full_name
 [✓] AnswerComposer 不输出 SQL，输出错误解释
 ```
 
-## 7. 端到端示例五：增量更新
+## 7. 端到端示例五：增量更新（目标设计，尚未实现）
 
 ### 7.1 场景
 

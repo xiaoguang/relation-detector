@@ -1,0 +1,35 @@
+database:
+  type: mysql
+  adaptorId: mysql
+  jdbcUrl: jdbc:mysql://172.21.1.150:13306/openlynxe_db?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&connectTimeout=5000&socketTimeout=30000
+  username: root
+  password: ${JSH_ERP1_DB_PASSWORD}
+  schema: openlynxe_db
+  catalog: openlynxe_db
+
+sources:
+  metadata:
+    enabled: true
+  ddl:
+    enabled: true
+    fromDatabase: true
+    files: []
+  objects:
+    enabled: true
+    fromDatabase: true
+    files: []
+  logs:
+    enabled: false
+    format: PLAIN_SQL
+    files: []
+  dataProfile:
+    enabled: false
+    sampleRows: 1000
+    timeoutSeconds: 10
+    maxCandidatePairs: 1000
+
+output:
+  format: json
+  minConfidence: 0.20
+  includeEvidence: true
+  includeWarnings: true

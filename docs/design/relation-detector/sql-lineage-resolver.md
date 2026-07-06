@@ -220,10 +220,10 @@ SELECT a.user_id + 1 AS user_id
 相关测试入口以当前代码为准：
 
 ```text
-core/src/test/java/com/relationdetector/core/lineage/ProjectionTraceResolverTest.java
-core/src/test/java/com/relationdetector/core/lineage/VisitorThreadSafetyTest.java
-cli/src/test/java/com/relationdetector/cli/CorrectnessFixtureRunnerTest.java
-cli/src/test/java/com/relationdetector/cli/DataLineageAuditGeneratorTest.java
+relation-detector/core/src/test/java/com/relationdetector/core/lineage/ProjectionTraceResolverTest.java
+relation-detector/core/src/test/java/com/relationdetector/core/lineage/VisitorThreadSafetyTest.java
+relation-detector/cli/src/test/java/com/relationdetector/cli/CorrectnessFixtureRunnerTest.java
+relation-detector/cli/src/test/java/com/relationdetector/cli/DataLineageAuditGeneratorTest.java
 ```
 
 correctness golden 中的 `expected-lineage.json` 是正式验收来源；如果新增 projection trace 能力导致输出变化，需要先按 SQL 上下文审计，再决定是修 parser 还是更新 golden。

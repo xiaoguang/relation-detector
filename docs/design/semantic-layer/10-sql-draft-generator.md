@@ -1,5 +1,7 @@
 # SQL Draft Generator 详细设计
 
+> 当前实现状态：目标设计，尚未落地。当前代码不生成 SQL draft，不执行模板渲染，也没有与 relation-detector parser/adaptor 交叉调用。
+
 ## 1. 目标与定位
 
 **职责：** 根据 `AnswerPlan` 生成 SQL 草稿。它只做模板渲染，不做事实推断，不决定 join 方向，不调用 LLM。

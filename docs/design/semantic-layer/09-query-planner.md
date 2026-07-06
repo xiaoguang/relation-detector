@@ -1,5 +1,7 @@
 # Query Planner 详细设计
 
+> 当前实现状态：目标设计，尚未落地。当前代码没有 `AnswerPlan`、join path 选择器或反问判断；这些能力依赖后续 Catalog/Search/Question Understanding。
+
 ## 1. 目标与定位
 
 **职责：** 将结构化问题意图和搜索候选映射为 `AnswerPlan`：选择主实体、grain、指标、字段、过滤条件和 evidence-backed join path，并判断是否能生成 SQL draft 或需要反问。

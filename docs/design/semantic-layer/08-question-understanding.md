@@ -1,5 +1,7 @@
 # Question Understanding 详细设计
 
+> 当前实现状态：目标设计，尚未落地。当前代码没有在线问答入口、真实 LLM 调用、问题标准化或 `QuestionIntent` 生成；当前只实现离线 KG JSON 构建。
+
 ## 1. 目标与定位
 
 **职责：** 将用户自然语言问题先标准化，再解析为结构化意图（QuestionIntent）。识别实体 mention、指标 mention、维度、时间范围、过滤条件、输出意图、未知词和歧义点。

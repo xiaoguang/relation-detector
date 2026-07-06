@@ -1,5 +1,7 @@
 # Semantic Search 详细设计
 
+> 当前实现状态：目标设计，尚未落地。当前代码没有 Semantic Search、lexicon/embedding 混合召回或 rerank；这些模块依赖后续 Catalog Store、Lexicon Manager 和 Embedding Indexer。
+
 ## 1. 目标与定位
 
 **职责：** 结合 lexicon 精确匹配、embedding 语义召回和 evidence-based rerank，从自然语言查询中找到最相关的语义对象。

@@ -178,7 +178,7 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 验证入口：
 
 - 日常 smoke：`mvn test`。
-- 全量 correctness golden：`mvn -pl cli -am -Dtest=CorrectnessFixtureRunnerTest -DcorrectnessFixtureProfile=full -DcorrectnessFixtureParallelism=8 -Dsurefire.failIfNoSpecifiedTests=false test`。
+- 全量 correctness golden：`mvn -pl relation-detector/cli -am -Dtest=CorrectnessFixtureRunnerTest -DcorrectnessFixtureProfile=full -DcorrectnessFixtureParallelism=8 -Dsurefire.failIfNoSpecifiedTests=false test`。
 - 报告验收：显式运行 `CorrectnessSummaryGeneratorTest` 和 `DataLineageAuditGeneratorTest`，并传 `-DrunGeneratedReportTests=true`。
 - 剩余跨 parser 差异记录在 `docs/parser-audit/all-golden-semantic-review.md`，主要是 root token-event typed visitor coverage backlog 或 PostgreSQL expected version delta。
 
