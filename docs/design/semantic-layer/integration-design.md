@@ -12,6 +12,8 @@
 
 ### 2.1 决策原则
 
+Semantica 官方 README 把 accountability、provenance、reasoning 和 governance 放在 LLM 旁边，而不是交给 LLM 自己完成。本项目沿用这个边界：LLM 只处理语言理解、候选解释和语义归纳；事实、冲突、去重、审核状态和 SQL draft 校验都必须由确定性模块或治理流程完成。
+
 | 原则 | 说明 |
 | --- | --- |
 | 事实不可创造 | LLM 不能创造表、字段、关系。这些必须来自 relation-detector |
@@ -73,7 +75,11 @@ scan-result.json
       ]
     }
   ],
-  "dataLineage": [...],
+  "dataLineages": [...],
+  "namingEvidence": [...],
+  "derivedRelationships": [...],
+  "derivedDataLineages": [...],
+  "derivedNamingEvidence": [...],
   "warnings": [...]
 }
 
@@ -158,7 +164,7 @@ EvidenceGraph {
         ↓ [Compact: 截断到大模型 token 预算]
         ↓ [LLM Semantic Enricher: 调用大模型]
         ↓ [LLM 任务: 业务名/描述/同义词/实体/指标/join path 解释]
-        ↓ [新增: LLM 冲突确认（CONFIRMED/FALSE_ALARM）]
+        ↓ [新增: LLM 冲突解释建议（recommendation only）]
 
 Step 4: EnrichmentResult（LLM 输出）
 ─────────────────────────────────────────
@@ -173,7 +179,7 @@ Step 4: EnrichmentResult（LLM 输出）
       "grain": "一行表示一个订单",
       "primaryKey": ["orders.id"],
       "evidenceRefs": ["DDL:orders", "REL:orders.customer_id->customers.id"],
-      "reviewStatus": "BUSINESS_APPROVED",
+      "reviewStatus": "EVIDENCE_SUPPORTED",
       "confidence": 0.95
     }
   ],
@@ -187,7 +193,7 @@ Step 4: EnrichmentResult（LLM 输出）
       "entityRef": "entity:Customer",
       "synonyms": ["客户", "买家", "用户"],
       "evidenceRefs": ["REL:orders.customer_id->customers.id", "DDL_COLUMN:orders.customer_id"],
-      "reviewStatus": "BUSINESS_APPROVED",
+      "reviewStatus": "EVIDENCE_SUPPORTED",
       "confidence": 0.95
     }
   ],

@@ -92,11 +92,41 @@ Evidence 可以来自 metadata、DDL、SQL、procedure、trigger、comment、sca
 
 EvidenceRef 建议包含 scanRunId、scanVersion、parserMode、grammarProfile、sourceHash、detectorVersion、payloadSnapshot、reviewDecisionId 等字段，用于复现语义对象的来源。
 
+### ScanBundle
+
+语义层消费 relation-detector 输出前的标准化事实包。
+
+ScanBundle 对应 Semantica 架构中 Raw Documents / Records 的角色，但它的内容是数据库事实记录而不是任意文档。它应包含 normalized relationships、data lineages、naming evidence、derived facts、metadata、diagnostics、source hashes 和 raw evidence references。ScanBundle 只负责标准化、校验和索引，不负责业务语义确认。
+
+### Provenance
+
+事实、语义对象、计划或回答的来源链路。
+
+Provenance 不只是展示用文本。它应能回答“这个结论来自哪次 scan、哪个 source、哪条 evidence、哪个 review decision”。本项目用 `evidenceRefs`、`rawEvidence`、`payloadSnapshot`、`reviewDecisionId` 等字段表达 provenance；如果未来导出到外部语义工具，可映射到 W3C PROV-O 等标准。
+
 ### Semantic Evidence Graph
 
 由事实层输出组织出的语义证据图。
 
 它把表、字段、relationship、lineage、SQL usage、comment、procedure、trigger 和 review decision 串成可搜索、可解释、可审核的 evidence graph。
+
+### Conflict Detection
+
+冲突检测。
+
+在语义层中，Conflict Detection 先由确定性规则发现候选冲突，例如同一字段存在多个业务解释、同一业务词映射到多个对象、同一指标存在多个来源表达式。LLM 可以生成解释和建议，但不能最终确认冲突真假；最终状态必须由 Review Queue 或治理流程写入。
+
+### Deduplication
+
+去重与合并。
+
+Deduplication 用于合并同 key evidence、同义词候选、语义对象候选和重复 observation。它必须保留 provenance，不能因为名称相似就合并不同 schema、不同物理对象或业务含义未确认的对象。
+
+### Context Graph
+
+上下文图。
+
+Context Graph 是借鉴 Semantica 的长期承载形态：把事实、语义对象、决策、原因、后果和 provenance 作为可查询图对象。Phase 1 不要求完整 graph store；当前以 Semantic Evidence Graph 和 Semantic Catalog 作为更窄的落地形态。
 
 ## 语义对象
 

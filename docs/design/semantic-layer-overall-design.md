@@ -290,6 +290,41 @@ sequenceDiagram
 
 这条链路对应我们对 LLM 角色的约束：LLM 可以解释、归纳、扩展和规划候选；不能创造物理 relationship、不能确认 lineage、不能把指标提升为 `BUSINESS_APPROVED`，也不能绕过 catalog/evidence 直接生成可执行结论。
 
+### 2.4 借鉴 Semantica 的 Context and Accountability Layer
+
+Semantica 官方 README 将其定位为位于 LLM、vector store 和 agent framework 旁边的 **Context and Accountability Layer**，官方 ARCHITECTURE 给出的主链路是：
+
+```text
+sources
+  -> ingest
+  -> raw documents
+  -> parse / normalize / split
+  -> semantic extract
+  -> conflict detection / deduplication
+  -> KG construction
+  -> ontology / reasoning / provenance / context decisions
+  -> vector store / graph store / export / services
+```
+
+本项目吸收这条链路的工程原则，但不把它写成当前已经完成的 KG 或 ontology 能力。对齐后的边界如下：
+
+| Semantica 层 | 官方文档中的职责 | 本项目 Phase 1 对应 | 边界 |
+| --- | --- | --- | --- |
+| Ingest / Raw Documents | 多来源输入统一进入 Raw Documents。 | relation-detector scan result 和 ScanBundle 是语义层的标准 facts/evidence records。 | 语义层不直接读取零散 SQL、DDL、metadata 文件。 |
+| Parse / Normalize / Split | 解析、归一化、清洗和上下文切分。 | Scan Result Reader 做 JSON schema 校验、endpoint/schema 保真、dedupe 和索引。 | 不调用 LLM，不发明事实。 |
+| Semantic Extract | 抽实体、关系、事件、triplet。 | relation-detector 已抽数据库 relationship、lineage、namingEvidence、diagnostics；Semantic Evidence Builder 组织成 evidence graph。 | 当前不宣称完整业务 KG 已完成。 |
+| Conflict / Dedup | 检测冲突、保留来源、去重合并。 | Evidence Builder 做规则初筛；LLM 只生成解释建议；Review Queue / governance 决定最终状态。 | LLM 不能确认冲突真假，也不能提升 BUSINESS_APPROVED。 |
+| KG / Context Graph | 构建可查询图，记录事实、决策和推理路径。 | Semantic Catalog + evidence graph 是第一阶段落地形态；Context Graph 是后续承载方式。 | Phase 1 不要求完整 graph store。 |
+| Ontology / Governance | OWL、SHACL、policy enforcement、合规规则。 | reviewStatus、SQL Validator、Review Queue 和治理决策。 | 不承诺完整 OWL/SHACL 本体平台。 |
+| Reasoning | Rete、Datalog、SPARQL、可解释推理路径。 | derived relationship / lineage / namingEvidence 和 Query Planner 的 bounded graph search。 | 推理结果必须保留 evidenceRefs 和 warning。 |
+| Provenance / Audit | W3C PROV-O、source-linked facts、audit export。 | 每个 semantic object、AnswerPlan、SQL draft element 都必须回到 relation-detector rawEvidence / evidenceRef / reviewDecision。 | provenance 是主线，不是可选附加字段。 |
+
+因此本项目后续设计应更强调三点：
+
+- **先标准化事实，再构建语义。** relation-detector JSON 进入 ScanBundle 后，才能被 Evidence Builder、Catalog 和 Planner 消费。
+- **所有语义结论都要可追溯。** 每个字段、指标、join path、AnswerPlan 和 SQL draft element 都要能回到 evidenceRef 或 reviewDecision。
+- **LLM 是解释器和候选生成器，不是事实裁决者。** LLM 不确认业务口径、不生成物理关系、不做最终治理决策。
+
 ## 3. 模块职责总览
 
 ### 3.1 Scan Result Reader
@@ -299,7 +334,7 @@ sequenceDiagram
 输入：
 
 - relationship JSON。
-- dataLineage JSON。
+- Data Lineage JSON。
 - metadata facts。
 - DDL / SQL / object source location。
 - warning 和 confidence。

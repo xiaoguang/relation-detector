@@ -238,11 +238,13 @@ sequenceDiagram
 }
 ```
 
-## 5. LLM 决策
+## 7. LLM 决策
 
 **不使用 LLM。** 规则驱动的文本归一化、索引构建和冲突检测。同义词生成由 LLM Enricher 完成，Lexicon Manager 只负责存储和检索。
 
-## 6. 测试验收
+Lexicon 冲突只做候选发现和排序建议，不能自动把某个映射提升为 `BUSINESS_APPROVED`。这与 Semantica 的 conflict / dedup 分层一致：系统负责发现和保留来源，最终确认进入 Review Queue / governance workflow。
+
+## 8. 测试验收
 
 | 测试场景 | 输入 | 预期输出 |
 | --- | --- | --- |

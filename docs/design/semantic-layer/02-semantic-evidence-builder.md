@@ -2,15 +2,26 @@
 
 ## 1. 目标与定位
 
-**职责：** 将 ScanBundle 中的关系、血缘、元数据组织成 evidence graph。为每个字段收集所有已知证据，通过 BFS 发现多跳 join path，提取注释证据，检测冲突。
+**职责：** 将 ScanBundle 中的关系、血缘、命名证据、衍生事实、元数据和 diagnostics 组织成 evidence graph。为每个字段收集所有已知证据，通过 bounded graph search 发现候选 join path，提取注释证据，执行确定性的冲突初筛和去重。
 
-**LLM 依赖：** 否。纯图构建和规则提取。BFS join path 发现、注释提取、冲突检测都是确定性算法。
+**LLM 依赖：** 否。纯图构建和规则提取。bounded graph search、注释提取、冲突初筛和去重都是确定性算法。
 
 **为什么不需要 LLM：**
-- Join path 发现是图遍历（BFS），确定性算法，LLM 无法可靠遍历图
-- 注释提取是正则匹配和文本切分，规则可覆盖
-- 冲突检测是集合比较，纯规则
-- LLM 可能把不同表但同名的字段误判为冲突，或漏掉真正的冲突
+- Join path 发现是图遍历和 evidence rerank，确定性算法，LLM 无法可靠遍历图。
+- 注释提取、source location 归并、evidence fingerprint 生成和 dedup 都是结构化规则。
+- 冲突检测第一阶段是规则初筛，例如同字段多种候选含义、同义词多目标、指标来源不一致。
+- LLM 可能把不同表但同名的字段误判为冲突，或漏掉真正的冲突；它只能在后续 Enricher 中生成解释和审核建议。
+
+## 1.1 Semantica 启发：Extract / Conflict / Dedup / Provenance 分层
+
+Semantica 官方 ARCHITECTURE 在 semantic extract 之后显式设置 conflict detection、deduplication、KG construction 和 provenance。本模块吸收这条分层，但只落到 Phase 1 的 evidence graph：
+
+| Semantica 思路 | 本模块落地 | 边界 |
+| --- | --- | --- |
+| semantic extract 输出结构化知识候选 | 消费 relation-detector 已抽取的 relationship、lineage、namingEvidence、derived facts。 | 不重新解析 SQL，不发明新的物理事实。 |
+| conflict detection | 规则初筛字段含义、指标来源、同义词映射和 join path 冲突。 | 不确认冲突真假，最终状态进入 Review Queue。 |
+| deduplication | 对同 key evidence、field evidence、path evidence 做 fingerprint 去重和 observation 合并。 | 不合并不同 schema 或不同物理对象。 |
+| provenance | 为每个 evidence graph node / edge 保留原始 evidenceRef、source location、payload snapshot。 | compact bundle 可以裁剪文本，但不能丢失可回溯引用。 |
 
 ## 2. 上游与下游
 
@@ -19,6 +30,10 @@
   ↓ 输入: ScanBundle {
       relationships: [NormalizedRelationship],
       dataLineages: [NormalizedLineage],
+      namingEvidence: [NormalizedNamingEvidence],
+      derivedRelationships: [NormalizedDerivedRelationship],
+      derivedDataLineages: [NormalizedDerivedLineage],
+      diagnostics: [NormalizedDiagnostic],
       metadataIndex: MetadataIndex
     }
   
@@ -791,7 +806,7 @@ String generateFingerprint(EvidenceRef ref) {
 
 | 场景 | 期望行为 |
 | --- | --- |
-| 从 ScanBundle 到 EvidenceGraph | relationship、lineage、metadata 和 comment evidence 都能进入 evidence graph。 |
+| 从 ScanBundle 到 EvidenceGraph | relationship、lineage、namingEvidence、derived facts、diagnostics、metadata 和 comment evidence 都能进入 evidence graph。 |
 | join path 枚举 | 只生成 evidence-backed path，且不会因为环路无限扩展。 |
 | compact bundle | 保留关键 evidenceRefs；超出预算时允许截断低优先级 evidence，并显式标记。 |
 | LLM 输入安全 | compact bundle 中每个可引用对象都带有可解析 fingerprint。 |
@@ -805,7 +820,7 @@ String generateFingerprint(EvidenceRef ref) {
 
 保留的测试意图：
 
-- 从 `ScanBundle` 构建 field、expression、comment evidence，并保留原始 `evidenceRef`。
+- 从 `ScanBundle` 构建 field、expression、comment、naming 和 derived evidence，并保留原始 `evidenceRef`。
 - compact bundle 必须保留足够的 `evidenceRefs`，让 LLM 只能引用已有证据。
 - join path 候选必须来自 relationship graph，不能由 LLM 或字段名猜测生成。
 - 冲突项使用 `candidateConflict` 表达，并以 `SYSTEM_PROPOSED` 进入后续审核；它不是正式业务口径。

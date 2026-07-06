@@ -13,6 +13,17 @@
 
 LLM 在本模块中负责语言理解和表达，不负责数据库事实判断。数据库事实来自 relation-detector 输出的 relationship、lineage、metadata、SQL source 和注释。
 
+## 1.1 Semantica 启发：LLM 不是 accountability layer
+
+Semantica 官方 README 将 Semantica 定位为 LLM 旁边的 Context and Accountability Layer，而不是让 LLM 自己承担事实、治理和审计。本模块沿用同一边界：
+
+- LLM 可以把已有 evidence 翻译成业务可读说明。
+- LLM 可以归纳业务域、实体候选、指标候选、同义词候选和冲突解释。
+- LLM 输出必须引用 evidenceRefs；无法引用 evidence 的内容只能成为 warning 或 review item。
+- LLM 不能确认 conflict，不能合并重复对象，不能写入 `BUSINESS_APPROVED`，不能绕过 SQL Validator。
+
+因此 LLM Enricher 的输出是 semantic candidates，不是 catalog truth。Catalog Store 和 Review Queue 负责持久化、状态保护和治理决策。
+
 四类角色示例：
 
 | 角色 | 输入 evidence | LLM 可以输出什么 | 边界 |

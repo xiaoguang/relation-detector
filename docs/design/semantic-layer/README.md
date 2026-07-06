@@ -19,6 +19,8 @@ Relation Detector
 
 Catalog Store 是语义资产中心。Lexicon 和 Embedding 从 catalog 并行构建索引，不是彼此的串行下游。
 
+这条链路吸收 Semantica 官方架构中的 `ingest -> raw documents -> parse / normalize -> extract -> conflict / dedup -> KG / provenance / reasoning` 思路，但落地边界更窄：relation-detector scan result / ScanBundle 是本项目的标准 facts/evidence records；Phase 1 只构建 evidence-backed semantic catalog，不宣称完整 KG、Context Graph 或 ontology 已完成。
+
 ### 在线问答链路
 
 ```text
@@ -74,11 +76,13 @@ Question
 ## 全局约束
 
 - 所有语义对象必须携带 `evidenceRefs`，可追溯到 relation-detector 原始输出。
+- provenance / auditability 是主线能力，不是输出展示层附属信息；AnswerPlan、SQL draft element 和 review decision 也必须能回溯 evidence。
 - LLM 只能生成 [SYSTEM_PROPOSED](glossary.md#system_proposed) semantic objects、解释、同义词和 query rewrite；不能创造数据库事实。
 - 指标默认 `SYSTEM_PROPOSED`，只有审核后才能成为 [BUSINESS_APPROVED](glossary.md#business_approved) 正式口径。
 - [EVIDENCE_SUPPORTED](glossary.md#evidence_supported) 表示有 evidence 支撑，但不等于业务已确认。
 - SQL draft 必须经过 SQL Validator；文档示例不代表自动执行能力。
 - 不确定时优先反问用户，而不是生成看似完整但口径不明的 SQL。
+- 冲突和去重分两层：系统规则负责发现候选冲突和重复；最终业务确认必须进入 Review Queue / governance workflow。
 - Prototype 可用 JSON 文件；production-ready [Phase 1 Scope](glossary.md#phase-1-scope) profile 推荐 PostgreSQL + JSONB + pgvector。
 - [Phase 2+](glossary.md#phase-2) / [Future Capability](glossary.md#future-capability) 能力不得写成 Phase 1 Scope 已实现能力。
 
@@ -99,6 +103,7 @@ Semantic Layer 在这些事实之上构建业务语义，不修改 relation-dete
 - [Semantic Layer 术语表](glossary.md)
 - [Semantic Layer 示例附录](../semantic-layer-examples.md)
 - [参考亿问改进分析](yiyiwen-reference-improvement.md)
+- [Semantica：开源的本体自动化构建平台](../../../Semantica：开源的本体自动化构建平台.md)
 - [集成设计与端到端数据流](integration-design.md)
 - [技术选型文档](technology-selection.md)
 - [端到端测试示例](end-to-end-examples.md)

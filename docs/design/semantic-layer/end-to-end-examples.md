@@ -63,7 +63,19 @@ CREATE TABLE order_items (
 {
   "database": {"type": "mysql", "schema": "shop"},
   "generatedAt": "2026-06-23T00:00:00Z",
-  "summary": {"relationshipCount": 5, "warningCount": 0, "sources": ["metadata", "ddl"]},
+  "summary": {
+    "directRelationshipCount": 5,
+    "derivedRelationshipCount": 0,
+    "totalRelationshipCount": 5,
+    "directDataLineageCount": 1,
+    "derivedDataLineageCount": 0,
+    "totalDataLineageCount": 1,
+    "directNamingEvidenceCount": 0,
+    "derivedNamingEvidenceCount": 0,
+    "totalNamingEvidenceCount": 0,
+    "warningCount": 0,
+    "sources": ["metadata", "ddl"]
+  },
   "relationships": [
     {
       "source": {"table": "orders", "column": "customer_id"},
@@ -101,7 +113,7 @@ CREATE TABLE order_items (
       "evidence": [{"type": "SQL_LOG_JOIN", "score": 0.55, "source": "app-sql.sql", "detail": "JOIN customers ON payments.customer_id = customers.id"}]
     }
   ],
-  "dataLineage": [
+  "dataLineages": [
     {
       "sources": [{"table": "payments", "column": "amount"}],
       "target": {"table": null, "column": "paid_amount_30d"},

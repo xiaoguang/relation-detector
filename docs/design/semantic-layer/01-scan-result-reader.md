@@ -8,6 +8,17 @@
 
 **为什么不需要 LLM：** 输入是结构化 JSON，输出是结构化内存对象。所有操作都是类型转换、字段校验和索引构建。LLM 无法比规则更可靠地完成这些操作，反而可能引入错误。
 
+## 1.1 Semantica 启发：ScanBundle 是本项目的 Raw Records 层
+
+Semantica 官方 ARCHITECTURE 中，不同来源会先进入 `Raw Documents`，再进入 parse、normalize、split 和 semantic extract。本项目的数据源不是任意文档，而是 relation-detector 的标准 JSON 输出；因此 `ScanBundle` 承担的是同类职责：
+
+- 把 relationship、Data Lineage、namingEvidence、derived facts、metadata、diagnostics 和 rawEvidence 统一成可处理 records。
+- 保留 sourceHash、scanRunId、parserMode、grammarProfile、source location 和 payload snapshot，支撑后续 provenance。
+- 对 endpoint、schema、evidenceRef、warning 和 review-related payload 做结构校验。
+- 只做标准化和索引，不判断业务实体、指标口径或 join path 是否业务正确。
+
+这意味着后续 Semantic Evidence Builder、Catalog、Question Planner 都只能消费 `ScanBundle` 或由它构建出的 evidence graph，不应直接绕过它读取零散 SQL、DDL 或 parser 内部结构。
+
 ## 2. 上游与下游
 
 ```
@@ -18,7 +29,8 @@
   ↓ 输出: ScanBundle (内存对象)
 
 下游: Semantic Evidence Builder
-  消费: ScanBundle.relationships, ScanBundle.metadataIndex, ScanBundle.dataLineages
+  消费: ScanBundle.relationships, ScanBundle.dataLineages, ScanBundle.namingEvidence,
+        ScanBundle.derivedFacts, ScanBundle.diagnostics, ScanBundle.metadataIndex
 ```
 
 ## 3. 接口契约
@@ -72,7 +84,15 @@ public interface ScanResultReader {
   },
   "generatedAt": "2026-06-23T00:00:00Z",  // 必填，ISO 8601
   "summary": {
-    "relationshipCount": 24,   // 必填，整数 >= 0
+    "directRelationshipCount": 24,   // 必填，整数 >= 0
+    "derivedRelationshipCount": 6,   // 必填，整数 >= 0
+    "totalRelationshipCount": 30,    // 必填，整数 >= 0
+    "directDataLineageCount": 8,
+    "derivedDataLineageCount": 2,
+    "totalDataLineageCount": 10,
+    "directNamingEvidenceCount": 40,
+    "derivedNamingEvidenceCount": 5,
+    "totalNamingEvidenceCount": 45,
     "warningCount": 3,         // 必填，整数 >= 0
     "sources": ["metadata", "ddl", "logs"]  // 必填
   },
@@ -103,7 +123,11 @@ public interface ScanResultReader {
       "warnings": [...]              // 必填，可为空数组
     }
   ],
-  "dataLineage": [...],        // 可选，缺失视为空数组
+  "dataLineages": [...],       // 可选，缺失视为空数组
+  "derivedRelationships": [...],
+  "derivedDataLineages": [...],
+  "namingEvidence": [...],
+  "derivedNamingEvidence": [...],
   "warnings": [...]            // 必填，可为空数组
 }
 ```
@@ -128,6 +152,11 @@ public interface ScanResultReader {
     }
   ],
   "dataLineages": [...],
+  "derivedRelationships": [...],
+  "derivedDataLineages": [...],
+  "namingEvidence": [...],
+  "derivedNamingEvidence": [...],
+  "diagnostics": [...],
   "metadataIndex": {
     "tables": {
       "orders": {
@@ -316,10 +345,18 @@ ScanBundle read(Path path) {
     // 6. 构建索引
     MetadataIndex metaIdx = buildMetadataIndex(root);
     RelationshipIndex relIdx = buildRelationshipIndex(rels);
-    LineageIndex linIdx = buildLineageIndex(root.get("dataLineage"));
+    LineageIndex linIdx = buildLineageIndex(root.path("dataLineages"));
 
-    // 7. 组装
-    return new ScanBundle(databaseInfo, generatedAt, rels, lineages, metaIdx, relIdx, linIdx, warnings);
+    // 7. 构建 naming / derived 索引
+    NamingEvidenceIndex namingIdx = buildNamingEvidenceIndex(root.path("namingEvidence"));
+    DerivedFactIndex derivedIdx = buildDerivedFactIndex(
+        root.path("derivedRelationships"),
+        root.path("derivedDataLineages"),
+        root.path("derivedNamingEvidence")
+    );
+
+    // 8. 组装
+    return new ScanBundle(databaseInfo, generatedAt, rels, lineages, namingIdx, derivedIdx, metaIdx, relIdx, linIdx, warnings);
 }
 ```
 
@@ -353,7 +390,7 @@ List<NormalizedRelationship> deduplicate(List<NormalizedRelationship> rels) {
 | relationship.source.table 缺失 | WARNING | 跳过该条关系 |
 | relationship.confidence 越界 | WARNING | clamp 到 [0.0, 0.99] |
 | relationship.evidence 缺失 | WARNING | 设为空数组 |
-| dataLineage 字段缺失 | INFO | 设为空数组，不终止 |
+| dataLineages 字段缺失 | INFO | 设为空数组，不终止 |
 
 ## 5. 测试验收
 
@@ -363,7 +400,7 @@ List<NormalizedRelationship> deduplicate(List<NormalizedRelationship> rels) {
 | --- | --- | --- |
 | 正常读取 | 标准 scan-result.json（24条关系） | ScanBundle 含 24 条关系，索引正确 |
 | 空关系 | relationships: [] | ScanBundle 含 0 条关系，索引为空 Map |
-| 缺失 dataLineage | 无 dataLineage 字段 | ScanBundle.dataLineages 为空列表 |
+| 缺失 dataLineages | 无 dataLineages 字段 | ScanBundle.dataLineages 为空列表 |
 | 文件不存在 | 不存在路径 | ScanResultReadException("INPUT_FILE_NOT_FOUND") |
 | JSON 格式错误 | 非 JSON 文本 | ScanResultReadException("INPUT_FORMAT_ERROR") |
 | 缺失 database.type | database: {} | ScanResultReadException("MISSING_DATABASE_TYPE") |

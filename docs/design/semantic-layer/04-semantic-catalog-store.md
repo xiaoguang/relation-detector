@@ -12,6 +12,17 @@
 
 Catalog Store 不调用 LLM，也不做语义判断。
 
+## 1.1 Semantica 启发：Catalog 先做 evidence-backed store，不冒充完整 KG
+
+Semantica 官方架构中，KG、Ontology、Reasoning、Provenance 和 Context/Decision 是 enriched KG 之后的能力层。本项目 Phase 1 的 Catalog Store 只承诺更窄的能力：
+
+- 保存 semantic object、edge、evidenceRef、review decision 和 question trace。
+- 保留 relation-detector scanRunId、sourceHash、payload snapshot 和 reviewDecisionId，支撑 provenance。
+- 为 Semantic Search、Query Planner、SQL Validator 提供可查询的 catalog snapshot。
+- 保留未来迁移到 graph store / Context Graph 的数据边界，但不要求 Phase 1 已经有完整 KG、OWL/SHACL ontology 或 graph database。
+
+换句话说，Catalog Store 是 “evidence-backed semantic catalog”，不是“业务真相数据库”。业务真相必须通过 reviewStatus 和 governance workflow 表达。
+
 ## 2. 上游与下游
 
 ```text
