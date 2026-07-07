@@ -30,7 +30,13 @@ import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
  * evidence 才会被 {@link NamingMatchEvidenceEnhancer} 合并进去。
  */
 public final class NamingEvidenceExtractor {
+    private final NamingRuleEngine namingRuleEngine = new NamingRuleEngine();
+
     public List<NamingEvidenceCandidate> extractFromMetadata(MetadataSnapshot metadata) {
+        return extractFromMetadata(metadata, null);
+    }
+
+    public List<NamingEvidenceCandidate> extractFromMetadata(MetadataSnapshot metadata, com.relationdetector.core.scan.ScanConfig config) {
         if (metadata == null) {
             return List.of();
         }
@@ -43,10 +49,18 @@ public final class NamingEvidenceExtractor {
             endpoints.add(Endpoint.column(new ColumnRef(table, fact.columnName(), fact.columnName(),
                     fact.dataType(), fact.nullable())));
         }
-        return extractFromEndpoints(endpoints, "metadata", "metadata catalog column names");
+        return extractFromEndpoints(endpoints, "metadata", "metadata catalog column names",
+                NamingRuleScope.METADATA, ruleSet(config));
     }
 
     public List<NamingEvidenceCandidate> extractFromDdlEvents(List<StructuredSqlEvent> events) {
+        return extractFromDdlEvents(events, null);
+    }
+
+    public List<NamingEvidenceCandidate> extractFromDdlEvents(
+            List<StructuredSqlEvent> events,
+            com.relationdetector.core.scan.ScanConfig config
+    ) {
         if (events == null || events.isEmpty()) {
             return List.of();
         }
@@ -66,23 +80,38 @@ public final class NamingEvidenceExtractor {
                 source = event.sourceName();
             }
         }
-        return extractFromEndpoints(endpoints, source, "DDL column inventory");
+        return extractFromEndpoints(endpoints, source, "DDL column inventory",
+                NamingRuleScope.DDL_COLUMN_INVENTORY, ruleSet(config));
     }
 
     public List<NamingEvidenceCandidate> extractFromRelationshipCandidates(List<RelationshipCandidate> candidates) {
+        return extractFromRelationshipCandidates(candidates, null);
+    }
+
+    public List<NamingEvidenceCandidate> extractFromRelationshipCandidates(
+            List<RelationshipCandidate> candidates,
+            com.relationdetector.core.scan.ScanConfig config
+    ) {
         if (candidates == null || candidates.isEmpty()) {
             return List.of();
         }
         List<NamingEvidenceCandidate> result = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
+        NamingRuleSet ruleSet = ruleSet(config);
         for (RelationshipCandidate candidate : candidates) {
             if (!isEligibleRelationshipCandidate(candidate)) {
                 continue;
             }
-            NamingMatchRules.match(candidate.source(), candidate.target(), hasSelfJoinRole(candidate))
-                    .ifPresent(match -> add(result, seen, candidate(match,
-                            "naming heuristic",
-                            match.source().displayName() + " matches " + match.target().displayName())));
+            for (NamingRuleEngine.Match match : namingRuleEngine.match(
+                    candidate.source(),
+                    candidate.target(),
+                    NamingRuleScope.RELATIONSHIP_CANDIDATE,
+                    hasSelfJoinRole(candidate),
+                    ruleSet)) {
+                add(result, seen, candidate(match,
+                        "naming heuristic",
+                        match.source().displayName() + " matches " + match.target().displayName()));
+            }
         }
         return List.copyOf(result);
     }
@@ -90,7 +119,9 @@ public final class NamingEvidenceExtractor {
     private List<NamingEvidenceCandidate> extractFromEndpoints(
             List<Endpoint> endpoints,
             String source,
-            String detailPrefix
+            String detailPrefix,
+            NamingRuleScope scope,
+            NamingRuleSet ruleSet
     ) {
         List<NamingEvidenceCandidate> result = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
@@ -102,18 +133,14 @@ public final class NamingEvidenceExtractor {
                 if (left.table().normalizedName().equals(right.table().normalizedName())) {
                     continue;
                 }
-                catalogNamingMatch(left, right)
-                        .ifPresent(match -> add(result, seen, candidate(match, source,
-                                detailPrefix + ": " + match.source().displayName()
-                                        + " matches " + match.target().displayName())));
+                for (NamingRuleEngine.Match match : namingRuleEngine.match(left, right, scope, false, ruleSet)) {
+                    add(result, seen, candidate(match, source,
+                            detailPrefix + ": " + match.source().displayName()
+                                    + " matches " + match.target().displayName()));
+                }
             }
         }
         return List.copyOf(result);
-    }
-
-    private java.util.Optional<NamingMatchRules.Match> catalogNamingMatch(Endpoint left, Endpoint right) {
-        return NamingMatchRules.match(left, right, false)
-                .filter(match -> "TABLE_ID".equals(match.rule()));
     }
 
     private List<Endpoint> dedupeEndpoints(List<Endpoint> endpoints) {
@@ -187,12 +214,12 @@ public final class NamingEvidenceExtractor {
         return parts;
     }
 
-    private NamingEvidenceCandidate candidate(NamingMatchRules.Match match, String source, String detail) {
+    private NamingEvidenceCandidate candidate(NamingRuleEngine.Match match, String source, String detail) {
         return new NamingEvidenceCandidate(match.source(), match.target(), evidenceFor(match, source, detail),
-                match.rule(), true);
+                match.rule(), match.directionHint());
     }
 
-    static Evidence evidenceFor(NamingMatchRules.Match match, String source, String detail) {
+    static Evidence evidenceFor(NamingRuleEngine.Match match, String source, String detail) {
         return new Evidence(
                 EvidenceType.NAMING_MATCH,
                 BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
@@ -200,6 +227,10 @@ public final class NamingEvidenceExtractor {
                 source,
                 detail,
                 match.attributes());
+    }
+
+    private NamingRuleSet ruleSet(com.relationdetector.core.scan.ScanConfig config) {
+        return config == null ? NamingRuleSet.systemDefault() : config.namingRuleSet();
     }
 
     private void add(

@@ -116,7 +116,7 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 | `CommonTokenEventStructuredSqlParserTest` / `TokenEventStructuredSqlParserTest` | common token-event | 验证 common portable typed grammar、rowset/predicate/write mapping 和 DDL/SQL 结构事件 |
 | `ProjectionTraceResolverTest` | Data Lineage / projection trace | 验证 CTE、derived table、projection alias、表达式来源和字段写入映射都通过结构化 `ProjectionTrace`，不使用 SQL 文本 regex/token span fallback |
 | `VisitorThreadSafetyTest` | parser state / 并发稳定性 | 并行解析同一批 SQL，验证 visitor/collector per-parse state 不泄漏 |
-| `NamingEvidenceExtractorTest` / `NamingMatchEvidenceEnhancerTest` | naming evidence | 验证 top-level naming evidence 池、relationship `evidenceRef` 引用和“不从 relationship 里本地重算 NAMING_MATCH”的边界 |
+| `NamingEvidenceExtractorTest` / `NamingMatchEvidenceEnhancerTest` / `ParserConfigRemovalTest` | naming evidence | 验证 top-level naming evidence 池、relationship `evidenceRef` 引用、“不从 relationship 里本地重算 NAMING_MATCH”、系统默认规则 YAML、客户 `USER_CONFIGURED` ruleFiles / inline rules、重复 id 和非法 `TRANSITIVE_NAMING_PATH` 配置拒绝 |
 | `DialectParserEvidenceConfidenceTest` | SQL primary / token-event / confidence | evidence type/source type、confidence 示例；验证 JOIN / correlated EXISTS / IN 子查询分别保留 `SQL_LOG_JOIN`、`SQL_LOG_EXISTS`、`SQL_LOG_SUBQUERY_IN`，且 SQL evidence 需要结合 unique/metadata/profile 或 `NAMING_MATCH` 方向提示才决定 FK-like 方向 |
 | `SqlParserAdditionalSourceTypesTest` | SQL primary / token-event / warning diagnostics | view/procedure/trigger/function/rule/event/package/migration 等 source type 行为 |
 | `ScanEngineDiagnosticsTest` | warning diagnostics | parse failure、raw SQL/DDL warning 保留 |

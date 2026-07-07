@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
@@ -22,11 +23,14 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.relation.NamingEvidenceExtractor;
+import com.relationdetector.core.relation.NamingRuleConfigLoader;
 import com.relationdetector.core.relation.NamingMatchEvidenceEnhancer;
 import com.relationdetector.core.relation.NamingEvidencePool;
+import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.tokenevent.TokenEventStructuredDdlParser;
 
 class NamingEvidenceExtractorTest {
+    private static final YAMLMapper YAML = new YAMLMapper();
     private final NamingEvidenceExtractor extractor = new NamingEvidenceExtractor();
 
     @Test
@@ -221,6 +225,92 @@ class NamingEvidenceExtractorTest {
         List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
 
         assertTrue(evidence.isEmpty());
+    }
+
+    @Test
+    void configuredSuffixAliasRuleCreatesUserConfiguredNamingEvidence() throws Exception {
+        RelationshipCandidate candidate = sqlPredicate("orders", "created_by", "employees", "id");
+        ScanConfig config = configuredRules("""
+                - id: created-by-user
+                  rule: USER_CONFIGURED
+                  appliesTo: [RELATIONSHIP_CANDIDATE]
+                  sourceColumn:
+                    equalsAny: [created_by, updated_by, approved_by]
+                  targetTable:
+                    aliases: [users, employees]
+                  targetColumn:
+                    equals: id
+                  directionHint: true
+                  description: "audit user columns point to employee/user ids"
+                """);
+
+        List<NamingEvidenceCandidate> evidence =
+                extractor.extractFromRelationshipCandidates(List.of(candidate), config);
+
+        assertEquals(1, evidence.size());
+        NamingEvidenceCandidate match = evidence.get(0);
+        assertEquals("USER_CONFIGURED", match.rule());
+        assertEndpoint("orders", "created_by", match.source());
+        assertEndpoint("employees", "id", match.target());
+        assertEquals("created-by-user", match.evidence().attributes().get("configuredRuleId"));
+        assertEquals("inline", match.evidence().attributes().get("ruleSource"));
+    }
+
+    @Test
+    void configuredExplicitEndpointRuleCanCreateMetadataNamingEvidenceOnly() throws Exception {
+        MetadataSnapshot metadata = new MetadataSnapshot();
+        metadata.columns().add(column("orders", "sales_rep_id"));
+        metadata.columns().add(column("employees", "id"));
+        ScanConfig config = configuredRules("""
+                - id: sales-rep-explicit
+                  rule: USER_CONFIGURED
+                  appliesTo: [METADATA]
+                  sourceEndpoint: orders.sales_rep_id
+                  targetEndpoint: employees.id
+                  directionHint: true
+                """);
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromMetadata(metadata, config);
+
+        assertEquals(1, evidence.size());
+        assertEquals("USER_CONFIGURED", evidence.get(0).rule());
+        assertEndpoint("orders", "sales_rep_id", evidence.get(0).source());
+        assertEndpoint("employees", "id", evidence.get(0).target());
+    }
+
+    @Test
+    void configuredRuleIsReusedByRelationshipEnhancerThroughPool() throws Exception {
+        RelationshipCandidate candidate = sqlPredicate("orders", "created_by", "employees", "id");
+        ScanConfig config = configuredRules("""
+                - id: created-by-user
+                  rule: USER_CONFIGURED
+                  appliesTo: [RELATIONSHIP_CANDIDATE]
+                  sourceColumn:
+                    equals: created_by
+                  targetTable:
+                    aliases: [employees]
+                  targetColumn:
+                    equals: id
+                """);
+        NamingEvidencePool pool = new NamingEvidencePool();
+        pool.addAll(extractor.extractFromRelationshipCandidates(List.of(candidate), config));
+
+        new NamingMatchEvidenceEnhancer().enhance(List.of(candidate), pool);
+
+        Evidence naming = candidate.evidence().stream()
+                .filter(item -> item.type() == EvidenceType.NAMING_MATCH)
+                .findFirst()
+                .orElseThrow();
+        assertEquals("USER_CONFIGURED", naming.attributes().get("namingRule"));
+        assertEquals("created-by-user", naming.attributes().get("configuredRuleId"));
+        assertTrue(String.valueOf(naming.attributes().get("evidenceRef")).endsWith(":USER_CONFIGURED"));
+    }
+
+    private ScanConfig configuredRules(String yaml) throws Exception {
+        ScanConfig config = new ScanConfig();
+        config.namingMatchSystemRulesEnabled = false;
+        config.namingMatchRules.addAll(new NamingRuleConfigLoader().readInlineRules(YAML.readTree(yaml)));
+        return config;
     }
 
     private RelationshipCandidate sqlPredicate(String leftTable, String leftColumn, String rightTable, String rightColumn) {

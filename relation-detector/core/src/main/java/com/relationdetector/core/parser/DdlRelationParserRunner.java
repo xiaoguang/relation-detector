@@ -68,12 +68,21 @@ public final class DdlRelationParserRunner {
             Path file,
             AdaptorContext context
     ) {
+        return parseWithEvidence(bundle, file, context, null);
+    }
+
+    public DdlParseOutcome parseWithEvidence(
+            ParserBundle bundle,
+            Path file,
+            AdaptorContext context,
+            ScanConfig config
+    ) {
         String ddl = read(file);
         StructuredParseResult structured = bundle.ddlParser().parseDdl(ddl, file.toString(), context);
         forwardWarnings(context, structured);
         return new DdlParseOutcome(
                 visitor.extract(ddl, file.toString(), structured),
-                namingEvidenceExtractor.extractFromDdlEvents(structured.events()));
+                namingEvidenceExtractor.extractFromDdlEvents(structured.events(), config));
     }
 
     /**
@@ -108,7 +117,7 @@ public final class DdlRelationParserRunner {
             AdaptorContext context
     ) {
         StructuredDdlParser parser = parserBundleSelector.select(adaptor, config, context).ddlParser();
-        return parseTextWithEvidence(parser, ddl, sourceName, sourceType, context);
+        return parseTextWithEvidence(parser, ddl, sourceName, sourceType, context, config);
     }
 
     public DdlParseOutcome parseTextWithEvidence(
@@ -119,6 +128,17 @@ public final class DdlRelationParserRunner {
             AdaptorContext context
     ) {
         return parseTextWithEvidence(bundle.ddlParser(), ddl, sourceName, sourceType, context);
+    }
+
+    public DdlParseOutcome parseTextWithEvidence(
+            ParserBundle bundle,
+            String ddl,
+            String sourceName,
+            EvidenceSourceType sourceType,
+            AdaptorContext context,
+            ScanConfig config
+    ) {
+        return parseTextWithEvidence(bundle.ddlParser(), ddl, sourceName, sourceType, context, config);
     }
 
     /**
@@ -145,6 +165,17 @@ public final class DdlRelationParserRunner {
             EvidenceSourceType sourceType,
             AdaptorContext context
     ) {
+        return parseTextWithEvidence(parser, ddl, sourceName, sourceType, context, null);
+    }
+
+    public DdlParseOutcome parseTextWithEvidence(
+            StructuredDdlParser parser,
+            String ddl,
+            String sourceName,
+            EvidenceSourceType sourceType,
+            AdaptorContext context,
+            ScanConfig config
+    ) {
         StructuredParseResult structured = parser.parseDdl(ddl, sourceName, context);
         forwardWarnings(context, structured);
         return new DdlParseOutcome(
@@ -152,7 +183,7 @@ public final class DdlRelationParserRunner {
                         visitor.extract(ddl, sourceName, structured),
                         sourceType,
                         sourceName),
-                namingEvidenceExtractor.extractFromDdlEvents(structured.events()));
+                namingEvidenceExtractor.extractFromDdlEvents(structured.events(), config));
     }
 
     private static void forwardWarnings(AdaptorContext context, StructuredParseResult structured) {

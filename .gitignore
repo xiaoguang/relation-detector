@@ -8,3 +8,4 @@ mysql80-sample-data-rdf-summary.json
 mysql80-sample-data-rdf.ttl
 mysql80-sample-data-readable-triples.ttl
 Semantica*.md
+semantic-layer/semantic-extraction-preview/

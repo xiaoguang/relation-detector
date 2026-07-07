@@ -86,11 +86,19 @@ public record NamingEvidenceCandidate(
 ) {}
 ```
 
-当前规则：
+规则模型：
+
+- `NamingRuleSet` 是合并后的运行时规则集；系统默认规则和客户规则都通过同一个 `NamingRuleEngine` 执行。
+- 系统默认规则保存在 classpath 资源 `naming-rules/system-default.yml`，用配置表达三类 direct 规则：`TABLE_ID`、`ID_SUFFIX_TO_ID`、`SELF_ROLE_ID`。
+- 客户规则通过 YAML `namingMatch.ruleFiles` 和 inline `namingMatch.rules` 注入，当前只允许输出 `USER_CONFIGURED` direct naming evidence。客户规则支持列名 equals / equalsAny / suffix / suffixAny、目标表 aliases，以及显式 source / target endpoint pair。
+- `namingMatch.systemRulesEnabled=false` 时只运行客户规则；`namingMatch.enabled=false` 时不生成 direct naming evidence。
+- `TRANSITIVE_NAMING_PATH` 不允许配置；它只能由 `DerivedPathInferenceService` 在 `derivedPaths.enabled=true` 时从已有 evidence path 推导。
+
+内置 direct 规则语义：
 
 - `TABLE_ID`：`orders.customer_id -> customers.id` 这类列名与目标表名 stem 匹配。
-- `ID_SUFFIX_TO_ID`：一侧 `_id` 指向另一侧 `id`。
-- `SELF_ROLE_ID`：self-join 中 `employees.manager_id -> employees.id` 这类角色 id。
+- `ID_SUFFIX_TO_ID`：一侧 `_id` 指向另一侧 `id`，默认只作用于已有 structural relationship candidate。
+- `SELF_ROLE_ID`：self-join 中 `employees.manager_id -> employees.id` 这类角色 id，默认只作用于已有 structural relationship candidate。
 
 稳定 id 由代码生成：
 
@@ -102,7 +110,7 @@ naming:<source-normalized-key>-><target-normalized-key>:<rule>
 
 - top-level `namingEvidence` 保存完整 grouped `evidence` 和 `rawEvidence`。
 - relationship 里的 `NAMING_MATCH` 只保存轻量摘要和 `evidenceRef`，指向 top-level naming evidence id。
-- `NamingEvidenceCandidate` 可以来自 metadata columns、DDL column inventory 或已有 SQL predicate candidate。
+- `NamingEvidenceCandidate` 可以来自 metadata columns、DDL column inventory 或已有 SQL predicate candidate；具体来源由每条 `NamingRule.appliesTo` 控制。
 - name-only hint 不能单独生成 relationship；只有同端点已有 SQL / DDL / metadata / profile relationship candidate 时，才可被 `NamingMatchEvidenceEnhancer` 消费。
 - 不变量：relationship 中的 `NAMING_MATCH.evidenceRef` 必须能在 top-level `namingEvidence.id` 中找到。
 
@@ -270,7 +278,7 @@ public record Evidence(
 | `SQL_LOG_EXISTS` | 已产出 | typed SQL parser 对 correlated `EXISTS` / `NOT EXISTS` 内部明确列级关联谓词生成。 |
 | `SQL_LOG_COLUMN_CO_OCCURRENCE` | `RESERVED_COMPATIBILITY / NOT_PRODUCED` | enum、分数、merger 兼容逻辑保留；当前 typed SQL path 优先保留具体 `SQL_LOG_JOIN` / `SQL_LOG_EXISTS` / `SQL_LOG_SUBQUERY_IN`，不主动产出该泛化 evidence。 |
 | `SQL_LOG_TABLE_CO_OCCURRENCE` | `RESERVED_COMPATIBILITY / NOT_PRODUCED` | enum、分数、merger 兼容逻辑保留；当前 parser 不因“同一 SQL 里出现多表但没有列谓词”自动生成正式 relationship evidence。 |
-| `NAMING_MATCH` | 已产出 | `NamingEvidenceExtractor` 生成 top-level `namingEvidence` 池；relationship 只能通过 `evidenceRef` 引用，不能本地重算或凭空创建关系。 |
+| `NAMING_MATCH` | 已产出 | `NamingEvidenceExtractor` 通过 `NamingRuleEngine` 执行系统默认 YAML 与客户 YAML 合并后的 `NamingRuleSet`，生成 top-level `namingEvidence` 池；relationship 只能通过 `evidenceRef` 引用，不能本地重算或凭空创建关系。 |
 | `SOURCE_INDEX` | 已产出 | typed DDL parser / metadata enhancer 可从普通索引、FK source-side index 生成。 |
 | `TARGET_UNIQUE` | 已产出 | typed DDL parser / metadata enhancer 可从 PK、unique constraint、unique index 生成。 |
 | `COLUMN_TYPE_COMPATIBLE` | 已产出 | metadata enhancer 在已有关系候选上按两端 column facts 增强。 |

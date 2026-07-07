@@ -372,7 +372,7 @@ class DialectGrammarArchitectureTest {
 
         assertTrue(text.contains("NamingEvidencePool namingEvidence"),
                 "NamingMatchEvidenceEnhancer must require the top-level naming evidence pool");
-        assertFalse(text.contains("NamingMatchRules"),
+        assertFalse(text.contains("NamingRuleEngine"),
                 "NamingMatchEvidenceEnhancer must not recompute naming rules locally");
         assertFalse(text.contains("NamingEvidenceExtractor"),
                 "NamingMatchEvidenceEnhancer must not create naming evidence locally");
@@ -389,19 +389,19 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
-    void namingMatchRulesAreOnlyCalledByNamingEvidenceExtractor() throws IOException {
+    void namingRuleEngineIsOnlyCalledByNamingEvidenceExtractor() throws IOException {
         Path root = repoRoot();
         try (Stream<Path> stream = Files.walk(root.resolve("core/src/main/java"))) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
-                    .filter(path -> containsAny(path, List.of("NamingMatchRules.match")))
+                    .filter(path -> containsAny(path, List.of("new NamingRuleEngine", "namingRuleEngine.match")))
                     .map(root::relativize)
                     .filter(path -> !path.equals(Path.of(
                             "core/src/main/java/com/relationdetector/core/relation/NamingEvidenceExtractor.java")))
                     .toList();
 
             assertTrue(offenders.isEmpty(),
-                    "Only NamingEvidenceExtractor may call naming rules; relationships consume the evidence pool, offenders="
+                    "Only NamingEvidenceExtractor may execute naming rules; relationships consume the evidence pool, offenders="
                             + offenders);
         }
     }

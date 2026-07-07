@@ -1,0 +1,9 @@
+semanticExtraction:
+  # Development/test mode. This does not call an external API and does not require OPENAI_API_KEY.
+  provider: codex-session
+  input: relation-detector/target/sample-data-parser-cli/results/mysql-v8_0-full-derived-fresh.json
+  output: semantic-layer/target/semantic-extraction/codex-session-sp-rebuild-sales-fact
+  focus: ROUTINE:erp_system.sp_rebuild_sales_fact
+  maxRelationships: 80
+  maxLineage: 80
+  maxNamingEvidence: 80

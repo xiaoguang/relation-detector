@@ -38,10 +38,11 @@ public final class EvidenceEnhancementService {
             ScanConfig config
     ) {
         if (metadataSnapshot != null) {
-            namingEvidencePool.addAll(namingEvidenceExtractor.extractFromMetadata(metadataSnapshot));
+            namingEvidencePool.addAll(namingEvidenceExtractor.extractFromMetadata(metadataSnapshot, config));
             metadataEvidenceEnhancer.enhance(relationshipCandidates, metadataSnapshot);
         }
-        namingEvidencePool.addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(relationshipCandidates));
+        namingEvidencePool.addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(relationshipCandidates,
+                config));
         namingEvidencePool.addAll(derivedPathInferenceService.deriveNamingEvidence(namingEvidencePool.merged(), config));
         namingMatchEvidenceEnhancer.enhance(relationshipCandidates, namingEvidencePool);
     }

@@ -62,6 +62,9 @@ public final class NamingMatchEvidenceEnhancer {
         copyAttribute(evidence, attributes, "suggestedTargetEndpoint");
         copyAttribute(evidence, attributes, "matchedColumn");
         copyAttribute(evidence, attributes, "matchedTable");
+        copyAttribute(evidence, attributes, "configuredRuleId");
+        copyAttribute(evidence, attributes, "configuredRuleDescription");
+        copyAttribute(evidence, attributes, "ruleSource");
         attributes.put("directionHint", naming.directionHint());
         return new Evidence(
                 evidence.type(),

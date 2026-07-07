@@ -1,0 +1,24 @@
+rules:
+  - id: system-table-id
+    rule: TABLE_ID
+    appliesTo:
+      - RELATIONSHIP_CANDIDATE
+      - METADATA
+      - DDL_COLUMN_INVENTORY
+    directionHint: true
+    description: "Column stem such as customer_id points to the matching table id."
+
+  - id: system-id-suffix-to-id
+    rule: ID_SUFFIX_TO_ID
+    appliesTo:
+      - RELATIONSHIP_CANDIDATE
+    directionHint: true
+    description: "A related *_id column points to the compared id endpoint."
+
+  - id: system-self-role-id
+    rule: SELF_ROLE_ID
+    appliesTo:
+      - RELATIONSHIP_CANDIDATE
+    requireSelfJoinRole: true
+    directionHint: true
+    description: "A role id in a self join points to the same table id endpoint."

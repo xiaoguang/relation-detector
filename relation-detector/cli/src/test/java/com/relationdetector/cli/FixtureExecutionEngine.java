@@ -65,7 +65,7 @@ final class FixtureExecutionEngine {
             StructuredSqlParser parser = new CommonTokenEventStructuredSqlParser();
             for (SqlStatementRecord statement : statements) {
                 addSqlOutcome(statementExecutionService.executeSql(
-                        parser, statement, context, NO_KNOWN_PHYSICAL_TABLES),
+                        parser, statement, context, NO_KNOWN_PHYSICAL_TABLES, config),
                         relationships,
                         lineages,
                         namingEvidencePool);
@@ -80,7 +80,7 @@ final class FixtureExecutionEngine {
             }
         }
 
-        evidenceEnhancementService.enhance(relationships, namingEvidencePool);
+        evidenceEnhancementService.enhance(relationships, namingEvidencePool, null, config);
         return new FixtureActualResult(relationships, lineages, namingEvidencePool.merged(), List.copyOf(warnings));
     }
 
@@ -95,7 +95,8 @@ final class FixtureExecutionEngine {
                         input.input(),
                         fixture.id() + ".ddl.sql",
                         fixture.evidenceSourceType(),
-                        context)
+                        context,
+                        config)
                 : statementExecutionService.executeDdlText(adaptor, config, input.input(), fixture.id() + ".ddl.sql",
                         fixture.evidenceSourceType(), context);
         NamingEvidencePool namingEvidencePool = new NamingEvidencePool();

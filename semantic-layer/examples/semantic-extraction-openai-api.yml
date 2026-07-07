@@ -1,0 +1,14 @@
+semanticExtraction:
+  # Production mode. This calls an OpenAI-compatible Responses API.
+  provider: openai-api
+  input: relation-detector/target/sample-data-parser-cli/results/mysql-v8_0-full-derived-fresh.json
+  output: semantic-layer/target/semantic-extraction/openai-api-sp-rebuild-sales-fact
+  focus: ROUTINE:erp_system.sp_rebuild_sales_fact
+  model: gpt-5.5
+  reasoningEffort: high
+  maxOutputTokens: 12000
+  baseUrl: https://api.openai.com/v1
+  apiKeyEnv: OPENAI_API_KEY
+  maxRelationships: 80
+  maxLineage: 80
+  maxNamingEvidence: 80

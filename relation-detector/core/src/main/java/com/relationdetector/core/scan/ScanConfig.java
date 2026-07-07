@@ -9,6 +9,8 @@ import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.OfflineSampleCompleteness;
 import com.relationdetector.contracts.Enums.OutputFormat;
 import com.relationdetector.contracts.spi.DataProfileOptions;
+import com.relationdetector.core.relation.NamingRule;
+import com.relationdetector.core.relation.NamingRuleSet;
 
 /** Runtime configuration after YAML and CLI overrides are resolved. */
 public final class ScanConfig {
@@ -61,6 +63,10 @@ public final class ScanConfig {
     public boolean includeEvidence = true;
     public boolean includeWarnings = true;
     public boolean includeObservationCounts = true;
+    public boolean namingMatchEnabled = true;
+    public boolean namingMatchSystemRulesEnabled = true;
+    public List<Path> namingMatchRuleFiles = new ArrayList<>();
+    public List<NamingRule> namingMatchRules = new ArrayList<>();
     public boolean derivedPathsEnabled;
     public boolean derivedRelationshipsEnabled = true;
     public boolean derivedDataLineageEnabled = true;
@@ -93,5 +99,9 @@ public final class ScanConfig {
                 useOfflineInsertSamples,
                 offlineSampleCompleteness,
                 skipUnindexedLargeTargets);
+    }
+
+    public NamingRuleSet namingRuleSet() {
+        return NamingRuleSet.fromConfig(namingMatchEnabled, namingMatchSystemRulesEnabled, namingMatchRules);
     }
 }

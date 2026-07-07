@@ -94,6 +94,29 @@ output:
   includeWarnings: true
   includeObservationCounts: true
 
+namingMatch:
+  enabled: true
+  systemRulesEnabled: true
+  ruleFiles:
+    - config/naming-rules/customer.yml
+  rules:
+    - id: created-by-user
+      rule: USER_CONFIGURED
+      appliesTo: [RELATIONSHIP_CANDIDATE]
+      sourceColumn:
+        equalsAny: [created_by, updated_by, approved_by]
+      targetTable:
+        aliases: [users, employees]
+      targetColumn:
+        equals: id
+      directionHint: true
+    - id: sales-rep-explicit
+      rule: USER_CONFIGURED
+      appliesTo: [RELATIONSHIP_CANDIDATE, DDL_COLUMN_INVENTORY, METADATA]
+      sourceEndpoint: orders.sales_rep_id
+      targetEndpoint: employees.id
+      directionHint: true
+
 derivedPaths:
   enabled: false
   relationships: true
@@ -122,6 +145,9 @@ derivedPaths:
 - `sources.logs.filterSystemQueries` 默认 `true`。开启时，native log 中仅访问系统 catalog/schema 的 metadata 查询会被跳过，不记录 parse warning。
 - `sources.logs.systemSchemas` 可覆盖当前数据库类型的默认系统 schema。MySQL 默认 `information_schema/performance_schema/mysql/sys`；PostgreSQL 默认 `pg_catalog/information_schema/pg_toast`。
 - `sources.logs.metadataQueryMarkers` 可配置日志文本标记，例如 `ApplicationName=DBeaver`、`DatabaseMetaData`，用于跳过工具或 JDBC metadata 查询。
+- `namingMatch.enabled` 默认 `true`。开启后，`NamingEvidenceExtractor` 使用合并后的 `NamingRuleSet` 生成 top-level `namingEvidence`；relationship 只能引用该证据池中的 `evidenceRef`，不能本地重新计算 `NAMING_MATCH`。
+- `namingMatch.systemRulesEnabled` 默认 `true`。系统默认规则来自 `naming-rules/system-default.yml`，当前表达 `TABLE_ID`、`ID_SUFFIX_TO_ID`、`SELF_ROLE_ID` 三类 direct 规则。客户规则可通过 `ruleFiles` 和 inline `rules` 追加；重复 `id`、只配置 source 或 target 半边、或配置 `TRANSITIVE_NAMING_PATH` 都必须报错。
+- 客户规则第一阶段统一使用 `rule: USER_CONFIGURED`，支持列名 equals / equalsAny / suffix / suffixAny、表 aliases、显式 `sourceEndpoint` / `targetEndpoint`。`TRANSITIVE_NAMING_PATH` 不是客户配置规则，只能由 derived path 引擎产生。
 - `derivedPaths.enabled` 默认 `false`。开启后输出传递推导视图：`derivedRelationships`、`derivedDataLineages`，并可向 top-level `namingEvidence` 增加 `TRANSITIVE_NAMING_PATH`。JSON 同时提供只读轻量视图 `derivedNamingEvidence`，方便统计和阅读 derived naming；完整 grouped evidence / rawEvidence 仍只保存在 top-level `namingEvidence`，relationship 也只引用 top-level `namingEvidence.id`。relationship 推导内部可反向遍历 referenced-by 图，但 JSON 中的 derived relationship source/target 仍保持 FK-like 正向；审计路径放在 `path`、`traversalPath` 和 attributes 中。`maxPathLength` 默认 `5`；`maxPathsPerPair=0` 和 `maxFacts=0` 表示不限制。
 - 启用 JDBC source 时 jdbcUrl、username、password 必须可解析。
 - `sampleRows`、`timeoutSeconds` 必须为正数。

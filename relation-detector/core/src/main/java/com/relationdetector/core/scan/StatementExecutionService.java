@@ -60,7 +60,7 @@ public final class StatementExecutionService {
                 .map(structured -> dataLineageExtractor.extract(statement, structured, knownPhysicalTables))
                 .orElseGet(List::of);
         List<NamingEvidenceCandidate> namingEvidence =
-                namingEvidenceExtractor.extractFromRelationshipCandidates(parsed.relationships());
+                namingEvidenceExtractor.extractFromRelationshipCandidates(parsed.relationships(), config);
         return new StatementExecutionOutcome(parsed.relationships(), lineages, namingEvidence, List.of());
     }
 
@@ -70,12 +70,22 @@ public final class StatementExecutionService {
             AdaptorContext context,
             Set<TableId> knownPhysicalTables
     ) {
+        return executeSql(parser, statement, context, knownPhysicalTables, null);
+    }
+
+    public StatementExecutionOutcome executeSql(
+            StructuredSqlParser parser,
+            SqlStatementRecord statement,
+            AdaptorContext context,
+            Set<TableId> knownPhysicalTables,
+            ScanConfig config
+    ) {
         StructuredParseResult structured = parser.parseSql(statement, context);
         List<RelationshipCandidate> relationships = tokenEventRelationExtractor.extract(statement, structured);
         List<DataLineageCandidate> lineages =
                 dataLineageExtractor.extract(statement, structured, knownPhysicalTables);
         List<NamingEvidenceCandidate> namingEvidence =
-                namingEvidenceExtractor.extractFromRelationshipCandidates(relationships);
+                namingEvidenceExtractor.extractFromRelationshipCandidates(relationships, config);
         return new StatementExecutionOutcome(relationships, lineages, namingEvidence, List.of());
     }
 
@@ -85,6 +95,16 @@ public final class StatementExecutionService {
             AdaptorContext context
     ) {
         DdlParseOutcome parsed = ddlParserRunner.parseWithEvidence(parserBundle, file, context);
+        return ddlOutcome(parsed);
+    }
+
+    public StatementExecutionOutcome executeDdlFile(
+            ParserBundle parserBundle,
+            Path file,
+            AdaptorContext context,
+            ScanConfig config
+    ) {
+        DdlParseOutcome parsed = ddlParserRunner.parseWithEvidence(parserBundle, file, context, config);
         return ddlOutcome(parsed);
     }
 
@@ -110,6 +130,18 @@ public final class StatementExecutionService {
     }
 
     public StatementExecutionOutcome executeDdlText(
+            ParserBundle parserBundle,
+            String ddl,
+            String sourceName,
+            EvidenceSourceType sourceType,
+            AdaptorContext context,
+            ScanConfig config
+    ) {
+        return ddlOutcome(ddlParserRunner.parseTextWithEvidence(parserBundle, ddl, sourceName, sourceType, context,
+                config));
+    }
+
+    public StatementExecutionOutcome executeDdlText(
             StructuredDdlParser parser,
             String ddl,
             String sourceName,
@@ -117,6 +149,17 @@ public final class StatementExecutionService {
             AdaptorContext context
     ) {
         return ddlOutcome(ddlParserRunner.parseTextWithEvidence(parser, ddl, sourceName, sourceType, context));
+    }
+
+    public StatementExecutionOutcome executeDdlText(
+            StructuredDdlParser parser,
+            String ddl,
+            String sourceName,
+            EvidenceSourceType sourceType,
+            AdaptorContext context,
+            ScanConfig config
+    ) {
+        return ddlOutcome(ddlParserRunner.parseTextWithEvidence(parser, ddl, sourceName, sourceType, context, config));
     }
 
     private StatementExecutionOutcome ddlOutcome(DdlParseOutcome parsed) {

@@ -244,6 +244,165 @@ class ParserConfigRemovalTest {
     }
 
     @Test
+    void yamlConfigCanLoadConfiguredNamingMatchRules() throws Exception {
+        Path dir = Files.createTempDirectory("relation-detector-naming-rules");
+        Path ruleFile = dir.resolve("customer-rules.yml");
+        Files.writeString(ruleFile, """
+                rules:
+                  - id: external-created-by
+                    rule: USER_CONFIGURED
+                    appliesTo: [RELATIONSHIP_CANDIDATE]
+                    sourceColumn:
+                      equals: created_by
+                    targetTable:
+                      aliases: [employees]
+                    targetColumn:
+                      equals: id
+                """);
+        Path file = dir.resolve("scan.yml");
+        Files.writeString(file, """
+                database:
+                  type: mysql
+                sources:
+                  metadata:
+                    enabled: false
+                  logs:
+                    enabled: true
+                    files:
+                      - app.sql
+                namingMatch:
+                  enabled: true
+                  systemRulesEnabled: false
+                  ruleFiles:
+                    - customer-rules.yml
+                  rules:
+                    - id: inline-sales-rep
+                      rule: USER_CONFIGURED
+                      appliesTo: [RELATIONSHIP_CANDIDATE, METADATA]
+                      sourceEndpoint: orders.sales_rep_id
+                      targetEndpoint: employees.id
+                """);
+
+        ScanConfig config = new SimpleYamlConfigLoader().load(file);
+
+        assertTrue(config.namingMatchEnabled);
+        assertEquals(false, config.namingMatchSystemRulesEnabled);
+        assertEquals(List.of(ruleFile), config.namingMatchRuleFiles);
+        assertEquals(2, config.namingMatchRules.size());
+        assertEquals(2, config.namingRuleSet().rules().size());
+    }
+
+    @Test
+    void yamlConfigRejectsTransitiveNamingPathAsConfiguredRule() throws Exception {
+        Path file = Files.createTempFile("relation-detector-naming-transitive", ".yml");
+        Files.writeString(file, """
+                database:
+                  type: mysql
+                sources:
+                  metadata:
+                    enabled: false
+                  logs:
+                    enabled: true
+                    files:
+                      - app.sql
+                namingMatch:
+                  rules:
+                    - id: illegal-derived
+                      rule: TRANSITIVE_NAMING_PATH
+                      sourceEndpoint: a.id
+                      targetEndpoint: b.id
+                """);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new SimpleYamlConfigLoader().load(file));
+        assertTrue(ex.getMessage().contains("TRANSITIVE_NAMING_PATH"));
+    }
+
+    @Test
+    void yamlConfigRejectsDuplicateNamingRuleIds() throws Exception {
+        Path file = Files.createTempFile("relation-detector-naming-duplicate", ".yml");
+        Files.writeString(file, """
+                database:
+                  type: mysql
+                sources:
+                  metadata:
+                    enabled: false
+                  logs:
+                    enabled: true
+                    files:
+                      - app.sql
+                namingMatch:
+                  rules:
+                    - id: duplicate
+                      rule: USER_CONFIGURED
+                      sourceEndpoint: orders.created_by
+                      targetEndpoint: employees.id
+                    - id: duplicate
+                      rule: USER_CONFIGURED
+                      sourceEndpoint: orders.updated_by
+                      targetEndpoint: employees.id
+                """);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new SimpleYamlConfigLoader().load(file));
+        assertTrue(ex.getMessage().contains("duplicate namingMatch rule id"));
+    }
+
+    @Test
+    void yamlConfigRejectsHalfSpecifiedNamingRuleMatchers() throws Exception {
+        Path file = Files.createTempFile("relation-detector-naming-half-rule", ".yml");
+        Files.writeString(file, """
+                database:
+                  type: mysql
+                sources:
+                  metadata:
+                    enabled: false
+                  logs:
+                    enabled: true
+                    files:
+                      - app.sql
+                namingMatch:
+                  rules:
+                    - id: too-broad
+                      rule: USER_CONFIGURED
+                      sourceColumn:
+                        equalsAny: [created_by, updated_by]
+                """);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new SimpleYamlConfigLoader().load(file));
+        assertTrue(ex.getMessage().contains("must define both source and target matchers"));
+    }
+
+    @Test
+    void yamlConfigRejectsConfiguredSystemNamingRuleKinds() throws Exception {
+        Path file = Files.createTempFile("relation-detector-naming-system-rule-kind", ".yml");
+        Files.writeString(file, """
+                database:
+                  type: mysql
+                sources:
+                  metadata:
+                    enabled: false
+                  logs:
+                    enabled: true
+                    files:
+                      - app.sql
+                namingMatch:
+                  rules:
+                    - id: customer-table-id
+                      rule: TABLE_ID
+                      sourceColumn:
+                        suffix: _id
+                      targetColumn:
+                        equals: id
+                """);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new SimpleYamlConfigLoader().load(file));
+        assertTrue(ex.getMessage().contains("must use rule USER_CONFIGURED"));
+    }
+
+    @Test
     void yamlConfigUsesJacksonYamlLoaderAndKeepsNestedValues() throws Exception {
         Path file = Files.createTempFile("relation-detector-jackson-yaml", ".yml");
         Files.writeString(file, """

@@ -17,6 +17,7 @@ import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
 import com.relationdetector.contracts.Enums.OfflineSampleCompleteness;
 import com.relationdetector.contracts.Enums.OutputFormat;
+import com.relationdetector.core.relation.NamingRuleConfigLoader;
 import com.relationdetector.core.scan.ScanConfig;
 
 /**
@@ -31,6 +32,7 @@ import com.relationdetector.core.scan.ScanConfig;
  */
 public final class SimpleYamlConfigLoader {
     private static final YAMLMapper YAML = new YAMLMapper();
+    private final NamingRuleConfigLoader namingRuleConfigLoader = new NamingRuleConfigLoader();
 
     /**
      * 从 YAML 文件加载 ScanConfig。
@@ -52,6 +54,7 @@ public final class SimpleYamlConfigLoader {
         readSources(config, root.path("sources"));
         readFilters(config, root.path("filters"));
         readOutput(config, root.path("output"));
+        readNamingMatch(config, root.path("namingMatch"), file.toAbsolutePath().getParent());
         readDerivedPaths(config, root.path("derivedPaths"));
         readParser(config, root.path("parser"));
 
@@ -132,6 +135,17 @@ public final class SimpleYamlConfigLoader {
         setBooleanIfPresent(output, "includeObservationCounts", value -> config.includeObservationCounts = value);
     }
 
+    private void readNamingMatch(ScanConfig config, JsonNode namingMatch, Path baseDir) {
+        setBooleanIfPresent(namingMatch, "enabled", value -> config.namingMatchEnabled = value);
+        setBooleanIfPresent(namingMatch, "systemRulesEnabled", value -> config.namingMatchSystemRulesEnabled = value);
+        for (Path path : paths(namingMatch.path("ruleFiles"))) {
+            Path resolved = path.isAbsolute() || baseDir == null ? path : baseDir.resolve(path).normalize();
+            config.namingMatchRuleFiles.add(resolved);
+            config.namingMatchRules.addAll(namingRuleConfigLoader.loadRuleFile(resolved));
+        }
+        config.namingMatchRules.addAll(namingRuleConfigLoader.readInlineRules(namingMatch.path("rules")));
+    }
+
     private void readDerivedPaths(ScanConfig config, JsonNode derivedPaths) {
         setBooleanIfPresent(derivedPaths, "enabled", value -> config.derivedPathsEnabled = value);
         setBooleanIfPresent(derivedPaths, "relationships", value -> config.derivedRelationshipsEnabled = value);
@@ -205,6 +219,12 @@ public final class SimpleYamlConfigLoader {
 
     private void addPaths(JsonNode node, List<Path> target) {
         addStrings(node, value -> target.add(Path.of(value)));
+    }
+
+    private List<Path> paths(JsonNode node) {
+        List<Path> result = new ArrayList<>();
+        addStrings(node, value -> result.add(Path.of(value)));
+        return List.copyOf(result);
     }
 
     private void addStrings(JsonNode node, List<String> target) {
@@ -309,6 +329,7 @@ public final class SimpleYamlConfigLoader {
         }
         validateRatio(config.derivedConfidenceDecay, "derivedPaths confidenceDecay");
         validateRatio(config.derivedMinConfidence, "derivedPaths minConfidence");
+        config.namingRuleSet();
         config.parserMode = normalizeParserMode(config.parserMode);
     }
 

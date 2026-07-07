@@ -33,7 +33,7 @@ final class StatementParsePipeline {
     ) {
         try {
             StatementExecutionOutcome outcome = statementExecutionService.executeDdlFile(
-                    parserBundle(adaptor, config, context, scanContext), file, context);
+                    parserBundle(adaptor, config, context, scanContext), file, context, config);
             scanContext.namingEvidencePool.addAll(outcome.namingEvidence());
             return outcome.relationshipCandidates();
         } catch (Exception ex) {
@@ -52,7 +52,7 @@ final class StatementParsePipeline {
         try {
             StatementExecutionOutcome outcome = statementExecutionService.executeDdlText(
                     parserBundle(adaptor, config, context, scanContext),
-                    definition.ddl(), definition.source(), EvidenceSourceType.DATABASE_DDL, context);
+                    definition.ddl(), definition.source(), EvidenceSourceType.DATABASE_DDL, context, config);
             scanContext.namingEvidencePool.addAll(outcome.namingEvidence());
             return qualifyDatabaseDdlCandidates(outcome.relationshipCandidates(), definition.schema());
         } catch (Exception ex) {
