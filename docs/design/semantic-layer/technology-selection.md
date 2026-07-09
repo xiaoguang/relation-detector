@@ -32,10 +32,12 @@ Phase 2+: 按服务边界拆分或引入消息队列
 
 ## 3. 模块间通信
 
-当前已实现的 KG artifact 阶段采用同进程 Java interface + 构造函数注入：
+当前已实现的离线 artifact 阶段采用同进程 Java interface + 构造函数注入：
 
 - 离线构建：`ScanBundle -> EvidenceGraph -> NoopSemanticEnricher -> SemanticKnowledgeGraph -> JSON artifacts`。
 - 输出 artifact：`semantic-kg.json`、`semantic-evidence-graph.json`、`semantic-build-run.json`。
+- 离线抽取：`ScanBundle -> SemanticExtractionBundleBuilder -> SemanticExtractionPromptBuilder -> semantic extract`。
+- 输出 artifact：`semantic-extraction-evidence-bundle.json`、`semantic-extraction-prompt.md`、`semantic-extraction-result.json`（仅 `openai-api` 或 normalize 后生成）。
 
 后续完整 Phase 1 目标链路为：
 

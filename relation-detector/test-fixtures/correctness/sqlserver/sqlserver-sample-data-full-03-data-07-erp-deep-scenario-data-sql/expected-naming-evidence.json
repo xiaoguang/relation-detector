@@ -1,18 +1,14 @@
 {
   "fingerprints": [
-    "naming:dbo.ap_aging_snapshots.order_id->dbo.purchase_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.ap_aging_snapshots.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.ar_aging_snapshots.customer_id->dbo.customers.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.ar_aging_snapshots.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.contract_milestones.contract_id->dbo.contracts.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.inspection_reports.batch_id->dbo.product_batches.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.inspection_reports.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.inspection_standards.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.service_tickets.customer_id->dbo.customers.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.service_tickets.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.service_tickets.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.work_order_materials.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH"
+    "naming:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.inventory.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.payments.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.product_categories.parent_id->dbo.product_categories.id:SELF_ROLE_ID:NAMING_MATCH",
+    "naming:dbo.project_costs.department_id->dbo.departments.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.sales_order_items.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.sales_order_items.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.sales_orders.customer_id->dbo.customers.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.sales_orders.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.sales_returns.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
   ]
 }

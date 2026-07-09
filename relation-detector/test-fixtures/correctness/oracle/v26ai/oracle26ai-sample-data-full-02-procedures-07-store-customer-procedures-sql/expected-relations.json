@@ -1,10 +1,6 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:employees.id->sales_orders.salesperson_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:sales_order_items.order_id->sales_order_items.order_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:sales_order_items.product_id->sales_order_items.product_id:SQL_LOG_JOIN,SQL_LOG_JOIN",
-    "CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:warehouses.id->warehouses.id:SQL_LOG_JOIN",
     "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN",
     "FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",

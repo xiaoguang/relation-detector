@@ -24,6 +24,7 @@ import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.core.lineage.model.AssignmentMapping;
 import com.relationdetector.core.lineage.model.ExpressionSourceSet;
+import com.relationdetector.core.log.SourceNameNormalizer;
 
 /**
  * SQL Data Lineage 语义抽取器。
@@ -60,13 +61,28 @@ public final class StructuredDataLineageExtractor {
             StructuredParseResult structured,
             Set<TableId> knownPhysicalTables
     ) {
-        Map<String, TableId> aliases = aliases(structured.events());
-        Set<String> localTempTables = localTempTables(statement, structured.events());
-        Set<String> ignoredRowsets = ignoredRowsets(structured.events());
-        ProjectionTraceResolver projectionTraces = ProjectionTraceResolver.fromEvents(
-                structured.events(), aliases, ignoredRowsets);
         List<DataLineageCandidate> candidates = new ArrayList<>();
-        for (StructuredSqlEvent event : structured.events()) {
+        Set<String> allLocalTempTables = localTempTables(statement, structured.events());
+        for (List<StructuredSqlEvent> events : scopedEventGroups(structured.events())) {
+            candidates.addAll(extractFromEvents(statement, events, knownPhysicalTables, allLocalTempTables));
+        }
+        return candidates;
+    }
+
+    private List<DataLineageCandidate> extractFromEvents(
+            SqlStatementRecord statement,
+            List<StructuredSqlEvent> events,
+            Set<TableId> knownPhysicalTables,
+            Set<String> allLocalTempTables
+    ) {
+        Map<String, TableId> aliases = aliases(events);
+        Set<String> localTempTables = new java.util.LinkedHashSet<>(allLocalTempTables);
+        localTempTables.addAll(localTempTables(statement, events));
+        Set<String> ignoredRowsets = ignoredRowsets(events);
+        ProjectionTraceResolver projectionTraces = ProjectionTraceResolver.fromEvents(
+                events, aliases, ignoredRowsets);
+        List<DataLineageCandidate> candidates = new ArrayList<>();
+        for (StructuredSqlEvent event : events) {
             if (event.type() != StructuredParseEventType.UPDATE_ASSIGNMENT
                     && event.type() != StructuredParseEventType.INSERT_SELECT_MAPPING
                     && event.type() != StructuredParseEventType.MERGE_WRITE_MAPPING) {
@@ -104,17 +120,42 @@ public final class StructuredDataLineageExtractor {
             Map<String, Object> attributes = new LinkedHashMap<>();
             attributes.put("tokenEventNative", true);
             attributes.put("mappingKind", text(event, "mappingKind"));
+            copySourceAttributes(statement, attributes);
             candidate.attributes().putAll(attributes);
             candidate.evidence().add(new DataLineageEvidence(
                     transform,
                     score,
                     sourceType(statement.sourceType()),
-                    statement.sourceName(),
+                    SourceNameNormalizer.normalize(statement.sourceName()),
                     "ANTLR token-event write mapping",
                     attributes));
             candidates.add(candidate);
         }
         return candidates;
+    }
+
+    private List<List<StructuredSqlEvent>> scopedEventGroups(List<StructuredSqlEvent> events) {
+        Map<String, List<StructuredSqlEvent>> scoped = new LinkedHashMap<>();
+        List<StructuredSqlEvent> ambient = new ArrayList<>();
+        for (StructuredSqlEvent event : events) {
+            String scope = text(event, "statementScope");
+            if (scope.isBlank()) {
+                ambient.add(event);
+            } else {
+                scoped.computeIfAbsent(scope, ignored -> new ArrayList<>()).add(event);
+            }
+        }
+        if (scoped.isEmpty()) {
+            return List.of(events);
+        }
+        List<List<StructuredSqlEvent>> groups = new ArrayList<>();
+        for (List<StructuredSqlEvent> scopeEvents : scoped.values()) {
+            List<StructuredSqlEvent> group = new ArrayList<>(ambient.size() + scopeEvents.size());
+            group.addAll(ambient);
+            group.addAll(scopeEvents);
+            groups.add(group);
+        }
+        return groups;
     }
 
     private AssignmentMapping assignmentMapping(
@@ -127,6 +168,22 @@ public final class StructuredDataLineageExtractor {
                 Endpoint.column(target),
                 new ExpressionSourceSet(sources, transform.name()),
                 text(event, "mappingKind"));
+    }
+
+    private void copySourceAttributes(SqlStatementRecord statement, Map<String, Object> attributes) {
+        copyAttribute(statement, attributes, "sourceObjectType");
+        copyAttribute(statement, attributes, "sourceObjectName");
+        copyAttribute(statement, attributes, "sourceFile");
+        copyAttribute(statement, attributes, "sourceStatementId");
+        copyAttribute(statement, attributes, "sourceBlockId");
+        copyAttribute(statement, attributes, "sourceObjectKind");
+    }
+
+    private void copyAttribute(SqlStatementRecord statement, Map<String, Object> attributes, String key) {
+        Object value = statement.attributes().get(key);
+        if (value != null && !String.valueOf(value).isBlank()) {
+            attributes.put(key, value);
+        }
     }
 
     private Map<String, TableId> aliases(List<StructuredSqlEvent> events) {

@@ -10,9 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 
+import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
@@ -264,7 +266,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 .toList();
 
         assertEquals(List.of(
-                "VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost"),
+                "VALUE:AGGREGATE:supplier_manifests.supply_price,supplier_manifests.product_id,warehouse_inventory.product_id,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost"),
                 fingerprints,
                 () -> "Scalar aggregate subquery should remain a physical aggregate source: " + structured.events());
     }
@@ -296,25 +298,39 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new StructuredDataLineageExtractor()
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
+                .toList();
+        List<String> fingerprints = lineages.stream()
                 .map(this::lineageFingerprint)
                 .sorted()
                 .toList();
 
-        assertTrue(fingerprints.contains(
-                        "VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count"),
-                () -> "COUNT(DISTINCT po.id) is valid aggregate lineage, not a false positive: "
+        assertLineageSource(lineages, "purchase_orders", "id", "supplier_products", "total_order_count",
+                LineageTransformType.AGGREGATE, () -> "COUNT(DISTINCT po.id) is valid aggregate lineage: "
                         + fingerprints + " events=" + structured.events());
-        assertTrue(fingerprints.contains(
-                        "VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty"),
-                () -> "SUM(poi.received_qty) is valid aggregate lineage, not a false positive: "
+        assertLineageSource(lineages, "purchase_order_items", "received_qty", "supplier_products", "total_order_qty",
+                LineageTransformType.AGGREGATE, () -> "SUM(poi.received_qty) is valid aggregate lineage: "
                         + fingerprints + " events=" + structured.events());
-        assertTrue(fingerprints.contains(
-                       "VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date"),
-               () -> "MAX(po.order_date) is valid aggregate lineage, not a false positive: "
-                       + fingerprints + " events=" + structured.events());
+        assertLineageSource(lineages, "purchase_orders", "order_date", "supplier_products", "last_order_date",
+                LineageTransformType.AGGREGATE, () -> "MAX(po.order_date) is valid aggregate lineage: "
+                        + fingerprints + " events=" + structured.events());
+        assertLineageSource(lineages, "purchase_order_items", "order_id", "supplier_products", "total_order_count",
+                LineageTransformType.AGGREGATE, () -> "JOIN predicate column poi.order_id should remain aggregate update lineage context: "
+                        + fingerprints + " events=" + structured.events());
+        assertLineageSource(lineages, "purchase_order_items", "product_id", "supplier_products", "total_order_qty",
+                LineageTransformType.AGGREGATE, () -> "Correlated filter column poi.product_id should remain aggregate update lineage context: "
+                        + fingerprints + " events=" + structured.events());
+        assertLineageSource(lineages, "purchase_orders", "supplier_id", "supplier_products", "total_order_qty",
+                LineageTransformType.AGGREGATE, () -> "Correlated filter column po.supplier_id should remain aggregate update lineage context: "
+                        + fingerprints + " events=" + structured.events());
+        assertLineageSource(lineages, "supplier_products", "product_id", "supplier_products", "total_order_qty",
+                LineageTransformType.AGGREGATE, () -> "Outer correlated target column sp.product_id should remain aggregate update lineage context: "
+                        + fingerprints + " events=" + structured.events());
+        assertLineageSource(lineages, "supplier_products", "supplier_id", "supplier_products", "total_order_qty",
+                LineageTransformType.AGGREGATE, () -> "Outer correlated target column sp.supplier_id should remain aggregate update lineage context: "
+                        + fingerprints + " events=" + structured.events());
     }
 
     @Test
@@ -516,6 +532,25 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
     private boolean isRelationDetectorRoot(Path path) {
         return Files.isDirectory(path.resolve("sample-data"))
                 && Files.isDirectory(path.resolve("test-fixtures"));
+    }
+
+    private void assertLineageSource(
+            List<DataLineageCandidate> lineages,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn,
+            LineageTransformType transformType,
+            Supplier<String> message
+    ) {
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.transformType() == transformType
+                                && targetTable.equals(lineage.target().table().tableName())
+                                && targetColumn.equals(lineage.target().column().columnName())
+                                && lineage.sources().stream().anyMatch(source ->
+                                sourceTable.equals(source.table().tableName())
+                                        && sourceColumn.equals(source.column().columnName()))),
+                message);
     }
 
     private String fingerprint(RelationshipCandidate relation) {

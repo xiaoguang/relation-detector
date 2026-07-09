@@ -6,6 +6,7 @@
     "CO_OCCURRENCE:employees.id->repair_orders.technician_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:fiscal_calendar.calendar_date->sales_fact.fiscal_date:SQL_LOG_JOIN,REPEATED_OBSERVATION",
     "CO_OCCURRENCE:inventory.warehouse_id->sales_fact.warehouse_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:inventory_location_balances.location_id->picking_task_items.location_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:inventory_location_balances.product_id->picking_task_items.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:master_data_change_requests.master_id->sensitive_access_logs.object_id:SQL_LOG_JOIN",

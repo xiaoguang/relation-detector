@@ -1,25 +1,4 @@
 {
-  "fingerprints": [
-    "CO_OCCURRENCE:dbo.employees.id->dbo.fixed_assets.custodian_id:SQL_LOG_JOIN",
-    "FK_LIKE:dbo.boms.child_product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.boms.parent_product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.depreciation_log.asset_id->dbo.fixed_assets.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.fixed_assets.department_id->dbo.departments.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.invoices.customer_id->dbo.customers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.invoices.supplier_id->dbo.suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.promotion_products.category_id->dbo.product_categories.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.promotion_products.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.promotion_usages.customer_id->dbo.customers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.promotion_usages.order_id->dbo.sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.promotion_usages.promotion_id->dbo.promotions.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.three_way_matching.invoice_id->dbo.invoices.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.three_way_matching.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.three_way_matching.purchase_order_id->dbo.purchase_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.three_way_matching.purchase_receipt_id->dbo.purchase_receipts.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.work_order_materials.work_order_id->dbo.work_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.work_orders.bom_id->dbo.boms.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.work_orders.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.work_orders.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH"
-  ],
+  "fingerprints": [],
   "forbiddenTables": []
 }

@@ -123,6 +123,45 @@ class TokenEventRelationExtractorIndependenceTest {
     }
 
     @Test
+    void ambiguousAliasDoesNotResolveAcrossIndependentQueryBlocks() {
+        SqlStatementRecord statement = record("""
+                WITH sales_stats AS (
+                    SELECT soi.product_id
+                    FROM sales_order_items soi
+                    JOIN products p ON soi.product_id = p.id
+                )
+                SELECT e.id, p.name
+                FROM employees e
+                JOIN positions p ON e.position_id = p.id
+                """);
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "sales_order_items", "soi", 1),
+                table("JOIN", "products", "p", 1),
+                table("FROM", "employees", "e", 6),
+                table("JOIN", "positions", "p", 7),
+                equality("soi", "product_id", "p", "id", 3),
+                equality("e", "position_id", "p", "id", 7)
+        ));
+
+        List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
+
+        assertEquals(2, relations.size(),
+                () -> "Alias p should resolve to the nearest query-block rowset without cross-block leakage: " + relations);
+        assertTrue(relations.stream().anyMatch(relation ->
+                        relation.source().displayName().equals("products.id")
+                                && relation.target().displayName().equals("sales_order_items.product_id")),
+                () -> "CTE predicate should resolve p to products: " + relations);
+        assertTrue(relations.stream().anyMatch(relation ->
+                        relation.source().displayName().equals("employees.position_id")
+                                && relation.target().displayName().equals("positions.id")),
+                () -> "Outer predicate should resolve p to positions: " + relations);
+        assertTrue(relations.stream().noneMatch(relation ->
+                        relation.source().displayName().equals("positions.id")
+                                && relation.target().displayName().equals("sales_order_items.product_id")),
+                () -> "Alias p must not leak from the outer query into the CTE predicate: " + relations);
+    }
+
+    @Test
     void emptyStructuredEventsDoNotRescanRawSql() {
         SqlStatementRecord statement = record("SELECT * FROM orders o JOIN users u ON o.user_id = u.id");
         StructuredParseResult structured = structured(List.of());

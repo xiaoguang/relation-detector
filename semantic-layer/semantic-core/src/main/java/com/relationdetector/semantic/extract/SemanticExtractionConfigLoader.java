@@ -47,9 +47,9 @@ public final class SemanticExtractionConfigLoader {
                 extract.path("maxOutputTokens").asInt(extract.path("max-output-tokens").asInt(12000)),
                 extract.path("baseUrl").asText(extract.path("base-url").asText("https://api.openai.com/v1")),
                 extract.path("apiKeyEnv").asText(extract.path("api-key-env").asText("OPENAI_API_KEY")),
-                extract.path("maxRelationships").asInt(extract.path("max-relationships").asInt(80)),
-                extract.path("maxLineage").asInt(extract.path("max-lineage").asInt(80)),
-                extract.path("maxNamingEvidence").asInt(extract.path("max-naming").asInt(80)),
+                extract.path("maxRelationships").asInt(extract.path("max-relationships").asInt(0)),
+                extract.path("maxLineage").asInt(extract.path("max-lineage").asInt(0)),
+                extract.path("maxNamingEvidence").asInt(extract.path("max-naming").asInt(0)),
                 extract.path("requestOnly").asBoolean(extract.path("request-only").asBoolean(false)));
     }
 

@@ -20,6 +20,7 @@ import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 import com.relationdetector.core.relation.NamingEvidenceExtractor;
+import com.relationdetector.core.relation.TokenEventRelationExtractor;
 import com.relationdetector.sqlserver.fullgrammer.v2025.SqlServer2025FullGrammerDialectModule;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredDdlParser;
@@ -196,6 +197,36 @@ class SqlServerFullGrammerLineageExpressionTest {
                                                 && "journal_type".equals(source.column().columnName()))),
                 () -> "Expected CONTROL lineage from cj.journal_type to debit_amount, lineages=" + lineages
                         + ", events=" + result.events());
+    }
+
+    @Test
+    void fullGrammerDoesNotEmitEqualityRelationForNonEqualityComparison() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                SELECT p.id
+                FROM dbo.products AS p
+                JOIN dbo.inventory AS i ON i.product_id = p.id
+                GROUP BY p.id
+                HAVING SUM(i.available_quantity) < MAX(p.min_stock);
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-non-equality-co.sql", 1, 1, Map.of());
+
+        StructuredParseResult result = new SqlServer2025FullGrammerDialectModule()
+                .sqlParser()
+                .parseSql(statement, null);
+
+        var fingerprints = new TokenEventRelationExtractor().extract(statement, result)
+                .stream()
+                .map(relation -> relation.relationType() + ":"
+                        + relation.source().displayName() + "->"
+                        + relation.target().displayName())
+                .toList();
+
+        assertTrue(fingerprints.contains("CO_OCCURRENCE:dbo.inventory.product_id->dbo.products.id"),
+                () -> "The JOIN equality should still be emitted: " + fingerprints
+                        + " events=" + result.events());
+        assertTrue(fingerprints.stream().noneMatch(fingerprint ->
+                        fingerprint.equals("CO_OCCURRENCE:dbo.inventory.available_quantity->dbo.products.min_stock")),
+                () -> "Non-equality HAVING comparison must not be emitted as column equality: "
+                        + fingerprints + " events=" + result.events());
     }
 
     private List<NamingEvidenceCandidate> namingEvidence(StructuredParseResult result) {

@@ -1,7 +1,5 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:orders.id->orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
-    "CO_OCCURRENCE:orders.user_id->orders.user_id:SQL_LOG_JOIN",
     "FK_LIKE:orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:orders.user_id->users.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:users.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH"

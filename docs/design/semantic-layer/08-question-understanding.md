@@ -1,6 +1,6 @@
 # Question Understanding 详细设计
 
-> 当前实现状态：目标设计，尚未落地。当前代码没有在线问答入口、真实 LLM 调用、问题标准化或 `QuestionIntent` 生成；当前只实现离线 KG JSON 构建。
+> 当前实现状态：目标设计，尚未落地。当前代码没有在线问答入口、问题标准化或 `QuestionIntent` 生成；已实现的是离线 KG JSON 构建，以及离线 `semantic extract` 的 `codex-session` / `openai-api` 语义抽取入口。
 
 ## 1. 目标与定位
 
@@ -42,7 +42,7 @@ Question Understanding 内部分成两个子步骤：
 
 下游: Semantic Search
   消费: QuestionIntent.entities[].mention → 消歧查找
-  
+
 下游: Query Planner
   消费: QuestionIntent (完整结构化意图)
 ```

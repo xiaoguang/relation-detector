@@ -21,6 +21,7 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
+import com.relationdetector.core.log.SourceNameNormalizer;
 
 /**
  * Extracts independent name-only evidence hints.
@@ -224,7 +225,7 @@ public final class NamingEvidenceExtractor {
                 EvidenceType.NAMING_MATCH,
                 BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
                 EvidenceSourceType.NAMING_HEURISTIC,
-                source,
+                SourceNameNormalizer.normalize(source),
                 detail,
                 match.attributes());
     }

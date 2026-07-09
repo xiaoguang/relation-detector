@@ -82,6 +82,10 @@ public final class FullGrammerTypedSqlEventSink {
         rowsets.withSelectScope(visitor);
     }
 
+    public void withStatementScope(Runnable visitor) {
+        source.withStatementScope(visitor);
+    }
+
     public String currentProjectionOwner() {
         return rowsets.currentProjectionOwner();
     }
@@ -312,6 +316,18 @@ public final class FullGrammerTypedSqlEventSink {
                     equalsIndex + 1, tree.getChildCount());
             Optional<ExpressionColumn> right = singlePredicateColumnInChildren(tree, equalsIndex + 1, tree.getChildCount(),
                     0, equalsIndex);
+            if (left.isPresent() && right.isPresent()) {
+                result.add(new ColumnPair(left.get(), right.get()));
+                return;
+            }
+        }
+        int nullSafeEqualityIndex = directTerminalSequenceStart(tree, List.of("IS", "NOT", "DISTINCT", "FROM"));
+        if (nullSafeEqualityIndex > 0) {
+            int rightStart = nullSafeEqualityIndex + 4;
+            Optional<ExpressionColumn> left = singlePredicateColumnInChildren(tree, 0, nullSafeEqualityIndex,
+                    rightStart, tree.getChildCount());
+            Optional<ExpressionColumn> right = singlePredicateColumnInChildren(tree, rightStart, tree.getChildCount(),
+                    0, nullSafeEqualityIndex);
             if (left.isPresent() && right.isPresent()) {
                 result.add(new ColumnPair(left.get(), right.get()));
                 return;
@@ -744,6 +760,27 @@ public final class FullGrammerTypedSqlEventSink {
     private int directLeafIndex(ParseTree tree, String text) {
         for (int index = 0; index < tree.getChildCount(); index++) {
             if (tree.getChild(index) instanceof TerminalNode terminal && terminal.getText().equals(text)) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    private int directTerminalSequenceStart(ParseTree tree, List<String> texts) {
+        if (texts.isEmpty() || tree.getChildCount() < texts.size()) {
+            return -1;
+        }
+        for (int index = 0; index <= tree.getChildCount() - texts.size(); index++) {
+            boolean matches = true;
+            for (int offset = 0; offset < texts.size(); offset++) {
+                ParseTree child = tree.getChild(index + offset);
+                if (!(child instanceof TerminalNode terminal)
+                        || !terminal.getText().equalsIgnoreCase(texts.get(offset))) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
                 return index;
             }
         }

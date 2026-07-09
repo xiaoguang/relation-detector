@@ -586,13 +586,14 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
             visit(scalarSubquery.selectStatement());
             ExpressionAnalysis selectedExpression = scalarSubquerySelectExpression(scalarSubquery.selectStatement());
             if (!selectedExpression.sources().isEmpty()) {
-                return selectedExpression;
+                return scalarSubqueryWithContext(scalarSubquery.selectStatement(), selectedExpression);
             }
             List<ColumnRead> columns = selectColumns(scalarSubquery.selectStatement());
             if (columns.isEmpty()) {
                 return ExpressionAnalysis.empty();
             }
-            return new ExpressionAnalysis(columns, LineageTransformType.DIRECT, LineageFlowKind.VALUE);
+            return scalarSubqueryWithContext(scalarSubquery.selectStatement(),
+                    new ExpressionAnalysis(columns, LineageTransformType.DIRECT, LineageFlowKind.VALUE));
         }
         return ExpressionAnalysis.empty();
     }
@@ -603,6 +604,64 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
             return ExpressionAnalysis.empty();
         }
         return analyze(items.get(0).expression());
+    }
+
+    private ExpressionAnalysis scalarSubqueryWithContext(
+            MySqlRelationSqlParser.SelectStatementContext select,
+            ExpressionAnalysis selectedExpression
+    ) {
+        if (selectedExpression.transform() != LineageTransformType.AGGREGATE
+                || selectedExpression.flowKind() != LineageFlowKind.VALUE) {
+            return selectedExpression;
+        }
+        ExpressionAnalysis context = scalarSubqueryContext(select);
+        if (context.sources().isEmpty()) {
+            return selectedExpression;
+        }
+        ExpressionAnalysis combined = ExpressionAnalysis.combine(
+                selectedExpression.transform(),
+                LineageFlowKind.VALUE,
+                selectedExpression,
+                context);
+        return new ExpressionAnalysis(combined.sources(), selectedExpression.transform(), LineageFlowKind.VALUE);
+    }
+
+    private ExpressionAnalysis scalarSubqueryContext(MySqlRelationSqlParser.SelectStatementContext select) {
+        MySqlRelationSqlParser.QuerySpecificationContext query = select.querySpecification();
+        ExpressionAnalysis context = ExpressionAnalysis.empty();
+        if (query.fromClause() != null) {
+            for (MySqlRelationSqlParser.TableReferenceContext reference : query.fromClause().tableReference()) {
+                for (MySqlRelationSqlParser.JoinClauseContext join : reference.joinClause()) {
+                    if (join.predicate() != null) {
+                        context = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                                LineageFlowKind.VALUE,
+                                context,
+                                analyze(join.predicate()));
+                    }
+                }
+            }
+        }
+        if (query.whereClause() != null) {
+            context = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.VALUE,
+                    context,
+                    analyze(query.whereClause().predicate()));
+        }
+        if (query.groupByClause() != null) {
+            for (MySqlRelationSqlParser.ExpressionContext expression : query.groupByClause().expressionList().expression()) {
+                context = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.VALUE,
+                        context,
+                        analyze(expression));
+            }
+        }
+        if (query.havingClause() != null) {
+            context = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.VALUE,
+                    context,
+                    analyze(query.havingClause().predicate()));
+        }
+        return context;
     }
 
     private ExpressionAnalysis analyze(MySqlRelationSqlParser.PredicateContext predicate) {

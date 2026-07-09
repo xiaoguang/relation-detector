@@ -51,6 +51,7 @@ public final class RelationshipMerger {
         }
         foldColumnCoOccurrencesIntoDirectionalEvidence(merged);
         merged = normalizeDirectionFromEvidence(merged);
+        merged.entrySet().removeIf(entry -> isNoOpColumnCoOccurrence(entry.getValue()));
 
         for (RelationshipCandidate candidate : merged.values()) {
             summarizeRepeatedEvidence(candidate);
@@ -115,6 +116,11 @@ public final class RelationshipMerger {
                 && candidate.relationSubType() == RelationSubType.COLUMN_CO_OCCURRENCE
                 && candidate.source().isColumnLevel()
                 && candidate.target().isColumnLevel();
+    }
+
+    private boolean isNoOpColumnCoOccurrence(RelationshipCandidate candidate) {
+        return isColumnCoOccurrence(candidate)
+                && candidate.source().normalizedKey().equals(candidate.target().normalizedKey());
     }
 
     private Map<String, RelationshipCandidate> normalizeDirectionFromEvidence(Map<String, RelationshipCandidate> merged) {

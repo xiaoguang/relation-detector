@@ -335,6 +335,12 @@ Observation count 也只保留三段式字段：`direct*ObservationCount`、`der
 - 重复观测不会把同一个基础分无限叠加；摘要 evidence 记录 `count` 和样本 detail，并额外使用 `REPEATED_OBSERVATION` 表示最多 0.10 的递减增益。
 - JSON 输出由 Jackson `ObjectMapper` 生成；输出字段保持稳定，后续新增字段应向后兼容。
 
+当前实现备注：
+
+- relationship 和 naming evidence 的 evidence type 已按现有 evidence model 输出。
+- data lineage 已有 `rawEvidence` / grouped `evidence` 双层结构和 stable source/target facts，但 lineage evidence 当前使用 `transformType/sourceType/score/source/detail/attributes`，不输出 relationship/naming evidence 那种 `type` 字段。这是 provenance typing 口径尚未完全统一的实现缺口，不表示 lineage fact 无证据，也不允许消费者用 SQL 文本重新推断结构。
+- 文件来源的 `rawEvidence.source` 应输出 repo-relative path；object/routine 来源可以输出对象名。不得重新输出本机绝对路径。
+
 ## Table 输出
 
 适合终端阅读：

@@ -164,18 +164,18 @@ sample-data/oracle/26ai
 
 - `01-schema`：7 个 schema / view / index 文件。
 - `02-procedures`：13 个 procedure / trigger / package-like logic 文件。
-- `03-data`：6 个 seed / business data 文件。
+- `03-data`：5 个 seed / business data 文件。
 - `04-queries`：12 个业务查询和写入样例。
 
 Oracle correctness 当前统计：
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 241 | 241 |
-| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 273 | 341 |
-| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
-| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
-| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
+| Oracle root token-event | 41 | 33 / 8 | 623 | 247 | 0 | 241 | 309 |
+| Oracle full-grammer v12c | 42 | 34 / 8 | 654 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v19c | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v21c | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v26ai | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
 
 `sample-data/oracle/<version>` 仍保留完整 ERP SQL 资产；correctness 中只保留会产生 relationship / lineage / diagnostics，或承载 Oracle 版本特性、DDL 解析等特殊语法边界的 fixture。纯 seed / routine / metadata-only 空输出切片不再进入 correctness，以降低全量测试时间。
 
@@ -183,25 +183,25 @@ Oracle correctness 当前统计：
 
 | Parser family | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 13 | 10 / 3 | 317 | 152 | 248 | 0 |
-| MySQL token-event root sample-data | 38 | 32 / 6 | 349 | 240 | 238 | 0 |
-| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 346 | 265 | 243 | 0 |
-| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 397 | 254 | 245 | 0 |
-| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 369 | 205 | 241 | 0 |
-| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 371 | 206 | 241 | 0 |
-| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 371 | 206 | 241 | 0 |
-| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 370 | 205 | 241 | 0 |
-| Oracle token-event root sample-data | 38 | 32 / 6 | 373 | 212 | 238 | 0 |
-| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
-| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
-| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
-| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 375 | 217 | 239 | 0 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 341 | 324 | 246 | 0 |
-| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
-| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
-| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
-| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
-| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 347 | 324 | 246 | 0 |
+| common token-event sample-data | 9 | 6 / 3 | 319 | 105 | 248 | 0 |
+| MySQL token-event root sample-data | 38 | 32 / 6 | 347 | 242 | 238 | 0 |
+| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 337 | 264 | 242 | 0 |
+| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 366 | 253 | 244 | 0 |
+| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 352 | 205 | 241 | 0 |
+| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 352 | 206 | 241 | 0 |
+| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 352 | 206 | 241 | 0 |
+| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 352 | 205 | 241 | 0 |
+| Oracle token-event root sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
+| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
+| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
+| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
+| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 343 | 266 | 251 | 0 |
+| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
+| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
+| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
+| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
+| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
 
 ## 后续收口
 

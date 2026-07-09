@@ -1,8 +1,6 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:ap_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:approval_instances.workflow_id->approval_instances.workflow_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:ar_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN",
     "FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:approval_records.node_id->approval_nodes.id:SQL_LOG_JOIN,NAMING_MATCH",

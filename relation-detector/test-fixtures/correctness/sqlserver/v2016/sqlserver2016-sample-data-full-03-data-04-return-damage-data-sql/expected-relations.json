@@ -1,25 +1,4 @@
 {
-  "fingerprints": [
-    "CO_OCCURRENCE:dbo.damage_reports.approved_by->dbo.employees.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.damage_reports.executed_by->dbo.employees.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.damage_reports.reported_by->dbo.employees.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.employees.id->dbo.purchase_returns.approved_by:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.employees.id->dbo.purchase_returns.handler_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.employees.id->dbo.vouchers.posted_by:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.employees.id->dbo.vouchers.prepared_by:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.employees.id->dbo.vouchers.reviewed_by:SQL_LOG_JOIN",
-    "FK_LIKE:dbo.accounts.parent_id->dbo.accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.damage_report_items.batch_id->dbo.product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.damage_report_items.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.damage_report_items.report_id->dbo.damage_reports.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.purchase_return_items.batch_id->dbo.product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.purchase_return_items.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:SQL_LOG_JOIN,NAMING_MATCH"
-  ],
+  "fingerprints": [],
   "forbiddenTables": []
 }

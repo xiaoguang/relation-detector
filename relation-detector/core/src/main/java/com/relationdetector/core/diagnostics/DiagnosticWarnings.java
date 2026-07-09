@@ -65,8 +65,12 @@ public final class DiagnosticWarnings {
         if (!statement.attributes().isEmpty()) {
             attributes.putAll(statement.attributes());
         }
+        Object sourceFile = attributes.get("sourceFile");
+        String source = sourceFile instanceof String text && !text.isBlank()
+                ? text
+                : statement.sourceName();
         return WarningMessage.warn(WarningType.PARSE_WARNING, "SQL_PARSE_FAILED",
-                ex.getMessage(), statement.sourceName(), statement.startLine(), attributes);
+                ex.getMessage(), source, statement.startLine(), attributes);
     }
 
     /** Builds a warning for a raw SQL/object file that could not be split into statements. */

@@ -1,12 +1,5 @@
 {
   "fingerprints": [
-    "naming:dbo.commission_rules.product_category_id->dbo.product_categories.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.promotion_products.promotion_id->dbo.promotions.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.sales_commissions.employee_id->dbo.employees.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.sales_commissions.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.settlement_items.settlement_id->dbo.settlements.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.shipments.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.shipments.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.shipping_tracks.shipment_id->dbo.shipments.id:TABLE_ID:NAMING_MATCH"
+    "naming:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:TABLE_ID:NAMING_MATCH"
   ]
 }

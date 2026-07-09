@@ -53,7 +53,11 @@ public final class PlainSqlLogExtractor {
                     if (!localTempTables.isEmpty()) {
                         attributes.put("localTempTables", localTempTables);
                     }
-                    statements.add(new SqlStatementRecord(sql, sourceType, file.toString(), line,
+                    String normalizedFile = SourceNameNormalizer.normalize(file);
+                    attributes.put("sourceFile", normalizedFile);
+                    attributes.put("sourceStatementId", normalizedFile + ":" + line + "-" + (line + countLines(part)));
+                    attributes.put("sourceObjectType", "SQL_WRITE");
+                    statements.add(new SqlStatementRecord(sql, sourceType, normalizedFile, line,
                             line + countLines(part), attributes));
                 }
                 line += countLines(part);

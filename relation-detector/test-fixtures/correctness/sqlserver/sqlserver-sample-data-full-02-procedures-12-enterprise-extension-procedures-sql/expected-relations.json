@@ -1,22 +1,6 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:dbo.employees.id->dbo.employees.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
-    "CO_OCCURRENCE:dbo.employees.id->dbo.settlements.approved_by:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.employees.id->dbo.settlements.prepared_by:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.product_categories.id->dbo.product_categories.id:SQL_LOG_SUBQUERY_IN",
-    "CO_OCCURRENCE:dbo.promotions.id->dbo.promotions.id:SQL_LOG_SUBQUERY_IN",
-    "CO_OCCURRENCE:dbo.sales_orders.id->dbo.sales_orders.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
-    "CO_OCCURRENCE:dbo.settlements.id->dbo.settlements.id:SQL_LOG_SUBQUERY_IN",
-    "CO_OCCURRENCE:dbo.shipments.id->dbo.shipments.id:SQL_LOG_SUBQUERY_IN",
-    "CO_OCCURRENCE:dbo.warehouses.id->dbo.warehouses.id:SQL_LOG_SUBQUERY_IN",
-    "FK_LIKE:dbo.commission_rules.product_category_id->dbo.product_categories.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.sales_commissions.employee_id->dbo.employees.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.sales_commissions.order_id->dbo.sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.settlement_items.settlement_id->dbo.settlements.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.shipments.order_id->dbo.sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.shipments.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.shipping_tracks.shipment_id->dbo.shipments.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:dbo.stocktake_items.stocktake_id->dbo.stocktakes.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

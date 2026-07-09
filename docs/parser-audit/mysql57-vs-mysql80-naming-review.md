@@ -1,63 +1,106 @@
-# MySQL 5.7 与 MySQL 8.0 NAMING_MATCH 审计
+# MySQL 5.7 / 8.0 sample-data parity 审计
 
-本文记录 `mysql-v5_7-full` 与 `mysql-v8_0-full` 在 sample-data correctness golden 中的 top-level `namingEvidence` 差异。
+本文记录 `mysql-v5_7-full` 与 `mysql-v8_0-full` 在自然 sample-data CLI 上的差异。输入来自：
 
-- `test-fixtures/correctness/mysql/v5_7/**/expected-naming-evidence.json`
-- `test-fixtures/correctness/mysql/v8_0/**/expected-naming-evidence.json`
+- `relation-detector/target/sample-data-parser-cli/results/mysql-v5_7-full-derived-fresh.json`
+- `relation-detector/target/sample-data-parser-cli/results/mysql-v8_0-full-derived-fresh.json`
+
+统计由 `relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh` 生成。
+
+## 审计口径
+
+MySQL 5.7 与 8.0 的 sample-data 不再按“数量必须相等”验收。5.7 是 8.0 业务资产的兼容改写版本：CTE、窗口函数、部分 8.0-only 写法会被改成 derived table、聚合子查询、变量或普通 DML。因此 `Rel/Lin/Name/Der*` 的数量差异必须逐项分类，而不是直接判定为 parser gap。
+
+分类只使用以下几类：
+
+- `EXPECTED_VERSION_DELTA`：由 MySQL 5.7 / 8.0 官方语法能力差异造成。
+- `EXPECTED_SQL_ASSET_DELTA`：由 5.7 兼容改写或 8.0 自然 SQL 资产差异造成，SQL 结构本身可解释。
+- `MYSQL57_PARSER_GAP`：5.7 SQL 中存在明确结构，但 v5_7 full-grammer 漏识别。
+- `MYSQL80_FALSE_POSITIVE`：8.0 输出没有 SQL/DDL/metadata/profile 结构证据支撑，应收紧 parser 或 golden。
+- `REVIEW_NEEDED`：仅凭 SQL 结构无法判断，需人工审核。
+
+当前结论：不要求 5.7 与 8.0 数量 parity；只要求所有差异能落入上述分类，且 `MYSQL57_PARSER_GAP` / `MYSQL80_FALSE_POSITIVE` 不能残留。
 
 ## 当前统计
 
-| Parser | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| MySQL full-grammer v5_7 sample-data | 37 | 31 / 6 | 562 | 285 | 256 | 0 |
-| MySQL full-grammer v8_0 sample-data | 37 | 31 / 6 | 785 | 273 | 418 | 0 |
+| Parser | Fixtures | SQL / DDL | Rel | Lin | Name | Diag | DerRel | DerLin | DerName |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| MySQL full-grammer v5_7 | 38 | 32 / 6 | 337 | 264 | 937 | 0 | 1043 | 60 | 695 |
+| MySQL full-grammer v8_0 | 38 | 32 / 6 | 366 | 253 | 990 | 0 | 1077 | 59 | 746 |
 
-上表的 `NAMING_MATCH` 是 sample-data fixture 级 fingerprint 总量。去重为 `source -> target + rule` 后，当前集合大小为：
+集合去重后：
 
-| Set | Count |
-| --- | ---: |
-| v5_7 top-level namingEvidence unique set | 95 |
-| v8_0 top-level namingEvidence unique set | 164 |
-| intersection | 90 |
+| Set | v5_7 | v8_0 | Intersection | v5_7 only | v8_0 only |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| direct relationships | 337 | 366 | 329 | 8 | 37 |
+| direct lineage source-target pairs | 351 | 367 | 332 | 19 | 35 |
+| top-level namingEvidence total | 937 | 990 | 919 | 18 | 71 |
+| top-level namingEvidence direct only | 242 | 244 | 238 | 4 | 6 |
 
-## 集合差异
+## 本轮确认并修复的 false positive
 
-| 差异 | 数量 | 总体判断 |
-| --- | ---: | --- |
-| v5_7-only namingEvidence | 5 | 来自 5.7 语义改写后的表/列命名，属于 `EXPECTED_VERSION_DELTA` |
-| v8_0-only namingEvidence | 74 | 主要来自 8.0 自然 ERP 资产中更完整的表/列、DDL FK 和业务谓词覆盖，属于 `ASSET_COVERAGE_DELTA`；未确认 parser gap |
+`mysql-v8_0-full` 曾额外输出：
 
-## 本轮处理结论
+```text
+CO_OCCURRENCE: positions.id -> sales_order_items.product_id
+```
 
-本轮逐条审计后做了两类修正：
+SQL 上下文在 `relation-detector/sample-data/mysql/8.0/04-queries/09-real-world-scenarios.sql`。同一条业务查询中，CTE 内部使用 `products p`，外层员工绩效查询又使用 `positions p`。full-grammer 事件流被压平成同一 alias map 后，`p.id = soi.product_id` 被错误解析为 `positions.id = sales_order_items.product_id`。
 
-- 收紧 8.0 过宽命中：`ID_SUFFIX_TO_ID` 不再表示“任意 `_id` 可以指向任意表的 `id`”。现在只有 source id 前缀和 target table stem 有可解释关系时才命中，例如 `order_id -> sales_orders.id`、`component_product_id -> products.id`。`position_id -> products.id`、`product_id -> positions.id`、`reference_id -> purchase_orders.id` 这类宽命中已被删除。
-- 合理补齐 naming evidence 池：DDL 已经确认的 `DDL_FOREIGN_KEY` relationship candidate 也会进入 top-level `namingEvidence` 抽取流程。这样跨 DDL 文件的 `ap_invoices.purchase_order_id -> purchase_orders.id`、`payments.customer_id -> customers.id`、`sales_fact.region_dim_id -> region_dim.id` 等不再依赖同一文件内的 column inventory 同时出现。
+修复方式：
 
-## v5_7-only 样例
+- `RowsetScopeSink` 在恢复 rowset scope 时同步恢复 alias index。
+- `TokenEventRelationExtractor` 对同一事件组内指向不同物理表的重复 alias 标记为 ambiguous，并拒绝用该 alias 解析关系。
 
-| Naming evidence | 判断 |
+修复后 `positions.id -> sales_order_items.product_id` 数量为 0；`mysql-v8_0-full` `Diag` 仍为 0。
+
+## v5_7-only 差异判断
+
+v5_7-only direct naming evidence 只有 4 条：
+
+| Evidence | 判断 |
 | --- | --- |
-| `ar_aging_snapshots.customer_id -> customers.id` | 5.7 兼容资产中保留的账龄快照客户维度命名，合理 |
-| `boms.component_product_id -> products.id` | 5.7 改写使用 `component_product_id`，与 8.0 的 `child_product_id` / `parent_product_id` 命名不同 |
-| `boms.product_id -> products.id` | 5.7 兼容 SQL 中保留的直接 product 维度命名，合理 |
-| `mrp_run_items.mrp_run_id -> mrp_runs.id` | 5.7 改写使用 `mrp_run_id`，与 8.0 的 `run_id` 命名不同 |
-| `mrp_runs.production_plan_id -> production_plans.id` | 5.7 改写使用完整业务名，8.0 使用较短 `plan_id` |
+| `boms.component_product_id -> products.id` | `EXPECTED_SQL_ASSET_DELTA`：5.7 兼容资产使用 `component_product_id`。 |
+| `boms.product_id -> products.id` | `EXPECTED_SQL_ASSET_DELTA`：5.7 兼容资产保留直接 product 维度命名。 |
+| `mrp_run_items.mrp_run_id -> mrp_runs.id` | `EXPECTED_SQL_ASSET_DELTA`：5.7 改写使用完整 `mrp_run_id`。 |
+| `mrp_runs.production_plan_id -> production_plans.id` | `EXPECTED_SQL_ASSET_DELTA`：5.7 改写使用完整 `production_plan_id`。 |
 
-## v8_0-only 样例
+v5_7-only lineage 主要来自 5.7 兼容过程中的自然改写，例如薪资生成 voucher、销售提成更新、退货凭证写入和库存预留自更新。这些都能从 5.7 SQL 的 `INSERT ... SELECT` / `UPDATE` 结构解释，当前不判定为 parser gap。
 
-剩余 v8_0-only 项数量较多，不再能用“少量自然命名差异”概括。逐类看，它们主要来自 8.0 sample-data 中覆盖更完整的 ERP 深水区对象：
+## v8_0-only 差异判断
 
-- 应收应付、付款、收款、期间结账：`ap_invoices.*_id`、`ar_invoices.customer_id`、`payment_receipt_allocations.receipt_id`、`period_close_jobs.period_id`。
-- 采购、退货、质检、序列号：`purchase_receipt_items.*_id`、`purchase_return_items.*_id`、`inspection_reports.batch_id`、`serial_numbers.*_id`。
-- 库存、盘点、调拨、拣货：`inventory_transactions.batch_id`、`stock_transfers.*_warehouse_id`、`stocktake_items.product_id`、`picking_task_items.*_id`。
-- 生产、MRP、工艺、工单：`mrp_run_items.*_id`、`production_operations.*_operation_id`、`work_orders.product_id`、`work_order_operations.*_id`。
-- 售后、维修、销售事实：`repair_orders.*_id`、`repair_order_parts.*_id`、`sales_fact.*_id`。
+v8_0-only direct naming evidence 只有 6 条：
 
-这些 v8_0-only 命名证据能从 8.0 SQL/DDL 资产结构解释；当前没有发现“8.0 过宽命中导致应删除”的项。5.7 侧 NAMING_MATCH 明显更低，主要是 5.7 兼容资产没有等量承载这些自然 8.0 深水区对象和谓词，而不是 v5_7 full-grammer visitor 漏解析。
+| Evidence | 判断 |
+| --- | --- |
+| `employees.manager_id -> employees.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖员工自引用管理关系。 |
+| `production_operations.predecessor_operation_id -> production_operations.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖工序前置关系。 |
+| `purchase_receipt_items.order_item_id -> purchase_order_items.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖采购收货明细到订单明细。 |
+| `serial_numbers.purchase_receipt_id -> purchase_receipts.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖序列号入库来源。 |
+| `serial_numbers.return_id -> sales_returns.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖序列号退货来源。 |
+| `serial_numbers.sales_order_id -> sales_orders.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖序列号销售来源。 |
+
+v8_0-only relationship 中仍有 37 条，其中多为自然查询/过程中的弱 `CO_OCCURRENCE`，例如审批节点 level/workflow、账龄 bucket、polymorphic `reference_id` / `party_id`、生产 BOM parent/child、供应商质量和退货率分析。这些不是 `NAMING_MATCH`，不会单独提升为命名事实；当前作为 SQL predicate 弱证据保留。
+
+v8_0-only lineage source-target pair 有 35 条，集中在供应商质量/采购表现更新、序列号/退货来源和若干 8.0 自然 SQL 派生写入：
+
+- `inspection_reports.inspection_result -> supplier_products.quality_score`
+- `purchase_order_items` / `purchase_orders` / `supplier_products` / `purchase_returns` 聚合到 `supplier_products.return_rate`
+- 同类聚合到 `supplier_products.total_order_qty`
+- 同类聚合到 `supplier_products.last_order_date`
+- 同类聚合到 `supplier_products.total_order_count`
+- `sales_order_items.* -> inventory_transactions.before_qty/after_qty` 等 8.0 自然派生写入
+
+这些来自 8.0 自然业务 SQL 中的供应商绩效写入，当前判断为 `EXPECTED_SQL_ASSET_DELTA`。
 
 ## 结论
 
-- 5.7 低 NAMING_MATCH 的当前主要原因是 SQL 资产覆盖差异和 5.7 兼容改写差异；不是已确认 parser gap。
-- 8.0 当前 top-level namingEvidence 中没有确认需要收紧的 false positive。
-- 当前 v5_7 与 v8_0 的差异结论是 `ASSET_COVERAGE_DELTA` / `EXPECTED_VERSION_DELTA`，没有需要用户审核的 `REVIEW_NEEDED`。
+- `MYSQL80_FALSE_POSITIVE`：已确认并修复 1 条 alias shadowing 造成的 `positions.id -> sales_order_items.product_id` 误识别。
+- `MYSQL57_PARSER_GAP`：当前未确认。
+- `MYSQL80_FALSE_POSITIVE`：修复后未发现新的 confirmed false positive。
+- `EXPECTED_SQL_ASSET_DELTA` / `EXPECTED_VERSION_DELTA`：解释当前剩余差异。
+- `REVIEW_NEEDED`：无。
+
+## 维护备注
+
+后续 parser 修复不应把 MySQL 5.7 / 8.0 的 sample-data 数量差异当成自动追平目标。例如 token-event scalar aggregate UPDATE 的 source tracing 修复，属于 token-event 覆盖能力补齐；它不改变本审计对 `mysql-v5_7-full` 与 `mysql-v8_0-full` 的判断口径。只有当某一侧 SQL 中存在明确结构而对应 full-grammer 漏识别时，才归类为 `MYSQL57_PARSER_GAP` 或 `MYSQL80_FALSE_POSITIVE` 并进入 parser/golden 修复。

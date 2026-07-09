@@ -54,6 +54,7 @@ public final class SqlServerParseTreeEventCollector {
         }
         String rule = ruleName(ctx);
         switch (rule) {
+            case "sql_clauses" -> sqlSink.withStatementScope(() -> visitChildren(ctx));
             case "common_table_expression" -> visitCommonTableExpression(ctx);
             case "query_specification" -> visitQuerySpecification(ctx);
             case "table_source_item" -> visitTableSourceItem(ctx);
@@ -169,7 +170,7 @@ public final class SqlServerParseTreeEventCollector {
             return;
         }
         List<ParserRuleContext> expressions = directChildren(ctx, "expression");
-        if (expressions.size() >= 2 && firstDirect(ctx, "comparison_operator").isPresent()) {
+        if (expressions.size() >= 2 && isEqualityComparison(ctx)) {
             Optional<ColumnEndpoint> left = singleColumnEndpoint(expressions.get(0));
             Optional<ColumnEndpoint> right = singleColumnEndpoint(expressions.get(1));
             if (left.isPresent() && right.isPresent()) {
@@ -388,7 +389,7 @@ public final class SqlServerParseTreeEventCollector {
     private void emitPredicateColumnEqualities(ParseTree tree, String joinKind) {
         if (tree instanceof ParserRuleContext ctx && ruleName(ctx).equals("predicate")) {
             List<ParserRuleContext> expressions = directChildren(ctx, "expression");
-            if (expressions.size() >= 2 && firstDirect(ctx, "comparison_operator").isPresent()) {
+            if (expressions.size() >= 2 && isEqualityComparison(ctx)) {
                 Optional<ColumnEndpoint> left = singleColumnEndpoint(expressions.get(0));
                 Optional<ColumnEndpoint> right = singleColumnEndpoint(expressions.get(1));
                 if (left.isPresent() && right.isPresent()) {
@@ -402,6 +403,12 @@ public final class SqlServerParseTreeEventCollector {
         for (int index = 0; index < tree.getChildCount(); index++) {
             emitPredicateColumnEqualities(tree.getChild(index), joinKind);
         }
+    }
+
+    private boolean isEqualityComparison(ParserRuleContext predicate) {
+        return firstDirect(predicate, "comparison_operator")
+                .map(operator -> "=".equals(operator.getText()))
+                .orElse(false);
     }
 
     private Optional<ColumnEndpoint> singleColumnEndpoint(ParseTree expression) {

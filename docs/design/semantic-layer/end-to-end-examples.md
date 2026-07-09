@@ -2,7 +2,12 @@
 
 ## 1. 概述
 
-本文档提供 Semantic Layer 的端到端测试示例。当前代码已经落地的是离线 KG JSON artifact 构建链路：`relation-detector scan-result.json -> ScanBundle -> EvidenceGraph -> SemanticKnowledgeGraph -> semantic-kg.json`。在线问答、Catalog Store、Embedding、Lexicon 和真实 LLM Enricher 是目标设计示例，不是当前已实现 API。
+本文档提供 Semantic Layer 的端到端测试示例。当前代码已经落地两条离线链路：
+
+- KG JSON artifact 构建链路：`relation-detector scan-result.json -> ScanBundle -> EvidenceGraph -> SemanticKnowledgeGraph -> semantic-kg.json`
+- 语义抽取链路：`semantic extract` 生成 evidence bundle / prompt，`codex-session` 只写会话输入，`openai-api` 可调用 Responses API 并产出 normalized semantic document
+
+在线问答、Catalog Store、Embedding、Lexicon 仍是目标设计示例，不是当前已实现 API。
 
 每个示例包含：
 - 输入数据（来自 relation-detector 的 scan-result.json）
@@ -165,7 +170,7 @@ CREATE TABLE order_items (
 验收检查点:
 [✓] 每个 relationship / lineage / namingEvidence 至少生成一个 fact
 [✓] derived relationship / derived lineage 进入独立 fact kind
-[✓] 不生成 CompactEvidenceBundle，不做 BFS join path 搜索，不做 conflict detection
+[✓] `SemanticEvidenceBuilder` 不生成历史 `CompactEvidenceBundle`，不做 BFS join path 搜索，不做 conflict detection
 ```
 
 **Step 3: NoopSemanticEnricher**
@@ -686,8 +691,8 @@ sequenceDiagram
     SR->>EB: second ScanBundle (6 tables)
     EB->>EB: compare with first EvidenceGraph
     EB->>EB: detect changes: add refunds table + 1 relation
-    EB->>LLM: send only refunds-related evidence
-    LLM->>CS: incremental EnrichmentResult (~10 new objects)
+    EB->>LLM: send only refunds-related evidence (target design)
+    LLM->>CS: incremental normalized semantic document (~10 new objects)
     CS->>CS: merge: insert new objects, preserve review status for existing objects
     CS->>CS: mark old objects deprecated, do not delete
 ```

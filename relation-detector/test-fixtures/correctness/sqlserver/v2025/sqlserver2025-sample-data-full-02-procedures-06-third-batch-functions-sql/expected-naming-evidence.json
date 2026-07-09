@@ -1,13 +1,9 @@
 {
   "fingerprints": [
-    "naming:dbo.employee_roles.employee_id->dbo.employees.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.employee_roles.role_id->dbo.roles.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.product_batches.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.product_batches.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.product_categories.parent_id->dbo.product_categories.id:SELF_ROLE_ID:NAMING_MATCH",
-    "naming:dbo.products.category_id->dbo.product_categories.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.role_permissions.permission_id->dbo.permissions.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.supplier_products.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.supplier_products.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH"
+    "naming:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.contract_milestones.contract_id->dbo.contracts.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.project_costs.project_id->dbo.projects.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.tax_invoices.filing_id->dbo.tax_filings.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
   ]
 }

@@ -9,8 +9,8 @@
 
 | Parser | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| MySQL token-event root | 38 | 32 / 6 | 349 | 240 | 238 | 0 |
-| MySQL full-grammer v8_0 | 38 | 32 / 6 | 397 | 254 | 245 | 0 |
+| MySQL token-event root | 38 | 32 / 6 | 347 | 242 | 238 | 0 |
+| MySQL full-grammer v8_0 | 38 | 32 / 6 | 366 | 253 | 244 | 0 |
 
 ## 本轮已修复
 
@@ -28,15 +28,15 @@
 
 | 差异 | 数量 | 判断 |
 | --- | ---: | --- |
-| token-event 独有 lineage | 14 | 未确认 false positive；主要是 transform 粒度不同，例如 token-event 标为 `CASE_WHEN` / `FUNCTION_CALL`，v8_0 标为 `DIRECT` |
-| v8_0 独有 lineage | 28 | 混合了确认 token-event gap 与 v8_0 更宽 source set；不应按数量直接硬追 |
+| token-event 独有 source-target lineage pair | 0 | 当前未发现 token-event 独有 source-target pair false positive。 |
+| v8_0 独有 source-target lineage pair | 14 | 混合了确认 token-event gap 与 v8_0 更宽 source set；不应按数量直接硬追。 |
 
 代表性 `CONFIRMED_TOKEN_EVENT_GAP`：
 
 | Lineage | 说明 |
 | --- | --- |
 | `repair_order_parts.quantity -> inventory_transactions.quantity_change` | 明确 `INSERT SELECT` 算术表达式，token-event 还需补 arithmetic source tracing |
-| `contracts.credit_days,sales_orders.order_date -> ar_aging_snapshots.due_date` | 明确日期函数表达式，token-event 还需补 date/function source tracing |
+| `purchase_returns.purchase_order_id -> purchase_return_items.batch_id/product_id/unit_price` | 明确退货明细派生写入，token-event 对部分 scalar subquery / joined source propagation 仍窄于 full-grammer |
 | `sales_orders.customer_id -> shipments.receiver_name/receiver_phone/to_address` | 明确业务查询映射，token-event 仍有部分 data/procedure 表达式覆盖差距 |
 
 代表性 `LIKELY_V8_BROAD_SOURCE_SET`：
@@ -61,7 +61,7 @@
 | 差异 | 数量 | 判断 |
 | --- | ---: | --- |
 | token-event 独有 namingEvidence | 0 | token-event 没有发明额外命名证据 |
-| v8_0 独有 namingEvidence | 7 | 来自 v8_0 更宽 SQL predicate 覆盖和自然资产表达差异，不是 DDL inventory 缺失 |
+| v8_0 独有 direct namingEvidence | 6 | 来自 v8_0 更宽 SQL predicate 覆盖和自然资产表达差异，不是 DDL inventory 缺失 |
 
 剩余 v8_0-only 命中包括：
 
@@ -73,11 +73,18 @@
 - `serial_numbers.return_id -> sales_returns.id`
 - `serial_numbers.sales_order_id -> sales_orders.id`
 
-前面那些 `_id -> 任意 id` 的宽命中已经被收紧删除。剩余 7 条能从 8.0 SQL 上下文解释，不再按 token-event parser gap 处理。
+前面那些 `_id -> 任意 id` 的宽命中已经被收紧删除。剩余 6 条能从 8.0 SQL 上下文解释；其中 `purchase_receipt_items.order_item_id -> purchase_order_items.id` 来自 routine join，`serial_numbers.return_id -> sales_returns.id` 来自 select-list scalar subquery predicate，当前更准确地归类为 token-event typed visitor coverage gap，而不是 v8_0 false positive。
+
+## 当前仍需修复的 token-event gap
+
+| Gap | SQL 上下文 | 判断 |
+| --- | --- | --- |
+| `purchase_receipt_items.order_item_id -> purchase_order_items.id` | `sample-data/mysql/8.0/02-procedures/02-procedures-supplement.sql` 中 `LEFT JOIN purchase_receipt_items pri ON poi.id = pri.order_item_id` | `CONFIRMED_TOKEN_EVENT_GAP`：routine join predicate 被 v8_0 full-grammer 捕获，token-event root 没有输出对应 relation/namingEvidence。 |
+| `serial_numbers.return_id -> sales_returns.id` | `sample-data/mysql/8.0/04-queries/03-complex-queries-batch3.sql` 中 select-list scalar subquery `WHERE sr.id = sn.return_id` | `CONFIRMED_TOKEN_EVENT_GAP`：select-list scalar subquery predicate 没有进入 token-event relationship/namingEvidence。 |
 
 ## 结论
 
-- MySQL token-event 已补上本轮确认的 high-value parser gap：routine `UNION` / `ON DUPLICATE`、boolean select item、keyword function、DDL column inventory。
-- token-event 独有 14 条 lineage 未确认 false positive，暂时保留。
-- 剩余 v8_0-only lineage / namingEvidence 不全部等于 token-event bug；其中一部分是 v8_0 source set 更宽或自然 SQL 资产覆盖差异。
+- MySQL token-event 已补上多项 high-value parser gap：routine `UNION` / `ON DUPLICATE`、boolean select item、keyword function、DDL column inventory 和部分 scalar aggregate source tracing。
+- 当前未发现 token-event 独有 source-target lineage false positive。
+- 剩余 v8_0-only lineage / namingEvidence 不全部等于 token-event bug；其中一部分是 v8_0 source set 更宽或自然 SQL 资产覆盖差异，上表两项是仍确认的 token-event typed visitor gap。
 - 当前没有 `REVIEW_NEEDED`。

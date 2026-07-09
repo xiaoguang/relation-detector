@@ -22,7 +22,6 @@
     "CO_OCCURRENCE:region_dim.city->warehouses.city:SQL_LOG_JOIN",
     "CO_OCCURRENCE:region_dim.province->warehouses.province:SQL_LOG_JOIN",
     "CO_OCCURRENCE:standard_costs.product_id->work_orders.product_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:work_orders.id->work_orders.id:SQL_LOG_JOIN",
     "FK_LIKE:budget_items.subject_id->account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:cogs_entries.sales_order_item_id->sales_order_items.id:SQL_LOG_EXISTS,NAMING_MATCH",
     "FK_LIKE:finished_goods_receipts.work_order_id->work_orders.id:SQL_LOG_JOIN,NAMING_MATCH",

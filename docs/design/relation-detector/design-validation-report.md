@@ -154,26 +154,26 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 全部 correctness | 1194 | 981 / 213 | 17973 | 6301 | 25 | 6833 | 8085 |
-| common token-event | 39 | 34 / 5 | 759 | 328 | 0 | 219 | 441 |
-| MySQL root token-event | 83 | 65 / 18 | 659 | 349 | 0 | 252 | 321 |
-| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 9 | 257 | 327 |
-| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 6 | 421 | 491 |
-| PostgreSQL root token-event | 111 | 92 / 19 | 1402 | 332 | 0 | 353 | 353 |
-| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1474 | 351 | 10 | 374 | 447 |
-| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1478 | 364 | 0 | 375 | 448 |
-| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1477 | 362 | 0 | 374 | 447 |
-| Oracle root token-event | 41 | 33 / 8 | 643 | 247 | 0 | 241 | 241 |
-| Oracle full-grammer v12c | 42 | 34 / 8 | 681 | 249 | 0 | 273 | 341 |
-| Oracle full-grammer v19c | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
-| Oracle full-grammer v21c | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
-| Oracle full-grammer v26ai | 43 | 35 / 8 | 681 | 249 | 0 | 273 | 341 |
-| SQL Server root token-event | 38 | 32 / 6 | 703 | 360 | 0 | 275 | 275 |
-| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
-| SQL Server full-grammer v2017 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
-| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
-| SQL Server full-grammer v2022 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
-| SQL Server full-grammer v2025 | 39 | 33 / 6 | 1005 | 360 | 0 | 520 | 586 |
+| 全部 correctness | 1197 | 983 / 214 | 16151 | 5936 | 0 | 5935 | 7330 |
+| common token-event | 39 | 34 / 5 | 756 | 328 | 0 | 219 | 441 |
+| MySQL root token-event | 83 | 65 / 18 | 652 | 350 | 0 | 252 | 321 |
+| MySQL full-grammer v5_7 | 89 | 71 / 18 | 696 | 414 | 0 | 257 | 327 |
+| MySQL full-grammer v8_0 | 89 | 71 / 18 | 883 | 398 | 0 | 421 | 491 |
+| PostgreSQL root token-event | 111 | 92 / 19 | 1365 | 332 | 0 | 353 | 353 |
+| PostgreSQL full-grammer v16 | 111 | 92 / 19 | 1417 | 351 | 0 | 374 | 450 |
+| PostgreSQL full-grammer v17 | 113 | 94 / 19 | 1420 | 364 | 0 | 375 | 451 |
+| PostgreSQL full-grammer v18 | 114 | 93 / 21 | 1420 | 362 | 0 | 374 | 450 |
+| Oracle root token-event | 41 | 33 / 8 | 623 | 247 | 0 | 241 | 309 |
+| Oracle full-grammer v12c | 42 | 34 / 8 | 654 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v19c | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v21c | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
+| Oracle full-grammer v26ai | 43 | 35 / 8 | 654 | 249 | 0 | 273 | 341 |
+| SQL Server root token-event | 38 | 32 / 6 | 465 | 299 | 0 | 125 | 191 |
+| SQL Server full-grammer v2016 | 39 | 33 / 6 | 767 | 299 | 0 | 370 | 436 |
+| SQL Server full-grammer v2017 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
+| SQL Server full-grammer v2019 | 39 | 33 / 6 | 767 | 299 | 0 | 370 | 436 |
+| SQL Server full-grammer v2022 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
+| SQL Server full-grammer v2025 | 40 | 33 / 7 | 768 | 299 | 0 | 370 | 436 |
 
 验证入口：
 

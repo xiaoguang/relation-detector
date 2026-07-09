@@ -1,19 +1,4 @@
 {
-  "fingerprints": [
-    "CO_OCCURRENCE:dbo.promotion_products.account_id->dbo.promotions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.promotion_products.approved_by->dbo.promotions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.promotion_products.cashier_id->dbo.promotions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.promotion_products.employee_id->dbo.promotions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.promotion_products.order_id->dbo.promotions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.promotion_products.prepared_by->dbo.promotions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.promotion_products.product_category_id->dbo.promotions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.promotion_products.reconciliation_id->dbo.promotions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.promotion_products.reviewed_by->dbo.promotions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.promotion_products.settlement_id->dbo.promotions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.promotion_products.shipment_id->dbo.promotions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.promotion_products.voucher_id->dbo.promotions.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.promotion_products.warehouse_id->dbo.promotions.id:SQL_LOG_JOIN",
-    "FK_LIKE:dbo.promotion_products.promotion_id->dbo.promotions.id:SQL_LOG_JOIN,NAMING_MATCH"
-  ],
+  "fingerprints": [],
   "forbiddenTables": []
 }

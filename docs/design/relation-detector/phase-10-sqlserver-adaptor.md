@@ -123,12 +123,12 @@ flowchart TD
 
 | Golden 组 | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| SQL Server root token-event | 38 | 32 / 6 | 727 | 437 | 0 | 283 | 349 |
-| SQL Server full-grammer v2016 | 39 | 33 / 6 | 1035 | 437 | 0 | 529 | 595 |
-| SQL Server full-grammer v2017 | 40 | 34 / 6 | 1036 | 437 | 0 | 530 | 596 |
-| SQL Server full-grammer v2019 | 39 | 33 / 6 | 1035 | 437 | 0 | 529 | 595 |
-| SQL Server full-grammer v2022 | 40 | 34 / 6 | 1036 | 437 | 0 | 530 | 596 |
-| SQL Server full-grammer v2025 | 40 | 33 / 7 | 1036 | 437 | 0 | 529 | 595 |
+| SQL Server root token-event | 38 | 32 / 6 | 465 | 299 | 0 | 125 | 191 |
+| SQL Server full-grammer v2016 | 39 | 33 / 6 | 767 | 299 | 0 | 370 | 436 |
+| SQL Server full-grammer v2017 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
+| SQL Server full-grammer v2019 | 39 | 33 / 6 | 767 | 299 | 0 | 370 | 436 |
+| SQL Server full-grammer v2022 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
+| SQL Server full-grammer v2025 | 40 | 33 / 7 | 768 | 299 | 0 | 370 | 436 |
 
 当前 fixture 语义：
 
@@ -137,7 +137,7 @@ flowchart TD
 - 预期 relationship：DDL FK/index 关系，以及 SQL predicate join / subquery relation。
 - 预期 lineage：明确字段写入、聚合写入、`UPDATE ... FROM` 与 `MERGE` 更新映射；参数、局部变量、临时表和动态 SQL 不作为物理 source。
 
-SQL Server root token-event 与 full-grammer v2025 在 sample-data 上当前 lineage fingerprint 数一致；full-grammer 因 typed DDL / predicate context 更完整，多识别少量 relationship 与 top-level naming evidence。五个 versioned full-grammer 的 sample-data 输出一致；该一致性来自当前 sample-data 的跨版本保守 T-SQL 子集。版本差异由 version-only fixtures 和 `SqlServerParserArchitectureTest` 单独验证。
+SQL Server root token-event 与 full-grammer v2025 在 correctness fixture 上当前 lineage fingerprint 数一致；full-grammer 因 typed DDL / predicate context 更完整，多识别 relationship 与 top-level naming evidence。五个 versioned full-grammer 的 sample-data 输出基本一致；该一致性来自当前 sample-data 的跨版本保守 T-SQL 子集。版本差异由 version-only fixtures 和 `SqlServerParserArchitectureTest` 单独验证。当前 CLI merged sample-data 只剩一个 full-only weak relationship candidate，详见 `docs/parser-audit/parser-comparison-summary.md`。
 
 ## 后续收口
 

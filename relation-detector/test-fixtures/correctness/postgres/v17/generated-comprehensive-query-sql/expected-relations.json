@@ -49,7 +49,6 @@
     "CO_OCCURRENCE:shipping_manifests.first_leg_id->transit_legs.leg_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:shipping_manifests.second_leg_id->transit_legs.leg_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:system_modules.module_id->tenant_configurations.module_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:system_perf_metrics.execution_batch->system_perf_metrics.execution_batch:SQL_LOG_JOIN",
     "CO_OCCURRENCE:system_tenants.tenant_id->tenant_config_values.tenant_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:system_tenants.tier_level->tenant_configurations.minimum_tier:SQL_LOG_JOIN",
     "CO_OCCURRENCE:tenant_config_values.config_id->tenant_configurations.config_id:SQL_LOG_JOIN",

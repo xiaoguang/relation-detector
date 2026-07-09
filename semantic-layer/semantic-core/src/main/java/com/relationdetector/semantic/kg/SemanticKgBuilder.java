@@ -50,6 +50,7 @@ public final class SemanticKgBuilder {
                 case "RelationshipFact", "DerivedRelationshipFact" -> "RelationshipFact";
                 case "LineageFact", "DerivedLineageFact" -> "LineageFact";
                 case "NamingEvidenceFact" -> "NamingEvidenceFact";
+                case "SemanticEventCandidate" -> "Event";
                 case "Diagnostic" -> "Diagnostic";
                 default -> fact.type();
             };
@@ -71,6 +72,9 @@ public final class SemanticKgBuilder {
         summary.put("inputNamingEvidenceCount", graph.scanBundle().namingEvidence().size());
         summary.put("inputDerivedRelationshipCount", graph.scanBundle().derivedRelationships().size());
         summary.put("inputDerivedDataLineageCount", graph.scanBundle().derivedDataLineages().size());
+        summary.put("eventCandidateCount", (int) graph.facts().stream()
+                .filter(fact -> "SemanticEventCandidate".equals(fact.type()))
+                .count());
 
         return new SemanticKnowledgeGraph(buildRun(graph.scanBundle()), summary, List.copyOf(nodes.values()),
                 List.copyOf(edges.values()), graph.evidenceRefs(), graph.diagnostics());
@@ -85,6 +89,7 @@ public final class SemanticKgBuilder {
                 case "RelationshipFact", "DerivedRelationshipFact" -> i == 0 ? "RELATIONSHIP_SOURCE" : "RELATIONSHIP_TARGET";
                 case "LineageFact", "DerivedLineageFact" -> i == endpoints.size() - 1 ? "LINEAGE_TARGET" : "LINEAGE_SOURCE";
                 case "NamingEvidenceFact" -> i == 0 ? "NAMING_SOURCE" : "NAMING_TARGET";
+                case "SemanticEventCandidate" -> i < eventInputEndpointCount(fact) ? "EVENT_INPUT" : "EVENT_OUTPUT";
                 default -> "FACT_ENDPOINT";
             };
             addEdge(edges, new SemanticEdge("edge:" + type + ":" + fact.id() + ":" + endpoint.displayName() + ":" + i,
@@ -94,6 +99,11 @@ public final class SemanticKgBuilder {
             addEdge(edges, new SemanticEdge("edge:supported-by:" + fact.id() + ":" + evidenceRef,
                     "SUPPORTED_BY_EVIDENCE", fact.id(), evidenceRef, fact.confidence(), List.of(evidenceRef), Map.of()));
         }
+    }
+
+    private int eventInputEndpointCount(EvidenceGraphFact fact) {
+        Object value = fact.attributes().get("inputEndpointCount");
+        return value instanceof Number number ? number.intValue() : 0;
     }
 
     private void addJoinPath(Map<String, SemanticNode> nodes, Map<String, SemanticEdge> edges, EvidenceGraphFact fact) {

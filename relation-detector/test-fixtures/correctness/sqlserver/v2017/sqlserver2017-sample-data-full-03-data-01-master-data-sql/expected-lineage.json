@@ -1,26 +1,5 @@
 {
-  "fingerprints": [
-    "VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id",
-    "VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id",
-    "VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id",
-    "VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id",
-    "VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id",
-    "VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id",
-    "VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id",
-    "VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id",
-    "VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id",
-    "VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id",
-    "VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id",
-    "VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id",
-    "VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id",
-    "VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id",
-    "VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id",
-    "VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id",
-    "VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id",
-    "VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id",
-    "VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id",
-    "VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id"
-  ],
+  "fingerprints": [],
   "forbiddenSources": [],
   "forbiddenTargets": [],
   "warningCodes": {}

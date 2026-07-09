@@ -22,6 +22,7 @@ statement
     | update_statement SEMI?
     | merge_statement SEMI?
     | delete_statement SEMI?
+    | set_identity_insert SEMI?
     | create_or_alter_procedure SEMI?
     | create_or_alter_function SEMI?
     | create_or_alter_trigger SEMI?
@@ -49,7 +50,7 @@ select_statement
     ;
 
 query_expression
-    : query_specification
+    : query_specification (UNION query_specification)*
     ;
 
 query_specification
@@ -138,6 +139,7 @@ predicate
     | expression IN LPAREN subquery RPAREN
     | expression IN LPAREN expression_list_ RPAREN
     | expression BETWEEN expression AND expression
+    | expression NOT? LIKE expression
     | expression comparison_operator expression
     | expression IS NOT? NULL
     | expression
@@ -196,6 +198,10 @@ update_elem
 
 delete_statement
     : DELETE FROM table_source search_condition_clause?
+    ;
+
+set_identity_insert
+    : SET IDENTITY_INSERT full_table_name (ON | OFF)
     ;
 
 create_or_alter_procedure
@@ -321,6 +327,7 @@ expression_atom
     | CAST LPAREN expression AS data_type RPAREN
     | DECIMAL_LITERAL
     | STRING
+    | NULL
     | LOCAL_ID
     | STAR
     | LPAREN select_statement RPAREN
@@ -359,10 +366,10 @@ binary_operator
 loose_token
     : SELECT | WITH | AS | FROM | WHERE | JOIN | INNER | LEFT | RIGHT | FULL | OUTER | CROSS | APPLY
     | ON | AND | OR | NOT | EXISTS | IN | BETWEEN | GROUP | BY | HAVING | ORDER | ASC | DESC | TOP | FETCH
-    | FIRST | NEXT | ROWS | ONLY | INSERT | INTO | VALUES | UPDATE | SET | DELETE | MERGE | USING
+    | FIRST | NEXT | ROWS | ONLY | UNION | INSERT | INTO | VALUES | UPDATE | SET | DELETE | MERGE | USING | IDENTITY_INSERT
     | WHEN | MATCHED | THEN | CREATE | ALTER | PROCEDURE | FUNCTION | RETURNS | RETURN | TRIGGER | AFTER | BEGIN | TABLE | INDEX | UNIQUE | CLUSTERED | NONCLUSTERED
     | CONSTRAINT | FOREIGN | KEY | REFERENCES | PRIMARY | NULL | IDENTITY | DEFAULT | CASE | WHEN
-    | ELSE | END | IS | CAST | COUNT | SUM | MAX | MIN | AVG | OVER | PARTITION | ID | BRACKET_ID | DOUBLE_QUOTE_ID
+    | ELSE | END | IS | LIKE | CAST | COUNT | SUM | MAX | MIN | AVG | OVER | PARTITION | OFF | ID | BRACKET_ID | DOUBLE_QUOTE_ID
     | LOCAL_ID | TEMP_ID | DECIMAL_LITERAL | STRING | COMMA | DOT | STAR | EQ | PLUS | MINUS
     | DIVIDE | PERCENT | LT | GT | LE | GE | NEQ | OTHER
     ;
@@ -406,6 +413,7 @@ FIRST: 'FIRST';
 NEXT: 'NEXT';
 ROWS: 'ROWS';
 ONLY: 'ONLY';
+UNION: 'UNION';
 INSERT: 'INSERT';
 INTO: 'INTO';
 VALUES: 'VALUES';
@@ -438,12 +446,15 @@ REFERENCES: 'REFERENCES';
 PRIMARY: 'PRIMARY';
 NULL: 'NULL';
 IDENTITY: 'IDENTITY';
+IDENTITY_INSERT: 'IDENTITY_INSERT';
 DEFAULT: 'DEFAULT';
 GO: 'GO';
+OFF: 'OFF';
 CASE: 'CASE';
 ELSE: 'ELSE';
 END: 'END';
 IS: 'IS';
+LIKE: 'LIKE';
 CAST: 'CAST';
 COUNT: 'COUNT';
 SUM: 'SUM';

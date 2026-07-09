@@ -1,11 +1,3 @@
 {
-  "fingerprints": [
-    "naming:dbo.cashier_journals.account_id->dbo.accounts.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.cashier_journals.voucher_id->dbo.vouchers.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.reconciliation_items.reconciliation_id->dbo.reconciliations.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.reconciliations.account_id->dbo.accounts.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.salary_payments.employee_id->dbo.employees.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.salary_payments.voucher_id->dbo.vouchers.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.settlements.voucher_id->dbo.vouchers.id:TABLE_ID:NAMING_MATCH"
-  ]
+  "fingerprints": []
 }

@@ -1,6 +1,5 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:materials.material_code->materials.material_code:SQL_LOG_JOIN",
     "FK_LIKE:account_logs.account_id->accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:log_permissions.log_id->account_logs.id:SQL_LOG_EXISTS,NAMING_MATCH",
     "FK_LIKE:material_places.material_id->materials.id:SQL_LOG_JOIN,NAMING_MATCH",

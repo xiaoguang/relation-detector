@@ -22,6 +22,7 @@ import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.core.log.SourceNameNormalizer;
 
 /**
  * DDL relationship 语义抽取器。
@@ -41,7 +42,7 @@ public final class DdlRelationExtractionVisitor {
      * <p>EN: Builds relationship candidates from DDL structured events.
      */
     public List<RelationshipCandidate> extract(String ddl, String sourceName, StructuredParseResult result) {
-        DdlState state = new DdlState(sourceName);
+        DdlState state = new DdlState(SourceNameNormalizer.normalize(sourceName));
         for (StructuredSqlEvent event : result.events()) {
             if (event.type() == StructuredParseEventType.DDL_INDEX) {
                 addIndex(event, state);

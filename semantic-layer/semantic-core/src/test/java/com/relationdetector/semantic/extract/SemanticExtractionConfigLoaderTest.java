@@ -51,4 +51,29 @@ final class SemanticExtractionConfigLoaderTest {
         assertEquals(30, loaded.maxNamingEvidence());
         assertTrue(loaded.requestOnly());
     }
+
+    @Test
+    void defaultsUseUnlimitedEvidenceCandidateLimits() {
+        SemanticExtractionConfig defaults = SemanticExtractionConfig.defaults();
+
+        assertEquals(0, defaults.maxRelationships());
+        assertEquals(0, defaults.maxLineage());
+        assertEquals(0, defaults.maxNamingEvidence());
+    }
+
+    @Test
+    void missingCandidateLimitsRemainUnlimited() throws Exception {
+        Path config = tempDir.resolve("semantic-extraction-default-limits.yml");
+        Files.writeString(config, """
+                semanticExtraction:
+                  input: result.json
+                  output: out
+                """);
+
+        SemanticExtractionConfig loaded = new SemanticExtractionConfigLoader().load(config);
+
+        assertEquals(0, loaded.maxRelationships());
+        assertEquals(0, loaded.maxLineage());
+        assertEquals(0, loaded.maxNamingEvidence());
+    }
 }

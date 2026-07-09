@@ -329,6 +329,7 @@ columnDefinitionParenToken
     | NOT
     | AND
     | OR
+    | BETWEEN
     | IS
     | literal
     | DATE

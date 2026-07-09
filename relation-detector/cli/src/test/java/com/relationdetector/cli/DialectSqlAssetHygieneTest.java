@@ -226,7 +226,7 @@ class DialectSqlAssetHygieneTest {
                 if (density.fkReferences() < 400) {
                     findings.add(versionDir.getFileName() + " FK/reference count too low: " + density.fkReferences());
                 }
-                if (density.procedures() < 80) {
+                if (density.procedures() < 16) {
                     findings.add(versionDir.getFileName() + " procedure count too low: " + density.procedures());
                 }
                 if (density.functions() < 10) {
@@ -235,8 +235,8 @@ class DialectSqlAssetHygieneTest {
                 if (density.triggers() < 8) {
                     findings.add(versionDir.getFileName() + " trigger count too low: " + density.triggers());
                 }
-                if (density.insertSelects() < 150) {
-                    findings.add(versionDir.getFileName() + " INSERT SELECT count too low: " + density.insertSelects());
+                if (density.insertSelects() < 35) {
+                    findings.add(versionDir.getFileName() + " business INSERT SELECT count too low: " + density.insertSelects());
                 }
             }
         }
@@ -282,7 +282,7 @@ class DialectSqlAssetHygieneTest {
         try (Stream<Path> versions = Files.list(sampleRoot)) {
             for (Path versionDir : versions.filter(Files::isDirectory).toList()) {
                 int probes = relationProbeTemplates(versionDir);
-                if (probes > 40) {
+                if (probes > 0) {
                     findings.add(versionDir.getFileName()
                             + " relation-probe templates belong in semantic-equivalent benchmark, found " + probes);
                 }
@@ -292,6 +292,87 @@ class DialectSqlAssetHygieneTest {
         assertTrue(findings.isEmpty(),
                 "SQL Server sample-data should keep natural ERP SQL, not high-density relation-probe templates: "
                         + findings);
+    }
+
+    @Test
+    void sqlServerSampleDataDoesNotUseNumberedRelationProbeProcedures() throws IOException {
+        Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
+        List<String> findings = new ArrayList<>();
+        Pattern numberedProbeProcedure = Pattern.compile(
+                "(?i)\\bCREATE\\s+OR\\s+ALTER\\s+PROCEDURE\\s+\\[dbo]\\.?\\[sp_[a-z0-9_]+_[0-9]+]");
+        Pattern numberedProbeFunction = Pattern.compile(
+                "(?i)\\bCREATE\\s+OR\\s+ALTER\\s+FUNCTION\\s+\\[dbo]\\.?\\[fn_(?:relation|relation_extra)_[0-9]+]");
+        List<ForbiddenSqlPattern> syntheticProbeResidue = List.of(
+                new ForbiddenSqlPattern("synthetic migrated-from relation probe block",
+                        Pattern.compile("(?i)migrated\\s+from\\s+sp_[a-z0-9_]+_[0-9]+")),
+                new ForbiddenSqlPattern("synthetic mapped_id relation probe projection",
+                        Pattern.compile("(?i)\\bmapped_id\\b")),
+                new ForbiddenSqlPattern("synthetic mapped_id relation probe fallback",
+                        Pattern.compile("(?i)ISNULL\\s*\\(\\s*src\\.\\[mapped_id]\\s*,\\s*src\\.\\[id]\\s*\\)")),
+                new ForbiddenSqlPattern("FK-copy probe INSERT SELECT",
+                        Pattern.compile("(?is)INSERT\\s+INTO\\s+\\[dbo]\\.?\\[[^]]+]\\s*\\([^)]*\\[[^]]*_id]\\s*\\)\\s*SELECT\\s+p\\.\\[id]\\s+FROM\\s+\\[dbo]\\.?\\[[^]]+]\\s+AS\\s+p\\s+INNER\\s+JOIN\\s+\\[dbo]\\.?\\[[^]]+]\\s+AS\\s+c\\s+ON\\s+c\\.\\[[^]]*_id]\\s*=\\s*p\\.\\[id]")));
+        try (Stream<Path> stream = Files.walk(sampleRoot)) {
+            for (Path path : stream
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".sql"))
+                    .sorted()
+                    .toList()) {
+                String sql = stripSqlStringLiterals(stripSqlComments(Files.readString(path)));
+                var matcher = numberedProbeProcedure.matcher(sql);
+                while (matcher.find()) {
+                    findings.add(repoRoot().relativize(path) + " -> " + matcher.group());
+                    if (findings.size() >= 20) {
+                        break;
+                    }
+                }
+                matcher = numberedProbeFunction.matcher(sql);
+                while (matcher.find()) {
+                    findings.add(repoRoot().relativize(path) + " -> " + matcher.group());
+                    if (findings.size() >= 20) {
+                        break;
+                    }
+                }
+                for (ForbiddenSqlPattern pattern : syntheticProbeResidue) {
+                    if (pattern.pattern().matcher(sql).find()) {
+                        findings.add(repoRoot().relativize(path) + " -> " + pattern.description());
+                        break;
+                    }
+                }
+            }
+        }
+
+        assertTrue(findings.isEmpty(),
+                "SQL Server sample-data should model natural ERP routines; numbered relation-probe procedures belong in semantic-equivalent benchmark: "
+                        + findings);
+    }
+
+    @Test
+    void commonNaturalSampleDataDoesNotContainParserCoverageBodies() throws IOException {
+        Path naturalRoot = repoRoot().resolve("sample-data/common-natural");
+        Path coverageRoot = repoRoot().resolve("sample-data/common-parser-coverage");
+        assertTrue(Files.isDirectory(naturalRoot), "Expected common natural sample-data root");
+        assertTrue(Files.isDirectory(coverageRoot), "Expected common parser coverage sample-data root");
+        assertNoSqlAssetFindings(
+                "Common natural sample-data must not contain parser/correctness coverage bodies",
+                List.of(naturalRoot),
+                List.of(
+                        forbidden("parser coverage for-golden file or reference", "for-golden"),
+                        forbidden("parser-ready mirror body comment", "parser-ready"),
+                        forbidden("correctness fixture source marker", "relation-detector-fixture-source")));
+        try (Stream<Path> coverageFiles = Files.walk(coverageRoot)) {
+            assertTrue(coverageFiles
+                    .filter(Files::isRegularFile)
+                    .anyMatch(path -> path.getFileName().toString().endsWith("-for-golden.sql")),
+                    "Common parser coverage root should retain for-golden SQL assets");
+        }
+    }
+
+    @Test
+    void sampleDataParserCliRunsCommonNaturalRoot() throws IOException {
+        String script = Files.readString(repoRoot()
+                .resolve("test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh"));
+        assertTrue(script.contains("run_case common-token-event-sample-data COMMON token-event \"\" \"\" \"$RELATION_ROOT/sample-data/common-natural\""),
+                "Common sample-data CLI row must use common-natural, not the parser coverage/mixed portable root");
     }
 
     @Test

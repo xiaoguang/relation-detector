@@ -1,26 +1,5 @@
 {
-  "fingerprints": [
-    "VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id",
-    "VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id"
-  ],
+  "fingerprints": [],
   "forbiddenSources": [],
   "forbiddenTargets": [],
   "warningCodes": {}

@@ -8,7 +8,14 @@
 - **跨模块契约**：模块间传递的精确数据形态
 - **端到端验收场景**：从输入到输出的完整测试用例
 
-当前代码实现边界：已实现 `semantic build --input <scan-result.json> --output <dir>`，链路为 `ScanResultReader -> SemanticEvidenceBuilder -> NoopSemanticEnricher -> SemanticKgBuilder -> JSON artifacts`。本文后续关于真实 LLM Enricher、Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator、SQL Validator 和 Answer Composer 的内容是目标设计，不是当前已落地 API。
+当前代码实现边界：
+
+- 已实现 `semantic build --input <scan-result.json> --output <dir>`，链路为 `ScanResultReader -> SemanticEvidenceBuilder -> NoopSemanticEnricher -> SemanticKgBuilder -> JSON artifacts`。
+- 已实现 `semantic extract`：构造 evidence bundle / prompt；`codex-session` provider 只写本地 prompt artifacts，不调用外部模型；`openai-api` provider 调用 OpenAI-compatible Responses API 并通过 bundle-aware normalizer 写 raw / normalized semantic extraction result。
+- 已实现 `semantic e2e`：同一次读取 scan result 后确定性写 `semantic-kg/<case-name>/` 与 `semantic-extraction/<case-name>/` artifacts，不调用模型。
+- 已实现 `semantic normalize-extraction`：把已有 JSON semantic extraction output 规范化为 ref-closed document，补齐 `semanticGraph` 与 `validation`。当前 CLI 入口是 raw-only normalization，不接收 evidence bundle，因此不会做 event/triplet/review 候选 backfill 或 bundle fact id 全量解析。
+
+本文后续关于 Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator、SQL Validator 和 Answer Composer 的内容是目标设计，不是当前已落地 API。
 
 ## 2. LLM 依赖决策
 
@@ -29,7 +36,7 @@ Semantica 官方 README 把 accountability、provenance、reasoning 和 governan
 | --- | --- | --- |
 | **Scan Result Reader** | 否 | 纯数据解析和校验。JSON 解析 + 字段校验是确定性规则操作。LLM 反而会引入错误 |
 | **Semantic Evidence Builder** | 否 | 纯图构建。BFS join path 发现、注释提取、冲突检测是确定性算法。LLM 无法可靠地遍历图结构 |
-| **LLM Semantic Enricher** | **是** | 核心 LLM 使用点。需要从 evidence 推断业务实体名、生成描述、扩展同义词、识别指标候选。这些是典型的 NLG 任务，规则无法覆盖 |
+| **LLM Semantic Enricher / Semantic Extraction** | **可选** | `semantic extract --provider codex-session` 只生成 prompt/bundle；`--provider openai-api` 才调用 LLM。LLM 用于从 evidence 推断业务实体名、生成描述、扩展同义词、识别指标候选；输出必须经过 normalizer/ref-closure 校验 |
 | **Semantic Catalog Store** | 否 | 纯 CRUD 存储。确定性读写，不需要 AI |
 | **Lexicon Manager** | 否 | 规则驱动的文本归一化和索引。列名拆分、注释提取是规则操作。同义词候选来自 LLM Enricher，Manager 只做存储和检索 |
 | **Embedding Indexer** | 否（但用 Embedding API） | 调用 Embedding API（如 text-embedding-3-small）生成向量。这不是 LLM 调用，不涉及文本生成。文本构造是模板化的 |
@@ -45,8 +52,9 @@ Semantica 官方 README 把 accountability、provenance、reasoning 和 governan
 
 ```
 离线链路：
-  Evidence Bundle → [LLM Enricher] → Semantic Objects
-  调用次数：N 次（按表/实体分批），每批 1 次 LLM 调用
+  Evidence Bundle → [semantic extract]
+    codex-session: 0 次外部调用，仅生成 prompt / bundle / session 指令
+    openai-api: N 次 LLM 调用（按输入文件、focus 或后续分批策略）
 
 在线链路：
   User Question → [Question Understanding] → QuestionIntent
@@ -103,9 +111,9 @@ ScanBundle {
 }
 
         ↓ [Semantic Evidence Builder: 纯算法，无 LLM]
-        ↓ [当前: 把 relationship / lineage / naming / derived / diagnostic materialize 为 EvidenceGraph facts]
+        ↓ [当前: 把 relationship / lineage / naming / derived / diagnostic / eventCandidate materialize 为 EvidenceGraph facts]
         ↓ [当前: 从 rawEvidence / grouped evidence 生成 EvidenceReference]
-        ↓ [未来: businessRole 推断、冲突初筛、compact bundle、catalog/search 索引]
+        ↓ [未来: businessRole 推断、冲突初筛、catalog/search 索引]
 
 Step 3: EvidenceGraph（目标设计示例；当前代码是更薄的 facts/endpoints/evidenceRefs 模型）
 ─────────────────────────────────────────
@@ -155,79 +163,66 @@ EvidenceGraph {
   }
 }
 
-        ↓ [Compact: 截断到大模型 token 预算]
-        ↓ [LLM Semantic Enricher: 调用大模型]
-        ↓ [LLM 任务: 业务名/描述/同义词/实体/指标/join path 解释]
-        ↓ [新增: LLM 冲突解释建议（recommendation only）]
+        ↓ [semantic extract: 构造 evidence bundle / prompt]
+        ↓ [codex-session: 写本地 prompt artifacts，不调用模型]
+        ↓ [openai-api: 可调用大模型，并使用 bundle-aware normalization]
+        ↓ [LLM 任务: 业务名/描述/同义词/实体/事件/指标/维度/lineage 解释/triplet]
+        ↓ [normalize-extraction: raw-only 生成 ref-closed semantic document]
 
-Step 4: EnrichmentResult（目标设计中的 LLM 输出，当前未实现）
+Step 4: Semantic Extraction Result（当前 `semantic extract` / `normalize-extraction` 输出；Catalog 写入仍未实现）
 ─────────────────────────────────────────
 {
-  "tables": [
-    {
-      "id": "table:orders",
-      "physicalName": "orders",
-      "semanticNames": ["订单", "订单主表", "交易订单"],
-      "description": "记录客户订单主数据，包含订单状态、金额和时间信息",
-      "domain": "交易",
-      "grain": "一行表示一个订单",
-      "primaryKey": ["orders.id"],
-      "evidenceRefs": ["DDL:orders", "REL:orders.customer_id->customers.id"],
-      "reviewStatus": "EVIDENCE_SUPPORTED",
-      "confidence": 0.95
-    }
-  ],
-  "columns": [
-    {
-      "id": "column:orders.customer_id",
-      "physicalName": "orders.customer_id",
-      "semanticNames": ["客户ID", "下单客户"],
-      "description": "订单所属客户的唯一标识",
-      "businessRole": "foreign_key",
-      "entityRef": "entity:Customer",
-      "synonyms": ["客户", "买家", "用户"],
-      "evidenceRefs": ["REL:orders.customer_id->customers.id", "DDL_COLUMN:orders.customer_id"],
-      "reviewStatus": "EVIDENCE_SUPPORTED",
-      "confidence": 0.95
-    }
-  ],
   "entities": [
     {
-      "id": "entity:Customer",
-      "names": ["客户", "用户", "会员", "买家"],
-      "primaryTable": "customers",
-      "keyColumns": ["customers.id"],
-      "relatedTables": ["orders", "payments"],
-      "description": "系统中的客户主体，可以进行下单和支付",
-      "evidenceRefs": ["REL:orders.customer_id->customers.id", "REL:payments.customer_id->customers.id"]
+      "id": "entity:orders",
+      "name": "orders",
+      "physicalName": "orders",
+      "machineType": "BusinessDataEntity",
+      "type": "业务单据实体",
+      "evidenceRefs": ["relationship:orders.customer_id->customers.id:FK_LIKE:0"]
     }
   ],
+  "events": [
+    {
+      "id": "event:sp_rebuild_sales_fact",
+      "name": "重建销售事实表",
+      "eventCandidateRef": "event-candidate:routine:sp_rebuild_sales_fact",
+      "inputs": ["sales_orders", "payments"],
+      "outputs": ["sales_fact"],
+      "evidenceRefs": ["lineage:payments.amount->sales_fact.amount:VALUE:AGGREGATE:0"]
+    }
+  ],
+  "relations": [],
+  "lineage": [],
   "metrics": [
     {
       "id": "metric:customer_total_paid_amount",
-      "names": ["客户总支付金额", "总消费金额"],
-      "expression": "SUM(payments.amount)",
-      "sourceColumns": ["payments.amount"],
-      "defaultGrain": ["customers.id"],
-      "defaultTimeColumn": "payments.paid_at",
-      "joinPaths": ["joinpath:customers-orders-payments"],
+      "name": "客户总支付金额",
+      "physicalField": "sales_fact.paid_amount",
+      "sourceFields": ["payments.amount"],
+      "formula": "SUM(payments.amount)",
+      "grain": ["customers.id"],
+      "timeField": "payments.paid_at",
       "reviewStatus": "SYSTEM_PROPOSED",
-      "confidence": 0.80
+      "evidenceRefs": ["lineage:payments.amount->sales_fact.paid_amount:VALUE:AGGREGATE:0"]
     }
   ],
   "reviewItems": [
     {
-      "reviewId": "review-001",
-      "objectId": "metric:customer_total_paid_amount",
-      "objectType": "METRIC",
-      "status": "SYSTEM_PROPOSED",
-      "priority": "MEDIUM",
-      "recommendation": "新指标候选，需要确认支付金额口径"
+      "id": "review:auto:metric_customer_total_paid_amount",
+      "targetRef": "metric:customer_total_paid_amount",
+      "targetSection": "metrics",
+      "type": "REVIEW_NEEDED",
+      "severity": "MEDIUM",
+      "reason": "新指标候选，需要确认支付金额口径",
+      "evidenceRefs": ["lineage:payments.amount->sales_fact.paid_amount:VALUE:AGGREGATE:0"]
     }
-  ]
+  ],
+  "semanticGraph": {"nodes": [], "edges": []},
+  "validation": {"isRefClosed": true}
 }
 
-        ↓ [Semantic Catalog Store: 纯存储，无 LLM]
+        ↓ [Semantic Catalog Store: 纯存储，无 LLM；当前尚未实现]
         ↓ [Embedding Indexer: Embedding API，非 LLM]
         ↓ [Lexicon Manager: 规则提取，无 LLM]
 
@@ -431,18 +426,29 @@ Step 7: Answer（最终输出）
     ↓ 输出: semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```
 
-**目标完整链路：**
+**已实现的离线语义抽取链路：**
 
 ```
 [relation-detector]
     ↓ 输出: scan-result.json (JSON 文件)
 [ScanResultReader]
     ↓ 输出: ScanBundle (内存对象)
-[SemanticEvidenceBuilder]
-    ↓ 输出: EvidenceGraph (内存对象) + CompactEvidenceBundle (给 LLM)
-[LLMSemanticEnricher]
-    ↓ 输出: EnrichmentResult (内存对象)
+[SemanticExtractionBundleBuilder]
+    ↓ 输出: semantic-extraction-evidence-bundle.json
+[SemanticExtractionPromptBuilder]
+    ↓ 输出: semantic-extraction-prompt.md
+[semantic extract]
+    ↓ codex-session: 只写 prompt / bundle / session 说明
+    ↓ openai-api: 调用 Responses API，写 raw result / bundle-aware normalized result
+[semantic normalize-extraction]
+    ↓ 输出: raw-only ref-closed semantic document
+```
+
+**目标完整治理链路：**
+
+```
 [SemanticCatalogStore]
+    ↑ 输入: normalized semantic document + human review decision
     ↓ 输出: SemanticCatalog (持久化对象)
 [EmbeddingIndexer]
     ↓ 输出: EmbeddingRecord 列表 (JSONL 文件)
@@ -560,7 +566,7 @@ Step 7: Answer（最终输出）
 
 **目标完整链路输出（后续阶段）：**
 
-1. LLMEnricher → EnrichmentResult（SemanticTable、SemanticColumn、SemanticEntity、SemanticMetric、join path explanations、ReviewItem）
+1. semantic extract / normalize-extraction → normalized semantic document（entities、events、relations、lineage、metrics、dimensions、triplets、reviewItems、semanticGraph、validation）
 2. CatalogStore → semantic-catalog/ 目录
 3. EmbeddingIndexer → embedding JSONL
 4. LexiconManager → lexicon JSON

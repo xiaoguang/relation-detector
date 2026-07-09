@@ -81,3 +81,14 @@ Typed coverage:
 - Any event category that cannot be migrated to typed context visitor must be
   listed here with the grammar limitation and a concrete SQL/DDL sample before
   it can remain unsupported or future-scoped.
+
+## Current Typed Predicate Gap
+
+- SQL Server full-grammer still has one observed weak relation candidate that
+  should be tightened if `CO_OCCURRENCE` is limited to direct column equality:
+  `dbo.accounting_periods.period_code -> dbo.sales_orders.order_date` from
+  `period_code = CONVERT(NVARCHAR(7), order_date, 120)` in
+  `sample-data/sqlserver/2025/03-data/07-erp-deep-scenario-data.sql`.
+  The predicate is typed, but the collector currently treats the
+  column-to-function comparison as column co-occurrence. This is not a SQL
+  asset gap and should be fixed in the full-grammer predicate collector.

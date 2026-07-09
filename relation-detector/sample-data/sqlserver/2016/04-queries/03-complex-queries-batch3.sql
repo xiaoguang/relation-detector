@@ -2,7 +2,7 @@
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer return and refund summary.

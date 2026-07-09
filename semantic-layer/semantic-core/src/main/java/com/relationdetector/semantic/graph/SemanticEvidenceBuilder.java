@@ -9,6 +9,11 @@ import java.util.Map;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.relationdetector.semantic.SemanticFactIds;
+import com.relationdetector.semantic.event.SemanticEventCandidate;
+import com.relationdetector.semantic.event.SemanticEventExtractor;
 import com.relationdetector.semantic.reader.EndpointRef;
 import com.relationdetector.semantic.reader.ScanBundle;
 
@@ -17,18 +22,18 @@ public final class SemanticEvidenceBuilder {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
     };
+    private final SemanticEventExtractor eventExtractor = new SemanticEventExtractor();
 
     public EvidenceGraph build(ScanBundle scanBundle) {
         Map<String, EndpointRef> endpoints = new LinkedHashMap<>();
         Map<String, EvidenceReference> evidenceRefs = new LinkedHashMap<>();
         List<EvidenceGraphFact> facts = new ArrayList<>();
 
+        int relationshipIndex = 0;
         for (JsonNode relationship : scanBundle.relationships()) {
             EndpointRef source = endpoint(relationship.path("source"));
             EndpointRef target = endpoint(relationship.path("target"));
-            String id = "relationship:" + source.displayName() + "->" + target.displayName()
-                    + ":" + relationship.path("relationType").asText("UNKNOWN")
-                    + ":" + relationship.path("relationSubType").asText("UNKNOWN");
+            String id = SemanticFactIds.relationship(relationship, false, relationshipIndex++);
             List<String> refs = evidenceRefs(id, relationship, evidenceRefs);
             addEndpoint(endpoints, source);
             addEndpoint(endpoints, target);
@@ -38,10 +43,11 @@ public final class SemanticEvidenceBuilder {
                             "relationSubType", relationship.path("relationSubType").asText(""))));
         }
 
+        int lineageIndex = 0;
         for (JsonNode lineage : scanBundle.dataLineages()) {
             List<EndpointRef> factEndpoints = new ArrayList<>();
-            for (JsonNode source : lineage.path("sources")) {
-                EndpointRef endpoint = endpoint(source);
+            for (String sourceName : SemanticFactIds.sources(lineage)) {
+                EndpointRef endpoint = endpoint(sourceName);
                 addEndpoint(endpoints, endpoint);
                 factEndpoints.add(endpoint);
             }
@@ -52,37 +58,42 @@ public final class SemanticEvidenceBuilder {
                     .map(EndpointRef::displayName)
                     .reduce((left, right) -> left + "+" + right)
                     .orElse("unknown");
-            String id = "lineage:" + sources + "->" + target.displayName()
-                    + ":" + lineage.path("flowKind").asText("UNKNOWN")
-                    + ":" + lineage.path("transformType").asText("UNKNOWN");
+            String id = SemanticFactIds.lineage(lineage, false, lineageIndex++);
             facts.add(new EvidenceGraphFact(id, "LineageFact", sources + " -> " + target.displayName(),
                     factEndpoints, evidenceRefs(id, lineage, evidenceRefs), confidence(lineage), lineage.deepCopy(),
                     Map.of("flowKind", lineage.path("flowKind").asText(""),
                             "transformType", lineage.path("transformType").asText(""))));
         }
 
+        int namingIndex = 0;
         for (JsonNode naming : scanBundle.namingEvidence()) {
             EndpointRef source = endpoint(naming.path("source"));
             EndpointRef target = endpoint(naming.path("target"));
             addEndpoint(endpoints, source);
             addEndpoint(endpoints, target);
-            String id = "naming:" + naming.path("id").asText(
-                    source.displayName() + "->" + target.displayName() + ":" + naming.path("rule").asText("UNKNOWN"));
+            String id = SemanticFactIds.naming(naming, namingIndex++);
             facts.add(new EvidenceGraphFact(id, "NamingEvidenceFact", source.displayName() + " -> " + target.displayName(),
                     List.of(source, target), evidenceRefs(id, naming, evidenceRefs), confidence(naming), naming.deepCopy(),
                     Map.of("rule", naming.path("rule").asText(""),
                             "directionHint", naming.path("directionHint").asBoolean(false))));
         }
 
+        int derivedRelationshipIndex = 0;
         for (JsonNode derived : scanBundle.derivedRelationships()) {
-            addDerivedFact("DerivedRelationshipFact", derived, endpoints, evidenceRefs, facts);
+            addDerivedFact("DerivedRelationshipFact", derived, derivedRelationshipIndex++, endpoints, evidenceRefs, facts);
         }
+        int derivedLineageIndex = 0;
         for (JsonNode derived : scanBundle.derivedDataLineages()) {
-            addDerivedFact("DerivedLineageFact", derived, endpoints, evidenceRefs, facts);
+            addDerivedFact("DerivedLineageFact", derived, derivedLineageIndex++, endpoints, evidenceRefs, facts);
         }
+
+        for (SemanticEventCandidate event : eventExtractor.extract(scanBundle)) {
+            addEventFact(event, endpoints, evidenceRefs, facts);
+        }
+
         for (int i = 0; i < scanBundle.diagnostics().size(); i++) {
             JsonNode diagnostic = scanBundle.diagnostics().get(i);
-            String id = "diagnostic:" + i + ":" + diagnostic.path("code").asText(diagnostic.path("type").asText("UNKNOWN"));
+            String id = SemanticFactIds.diagnostic(diagnostic, i);
             EvidenceReference ref = diagnosticEvidenceRef(id, diagnostic);
             evidenceRefs.putIfAbsent(ref.id(), ref);
             facts.add(new EvidenceGraphFact(id, "Diagnostic", diagnostic.path("message").asText(id),
@@ -95,9 +106,42 @@ public final class SemanticEvidenceBuilder {
                 List.copyOf(evidenceRefs.values()), scanBundle.diagnostics(), scanBundle.summary());
     }
 
+    private void addEventFact(
+            SemanticEventCandidate event,
+            Map<String, EndpointRef> endpoints,
+            Map<String, EvidenceReference> evidenceRefs,
+            List<EvidenceGraphFact> facts
+    ) {
+        List<EndpointRef> factEndpoints = new ArrayList<>();
+        for (String endpointName : event.inputEndpoints()) {
+            EndpointRef endpoint = endpoint(endpointName);
+            addEndpoint(endpoints, endpoint);
+            factEndpoints.add(endpoint);
+        }
+        for (String endpointName : event.outputEndpoints()) {
+            EndpointRef endpoint = endpoint(endpointName);
+            addEndpoint(endpoints, endpoint);
+            factEndpoints.add(endpoint);
+        }
+        facts.add(new EvidenceGraphFact(event.id(), "SemanticEventCandidate",
+                event.readableNameHint().isBlank()
+                        ? (event.sourceObject().isBlank() ? event.eventKind() : event.sourceObject())
+                        : event.readableNameHint(),
+                factEndpoints, event.evidenceRefs(), event.confidence(), eventPayload(event),
+                Map.of("eventKind", event.eventKind(),
+                        "sourceType", event.sourceType(),
+                        "sourceObjectType", event.sourceObjectType(),
+                        "sourceObject", event.sourceObject(),
+                        "readableNameHint", event.readableNameHint(),
+                        "businessActionHint", event.businessActionHint(),
+                        "eventNameBasis", event.eventNameBasis(),
+                        "inputEndpointCount", event.inputEndpoints().size())));
+    }
+
     private void addDerivedFact(
             String type,
             JsonNode derived,
+            int index,
             Map<String, EndpointRef> endpoints,
             Map<String, EvidenceReference> evidenceRefs,
             List<EvidenceGraphFact> facts
@@ -116,8 +160,9 @@ public final class SemanticEvidenceBuilder {
             factEndpoints.add(source);
             factEndpoints.add(target);
         }
-        String id = ("DerivedRelationshipFact".equals(type) ? "derived-relationship:" : "derived-lineage:")
-                + source.displayName() + "->" + target.displayName() + ":" + derived.path("pathLength").asText("0");
+        String id = "DerivedRelationshipFact".equals(type)
+                ? SemanticFactIds.relationship(derived, true, index)
+                : SemanticFactIds.lineage(derived, true, index);
         facts.add(new EvidenceGraphFact(id, type, source.displayName() + " -> " + target.displayName(),
                 factEndpoints, evidenceRefs(id, derived, evidenceRefs), confidence(derived), derived.deepCopy(),
                 Map.of("pathLength", derived.path("pathLength").asInt(0),
@@ -170,8 +215,48 @@ public final class SemanticEvidenceBuilder {
         );
     }
 
+    private ObjectNode eventPayload(SemanticEventCandidate event) {
+        ObjectNode payload = JSON.createObjectNode();
+        payload.put("id", event.id());
+        payload.put("eventKind", event.eventKind());
+        payload.put("sourceType", event.sourceType());
+        payload.put("sourceObject", event.sourceObject());
+        payload.put("sourceObjectType", event.sourceObjectType());
+        payload.put("sourceObjectName", event.sourceObjectName());
+        payload.put("sourceFile", event.sourceFile());
+        payload.put("sourceStatementId", event.sourceStatementId());
+        payload.put("readableNameHint", event.readableNameHint());
+        payload.put("businessActionHint", event.businessActionHint());
+        payload.put("eventNameBasis", event.eventNameBasis());
+        payload.set("operationKinds", strings(event.operationKinds()));
+        payload.set("inputEndpoints", strings(event.inputEndpoints()));
+        payload.set("outputEndpoints", strings(event.outputEndpoints()));
+        payload.set("lineageRefs", strings(event.lineageRefs()));
+        payload.set("supportingDerivedLineageRefs", strings(event.supportingDerivedLineageRefs()));
+        payload.set("relationshipRefs", strings(event.relationshipRefs()));
+        payload.set("evidenceRefs", strings(event.evidenceRefs()));
+        payload.put("confidence", event.confidence());
+        return payload;
+    }
+
+    private ArrayNode strings(List<String> values) {
+        ArrayNode result = JSON.createArrayNode();
+        for (String value : values) {
+            result.add(value);
+        }
+        return result;
+    }
+
     private EndpointRef endpoint(JsonNode node) {
         return EndpointRef.fromJson(node);
+    }
+
+    private EndpointRef endpoint(String value) {
+        int index = value == null ? -1 : value.lastIndexOf('.');
+        if (index < 0) {
+            return new EndpointRef(value == null || value.isBlank() ? "unknown" : value, null);
+        }
+        return new EndpointRef(value.substring(0, index), value.substring(index + 1));
     }
 
     private void addEndpoint(Map<String, EndpointRef> endpoints, EndpointRef endpoint) {

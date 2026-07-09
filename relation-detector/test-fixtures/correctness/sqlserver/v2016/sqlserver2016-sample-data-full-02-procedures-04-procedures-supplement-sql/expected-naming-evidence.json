@@ -1,13 +1,5 @@
 {
   "fingerprints": [
-    "naming:dbo.inventory.batch_id->dbo.product_batches.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.inventory.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.inventory.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.inventory_transactions.batch_id->dbo.product_batches.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.inventory_transactions.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.inventory_transactions.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.purchase_requisition_items.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.purchase_requisition_items.requisition_id->dbo.purchase_requisitions.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.purchase_requisitions.department_id->dbo.departments.id:TABLE_ID:NAMING_MATCH"
+    "naming:dbo.sales_order_items.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
   ]
 }

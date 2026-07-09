@@ -36,13 +36,18 @@ public final class SemanticExtractionArtifactWriter {
         writeRequestOnly(outputDirectory, prompt, result.requestJson());
         write(outputDirectory.resolve("semantic-extraction-response.json"), result.responseJson());
         write(outputDirectory.resolve("semantic-extraction-result-raw.json"), result.outputText());
-        write(outputDirectory.resolve("semantic-extraction-result.json"), pretty(normalizeResult(result.outputText())));
+        write(outputDirectory.resolve("semantic-extraction-result.json"),
+                pretty(normalizeResult(result.outputText(), prompt.evidenceBundle())));
     }
 
     public ObjectNode normalizeResult(String outputText) {
+        return normalizeResult(outputText, null);
+    }
+
+    public ObjectNode normalizeResult(String outputText, JsonNode evidenceBundle) {
         try {
             JsonNode raw = JSON.readTree(outputText);
-            return normalizer.normalize(raw);
+            return evidenceBundle == null ? normalizer.normalize(raw) : normalizer.normalize(raw, evidenceBundle);
         } catch (IOException e) {
             throw new IllegalArgumentException("semantic extraction result must be valid JSON", e);
         }

@@ -1,7 +1,6 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:contracts.prepared_by->employees.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:departments.id->departments.id:SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN,SQL_LOG_SUBQUERY_IN",
     "CO_OCCURRENCE:employees.id->tax_filings.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN",
     "CO_OCCURRENCE:employees.id->vouchers.prepared_by:SQL_LOG_JOIN,SQL_LOG_JOIN,SQL_LOG_JOIN",
     "CO_OCCURRENCE:employees.id->warehouses.manager_id:SQL_LOG_JOIN",

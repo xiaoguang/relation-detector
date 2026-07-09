@@ -1,5 +1,3 @@
 {
-  "fingerprints": [
-    "naming:dbo.promotion_products.promotion_id->dbo.promotions.id:TABLE_ID:NAMING_MATCH"
-  ]
+  "fingerprints": []
 }

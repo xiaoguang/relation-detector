@@ -156,12 +156,24 @@ final class SourceCollectorPipeline {
         attributes.put("objectName", definition.name());
         attributes.put("objectType", definition.type().name());
         attributes.put("objectDefinitionSource", definition.source());
+        attributes.put("sourceObjectType", semanticSourceObjectType(definition.type()));
+        attributes.put("sourceObjectName", objectSourceName(definition));
+        attributes.put("sourceStatementId", objectSourceName(definition));
         if (definition.type() == DatabaseObjectType.PROCEDURE || definition.type() == DatabaseObjectType.FUNCTION) {
             attributes.put("routineSchema", definition.schema());
             attributes.put("routineName", definition.name());
             attributes.put("routineType", definition.type().name());
         }
         return attributes;
+    }
+
+    private String semanticSourceObjectType(DatabaseObjectType type) {
+        return switch (type) {
+            case PROCEDURE, FUNCTION, PACKAGE, PACKAGE_BODY, EVENT -> "ROUTINE";
+            case TRIGGER -> "TRIGGER";
+            case VIEW, MATERIALIZED_VIEW -> "QUERY";
+            case RULE -> "RULE";
+        };
     }
 
     private String objectSourceName(DatabaseObjectDefinition definition) {

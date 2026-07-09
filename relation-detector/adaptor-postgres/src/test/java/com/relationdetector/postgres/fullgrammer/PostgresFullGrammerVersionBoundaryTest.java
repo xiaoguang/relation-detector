@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
 class PostgresFullGrammerVersionBoundaryTest {
     @Test
@@ -151,6 +153,37 @@ class PostgresFullGrammerVersionBoundaryTest {
                                 && "customer_id".equals(event.attributes().get("column"))),
                 () -> "PostgreSQL full-grammer DDL should emit DDL_COLUMN inventory events: "
                         + result.events());
+    }
+
+    @Test
+    void fullGrammerTreatsIsNotDistinctFromAsNullSafeEqualityAcrossVersions() {
+        List<com.relationdetector.core.fullgrammer.FullGrammerDialectModule> modules = List.of(
+                new com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerDialectModule(),
+                new com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerDialectModule(),
+                new com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerDialectModule());
+        SqlStatementRecord statement = statement("""
+                SELECT pti.id
+                FROM picking_task_items pti
+                LEFT JOIN inventory_location_balances ilb
+                    ON ilb.location_id = pti.location_id
+                   AND ilb.product_id = pti.product_id
+                   AND ilb.batch_id IS NOT DISTINCT FROM pti.batch_id;
+                """);
+
+        for (var module : modules) {
+            var structured = module.sqlParser().parseSql(statement, null);
+            var fingerprints = new TokenEventRelationExtractor().extract(statement, structured)
+                    .stream()
+                    .map(relation -> relation.relationType() + ":"
+                            + relation.source().displayName() + "->"
+                            + relation.target().displayName())
+                    .toList();
+
+            assertTrue(fingerprints.contains(
+                            "CO_OCCURRENCE:inventory_location_balances.batch_id->picking_task_items.batch_id"),
+                    () -> module.profile().id() + " should treat IS NOT DISTINCT FROM as null-safe equality. "
+                            + "Actual=" + fingerprints + " events=" + structured.events());
+        }
     }
 
     @Test

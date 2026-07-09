@@ -11,6 +11,7 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
+import com.relationdetector.core.log.SourceNameNormalizer;
 import com.relationdetector.core.scan.ScanConfig;
 import com.relationdetector.core.relation.DdlRelationExtractionVisitor;
 import com.relationdetector.core.relation.NamingEvidenceExtractor;
@@ -78,10 +79,11 @@ public final class DdlRelationParserRunner {
             ScanConfig config
     ) {
         String ddl = read(file);
-        StructuredParseResult structured = bundle.ddlParser().parseDdl(ddl, file.toString(), context);
+        String sourceName = SourceNameNormalizer.normalize(file);
+        StructuredParseResult structured = bundle.ddlParser().parseDdl(ddl, sourceName, context);
         forwardWarnings(context, structured);
         return new DdlParseOutcome(
-                visitor.extract(ddl, file.toString(), structured),
+                visitor.extract(ddl, sourceName, structured),
                 namingEvidenceExtractor.extractFromDdlEvents(structured.events(), config));
     }
 
@@ -176,13 +178,14 @@ public final class DdlRelationParserRunner {
             AdaptorContext context,
             ScanConfig config
     ) {
-        StructuredParseResult structured = parser.parseDdl(ddl, sourceName, context);
+        String normalizedSourceName = SourceNameNormalizer.normalize(sourceName);
+        StructuredParseResult structured = parser.parseDdl(ddl, normalizedSourceName, context);
         forwardWarnings(context, structured);
         return new DdlParseOutcome(
                 rewriteEvidenceSource(
-                        visitor.extract(ddl, sourceName, structured),
+                        visitor.extract(ddl, normalizedSourceName, structured),
                         sourceType,
-                        sourceName),
+                        normalizedSourceName),
                 namingEvidenceExtractor.extractFromDdlEvents(structured.events(), config));
     }
 
@@ -198,13 +201,11 @@ public final class DdlRelationParserRunner {
             EvidenceSourceType sourceType,
             String sourceName
     ) {
-        if (sourceType == EvidenceSourceType.DDL_FILE) {
-            return candidates;
-        }
+        String normalizedSourceName = SourceNameNormalizer.normalize(sourceName);
         for (RelationshipCandidate candidate : candidates) {
             List<Evidence> rewritten = candidate.evidence().stream()
                     .map(evidence -> new Evidence(evidence.type(), evidence.score(), sourceType,
-                            sourceName, evidence.detail(), evidence.attributes()))
+                            normalizedSourceName, evidence.detail(), evidence.attributes()))
                     .toList();
             candidate.evidence().clear();
             candidate.evidence().addAll(rewritten);

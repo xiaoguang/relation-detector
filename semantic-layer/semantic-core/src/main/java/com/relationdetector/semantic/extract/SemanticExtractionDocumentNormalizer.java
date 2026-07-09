@@ -2,6 +2,7 @@ package com.relationdetector.semantic.extract;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -39,10 +40,180 @@ public final class SemanticExtractionDocumentNormalizer {
                 linkedEntities, validationState);
         normalizeTriplets(root.withArray("triplets"), entityByName, graphNodes, graphEdges, linkedEntities,
                 validationState);
-        normalizeReviewItems(root.withArray("reviewItems"), graphNodes, validationState);
+        validationState.generatedReviewItemCount += generateReviewItemsForReviewNeeded(root);
+        normalizeReviewItems(root.withArray("reviewItems"), graphNodes, graphEdges, validationState);
         root.set("semanticGraph", graph(graphNodes, graphEdges));
         root.set("validation", validation(root.withArray("entities"), linkedEntities, validationState));
         return root;
+    }
+
+    public ObjectNode normalize(JsonNode rawDocument, JsonNode evidenceBundle) {
+        if (rawDocument == null || !rawDocument.isObject()) {
+            throw new IllegalArgumentException("semantic extraction document must be a JSON object");
+        }
+        if (evidenceBundle == null || !evidenceBundle.isObject()) {
+            return normalize(rawDocument);
+        }
+        return normalize(withCandidateBackfill((ObjectNode) rawDocument.deepCopy(), evidenceBundle));
+    }
+
+    private ObjectNode withCandidateBackfill(ObjectNode root, JsonNode evidenceBundle) {
+        Map<String, String> entityNamesByPhysical = entityNamesByPhysical(root.withArray("entities"));
+        backfillEventCandidates(root.withArray("events"), evidenceBundle.path("eventCandidates"), entityNamesByPhysical);
+        backfillTripletCandidates(root.withArray("triplets"), evidenceBundle.path("tripletCandidates"), entityNamesByPhysical);
+        backfillReviewItemCandidates(root.withArray("reviewItems"), evidenceBundle.path("reviewItemCandidates"));
+        return root;
+    }
+
+    private Map<String, String> entityNamesByPhysical(ArrayNode entities) {
+        Map<String, String> result = new LinkedHashMap<>();
+        for (JsonNode node : entities) {
+            String physical = node.path("physicalName").asText("");
+            String name = node.path("name").asText("");
+            if (!physical.isBlank() && !name.isBlank()) {
+                result.put(physical, name);
+            }
+        }
+        return result;
+    }
+
+    private void backfillEventCandidates(
+            ArrayNode events,
+            JsonNode candidates,
+            Map<String, String> entityNamesByPhysical
+    ) {
+        Set<String> existing = new LinkedHashSet<>();
+        for (JsonNode event : events) {
+            String ref = event.path("eventCandidateRef").asText("");
+            if (!ref.isBlank()) {
+                existing.add(ref);
+            }
+        }
+        if (!candidates.isArray()) {
+            return;
+        }
+        for (JsonNode candidate : candidates) {
+            String id = candidate.path("id").asText("");
+            if (id.isBlank() || existing.contains(id)) {
+                continue;
+            }
+            ObjectNode event = events.addObject();
+            event.put("name", nonBlank(candidate.path("readableNameHint").asText(""),
+                    nonBlank(candidate.path("sourceObjectName").asText(""), candidate.path("eventKind").asText("Event"))));
+            event.put("type", "业务/数据处理事件");
+            event.put("machineType", candidate.path("eventKind").asText("Event"));
+            event.put("eventCandidateRef", id);
+            event.put("description", candidate.path("businessActionHint").asText(""));
+            event.set("inputs", entityNames(candidate.path("inputEndpoints"), entityNamesByPhysical));
+            event.set("outputs", entityNames(candidate.path("outputEndpoints"), entityNamesByPhysical));
+            event.set("evidenceRefs", stringArray(List.of(id)));
+            existing.add(id);
+        }
+    }
+
+    private void backfillTripletCandidates(
+            ArrayNode triplets,
+            JsonNode candidates,
+            Map<String, String> entityNamesByPhysical
+    ) {
+        Set<String> existing = new LinkedHashSet<>();
+        for (JsonNode triplet : triplets) {
+            String ref = triplet.path("candidateRef").asText("");
+            if (!ref.isBlank()) {
+                existing.add(ref);
+            }
+        }
+        if (!candidates.isArray()) {
+            return;
+        }
+        for (JsonNode candidate : candidates) {
+            String id = candidate.path("id").asText("");
+            if (id.isBlank() || existing.contains(id)) {
+                continue;
+            }
+            String subject = entityName(candidate.path("subject").asText(""), entityNamesByPhysical);
+            String object = entityName(candidate.path("object").asText(""), entityNamesByPhysical);
+            ObjectNode triplet = triplets.addObject();
+            triplet.put("candidateRef", id);
+            triplet.put("type", "语义三元组");
+            triplet.put("machineType", candidate.path("type").asText(""));
+            triplet.put("subject", subject);
+            triplet.put("predicate", candidate.path("predicate").asText("关联"));
+            triplet.put("object", object);
+            triplet.put("readable", subject + " " + triplet.path("predicate").asText("关联") + " " + object);
+            triplet.set("evidenceRefs", stringArray(List.of(id)));
+            existing.add(id);
+        }
+    }
+
+    private void backfillReviewItemCandidates(ArrayNode reviewItems, JsonNode candidates) {
+        Set<String> existingTargets = new LinkedHashSet<>();
+        for (JsonNode reviewItem : reviewItems) {
+            String targetRef = reviewItem.path("targetRef").asText(reviewItem.path("target").asText(""));
+            if (!targetRef.isBlank()) {
+                existingTargets.add(targetRef);
+            }
+        }
+        if (!candidates.isArray()) {
+            return;
+        }
+        for (JsonNode candidate : candidates) {
+            String targetRef = candidate.path("targetRef").asText("");
+            if (targetRef.isBlank() || existingTargets.contains(targetRef)) {
+                continue;
+            }
+            ObjectNode review = reviewItems.addObject();
+            review.put("id", candidate.path("id").asText("review:" + slug(targetRef)));
+            review.put("targetRef", targetRef);
+            review.put("targetSection", candidate.path("targetSection").asText(""));
+            review.put("type", candidate.path("type").asText("REVIEW_NEEDED"));
+            review.put("severity", candidate.path("severity").asText("MEDIUM"));
+            review.put("reason", candidate.path("reason").asText("Candidate requires review."));
+            review.set("evidenceRefs", evidenceRefsOrCandidate(candidate));
+            existingTargets.add(targetRef);
+        }
+    }
+
+    private ArrayNode entityNames(JsonNode endpoints, Map<String, String> entityNamesByPhysical) {
+        ArrayNode result = JSON.createArrayNode();
+        if (!endpoints.isArray()) {
+            return result;
+        }
+        for (JsonNode endpoint : endpoints) {
+            String name = entityName(endpoint.asText(""), entityNamesByPhysical);
+            if (!name.isBlank() && !contains(result, name)) {
+                result.add(name);
+            }
+        }
+        return result;
+    }
+
+    private String entityName(String endpointOrTable, Map<String, String> entityNamesByPhysical) {
+        String table = endpointOrTable == null ? "" : endpointOrTable;
+        if (table.contains(".")) {
+            table = tableOf(table);
+        }
+        return entityNamesByPhysical.getOrDefault(table, table);
+    }
+
+    private ArrayNode evidenceRefsOrCandidate(JsonNode candidate) {
+        ArrayNode refs = JSON.createArrayNode();
+        if (candidate.path("evidenceRefs").isArray() && !candidate.path("evidenceRefs").isEmpty()) {
+            candidate.path("evidenceRefs").forEach(ref -> refs.add(ref.asText("")));
+        } else {
+            refs.add(candidate.path("id").asText(""));
+        }
+        return refs;
+    }
+
+    private ArrayNode stringArray(List<String> values) {
+        ArrayNode result = JSON.createArrayNode();
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                result.add(value);
+            }
+        }
+        return result;
     }
 
     private void normalizeEntities(
@@ -83,19 +254,38 @@ public final class SemanticExtractionDocumentNormalizer {
             String id = nonBlank(event.path("id").asText(""), "event:" + slug(eventKey(event)));
             event.put("id", id);
             requireEvidence(validationState, "event", id, event);
+            requireEventCandidateRef(validationState, id, event);
             graphNodes.put(id, graphNode(id, "Event", event.path("name").asText(""), event.path("type").asText(""),
                     event.path("evidenceRefs")));
+            JsonNode originalInputRefs = event.path("inputEntityRefs").deepCopy();
+            JsonNode originalOutputRefs = event.path("outputEntityRefs").deepCopy();
             ArrayNode inputRefs = event.putArray("inputEntityRefs");
+            for (JsonNode inputRef : originalInputRefs) {
+                String ref = inputRef.asText("");
+                addKnownEntityRef(inputRefs, ref, entityByName, linkedEntities);
+                addEdge(graphEdges, "event-input", id, knownEntityRef(ref, entityByName), "EVENT_INPUT",
+                        event.path("evidenceRefs"));
+                requireResolved(validationState, id, "inputEntityRefs", ref, knownEntityRef(ref, entityByName),
+                        "entity");
+            }
             for (JsonNode input : event.path("inputs")) {
                 String ref = entityByName.get(input.asText(""));
-                addEntityRef(inputRefs, ref, linkedEntities);
+                addEntityRefIfAbsent(inputRefs, ref, linkedEntities);
                 addEdge(graphEdges, "event-input", id, ref, "EVENT_INPUT", event.path("evidenceRefs"));
                 requireResolved(validationState, id, "inputs", input.asText(""), ref, "entity");
             }
             ArrayNode outputRefs = event.putArray("outputEntityRefs");
+            for (JsonNode outputRef : originalOutputRefs) {
+                String ref = outputRef.asText("");
+                addKnownEntityRef(outputRefs, ref, entityByName, linkedEntities);
+                addEdge(graphEdges, "event-output", id, knownEntityRef(ref, entityByName), "EVENT_OUTPUT",
+                        event.path("evidenceRefs"));
+                requireResolved(validationState, id, "outputEntityRefs", ref, knownEntityRef(ref, entityByName),
+                        "entity");
+            }
             for (JsonNode output : event.path("outputs")) {
                 String ref = entityByName.get(output.asText(""));
-                addEntityRef(outputRefs, ref, linkedEntities);
+                addEntityRefIfAbsent(outputRefs, ref, linkedEntities);
                 addEdge(graphEdges, "event-output", id, ref, "EVENT_OUTPUT", event.path("evidenceRefs"));
                 requireResolved(validationState, id, "outputs", output.asText(""), ref, "entity");
             }
@@ -265,6 +455,7 @@ public final class SemanticExtractionDocumentNormalizer {
                             + ":" + slug(triplet.path("object").asText("")) + ":" + index);
             triplet.put("id", id);
             requireEvidence(validationState, "triplet", id, triplet);
+            requireTripletCandidateRef(validationState, id, triplet);
             String subjectRef = entityByName.get(triplet.path("subject").asText(""));
             String objectRef = entityByName.get(triplet.path("object").asText(""));
             putIfPresent(triplet, "subjectRef", subjectRef);
@@ -280,7 +471,63 @@ public final class SemanticExtractionDocumentNormalizer {
         }
     }
 
+    private int generateReviewItemsForReviewNeeded(ObjectNode root) {
+        ArrayNode reviewItems = root.withArray("reviewItems");
+        Set<String> existingTargets = new LinkedHashSet<>();
+        for (JsonNode reviewItem : reviewItems) {
+            String targetRef = reviewItem.path("targetRef").asText(reviewItem.path("target").asText(""));
+            if (!targetRef.isBlank()) {
+                existingTargets.add(targetRef);
+            }
+        }
+        int generated = 0;
+        generated += generateReviewItemsForSection(reviewItems, existingTargets, root.withArray("entities"), "entities");
+        generated += generateReviewItemsForSection(reviewItems, existingTargets, root.withArray("events"), "events");
+        generated += generateReviewItemsForSection(reviewItems, existingTargets, root.withArray("relations"), "relations");
+        generated += generateReviewItemsForSection(reviewItems, existingTargets, root.withArray("lineage"), "lineage");
+        generated += generateReviewItemsForSection(reviewItems, existingTargets, root.withArray("metrics"), "metrics");
+        generated += generateReviewItemsForSection(reviewItems, existingTargets, root.withArray("dimensions"), "dimensions");
+        generated += generateReviewItemsForSection(reviewItems, existingTargets, root.withArray("triplets"), "triplets");
+        return generated;
+    }
+
+    private int generateReviewItemsForSection(
+            ArrayNode reviewItems,
+            Set<String> existingTargets,
+            ArrayNode sectionItems,
+            String targetSection
+    ) {
+        int generated = 0;
+        for (JsonNode node : sectionItems) {
+            if (!node.isObject() || !"REVIEW_NEEDED".equalsIgnoreCase(node.path("reviewStatus").asText(""))) {
+                continue;
+            }
+            ObjectNode item = (ObjectNode) node;
+            String targetRef = item.path("id").asText("");
+            if (targetRef.isBlank() || existingTargets.contains(targetRef)) {
+                continue;
+            }
+            ObjectNode review = reviewItems.addObject();
+            review.put("id", "review:auto:" + slug(targetRef));
+            review.put("targetRef", targetRef);
+            review.put("targetSection", targetSection);
+            review.put("type", "REVIEW_NEEDED");
+            review.put("severity", item.path("severity").asText("MEDIUM"));
+            review.put("reason", "Semantic item is marked REVIEW_NEEDED and requires business or data owner review.");
+            ArrayNode evidenceRefs = review.putArray("evidenceRefs");
+            if (item.path("evidenceRefs").isArray() && !item.path("evidenceRefs").isEmpty()) {
+                item.path("evidenceRefs").forEach(ref -> evidenceRefs.add(ref.asText("")));
+            } else {
+                evidenceRefs.add(targetRef);
+            }
+            existingTargets.add(targetRef);
+            generated++;
+        }
+        return generated;
+    }
+
     private void normalizeReviewItems(ArrayNode reviewItems, Map<String, ObjectNode> graphNodes,
+            Map<String, ObjectNode> graphEdges,
             ValidationState validationState) {
         int index = 0;
         for (JsonNode node : reviewItems) {
@@ -288,11 +535,17 @@ public final class SemanticExtractionDocumentNormalizer {
                 continue;
             }
             ObjectNode item = (ObjectNode) node;
-            String id = nonBlank(item.path("id").asText(""), "review:" + slug(item.path("target").asText("")) + ":" + index);
+            String targetRef = item.path("targetRef").asText(item.path("target").asText(""));
+            String id = nonBlank(item.path("id").asText(""), "review:" + slug(targetRef) + ":" + index);
             item.put("id", id);
+            putIfPresent(item, "targetRef", targetRef);
+            if (!item.hasNonNull("targetSection")) {
+                item.put("targetSection", item.path("section").asText(""));
+            }
             requireEvidence(validationState, "reviewItem", id, item);
-            graphNodes.put(id, graphNode(id, "ReviewItem", item.path("target").asText(""), "REVIEW_NEEDED",
+            graphNodes.put(id, graphNode(id, "ReviewItem", targetRef, "REVIEW_NEEDED",
                     item.path("evidenceRefs")));
+            addEdge(graphEdges, "review-target", id, targetRef, "REVIEW_TARGET", item.path("evidenceRefs"));
             index++;
         }
     }
@@ -324,6 +577,7 @@ public final class SemanticExtractionDocumentNormalizer {
         validationState.unresolvedReferences.values().forEach(unresolved::add);
         ArrayNode missingEvidence = validation.putArray("missingEvidenceRefs");
         validationState.missingEvidenceRefs.values().forEach(missingEvidence::add);
+        validation.put("generatedReviewItemCount", validationState.generatedReviewItemCount);
         validation.put("isRefClosed", isolated.isEmpty() && unresolved.isEmpty() && missingEvidence.isEmpty());
         return validation;
     }
@@ -339,6 +593,38 @@ public final class SemanticExtractionDocumentNormalizer {
             missing.put("section", section);
             missing.put("id", id);
             missing.put("reason", "Semantic item has no evidenceRefs.");
+            return missing;
+        });
+    }
+
+    private void requireEventCandidateRef(ValidationState validationState, String id, ObjectNode event) {
+        if (!event.path("eventCandidateRef").asText("").isBlank()) {
+            return;
+        }
+        String key = "eventCandidateRef:" + id;
+        validationState.unresolvedReferences.computeIfAbsent(key, ignored -> {
+            ObjectNode missing = JSON.createObjectNode();
+            missing.put("id", id);
+            missing.put("field", "eventCandidateRef");
+            missing.put("value", "");
+            missing.put("expectedRefKind", "eventCandidate");
+            missing.put("reason", "Event must reference a deterministic eventCandidate.");
+            return missing;
+        });
+    }
+
+    private void requireTripletCandidateRef(ValidationState validationState, String id, ObjectNode triplet) {
+        if (!triplet.path("candidateRef").asText("").isBlank()) {
+            return;
+        }
+        String key = "tripletCandidateRef:" + id;
+        validationState.unresolvedReferences.computeIfAbsent(key, ignored -> {
+            ObjectNode missing = JSON.createObjectNode();
+            missing.put("id", id);
+            missing.put("field", "candidateRef");
+            missing.put("value", "");
+            missing.put("expectedRefKind", "tripletCandidate");
+            missing.put("reason", "Triplet must reference a deterministic tripletCandidate.");
             return missing;
         });
     }
@@ -415,6 +701,41 @@ public final class SemanticExtractionDocumentNormalizer {
         linkedEntities.add(ref);
     }
 
+    private void addKnownEntityRef(
+            ArrayNode refs,
+            String ref,
+            Map<String, String> entityByName,
+            Set<String> linkedEntities
+    ) {
+        addEntityRefIfAbsent(refs, knownEntityRef(ref, entityByName), linkedEntities);
+    }
+
+    private String knownEntityRef(String ref, Map<String, String> entityByName) {
+        if (ref == null || ref.isBlank()) {
+            return null;
+        }
+        return entityByName.containsValue(ref) ? ref : null;
+    }
+
+    private void addEntityRefIfAbsent(ArrayNode refs, String ref, Set<String> linkedEntities) {
+        if (ref == null || ref.isBlank()) {
+            return;
+        }
+        if (refs != null && !contains(refs, ref)) {
+            refs.add(ref);
+        }
+        linkedEntities.add(ref);
+    }
+
+    private boolean contains(ArrayNode refs, String ref) {
+        for (JsonNode node : refs) {
+            if (ref.equals(node.asText())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void addLinked(Set<String> linkedEntities, String... refs) {
         for (String ref : refs) {
             if (ref != null && !ref.isBlank()) {
@@ -468,5 +789,6 @@ public final class SemanticExtractionDocumentNormalizer {
     private static final class ValidationState {
         private final Map<String, ObjectNode> unresolvedReferences = new LinkedHashMap<>();
         private final Map<String, ObjectNode> missingEvidenceRefs = new LinkedHashMap<>();
+        private int generatedReviewItemCount;
     }
 }

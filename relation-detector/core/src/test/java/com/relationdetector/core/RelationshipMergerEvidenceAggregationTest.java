@@ -136,6 +136,53 @@ class RelationshipMergerEvidenceAggregationTest {
     }
 
     @Test
+    void dropsSameEndpointColumnCoOccurrenceFromFinalOutput() {
+        RelationshipCandidate noInformationSelfCo = columnCoOccurrence(
+                "orders", "customer_id",
+                "orders", "customer_id",
+                "line 12: o.customer_id = customer_id");
+
+        List<RelationshipCandidate> merged = merger.merge(List.of(noInformationSelfCo), 0.0d);
+
+        assertEquals(0, merged.size(),
+                "Same-endpoint CO_OCCURRENCE is a no-op observation and should not inflate final Rel counts");
+    }
+
+    @Test
+    void keepsSameTableDifferentColumnCoOccurrence() {
+        RelationshipCandidate selfJoin = columnCoOccurrence(
+                "employees", "manager_id",
+                "employees", "id",
+                "line 18: e.manager_id = m.id");
+
+        RelationshipCandidate merged = merger.merge(List.of(selfJoin), 0.0d).get(0);
+
+        assertEquals(RelationType.CO_OCCURRENCE, merged.relationType());
+        assertEquals(RelationSubType.COLUMN_CO_OCCURRENCE, merged.relationSubType());
+        assertEquals("employees.manager_id", merged.source().displayName());
+        assertEquals("employees.id", merged.target().displayName());
+    }
+
+    @Test
+    void keepsSelfReferentialFkLikeRelationship() {
+        RelationshipCandidate selfFk = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(TableId.of(null, "employees"), "manager_id")),
+                Endpoint.column(ColumnRef.of(TableId.of(null, "employees"), "id")),
+                RelationType.FK_LIKE,
+                RelationSubType.DDL_DECLARED_FK);
+        selfFk.evidence().add(Evidence.of(EvidenceType.DDL_FOREIGN_KEY, DefaultEvidenceScores.DDL_FOREIGN_KEY,
+                EvidenceSourceType.DDL_FILE, "schema.sql",
+                "FOREIGN KEY (manager_id) REFERENCES employees(id)"));
+
+        RelationshipCandidate merged = merger.merge(List.of(selfFk), 0.0d).get(0);
+
+        assertEquals(RelationType.FK_LIKE, merged.relationType());
+        assertEquals(RelationSubType.DDL_DECLARED_FK, merged.relationSubType());
+        assertEquals("employees.manager_id", merged.source().displayName());
+        assertEquals("employees.id", merged.target().displayName());
+    }
+
+    @Test
     void uniqueEndpointAndSqlJoinInferFkDirection() {
         RelationshipCandidate sql = sqlLogJoinCoOccurrence("app.log", "line 10: o.user_id = u.id");
         sql.evidence().add(new Evidence(EvidenceType.TARGET_UNIQUE,
@@ -217,6 +264,23 @@ class RelationshipMergerEvidenceAggregationTest {
                 RelationSubType.COLUMN_CO_OCCURRENCE);
         candidate.evidence().add(Evidence.of(EvidenceType.SQL_LOG_JOIN, DefaultEvidenceScores.SQL_LOG_JOIN,
                 EvidenceSourceType.NATIVE_LOG, source, detail));
+        return candidate;
+    }
+
+    private RelationshipCandidate columnCoOccurrence(
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn,
+            String detail
+    ) {
+        RelationshipCandidate candidate = new RelationshipCandidate(
+                Endpoint.column(ColumnRef.of(TableId.of(null, sourceTable), sourceColumn)),
+                Endpoint.column(ColumnRef.of(TableId.of(null, targetTable), targetColumn)),
+                RelationType.CO_OCCURRENCE,
+                RelationSubType.COLUMN_CO_OCCURRENCE);
+        candidate.evidence().add(Evidence.of(EvidenceType.SQL_LOG_JOIN, DefaultEvidenceScores.SQL_LOG_JOIN,
+                EvidenceSourceType.NATIVE_LOG, "app.log", detail));
         return candidate;
     }
 

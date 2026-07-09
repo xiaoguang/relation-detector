@@ -1,36 +1,50 @@
 # Common sample-data benchmark 审计
 
-本文记录 common token-event 在 sample-data 统计中的来源、边界和是否需要补能力的判断。
+本文记录 common token-event 在 sample-data CLI 统计中的来源、边界和能力判断。
 
 ## 当前统计
 
-common 现在是正式 CLI parser category：配置 `database.type: common` 时由 `CommonDatabaseAdaptor` 接管，使用 common portable typed grammar 跑 file DDL、object files、plain SQL logs、naming evidence、lineage 和 derived path。它不是 MySQL/PostgreSQL/Oracle/SQL Server 的方言 fallback，也不连接 live catalog metadata。当前 correctness 统计仍来自 portable benchmark fixture；sample-data CLI 统计则来自 `sample-data/portable` 的真实 CLI 扫描结果。
+common 是正式 CLI parser category：配置 `database.type: common` 时由 `CommonDatabaseAdaptor` 接管，使用 common portable typed grammar 跑 file DDL、object files、plain SQL logs、naming evidence、lineage 和 derived path。它不是 MySQL/PostgreSQL/Oracle/SQL Server 的方言 fallback，也不连接 live catalog metadata。
 
-| Parser | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics | 来源 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| common-token-event sample-data | 15 | 11 / 4 | 729 | 292 | 419 | 0 | `test-fixtures/correctness/common` |
-| common-token-event sample-data CLI | 13 | 10 / 3 | 317 | 152 | 248 | 0 | `sample-data/portable` via `database.type: common` |
+自然 sample-data CLI 只读取：
 
-## 为什么 common 数量看起来高
+```text
+relation-detector/sample-data/common-natural
+```
 
-common correctness 行不是 38 个自然业务 SQL 文件的直接扫描结果，而是高密度 portable benchmark。sample-data CLI 行则是 `sample-data/portable` 目录的真实扫描结果，两者统计口径不同：
+parser coverage 样例保留在：
 
-- SQL 被压缩成跨方言 portable subset，用来集中覆盖 join、CTE、derived table、DML lineage、DDL column inventory。
-- 同一个 fixture 往往承载多个业务语义点，因此单位 fixture 的 relationship / lineage / namingEvidence 密度更高。
-- 它的目标是验证 common portable grammar 的结构能力，不是替代 MySQL/PostgreSQL/Oracle/SQL Server 的自然方言 sample-data。
+```text
+relation-detector/sample-data/common-parser-coverage
+```
+
+coverage 样例继续服务 correctness/golden，不混入自然 sample-data CLI 统计。
+
+| Parser | Fixtures | SQL / DDL | Rel | Lin | Name | Diag | DerRel | DerLin | DerName |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| common-token-event-sample-data | 9 | 6 / 3 | 319 | 105 | 966 | 0 | 1089 | 13 | 718 |
+
+## 为什么 common 不和 38 个方言 ERP 文件做数量对齐
+
+common natural benchmark 的目标是 portable SQL subset，不是某个方言 ERP 样例库的完整迁移：
+
+- 只放跨方言可自然表达的 `SELECT`、CTE、derived table、join/exists/in、标准 `INSERT SELECT`、基础 `UPDATE/DELETE`、基础 DDL。
+- 不放 MySQL `ON DUPLICATE KEY UPDATE`、PostgreSQL `UPDATE FROM`、Oracle PL/SQL、SQL Server `MERGE` 等方言能力。
+- 不混入 `*-for-golden.sql` 这类 parser coverage body；这些文件用于 correctness，而不是自然 sample-data 统计。
+- common 的 `Name/DerName` 可以较高，因为 portable schema/DDL 与自然查询集中覆盖了稳定的 id/foreign-key-like 命名链；这不是方言覆盖量的直接排名。
 
 ## 能力判断
 
 | 分类 | 当前结论 |
 | --- | --- |
-| `COMMON_PARSER_GAP` | 本轮未确认新的 common parser gap |
-| `PORTABLE_SQL_ASSET_GAP` | 当前 portable benchmark 仍是高密度精选资产，不等于完整 ERP 自然样例库 |
-| `EXPECTED_DIALECT_ONLY` | MySQL `ON DUPLICATE KEY UPDATE`、PostgreSQL `UPDATE FROM`、Oracle PL/SQL、SQL Server `MERGE` 等不进入 common grammar |
-| `COMMON_FALSE_POSITIVE` | 本轮未确认 common false positive |
-| `REVIEW_NEEDED` | 无 |
+| `COMMON_PARSER_GAP` | 本轮未确认新的 common parser gap。 |
+| `PORTABLE_SQL_ASSET_GAP` | common natural 是精选 portable benchmark，不承诺 38 个 ERP 文件规模。 |
+| `EXPECTED_DIALECT_ONLY` | 方言专属 SQL 不进入 common grammar。 |
+| `COMMON_FALSE_POSITIVE` | 本轮未确认 common false positive。 |
+| `REVIEW_NEEDED` | 无。 |
 
 ## 后续口径
 
-- common 只补 portable SQL subset：`SELECT`、CTE、derived table、join/exists/in、标准 `INSERT SELECT`、基础 `UPDATE/DELETE`、基础 DDL。
-- 任何方言专属能力都应留在对应 adaptor token-event 或 full-grammer，不为追数量塞进 common。
-- common 是否需要补能力，应通过 `semantic-equivalent benchmark` 或 portable SQL fixture 的实际缺失判断，而不是和 38 个自然方言 sample-data 文件做简单数量对齐。
+- common 作为正式 parser category 继续通过 CLI 可运行、可观测、可验收。
+- common 不参与方言自动 fallback；MySQL/PostgreSQL/Oracle/SQL Server unsupported version 仍回到本方言 token-event fallback。
+- common 是否需要补能力，只通过 portable natural benchmark、common correctness 或 semantic-equivalent benchmark 的明确缺失来判断，不用方言 ERP 文件数量简单倒推。

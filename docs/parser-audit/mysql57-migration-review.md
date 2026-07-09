@@ -62,17 +62,17 @@ The MySQL 5.7 sample-data hygiene test scans `sample-data/mysql/5.7` for CTE, wi
 
 Current golden counts:
 
-| Golden group | Fixtures | SQL / DDL | Relations | Lineage | NAMING_MATCH | Diagnostics |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| MySQL root token-event | 83 | 65 / 18 | 659 | 349 | 321 | 0 |
-| MySQL full-grammer v5_7 | 89 | 71 / 18 | 706 | 414 | 327 | 9 |
-| MySQL full-grammer v8_0 | 89 | 71 / 18 | 923 | 398 | 491 | 6 |
+| Golden group | Fixtures | SQL / DDL | Relations | Lineage | Diagnostics | Rel NAMING_MATCH | Top-level namingEvidence |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| MySQL root token-event | 83 | 65 / 18 | 652 | 350 | 0 | 252 | 321 |
+| MySQL full-grammer v5_7 | 89 | 71 / 18 | 696 | 414 | 0 | 257 | 327 |
+| MySQL full-grammer v8_0 | 89 | 71 / 18 | 883 | 398 | 0 | 421 | 491 |
 
 Interpretation:
 
 - `mysql/v5_7` has fewer relations than `mysql/v8_0` because 8.0-only relation-producing syntax is rejected or rewritten to 5.7-compatible forms.
 - `mysql/v5_7` has slightly more lineage than `mysql/v8_0` because several complex 8.0 fixtures were rewritten into simpler 5.7-positive DML forms that expose field mappings more directly.
-- Current MySQL 5.7 / 8.0 correctness keeps a small number of explicit diagnostics for version-boundary and parser-warning fixtures. These are expected warning counts, not silently swallowed parse failures.
+- Current MySQL 5.7 / 8.0 correctness no longer has expected diagnostics in the golden summary; version-boundary behavior is covered by dedicated parser/architecture tests and positive/negative fixtures rather than silent fallback.
 
 ## 6. Parser Fixes Made
 

@@ -1,11 +1,6 @@
 {
   "fingerprints": [
-    "naming:dbo.accounts.parent_id->dbo.accounts.id:SELF_ROLE_ID:NAMING_MATCH",
-    "naming:dbo.damage_report_items.batch_id->dbo.product_batches.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.damage_report_items.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.damage_report_items.report_id->dbo.damage_reports.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.damage_reports.voucher_id->dbo.vouchers.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.voucher_items.account_id->dbo.accounts.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.voucher_items.voucher_id->dbo.vouchers.id:TABLE_ID:NAMING_MATCH"
+    "naming:dbo.inventory.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.supplier_products.supplier_id->dbo.suppliers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

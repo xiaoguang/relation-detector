@@ -309,6 +309,62 @@ class DerivedPathInferenceServiceTest {
     }
 
     @Test
+    void pureIdentitySelfLineageDoesNotParticipateInDerivedLineage() {
+        ScanConfig config = enabledConfig();
+        Endpoint departmentId = col("departments", "id");
+        Endpoint employeeId = col("employees", "id");
+
+        DerivedPathInferenceResult result = service.infer(List.of(), List.of(
+                lineage(departmentId, departmentId, LineageFlowKind.VALUE),
+                lineage(departmentId, employeeId, LineageFlowKind.VALUE)
+        ), List.of(), config);
+
+        assertTrue(result.derivedDataLineages().isEmpty(),
+                "A pure id -> id no-op lineage edge should not seed transitive lineage paths");
+    }
+
+    @Test
+    void nonTrivialSelfUpdateLineageCanStillParticipateInDerivedLineage() {
+        ScanConfig config = enabledConfig();
+        Endpoint quantity = col("inventory", "quantity");
+        Endpoint beforeQty = col("inventory_transactions", "before_qty");
+        Endpoint auditQty = col("inventory_audit", "before_qty");
+
+        DerivedPathInferenceResult result = service.infer(List.of(), List.of(
+                lineage(quantity, quantity, LineageFlowKind.VALUE, LineageTransformType.ARITHMETIC,
+                        Map.of("mappingKind", "UPDATE_SET")),
+                lineage(quantity, beforeQty, LineageFlowKind.VALUE),
+                lineage(beforeQty, auditQty, LineageFlowKind.VALUE)
+        ), List.of(), config);
+
+        assertTrue(result.derivedDataLineages().stream().anyMatch(candidate ->
+                        candidate.source().equals(quantity) && candidate.target().equals(auditQty)),
+                "Non-trivial self updates are meaningful value-flow edges and may support derived lineage");
+    }
+
+    @Test
+    void lineagePathDoesNotReenterNonAdjacentEndpoint() {
+        ScanConfig config = enabledConfig();
+        Endpoint cashierAmount = col("dbo", "cashier_journals", "amount");
+        Endpoint paymentAmount = col("dbo", "payments", "amount");
+        Endpoint salesOrderPaidAmount = col("dbo", "sales_orders", "paid_amount");
+        Endpoint paymentReceiptAmount = col("dbo", "payment_receipts", "amount");
+        Endpoint salesFactPaidAmount = col("dbo", "sales_fact", "paid_amount");
+
+        DerivedPathInferenceResult result = service.infer(List.of(), List.of(
+                lineage(cashierAmount, paymentAmount, LineageFlowKind.VALUE),
+                lineage(paymentAmount, salesOrderPaidAmount, LineageFlowKind.VALUE),
+                lineage(salesOrderPaidAmount, paymentReceiptAmount, LineageFlowKind.VALUE),
+                lineage(paymentReceiptAmount, paymentAmount, LineageFlowKind.VALUE),
+                lineage(paymentAmount, salesFactPaidAmount, LineageFlowKind.VALUE)
+        ), List.of(), config);
+
+        assertTrue(result.derivedDataLineages().stream().noneMatch(candidate ->
+                        hasNonAdjacentRepeatedEndpoint(candidate.path())),
+                () -> "A path must not revisit an endpoint after leaving it: " + result.derivedDataLineages());
+    }
+
+    @Test
     void relationshipPathDoesNotBridgeSchemaQualifiedAndUnqualifiedTables() {
         ScanConfig config = enabledConfig();
         Endpoint accountingClosedBy = col("accounting_periods", "closed_by");
@@ -387,23 +443,44 @@ class DerivedPathInferenceServiceTest {
     }
 
     private DataLineageCandidate lineage(Endpoint source, Endpoint target, LineageFlowKind flowKind) {
+        return lineage(source, target, flowKind, LineageTransformType.DIRECT, Map.of());
+    }
+
+    private DataLineageCandidate lineage(
+            Endpoint source,
+            Endpoint target,
+            LineageFlowKind flowKind,
+            LineageTransformType transformType,
+            Map<String, Object> attributes
+    ) {
         DataLineageCandidate candidate = new DataLineageCandidate(
                 List.of(source),
                 target,
                 flowKind,
-                LineageTransformType.DIRECT);
+                transformType);
         candidate.confidence(BigDecimal.valueOf(0.80d));
-        candidate.evidence().add(new DataLineageEvidence(LineageTransformType.DIRECT,
+        candidate.evidence().add(new DataLineageEvidence(transformType,
                 BigDecimal.valueOf(0.80d),
                 EvidenceSourceType.PLAIN_SQL,
                 "test.sql",
                 source.displayName() + " -> " + target.displayName(),
-                Map.of()));
+                attributes));
         return candidate;
     }
 
     private boolean hasNaming(List<NamingEvidenceCandidate> evidence, Endpoint source, Endpoint target) {
         return evidence.stream()
                 .anyMatch(item -> item.source().equals(source) && item.target().equals(target));
+    }
+
+    private boolean hasNonAdjacentRepeatedEndpoint(List<Endpoint> path) {
+        for (int left = 0; left < path.size(); left++) {
+            for (int right = left + 2; right < path.size(); right++) {
+                if (path.get(left).normalizedKey().equals(path.get(right).normalizedKey())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

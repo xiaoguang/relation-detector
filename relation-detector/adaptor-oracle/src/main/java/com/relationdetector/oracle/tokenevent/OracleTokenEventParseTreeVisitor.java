@@ -386,6 +386,7 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
     public Void visitColumnDefinition(OracleRelationSqlParser.ColumnDefinitionContext ctx) {
         String table = currentDdlTable();
         String column = clean(ctx.identifier().getText());
+        addDdlColumnEvent(table, column, ctx);
         for (OracleRelationSqlParser.ColumnDefinitionPartContext part : ctx.columnDefinitionPart()) {
             OracleRelationSqlParser.InlineColumnConstraintContext constraint = part.inlineColumnConstraint();
             if (constraint == null) {
@@ -455,6 +456,10 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
 
     private void addIndexEvent(String table, String column, String role, String kind, ParserRuleContext ctx) {
         emitter.addIndexEvent(events, ctx, table, column, role, kind);
+    }
+
+    private void addDdlColumnEvent(String table, String column, ParserRuleContext ctx) {
+        emitter.addDdlColumnEvent(events, ctx, table, column);
     }
 
     private void emitWriteTarget(
@@ -604,7 +609,9 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
                 return new OracleExpressionAnalysis(args.sources(), LineageTransformType.AGGREGATE, LineageFlowKind.VALUE);
             }
             if (Set.of("coalesce", "nvl").contains(functionName)) {
-                return new OracleExpressionAnalysis(args.sources(), LineageTransformType.COALESCE, LineageFlowKind.VALUE);
+                return new OracleExpressionAnalysis(args.sources(),
+                        OracleExpressionAnalysis.dominant(LineageTransformType.COALESCE, args.transform()),
+                        LineageFlowKind.VALUE);
             }
             if (Set.of("concat", "format", "string_agg", "listagg").contains(functionName)) {
                 return new OracleExpressionAnalysis(args.sources(), LineageTransformType.CONCAT_FORMAT, LineageFlowKind.VALUE);
@@ -640,13 +647,94 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
         }
         if (expression instanceof OracleRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
             visit(scalarSubquery.selectStatement());
+            OracleExpressionAnalysis selectedExpression = scalarSubquerySelectExpression(scalarSubquery.selectStatement());
+            if (!selectedExpression.sources().isEmpty()) {
+                return scalarSubqueryWithContext(scalarSubquery.selectStatement(), selectedExpression);
+            }
             List<OracleColumnRead> columns = selectColumns(scalarSubquery.selectStatement());
             if (columns.isEmpty()) {
                 return OracleExpressionAnalysis.empty();
             }
-            return new OracleExpressionAnalysis(columns, LineageTransformType.DIRECT, LineageFlowKind.VALUE);
+            return scalarSubqueryWithContext(scalarSubquery.selectStatement(),
+                    new OracleExpressionAnalysis(columns, LineageTransformType.DIRECT, LineageFlowKind.VALUE));
         }
         return OracleExpressionAnalysis.empty();
+    }
+
+    private OracleExpressionAnalysis scalarSubquerySelectExpression(OracleRelationSqlParser.SelectStatementContext select) {
+        queryScopes.push(scopeFor(select.querySpecification()));
+        try {
+            List<OracleRelationSqlParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
+            if (items.size() != 1 || items.get(0).expression() == null) {
+                return OracleExpressionAnalysis.empty();
+            }
+            return analyze(items.get(0).expression());
+        } finally {
+            queryScopes.pop();
+        }
+    }
+
+    private OracleExpressionAnalysis scalarSubqueryWithContext(
+            OracleRelationSqlParser.SelectStatementContext select,
+            OracleExpressionAnalysis selectedExpression
+    ) {
+        if (selectedExpression.transform() != LineageTransformType.AGGREGATE
+                || selectedExpression.flowKind() != LineageFlowKind.VALUE) {
+            return selectedExpression;
+        }
+        OracleExpressionAnalysis context = scalarSubqueryContext(select);
+        if (context.sources().isEmpty()) {
+            return selectedExpression;
+        }
+        OracleExpressionAnalysis combined = OracleExpressionAnalysis.combine(
+                selectedExpression.transform(),
+                LineageFlowKind.VALUE,
+                selectedExpression,
+                context);
+        return new OracleExpressionAnalysis(combined.sources(), selectedExpression.transform(), LineageFlowKind.VALUE);
+    }
+
+    private OracleExpressionAnalysis scalarSubqueryContext(OracleRelationSqlParser.SelectStatementContext select) {
+        OracleRelationSqlParser.QuerySpecificationContext query = select.querySpecification();
+        queryScopes.push(scopeFor(query));
+        try {
+            OracleExpressionAnalysis context = OracleExpressionAnalysis.empty();
+            if (query.fromClause() != null) {
+                for (OracleRelationSqlParser.TableReferenceContext reference : query.fromClause().tableReference()) {
+                    for (OracleRelationSqlParser.JoinClauseContext join : reference.joinClause()) {
+                        if (join.predicate() != null) {
+                            context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                                    LineageFlowKind.VALUE,
+                                    context,
+                                    analyze(join.predicate()));
+                        }
+                    }
+                }
+            }
+            if (query.whereClause() != null) {
+                context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.VALUE,
+                        context,
+                        analyze(query.whereClause().predicate()));
+            }
+            if (query.groupByClause() != null) {
+                for (OracleRelationSqlParser.ExpressionContext expression : query.groupByClause().expressionList().expression()) {
+                    context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                            LineageFlowKind.VALUE,
+                            context,
+                            analyze(expression));
+                }
+            }
+            if (query.havingClause() != null) {
+                context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.VALUE,
+                        context,
+                        analyze(query.havingClause().predicate()));
+            }
+            return context;
+        } finally {
+            queryScopes.pop();
+        }
     }
 
     private OracleExpressionAnalysis analyze(OracleRelationSqlParser.PredicateContext predicate) {

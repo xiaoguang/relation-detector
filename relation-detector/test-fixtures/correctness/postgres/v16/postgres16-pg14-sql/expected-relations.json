@@ -1,7 +1,4 @@
 {
-  "fingerprints": [
-    "CO_OCCURRENCE:pg14_price_windows.product_id->pg14_price_windows.product_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:pg14_room_bookings.room_id->pg14_room_bookings.room_id:SQL_LOG_JOIN,REPEATED_OBSERVATION"
-  ],
+  "fingerprints": [],
   "forbiddenTables": []
 }

@@ -1,7 +1,9 @@
 package com.relationdetector.sqlserver;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.LinkedHashSet;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -120,26 +122,55 @@ class SqlServerTokenEventParserTest {
 
     @Test
     void tokenEventParserExtractsCoalesceLineageFromRealSampleProcedureBlock() {
-        Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/01-procedures.sql");
+        Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/02-procedures/13-erp-deep-scenario-procedures.sql");
         List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
                 .extract(file.toString().isBlank() ? "" : readFixture(file),
                         StatementSourceType.PROCEDURE,
                         file.toString(),
                         DatabaseType.SQLSERVER);
         SqlStatementRecord statement = statements.stream()
-                .filter(record -> record.sourceName().equals("sqlserver.sp_01_procedures_1"))
+                .filter(record -> record.sourceName().equals("sqlserver.sp_post_finished_goods_receipt"))
                 .findFirst()
                 .orElseThrow();
+        assertEquals("ROUTINE", statement.attributes().get("sourceObjectType"));
+        assertEquals("dbo.sp_post_finished_goods_receipt", statement.attributes().get("sourceObjectName"));
+        assertEquals("sqlserver.sp_post_finished_goods_receipt", statement.attributes().get("sourceBlockId"));
 
         StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
         var lineages = new StructuredDataLineageExtractor().extract(
                 statement,
                 result,
-                Set.of(TableId.of("dbo", "departments")));
+                Set.of(TableId.of("dbo", "inventory"), TableId.of("dbo", "finished_goods_receipts"),
+                        TableId.of("dbo", "inventory_transactions")));
 
-        assertTrue(lineages.stream().anyMatch(this::isExpectedCoalesceLineage),
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.transformType() == LineageTransformType.COALESCE
+                                && lineage.sources().stream().anyMatch(source ->
+                                "inventory".equals(source.table().tableName())
+                                        && "quantity".equals(source.column().columnName()))
+                                && "inventory_transactions".equals(lineage.target().table().tableName())
+                                && "before_qty".equals(lineage.target().column().columnName())),
                 () -> "Expected COALESCE lineage from real sample block, lineages=" + lineages
                         + ", events=" + result.events());
+        assertTrue(lineages.stream().allMatch(lineage ->
+                        "ROUTINE".equals(lineage.evidence().get(0).attributes().get("sourceObjectType"))
+                                && "dbo.sp_post_finished_goods_receipt".equals(
+                                lineage.evidence().get(0).attributes().get("sourceObjectName"))),
+                () -> "Expected routine provenance on lineage evidence, lineages=" + lineages);
+    }
+
+    @Test
+    void tokenEventParserPreservesTriggerSourceObjectMetadata() {
+        Path file = repositoryRoot().resolve("sample-data/sqlserver/2025/01-schema/03-triggers.sql");
+        List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
+                .extract(readFixture(file), StatementSourceType.TRIGGER, file.toString(), DatabaseType.SQLSERVER);
+        SqlStatementRecord statement = statements.stream()
+                .filter(record -> record.sourceName().equals("sqlserver.tr_departments_1_audit"))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals("TRIGGER", statement.attributes().get("sourceObjectType"));
+        assertEquals("dbo.tr_departments_1_audit", statement.attributes().get("sourceObjectName"));
     }
 
     @Test
@@ -148,10 +179,10 @@ class SqlServerTokenEventParserTest {
         List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
                 .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
 
-        assertBusinessLineage(statements, "sqlserver.sp_post_sales_cashier_journals_business",
-                "customers", "name", "cashier_journals", "counterparty");
-        assertBusinessLineage(statements, "sqlserver.sp_post_reconciliation_items_business",
-                "cashier_journals", "counterparty", "reconciliation_items", "description");
+        assertBusinessLineage(statements, "sqlserver.sp_record_customer_payment",
+                "sales_orders", "customer_id", "payments", "customer_id");
+        assertBusinessLineage(statements, "sqlserver.sp_record_customer_payment",
+                "cashier_journals", "amount", "payments", "amount");
     }
 
     @Test
@@ -161,9 +192,9 @@ class SqlServerTokenEventParserTest {
                 .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
 
         assertBusinessLineage(statements, "sqlserver.sp_post_finished_goods_receipt",
-                "finished_goods_receipts", "product_id", "inventory_cost_layers", "product_id");
+                "finished_goods_receipts", "product_id", "inventory_transactions", "product_id");
         assertBusinessLineage(statements, "sqlserver.sp_post_finished_goods_receipt",
-                "finished_goods_receipts", "received_qty", "inventory_cost_layers", "remaining_qty");
+                "finished_goods_receipts", "received_qty", "inventory_transactions", "quantity_change");
     }
 
     @Test
@@ -173,9 +204,9 @@ class SqlServerTokenEventParserTest {
                 .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
 
         assertBusinessLineage(statements, "sqlserver.sp_calculate_work_order_actual_cost",
-                "material_issue_items", "issued_qty", "work_order_costs", "material_cost");
+                "work_order_materials", "actual_consumed", "work_order_costs", "material_cost");
         assertBusinessLineage(statements, "sqlserver.sp_calculate_work_order_actual_cost",
-                "operation_reports", "labor_minutes", "work_order_costs", "labor_cost");
+                "product_batches", "purchase_price", "work_order_costs", "material_cost");
     }
 
     @Test
@@ -194,10 +225,10 @@ class SqlServerTokenEventParserTest {
         List<SqlStatementRecord> statements = new ObjectSqlFileExtractor()
                 .extract(readFixture(file), StatementSourceType.PROCEDURE, file.toString(), DatabaseType.SQLSERVER);
 
-        assertBusinessLineage(statements, "sqlserver.sp_post_reconciliation_items_business",
-                "cashier_journals", "journal_type", "reconciliation_items", "debit_amount", LineageFlowKind.CONTROL);
-        assertBusinessLineage(statements, "sqlserver.sp_post_reconciliation_items_business",
-                "cashier_journals", "journal_type", "reconciliation_items", "credit_amount", LineageFlowKind.CONTROL);
+        assertBusinessLineage(statements, "sqlserver.sp_calculate_work_order_actual_cost",
+                "work_orders", "completed_quantity", "work_order_costs", "unit_cost", LineageFlowKind.CONTROL);
+        assertBusinessLineage(statements, "sqlserver.sp_record_customer_payment",
+                "sales_orders", "total_amount", "sales_orders", "status", LineageFlowKind.CONTROL);
     }
 
     @Test
@@ -210,6 +241,79 @@ class SqlServerTokenEventParserTest {
                 "repair_order_parts", "quantity", "inventory_transactions", "quantity_change", LineageTransformType.ARITHMETIC);
         assertBusinessLineage(statements, "sqlserver.sp_issue_repair_order_parts",
                 "repair_order_parts", "quantity", "inventory_transactions", "after_qty", LineageTransformType.ARITHMETIC);
+    }
+
+    @Test
+    void tokenEventParserKeepsNaturalDataInsertSelectExpressionSources() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO [dbo].[payments] ([payment_no], [customer_id], [order_id], [receipt_id], [journal_id],
+                    [payment_date], [amount], [currency], [payment_method], [payment_status], [failure_reason], [created_at])
+                SELECT
+                    'PAY-' + pr.[receipt_no] AS [payment_no],
+                    so.[customer_id],
+                    so.[id] AS [order_id],
+                    pr.[id] AS [receipt_id],
+                    cj.[id] AS [journal_id],
+                    pr.[receipt_date] AS [payment_date],
+                    pr.[amount],
+                    pr.[currency],
+                    so.[payment_method],
+                    CASE WHEN pr.[amount] >= so.[paid_amount] THEN 'paid' ELSE 'partial' END AS [payment_status],
+                    CASE WHEN pr.[amount] = 0 THEN 'no receipt amount' ELSE NULL END AS [failure_reason],
+                    pr.[confirmed_at] AS [created_at]
+                FROM [dbo].[payment_receipts] AS pr
+                INNER JOIN [dbo].[sales_orders] AS so
+                    ON so.[customer_id] = pr.[party_id]
+                LEFT JOIN [dbo].[cashier_journals] AS cj
+                    ON cj.[reference_id] = so.[id]
+                   AND cj.[reference_type] = 'sales_order';
+
+                INSERT INTO [dbo].[reconciliation_items] ([reconciliation_id], [journal_id], [transaction_date],
+                    [description], [debit_amount], [credit_amount], [is_matched], [matched_item_id], [difference_reason])
+                SELECT
+                    r.[id] AS [reconciliation_id],
+                    cj.[id] AS [journal_id],
+                    cj.[journal_date] AS [transaction_date],
+                    cj.[counterparty] + N' - ' + cj.[reference_type] AS [description],
+                    CASE WHEN cj.[journal_type] = 'receipt' THEN cj.[amount] ELSE 0 END AS [debit_amount],
+                    CASE WHEN cj.[journal_type] = 'payment' THEN cj.[amount] ELSE 0 END AS [credit_amount],
+                    CASE WHEN cj.[status] = 'confirmed' THEN 1 ELSE 0 END AS [is_matched],
+                    NULL AS [matched_item_id],
+                    CASE WHEN cj.[status] <> 'confirmed' THEN cj.[remark] ELSE NULL END AS [difference_reason]
+                FROM [dbo].[reconciliations] AS r
+                INNER JOIN [dbo].[cashier_journals] AS cj
+                    ON cj.[account_id] = r.[account_id]
+                   AND cj.[journal_date] BETWEEN r.[period_start] AND r.[period_end];
+
+                INSERT INTO [dbo].[ar_invoices] ([ar_no], [sales_order_id], [customer_id], [invoice_date],
+                    [due_date], [invoice_amount], [paid_amount], [writeoff_amount], [status])
+                SELECT
+                    'AR-' + so.[order_no] AS [ar_no],
+                    so.[id] AS [sales_order_id],
+                    so.[customer_id],
+                    so.[order_date] AS [invoice_date],
+                    DATEADD(DAY, c.[credit_days], so.[order_date]) AS [due_date],
+                    so.[total_amount] AS [invoice_amount],
+                    so.[paid_amount],
+                    so.[discount_amount] AS [writeoff_amount],
+                    CASE WHEN so.[paid_amount] >= so.[total_amount] THEN 'paid' ELSE 'open' END AS [status]
+                FROM [dbo].[sales_orders] AS so
+                INNER JOIN [dbo].[customers] AS c
+                    ON c.[id] = so.[customer_id];
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-natural-data.sql", 1, 1, Map.of());
+
+        StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        var lineages = new StructuredDataLineageExtractor().extract(statement, result,
+                knownTables("payments", "payment_receipts", "sales_orders", "cashier_journals",
+                        "reconciliation_items", "reconciliations", "ar_invoices", "customers"));
+
+        assertLineage(lineages, "payment_receipts", "id", "payments", "receipt_id");
+        assertLineage(lineages, "cashier_journals", "id", "payments", "journal_id");
+        assertLineage(lineages, "cashier_journals", "counterparty", "reconciliation_items", "description");
+        assertLineage(lineages, "cashier_journals", "reference_type", "reconciliation_items", "description");
+        assertLineage(lineages, "cashier_journals", "remark", "reconciliation_items", "difference_reason");
+        assertLineage(lineages, "customers", "credit_days", "ar_invoices", "due_date");
+        assertLineage(lineages, "sales_orders", "order_date", "ar_invoices", "due_date");
     }
 
     private boolean isExpectedInSubquery(StructuredSqlEvent event) {
@@ -245,7 +349,7 @@ class SqlServerTokenEventParserTest {
         var lineages = new StructuredDataLineageExtractor().extract(
                 statement,
                 result,
-                Set.of(TableId.of("dbo", sourceTable), TableId.of("dbo", targetTable)));
+                knownTables(sourceTable, targetTable));
 
         assertTrue(lineages.stream().anyMatch(lineage ->
                         lineage.sources().stream().anyMatch(source ->
@@ -302,7 +406,7 @@ class SqlServerTokenEventParserTest {
         var lineages = new StructuredDataLineageExtractor().extract(
                 statement,
                 result,
-                Set.of(TableId.of("dbo", sourceTable), TableId.of("dbo", targetTable)));
+                knownTables(sourceTable, targetTable));
 
         assertTrue(lineages.stream().anyMatch(lineage ->
                         (flowKind == null || lineage.flowKind() == flowKind)
@@ -317,6 +421,41 @@ class SqlServerTokenEventParserTest {
                         + (flowKind == null ? "" : " flow=" + flowKind)
                         + (transformType == null ? "" : " transform=" + transformType)
                         + ", lineages=" + lineages + ", events=" + result.events());
+    }
+
+    private void assertLineage(
+            List<DataLineageCandidate> lineages,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn
+    ) {
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.sources().stream().anyMatch(source ->
+                                sourceTable.equals(source.table().tableName())
+                                        && sourceColumn.equals(source.column().columnName()))
+                                && targetTable.equals(lineage.target().table().tableName())
+                                && targetColumn.equals(lineage.target().column().columnName())),
+                () -> "Expected " + sourceTable + "." + sourceColumn + " -> "
+                        + targetTable + "." + targetColumn + ", lineages="
+                        + lineages.stream().map(this::lineageFingerprint).sorted().toList());
+    }
+
+    private String lineageFingerprint(DataLineageCandidate lineage) {
+        return lineage.flowKind() + ":"
+                + lineage.transformType() + ":"
+                + lineage.sources().stream()
+                .map(com.relationdetector.contracts.model.Endpoint::displayName)
+                .collect(Collectors.joining(","))
+                + "->" + lineage.target().displayName();
+    }
+
+    private Set<TableId> knownTables(String... tableNames) {
+        Set<TableId> tables = new LinkedHashSet<>();
+        for (String tableName : tableNames) {
+            tables.add(TableId.of("dbo", tableName));
+        }
+        return tables;
     }
 
     private String readFixture(Path file) {

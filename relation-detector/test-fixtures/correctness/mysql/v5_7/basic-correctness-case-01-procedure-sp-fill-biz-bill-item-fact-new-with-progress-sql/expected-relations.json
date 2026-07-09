@@ -4,7 +4,6 @@
     "CO_OCCURRENCE:jsh_depot_head.id->jsh_depot_item.header_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:jsh_depot_head.link_number->jsh_depot_head.number:SQL_LOG_JOIN",
     "CO_OCCURRENCE:jsh_depot_head.organ_id->jsh_supplier.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:jsh_depot_head.tenant_id->jsh_depot_head.tenant_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:jsh_depot_head.tenant_id->jsh_depot_item.tenant_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:jsh_depot_head.tenant_id->jsh_orga_user_rel.tenant_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:jsh_depot_head.tenant_id->jsh_supplier.tenant_id:SQL_LOG_JOIN"

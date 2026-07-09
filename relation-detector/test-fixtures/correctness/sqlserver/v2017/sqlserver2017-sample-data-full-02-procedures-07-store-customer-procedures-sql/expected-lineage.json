@@ -1,25 +1,8 @@
 {
   "fingerprints": [
-    "VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id",
-    "VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id",
-    "VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id",
-    "VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id",
-    "VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id",
-    "VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id",
-    "VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id",
-    "VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id",
-    "VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id",
-    "VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id",
-    "VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id",
-    "VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id",
-    "VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id",
-    "VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id",
-    "VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id",
-    "VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id",
-    "VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id",
-    "VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id",
-    "VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id",
-    "VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id"
+    "VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance",
+    "VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value",
+    "VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id"
   ],
   "forbiddenSources": [],
   "forbiddenTargets": [],

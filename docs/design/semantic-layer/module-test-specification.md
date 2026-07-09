@@ -24,9 +24,9 @@
 
 | 场景 | 示例输入 | 期望行为 |
 | --- | --- | --- |
-| LLM 编造字段 | `customers.full_name` 不存在 | 拒绝该对象或标记 `NEEDS_MORE_EVIDENCE`。 |
-| LLM 编造 evidenceRef | fingerprint 无法解析 | 不写入正式 catalog，并记录 warning / review item。 |
-| LLM 返回 `BUSINESS_APPROVED` | metric reviewStatus 被 LLM 设置为 `BUSINESS_APPROVED` | 降级为 `SYSTEM_PROPOSED`；业务审核状态只能由治理流程写入。 |
+| LLM 编造字段 | `customers.full_name` 不存在 | 当前 normalizer 应在 `validation.unresolvedReferences` 中暴露；正式拒绝或标记 `NEEDS_MORE_EVIDENCE` 属于后续 catalog gate。 |
+| LLM 编造 evidenceRef | fingerprint 无法解析 | 当前要求 `evidenceRefs` 非空并保留回溯字段；逐条解析回 bundle fact id、写 warning / review item 属于后续增强。 |
+| LLM 返回 `BUSINESS_APPROVED` | metric reviewStatus 被 LLM 设置为 `BUSINESS_APPROVED` | 当前由 prompt / review gate 禁止采纳；自动降级为 `SYSTEM_PROPOSED` 属于后续增强。 |
 | LLM 解释 join path | 引用已有 `orders.customer_id -> customers.id` | 可生成解释文本；不能新增 path step。 |
 | 同义词扩展 | `customer`、`客户编号` | 生成 SYSTEM_PROPOSED lexicon entry，等待审核或后续证据支持。 |
 

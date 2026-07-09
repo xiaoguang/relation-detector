@@ -1,11 +1,8 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:ap_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:approval_instances.workflow_id->approval_instances.workflow_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:approval_instances.workflow_id->approval_nodes.workflow_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:ar_aging_snapshots.aging_bucket->ar_aging_snapshots.aging_bucket:SQL_LOG_JOIN",
     "CO_OCCURRENCE:purchase_receipt_items.product_id->serial_numbers.product_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:sales_orders.customer_id->sales_orders.customer_id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
     "CO_OCCURRENCE:sales_orders.customer_id->sales_returns.customer_id:SQL_LOG_JOIN",
     "FK_LIKE:approval_instances.workflow_id->approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:approval_records.instance_id->approval_instances.id:SQL_LOG_JOIN,NAMING_MATCH",

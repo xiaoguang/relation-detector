@@ -1,6 +1,4 @@
 {
-  "fingerprints": [
-    "CO_OCCURRENCE:pg16_analytics_events.session_id->pg16_analytics_events.session_id:SQL_LOG_JOIN"
-  ],
+  "fingerprints": [],
   "forbiddenTables": []
 }

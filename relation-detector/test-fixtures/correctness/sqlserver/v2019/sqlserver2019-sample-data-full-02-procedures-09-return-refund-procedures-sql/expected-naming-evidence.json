@@ -1,9 +1,5 @@
 {
   "fingerprints": [
-    "naming:dbo.damage_reports.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.purchase_return_items.batch_id->dbo.product_batches.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.purchase_return_items.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.purchase_return_items.return_id->dbo.purchase_returns.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.purchase_returns.refund_voucher_id->dbo.vouchers.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
+    "naming:dbo.sales_returns.customer_id->dbo.customers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

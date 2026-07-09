@@ -50,6 +50,9 @@ public final class Main {
             if (arguments.command == Command.EXTRACT) {
                 return runExtract(arguments);
             }
+            if (arguments.command == Command.E2E) {
+                return runE2e(arguments);
+            }
             if (arguments.command == Command.NORMALIZE_EXTRACTION) {
                 return runNormalizeExtraction(arguments);
             }
@@ -64,10 +67,7 @@ public final class Main {
     }
 
     private static int runBuild(Arguments arguments) {
-            ScanResultReader reader = new ScanResultReader();
-            ScanBundle bundle = arguments.inputs.size() == 1
-                    ? reader.read(arguments.inputs.get(0))
-                    : reader.readMerged(arguments.inputs);
+            ScanBundle bundle = readBundle(arguments);
             EvidenceGraph evidenceGraph = new SemanticEvidenceBuilder().build(bundle);
             evidenceGraph = new NoopSemanticEnricher().enrich(evidenceGraph);
             SemanticKnowledgeGraph kg = new SemanticKgBuilder().build(evidenceGraph);
@@ -76,10 +76,7 @@ public final class Main {
     }
 
     private static int runExtract(Arguments arguments) {
-        ScanResultReader reader = new ScanResultReader();
-        ScanBundle bundle = arguments.inputs.size() == 1
-                ? reader.read(arguments.inputs.get(0))
-                : reader.readMerged(arguments.inputs);
+        ScanBundle bundle = readBundle(arguments);
         SemanticExtractionPrompt prompt = new SemanticExtractionPromptBuilder().build(
                 bundle,
                 arguments.focus,
@@ -107,6 +104,32 @@ public final class Main {
         return 0;
     }
 
+    private static int runE2e(Arguments arguments) {
+        ScanBundle bundle = readBundle(arguments);
+        String name = arguments.name().isBlank() ? defaultName(arguments.inputs().get(0)) : arguments.name();
+        Path kgOutput = arguments.output.resolve("semantic-kg").resolve(name);
+        Path extractionOutput = arguments.output.resolve("semantic-extraction").resolve(name);
+        EvidenceGraph evidenceGraph = new SemanticEvidenceBuilder().build(bundle);
+        evidenceGraph = new NoopSemanticEnricher().enrich(evidenceGraph);
+        SemanticKnowledgeGraph kg = new SemanticKgBuilder().build(evidenceGraph);
+        new JsonSemanticKgWriter().writeArtifacts(kg, evidenceGraph, kgOutput);
+        SemanticExtractionPrompt prompt = new SemanticExtractionPromptBuilder().build(
+                bundle,
+                arguments.focus,
+                arguments.maxRelationships,
+                arguments.maxLineage,
+                arguments.maxNamingEvidence);
+        new SemanticExtractionArtifactWriter().writeCodexSessionRequest(extractionOutput, prompt);
+        return 0;
+    }
+
+    private static ScanBundle readBundle(Arguments arguments) {
+        ScanResultReader reader = new ScanResultReader();
+        return arguments.inputs.size() == 1
+                ? reader.read(arguments.inputs.get(0))
+                : reader.readMerged(arguments.inputs);
+    }
+
     private static int runNormalizeExtraction(Arguments arguments) {
         if (arguments.inputs.size() != 1) {
             throw new IllegalArgumentException("normalize-extraction requires exactly one --input file");
@@ -130,12 +153,15 @@ public final class Main {
                 semantic build --input <scan-result.json> [--input <scan-result.json> ...] --output <dir>
                 semantic extract --config <semantic-extraction.yml>
                 semantic extract --input <scan-result.json> --output <dir> [--focus <source>] [--request-only]
+                semantic e2e --input <scan-result.json> --output <dir> [--name <case-name>]
                 semantic normalize-extraction --input <raw-result.json> --output <normalized-result.json>
 
                 Commands:
                   build                 Build evidence-backed semantic KG JSON from relation-detector JSON.
-                  extract               Build a compact evidence bundle and call an OpenAI-compatible
-                                        Responses API to generate semantic candidates.
+                  extract               Build an evidence bundle/prompt. codex-session writes local artifacts;
+                                        openai-api calls an OpenAI-compatible Responses API.
+                  e2e                   Deterministically write both semantic-kg/<name>/ and
+                                        semantic-extraction/<name>/ artifacts without calling a model.
                   normalize-extraction  Convert a JSON semantic extraction result into the formal ref-closed
                                         semantic document shape without calling any model.
 
@@ -143,6 +169,7 @@ public final class Main {
                   --input <file>         relation-detector JSON output. Repeat for same database/schema merge.
                   --output <dir>         Output directory for semantic-kg.json, semantic-build-run.json,
                                          semantic-evidence-graph.json.
+                  --name <case-name>     E2E output case name. Defaults to input file stem.
                   --config <file>        YAML/JSON config for extract. CLI arguments override config values.
                   --focus <source>       Optional routine/query/source focus, for example
                                          ROUTINE:erp_system.sp_rebuild_sales_fact.
@@ -153,9 +180,9 @@ public final class Main {
                   --base-url <url>       OpenAI-compatible base URL. Defaults to OPENAI_BASE_URL
                                          or https://api.openai.com/v1.
                   --api-key-env <name>   Environment variable containing API key. Defaults to OPENAI_API_KEY.
-                  --max-relationships <n>Evidence relationship cap. Defaults to 80.
-                  --max-lineage <n>      Evidence lineage cap. Defaults to 80.
-                  --max-naming <n>       Evidence naming cap. Defaults to 80.
+                  --max-relationships <n>Evidence relationship cap. Defaults to 0 (unlimited).
+                  --max-lineage <n>      Evidence lineage cap. Defaults to 0 (unlimited).
+                  --max-naming <n>       Evidence naming cap. Defaults to 0 (unlimited).
                   --request-only         Write prompt/evidence/request artifacts but do not call the model.
                   --help                 Show this help.
                 """;
@@ -164,6 +191,7 @@ public final class Main {
     private enum Command {
         BUILD,
         EXTRACT,
+        E2E,
         NORMALIZE_EXTRACTION
     }
 
@@ -196,7 +224,8 @@ public final class Main {
             int maxRelationships,
             int maxLineage,
             int maxNamingEvidence,
-            boolean requestOnly
+            boolean requestOnly,
+            String name
     ) {
         static Arguments parse(String[] args) {
             if (args == null || args.length == 0) {
@@ -213,6 +242,9 @@ public final class Main {
                 index++;
             } else if (index < args.length && "extract".equals(args[index])) {
                 command = Command.EXTRACT;
+                index++;
+            } else if (index < args.length && "e2e".equals(args[index])) {
+                command = Command.E2E;
                 index++;
             } else if (index < args.length && "normalize-extraction".equals(args[index])) {
                 command = Command.NORMALIZE_EXTRACTION;
@@ -234,10 +266,11 @@ public final class Main {
             int maxOutputTokens = 12000;
             String baseUrl = valueOrDefault(System.getenv("OPENAI_BASE_URL"), "https://api.openai.com/v1");
             String apiKeyEnv = "OPENAI_API_KEY";
-            int maxRelationships = 80;
-            int maxLineage = 80;
-            int maxNamingEvidence = 80;
+            int maxRelationships = 0;
+            int maxLineage = 0;
+            int maxNamingEvidence = 0;
             boolean requestOnly = false;
+            String name = "";
             boolean providerSet = false;
             boolean focusSet = false;
             boolean modelSet = false;
@@ -285,21 +318,22 @@ public final class Main {
                         apiKeyEnvSet = true;
                     }
                     case "--max-relationships" -> {
-                        maxRelationships = positiveInt(requireValue(args, index++, arg), arg);
+                        maxRelationships = nonNegativeInt(requireValue(args, index++, arg), arg);
                         maxRelationshipsSet = true;
                     }
                     case "--max-lineage" -> {
-                        maxLineage = positiveInt(requireValue(args, index++, arg), arg);
+                        maxLineage = nonNegativeInt(requireValue(args, index++, arg), arg);
                         maxLineageSet = true;
                     }
                     case "--max-naming" -> {
-                        maxNamingEvidence = positiveInt(requireValue(args, index++, arg), arg);
+                        maxNamingEvidence = nonNegativeInt(requireValue(args, index++, arg), arg);
                         maxNamingSet = true;
                     }
                     case "--request-only" -> {
                         requestOnly = true;
                         requestOnlySet = true;
                     }
+                    case "--name" -> name = requireValue(args, index++, arg);
                     default -> throw new IllegalArgumentException("unknown argument: " + arg);
                 }
             }
@@ -352,7 +386,8 @@ public final class Main {
                 throw new IllegalArgumentException("--output is required");
             }
             return new Arguments(command, List.copyOf(inputs), output, help, provider, focus, model, reasoningEffort,
-                    maxOutputTokens, baseUrl, apiKeyEnv, maxRelationships, maxLineage, maxNamingEvidence, requestOnly);
+                    maxOutputTokens, baseUrl, apiKeyEnv, maxRelationships, maxLineage, maxNamingEvidence, requestOnly,
+                    name);
         }
 
         String apiKey() {
@@ -383,8 +418,25 @@ public final class Main {
             }
         }
 
+        private static int nonNegativeInt(String text, String option) {
+            try {
+                int value = Integer.parseInt(text);
+                if (value < 0) {
+                    throw new IllegalArgumentException(option + " must be zero or positive");
+                }
+                return value;
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(option + " must be an integer", e);
+            }
+        }
+
         private static String valueOrDefault(String value, String defaultValue) {
             return value == null || value.isBlank() ? defaultValue : value;
         }
+    }
+
+    private static String defaultName(Path input) {
+        String fileName = input.getFileName() == null ? "scan-result" : input.getFileName().toString();
+        return fileName.endsWith(".json") ? fileName.substring(0, fileName.length() - ".json".length()) : fileName;
     }
 }

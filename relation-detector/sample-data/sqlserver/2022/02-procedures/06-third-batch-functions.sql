@@ -1,115 +1,94 @@
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+-- relation-detector-fixture-source:sqlserver.fn_contract_milestone_status
+CREATE OR ALTER FUNCTION [dbo].[fn_contract_milestone_status]()
 RETURNS TABLE
 AS
 RETURN (
-    SELECT c.[permission_id] AS [child_id], p.[id] AS [parent_id]
-    FROM [dbo].[role_permissions] AS c
-    INNER JOIN [dbo].[permissions] AS p ON c.[permission_id] = p.[id]
+    SELECT c.[id] AS [contract_id], cm.[id] AS [milestone_id], c.[party_id], cm.[amount], cm.[status] FROM [dbo].[contracts] AS c INNER JOIN [dbo].[contract_milestones] AS cm ON cm.[contract_id] = c.[id]
 );
 -- relation-detector-fixture-end
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_2
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_2]()
+-- relation-detector-fixture-source:sqlserver.fn_quality_inspection_overview
+CREATE OR ALTER FUNCTION [dbo].[fn_quality_inspection_overview]()
 RETURNS TABLE
 AS
 RETURN (
-    SELECT c.[employee_id] AS [child_id], p.[id] AS [parent_id]
-    FROM [dbo].[employee_roles] AS c
-    INNER JOIN [dbo].[employees] AS p ON c.[employee_id] = p.[id]
+    SELECT ir.[id] AS [inspection_report_id], ir.[product_id], ir.[batch_id], ir.[standard_id], ist.[sample_size], ir.[inspector_id] FROM [dbo].[inspection_reports] AS ir LEFT JOIN [dbo].[inspection_standards] AS ist ON ist.[id] = ir.[standard_id]
 );
 -- relation-detector-fixture-end
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_3
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_3]()
+-- relation-detector-fixture-source:sqlserver.fn_project_cost_summary
+CREATE OR ALTER FUNCTION [dbo].[fn_project_cost_summary]()
 RETURNS TABLE
 AS
 RETURN (
-    SELECT c.[role_id] AS [child_id], p.[id] AS [parent_id]
-    FROM [dbo].[employee_roles] AS c
-    INNER JOIN [dbo].[roles] AS p ON c.[role_id] = p.[id]
+    SELECT p.[id] AS [project_id], p.[manager_id], SUM(pc.[amount]) AS [actual_cost] FROM [dbo].[projects] AS p LEFT JOIN [dbo].[project_costs] AS pc ON pc.[project_id] = p.[id] GROUP BY p.[id], p.[manager_id]
 );
 -- relation-detector-fixture-end
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_4
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_4]()
+-- relation-detector-fixture-source:sqlserver.fn_ar_aging_by_customer
+CREATE OR ALTER FUNCTION [dbo].[fn_ar_aging_by_customer]()
 RETURNS TABLE
 AS
 RETURN (
-    SELECT c.[parent_id] AS [child_id], p.[id] AS [parent_id]
-    FROM [dbo].[product_categories] AS c
-    INNER JOIN [dbo].[product_categories] AS p ON c.[parent_id] = p.[id]
+    SELECT a.[customer_id], a.[order_id], SUM(a.[invoice_amount]) AS [invoice_amount], SUM(a.[paid_amount]) AS [paid_amount] FROM [dbo].[ar_aging_snapshots] AS a GROUP BY a.[customer_id], a.[order_id]
 );
 -- relation-detector-fixture-end
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_5
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_5]()
+-- relation-detector-fixture-source:sqlserver.fn_ap_aging_by_supplier
+CREATE OR ALTER FUNCTION [dbo].[fn_ap_aging_by_supplier]()
 RETURNS TABLE
 AS
 RETURN (
-    SELECT c.[category_id] AS [child_id], p.[id] AS [parent_id]
-    FROM [dbo].[products] AS c
-    INNER JOIN [dbo].[product_categories] AS p ON c.[category_id] = p.[id]
+    SELECT a.[supplier_id], a.[order_id], SUM(a.[invoice_amount]) AS [invoice_amount], SUM(a.[paid_amount]) AS [paid_amount] FROM [dbo].[ap_aging_snapshots] AS a GROUP BY a.[supplier_id], a.[order_id]
 );
 -- relation-detector-fixture-end
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_6
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_6]()
+-- relation-detector-fixture-source:sqlserver.fn_tax_invoice_audit
+CREATE OR ALTER FUNCTION [dbo].[fn_tax_invoice_audit]()
 RETURNS TABLE
 AS
 RETURN (
-    SELECT c.[supplier_id] AS [child_id], p.[id] AS [parent_id]
-    FROM [dbo].[supplier_products] AS c
-    INNER JOIN [dbo].[suppliers] AS p ON c.[supplier_id] = p.[id]
+    SELECT ti.[id] AS [tax_invoice_id], ti.[verified_by], tf.[prepared_by], ti.[amount], ti.[tax_amount] FROM [dbo].[tax_invoices] AS ti LEFT JOIN [dbo].[tax_filings] AS tf ON tf.[id] = ti.[filing_id]
 );
 -- relation-detector-fixture-end
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_7
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_7]()
+-- relation-detector-fixture-source:sqlserver.fn_approval_workflow_nodes
+CREATE OR ALTER FUNCTION [dbo].[fn_approval_workflow_nodes]()
 RETURNS TABLE
 AS
 RETURN (
-    SELECT c.[product_id] AS [child_id], p.[id] AS [parent_id]
-    FROM [dbo].[supplier_products] AS c
-    INNER JOIN [dbo].[products] AS p ON c.[product_id] = p.[id]
+    SELECT aw.[id] AS [workflow_id], an.[id] AS [node_id], an.[approver_id], an.[node_level] FROM [dbo].[approval_workflows] AS aw INNER JOIN [dbo].[approval_nodes] AS an ON an.[workflow_id] = aw.[id]
 );
 -- relation-detector-fixture-end
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_8
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_8]()
+-- relation-detector-fixture-source:sqlserver.fn_serial_warranty_lookup
+CREATE OR ALTER FUNCTION [dbo].[fn_serial_warranty_lookup]()
 RETURNS TABLE
 AS
 RETURN (
-    SELECT c.[product_id] AS [child_id], p.[id] AS [parent_id]
-    FROM [dbo].[product_batches] AS c
-    INNER JOIN [dbo].[products] AS p ON c.[product_id] = p.[id]
+    SELECT sn.[id] AS [serial_id], sn.[product_id], sn.[batch_id], sn.[warehouse_id], sn.[status] FROM [dbo].[serial_numbers] AS sn
 );
 -- relation-detector-fixture-end
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_9
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_9]()
+-- relation-detector-fixture-source:sqlserver.fn_consignment_inventory_status
+CREATE OR ALTER FUNCTION [dbo].[fn_consignment_inventory_status]()
 RETURNS TABLE
 AS
 RETURN (
-    SELECT c.[supplier_id] AS [child_id], p.[id] AS [parent_id]
-    FROM [dbo].[product_batches] AS c
-    INNER JOIN [dbo].[suppliers] AS p ON c.[supplier_id] = p.[id]
+    SELECT ci.[customer_id], ci.[product_id], ci.[batch_id], ci.[consigned_qty], ci.[consumed_qty] FROM [dbo].[consignment_inventory] AS ci
 );
 -- relation-detector-fixture-end
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_10
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_10]()
+-- relation-detector-fixture-source:sqlserver.fn_employee_performance_kpi
+CREATE OR ALTER FUNCTION [dbo].[fn_employee_performance_kpi]()
 RETURNS TABLE
 AS
 RETURN (
-    SELECT c.[manager_id] AS [child_id], p.[id] AS [parent_id]
-    FROM [dbo].[warehouses] AS c
-    INNER JOIN [dbo].[employees] AS p ON c.[manager_id] = p.[id]
+    SELECT pr.[employee_id], pr.[reviewer_id], k.[id] AS [kpi_id], k.[target_value], pr.[overall_score] FROM [dbo].[performance_reviews] AS pr LEFT JOIN [dbo].[kpi_indicators] AS k ON k.[applicable_role_id] = pr.[employee_id]
 );
 -- relation-detector-fixture-end

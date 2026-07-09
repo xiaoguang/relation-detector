@@ -18,6 +18,7 @@ final class RowsetScopeSink {
     private final Set<String> ignoredNames = new LinkedHashSet<>();
     private final Set<String> functionRowsetNames = new LinkedHashSet<>();
     private final Map<String, String> aliasToTable = new LinkedHashMap<>();
+    private final List<RowsetRegistration> rowsetRegistrations = new ArrayList<>();
     private final List<String> rowsetTables = new ArrayList<>();
 
     RowsetScopeSink(SourceLocationSupport source) {
@@ -83,7 +84,9 @@ final class RowsetScopeSink {
         }
         while (rowsetTables.size() > mark) {
             rowsetTables.remove(rowsetTables.size() - 1);
+            rowsetRegistrations.remove(rowsetRegistrations.size() - 1);
         }
+        rebuildAliasIndex();
     }
 
     void registerRowset(String qualifiedTable, String alias) {
@@ -94,6 +97,7 @@ final class RowsetScopeSink {
         aliasToTable.put(table.toLowerCase(Locale.ROOT), table);
         String cleanAlias = source.clean(alias);
         rowsetTables.add(cleanAlias.isBlank() ? table : cleanAlias);
+        rowsetRegistrations.add(new RowsetRegistration(table, cleanAlias));
         if (!cleanAlias.isBlank()) {
             aliasToTable.put(cleanAlias.toLowerCase(Locale.ROOT), table);
         }
@@ -135,5 +139,18 @@ final class RowsetScopeSink {
             return "";
         }
         return aliasToTable.getOrDefault(clean.toLowerCase(Locale.ROOT), clean);
+    }
+
+    private void rebuildAliasIndex() {
+        aliasToTable.clear();
+        for (RowsetRegistration registration : rowsetRegistrations) {
+            aliasToTable.put(registration.table().toLowerCase(Locale.ROOT), registration.table());
+            if (!registration.alias().isBlank()) {
+                aliasToTable.put(registration.alias().toLowerCase(Locale.ROOT), registration.table());
+            }
+        }
+    }
+
+    private record RowsetRegistration(String table, String alias) {
     }
 }

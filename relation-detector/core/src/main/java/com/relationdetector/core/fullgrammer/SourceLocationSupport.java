@@ -1,6 +1,7 @@
 package com.relationdetector.core.fullgrammer;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -17,6 +18,8 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 
 final class SourceLocationSupport {
     private final SqlStatementRecord statement;
+    private final ArrayDeque<String> statementScopes = new ArrayDeque<>();
+    private int nextStatementScope = 1;
 
     SourceLocationSupport(SqlStatementRecord statement) {
         this.statement = statement;
@@ -26,7 +29,19 @@ final class SourceLocationSupport {
         Map<String, Object> attributes = new LinkedHashMap<>();
         attributes.put("tokenEventNative", true);
         attributes.put("fullGrammerNative", true);
+        if (!statementScopes.isEmpty()) {
+            attributes.put("statementScope", statementScopes.peek());
+        }
         return attributes;
+    }
+
+    void withStatementScope(Runnable visitor) {
+        statementScopes.push("stmt-" + nextStatementScope++);
+        try {
+            visitor.run();
+        } finally {
+            statementScopes.pop();
+        }
     }
 
     int line(ParserRuleContext ctx) {

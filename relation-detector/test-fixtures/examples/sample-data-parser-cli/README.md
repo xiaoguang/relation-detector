@@ -12,7 +12,7 @@ This directory contains runnable CLI examples for scanning `sample-data` with ev
 - SQL Server `full-grammer` profiles `sqlserver/2016`, `sqlserver/2017`, `sqlserver/2019`, `sqlserver/2022`, `sqlserver/2025`
 - Common portable SQL `token-event`
 
-`common token-event` is a first-class portable parser category. The script runs the real CLI with `database.type: COMMON` against `sample-data/portable`, so the output goes through the same `ScanEngine`, naming evidence, lineage, derived path, and JSON writer path as dialect scans. It is still a portable benchmark, not a database-specific adaptor and not a substitute for natural MySQL/PostgreSQL/Oracle/SQL Server sample-data.
+`common token-event` is a first-class portable parser category. The script runs the real CLI with `database.type: COMMON` against `sample-data/common-natural`, so the output goes through the same `ScanEngine`, naming evidence, lineage, derived path, and JSON writer path as dialect scans. It is still a portable benchmark, not a database-specific adaptor and not a substitute for natural MySQL/PostgreSQL/Oracle/SQL Server sample-data. Parser/correctness-only portable bodies live under `sample-data/common-parser-coverage` and remain covered by correctness fixtures; they are intentionally excluded from natural sample-data CLI statistics.
 
 Run all sample-data parser scans:
 

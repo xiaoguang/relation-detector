@@ -1,9 +1,5 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:pg13_hash_metrics.hour_bucket->pg13_hash_metrics.hour_bucket:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:pg13_hash_metrics.metric_name->pg13_hash_metrics.metric_name:SQL_LOG_JOIN,REPEATED_OBSERVATION",
-    "CO_OCCURRENCE:pg13_hash_metrics.recorded_at->pg13_hash_metrics.recorded_at:SQL_LOG_SUBQUERY_IN",
-    "CO_OCCURRENCE:pg13_hash_metrics.tenant_id->pg13_hash_metrics.tenant_id:SQL_LOG_JOIN,REPEATED_OBSERVATION",
     "FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_EXISTS"
   ],
   "forbiddenTables": []

@@ -45,6 +45,10 @@ write_config() {
   if [[ ! -d "$procedure_dir" && -d "$sample_dir/02-processes" ]]; then
     procedure_dir="$sample_dir/02-processes"
   fi
+  local use_procedure_file_list=false
+  if [[ "$database_type" == "COMMON" && "$(basename "$procedure_dir")" == "02-processes" ]]; then
+    use_procedure_file_list=true
+  fi
   local trigger_file="$schema_dir/03-triggers.sql"
   local object_pattern='CREATE[[:space:]]+(OR[[:space:]]+(REPLACE|ALTER)[[:space:]]+)?(PROCEDURE|FUNCTION|TRIGGER|PACKAGE)'
 
@@ -79,25 +83,43 @@ write_config() {
     printf '  objects:\n'
     printf '    enabled: true\n'
     printf '    fromDatabase: false\n'
-    printf '    paths:\n'
-    printf '      - %s\n' "$procedure_dir"
-    printf '    include:\n'
-    printf '      - "**/*.sql"\n'
-    if [[ -f "$trigger_file" ]]; then
+    local object_files_printed=false
+    if [[ "$use_procedure_file_list" == "true" ]]; then
       printf '    files:\n'
+      object_files_printed=true
+      local procedure_file
+      for procedure_file in "$procedure_dir"/*.sql; do
+        if [[ ! -f "$procedure_file" ]]; then
+          continue
+        fi
+        if [[ "$(basename "$procedure_file")" == *-for-golden.sql ]]; then
+          continue
+        fi
+        printf '      - %s\n' "$procedure_file"
+      done
+    else
+      printf '    paths:\n'
+      printf '      - %s\n' "$procedure_dir"
+      printf '    include:\n'
+      printf '      - "**/*.sql"\n'
+    fi
+    if [[ -f "$trigger_file" ]]; then
+      if [[ "$object_files_printed" == "false" ]]; then
+        printf '    files:\n'
+        object_files_printed=true
+      fi
       printf '      - %s\n' "$trigger_file"
     fi
     local maybe_object_file
-    local object_files_printed=false
     for maybe_object_file in "$sample_dir"/03-data/*.sql "$sample_dir"/04-queries/*.sql; do
       if [[ ! -f "$maybe_object_file" ]]; then
         continue
       fi
       if grep -Eiq "$object_pattern|^[[:space:]]*DELIMITER[[:space:]]+" "$maybe_object_file"; then
-        if [[ "$object_files_printed" == "false" && ! -f "$trigger_file" ]]; then
+        if [[ "$object_files_printed" == "false" ]]; then
           printf '    files:\n'
+          object_files_printed=true
         fi
-        object_files_printed=true
         printf '      - %s\n' "$maybe_object_file"
       fi
     done
@@ -178,7 +200,7 @@ run_case() {
 mvn -q -pl relation-detector/core,relation-detector/adaptor-mysql,relation-detector/adaptor-postgres,relation-detector/adaptor-oracle,relation-detector/adaptor-sqlserver,relation-detector/cli -am -Dmaven.test.skip=true package
 "$RELATION_ROOT/scripts/check-no-jls-bad-classes.sh" "$ROOT"
 
-run_case common-token-event-sample-data COMMON token-event "" "" "$RELATION_ROOT/sample-data/portable"
+run_case common-token-event-sample-data COMMON token-event "" "" "$RELATION_ROOT/sample-data/common-natural"
 
 run_case mysql-token-event-root MYSQL token-event "" "" "$RELATION_ROOT/sample-data/mysql/8.0"
 run_case mysql-v5_7-full MYSQL full-grammer mysql/5.7 5.7 "$RELATION_ROOT/sample-data/mysql/5.7"

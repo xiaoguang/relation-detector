@@ -28,14 +28,14 @@ public record SemanticExtractionConfig(
         maxOutputTokens = positiveDefault(maxOutputTokens, 12000);
         baseUrl = blankDefault(baseUrl, "https://api.openai.com/v1");
         apiKeyEnv = blankDefault(apiKeyEnv, "OPENAI_API_KEY");
-        maxRelationships = positiveDefault(maxRelationships, 80);
-        maxLineage = positiveDefault(maxLineage, 80);
-        maxNamingEvidence = positiveDefault(maxNamingEvidence, 80);
+        maxRelationships = nonNegativeDefault(maxRelationships, 0);
+        maxLineage = nonNegativeDefault(maxLineage, 0);
+        maxNamingEvidence = nonNegativeDefault(maxNamingEvidence, 0);
     }
 
     public static SemanticExtractionConfig defaults() {
         return new SemanticExtractionConfig("codex-session", List.of(), null, "", "gpt-5.5", "high", 12000,
-                "https://api.openai.com/v1", "OPENAI_API_KEY", 80, 80, 80, false);
+                "https://api.openai.com/v1", "OPENAI_API_KEY", 0, 0, 0, false);
     }
 
     private static String blankDefault(String value, String defaultValue) {
@@ -44,5 +44,9 @@ public record SemanticExtractionConfig(
 
     private static int positiveDefault(int value, int defaultValue) {
         return value <= 0 ? defaultValue : value;
+    }
+
+    private static int nonNegativeDefault(int value, int defaultValue) {
+        return value < 0 ? defaultValue : value;
     }
 }

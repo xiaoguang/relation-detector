@@ -9,6 +9,7 @@ semanticExtraction:
   maxOutputTokens: 12000
   baseUrl: https://api.openai.com/v1
   apiKeyEnv: OPENAI_API_KEY
-  maxRelationships: 80
-  maxLineage: 80
-  maxNamingEvidence: 80
+  # 0 means unlimited. Set positive max* values only for an intentional preview prompt.
+  maxRelationships: 0
+  maxLineage: 0
+  maxNamingEvidence: 0

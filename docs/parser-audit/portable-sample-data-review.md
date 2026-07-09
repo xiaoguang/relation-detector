@@ -1,5 +1,10 @@
 # Portable Sample Data Review
 
+> Status: historical portable inventory review. Current common CLI natural benchmark reads
+> `relation-detector/sample-data/common-natural`; parser coverage SQL lives under
+> `relation-detector/sample-data/common-parser-coverage`. The older
+> `sample-data/portable` references below are retained only as migration notes.
+
 ## Summary
 
 `sample-data/portable` now mirrors the MySQL 8.0 ERP object inventory with portable SQL forms.

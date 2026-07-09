@@ -1,6 +1,5 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:inventory.batch_id->inventory.batch_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:inventory.batch_id->sales_order_items.batch_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:inventory.product_id->sales_order_items.product_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:inventory.warehouse_id->sales_orders.warehouse_id:SQL_LOG_JOIN",

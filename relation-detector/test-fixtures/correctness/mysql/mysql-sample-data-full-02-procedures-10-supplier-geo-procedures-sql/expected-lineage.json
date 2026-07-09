@@ -1,10 +1,10 @@
 {
   "fingerprints": [
     "CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score",
-    "VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty",
-    "VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count",
-    "VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date",
-    "VALUE:AGGREGATE:purchase_return_items.return_qty,purchase_order_items.received_qty->supplier_products.return_rate"
+    "VALUE:AGGREGATE:purchase_order_items.received_qty,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty",
+    "VALUE:AGGREGATE:purchase_orders.id,purchase_order_items.order_id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count",
+    "VALUE:AGGREGATE:purchase_orders.order_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date",
+    "VALUE:AGGREGATE:purchase_return_items.return_qty,purchase_order_items.received_qty,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id,purchase_orders.order_date,purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,purchase_return_items.product_id,purchase_returns.return_date->supplier_products.return_rate"
   ],
   "forbiddenSources": [],
   "forbiddenTargets": [],

@@ -5,6 +5,7 @@
     "CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at",
     "CONTROL:CASE_WHEN:sales_orders.status->shipments.status",
     "CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status",
+    "VALUE:AGGREGATE:fixed_assets.id->fixed_assets.accumulated_depreciation",
     "VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed",
     "VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty",
     "VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty",

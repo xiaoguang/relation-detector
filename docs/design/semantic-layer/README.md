@@ -15,7 +15,25 @@ Relation Detector
   -> semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```
 
-这条当前链路吸收 Semantica 官方架构中的 `ingest -> raw documents -> parse / normalize -> extract -> conflict / dedup -> KG / provenance / reasoning` 思路，但落地边界更窄：relation-detector scan result / ScanBundle 是本项目的标准 facts/evidence records；当前代码已落地到离线 KG JSON 阶段，即 `semantic-layer/semantic-core` 可以把 scan result 构建为 evidence graph 与可审计 `semantic-kg.json`，`semantic-layer/semantic-cli` 提供 `semantic build` 离线入口。当前 KG 节点范围是 `PhysicalTable`、`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`Diagnostic` 和从 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、supported-by evidence 和 join path step。当前不接入真实 LLM，不写 Semantic Catalog Store，不提供 lexicon、embedding、review queue 或在线问答。
+这条当前链路吸收 Semantica 官方架构中的 `ingest -> raw documents -> parse / normalize -> extract -> conflict / dedup -> KG / provenance / reasoning` 思路，但落地边界更窄：relation-detector scan result / ScanBundle 是本项目的标准 facts/evidence records；当前代码已落地到离线 KG JSON 阶段，即 `semantic-layer/semantic-core` 可以把 scan result 构建为 evidence graph 与可审计 `semantic-kg.json`，`semantic-layer/semantic-cli` 提供 `semantic build` 离线入口。当前 KG 节点范围是 `PhysicalTable`、`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`EventFact`、`Diagnostic`、derived fact 和从 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、event input/output、supported-by evidence 和 path step。
+
+当前还实现了语义抽取 artifact 链路：
+
+```text
+Relation Detector JSON
+  -> Scan Result Reader
+  -> SemanticExtractionBundleBuilder
+  -> SemanticExtractionPromptBuilder
+  -> semantic extract
+       -> codex-session: 写 prompt / evidence bundle / 会话说明，不调用外部模型
+       -> openai-api: 调用 OpenAI-compatible Responses API，通过 bundle-aware normalizer 写 raw response 与 normalized semantic document
+  -> semantic normalize-extraction
+       -> raw-only 规范化 JSON semantic extraction output，补齐 semanticGraph / validation
+```
+
+`semantic e2e` 是 deterministic 验证入口：同一次读取 scan result 后同时写 `semantic-kg/<case-name>/` 和 `semantic-extraction/<case-name>/` 的 evidence bundle / prompt artifacts，但不调用模型。当前不写 Semantic Catalog Store，不提供 lexicon、embedding、review queue 或在线问答；这些仍是后续阶段。
+
+`semantic normalize-extraction` 当前不接收 evidence bundle，因此不能补齐 LLM 漏掉的全部 event / triplet / review 候选，也不能逐条验证 `evidenceRefs` 是否解析回 bundle fact id；这类 bundle-aware backfill 当前只在 `openai-api` 写出结果的代码路径中执行。
 
 ### 目标离线构建链路
 
@@ -62,7 +80,7 @@ Question
 | --- | --- | --- | --- |
 | 1 | Scan Result Reader | [01-scan-result-reader.md](01-scan-result-reader.md) | 读取 relation-detector 输出，归一化为 ScanBundle。 |
 | 2 | Semantic Evidence Builder | [02-semantic-evidence-builder.md](02-semantic-evidence-builder.md) | 组织 relationship、lineage、metadata、注释 evidence graph。 |
-| 3 | LLM Semantic Enricher | [03-llm-semantic-enricher.md](03-llm-semantic-enricher.md) | 生成业务语义候选、描述、同义词和 review item。 |
+| 3 | LLM Semantic Enricher / Semantic Extraction | [03-llm-semantic-enricher.md](03-llm-semantic-enricher.md) | 构造 evidence bundle / prompt，支持 codex-session、openai-api 和 normalized extraction result。 |
 | 4 | Semantic Catalog Store | [04-semantic-catalog-store.md](04-semantic-catalog-store.md) | 持久化 semantic objects、edges、evidence refs、review decisions。 |
 | 5 | Lexicon Manager | [05-lexicon-manager.md](05-lexicon-manager.md) | 管理业务词、同义词和对象映射。 |
 | 6 | Embedding Indexer | [06-embedding-indexer.md](06-embedding-indexer.md) | 为语义对象生成向量索引。 |

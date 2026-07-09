@@ -15,6 +15,7 @@ import com.relationdetector.contracts.Enums.DerivedPathKind;
 import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.LineageFlowKind;
+import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.DerivedPathCandidate;
@@ -271,6 +272,9 @@ public final class DerivedPathInferenceService {
                 if (!source.isColumnLevel() || !lineage.target().isColumnLevel()) {
                     continue;
                 }
+                if (isPureNoOpSelfLineage(source, lineage)) {
+                    continue;
+                }
                 directPairs.addAll(pairKeys(source, lineage.target()));
                 edges.add(lineageEdge(source, lineage));
             }
@@ -337,21 +341,23 @@ public final class DerivedPathInferenceService {
         if (path.size() >= config.derivedMaxPathLength || limitReached(config, observations.size())) {
             return;
         }
+        LinkedHashSet<String> branchVisited = new LinkedHashSet<>(visited);
+        branchVisited.addAll(graphKeys(current));
         List<Edge> outgoing = graphKeys(current).stream()
                 .flatMap(key -> adjacency.getOrDefault(key, List.of()).stream())
                 .distinct()
                 .toList();
         for (Edge edge : outgoing) {
             LinkedHashSet<String> nextKeys = graphKeys(edge.target());
-            if (overlaps(visited, nextKeys)) {
+            if (overlaps(branchVisited, nextKeys)) {
                 continue;
             }
-            visited.addAll(nextKeys);
+            LinkedHashSet<String> nextVisited = new LinkedHashSet<>(branchVisited);
+            nextVisited.addAll(nextKeys);
             List<Edge> nextPath = new ArrayList<>(path);
             nextPath.add(edge);
-            dfs(origin, edge.target(), nextPath, visited, adjacency,
+            dfs(origin, edge.target(), nextPath, nextVisited, adjacency,
                     directPairs, pathsPerPair, observations, config, allowNamingOnlyGraph);
-            visited.removeAll(nextKeys);
             if (limitReached(config, observations.size())) {
                 break;
             }
@@ -534,6 +540,14 @@ public final class DerivedPathInferenceService {
     private Edge lineageEdge(Endpoint source, DataLineageCandidate lineage) {
         String ref = "lineage:" + source.normalizedKey() + "->" + lineage.target().normalizedKey();
         return new Edge(source, lineage.target(), EdgeKind.LINEAGE, lineage.confidence(), ref, List.of());
+    }
+
+    private boolean isPureNoOpSelfLineage(Endpoint source, DataLineageCandidate lineage) {
+        return source.normalizedKey().equals(lineage.target().normalizedKey())
+                && lineage.transformType() == LineageTransformType.DIRECT
+                && lineage.evidence().stream()
+                .allMatch(evidence -> evidence.transformType()
+                        == LineageTransformType.DIRECT);
     }
 
     private Edge namingEdge(NamingEvidenceCandidate naming) {

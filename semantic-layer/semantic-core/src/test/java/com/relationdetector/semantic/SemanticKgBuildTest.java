@@ -52,7 +52,8 @@ final class SemanticKgBuildTest {
         assertTrue(nodeIds.contains("column:orders.customer_id"));
         assertTrue(nodeIds.stream().anyMatch(id -> id.startsWith("relationship:orders.customer_id->customers.id")));
         assertTrue(nodeIds.stream().anyMatch(id -> id.startsWith("lineage:payments.amount->customer_rollups.total_paid")));
-        assertTrue(nodeIds.contains("naming:naming:orders.customer_id->customers.id:TABLE_ID"));
+        assertTrue(nodeIds.contains("naming:orders.customer_id->customers.id:TABLE_ID"));
+        assertTrue(nodeIds.stream().anyMatch(id -> id.startsWith("event-candidate:sql-write:rollup.sql:customer_rollups")));
 
         Set<String> evidenceIds = JSON.readerForListOf(JsonNode.class)
                 .<java.util.List<JsonNode>>readValue(json.path("evidenceRefs"))
@@ -62,13 +63,15 @@ final class SemanticKgBuildTest {
         assertFalse(evidenceIds.isEmpty());
         for (JsonNode node : json.path("nodes")) {
             for (JsonNode evidenceRef : node.path("evidenceRefs")) {
-                assertTrue(evidenceIds.contains(evidenceRef.asText()), () -> evidenceRef + " is unresolved");
+                assertTrue(evidenceIds.contains(evidenceRef.asText()) || nodeIds.contains(evidenceRef.asText()),
+                        () -> evidenceRef + " is unresolved");
             }
         }
         for (JsonNode edge : json.path("edges")) {
             assertFalse(edge.path("evidenceRefs").isEmpty(), () -> edge.path("id").asText() + " lacks evidence");
             for (JsonNode evidenceRef : edge.path("evidenceRefs")) {
-                assertTrue(evidenceIds.contains(evidenceRef.asText()), () -> evidenceRef + " is unresolved");
+                assertTrue(evidenceIds.contains(evidenceRef.asText()) || nodeIds.contains(evidenceRef.asText()),
+                        () -> evidenceRef + " is unresolved");
             }
         }
     }
