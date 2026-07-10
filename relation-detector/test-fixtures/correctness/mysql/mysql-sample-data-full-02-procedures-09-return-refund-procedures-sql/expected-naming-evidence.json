@@ -2,9 +2,12 @@
   "fingerprints": [
     "naming:sales_order_items.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_order_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_return_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_return_items.return_id->sales_returns.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_returns.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_returns.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_returns.refund_voucher_id->vouchers.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:sales_returns.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH"
+    "naming:sales_returns.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH",
+    "naming:voucher_items.account_id->accounts.id:TABLE_ID:NAMING_MATCH"
   ]
 }

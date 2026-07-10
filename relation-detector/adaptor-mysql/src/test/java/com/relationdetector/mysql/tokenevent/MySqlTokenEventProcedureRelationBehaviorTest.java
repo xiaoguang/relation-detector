@@ -21,6 +21,7 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
+import com.relationdetector.core.relation.NamingEvidenceExtractor;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
 class MySqlTokenEventProcedureRelationBehaviorTest {
@@ -97,9 +98,11 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-derived-aggregate.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new StructuredDataLineageExtractor()
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
+                .toList();
+        List<String> fingerprints = lineages.stream()
                 .map(this::lineageFingerprint)
                 .toList();
 
@@ -259,16 +262,22 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-scalar-aggregate.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new StructuredDataLineageExtractor()
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
+                .toList();
+        List<String> fingerprints = lineages.stream()
                 .map(this::lineageFingerprint)
                 .toList();
 
-        assertEquals(List.of(
-                "VALUE:AGGREGATE:supplier_manifests.supply_price,supplier_manifests.product_id,warehouse_inventory.product_id,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost"),
-                fingerprints,
-                () -> "Scalar aggregate subquery should remain a physical aggregate source: " + structured.events());
+        assertTrue(fingerprints.contains(
+                        "VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost"),
+                () -> "Scalar aggregate selected expression should stay VALUE, without predicate keys: "
+                        + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "CONTROL:CASE_WHEN:supplier_manifests.product_id,warehouse_inventory.product_id->order_items.estimated_cost"),
+                () -> "Scalar aggregate locator predicate should be CONTROL, not VALUE: "
+                        + fingerprints + " events=" + structured.events());
     }
 
     @Test
@@ -317,19 +326,24 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 LineageTransformType.AGGREGATE, () -> "MAX(po.order_date) is valid aggregate lineage: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "purchase_order_items", "order_id", "supplier_products", "total_order_count",
-                LineageTransformType.AGGREGATE, () -> "JOIN predicate column poi.order_id should remain aggregate update lineage context: "
+                LineageTransformType.CASE_WHEN, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                () -> "JOIN predicate column poi.order_id should be CONTROL lineage context: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "purchase_order_items", "product_id", "supplier_products", "total_order_qty",
-                LineageTransformType.AGGREGATE, () -> "Correlated filter column poi.product_id should remain aggregate update lineage context: "
+                LineageTransformType.CASE_WHEN, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                () -> "Correlated filter column poi.product_id should be CONTROL lineage context: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "purchase_orders", "supplier_id", "supplier_products", "total_order_qty",
-                LineageTransformType.AGGREGATE, () -> "Correlated filter column po.supplier_id should remain aggregate update lineage context: "
+                LineageTransformType.CASE_WHEN, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                () -> "Correlated filter column po.supplier_id should be CONTROL lineage context: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "supplier_products", "product_id", "supplier_products", "total_order_qty",
-                LineageTransformType.AGGREGATE, () -> "Outer correlated target column sp.product_id should remain aggregate update lineage context: "
+                LineageTransformType.CASE_WHEN, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                () -> "Outer correlated target column sp.product_id should be CONTROL lineage context: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "supplier_products", "supplier_id", "supplier_products", "total_order_qty",
-                LineageTransformType.AGGREGATE, () -> "Outer correlated target column sp.supplier_id should remain aggregate update lineage context: "
+                LineageTransformType.CASE_WHEN, com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                () -> "Outer correlated target column sp.supplier_id should be CONTROL lineage context: "
                         + fingerprints + " events=" + structured.events());
     }
 
@@ -351,24 +365,32 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.TRIGGER, "TRIGGER:trg_sales_order_delivered", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new StructuredDataLineageExtractor()
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor()
                 .extract(statement, structured, Set.of(
                         TableId.of(null, "inventory"),
                         TableId.of(null, "inventory_transactions"),
                         TableId.of(null, "sales_order_items")))
                 .stream()
+                .toList();
+        List<String> fingerprints = lineages.stream()
                 .map(this::lineageFingerprint)
                 .sorted()
                 .toList();
 
-        assertTrue(fingerprints.contains(
-                        "VALUE:COALESCE:sales_order_items.quantity->inventory_transactions.after_qty"),
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.flowKind() == com.relationdetector.contracts.Enums.LineageFlowKind.VALUE
+                                && lineage.transformType() == LineageTransformType.COALESCE
+                                && "inventory_transactions".equals(lineage.target().table().tableName())
+                                && "after_qty".equals(lineage.target().column().columnName())
+                                && lineage.sources().stream().anyMatch(source ->
+                                "sales_order_items".equals(source.table().tableName())
+                                        && "quantity".equals(source.column().columnName()))),
                 () -> "soi.quantity in COALESCE(...) + soi.quantity is a valid source for after_qty, not a false positive: "
                         + fingerprints + " events=" + structured.events());
     }
 
     @Test
-    void aggregateCasePredicateRemainsControlLineage() {
+    void scalarSubqueryAggregateCaseSplitsSelectedValueFromLocatorControl() {
         SqlStatementRecord statement = new SqlStatementRecord("""
                 UPDATE supplier_products sp
                 SET quality_score = COALESCE((
@@ -382,17 +404,34 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 """, StatementSourceType.PLAIN_SQL, "mysql-aggregate-case-control.sql", 1, 1, Map.of());
 
         var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
-        List<String> fingerprints = new StructuredDataLineageExtractor()
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor()
                 .extract(statement, structured)
                 .stream()
+                .toList();
+        List<String> fingerprints = lineages.stream()
                 .map(this::lineageFingerprint)
                 .toList();
 
-        assertEquals(List.of(
-                "CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score"),
-                fingerprints,
-                () -> "CASE inside aggregate controls the count condition; it is not a value transfer: "
-                        + structured.events());
+        assertLineageSource(lineages, "inspection_reports", "inspection_result",
+                "supplier_products", "quality_score", LineageTransformType.CASE_WHEN,
+                com.relationdetector.contracts.Enums.LineageFlowKind.VALUE,
+                () -> "CASE inside a scalar subquery SELECT projection is a value input for quality_score: "
+                        + fingerprints + " events=" + structured.events());
+        assertLineageSource(lineages, "inspection_reports", "batch_id",
+                "supplier_products", "quality_score", LineageTransformType.CASE_WHEN,
+                com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                () -> "JOIN predicate source should remain attached to aggregate CASE control lineage: "
+                        + fingerprints + " events=" + structured.events());
+        assertLineageSource(lineages, "product_batches", "id",
+                "supplier_products", "quality_score", LineageTransformType.CASE_WHEN,
+                com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                () -> "JOIN target source should remain attached to aggregate CASE control lineage: "
+                        + fingerprints + " events=" + structured.events());
+        assertLineageSource(lineages, "supplier_products", "supplier_id",
+                "supplier_products", "quality_score", LineageTransformType.CASE_WHEN,
+                com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                () -> "Correlated supplier source should remain attached to aggregate CASE control lineage: "
+                        + fingerprints + " events=" + structured.events());
     }
 
     @Test
@@ -489,6 +528,120 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                         .toString());
     }
 
+    @Test
+    void tokenEventKeepsRoutineJoinRelationshipAcrossPurchaseReceiptItems() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                SELECT pri.order_item_id, poi.id
+                FROM suppliers s
+                LEFT JOIN purchase_orders po ON s.id = po.supplier_id
+                    AND po.order_date BETWEEN p_start_date AND p_end_date
+                LEFT JOIN purchase_order_items poi ON po.id = poi.order_id
+                LEFT JOIN purchase_receipt_items pri ON poi.id = pri.order_item_id;
+                """, StatementSourceType.PROCEDURE, "ROUTINE:erp_system.sp_receipt_quality_rollup", 1, 1,
+                Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<RelationshipCandidate> relations = new TokenEventRelationExtractor()
+                .extract(statement, structured)
+                .stream().toList();
+        List<String> fingerprints = relations.stream()
+                .map(this::fingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.stream().anyMatch(fingerprint ->
+                        fingerprint.equals("CO_OCCURRENCE:purchase_order_items.id->purchase_receipt_items.order_item_id:SQL_LOG_JOIN")
+                                || fingerprint.equals("CO_OCCURRENCE:purchase_receipt_items.order_item_id->purchase_order_items.id:SQL_LOG_JOIN")),
+                () -> "Routine JOIN chain should expose receipt item -> order item relationship: "
+                        + fingerprints + " events=" + structured.events());
+        assertTrue(new NamingEvidenceExtractor().extractFromRelationshipCandidates(relations).stream().anyMatch(candidate ->
+                        "purchase_receipt_items.order_item_id".equals(candidate.source().displayName())
+                                && "purchase_order_items.id".equals(candidate.target().displayName())),
+                () -> "Naming evidence should give FK-like direction for receipt item -> order item: "
+                        + fingerprints + " naming="
+                        + new NamingEvidenceExtractor().extractFromRelationshipCandidates(relations));
+    }
+
+    @Test
+    void tokenEventVisitsSelectListScalarSubqueryPredicatesForRelationships() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                SELECT sn.serial_no,
+                       (SELECT sr.return_no
+                        FROM sales_returns sr
+                        WHERE sr.id = sn.return_id) AS return_order
+                FROM serial_numbers sn;
+                """, StatementSourceType.PLAIN_SQL, "mysql-select-list-scalar-subquery.sql", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new TokenEventRelationExtractor()
+                .extract(statement, structured)
+                .stream()
+                .map(this::fingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.stream().anyMatch(fingerprint ->
+                        fingerprint.equals("CO_OCCURRENCE:serial_numbers.return_id->sales_returns.id:SQL_LOG_JOIN")
+                                || fingerprint.equals("CO_OCCURRENCE:sales_returns.id->serial_numbers.return_id:SQL_LOG_JOIN")),
+                () -> "SELECT-list scalar subquery predicate should be visible to token-event relations: "
+                        + fingerprints + " events=" + structured.events());
+        List<RelationshipCandidate> relations = new TokenEventRelationExtractor()
+                .extract(statement, structured)
+                .stream().toList();
+        assertTrue(new NamingEvidenceExtractor().extractFromRelationshipCandidates(relations).stream().anyMatch(candidate ->
+                        "serial_numbers.return_id".equals(candidate.source().displayName())
+                                && "sales_returns.id".equals(candidate.target().displayName())),
+                () -> "Naming evidence should give FK-like direction for serial number return -> sales return: "
+                        + fingerprints + " naming="
+                        + new NamingEvidenceExtractor().extractFromRelationshipCandidates(relations));
+    }
+
+    @Test
+    void tokenEventVisitsFullSerialLifecycleScalarSubqueriesForRelationships() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                SELECT
+                    sn.serial_no,
+                    p.sku AS product_sku,
+                    p.name AS product_name,
+                    sn.status AS current_status,
+                    (SELECT pr.receipt_no FROM purchase_receipts pr WHERE pr.id = sn.purchase_receipt_id) AS purchase_receipt,
+                    (SELECT so.order_no FROM sales_orders so WHERE so.id = sn.sales_order_id) AS sales_order,
+                    (SELECT sr.return_no FROM sales_returns sr WHERE sr.id = sn.return_id) AS return_order,
+                    (SELECT snl.event_type FROM serial_number_logs snl
+                     WHERE snl.serial_number_id = sn.id ORDER BY snl.event_time DESC LIMIT 1) AS last_event
+                FROM serial_numbers sn
+                JOIN products p ON sn.product_id = p.id
+                ORDER BY sn.serial_no;
+                """, StatementSourceType.PLAIN_SQL, "mysql-q50-serial-lifecycle.sql", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<RelationshipCandidate> relations = new TokenEventRelationExtractor()
+                .extract(statement, structured)
+                .stream().toList();
+        List<String> fingerprints = relations.stream()
+                .map(this::fingerprint)
+                .sorted()
+                .toList();
+
+        assertDirectionalNaming(relations, "serial_numbers.purchase_receipt_id", "purchase_receipts.id", fingerprints);
+        assertDirectionalNaming(relations, "serial_numbers.sales_order_id", "sales_orders.id", fingerprints);
+        assertDirectionalNaming(relations, "serial_numbers.return_id", "sales_returns.id", fingerprints);
+    }
+
+    private void assertDirectionalNaming(
+            List<RelationshipCandidate> relations,
+            String source,
+            String target,
+            List<String> relationshipFingerprints
+    ) {
+        assertTrue(new NamingEvidenceExtractor().extractFromRelationshipCandidates(relations).stream().anyMatch(candidate ->
+                        source.equals(candidate.source().displayName())
+                                && target.equals(candidate.target().displayName())),
+                () -> "Expected naming direction " + source + " -> " + target
+                        + "; relationships=" + relationshipFingerprints
+                        + "; naming=" + new NamingEvidenceExtractor().extractFromRelationshipCandidates(relations));
+    }
+
     private String objectBlock(String marker) throws Exception {
         Path input = workspaceRoot().resolve("test-fixtures/mysql/basic-correctness/case-01/sql/routines-procedures.sql");
         return objectBlock(input, marker);
@@ -535,6 +688,40 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
     }
 
     private void assertLineageSource(
+            List<DataLineageCandidate> lineages,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn,
+            LineageTransformType transformType,
+            Supplier<String> message
+    ) {
+        assertLineageSource(lineages, sourceTable, sourceColumn, targetTable, targetColumn,
+                transformType, com.relationdetector.contracts.Enums.LineageFlowKind.VALUE, message);
+    }
+
+    private void assertLineageSource(
+            List<DataLineageCandidate> lineages,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn,
+            LineageTransformType transformType,
+            com.relationdetector.contracts.Enums.LineageFlowKind flowKind,
+            Supplier<String> message
+    ) {
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.transformType() == transformType
+                                && lineage.flowKind() == flowKind
+                                && targetTable.equals(lineage.target().table().tableName())
+                                && targetColumn.equals(lineage.target().column().columnName())
+                                && lineage.sources().stream().anyMatch(source ->
+                                sourceTable.equals(source.table().tableName())
+                                        && sourceColumn.equals(source.column().columnName()))),
+                message);
+    }
+
+    private void assertLineageSourceAnyFlow(
             List<DataLineageCandidate> lineages,
             String sourceTable,
             String sourceColumn,

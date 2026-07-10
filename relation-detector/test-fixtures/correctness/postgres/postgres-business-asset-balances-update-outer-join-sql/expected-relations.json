@@ -1,8 +1,6 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:account_extensions.assigned_staff_id->staff_assignments.id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:account_extensions.id->ledger_system_a.account_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:asset_balances.account_id->ledger_system_a.account_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:ledger_system_a.account_id->ledger_system_b.account_id:SQL_LOG_JOIN"
   ],
   "forbiddenTables": [

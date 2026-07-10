@@ -1,10 +1,22 @@
 {
   "fingerprints": [
+    "CONTROL:CASE_WHEN:product_batches.product_id,purchase_order_items.product_id->purchase_return_items.batch_id",
+    "CONTROL:CASE_WHEN:product_batches.product_id->damage_report_items.batch_id",
+    "CONTROL:CASE_WHEN:products.id->damage_report_items.unit_cost",
+    "CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.product_id",
+    "CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.unit_price",
+    "CONTROL:CASE_WHEN:purchase_receipts.order_id,purchase_orders.id->purchase_returns.purchase_receipt_id",
     "VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.refund_received",
     "VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.total_amount",
     "VALUE:DIRECT:damage_reports.id->damage_report_items.report_id",
+    "VALUE:DIRECT:product_batches.id->damage_report_items.batch_id",
+    "VALUE:DIRECT:product_batches.id->purchase_return_items.batch_id",
+    "VALUE:DIRECT:products.purchase_price->damage_report_items.unit_cost",
+    "VALUE:DIRECT:purchase_order_items.product_id->purchase_return_items.product_id",
+    "VALUE:DIRECT:purchase_order_items.unit_price->purchase_return_items.unit_price",
     "VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id",
     "VALUE:DIRECT:purchase_orders.supplier_id->purchase_returns.supplier_id",
+    "VALUE:DIRECT:purchase_receipts.id->purchase_returns.purchase_receipt_id",
     "VALUE:DIRECT:purchase_returns.id->purchase_return_items.return_id"
   ],
   "forbiddenSources": [],

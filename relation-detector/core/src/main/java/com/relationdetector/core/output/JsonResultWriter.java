@@ -295,6 +295,7 @@ public final class JsonResultWriter {
         ArrayNode array = JSON.createArrayNode();
         evidence.forEach(item -> {
             ObjectNode node = array.addObject();
+            node.put("type", "DATA_LINEAGE");
             node.put("transformType", item.transformType().name());
             node.put("sourceType", item.sourceType().name());
             node.put("score", item.score());

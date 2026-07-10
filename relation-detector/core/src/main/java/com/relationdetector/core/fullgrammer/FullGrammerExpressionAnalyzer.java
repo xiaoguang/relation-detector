@@ -56,6 +56,27 @@ public abstract class FullGrammerExpressionAnalyzer {
     }
 
     /**
+     * Returns one or more write-side expression analyses for a DML assignment.
+     *
+     * <p>Most dialects have a single value analysis. Dialects with typed scalar
+     * subquery contexts can override this to split selected projection sources
+     * from predicate/correlation control sources.</p>
+     */
+    public List<FullGrammerExpressionAnalysis> writeAnalyses(ParseTree expression, String defaultQualifier) {
+        FullGrammerExpressionAnalysis analysis = analyze(expression, defaultQualifier);
+        return analysis.hasSources() ? List.of(analysis) : List.of();
+    }
+
+    /**
+     * Lets a dialect-specific analyzer take precedence over the generic nested
+     * CASE splitting path for statement forms where the dialect can already
+     * return a more precise VALUE/CONTROL split.
+     */
+    public boolean prefersDialectWriteAnalyses(ParseTree expression) {
+        return false;
+    }
+
+    /**
      * 分析关系谓词中的“裸列表达式”。
      *
      * <p>CN: JOIN/EXISTS/IN 关系只能从裸列或裸列 tuple 产生。拼接、算术、函数、

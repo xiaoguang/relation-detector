@@ -91,4 +91,22 @@ final class ObjectSqlFileExtractorTest {
         assertEquals("dbo.sp_rebuild_sales_fact", statements.get(0).attributes().get("sourceObjectName"));
         assertEquals("sqlserver.mechanical_block_name", statements.get(0).attributes().get("sourceBlockId"));
     }
+
+    @Test
+    void unmarkedOracleRoutineNameDropsEmptyParameterParentheses() {
+        List<SqlStatementRecord> statements = extractor.extract("""
+                CREATE OR REPLACE PROCEDURE sp_update_supplier_metrics()
+                AS
+                BEGIN
+                  NULL;
+                END;
+                /
+                """, StatementSourceType.PROCEDURE, "sample-data/oracle/26ai/02-procedures/10-supplier-geo-procedures.sql",
+                DatabaseType.ORACLE);
+
+        assertEquals(1, statements.size());
+        assertEquals("sp_update_supplier_metrics", statements.get(0).attributes().get("sourceBlockId"));
+        assertEquals("sp_update_supplier_metrics", statements.get(0).attributes().get("sourceStatementId"));
+        assertEquals("sp_update_supplier_metrics", statements.get(0).attributes().get("sourceObjectName"));
+    }
 }

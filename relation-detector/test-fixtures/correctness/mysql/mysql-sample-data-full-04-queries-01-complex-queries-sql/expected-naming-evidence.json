@@ -13,6 +13,8 @@
     "naming:three_way_matching.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:three_way_matching.purchase_order_id->purchase_orders.id:TABLE_ID:NAMING_MATCH",
     "naming:three_way_matching.purchase_receipt_id->purchase_receipts.id:TABLE_ID:NAMING_MATCH",
+    "naming:work_order_materials.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:work_order_materials.work_order_id->work_orders.id:TABLE_ID:NAMING_MATCH",
     "naming:work_orders.product_id->products.id:TABLE_ID:NAMING_MATCH"
   ]
 }

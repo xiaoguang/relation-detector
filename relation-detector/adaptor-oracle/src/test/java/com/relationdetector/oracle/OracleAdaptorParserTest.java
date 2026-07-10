@@ -333,6 +333,68 @@ class OracleAdaptorParserTest {
     }
 
     @Test
+    void oracleTokenEventNestedScalarAggregateSubqueryKeepsJoinAndFilterSources() {
+        var parser = new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow();
+        var statement = statement("""
+                UPDATE supplier_products sp
+                SET return_rate = COALESCE((
+                    SELECT SUM(pri.return_qty) * 1.0 / NULLIF(SUM(pri.return_qty) + (
+                        SELECT SUM(poi.received_qty)
+                        FROM purchase_order_items poi
+                        JOIN purchase_orders po ON poi.order_id = po.id
+                        WHERE poi.product_id = sp.product_id AND po.supplier_id = sp.supplier_id
+                    ), 0)
+                    FROM purchase_returns pr
+                    JOIN purchase_return_items pri ON pr.id = pri.return_id
+                    WHERE pr.supplier_id = sp.supplier_id
+                      AND pri.product_id = sp.product_id
+                ),
+                0),
+                quality_score = COALESCE((
+                    SELECT ROUND(COUNT(CASE WHEN ir.inspection_result = 'qualified' THEN 1 END) * 100.0
+                        / NULLIF(COUNT(*), 0), 2)
+                    FROM inspection_reports ir
+                    JOIN product_batches pb ON ir.batch_id = pb.id
+                    WHERE pb.supplier_id = sp.supplier_id
+                      AND ir.product_id = sp.product_id
+                ), 100)
+                """);
+        var result = parser.parseSql(statement, null);
+
+        assertEquals(0, result.attributes().get("syntaxErrors"));
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, result);
+        assertLineageSourceAnyTransform(lineages, "purchase_return_items", "return_qty",
+                "supplier_products", "return_rate", result);
+        assertLineageSourceAnyTransform(lineages, "purchase_returns", "id",
+                "supplier_products", "return_rate", result);
+        assertLineageSourceAnyTransform(lineages, "purchase_returns", "supplier_id",
+                "supplier_products", "return_rate", result);
+        assertLineageSourceAnyTransform(lineages, "purchase_order_items", "received_qty",
+                "supplier_products", "return_rate", result);
+        assertLineageSourceAnyTransform(lineages, "purchase_orders", "supplier_id",
+                "supplier_products", "return_rate", result);
+        assertLineageSourceAnyTransform(lineages, "supplier_products", "supplier_id",
+                "supplier_products", "return_rate", result);
+        assertLineageSourceAnyTransform(lineages, "supplier_products", "product_id",
+                "supplier_products", "return_rate", result);
+
+        assertLineageSourceAnyTransform(lineages, "inspection_reports", "inspection_result",
+                "supplier_products", "quality_score", result);
+        assertLineageSourceAnyTransform(lineages, "inspection_reports", "batch_id",
+                "supplier_products", "quality_score", result);
+        assertLineageSourceAnyTransform(lineages, "product_batches", "id",
+                "supplier_products", "quality_score", result);
+        assertLineageSourceAnyTransform(lineages, "product_batches", "supplier_id",
+                "supplier_products", "quality_score", result);
+        assertLineageSourceAnyTransform(lineages, "inspection_reports", "product_id",
+                "supplier_products", "quality_score", result);
+        assertLineageSourceAnyTransform(lineages, "supplier_products", "supplier_id",
+                "supplier_products", "quality_score", result);
+        assertLineageSourceAnyTransform(lineages, "supplier_products", "product_id",
+                "supplier_products", "quality_score", result);
+    }
+
+    @Test
     void oracleTokenEventProcedureBlockParsesInsertSelectReturningLineage() {
         var parser = new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow();
         var statement = statement(oracleFixtureObject("ROUTINE:oracle.sp_onboard_employee_full"));
@@ -879,6 +941,26 @@ class OracleAdaptorParserTest {
                                         && sourceColumn.equals(source.column().columnName()))),
                 () -> "Expected " + sourceTable + "." + sourceColumn + " -> "
                         + targetTable + "." + targetColumn + " transform=" + transformType
+                        + ", lineages=" + lineages.stream().map(this::lineageFingerprint).toList()
+                        + " events=" + result.events());
+    }
+
+    private void assertLineageSourceAnyTransform(
+            List<DataLineageCandidate> lineages,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn,
+            com.relationdetector.contracts.parse.StructuredParseResult result
+    ) {
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        targetTable.equals(lineage.target().table().tableName())
+                                && targetColumn.equals(lineage.target().column().columnName())
+                                && lineage.sources().stream().anyMatch(source ->
+                                sourceTable.equals(source.table().tableName())
+                                        && sourceColumn.equals(source.column().columnName()))),
+                () -> "Expected " + sourceTable + "." + sourceColumn + " -> "
+                        + targetTable + "." + targetColumn
                         + ", lineages=" + lineages.stream().map(this::lineageFingerprint).toList()
                         + " events=" + result.events());
     }

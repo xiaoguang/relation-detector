@@ -101,6 +101,10 @@ class JsonResultWriterEvidenceOutputTest {
         assertTrue("VALUE".equals(lineageNode.path("flowKind").asText()), "Lineage flow kind should be serialized");
         assertTrue("AGGREGATE".equals(lineageNode.path("transformType").asText()),
                 "Lineage transform should be serialized");
+        assertTrue("DATA_LINEAGE".equals(lineageNode.path("evidence").get(0).path("type").asText()),
+                "Lineage grouped evidence should expose a stable evidence type");
+        assertTrue("DATA_LINEAGE".equals(lineageNode.path("rawEvidence").get(0).path("type").asText()),
+                "Lineage raw evidence should expose a stable evidence type");
         assertTrue("orders".equals(lineageNode.path("sources").get(0).path("table").asText()),
                 "Lineage source table should be serialized");
         assertTrue("total_spent".equals(lineageNode.path("target").path("column").asText()),
@@ -129,6 +133,11 @@ class JsonResultWriterEvidenceOutputTest {
                 "Lineage rawEvidence should keep both observations as JSON nodes");
         assertTrue(root.path("dataLineages").get(0).path("evidence").get(0).path("attributes").path("count").asInt() == 2,
                 "Lineage grouped evidence should expose numeric count through JSON");
+        assertTrue("DATA_LINEAGE".equals(root.path("dataLineages").get(0).path("evidence").get(0)
+                        .path("type").asText())
+                        && "DATA_LINEAGE".equals(root.path("dataLineages").get(0).path("rawEvidence").get(0)
+                                .path("type").asText()),
+                "Lineage grouped and raw evidence should expose stable evidence types");
         assertTrue("AGGREGATE".equals(root.path("dataLineages").get(0).path("transformType").asText())
                         && "AGGREGATE".equals(root.path("dataLineages").get(0).path("evidence").get(0)
                                 .path("transformType").asText())

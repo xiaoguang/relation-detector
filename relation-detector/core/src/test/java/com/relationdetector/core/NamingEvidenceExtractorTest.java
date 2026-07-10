@@ -219,6 +219,18 @@ class NamingEvidenceExtractorTest {
     }
 
     @Test
+    void extractsSelfRoleIdEvidenceFromDdlSelfForeignKey() {
+        RelationshipCandidate candidate = ddlForeignKey("employees", "manager_id", "employees", "id");
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
+
+        assertEquals(1, evidence.size());
+        assertEquals("SELF_ROLE_ID", evidence.get(0).rule());
+        assertEndpoint("employees", "manager_id", evidence.get(0).source());
+        assertEndpoint("employees", "id", evidence.get(0).target());
+    }
+
+    @Test
     void doesNotExtractPlainIdToIdEvidence() {
         RelationshipCandidate candidate = sqlPredicate("a", "id", "b", "id");
 

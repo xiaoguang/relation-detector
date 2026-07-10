@@ -61,6 +61,14 @@ final class WriteMappingSink {
         if (cleanColumn.isBlank()) {
             return;
         }
+        if (expressionAnalyzer.prefersDialectWriteAnalyses(expression)) {
+            for (FullGrammerExpressionAnalysis writeAnalysis :
+                    expressionAnalyzer.writeAnalyses(expression, rowsets.defaultProjectionQualifier())) {
+                addMappingEvent(ctx, type, mappingKind, targetAlias, targetTable, cleanColumn, writeAnalysis);
+                projectionEvents.expressionSource(ctx, writeAnalysis);
+            }
+            return;
+        }
         FullGrammerExpressionAnalysis analysis = expressionAnalyzer.analyze(expression);
         var caseAnalyses = expressionAnalyzer.caseWriteAnalyses(expression, rowsets.defaultProjectionQualifier());
         if (!caseAnalyses.isEmpty()) {
@@ -73,7 +81,12 @@ final class WriteMappingSink {
         if (isNestedCaseWhen(expression, analysis)) {
             addNestedCaseWhenMappings(ctx, type, mappingKind, targetAlias, targetTable, cleanColumn, expression);
         } else {
-            addMappingEvent(ctx, type, mappingKind, targetAlias, targetTable, cleanColumn, analysis);
+            for (FullGrammerExpressionAnalysis writeAnalysis :
+                    expressionAnalyzer.writeAnalyses(expression, rowsets.defaultProjectionQualifier())) {
+                addMappingEvent(ctx, type, mappingKind, targetAlias, targetTable, cleanColumn, writeAnalysis);
+                projectionEvents.expressionSource(ctx, writeAnalysis);
+            }
+            return;
         }
         projectionEvents.expressionSource(ctx, analysis);
     }

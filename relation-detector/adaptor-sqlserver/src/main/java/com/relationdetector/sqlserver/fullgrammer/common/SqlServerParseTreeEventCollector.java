@@ -412,7 +412,11 @@ public final class SqlServerParseTreeEventCollector {
     }
 
     private Optional<ColumnEndpoint> singleColumnEndpoint(ParseTree expression) {
-        List<ParserRuleContext> columns = descendants(expression, "full_column_name");
+        Optional<ParserRuleContext> directColumn = directColumnExpression(expression);
+        if (directColumn.isEmpty()) {
+            return Optional.empty();
+        }
+        List<ParserRuleContext> columns = List.of(directColumn.get());
         if (columns.size() != 1) {
             return Optional.empty();
         }
@@ -424,6 +428,26 @@ public final class SqlServerParseTreeEventCollector {
             return Optional.empty();
         }
         return Optional.of(new ColumnEndpoint(parts.get(parts.size() - 2), parts.get(parts.size() - 1)));
+    }
+
+    private Optional<ParserRuleContext> directColumnExpression(ParseTree expression) {
+        if (!(expression instanceof ParserRuleContext ctx)) {
+            return Optional.empty();
+        }
+        List<ParserRuleContext> columns = directChildren(ctx, "full_column_name");
+        if (columns.size() != 1) {
+            List<ParserRuleContext> nestedExpressions = directChildren(ctx, "expression");
+            if (columns.isEmpty() && nestedExpressions.size() == 1) {
+                return directColumnExpression(nestedExpressions.get(0));
+            }
+            return Optional.empty();
+        }
+        for (ParserRuleContext child : directChildren(ctx)) {
+            if (child != columns.get(0) && !ruleName(child).equals("id_")) {
+                return Optional.empty();
+            }
+        }
+        return Optional.of(columns.get(0));
     }
 
     private Optional<String> lastIdText(ParserRuleContext ctx) {

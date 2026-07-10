@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
@@ -678,8 +679,7 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
             OracleRelationSqlParser.SelectStatementContext select,
             OracleExpressionAnalysis selectedExpression
     ) {
-        if (selectedExpression.transform() != LineageTransformType.AGGREGATE
-                || selectedExpression.flowKind() != LineageFlowKind.VALUE) {
+        if (!containsAggregateFunction(select.querySpecification().selectList())) {
             return selectedExpression;
         }
         OracleExpressionAnalysis context = scalarSubqueryContext(select);
@@ -688,10 +688,25 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
         }
         OracleExpressionAnalysis combined = OracleExpressionAnalysis.combine(
                 selectedExpression.transform(),
-                LineageFlowKind.VALUE,
+                selectedExpression.flowKind(),
                 selectedExpression,
                 context);
-        return new OracleExpressionAnalysis(combined.sources(), selectedExpression.transform(), LineageFlowKind.VALUE);
+        return new OracleExpressionAnalysis(combined.sources(), selectedExpression.transform(), selectedExpression.flowKind());
+    }
+
+    private boolean containsAggregateFunction(ParseTree tree) {
+        if (tree instanceof OracleRelationSqlParser.FunctionExpressionContext function) {
+            String functionName = baseName(qualifiedName(function.functionCall().qualifiedName())).toLowerCase(Locale.ROOT);
+            if (Set.of("sum", "avg", "count", "min", "max").contains(functionName)) {
+                return true;
+            }
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            if (containsAggregateFunction(tree.getChild(index))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private OracleExpressionAnalysis scalarSubqueryContext(OracleRelationSqlParser.SelectStatementContext select) {

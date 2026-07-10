@@ -438,9 +438,15 @@ public final class ObjectSqlFileExtractor {
         if (value == null || value.isBlank()) {
             return "";
         }
-        return value.replace(" . ", ".")
+        String normalized = value;
+        int args = normalized.indexOf('(');
+        if (args >= 0) {
+            normalized = normalized.substring(0, args);
+        }
+        return normalized.replace(" . ", ".")
                 .replace("..", ".")
-                .replaceAll("^\\.+|\\.+$", "");
+                .replaceAll("^\\.+|\\.+$", "")
+                .replaceAll("[)]+$", "");
     }
 
     private static boolean startsOracleObject(String trimmed) {
@@ -460,6 +466,6 @@ public final class ObjectSqlFileExtractor {
                 && parts[4].equalsIgnoreCase("BODY")
                         ? 5
                         : 4;
-        return parts[nameIndex].replace("\"", "").replace("(", "");
+        return normalizeObjectName(parts[nameIndex].replace("\"", ""));
     }
 }

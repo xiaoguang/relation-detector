@@ -107,7 +107,7 @@ public final class NamingEvidenceExtractor {
                     candidate.source(),
                     candidate.target(),
                     NamingRuleScope.RELATIONSHIP_CANDIDATE,
-                    hasSelfJoinRole(candidate),
+                    hasSelfJoinRole(candidate) || isDeclaredSelfReference(candidate),
                     ruleSet)) {
                 add(result, seen, candidate(match,
                         "naming heuristic",
@@ -265,6 +265,17 @@ public final class NamingEvidenceExtractor {
     private boolean hasSelfJoinRole(RelationshipCandidate candidate) {
         return candidate.evidence().stream()
                 .anyMatch(evidence -> Boolean.TRUE.equals(evidence.attributes().get("selfJoinRole")));
+    }
+
+    private boolean isDeclaredSelfReference(RelationshipCandidate candidate) {
+        if (!candidate.source().table().normalizedName().equals(candidate.target().table().normalizedName())
+                || candidate.source().column().normalizedName().equals(candidate.target().column().normalizedName())) {
+            return false;
+        }
+        return candidate.evidence().stream().anyMatch(evidence -> switch (evidence.type()) {
+            case DDL_FOREIGN_KEY, METADATA_FOREIGN_KEY -> true;
+            default -> false;
+        });
     }
 
     private String text(Map<String, Object> attributes, String key) {

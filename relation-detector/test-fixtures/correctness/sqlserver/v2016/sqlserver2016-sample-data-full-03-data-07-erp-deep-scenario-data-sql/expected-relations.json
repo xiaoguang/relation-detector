@@ -1,7 +1,6 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:dbo.account_subjects.id->dbo.budget_versions.ledger_book_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.accounting_periods.period_code->dbo.sales_orders.order_date:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.budget_versions.ledger_book_id->dbo.departments.id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.cashier_journals.account_id->dbo.reconciliations.account_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.cashier_journals.reference_id->dbo.sales_orders.id:SQL_LOG_JOIN",

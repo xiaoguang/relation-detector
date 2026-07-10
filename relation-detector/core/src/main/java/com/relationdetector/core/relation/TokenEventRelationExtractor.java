@@ -300,6 +300,9 @@ public final class TokenEventRelationExtractor {
                 if (event.type() != StructuredParseEventType.PROJECTION_ITEM) {
                     continue;
                 }
+                if (!isDirectValueProjection(event)) {
+                    continue;
+                }
                 String outputAlias = text(event, "outputAlias");
                 String outputColumn = text(event, "outputColumn");
                 if (outputAlias.isBlank() || outputColumn.isBlank()) {
@@ -314,6 +317,13 @@ public final class TokenEventRelationExtractor {
             changed |= copyIgnoredRowsetAliases(events, ignoredRowsets, projections);
         } while (changed);
         return projections;
+    }
+
+    private boolean isDirectValueProjection(StructuredSqlEvent event) {
+        String transformType = text(event, "transformType");
+        String flowKind = text(event, "flowKind");
+        return (transformType.isBlank() || "DIRECT".equalsIgnoreCase(transformType))
+                && (flowKind.isBlank() || "VALUE".equalsIgnoreCase(flowKind));
     }
 
     private ColumnRef firstResolvableSource(

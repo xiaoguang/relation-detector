@@ -229,6 +229,32 @@ class SqlServerFullGrammerLineageExpressionTest {
                         + fingerprints + " events=" + result.events());
     }
 
+    @Test
+    void fullGrammerDoesNotEmitEqualityRelationForFunctionWrappedColumnComparison() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                SELECT so.id
+                FROM dbo.sales_orders AS so
+                JOIN dbo.accounting_periods AS ap
+                  ON ap.period_code = CONVERT(NVARCHAR(7), so.order_date, 120);
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-function-wrapped-equality-co.sql", 1, 1, Map.of());
+
+        StructuredParseResult result = new SqlServer2025FullGrammerDialectModule()
+                .sqlParser()
+                .parseSql(statement, null);
+
+        var fingerprints = new TokenEventRelationExtractor().extract(statement, result)
+                .stream()
+                .map(relation -> relation.relationType() + ":"
+                        + relation.source().displayName() + "->"
+                        + relation.target().displayName())
+                .toList();
+
+        assertTrue(fingerprints.stream().noneMatch(fingerprint ->
+                        fingerprint.equals("CO_OCCURRENCE:dbo.accounting_periods.period_code->dbo.sales_orders.order_date")),
+                () -> "Function(column) equality must not be emitted as direct column equality: "
+                        + fingerprints + " events=" + result.events());
+    }
+
     private List<NamingEvidenceCandidate> namingEvidence(StructuredParseResult result) {
         return new NamingEvidenceExtractor().extractFromDdlEvents(result.events());
     }

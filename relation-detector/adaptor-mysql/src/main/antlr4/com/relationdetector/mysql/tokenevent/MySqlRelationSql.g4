@@ -180,7 +180,11 @@ havingClause
     ;
 
 orderByClause
-    : ORDER BY expression (COMMA expression)*
+    : ORDER BY orderByItem (COMMA orderByItem)*
+    ;
+
+orderByItem
+    : expression identifier?
     ;
 
 limitClause
@@ -402,6 +406,7 @@ predicate
     | expression IN LPAREN expressionList RPAREN                          # literalInPredicate
     | expression IS NOT? NULL                                             # isNullPredicate
     | expression likeOperator expression (ESCAPE expression)?             # likePredicate
+    | expression NOT? BETWEEN expression AND expression                    # betweenPredicate
     | expression comparisonOperator expression                            # comparisonPredicate
     | LPAREN predicate RPAREN                                             # parenPredicate
     | expression                                                          # expressionPredicate
@@ -413,6 +418,7 @@ booleanSelectExpression
     | NOT booleanSelectExpression                                         # selectNotBoolean
     | expression IS NOT? NULL                                             # selectIsNullBoolean
     | expression likeOperator expression (ESCAPE expression)?             # selectLikeBoolean
+    | expression NOT? BETWEEN expression AND expression                    # selectBetweenBoolean
     | expression comparisonOperator expression                            # selectComparisonBoolean
     | LPAREN booleanSelectExpression RPAREN                               # selectParenBoolean
     ;
@@ -500,7 +506,7 @@ literal
 
 sqlToken
     : SELECT | WITH | AS | FROM | JOIN | STRAIGHT_JOIN | ON | INNER | LEFT | RIGHT | FULL
-    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE
+    | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE | BETWEEN
     | USING | GROUP | BY | HAVING | ORDER | LIMIT | UNION | INSERT | INTO | UPDATE
     | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE | DO
@@ -538,6 +544,7 @@ IN: I N;
 IS: I S;
 LIKE: L I K E;
 ESCAPE: E S C A P E;
+BETWEEN: B E T W E E N;
 GROUP: G R O U P;
 BY: B Y;
 HAVING: H A V I N G;

@@ -114,6 +114,12 @@ The latest sample-data output audit checked every generated JSON in `relation-de
 - `warning-codes.tsv` is clean: every parser reports `NONE 0`.
 - `rawEvidence.source` no longer contains the local absolute workspace path.
 
+The detailed future repair backlog from the latest JSON + SQL audit is recorded in
+[`sample-data-output-audit-backlog.md`](sample-data-output-audit-backlog.md). The key
+point is that clean JSON structure and zero diagnostics do not prove the SQL assets
+are schema-valid; several current count anomalies come from SQL/schema mismatches
+and should be fixed before using count parity as a parser quality signal.
+
 Remaining implementation mismatches that are not solved by documentation:
 
 | Area | Concrete evidence | Status |

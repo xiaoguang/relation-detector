@@ -2,6 +2,8 @@
   "fingerprints": [
     "naming:inventory.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:products.category_id->product_categories.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:purchase_orders.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH"
+    "naming:purchase_order_items.order_id->purchase_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:purchase_orders.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
+    "naming:purchase_receipt_items.order_item_id->purchase_order_items.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
   ]
 }

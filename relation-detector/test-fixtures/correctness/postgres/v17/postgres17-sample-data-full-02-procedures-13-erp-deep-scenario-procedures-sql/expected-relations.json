@@ -2,7 +2,6 @@
   "fingerprints": [
     "CO_OCCURRENCE:account_subjects.subject_code->accounts.code:SQL_LOG_JOIN",
     "CO_OCCURRENCE:boms.parent_product_id->production_plans.product_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:budget_items.period_code->vouchers.voucher_date:SQL_LOG_JOIN",
     "CO_OCCURRENCE:category_dim.source_category_id->products.category_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:customers.id->master_data_change_requests.master_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:finished_goods_receipts.product_id->inventory.product_id:SQL_LOG_JOIN",

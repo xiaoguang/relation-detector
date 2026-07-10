@@ -14,7 +14,6 @@
     "CO_OCCURRENCE:catalog_categories.category_id->running_promotions.target_category_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:chart_of_accounts.account_id->journal_entries.account_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:claim_diagnoses.claim_id->medical_claims.claim_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:corporate_tax_matrix.jurisdiction_string->financial_subsidiaries.tax_jurisdiction:SQL_LOG_JOIN",
     "CO_OCCURRENCE:crm_customers.customer_uuid->customer_interactions.customer_uuid:SQL_LOG_JOIN",
     "CO_OCCURRENCE:customer_agents.agent_id->customer_interactions.assigned_agent_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:customer_disputes.customer_id->sales_orders.customer_id:SQL_LOG_EXISTS",
