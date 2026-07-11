@@ -41,13 +41,13 @@ public final class NamingEvidenceExtractor {
         if (metadata == null) {
             return List.of();
         }
-        List<Endpoint> endpoints = new ArrayList<>();
+        List<EndpointObservation> endpoints = new ArrayList<>();
         for (ColumnRef column : metadata.columns()) {
-            endpoints.add(Endpoint.column(column));
+            endpoints.add(metadataObservation(column));
         }
         for (MetadataColumnFact fact : metadata.columnFacts()) {
             TableId table = TableId.of(fact.schema(), fact.tableName());
-            endpoints.add(Endpoint.column(new ColumnRef(table, fact.columnName(), fact.columnName(),
+            endpoints.add(metadataObservation(new ColumnRef(table, fact.columnName(), fact.columnName(),
                     fact.dataType(), fact.nullable())));
         }
         return extractFromEndpoints(endpoints, "metadata", "metadata catalog column names",
@@ -65,7 +65,7 @@ public final class NamingEvidenceExtractor {
         if (events == null || events.isEmpty()) {
             return List.of();
         }
-        List<Endpoint> endpoints = new ArrayList<>();
+        List<EndpointObservation> endpoints = new ArrayList<>();
         String source = "DDL column inventory";
         for (StructuredSqlEvent event : events) {
             if (event.type() != StructuredParseEventType.DDL_COLUMN) {
@@ -76,7 +76,7 @@ public final class NamingEvidenceExtractor {
             if (table.isBlank() || column.isBlank()) {
                 continue;
             }
-            endpoints.add(Endpoint.column(ColumnRef.of(tableId(table), column)));
+            endpoints.add(ddlObservation(event, ColumnRef.of(tableId(table), column)));
             if (event.sourceName() != null && !event.sourceName().isBlank()) {
                 source = event.sourceName();
             }
@@ -111,14 +111,15 @@ public final class NamingEvidenceExtractor {
                     ruleSet)) {
                 add(result, seen, candidate(match,
                         "naming heuristic",
-                        match.source().displayName() + " matches " + match.target().displayName()));
+                        match.source().displayName() + " matches " + match.target().displayName(),
+                        structuralEvidence(candidate)));
             }
         }
         return List.copyOf(result);
     }
 
     private List<NamingEvidenceCandidate> extractFromEndpoints(
-            List<Endpoint> endpoints,
+            List<EndpointObservation> endpoints,
             String source,
             String detailPrefix,
             NamingRuleScope scope,
@@ -126,36 +127,38 @@ public final class NamingEvidenceExtractor {
     ) {
         List<NamingEvidenceCandidate> result = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
-        List<Endpoint> uniqueEndpoints = dedupeEndpoints(endpoints);
-        for (int leftIndex = 0; leftIndex < uniqueEndpoints.size(); leftIndex++) {
-            for (int rightIndex = leftIndex + 1; rightIndex < uniqueEndpoints.size(); rightIndex++) {
-                Endpoint left = uniqueEndpoints.get(leftIndex);
-                Endpoint right = uniqueEndpoints.get(rightIndex);
-                if (left.table().normalizedName().equals(right.table().normalizedName())) {
+        List<List<EndpointObservation>> endpointGroups = groupEndpointObservations(endpoints);
+        for (int leftIndex = 0; leftIndex < endpointGroups.size(); leftIndex++) {
+            for (int rightIndex = leftIndex + 1; rightIndex < endpointGroups.size(); rightIndex++) {
+                List<EndpointObservation> leftGroup = endpointGroups.get(leftIndex);
+                List<EndpointObservation> rightGroup = endpointGroups.get(rightIndex);
+                EndpointObservation left = leftGroup.get(0);
+                EndpointObservation right = rightGroup.get(0);
+                if (left.endpoint().table().normalizedName().equals(right.endpoint().table().normalizedName())) {
                     continue;
                 }
-                for (NamingRuleEngine.Match match : namingRuleEngine.match(left, right, scope, false, ruleSet)) {
+                for (NamingRuleEngine.Match match : namingRuleEngine.match(
+                        left.endpoint(), right.endpoint(), scope, false, ruleSet)) {
                     add(result, seen, candidate(match, source,
                             detailPrefix + ": " + match.source().displayName()
-                                    + " matches " + match.target().displayName()));
+                                    + " matches " + match.target().displayName(),
+                            observationsFor(match, leftGroup, rightGroup)));
                 }
             }
         }
         return List.copyOf(result);
     }
 
-    private List<Endpoint> dedupeEndpoints(List<Endpoint> endpoints) {
-        List<Endpoint> result = new ArrayList<>();
-        Set<String> seen = new LinkedHashSet<>();
-        for (Endpoint endpoint : endpoints) {
-            if (endpoint == null || !endpoint.isColumnLevel()) {
+    private List<List<EndpointObservation>> groupEndpointObservations(List<EndpointObservation> endpoints) {
+        Map<String, List<EndpointObservation>> grouped = new LinkedHashMap<>();
+        for (EndpointObservation observation : endpoints) {
+            if (observation == null || !observation.endpoint().isColumnLevel()) {
                 continue;
             }
-            if (seen.add(endpoint.normalizedKey())) {
-                result.add(endpoint);
-            }
+            grouped.computeIfAbsent(observation.endpoint().normalizedKey(), ignored -> new ArrayList<>())
+                    .add(observation);
         }
-        return result;
+        return List.copyOf(grouped.values());
     }
 
     private TableId tableId(String raw) {
@@ -215,9 +218,64 @@ public final class NamingEvidenceExtractor {
         return parts;
     }
 
-    private NamingEvidenceCandidate candidate(NamingRuleEngine.Match match, String source, String detail) {
+    private NamingEvidenceCandidate candidate(
+            NamingRuleEngine.Match match,
+            String source,
+            String detail,
+            List<Evidence> rawEvidence
+    ) {
         return new NamingEvidenceCandidate(match.source(), match.target(), evidenceFor(match, source, detail),
-                match.rule(), match.directionHint());
+                match.rule(), match.directionHint(), rawEvidence);
+    }
+
+    private EndpointObservation metadataObservation(ColumnRef column) {
+        Endpoint endpoint = Endpoint.column(column);
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        attributes.put("catalogSchema", nullToEmpty(column.table().schema()));
+        attributes.put("catalogTable", column.table().tableName());
+        attributes.put("catalogColumn", column.columnName());
+        return new EndpointObservation(endpoint, new Evidence(
+                EvidenceType.NAMING_MATCH,
+                BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                EvidenceSourceType.METADATA,
+                "metadata catalog",
+                "metadata catalog column " + endpoint.displayName(),
+                attributes));
+    }
+
+    private EndpointObservation ddlObservation(StructuredSqlEvent event, ColumnRef column) {
+        Endpoint endpoint = Endpoint.column(column);
+        Map<String, Object> attributes = new LinkedHashMap<>(event.attributes());
+        attributes.put("line", event.line());
+        return new EndpointObservation(endpoint, new Evidence(
+                EvidenceType.NAMING_MATCH,
+                BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                EvidenceSourceType.DDL_FILE,
+                SourceNameNormalizer.normalize(event.sourceName()),
+                "DDL column inventory: " + endpoint.displayName(),
+                attributes));
+    }
+
+    private List<Evidence> observationsFor(
+            NamingRuleEngine.Match match,
+            List<EndpointObservation> left,
+            List<EndpointObservation> right
+    ) {
+        List<Evidence> observations = new ArrayList<>(left.size() + right.size());
+        if (match.source().normalizedKey().equals(left.get(0).endpoint().normalizedKey())) {
+            left.stream().map(EndpointObservation::evidence).forEach(observations::add);
+            right.stream().map(EndpointObservation::evidence).forEach(observations::add);
+        } else {
+            right.stream().map(EndpointObservation::evidence).forEach(observations::add);
+            left.stream().map(EndpointObservation::evidence).forEach(observations::add);
+        }
+        return List.copyOf(observations);
+    }
+
+    private List<Evidence> structuralEvidence(RelationshipCandidate candidate) {
+        return candidate.evidence().stream()
+                .filter(this::isStructuralEndpointEvidence)
+                .toList();
     }
 
     static Evidence evidenceFor(NamingRuleEngine.Match match, String source, String detail) {
@@ -254,12 +312,16 @@ public final class NamingEvidenceExtractor {
     }
 
     private boolean hasStructuralEndpointEvidence(RelationshipCandidate candidate) {
-        return candidate.evidence().stream().anyMatch(evidence -> switch (evidence.type()) {
+        return candidate.evidence().stream().anyMatch(this::isStructuralEndpointEvidence);
+    }
+
+    private boolean isStructuralEndpointEvidence(Evidence evidence) {
+        return switch (evidence.type()) {
             case DDL_FOREIGN_KEY, METADATA_FOREIGN_KEY,
                     SQL_LOG_JOIN, SQL_LOG_SUBQUERY_IN, SQL_LOG_EXISTS, SQL_LOG_COLUMN_CO_OCCURRENCE,
                     VIEW_JOIN, PROCEDURE_JOIN, TRIGGER_REFERENCE -> true;
             default -> false;
-        });
+        };
     }
 
     private boolean hasSelfJoinRole(RelationshipCandidate candidate) {
@@ -294,5 +356,12 @@ public final class NamingEvidenceExtractor {
             text = text.substring(1, text.length() - 1).trim();
         }
         return text;
+    }
+
+    private String nullToEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
+    private record EndpointObservation(Endpoint endpoint, Evidence evidence) {
     }
 }

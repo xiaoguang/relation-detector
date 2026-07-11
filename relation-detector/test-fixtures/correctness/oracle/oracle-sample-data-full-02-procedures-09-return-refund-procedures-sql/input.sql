@@ -213,9 +213,10 @@ BEGIN
     RETURNING id INTO v_voucher_id;
 
     -- 退款分录: 借:主营业务收入 贷:银行存款
-    INSERT INTO voucher_items (voucher_id, account_id, line_no, direction, amount, summary) VALUES
-    (v_voucher_id, 15, 1, 'debit', p_actual_refund, '冲减销售收入-退货退款'),
-    (v_voucher_id, 3, 2, 'credit', p_actual_refund, '银行存款退款');
+    INSERT ALL
+    INTO voucher_items (voucher_id, account_id, line_no, direction, amount, summary) VALUES (v_voucher_id, 15, 1, 'debit', p_actual_refund, '冲减销售收入-退货退款')
+    INTO voucher_items (voucher_id, account_id, line_no, direction, amount, summary) VALUES (v_voucher_id, 3, 2, 'credit', p_actual_refund, '银行存款退款')
+SELECT 1 FROM dual;
 
     UPDATE vouchers SET total_debit = p_actual_refund, total_credit = p_actual_refund WHERE id = v_voucher_id;
 
@@ -461,9 +462,10 @@ BEGIN
         'posted')
     RETURNING id INTO v_voucher_id;
 
-    INSERT INTO voucher_items (voucher_id, account_id, line_no, direction, amount, summary) VALUES
-    (v_voucher_id, 19, 1, 'debit', v_total_loss, '管理费用-报损损失'),
-    (v_voucher_id, 8, 2, 'credit', v_total_loss, '库存商品-报废减少');
+    INSERT ALL
+    INTO voucher_items (voucher_id, account_id, line_no, direction, amount, summary) VALUES (v_voucher_id, 19, 1, 'debit', v_total_loss, '管理费用-报损损失')
+    INTO voucher_items (voucher_id, account_id, line_no, direction, amount, summary) VALUES (v_voucher_id, 8, 2, 'credit', v_total_loss, '库存商品-报废减少')
+SELECT 1 FROM dual;
 
     UPDATE vouchers SET total_debit = v_total_loss, total_credit = v_total_loss WHERE id = v_voucher_id;
 
@@ -588,9 +590,9 @@ BEGIN
         '品类退货率' AS dimension,
         pc.name AS category_name,
         sr.return_type,
-        COUNT(DISTINCT sr.id)(19) AS return_count,
+        COUNT(DISTINCT sr.id) AS return_count,
         SUM(sr.total_amount) AS return_amount,
-        (SELECT COUNT(DISTINCT so.id)(19) FROM sales_orders so
+        (SELECT COUNT(DISTINCT so.id) FROM sales_orders so
          JOIN sales_order_items soi ON so.id = soi.order_id
          JOIN products p ON soi.product_id = p.id
          WHERE p.category_id = pc.id AND so.order_date BETWEEN p_start_date AND p_end_date
@@ -617,9 +619,9 @@ BEGIN
         '门店退货率: ' || w.name,
         w.name,
         NULL,
-        COUNT(DISTINCT sr.id)(19),
+        COUNT(DISTINCT sr.id),
         SUM(sr.total_amount),
-        (SELECT COUNT(DISTINCT so.id)(19) FROM sales_orders so WHERE so.warehouse_id = w.id
+        (SELECT COUNT(DISTINCT so.id) FROM sales_orders so WHERE so.warehouse_id = w.id
          AND so.order_date BETWEEN p_start_date AND p_end_date AND so.status NOT IN ('draft', 'cancelled')),
         ROUND(SUM(sr.total_amount) * 100.0 / NULLIF(
             (SELECT SUM(so.total_amount) FROM sales_orders so WHERE so.warehouse_id = w.id
@@ -637,9 +639,9 @@ BEGIN
         '客户退货率: ' || c.name,
         c.name,
         NULL,
-        COUNT(DISTINCT sr.id)(19),
+        COUNT(DISTINCT sr.id),
         SUM(sr.total_amount),
-        (SELECT COUNT(DISTINCT so.id)(19) FROM sales_orders so WHERE so.customer_id = c.id
+        (SELECT COUNT(DISTINCT so.id) FROM sales_orders so WHERE so.customer_id = c.id
          AND so.order_date BETWEEN p_start_date AND p_end_date AND so.status NOT IN ('draft', 'cancelled')),
         ROUND(SUM(sr.total_amount) * 100.0 / NULLIF(
             (SELECT SUM(so.total_amount) FROM sales_orders so WHERE so.customer_id = c.id
@@ -708,7 +710,7 @@ BEGIN
         p_start_date AS period_start,
         p_end_date AS period_end,
         -- 销售退货
-        COALESCE(sri.return_order_count, 0)(19) AS sales_return_orders,
+        COALESCE(sri.return_order_count, 0) AS sales_return_orders,
         COALESCE(sri.total_return_amount, 0) AS sales_return_amount,
         COALESCE(sri.total_refund_amount, 0) AS actual_refund,
         COALESCE(sri.total_cost_recovered, 0) AS cost_recovered_to_inventory,
@@ -719,11 +721,11 @@ BEGIN
             + COALESCE(sri.scrapped_cost, 0) + COALESCE(sri.total_restock_fee, 0)
             + COALESCE(sri.total_shipping_fee, 0) AS net_loss_from_sales_returns,
         -- 采购退货
-        COALESCE(pri.return_count, 0)(19) AS purchase_return_orders,
+        COALESCE(pri.return_count, 0) AS purchase_return_orders,
         COALESCE(pri.total_return_amount, 0) AS purchase_return_amount,
         COALESCE(pri.total_refund_received, 0) AS refund_received_from_supplier,
         -- 报损
-        COALESCE(di.report_count, 0)(19) AS damage_reports,
+        COALESCE(di.report_count, 0) AS damage_reports,
         COALESCE(di.total_loss, 0) AS total_damage_loss,
         -- 综合净影响
         (COALESCE(sri.total_refund_amount, 0) - COALESCE(sri.total_cost_recovered, 0)

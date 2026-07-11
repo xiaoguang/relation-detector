@@ -12,6 +12,11 @@
     "naming:promotion_usages.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_order_items.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_order_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
-    "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH"
+    "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
+    "naming:serial_number_logs.serial_number_id->serial_numbers.id:TABLE_ID:NAMING_MATCH",
+    "naming:serial_numbers.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:serial_numbers.purchase_receipt_id->purchase_receipts.id:TABLE_ID:NAMING_MATCH",
+    "naming:serial_numbers.return_id->sales_returns.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:serial_numbers.sales_order_id->sales_orders.id:TABLE_ID:NAMING_MATCH"
   ]
 }

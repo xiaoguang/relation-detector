@@ -60,7 +60,9 @@ public final class ScanResultReader {
 - `relationships`、`dataLineages`、`derivedRelationships`、`derivedDataLineages`、`namingEvidence`、`diagnostics` 直接 append。
 - 不在 reader 层做 semantic 去重、confidence 重算或 evidence 合并。
 
-### 3.2 精确输入 Schema
+### 3.2 输入 Schema 与当前校验边界
+
+下列字段是 relation-detector 正常输出契约；当前 reader 的强制校验比该契约更轻：只校验文件存在、JSON root 是 object、`database.type` 非空，以及多 input 的 `database.type/schema` 一致。`database.schema`、`generatedAt`、summary count 和各 fact 内部字段当前不会在 reader 层做完整 schema validation；缺失数组按空数组处理，缺失字符串按空字符串处理。严格 schema validation 是尚未实现的输入 gate，不能把下面标注的“契约必填”理解为当前代码已经逐字段拒绝。
 
 ```pseudo-json
 {
@@ -138,7 +140,7 @@ public final class ScanResultReader {
 }
 ```
 
-`ScanBundle` 当前保留 relation-detector JSON 的事实数组为 `JsonNode`，避免在 reader 层复制 relation-detector schema。relation-detector 顶层 `warnings` 在 semantic reader 中映射为 `ScanBundle.diagnostics`；当前 reader 不读取独立的顶层 `diagnostics` 字段。索引、typed semantic object 和 catalog snapshot 是后续模块职责，不是当前 reader 输出。
+`ScanBundle` 当前保留 relation-detector JSON 的事实数组为 `JsonNode`，避免在 reader 层复制 relation-detector schema。relation-detector 顶层 `warnings` 在 semantic reader 中映射为 `ScanBundle.diagnostics`；当前 reader 不读取独立的顶层 `diagnostics` 字段。`inputFiles` 保存调用方传入的 `Path`，`SemanticKgBuilder` 当前在 build run 中把它渲染为绝对路径；这不符合可移植 artifact 的长期目标，后续应改为显式 source id 或工作区相对路径。索引、typed semantic object 和 catalog snapshot 是后续模块职责，不是当前 reader 输出。
 
 ## 4. 处理流程图
 

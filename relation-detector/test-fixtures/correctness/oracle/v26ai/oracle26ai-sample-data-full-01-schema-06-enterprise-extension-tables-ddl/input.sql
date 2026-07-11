@@ -176,7 +176,7 @@ CREATE TABLE stocktake_items (
     batch_id NUMBER(19) NULL,
     book_quantity NUMBER(10) NOT NULL,
     counted_quantity NUMBER(10) NOT NULL,
-    variance_quantity NUMBER(10) GENERATED ALWAYS AS (counted_quantity - book_quantity) STORED,
+    variance_quantity NUMBER(10) GENERATED ALWAYS AS (counted_quantity - book_quantity) VIRTUAL,
     variance_reason VARCHAR2(300) NULL,
     CONSTRAINT fk_stocktake_item_stocktake FOREIGN KEY (stocktake_id) REFERENCES stocktakes(id) ON DELETE CASCADE,
     CONSTRAINT fk_stocktake_item_product FOREIGN KEY (product_id) REFERENCES products(id),

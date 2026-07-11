@@ -114,9 +114,9 @@ CREATE TABLE ar_aging_snapshots (
     order_id NUMBER(19) CHECK (order_id >= 0) NOT NULL,
     invoice_amount NUMBER(18,2) NOT NULL,
     paid_amount NUMBER(18,2) DEFAULT 0.00,
-    outstanding_amount NUMBER(18,2) GENERATED ALWAYS AS (invoice_amount - paid_amount) STORED,
+    outstanding_amount NUMBER(18,2) GENERATED ALWAYS AS (invoice_amount - paid_amount) VIRTUAL,
     due_date DATE NOT NULL,
-    aging_days NUMBER(10) GENERATED ALWAYS AS (snapshot_date - due_date) STORED,
+    aging_days NUMBER(10) GENERATED ALWAYS AS (snapshot_date - due_date) VIRTUAL,
     aging_bucket VARCHAR2(20) GENERATED ALWAYS AS (
         CASE
             WHEN snapshot_date - due_date <= 0 THEN '未到期'
@@ -127,7 +127,7 @@ CREATE TABLE ar_aging_snapshots (
             WHEN snapshot_date - due_date <= 365 THEN '181-365天'
             ELSE '365天以上'
         END
-    ) STORED,
+    ) VIRTUAL,
     bad_debt_provision NUMBER(18,2) GENERATED ALWAYS AS (
         ROUND((invoice_amount - paid_amount) *
         CASE
@@ -136,7 +136,7 @@ CREATE TABLE ar_aging_snapshots (
             WHEN snapshot_date - due_date <= 365 THEN 0.20
             ELSE 0.50
         END, 2)
-    ) STORED,
+    ) VIRTUAL,
     last_collection_date DATE NULL,
     collection_notes VARCHAR2(500) NULL,
     CONSTRAINT fk_ar_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
@@ -156,7 +156,7 @@ CREATE TABLE ap_aging_snapshots (
     order_id NUMBER(19) CHECK (order_id >= 0) NOT NULL,
     invoice_amount NUMBER(18,2) NOT NULL,
     paid_amount NUMBER(18,2) DEFAULT 0.00,
-    outstanding_amount NUMBER(18,2) GENERATED ALWAYS AS (invoice_amount - paid_amount) STORED,
+    outstanding_amount NUMBER(18,2) GENERATED ALWAYS AS (invoice_amount - paid_amount) VIRTUAL,
     due_date DATE NOT NULL,
     aging_bucket VARCHAR2(20) GENERATED ALWAYS AS (
         CASE
@@ -168,7 +168,7 @@ CREATE TABLE ap_aging_snapshots (
             WHEN snapshot_date - due_date <= 365 THEN '181-365天'
             ELSE '365天以上'
         END
-    ) STORED,
+    ) VIRTUAL,
     planned_payment_date DATE NULL,
     CONSTRAINT fk_ap_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
     CONSTRAINT fk_ap_order FOREIGN KEY (order_id) REFERENCES purchase_orders(id)
@@ -196,8 +196,8 @@ CREATE TABLE tax_invoices (
     invoice_date DATE NOT NULL,
     amount_excluding_tax NUMBER(18,2) NOT NULL,
     tax_rate NUMBER(5,4) NOT NULL,
-    tax_amount NUMBER(18,2) GENERATED ALWAYS AS (ROUND(amount_excluding_tax * tax_rate, 2)) STORED,
-    amount_including_tax NUMBER(18,2) GENERATED ALWAYS AS (amount_excluding_tax + ROUND(amount_excluding_tax * tax_rate, 2)) STORED,
+    tax_amount NUMBER(18,2) GENERATED ALWAYS AS (ROUND(amount_excluding_tax * tax_rate, 2)) VIRTUAL,
+    amount_including_tax NUMBER(18,2) GENERATED ALWAYS AS (amount_excluding_tax + ROUND(amount_excluding_tax * tax_rate, 2)) VIRTUAL,
     verification_status VARCHAR2(40) DEFAULT 'pending',
     verified_at TIMESTAMP(0) NULL,
     verified_by NUMBER(19) NULL,
@@ -294,7 +294,7 @@ CREATE TABLE inspection_reports (
     defective_qty NUMBER(10) DEFAULT 0,
     defect_rate NUMBER(5,2) GENERATED ALWAYS AS (
         ROUND(defective_qty * 100.0 / NULLIF(inspected_qty, 0), 2)
-    ) STORED,
+    ) VIRTUAL,
     inspection_result VARCHAR2(40) NOT NULL,
     inspector_id NUMBER(19) CHECK (inspector_id >= 0) NOT NULL,
     inspection_date DATE NOT NULL,
@@ -411,10 +411,10 @@ CREATE TABLE cash_flow_forecasts (
     other_expense NUMBER(18,2) DEFAULT 0.00,
     net_cash_flow NUMBER(18,2) GENERATED ALWAYS AS (
         expected_collections - expected_payments - expected_salary - expected_tax + other_income - other_expense
-    ) STORED,
+    ) VIRTUAL,
     ending_balance NUMBER(18,2) GENERATED ALWAYS AS (
         beginning_balance + expected_collections - expected_payments - expected_salary - expected_tax + other_income - other_expense
-    ) STORED,
+    ) VIRTUAL,
     created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (forecast_date, forecast_type)
 );
@@ -528,7 +528,7 @@ CREATE TABLE performance_reviews (
     -- 加权总分 (业绩40% + 能力30% + 态度20% + 出勤10%)
     total_score NUMBER(5,2) GENERATED ALWAYS AS (
         ROUND(performance_score * 0.40 + competency_score * 0.30 + attitude_score * 0.20 + attendance_score * 0.10, 2)
-    ) STORED,
+    ) VIRTUAL,
     grade CHAR(1) GENERATED ALWAYS AS (
         CASE
             WHEN ROUND(performance_score * 0.40 + competency_score * 0.30 + attitude_score * 0.20 + attendance_score * 0.10, 2) >= 90 THEN 'S'
@@ -537,7 +537,7 @@ CREATE TABLE performance_reviews (
             WHEN ROUND(performance_score * 0.40 + competency_score * 0.30 + attitude_score * 0.20 + attendance_score * 0.10, 2) >= 60 THEN 'C'
             ELSE 'D'
         END
-    ) STORED,
+    ) VIRTUAL,
     self_assessment CLOB NULL,
     reviewer_comment CLOB NULL,
     improvement_plan CLOB NULL,
@@ -658,7 +658,7 @@ CREATE TABLE consignment_inventory (
     customer_id NUMBER(19) CHECK (customer_id >= 0) NOT NULL,
     consigned_qty NUMBER(10) NOT NULL,
     consumed_qty NUMBER(10) DEFAULT 0,
-    available_qty NUMBER(10) GENERATED ALWAYS AS (consigned_qty - consumed_qty) STORED,
+    available_qty NUMBER(10) GENERATED ALWAYS AS (consigned_qty - consumed_qty) VIRTUAL,
     unit_price NUMBER(12,2) NOT NULL,
     consigned_date DATE NOT NULL,
     last_consumed_date DATE NULL,
@@ -690,7 +690,7 @@ CREATE TABLE consignment_consumptions (
     consumed_qty NUMBER(10) NOT NULL,
     consumed_date DATE NOT NULL,
     unit_price NUMBER(12,2) NOT NULL,
-    amount NUMBER(18,2) GENERATED ALWAYS AS (consumed_qty * unit_price) STORED,
+    amount NUMBER(18,2) GENERATED ALWAYS AS (consumed_qty * unit_price) VIRTUAL,
     confirmed_by_customer NUMBER(1) DEFAULT 0,
     sales_order_id NUMBER(19) NULL,
     remark VARCHAR2(200) NULL,

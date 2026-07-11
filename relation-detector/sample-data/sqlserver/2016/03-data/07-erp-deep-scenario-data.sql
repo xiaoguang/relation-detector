@@ -429,22 +429,24 @@ SELECT
 FROM [dbo].[purchase_orders] AS po
 WHERE po.[id] > 2;
 
-INSERT INTO [dbo].[budget_items] ([version_id], [department_id], [subject_id], [period_code], [budget_amount], [used_amount])
-SELECT
-    bv.[id] AS [version_id],
-    d.[id] AS [department_id],
-    s.[id] AS [subject_id],
-    '2026-02' AS [period_code],
-    d.[budget] AS [budget_amount],
-    COALESCE(SUM(pc.[amount]), 0) AS [used_amount]
-FROM [dbo].[budget_versions] AS bv
-INNER JOIN [dbo].[departments] AS d
-    ON d.[id] = bv.[ledger_book_id]
-INNER JOIN [dbo].[account_subjects] AS s
-    ON s.[id] = bv.[ledger_book_id]
-LEFT JOIN [dbo].[project_costs] AS pc
-    ON pc.[department_id] = d.[id]
-GROUP BY bv.[id], d.[id], s.[id], d.[budget];
+UPDATE bi
+SET [used_amount] = COALESCE(usage_by_subject.[used_amount], 0)
+FROM [dbo].[budget_items] AS bi
+INNER JOIN [dbo].[account_subjects] AS subject
+    ON subject.[id] = bi.[subject_id]
+LEFT JOIN (
+    SELECT
+        a.[code] AS [subject_code],
+        CONVERT(NVARCHAR(7), v.[voucher_date], 120) AS [period_code],
+        SUM(CASE WHEN vi.[direction] = 'debit' THEN vi.[amount] ELSE 0 END) AS [used_amount]
+    FROM [dbo].[vouchers] AS v
+    INNER JOIN [dbo].[voucher_items] AS vi ON vi.[voucher_id] = v.[id]
+    INNER JOIN [dbo].[accounts] AS a ON a.[id] = vi.[account_id]
+    WHERE v.[status] = 'posted'
+    GROUP BY a.[code], CONVERT(NVARCHAR(7), v.[voucher_date], 120)
+) AS usage_by_subject
+    ON usage_by_subject.[subject_code] = subject.[subject_code]
+   AND usage_by_subject.[period_code] = bi.[period_code];
 
 INSERT INTO [dbo].[sales_fact] ([order_id], [order_item_id], [customer_id], [product_id], [category_dim_id], [warehouse_id], [region_dim_id], [fiscal_date], [payment_id], [quantity_sold], [sales_amount], [paid_amount], [refund_amount], [net_sales_amount], [gross_margin_amount], [order_status], [sales_channel], [created_at])
 SELECT

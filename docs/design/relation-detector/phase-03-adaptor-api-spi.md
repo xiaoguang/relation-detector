@@ -59,6 +59,7 @@ public interface DatabaseAdaptor {
 - `parsers()` 聚合 legacy SQL relation parser、structured SQL parser 和 structured DDL parser。
 - `profiling()` 聚合 data profiler 和 evidence weight adjuster。
 - `metadataCollector()`、`structuredSqlParser()` 等旧方法是兼容层；core 新代码应通过 grouped capability 访问，不再直接依赖旧方法。
+- 当前 `capabilities()` 已由 adaptor 声明，但 core/CLI 尚未把它作为统一 preflight gate；某些 adaptor 还会声明 `METADATA` / `DATABASE_OBJECTS`，而 collector 实际返回保守空结果。能力集合目前是描述性 SPI，尚不能单独证明 live capability 可用。
 
 ## 采集器接口
 
@@ -313,7 +314,7 @@ public record AdaptorCapabilities(
 ) {}
 ```
 
-CLI 可以据此提前校验配置：
+目标上 CLI 应据此提前校验配置；当前生产链路尚未完成这层统一 preflight：
 
 - 用户启用 `dataProfile`，但 adaptor 不支持，则失败或 warning。
 - 用户提供 native log，但 adaptor 不支持对应格式，则提示使用 pure SQL 模式。

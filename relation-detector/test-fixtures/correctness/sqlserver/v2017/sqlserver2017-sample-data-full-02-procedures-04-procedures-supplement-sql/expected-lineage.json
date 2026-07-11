@@ -1,12 +1,14 @@
 {
   "fingerprints": [
-    "VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission",
+    "CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus",
+    "CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission",
+    "VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission",
     "VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount",
+    "VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus",
     "VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.commission_amount",
     "VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_commissions.order_item_id",
     "VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id",
     "VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_commissions.period",
-    "VALUE:DIRECT:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount,dbo.sales_order_items.amount->dbo.sales_commissions.bonus",
     "VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.sales_commissions.employee_id"
   ],
   "forbiddenSources": [],

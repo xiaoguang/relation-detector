@@ -697,13 +697,13 @@ full-grammer SQL 直接通过对应 versioned golden 验收，不再拿 token-ev
 | SQL Server full-grammer v2022 | 40 | 34 / 6 | 768 | 299 | 0 | 371 | 437 |
 | SQL Server full-grammer v2025 | 40 | 33 / 7 | 768 | 299 | 0 | 370 | 436 |
 
-root token-event 与对应 full-grammer 数量不要求完全一致：token-event 是 fallback typed grammar，目标是宽松兼容和高价值结构覆盖；full-grammer 是有 profile 时的 primary，目标是版本严格。两者都必须能从 SQL/DDL 结构解释自己的 golden。当前跨 parser 差异和 follow-up backlog 统一记录在 `docs/parser-audit/all-golden-semantic-review.md`：
+root token-event 与对应 full-grammer 数量不要求完全一致：token-event 是 fallback typed grammar，目标是宽松兼容和高价值结构覆盖；full-grammer 是有 profile 时的 primary，目标是版本严格。两者都必须能从 SQL/DDL 结构解释自己的 golden。当前跨 parser 差异和 follow-up backlog 分别记录在 `docs/parser-audit/all-golden-semantic-review.md`、`parser-comparison-summary.md` 与 `sample-data-output-audit-backlog.md`。Golden review 只覆盖 fixture 基线；sample-data JSON/SQL 审计仍可能发现未进入 golden 分类的 parser gap：
 
 - `EXPECTED_VERSION_DELTA`：PostgreSQL 17/18 版本专属语法导致的合理差异。
 - `PARSER_GAP_TYPED_VISITOR_COVERAGE`：root token-event typed visitor 尚未覆盖 full-grammer 已能确认的结构。
 - `PARSER_GAP_ROUTINE_OR_COMPLEX_QUERY`：routine、trigger、sample-data 复杂业务查询或数据生成 SQL 的 typed visitor coverage backlog。
 
-当前没有新的 `REVIEW_NEEDED` 项。后续若出现无法由 SQL/DDL 结构、版本边界、作用域或 endpoint 类型解释的差异，应写入 parser-audit 审核文档，不应通过刷新 golden 掩盖。
+当前没有未决业务口径类 `REVIEW_NEEDED`。2026-07 审计确认的 derived canonical merge、naming observation、Oracle 版本资产、CASE/scalar-subquery source role、trigger provenance、非平凡 self-update 和 derived naming pool 一致性问题均已修复并有定向测试。自然 sample-data 的 token/full 数量仍可因 SQL 资产和 typed coverage 不同而不同；后续若出现无法由 SQL/DDL 结构、版本边界、作用域或 endpoint 类型解释的差异，应写入 parser-audit 审核文档，不应通过刷新 golden 掩盖。
 
 ### PostgreSQL 版本专属 fixture 差异
 
@@ -876,7 +876,7 @@ COALESCE(sm.avg_cost, wi.default_unit_cost) * oi.quantity
 - `derivedDataLineages`：只从 `LineageFlowKind.VALUE` 的字段血缘边推导；`CONTROL` 和 `NAMING_MATCH` 不参与数据流推导。
 - derived `namingEvidence`：direct namingEvidence 的有向链可生成 `rule=TRANSITIVE_NAMING_PATH` 的 top-level naming evidence，relationship 仍只能通过 `evidenceRef` 引用这个池。JSON 顶层的 `derivedNamingEvidence` 只是轻量阅读视图，方便按 derived name 统计；完整证据仍只在 top-level `namingEvidence` 中维护。
 
-路径推导不会修改直接 relationship / lineage，不参与 parser fallback，也不使用 SQL regex、token span 或名字白名单。默认 `maxPathLength=5`；`maxPathsPerPair=0` 和 `maxFacts=0` 表示不限制，但仍做循环检测和自环过滤。
+路径推导不会修改直接 relationship / lineage，不参与 parser fallback，也不使用 SQL regex、token span 或名字白名单。默认 `maxPathLength=5`；`maxPathsPerPair=0` 和 `maxFacts=0` 表示不限制，但仍做循环检测和自环过滤。最终 derived fact 按 canonical `{kind,source,target,path}` 合并；`flowKind/transformType` 只区分 direct edge variant，不能把同一 endpoint path 拆成多个 derived fact。不同 edge variant 和重复出现位置合并到该 fact 的 `rawEvidence`，observation count 统计真实 occurrence。非相邻 endpoint 重入被拒绝，相邻且有非平凡写入语义的 self-update 可以保留。
 
 Endpoint identity 在 derived graph 中保持 schema 保真：parser 只保留 SQL/DDL 显式写出的 schema，不自动补默认 schema，也不丢弃 schema。`schema.table.column` 与 `table.column` 默认不是同一个 graph key。表内 identity bridge 只允许在同一个 canonical table key 内连接，例如 `orders.id -> orders.customer_id` 或 `dbo.orders.id -> dbo.orders.customer_id`；`orders.id -> dbo.orders.customer_id` 这类 schema-qualified / bare endpoint 混合路径不能被自动桥接。
 

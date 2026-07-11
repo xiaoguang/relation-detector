@@ -1,13 +1,17 @@
 {
   "fingerprints": [
+    "CO_OCCURRENCE:employees.id->warehouses.manager_id:SQL_LOG_JOIN",
     "FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:inventory.warehouse_id->warehouses.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:inventory_transactions.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:product_batches.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:product_batches.supplier_id->suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:products.category_id->product_categories.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:sales_order_items.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:sales_order_items.product_id->products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
+    "FK_LIKE:sales_orders.warehouse_id->warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_return_items.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_return_items.return_id->sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],

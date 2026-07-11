@@ -70,7 +70,15 @@ class OracleParserArchitectureTest {
             new ForbiddenOracleSqlPattern("Mechanical migration produced VARCHAR2 pseudo column reference",
                     Pattern.compile("(?i)\\b[A-Za-z_][A-Za-z0-9_]*\\s*\\.\\s*VARCHAR2\\s*\\(")),
             new ForbiddenOracleSqlPattern("Mechanical migration produced VARCHAR2 pseudo DDL/variable name",
-                    Pattern.compile("(?im)^\\s*VARCHAR2\\s*\\(")));
+                    Pattern.compile("(?im)^\\s*VARCHAR2\\s*\\(")),
+            new ForbiddenOracleSqlPattern("Mechanical migration produced postfix numeric cast artifact",
+                    Pattern.compile("\\)\\s*\\(\\s*\\d+(?:\\s*,\\s*\\d+)?\\s*\\)")),
+            new ForbiddenOracleSqlPattern("Oracle EXTRACT does not support QUARTER",
+                    Pattern.compile("(?i)\\bEXTRACT\\s*\\(\\s*QUARTER\\s+FROM\\b")),
+            new ForbiddenOracleSqlPattern("Oracle natural baseline must not project EXTRACT comparison as SQL BOOLEAN",
+                    Pattern.compile("(?im)^\\s*EXTRACT\\s*\\([^\\n]+\\)\\s*(?:=|<>|!=|<=|>=|<|>)\\s*[^,;]+,\\s*$")),
+            new ForbiddenOracleSqlPattern("Oracle natural baseline must not project OR-combined comparisons as SQL BOOLEAN",
+                    Pattern.compile("(?im)^\\s*[A-Za-z_$#][A-Za-z0-9_.$#]*\\s*=\\s*[^,;\\n]+\\s+OR\\s+[^,;\\n]+,\\s*$")));
 
     @Test
     void oracleTokenEventParserUsesOracleGrammarNotCommonParser() {
@@ -312,7 +320,59 @@ class OracleParserArchitectureTest {
         if (containsTopLevelUpdateFrom(sqlText)) {
             findings.add(repoRoot().relativize(path) + " -> PostgreSQL UPDATE FROM statement");
         }
+        if (!isOracleVersionOnlyFixture(path) && containsOracleMultivalueInsert(sqlText)) {
+            findings.add(repoRoot().relativize(path)
+                    + " -> Oracle natural baseline must not use multivalue INSERT VALUES");
+        }
         return findings;
+    }
+
+    private static boolean isOracleVersionOnlyFixture(Path path) {
+        Path parent = path.getParent();
+        return parent != null && parent.getFileName().toString().contains("-version-");
+    }
+
+    private static boolean containsOracleMultivalueInsert(String sqlText) {
+        var valuesMatcher = Pattern.compile("(?i)\\bVALUES\\b").matcher(sqlText);
+        while (valuesMatcher.find()) {
+            int tupleStart = skipWhitespace(sqlText, valuesMatcher.end());
+            if (tupleStart >= sqlText.length() || sqlText.charAt(tupleStart) != '(') {
+                continue;
+            }
+            int tupleEnd = matchingParenthesis(sqlText, tupleStart);
+            if (tupleEnd < 0) {
+                continue;
+            }
+            int separator = skipWhitespace(sqlText, tupleEnd + 1);
+            if (separator < sqlText.length() && sqlText.charAt(separator) == ',') {
+                int nextTuple = skipWhitespace(sqlText, separator + 1);
+                if (nextTuple < sqlText.length() && sqlText.charAt(nextTuple) == '(') {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static int skipWhitespace(String text, int start) {
+        int index = start;
+        while (index < text.length() && Character.isWhitespace(text.charAt(index))) {
+            index++;
+        }
+        return index;
+    }
+
+    private static int matchingParenthesis(String text, int start) {
+        int depth = 0;
+        for (int index = start; index < text.length(); index++) {
+            char ch = text.charAt(index);
+            if (ch == '(') {
+                depth++;
+            } else if (ch == ')' && --depth == 0) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     private static boolean containsTopLevelUpdateFrom(String sqlText) {

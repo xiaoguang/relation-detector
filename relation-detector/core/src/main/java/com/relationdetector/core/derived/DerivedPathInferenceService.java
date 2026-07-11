@@ -79,6 +79,7 @@ public final class DerivedPathInferenceService {
             List<NamingEvidenceCandidate> namingEvidence,
             ScanConfig config
     ) {
+        Map<String, List<String>> directNamingRefsByPair = directNamingRefsByPair(namingEvidence);
         List<Edge> relationshipEdges = new ArrayList<>();
         List<Edge> reverseStartEdges = new ArrayList<>();
         Set<String> directPairs = new HashSet<>();
@@ -92,7 +93,7 @@ public final class DerivedPathInferenceService {
                 continue;
             }
             directPairs.addAll(pairKeys(relationship.source(), relationship.target()));
-            Edge edge = relationshipEdge(relationship);
+            Edge edge = relationshipEdge(relationship, directNamingRefsByPair);
             relationshipEdges.add(edge);
             Edge reverseEdge = edge.reverse();
             reverseStartEdges.add(reverseEdge);
@@ -102,6 +103,7 @@ public final class DerivedPathInferenceService {
         if (config.derivedIncludeNamingEdgesInRelationshipPaths) {
             namingEvidence.stream()
                     .filter(NamingEvidenceCandidate::directionHint)
+                    .filter(candidate -> !isDerived(candidate.evidence()))
                     .filter(candidate -> candidate.source().isColumnLevel() && candidate.target().isColumnLevel())
                     .map(this::namingEdge)
                     .map(Edge::reverse)
@@ -279,9 +281,70 @@ public final class DerivedPathInferenceService {
                 edges.add(lineageEdge(source, lineage));
             }
         }
-        return enumerate(edges.stream().sorted(edgeComparator()).toList(), config, directPairs, false).stream()
-                .map(path -> toDerivedPath(DerivedPathKind.DATA_LINEAGE, path, config))
-                .toList();
+        List<PathObservation> observations = enumerate(
+                edges.stream().sorted(edgeComparator()).toList(), config, directPairs, false);
+        return mergeLineagePathObservations(observations, config);
+    }
+
+    private List<DerivedPathCandidate> mergeLineagePathObservations(
+            List<PathObservation> observations,
+            ScanConfig config
+    ) {
+        Map<String, List<PathObservation>> grouped = new LinkedHashMap<>();
+        for (PathObservation observation : observations) {
+            grouped.computeIfAbsent(canonicalPathKey(DerivedPathKind.DATA_LINEAGE, observation),
+                    ignored -> new ArrayList<>()).add(observation);
+        }
+        List<DerivedPathCandidate> result = new ArrayList<>();
+        for (List<PathObservation> variants : grouped.values()) {
+            PathObservation representative = variants.stream()
+                    .max(Comparator.comparing(path -> confidence(path, config)))
+                    .orElseThrow();
+            DerivedPathCandidate candidate = new DerivedPathCandidate(
+                    DerivedPathKind.DATA_LINEAGE,
+                    representative.source(),
+                    representative.target(),
+                    endpoints(representative));
+            BigDecimal confidence = confidence(representative, config);
+            candidate.confidence(confidence);
+            candidate.attributes().put("pathLength", representative.edges().size());
+            candidate.attributes().put("containsNamingEdge", false);
+            candidate.attributes().put("containsTableIdentityBridge", false);
+            candidate.attributes().put("path", endpointNames(endpoints(representative)));
+            candidate.attributes().put("observationCount", variants.size());
+
+            List<String> pathEvidenceRefs = variants.stream()
+                    .flatMap(path -> path.edges().stream())
+                    .map(Edge::ref)
+                    .distinct()
+                    .sorted()
+                    .toList();
+            Evidence first = pathEvidence(representative, config, "derived:data_lineage", false,
+                    endpoints(representative), endpoints(representative));
+            Map<String, Object> summaryAttributes = new LinkedHashMap<>(first.attributes());
+            summaryAttributes.put("count", variants.size());
+            summaryAttributes.put("pathEvidenceRefs", pathEvidenceRefs);
+            candidate.evidence().add(new Evidence(
+                    first.type(), confidence, first.sourceType(), first.source(), first.detail(), summaryAttributes));
+            for (PathObservation variant : variants) {
+                candidate.rawEvidence().add(pathEvidence(variant, config, "derived:data_lineage", false,
+                        endpoints(variant), endpoints(variant)));
+            }
+            result.add(candidate);
+            if (limitReached(config, result.size())) {
+                break;
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private String canonicalPathKey(DerivedPathKind kind, PathObservation observation) {
+        return kind.name() + ":" + observation.source().normalizedKey() + "->"
+                + observation.target().normalizedKey() + ":"
+                + endpoints(observation).stream()
+                .map(Endpoint::normalizedKey)
+                .reduce((left, right) -> left + "->" + right)
+                .orElse("");
     }
 
     private List<PathObservation> enumerate(
@@ -389,14 +452,20 @@ public final class DerivedPathInferenceService {
     }
 
     private NamingEvidenceCandidate toRelationshipPathNamingEvidence(PathObservation path, ScanConfig config) {
-        if (!config.derivedNamingEvidenceEnabled || relationshipNamingRefs(path).isEmpty()) {
+        List<String> namingRefs = relationshipNamingRefs(path);
+        if (!config.derivedNamingEvidenceEnabled || namingRefs.isEmpty()) {
             return null;
         }
         List<Endpoint> outputPath = relationshipOutputPath(path.edges());
         List<Endpoint> traversalPath = endpoints(path);
         Endpoint source = outputPath.get(0);
         Endpoint target = outputPath.get(outputPath.size() - 1);
-        Evidence evidence = pathEvidence(path, config, "derived:naming", true, outputPath, traversalPath);
+        Evidence baseEvidence = pathEvidence(path, config, "derived:naming", true, outputPath, traversalPath);
+        Map<String, Object> attributes = new LinkedHashMap<>(baseEvidence.attributes());
+        attributes.put("supportingNamingEvidenceRefs", namingRefs);
+        Evidence evidence = new Evidence(
+                baseEvidence.type(), baseEvidence.score(), baseEvidence.sourceType(),
+                baseEvidence.source(), baseEvidence.detail(), attributes);
         return new NamingEvidenceCandidate(source, target, evidence, TRANSITIVE_NAMING_RULE, true, List.of(evidence));
     }
 
@@ -531,14 +600,19 @@ public final class DerivedPathInferenceService {
         return endpoints.stream().map(Endpoint::displayName).toList();
     }
 
-    private Edge relationshipEdge(RelationshipCandidate relationship) {
+    private Edge relationshipEdge(
+            RelationshipCandidate relationship,
+            Map<String, List<String>> directNamingRefsByPair
+    ) {
         String ref = "relationship:" + relationship.source().normalizedKey() + "->" + relationship.target().normalizedKey();
         return new Edge(relationship.source(), relationship.target(), EdgeKind.RELATIONSHIP,
-                relationship.confidence(), ref, relationshipNamingRefs(relationship));
+                relationship.confidence(), ref,
+                directNamingRefsByPair.getOrDefault(pairKey(relationship.source(), relationship.target()), List.of()));
     }
 
     private Edge lineageEdge(Endpoint source, DataLineageCandidate lineage) {
-        String ref = "lineage:" + source.normalizedKey() + "->" + lineage.target().normalizedKey();
+        String ref = "lineage:" + source.normalizedKey() + "->" + lineage.target().normalizedKey()
+                + ":" + lineage.flowKind().name() + ":" + lineage.transformType().name();
         return new Edge(source, lineage.target(), EdgeKind.LINEAGE, lineage.confidence(), ref, List.of());
     }
 
@@ -555,14 +629,19 @@ public final class DerivedPathInferenceService {
                 naming.evidence().score(), naming.id(), List.of(naming.id()));
     }
 
-    private List<String> relationshipNamingRefs(RelationshipCandidate relationship) {
-        return relationship.evidence().stream()
-                .filter(evidence -> evidence.type() == EvidenceType.NAMING_MATCH)
-                .map(evidence -> evidence.attributes().get("evidenceRef"))
-                .filter(String.class::isInstance)
-                .map(String.class::cast)
-                .sorted()
-                .toList();
+    private Map<String, List<String>> directNamingRefsByPair(List<NamingEvidenceCandidate> namingEvidence) {
+        Map<String, List<String>> refs = new LinkedHashMap<>();
+        namingEvidence.stream()
+                .filter(NamingEvidenceCandidate::directionHint)
+                .filter(candidate -> candidate.source().isColumnLevel() && candidate.target().isColumnLevel())
+                .filter(candidate -> !isDerived(candidate.evidence()))
+                .filter(candidate -> !TRANSITIVE_NAMING_RULE.equals(candidate.rule()))
+                .sorted(Comparator.comparing(NamingEvidenceCandidate::id))
+                .forEach(candidate -> refs.computeIfAbsent(
+                        pairKey(candidate.source(), candidate.target()), ignored -> new ArrayList<>())
+                        .add(candidate.id()));
+        refs.replaceAll((ignored, values) -> values.stream().distinct().sorted().toList());
+        return refs;
     }
 
     private List<String> relationshipNamingRefs(PathObservation path) {

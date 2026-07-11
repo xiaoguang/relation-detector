@@ -1,13 +1,15 @@
 {
   "fingerprints": [
-    "naming:boms.component_product_id->products.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:boms.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:boms.child_product_id->products.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:boms.parent_product_id->products.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:employee_roles.employee_id->employees.id:TABLE_ID:NAMING_MATCH",
     "naming:inventory.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:products.category_id->product_categories.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:purchase_order_items.order_id->purchase_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:purchase_orders.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
     "naming:role_permissions.permission_id->permissions.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_fact.category_dim_id->category_dim.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:sales_fact.region_dim_id->region_dim.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_order_items.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_order_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH",

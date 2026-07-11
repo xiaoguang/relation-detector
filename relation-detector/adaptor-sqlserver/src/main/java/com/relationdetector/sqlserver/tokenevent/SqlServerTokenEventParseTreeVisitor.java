@@ -13,6 +13,7 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
 
 /**
@@ -23,6 +24,9 @@ import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
  * 判断 SQL 结构。</p>
  */
 public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelationSqlBaseVisitor<Void> {
+    private final Map<String, LineageTransformType> functionExtensions = Map.of(
+            "isnull", LineageTransformType.COALESCE);
+
     private final SqlStatementRecord statement;
     private final boolean ddlOnly;
     private final TokenEventEventEmitter emitter;
@@ -340,6 +344,22 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
     }
 
     @Override
+    public Void visitAlter_table(SqlServerRelationSqlParser.Alter_tableContext ctx) {
+        SqlServerRelationSqlParser.Table_constraintContext constraint = ctx.table_constraint();
+        if (constraint.FOREIGN() == null || constraint.foreign_key_options() == null) {
+            return null;
+        }
+        String sourceTable = qualifiedName(ctx.table_name().full_table_name());
+        String targetTable = qualifiedName(constraint.foreign_key_options().table_name().full_table_name());
+        List<String> sourceColumns = identifiers(constraint.column_name_list());
+        List<String> targetColumns = identifiers(constraint.foreign_key_options().column_name_list());
+        sourceColumns.forEach(column -> emitter.addDdlColumnEvent(events, constraint, sourceTable, column));
+        targetColumns.forEach(column -> emitter.addDdlColumnEvent(events, constraint, targetTable, column));
+        addForeignKeyEvents(constraint, sourceTable, sourceColumns, targetTable, targetColumns);
+        return null;
+    }
+
+    @Override
     public Void visitColumn_definition(SqlServerRelationSqlParser.Column_definitionContext ctx) {
         String column = clean(ctx.id_().getText());
         String table = currentDdlTable();
@@ -415,9 +435,10 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
             }
             if (!source.sources().isEmpty()) {
                 emitProjectionItem(item, owner, outputColumn,
-                        source.valueProjectionAliases(), source.valueProjectionColumns(),
+                        source.aliases(), source.columns(),
                         source.transform(), source.flowKind());
-            } else if (!source.controlSources().isEmpty()) {
+            }
+            if (!source.controlSources().isEmpty()) {
                 emitProjectionItem(item, owner, outputColumn,
                         source.controlAliases(), source.controlColumns(),
                         source.controlTransform(), LineageFlowKind.CONTROL);
@@ -640,55 +661,118 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
                 }
             }
             String name = baseName(atom.function_call().function_name().getText()).toLowerCase(Locale.ROOT);
-            LineageTransformType transform = switch (name) {
-                case "sum", "avg", "count", "min", "max" -> LineageTransformType.AGGREGATE;
-                case "coalesce", "isnull" -> LineageTransformType.COALESCE;
-                case "concat", "format" -> LineageTransformType.CONCAT_FORMAT;
-                default -> LineageTransformType.FUNCTION_CALL;
-            };
-            return new ExpressionAnalysis(args.sources(), ExpressionAnalysis.dominant(transform, args.transform()),
+            LineageTransformType transform = LineageTransformClassifier.classifyFunction(
+                    name, false, functionExtensions);
+            return new ExpressionAnalysis(args.sources(), LineageTransformClassifier.dominant(transform, args.transform()),
                     LineageFlowKind.VALUE, args.controlSources(), args.controlTransform());
         }
         if (atom.case_expression() != null) {
-            ExpressionAnalysis value = ExpressionAnalysis.empty();
-            for (SqlServerRelationSqlParser.ExpressionContext expression : atom.case_expression().expression()) {
-                value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.VALUE,
-                        value,
-                        analyze(expression, defaultQualifier));
-            }
-            ExpressionAnalysis control = analyzeCaseConditions(atom.case_expression(), defaultQualifier);
-            LineageTransformType valueTransform = value.transform() == LineageTransformType.DIRECT
-                    ? LineageTransformType.CASE_WHEN
-                    : value.transform();
-            LineageTransformType controlTransform = control.transform() == LineageTransformType.DIRECT
-                    ? LineageTransformType.CASE_WHEN
-                    : control.transform();
-            return new ExpressionAnalysis(value.sources(), valueTransform, LineageFlowKind.VALUE,
-                    control.sources(), controlTransform);
+            return analyzeCase(atom.case_expression(), defaultQualifier);
         }
         if (atom.expression_atom() != null) {
             ExpressionAnalysis nested = analyze(atom.expression_atom(), defaultQualifier);
             return new ExpressionAnalysis(nested.sources(),
-                    ExpressionAnalysis.dominant(LineageTransformType.ARITHMETIC, nested.transform()),
+                    LineageTransformClassifier.dominant(LineageTransformType.ARITHMETIC, nested.transform()),
                     nested.flowKind(), nested.controlSources(), nested.controlTransform());
         }
         if (atom.expression() != null) {
             return analyze(atom.expression(), defaultQualifier);
         }
+        if (atom.select_statement() != null) {
+            return analyzeScalarSubquery(atom.select_statement());
+        }
         return ExpressionAnalysis.empty();
     }
 
-    private ExpressionAnalysis analyzeCaseConditions(
+    private ExpressionAnalysis analyzeScalarSubquery(SqlServerRelationSqlParser.Select_statementContext select) {
+        visit(select);
+        SqlServerRelationSqlParser.Query_specificationContext query = firstQuerySpecification(select);
+        if (query == null || query.select_list().select_list_elem().size() != 1
+                || query.select_list().select_list_elem(0).expression() == null) {
+            return ExpressionAnalysis.empty();
+        }
+        String defaultQualifier = singleProjectionQualifier(query.table_sources());
+        ExpressionAnalysis value = analyze(query.select_list().select_list_elem(0).expression(), defaultQualifier);
+        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        if (query.table_sources() != null) {
+            for (SqlServerRelationSqlParser.Table_sourceContext table : query.table_sources().table_source()) {
+                for (SqlServerRelationSqlParser.Table_source_suffixContext suffix : table.table_source_suffix()) {
+                    if (suffix.join_on() != null) {
+                        control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                                LineageFlowKind.CONTROL, control,
+                                analyzeSearchCondition(suffix.join_on().search_condition(), defaultQualifier));
+                    }
+                }
+            }
+        }
+        if (query.search_condition_clause() != null) {
+            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, control,
+                    analyzeSearchCondition(query.search_condition_clause().search_condition(), defaultQualifier));
+        }
+        if (query.group_by_clause() != null) {
+            for (SqlServerRelationSqlParser.ExpressionContext grouping
+                    : query.group_by_clause().expression_list_().expression()) {
+                control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL, control, analyze(grouping, defaultQualifier));
+            }
+        }
+        if (query.having_clause() != null) {
+            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, control,
+                    analyzeSearchCondition(query.having_clause().search_condition(), defaultQualifier));
+        }
+        return new ExpressionAnalysis(value.sources(), value.transform(), LineageFlowKind.VALUE,
+                control.sources(), LineageTransformType.CASE_WHEN);
+    }
+
+    private ExpressionAnalysis analyzeCase(
             SqlServerRelationSqlParser.Case_expressionContext ctx,
             String defaultQualifier
     ) {
-        ExpressionAnalysis result = ExpressionAnalysis.empty();
-        for (SqlServerRelationSqlParser.Search_conditionContext condition : ctx.search_condition()) {
-            result = ExpressionAnalysis.combine(result.transform(), LineageFlowKind.CONTROL,
-                    result, analyzeSearchCondition(condition, defaultQualifier));
+        ExpressionAnalysis value = ExpressionAnalysis.empty();
+        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        if (ctx.expression() != null) {
+            control = combineCaseControl(control, analyze(ctx.expression(), defaultQualifier));
         }
-        return result;
+        for (SqlServerRelationSqlParser.Searched_case_whenContext when : ctx.searched_case_when()) {
+            control = combineCaseControl(control,
+                    analyzeSearchCondition(when.search_condition(), defaultQualifier));
+            value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.VALUE, value, analyze(when.expression(), defaultQualifier));
+        }
+        for (SqlServerRelationSqlParser.Simple_case_whenContext when : ctx.simple_case_when()) {
+            control = combineCaseControl(control, analyze(when.expression(0), defaultQualifier));
+            value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.VALUE, value, analyze(when.expression(1), defaultQualifier));
+        }
+        if (ctx.case_else() != null) {
+            value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.VALUE, value, analyze(ctx.case_else().expression(), defaultQualifier));
+        }
+        List<ColumnRead> controls = new ArrayList<>();
+        controls.addAll(control.sources());
+        controls.addAll(control.controlSources());
+        controls.addAll(value.controlSources());
+        LineageTransformType valueTransform = value.transform() == LineageTransformType.DIRECT
+                ? LineageTransformType.CASE_WHEN
+                : value.transform();
+        return new ExpressionAnalysis(value.sources(), valueTransform, LineageFlowKind.VALUE,
+                controls.stream().distinct().toList(), LineageTransformType.CASE_WHEN);
+    }
+
+    private ExpressionAnalysis combineCaseControl(ExpressionAnalysis left, ExpressionAnalysis right) {
+        List<ColumnRead> controls = new ArrayList<>();
+        controls.addAll(right.sources());
+        controls.addAll(right.controlSources());
+        ExpressionAnalysis normalized = new ExpressionAnalysis(
+                controls.stream().distinct().toList(),
+                LineageTransformType.CASE_WHEN,
+                LineageFlowKind.CONTROL,
+                List.of(),
+                LineageTransformType.CASE_WHEN);
+        return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                LineageFlowKind.CONTROL, left, normalized);
     }
 
     private ExpressionAnalysis analyzeSearchCondition(
@@ -916,34 +1000,11 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
             controlSources.addAll(left.controlSources());
             controlSources.addAll(right.controlSources());
             return new ExpressionAnalysis(sources.stream().distinct().toList(),
-                    dominant(transform, left.transform(), right.transform()),
+                    LineageTransformClassifier.dominantForFlow(
+                            flowKind, transform, left.transform(), right.transform()),
                     flowKind,
                     controlSources.stream().distinct().toList(),
-                    dominant(left.controlTransform(), right.controlTransform()));
-        }
-
-        static LineageTransformType dominant(LineageTransformType... transforms) {
-            LineageTransformType dominant = LineageTransformType.DIRECT;
-            for (LineageTransformType transform : transforms) {
-                if (priority(transform) > priority(dominant)) {
-                    dominant = transform;
-                }
-            }
-            return dominant;
-        }
-
-        private static int priority(LineageTransformType transform) {
-            return switch (transform) {
-                case CASE_WHEN -> 8;
-                case CUMULATIVE -> 7;
-                case AGGREGATE -> 6;
-                case WINDOW_DERIVED -> 5;
-                case COALESCE -> 4;
-                case CONCAT_FORMAT -> 3;
-                case ARITHMETIC -> 2;
-                case FUNCTION_CALL -> 1;
-                default -> 0;
-            };
+                    LineageTransformClassifier.dominant(left.controlTransform(), right.controlTransform()));
         }
 
         List<String> aliases() {
@@ -966,19 +1027,5 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
             return !sources.isEmpty() || !controlSources.isEmpty();
         }
 
-        List<String> valueProjectionAliases() {
-            return valueProjectionSources().stream().map(ColumnRead::alias).toList();
-        }
-
-        List<String> valueProjectionColumns() {
-            return valueProjectionSources().stream().map(ColumnRead::column).toList();
-        }
-
-        private List<ColumnRead> valueProjectionSources() {
-            List<ColumnRead> combined = new ArrayList<>();
-            combined.addAll(sources);
-            combined.addAll(controlSources);
-            return combined.stream().distinct().toList();
-        }
     }
 }

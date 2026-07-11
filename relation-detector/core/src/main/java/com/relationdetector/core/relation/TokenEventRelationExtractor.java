@@ -81,6 +81,7 @@ public final class TokenEventRelationExtractor {
                             text(event, "joinKind"),
                             text(event, "leftAlias"),
                             text(event, "rightAlias"),
+                            event.line(),
                             "ANTLR token-event column equality"));
                 }
             } else if (event.type() == StructuredParseEventType.EXISTS_PREDICATE) {
@@ -98,6 +99,7 @@ public final class TokenEventRelationExtractor {
                             "EXISTS",
                             text(event, "leftAlias"),
                             text(event, "rightAlias"),
+                            event.line(),
                             "ANTLR token-event EXISTS ambiguous column equality"));
                 }
             } else if (event.type() == StructuredParseEventType.JOIN_USING_COLUMNS) {
@@ -117,6 +119,7 @@ public final class TokenEventRelationExtractor {
                             "USING_JOIN",
                             leftAlias,
                             rightAlias,
+                            event.line(),
                             "ANTLR token-event JOIN USING column equality"));
                 }
             } else if (event.type() == StructuredParseEventType.IN_SUBQUERY_PREDICATE) {
@@ -143,6 +146,7 @@ public final class TokenEventRelationExtractor {
                             "IN_SUBQUERY",
                             text(event, "outerAlias"),
                             text(event, "innerAlias"),
+                            event.line(),
                             "ANTLR token-event IN subquery column co-occurrence"));
                 }
             } else if (event.type() == StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE) {
@@ -171,6 +175,7 @@ public final class TokenEventRelationExtractor {
                                 "TUPLE_IN_SUBQUERY",
                                 outerAliases.get(index),
                                 innerAliases.get(index),
+                                event.line(),
                                 "ANTLR token-event tuple IN subquery column co-occurrence position " + (index + 1)));
                     }
                 }
@@ -466,6 +471,7 @@ public final class TokenEventRelationExtractor {
             String joinKind,
             String leftAlias,
             String rightAlias,
+            long sourceLine,
             String detail
     ) {
         ColumnRef first = left;
@@ -482,6 +488,10 @@ public final class TokenEventRelationExtractor {
         Map<String, Object> attributes = new LinkedHashMap<>();
         attributes.put("joinKind", joinKind.isBlank() ? "WHERE_OR_UNKNOWN" : joinKind);
         attributes.put("tokenEventNative", true);
+        copyStatementProvenance(statement, attributes);
+        if (sourceLine > 0) {
+            attributes.put("sourceLine", sourceLine);
+        }
         if (isExplicitSelfJoinRole(left, right, leftAlias, rightAlias)) {
             attributes.put("selfJoinRole", true);
             attributes.put("leftAlias", clean(leftAlias));
@@ -495,6 +505,17 @@ public final class TokenEventRelationExtractor {
                 detail,
                 attributes));
         return candidate;
+    }
+
+    private void copyStatementProvenance(SqlStatementRecord statement, Map<String, Object> attributes) {
+        statement.attributes().forEach((key, value) -> {
+            if ("sourceFile".equals(key)
+                    || "sourceStatementId".equals(key)
+                    || "sourceBlockId".equals(key)
+                    || key.startsWith("sourceObject")) {
+                attributes.put(key, value);
+            }
+        });
     }
 
     private boolean shouldEmitColumnCoOccurrence(ColumnRef left, ColumnRef right, String leftAlias, String rightAlias) {

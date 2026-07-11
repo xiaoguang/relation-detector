@@ -1,5 +1,8 @@
 {
   "fingerprints": [
+    "VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount",
+    "VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price",
+    "VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money",
     "VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price",
     "VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money",
     "VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number",

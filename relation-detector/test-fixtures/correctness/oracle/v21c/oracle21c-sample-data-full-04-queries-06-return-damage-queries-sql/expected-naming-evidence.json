@@ -4,6 +4,7 @@
     "naming:inspection_reports.batch_id->product_batches.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:inventory_transactions.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:inventory_transactions.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH",
+    "naming:product_batches.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:product_batches.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
     "naming:products.category_id->product_categories.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:purchase_orders.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",

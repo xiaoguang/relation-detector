@@ -751,7 +751,7 @@ function_body
     ;
 
 procedure_body
-    : PROCEDURE identifier ('(' (parameter (',' parameter)*)? ')')? (
+    : PROCEDURE identifier ('(' parameter (',' parameter)* ')')? (
         accessible_by_clause
         | PARALLEL_ENABLE
         | DETERMINISTIC
@@ -759,7 +759,7 @@ procedure_body
     ;
 
 create_procedure_body
-    : CREATE (OR REPLACE)? PROCEDURE procedure_name ('(' (parameter (',' parameter)*)? ')')? invoker_rights_clause? (PARALLEL_ENABLE | DETERMINISTIC)* (
+    : CREATE (OR REPLACE)? PROCEDURE procedure_name ('(' parameter (',' parameter)* ')')? invoker_rights_clause? (PARALLEL_ENABLE | DETERMINISTIC)* (
         IS
         | AS
     ) (DECLARE? seq_of_declare_specs? body | call_spec | EXTERNAL)
@@ -5487,7 +5487,7 @@ end_time_column
     ;
 
 column_definition
-    : column_name ((datatype | type_name) (COLLATE column_collation_name)?)? SORT? (
+    : column_name ({this._input.LA(1) != BOOLEAN}? (datatype | type_name) (COLLATE column_collation_name)?)? SORT? (
         VISIBLE
         | INVISIBLE
     )? (DEFAULT (ON NULL_)? expression | identity_clause)? (ENCRYPT encryption_spec)? (

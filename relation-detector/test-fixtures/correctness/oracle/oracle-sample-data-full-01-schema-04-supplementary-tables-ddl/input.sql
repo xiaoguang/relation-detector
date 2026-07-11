@@ -113,7 +113,7 @@ CREATE TABLE sales_commissions (
     commission_rate NUMBER(5,4) NOT NULL,
     commission_amount NUMBER(12,2) NOT NULL,
     bonus NUMBER(12,2) DEFAULT 0.00,
-    total_commission NUMBER(12,2) GENERATED ALWAYS AS (commission_amount + bonus) STORED,
+    total_commission NUMBER(12,2) GENERATED ALWAYS AS (commission_amount + bonus) VIRTUAL,
     status VARCHAR2(40) DEFAULT 'pending',
     calculated_at TIMESTAMP(0) NULL,
     paid_at TIMESTAMP(0) NULL,
@@ -239,8 +239,8 @@ CREATE TABLE three_way_matching (
     po_price NUMBER(12,2) NOT NULL,
     receipt_price NUMBER(12,2) NOT NULL,
     invoice_price NUMBER(12,2) NOT NULL,
-    quantity_match NUMBER(1) GENERATED ALWAYS AS (po_quantity = receipt_quantity AND receipt_quantity = invoice_quantity) STORED,
-    price_match NUMBER(1) GENERATED ALWAYS AS (po_price = receipt_price AND receipt_price = invoice_price) STORED,
+    quantity_match NUMBER(1) GENERATED ALWAYS AS (CASE WHEN po_quantity = receipt_quantity AND receipt_quantity = invoice_quantity THEN 1 ELSE 0 END) VIRTUAL,
+    price_match NUMBER(1) GENERATED ALWAYS AS (CASE WHEN po_price = receipt_price AND receipt_price = invoice_price THEN 1 ELSE 0 END) VIRTUAL,
     match_status VARCHAR2(40) DEFAULT 'pending',
     match_result VARCHAR2(500) NULL,
     matched_by NUMBER(19) NULL,
@@ -273,11 +273,11 @@ CREATE TABLE fixed_assets (
     useful_life_months NUMBER(10) NOT NULL,
     monthly_depreciation NUMBER(12,2) GENERATED ALWAYS AS (
         ROUND((purchase_amount - salvage_value) / useful_life_months, 2)
-    ) STORED,
+    ) VIRTUAL,
     accumulated_depreciation NUMBER(18,2) DEFAULT 0.00,
     net_book_value NUMBER(18,2) GENERATED ALWAYS AS (
         purchase_amount - accumulated_depreciation
-    ) STORED,
+    ) VIRTUAL,
     department_id NUMBER(19) CHECK (department_id >= 0) NOT NULL,
     custodian_id NUMBER(19) NULL,
     location VARCHAR2(200) NULL,

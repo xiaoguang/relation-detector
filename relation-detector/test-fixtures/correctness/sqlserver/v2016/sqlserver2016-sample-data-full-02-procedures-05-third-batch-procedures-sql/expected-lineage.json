@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "CONTROL:AGGREGATE:dbo.work_order_materials.required_qty->dbo.work_orders.status",
+    "CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status",
     "VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty",
     "VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status",
     "VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id",

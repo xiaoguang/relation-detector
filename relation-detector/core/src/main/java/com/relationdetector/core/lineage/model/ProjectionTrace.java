@@ -2,6 +2,7 @@ package com.relationdetector.core.lineage.model;
 
 import java.util.List;
 
+import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.model.Endpoint;
 
@@ -11,6 +12,7 @@ import com.relationdetector.contracts.model.Endpoint;
 public record ProjectionTrace(
         Endpoint projection,
         List<Endpoint> sources,
-        LineageTransformType transform
+        LineageTransformType transform,
+        LineageFlowKind flowKind
 ) {
 }

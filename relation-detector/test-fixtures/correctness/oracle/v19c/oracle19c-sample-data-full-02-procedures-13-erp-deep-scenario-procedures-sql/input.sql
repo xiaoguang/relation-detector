@@ -91,17 +91,16 @@ END;
 -- relation-detector-fixture-end
 
 -- relation-detector-fixture-source: ROUTINE:oracle.sp_refresh_semantic_dimensions
-CREATE OR REPLACE PROCEDURE sp_refresh_semantic_dimensions()
+CREATE OR REPLACE PROCEDURE sp_refresh_semantic_dimensions
 AS
 BEGIN
-    INSERT INTO region_dim (id, region_code, region_name, province, city, district, sales_region, region_level, is_active)
-    VALUES
-    (1, 'EAST-SH', '上海销售区', '上海市', '上海市', NULL, '华东', 'city', 1),
-    (2, 'EAST-HZ', '杭州销售区', '浙江省', '杭州市', NULL, '华东', 'city', 1),
-    (3, 'EAST-SZ', '苏州销售区', '江苏省', '苏州市', NULL, '华东', 'city', 1),
-    (4, 'SOUTH-GZ', '广州销售区', '广东省', '广州市', NULL, '华南', 'city', 1),
-    (5, 'NORTH-BJ', '北京销售区', '北京市', '北京市', NULL, '华北', 'city', 1)
-    ;
+    INSERT ALL
+    INTO region_dim (id, region_code, region_name, province, city, district, sales_region, region_level, is_active) VALUES (1, 'EAST-SH', '上海销售区', '上海市', '上海市', NULL, '华东', 'city', 1)
+    INTO region_dim (id, region_code, region_name, province, city, district, sales_region, region_level, is_active) VALUES (2, 'EAST-HZ', '杭州销售区', '浙江省', '杭州市', NULL, '华东', 'city', 1)
+    INTO region_dim (id, region_code, region_name, province, city, district, sales_region, region_level, is_active) VALUES (3, 'EAST-SZ', '苏州销售区', '江苏省', '苏州市', NULL, '华东', 'city', 1)
+    INTO region_dim (id, region_code, region_name, province, city, district, sales_region, region_level, is_active) VALUES (4, 'SOUTH-GZ', '广州销售区', '广东省', '广州市', NULL, '华南', 'city', 1)
+    INTO region_dim (id, region_code, region_name, province, city, district, sales_region, region_level, is_active) VALUES (5, 'NORTH-BJ', '北京销售区', '北京市', '北京市', NULL, '华北', 'city', 1)
+SELECT 1 FROM dual;
 
     INSERT INTO fiscal_calendar (
         calendar_date, fiscal_year, fiscal_quarter, fiscal_month, fiscal_month_name,
@@ -110,13 +109,13 @@ BEGIN
     SELECT DISTINCT
         d.calendar_date,
         EXTRACT(YEAR FROM d.calendar_date),
-        EXTRACT(QUARTER FROM d.calendar_date)(5),
-        EXTRACT(MONTH FROM d.calendar_date)(5),
+        TO_NUMBER(TO_CHAR(d.calendar_date, 'Q')),
+        EXTRACT(MONTH FROM d.calendar_date),
         to_char(d.calendar_date, 'YYYY-MM'),
         to_char(d.calendar_date, 'YYYY-MM'),
         TRUNC(d.calendar_date, 'MM'),
         LAST_DAY(d.calendar_date),
-        EXTRACT(YEAR FROM d.calendar_date) = 2026,
+        CASE WHEN EXTRACT(YEAR FROM d.calendar_date) = 2026 THEN 1 ELSE 0 END,
         ap.id
     FROM (
         SELECT order_date AS calendar_date FROM sales_orders
@@ -142,7 +141,7 @@ BEGIN
         COALESCE(grand.name, parent.name, pc.name),
         CASE WHEN grand.id IS NOT NULL THEN parent.name ELSE NULL END,
         pc.name,
-        pc.name = '女装' OR parent.name = '女装' OR grand.name = '女装',
+        CASE WHEN pc.name = '女装' OR parent.name = '女装' OR grand.name = '女装' THEN 1 ELSE 0 END,
         DATE '2026-01-01',
         'active'
     FROM product_categories pc
@@ -232,7 +231,7 @@ END;
 -- relation-detector-fixture-end
 
 -- relation-detector-fixture-source: ROUTINE:oracle.sp_rebuild_sales_fact
-CREATE OR REPLACE PROCEDURE sp_rebuild_sales_fact()
+CREATE OR REPLACE PROCEDURE sp_rebuild_sales_fact
 AS
 BEGIN
     INSERT INTO sales_fact (
@@ -311,9 +310,9 @@ BEGIN
         d.id,
         pos.id,
         p_manager_id,
-        pos.base_salary,
-        pos.base_salary,
-        pos.base_salary,
+        (pos.min_salary + pos.max_salary) / 2,
+        (pos.min_salary + pos.max_salary) / 2,
+        (pos.min_salary + pos.max_salary) / 2,
         '工商银行',
         '622202' || lpad(p_position_id, 12, '0'),
         'probation',
@@ -711,7 +710,7 @@ BEGIN
         approved_by = COALESCE(approved_by, p_applied_by),
         approved_at = COALESCE(approved_at, CURRENT_TIMESTAMP)
     WHERE id = p_request_id
-      AND VARCHAR2(40) = 'customer'
+      AND master_type = 'customer'
       AND status = 'approved';
 
     INSERT INTO audit_log (employee_id, action, target_type, target_id, new_value)

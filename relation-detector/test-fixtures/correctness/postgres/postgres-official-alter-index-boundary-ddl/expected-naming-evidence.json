@@ -1,0 +1,5 @@
+{
+  "fingerprints": [
+    "naming:password_resets.user_id->users.id:TABLE_ID:NAMING_MATCH"
+  ]
+}

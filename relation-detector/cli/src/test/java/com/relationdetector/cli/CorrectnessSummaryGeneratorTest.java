@@ -11,26 +11,27 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 class CorrectnessSummaryGeneratorTest {
-    private static final Path WORKSPACE = workspaceRoot();
-    private static final Path SUMMARY = WORKSPACE.resolve("docs/generated/correctness-test-summary.md");
+    private static final Path RELATION_DETECTOR_ROOT = TestWorkspacePaths.relationDetectorRoot();
+    private static final Path SUMMARY = TestWorkspacePaths.repositoryRoot()
+            .resolve("docs/generated/correctness-test-summary.md");
 
     @Test
     void generatedSummaryCapturesFixtureCountsAndInputPreview() throws Exception {
         assumeGeneratedReportTestEnabled();
-        String markdown = CorrectnessSummaryGenerator.generate(WORKSPACE);
+        String markdown = CorrectnessSummaryGenerator.generate(RELATION_DETECTOR_ROOT);
 
-        assertTrue(markdown.contains("| Total correctness fixtures | 1197 |"));
-        assertTrue(markdown.contains("| SQL fixtures | 983 |"));
+        assertTrue(markdown.contains("| Total correctness fixtures | 1198 |"));
+        assertTrue(markdown.contains("| SQL fixtures | 984 |"));
         assertTrue(markdown.contains("| DDL fixtures | 214 |"));
-        assertTrue(markdown.contains("| Fixtures with expected lineage | 429 |"));
+        assertTrue(markdown.contains("| Fixtures with expected lineage | 405 |"));
         assertTrue(markdown.contains("| MySQL directory fixtures | 261 |"));
         assertTrue(markdown.contains("| PostgreSQL directory fixtures | 449 |"));
-        assertTrue(markdown.contains("| Oracle directory fixtures | 212 |"));
+        assertTrue(markdown.contains("| Oracle directory fixtures | 213 |"));
         assertTrue(markdown.contains("| SQL Server directory fixtures | 236 |"));
         assertTrue(markdown.contains("| COMMON | 39 | 34 | 5 |"));
         assertTrue(markdown.contains("| MYSQL | 261 | 207 | 54 |"));
         assertTrue(markdown.contains("| POSTGRESQL | 449 | 371 | 78 |"));
-        assertTrue(markdown.contains("| ORACLE | 212 | 172 | 40 |"));
+        assertTrue(markdown.contains("| ORACLE | 213 | 173 | 40 |"));
         assertTrue(markdown.contains("| SQLSERVER | 236 | 199 | 37 |"));
         assertTrue(markdown.contains("Lightweight index report. Full SQL/DDL is available in each input file."));
         assertTrue(markdown.contains("test-fixtures/correctness/mysql/mysql-commerce-promotion-update-explicit-join-sql/input.sql"));
@@ -43,8 +44,10 @@ class CorrectnessSummaryGeneratorTest {
                 + "->account_balances.adjusted_limit"));
         assertTrue(markdown.contains(
                 "VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,"
-                        + "transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category"
+                        + "transaction_ledgers.amount,transaction_ledgers.merchant_category"
                         + "->account_balances.compliance_notes"));
+        assertTrue(markdown.contains(
+                "CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes"));
         assertTrue(markdown.contains("UPDATE products p"));
         assertTrue(markdown.contains("Preview truncated; see input file for full content."));
         assertTrue(markdown.contains("test-fixtures/correctness/postgres/postgres-business-risk-ledger-update-cte-comma-sql/input.sql"));
@@ -84,7 +87,7 @@ class CorrectnessSummaryGeneratorTest {
     @Test
     void generatedSummaryFileIsUpToDate() throws Exception {
         assumeGeneratedReportTestEnabled();
-        String markdown = CorrectnessSummaryGenerator.generate(WORKSPACE);
+        String markdown = CorrectnessSummaryGenerator.generate(RELATION_DETECTOR_ROOT);
         if (Boolean.getBoolean("updateCorrectnessSummary")) {
             Files.createDirectories(SUMMARY.getParent());
             Files.writeString(SUMMARY, markdown);
@@ -94,10 +97,6 @@ class CorrectnessSummaryGeneratorTest {
                 "Generated correctness summary is stale. Refresh it with: "
                         + "mvn -pl cli -Dtest=CorrectnessSummaryGeneratorTest "
                         + "-DupdateCorrectnessSummary=true test");
-    }
-
-    private static Path workspaceRoot() {
-        return TestWorkspacePaths.relationDetectorRoot();
     }
 
     private static void assumeGeneratedReportTestEnabled() {

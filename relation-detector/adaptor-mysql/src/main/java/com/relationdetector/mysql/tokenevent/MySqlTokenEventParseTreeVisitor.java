@@ -16,6 +16,7 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
 import com.relationdetector.mysql.tokenevent.MySqlRelationSqlBaseVisitor;
 import com.relationdetector.mysql.tokenevent.MySqlRelationSqlParser;
@@ -32,6 +33,9 @@ import com.relationdetector.mysql.tokenevent.MySqlRelationSqlParser;
  * identifier spelling and source locations.
  */
 public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseVisitor<Void> {
+    private final Map<String, LineageTransformType> functionExtensions = Map.of(
+            "string_agg", LineageTransformType.CONCAT_FORMAT);
+
     private final SqlStatementRecord statement;
     private final TokenEventEventEmitter emitter;
     private final List<StructuredSqlEvent> events = new ArrayList<>();
@@ -175,8 +179,9 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
         if (!"=".equals(ctx.comparisonOperator().getText())) {
             return visitChildren(ctx);
         }
-        ColumnRead left = singleColumn(ctx.expression(0));
-        ColumnRead right = singleColumn(ctx.expression(1));
+        String defaultQualifier = enclosingSingleProjectionQualifier(ctx);
+        ColumnRead left = singleColumn(ctx.expression(0), defaultQualifier);
+        ColumnRead right = singleColumn(ctx.expression(1), defaultQualifier);
         if (left == null || right == null) {
             return visitChildren(ctx);
         }
@@ -202,7 +207,7 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
 
     @Override
     public Void visitInSubqueryPredicate(MySqlRelationSqlParser.InSubqueryPredicateContext ctx) {
-        ColumnRead outer = singleColumn(ctx.expression());
+        ColumnRead outer = singleColumn(ctx.expression(), enclosingSingleProjectionQualifier(ctx));
         ColumnRead inner = singleSelectColumn(ctx.selectStatement());
         visit(ctx.selectStatement());
         if (outer == null || inner == null) {
@@ -395,22 +400,23 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
         List<MySqlRelationSqlParser.SelectItemContext> items = ctx.selectItem();
         for (int index = 0; index < items.size(); index++) {
             MySqlRelationSqlParser.SelectItemContext item = items.get(index);
-            ExpressionAnalysis source = analyzeSelectItem(item, defaultQualifier);
-            if (source.sources().isEmpty()) {
-                continue;
-            }
             String outputColumn = index < owner.columns().size() ? owner.columns().get(index) : outputColumn(item);
             if (outputColumn.isBlank()) {
                 continue;
             }
-            Map<String, Object> attrs = attrs();
-            attrs.put("outputAlias", owner.alias());
-            attrs.put("outputColumn", outputColumn);
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
+            for (ExpressionAnalysis source : writeAnalyses(item, defaultQualifier)) {
+                if (source.sources().isEmpty()) {
+                    continue;
+                }
+                Map<String, Object> attrs = attrs();
+                attrs.put("outputAlias", owner.alias());
+                attrs.put("outputColumn", outputColumn);
+                attrs.put("sourceAliases", source.aliases());
+                attrs.put("sourceColumns", source.columns());
+                attrs.put("transformType", source.transform().name());
+                attrs.put("flowKind", source.flowKind().name());
+                add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
+            }
         }
     }
 
@@ -456,13 +462,33 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
             return writeAnalyses(item.expression(), defaultQualifier);
         }
         ExpressionAnalysis analysis = analyzeSelectItem(item, defaultQualifier);
-        return analysis.sources().isEmpty() ? List.of() : List.of(analysis);
+        if (analysis.sources().isEmpty()) {
+            return List.of();
+        }
+        LineageTransformType transform = projectionTransform(item.booleanSelectExpression(), defaultQualifier);
+        return List.of(new ExpressionAnalysis(analysis.sources(), transform, LineageFlowKind.VALUE));
     }
 
     private List<ExpressionAnalysis> writeAnalyses(
             MySqlRelationSqlParser.ExpressionContext expression,
             String defaultQualifier
     ) {
+        if (containsConditionalExpression(expression)) {
+            List<ExpressionAnalysis> result = new ArrayList<>();
+            ExpressionAnalysis value = selectedValueAnalysis(expression, defaultQualifier);
+            if (!value.sources().isEmpty()) {
+                result.add(value);
+            }
+            ExpressionAnalysis control = ExpressionAnalysis.combine(
+                    LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL,
+                    conditionalControl(expression, defaultQualifier),
+                    scalarSubqueryControl(expression, defaultQualifier));
+            if (!control.sources().isEmpty()) {
+                result.add(control);
+            }
+            return result;
+        }
         List<ExpressionAnalysis> result = new ArrayList<>();
         ExpressionAnalysis value = analyze(expression, defaultQualifier);
         if (containsScalarSubquery(expression)) {
@@ -509,12 +535,13 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
 
     private List<ColumnRead> selectColumns(MySqlRelationSqlParser.SelectStatementContext select) {
         List<MySqlRelationSqlParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
+        String defaultQualifier = singleProjectionQualifier(select.querySpecification().fromClause());
         List<ColumnRead> columns = new ArrayList<>();
         for (MySqlRelationSqlParser.SelectItemContext item : items) {
             if (item.expression() == null) {
                 return List.of();
             }
-            ColumnRead column = singleColumn(item.expression());
+            ColumnRead column = singleColumn(item.expression(), defaultQualifier);
             if (column == null) {
                 return List.of();
             }
@@ -564,6 +591,11 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
                     : LineageTransformType.ARITHMETIC;
             return ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE, left, right);
         }
+        if (expression instanceof MySqlRelationSqlParser.UnaryExpressionContext unary) {
+            ExpressionAnalysis operand = analyze(unary.expression(), defaultQualifier);
+            return new ExpressionAnalysis(
+                    operand.sources(), LineageTransformType.ARITHMETIC, LineageFlowKind.VALUE);
+        }
         if (expression instanceof MySqlRelationSqlParser.FunctionExpressionContext function) {
             ExpressionAnalysis args = ExpressionAnalysis.empty();
             if (function.functionCall().expressionList() != null) {
@@ -572,13 +604,9 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
                 }
             }
             String functionName = baseName(qualifiedName(function.functionCall().qualifiedName())).toLowerCase(Locale.ROOT);
-            LineageTransformType transform = switch (functionName) {
-                case "sum", "avg", "count", "min", "max" -> LineageTransformType.AGGREGATE;
-                case "coalesce" -> LineageTransformType.COALESCE;
-                case "concat", "format", "string_agg" -> LineageTransformType.CONCAT_FORMAT;
-                default -> LineageTransformType.FUNCTION_CALL;
-            };
-            LineageTransformType dominant = ExpressionAnalysis.dominant(transform, args.transform());
+            LineageTransformType transform = LineageTransformClassifier.classifyFunction(
+                    functionName, false, functionExtensions);
+            LineageTransformType dominant = LineageTransformClassifier.dominant(transform, args.transform());
             LineageFlowKind flowKind = dominant == LineageTransformType.CASE_WHEN
                     ? LineageFlowKind.CONTROL
                     : LineageFlowKind.VALUE;
@@ -586,6 +614,12 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
         }
         if (expression instanceof MySqlRelationSqlParser.CaseExpressionContext caseExpression) {
             ExpressionAnalysis combined = ExpressionAnalysis.empty();
+            if (caseExpression.selector != null) {
+                combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL,
+                        combined,
+                        analyze(caseExpression.selector, defaultQualifier));
+            }
             for (MySqlRelationSqlParser.CaseWhenClauseContext whenClause : caseExpression.caseWhenClause()) {
                 combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                         LineageFlowKind.CONTROL,
@@ -596,13 +630,11 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
                         combined,
                         analyze(whenClause.expression(), defaultQualifier));
             }
-            if (caseExpression.expression().size() > 0) {
-                for (MySqlRelationSqlParser.ExpressionContext part : caseExpression.expression()) {
-                    combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                            LineageFlowKind.CONTROL,
-                            combined,
-                            analyze(part, defaultQualifier));
-                }
+            if (caseExpression.elseBranch != null) {
+                combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL,
+                        combined,
+                        analyze(caseExpression.elseBranch, defaultQualifier));
             }
             return new ExpressionAnalysis(combined.sources(), LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL);
         }
@@ -640,7 +672,70 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
         if (items.size() != 1 || items.get(0).expression() == null) {
             return ExpressionAnalysis.empty();
         }
-        return asValue(analyze(items.get(0).expression(), singleProjectionQualifier(select.querySpecification().fromClause())));
+        return selectedValueAnalysis(
+                items.get(0).expression(),
+                singleProjectionQualifier(select.querySpecification().fromClause()));
+    }
+
+    private ExpressionAnalysis selectedValueAnalysis(
+            MySqlRelationSqlParser.ExpressionContext expression,
+            String defaultQualifier
+    ) {
+        if (expression instanceof MySqlRelationSqlParser.CaseExpressionContext caseExpression) {
+            ExpressionAnalysis value = ExpressionAnalysis.empty();
+            for (MySqlRelationSqlParser.CaseWhenClauseContext whenClause : caseExpression.caseWhenClause()) {
+                value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.VALUE,
+                        value, selectedValueAnalysis(whenClause.expression(), defaultQualifier));
+            }
+            if (caseExpression.elseBranch != null) {
+                value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.VALUE,
+                        value, selectedValueAnalysis(caseExpression.elseBranch, defaultQualifier));
+            }
+            return value;
+        }
+        if (expression instanceof MySqlRelationSqlParser.IfExpressionContext ifExpression) {
+            return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.VALUE,
+                    selectedValueAnalysis(ifExpression.expression(0), defaultQualifier),
+                    selectedValueAnalysis(ifExpression.expression(1), defaultQualifier));
+        }
+        if (expression instanceof MySqlRelationSqlParser.FunctionExpressionContext function) {
+            ExpressionAnalysis args = ExpressionAnalysis.empty();
+            if (function.functionCall().expressionList() != null) {
+                for (MySqlRelationSqlParser.ExpressionContext argument
+                        : function.functionCall().expressionList().expression()) {
+                    args = ExpressionAnalysis.combine(args.transform(), LineageFlowKind.VALUE,
+                            args, selectedValueAnalysis(argument, defaultQualifier));
+                }
+            }
+            String functionName = baseName(qualifiedName(function.functionCall().qualifiedName()))
+                    .toLowerCase(Locale.ROOT);
+            LineageTransformType transform = LineageTransformClassifier.classifyFunction(
+                    functionName, false, functionExtensions);
+            LineageTransformType effective = transform == LineageTransformType.AGGREGATE
+                    ? LineageTransformType.AGGREGATE
+                    : LineageTransformClassifier.dominant(transform, args.transform());
+            return new ExpressionAnalysis(args.sources(),
+                    effective, LineageFlowKind.VALUE);
+        }
+        if (expression instanceof MySqlRelationSqlParser.BinaryExpressionContext binary) {
+            LineageTransformType transform = "||".equals(binary.arithmeticOperator().getText())
+                    ? LineageTransformType.CONCAT_FORMAT
+                    : LineageTransformType.ARITHMETIC;
+            return ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE,
+                    selectedValueAnalysis(binary.expression(0), defaultQualifier),
+                    selectedValueAnalysis(binary.expression(1), defaultQualifier));
+        }
+        if (expression instanceof MySqlRelationSqlParser.UnaryExpressionContext unary) {
+            ExpressionAnalysis operand = selectedValueAnalysis(unary.expression(), defaultQualifier);
+            return new ExpressionAnalysis(operand.sources(), LineageTransformType.ARITHMETIC, LineageFlowKind.VALUE);
+        }
+        if (expression instanceof MySqlRelationSqlParser.ParenExpressionContext paren) {
+            return selectedValueAnalysis(paren.expression(), defaultQualifier);
+        }
+        if (expression instanceof MySqlRelationSqlParser.IntervalExpressionContext interval) {
+            return selectedValueAnalysis(interval.expression(), defaultQualifier);
+        }
+        return asValue(analyze(expression, defaultQualifier));
     }
 
     private ExpressionAnalysis asValue(ExpressionAnalysis analysis) {
@@ -649,9 +744,40 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
                 : new ExpressionAnalysis(analysis.sources(), analysis.transform(), LineageFlowKind.VALUE);
     }
 
+    private ExpressionAnalysis asControl(ExpressionAnalysis analysis) {
+        return analysis.sources().isEmpty()
+                ? analysis
+                : new ExpressionAnalysis(analysis.sources(), LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL);
+    }
+
+    private ExpressionAnalysis controlExpression(ParseTree tree, String defaultQualifier) {
+        if (tree instanceof MySqlRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
+            return scalarSubqueryPredicateOperandControl(scalarSubquery.selectStatement(), defaultQualifier);
+        }
+        if (tree instanceof MySqlRelationSqlParser.ExpressionContext expression
+                && !containsScalarSubquery(expression)) {
+            return asControl(analyze(expression, defaultQualifier));
+        }
+        ExpressionAnalysis context = ExpressionAnalysis.emptyControl();
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            context = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL,
+                    context, controlExpression(tree.getChild(index), defaultQualifier));
+        }
+        return context;
+    }
+
     private ExpressionAnalysis scalarSubqueryControl(ParseTree expression, String defaultQualifier) {
         if (expression instanceof MySqlRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
-            return scalarSubqueryContext(scalarSubquery.selectStatement(), defaultQualifier);
+            MySqlRelationSqlParser.SelectStatementContext select = scalarSubquery.selectStatement();
+            ExpressionAnalysis context = scalarSubqueryContext(select, defaultQualifier);
+            List<MySqlRelationSqlParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
+            if (items.size() == 1 && items.get(0).expression() != null) {
+                context = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL,
+                        context,
+                        conditionalControl(items.get(0).expression(),
+                                singleProjectionQualifier(select.querySpecification().fromClause())));
+            }
+            return context;
         }
         ExpressionAnalysis context = ExpressionAnalysis.emptyControl();
         for (int index = 0; index < expression.getChildCount(); index++) {
@@ -659,6 +785,86 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
                     context, scalarSubqueryControl(expression.getChild(index), defaultQualifier));
         }
         return context;
+    }
+
+    private ExpressionAnalysis conditionalControl(ParseTree tree, String defaultQualifier) {
+        if (tree == null) {
+            return ExpressionAnalysis.emptyControl();
+        }
+        if (tree instanceof MySqlRelationSqlParser.CaseExpressionContext caseExpression) {
+            ExpressionAnalysis control = ExpressionAnalysis.emptyControl();
+            if (caseExpression.selector != null) {
+                control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL,
+                        control, asControl(analyze(caseExpression.selector, defaultQualifier)));
+            }
+            for (MySqlRelationSqlParser.CaseWhenClauseContext whenClause : caseExpression.caseWhenClause()) {
+                control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL,
+                        control, analyze(whenClause.predicate(), defaultQualifier));
+                control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL,
+                        control, conditionalControl(whenClause.expression(), defaultQualifier));
+            }
+            if (caseExpression.elseBranch != null) {
+                control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL,
+                        control, conditionalControl(caseExpression.elseBranch, defaultQualifier));
+            }
+            return control;
+        }
+        if (tree instanceof MySqlRelationSqlParser.IfExpressionContext ifExpression) {
+            return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL,
+                    analyze(ifExpression.predicate(), defaultQualifier),
+                    ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL,
+                            conditionalControl(ifExpression.expression(0), defaultQualifier),
+                            conditionalControl(ifExpression.expression(1), defaultQualifier)));
+        }
+        ExpressionAnalysis control = ExpressionAnalysis.emptyControl();
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL,
+                    control, conditionalControl(tree.getChild(index), defaultQualifier));
+        }
+        return control;
+    }
+
+    private boolean containsConditionalExpression(ParseTree tree) {
+        if (tree == null) {
+            return false;
+        }
+        if (tree instanceof MySqlRelationSqlParser.CaseExpressionContext
+                || tree instanceof MySqlRelationSqlParser.IfExpressionContext) {
+            return true;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            if (containsConditionalExpression(tree.getChild(index))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private LineageTransformType projectionTransform(ParseTree tree, String defaultQualifier) {
+        if (tree == null) {
+            return LineageTransformType.DIRECT;
+        }
+        if (tree instanceof MySqlRelationSqlParser.ExpressionContext expression) {
+            LineageTransformType transform = analyze(expression, defaultQualifier).transform();
+            if (transform != LineageTransformType.CASE_WHEN) {
+                return transform;
+            }
+        }
+        LineageTransformType transform = LineageTransformType.DIRECT;
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            transform = LineageTransformClassifier.dominant(
+                    transform, projectionTransform(tree.getChild(index), defaultQualifier));
+        }
+        return transform;
+    }
+
+    private ExpressionAnalysis scalarSubqueryPredicateOperandControl(
+            MySqlRelationSqlParser.SelectStatementContext select,
+            String defaultQualifier
+    ) {
+        return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL,
+                asControl(scalarSubquerySelectExpression(select)),
+                scalarSubqueryContext(select, defaultQualifier));
     }
 
     private boolean containsScalarSubquery(ParseTree tree) {
@@ -679,7 +885,8 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
     private boolean containsAggregateFunction(ParseTree tree) {
         if (tree instanceof MySqlRelationSqlParser.FunctionExpressionContext function) {
             String functionName = baseName(qualifiedName(function.functionCall().qualifiedName())).toLowerCase(Locale.ROOT);
-            if (Set.of("sum", "avg", "count", "min", "max").contains(functionName)) {
+            if (LineageTransformClassifier.classifyFunction(functionName, false, functionExtensions)
+                    == LineageTransformType.AGGREGATE) {
                 return true;
             }
         }
@@ -721,7 +928,7 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
                 context = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                         LineageFlowKind.CONTROL,
                         context,
-                        analyze(expression, scalarDefaultQualifier));
+                        controlExpression(expression, scalarDefaultQualifier));
             }
         }
         if (query.havingClause() != null) {
@@ -759,47 +966,47 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
         if (predicate instanceof MySqlRelationSqlParser.ComparisonPredicateContext comparisonPredicate) {
             return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL,
-                    analyze(comparisonPredicate.expression(0), defaultQualifier),
-                    analyze(comparisonPredicate.expression(1), defaultQualifier));
+                    controlExpression(comparisonPredicate.expression(0), defaultQualifier),
+                    controlExpression(comparisonPredicate.expression(1), defaultQualifier));
         }
         if (predicate instanceof MySqlRelationSqlParser.LikePredicateContext likePredicate) {
             ExpressionAnalysis combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL,
-                    analyze(likePredicate.expression(0), defaultQualifier),
-                    analyze(likePredicate.expression(1), defaultQualifier));
+                    controlExpression(likePredicate.expression(0), defaultQualifier),
+                    controlExpression(likePredicate.expression(1), defaultQualifier));
             if (likePredicate.expression().size() > 2) {
                 combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                         LineageFlowKind.CONTROL,
                         combined,
-                        analyze(likePredicate.expression(2), defaultQualifier));
+                        controlExpression(likePredicate.expression(2), defaultQualifier));
             }
             return combined;
         }
         if (predicate instanceof MySqlRelationSqlParser.BetweenPredicateContext betweenPredicate) {
             ExpressionAnalysis lowerBound = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL,
-                    analyze(betweenPredicate.expression(0), defaultQualifier),
-                    analyze(betweenPredicate.expression(1), defaultQualifier));
+                    controlExpression(betweenPredicate.expression(0), defaultQualifier),
+                    controlExpression(betweenPredicate.expression(1), defaultQualifier));
             return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL,
                     lowerBound,
-                    analyze(betweenPredicate.expression(2), defaultQualifier));
+                    controlExpression(betweenPredicate.expression(2), defaultQualifier));
         }
         if (predicate instanceof MySqlRelationSqlParser.LiteralInPredicateContext literalInPredicate) {
-            ExpressionAnalysis combined = analyze(literalInPredicate.expression(), defaultQualifier);
+            ExpressionAnalysis combined = controlExpression(literalInPredicate.expression(), defaultQualifier);
             for (MySqlRelationSqlParser.ExpressionContext item : literalInPredicate.expressionList().expression()) {
                 combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                         LineageFlowKind.CONTROL,
                         combined,
-                        analyze(item, defaultQualifier));
+                        controlExpression(item, defaultQualifier));
             }
             return combined;
         }
         if (predicate instanceof MySqlRelationSqlParser.IsNullPredicateContext isNullPredicate) {
-            return analyze(isNullPredicate.expression(), defaultQualifier);
+            return controlExpression(isNullPredicate.expression(), defaultQualifier);
         }
         if (predicate instanceof MySqlRelationSqlParser.InSubqueryPredicateContext inSubqueryPredicate) {
-            return analyze(inSubqueryPredicate.expression(), defaultQualifier);
+            return controlExpression(inSubqueryPredicate.expression(), defaultQualifier);
         }
         if (predicate instanceof MySqlRelationSqlParser.TupleInSubqueryPredicateContext tupleInPredicate) {
             ExpressionAnalysis combined = ExpressionAnalysis.empty();
@@ -807,12 +1014,12 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
                 combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                         LineageFlowKind.CONTROL,
                         combined,
-                        analyze(item, defaultQualifier));
+                        controlExpression(item, defaultQualifier));
             }
             return combined;
         }
         if (predicate instanceof MySqlRelationSqlParser.ExpressionPredicateContext expressionPredicate) {
-            return analyze(expressionPredicate.expression(), defaultQualifier);
+            return controlExpression(expressionPredicate.expression(), defaultQualifier);
         }
         return ExpressionAnalysis.empty();
     }
@@ -839,34 +1046,34 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
         if (expression instanceof MySqlRelationSqlParser.SelectComparisonBooleanContext comparisonExpression) {
             return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL,
-                    analyze(comparisonExpression.expression(0), defaultQualifier),
-                    analyze(comparisonExpression.expression(1), defaultQualifier));
+                    controlExpression(comparisonExpression.expression(0), defaultQualifier),
+                    controlExpression(comparisonExpression.expression(1), defaultQualifier));
         }
         if (expression instanceof MySqlRelationSqlParser.SelectLikeBooleanContext likeExpression) {
             ExpressionAnalysis combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL,
-                    analyze(likeExpression.expression(0), defaultQualifier),
-                    analyze(likeExpression.expression(1), defaultQualifier));
+                    controlExpression(likeExpression.expression(0), defaultQualifier),
+                    controlExpression(likeExpression.expression(1), defaultQualifier));
             if (likeExpression.expression().size() > 2) {
                 combined = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                         LineageFlowKind.CONTROL,
                         combined,
-                        analyze(likeExpression.expression(2), defaultQualifier));
+                        controlExpression(likeExpression.expression(2), defaultQualifier));
             }
             return combined;
         }
         if (expression instanceof MySqlRelationSqlParser.SelectBetweenBooleanContext betweenExpression) {
             ExpressionAnalysis lowerBound = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL,
-                    analyze(betweenExpression.expression(0), defaultQualifier),
-                    analyze(betweenExpression.expression(1), defaultQualifier));
+                    controlExpression(betweenExpression.expression(0), defaultQualifier),
+                    controlExpression(betweenExpression.expression(1), defaultQualifier));
             return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
                     LineageFlowKind.CONTROL,
                     lowerBound,
-                    analyze(betweenExpression.expression(2), defaultQualifier));
+                    controlExpression(betweenExpression.expression(2), defaultQualifier));
         }
         if (expression instanceof MySqlRelationSqlParser.SelectIsNullBooleanContext isNullExpression) {
-            return analyze(isNullExpression.expression(), defaultQualifier);
+            return controlExpression(isNullExpression.expression(), defaultQualifier);
         }
         if (expression instanceof MySqlRelationSqlParser.SelectParenBooleanContext parenExpression) {
             return analyze(parenExpression.booleanSelectExpression(), defaultQualifier);
@@ -950,6 +1157,17 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
             return "";
         }
         return rowsetAlias(reference.tablePrimary());
+    }
+
+    private String enclosingSingleProjectionQualifier(ParserRuleContext ctx) {
+        ParserRuleContext current = ctx;
+        while (current != null) {
+            if (current instanceof MySqlRelationSqlParser.QuerySpecificationContext query) {
+                return singleProjectionQualifier(query.fromClause());
+            }
+            current = current.getParent();
+        }
+        return "";
     }
 
     private String currentDdlTable() {
@@ -1064,31 +1282,8 @@ public final class MySqlTokenEventParseTreeVisitor extends MySqlRelationSqlBaseV
             sources.addAll(left.sources());
             sources.addAll(right.sources());
             return new ExpressionAnalysis(sources.stream().distinct().toList(),
-                    dominant(transform, left.transform(), right.transform()), flowKind);
-        }
-
-        static LineageTransformType dominant(LineageTransformType... transforms) {
-            LineageTransformType dominant = LineageTransformType.DIRECT;
-            for (LineageTransformType transform : transforms) {
-                if (priority(transform) > priority(dominant)) {
-                    dominant = transform;
-                }
-            }
-            return dominant;
-        }
-
-        private static int priority(LineageTransformType transform) {
-            return switch (transform) {
-                case CASE_WHEN -> 8;
-                case CUMULATIVE -> 7;
-                case AGGREGATE -> 6;
-                case WINDOW_DERIVED -> 5;
-                case COALESCE -> 4;
-                case CONCAT_FORMAT -> 3;
-                case ARITHMETIC -> 2;
-                case FUNCTION_CALL -> 1;
-                default -> 0;
-            };
+                    LineageTransformClassifier.dominantForFlow(
+                            flowKind, transform, left.transform(), right.transform()), flowKind);
         }
 
         List<String> aliases() {

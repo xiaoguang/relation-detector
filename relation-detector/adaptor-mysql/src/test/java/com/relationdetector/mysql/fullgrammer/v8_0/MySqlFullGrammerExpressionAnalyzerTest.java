@@ -19,6 +19,71 @@ import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
 class MySqlFullGrammerExpressionAnalyzerTest {
     @Test
+    void caseSourceSharedByPredicateAndBranchRemainsValueLineage() {
+        SqlStatementRecord statement = statement("""
+                UPDATE order_rollup r
+                SET amount = CASE
+                    WHEN r.amount > 0 THEN r.amount
+                    ELSE (SELECT p.amount
+                          FROM payments p
+                          WHERE p.order_id = r.order_id
+                          LIMIT 1)
+                END;
+                """);
+
+        var structured = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new StructuredDataLineageExtractor()
+                .extract(statement, structured)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains(
+                        "VALUE:CASE_WHEN:order_rollup.amount,payments.amount->order_rollup.amount"),
+                () -> "A column used by both WHEN and THEN must remain a VALUE source: "
+                        + fingerprints + " events=" + structured.events());
+    }
+
+    @Test
+    void nestedScalarBatchProjectionKeepsValuesSeparateFromCorrelatedControls() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO purchase_return_items (return_id, product_id, batch_id)
+                SELECT
+                    pr.id,
+                    (SELECT product_id
+                     FROM purchase_order_items
+                     WHERE order_id = pr.purchase_order_id
+                     LIMIT 1),
+                    (SELECT id
+                     FROM product_batches
+                     WHERE product_id = (SELECT product_id
+                                         FROM purchase_order_items
+                                         WHERE order_id = pr.purchase_order_id
+                                         LIMIT 1)
+                     LIMIT 1)
+                FROM purchase_returns pr;
+                """);
+        var structured = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new StructuredDataLineageExtractor()
+                .extract(statement, structured)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains("VALUE:DIRECT:product_batches.id->purchase_return_items.batch_id"),
+                () -> "Scalar projection should be VALUE lineage: " + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "CONTROL:CASE_WHEN:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id"),
+                () -> "Nested scalar predicates and correlation should be CONTROL lineage: "
+                        + fingerprints + " events=" + structured.events());
+        assertFalse(fingerprints.stream().anyMatch(fingerprint ->
+                        fingerprint.contains("product_batches.order_id")),
+                () -> "No source may leak through the product_batches qualifier: " + fingerprints);
+    }
+
+    @Test
     void analyzerReadsArithmeticExpressionThroughFullGrammerEvents() {
         var result = new MySqlFullGrammerStructuredSqlParser()
                 .parseSql(statement("""
@@ -221,9 +286,17 @@ class MySqlFullGrammerExpressionAnalyzerTest {
                 .sorted()
                 .toList();
 
-        assertTrue(fingerprints.contains(
-                        "VALUE:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score"),
-                () -> "Scalar subquery SELECT projection CASE source should be VALUE lineage: "
+        assertFalse(fingerprints.stream().anyMatch(fingerprint ->
+                        fingerprint.startsWith("VALUE:")
+                                && fingerprint.contains("inspection_reports.inspection_result")
+                                && fingerprint.endsWith("->supplier_products.quality_score")),
+                () -> "A predicate-only CASE source must not become VALUE lineage: "
+                        + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.stream().anyMatch(fingerprint ->
+                        fingerprint.startsWith("CONTROL:CASE_WHEN:")
+                                && fingerprint.contains("inspection_reports.inspection_result")
+                                && fingerprint.endsWith("->supplier_products.quality_score")),
+                () -> "The CASE predicate must remain CONTROL lineage: "
                         + fingerprints + " events=" + structured.events());
         assertTrue(fingerprints.contains(
                         "CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id->supplier_products.quality_score"),
@@ -360,6 +433,181 @@ class MySqlFullGrammerExpressionAnalyzerTest {
         assertEquals("FUNCTION_CALL", assignment.get("transformType"));
         assertEquals(List.of("so", "c"), assignment.get("sourceAliases"));
         assertEquals(List.of("order_date", "credit_days"), assignment.get("sourceColumns"));
+    }
+
+    @Test
+    void reconciliationAndMasterDataCasesSplitBranchValuesFromPredicates() {
+        SqlStatementRecord statement = statement("""
+                UPDATE reconciliation_totals rt
+                JOIN cashier_journals cj ON cj.account_id = rt.account_id
+                SET rt.debit_amount = CASE
+                        WHEN cj.journal_type = 'receipt' THEN cj.amount
+                        ELSE 0
+                    END,
+                    rt.customer_address = CASE
+                        WHEN rt.field_name = 'address' THEN rt.new_value
+                        ELSE rt.customer_address
+                    END;
+                """);
+        var structured = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                .map(this::lineageFingerprint).sorted().toList();
+
+        assertTrue(fingerprints.contains(
+                        "VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_totals.debit_amount"),
+                () -> "THEN branch amount must be VALUE: " + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_totals.debit_amount"),
+                () -> "WHEN predicate must be CONTROL: " + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "VALUE:CASE_WHEN:reconciliation_totals.new_value,reconciliation_totals.customer_address->reconciliation_totals.customer_address"),
+                () -> "Master-data branch values must remain VALUE: " + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "CONTROL:CASE_WHEN:reconciliation_totals.field_name->reconciliation_totals.customer_address"),
+                () -> "Master-data field selector must be CONTROL: " + fingerprints + " events=" + structured.events());
+    }
+
+    @Test
+    void standaloneBooleanProjectionsRemainValueAndPreserveFunctionTransform() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO semantic_flags (is_current_year, is_womenwear)
+                SELECT YEAR(so.order_date) = 2026,
+                       pc.name = '女装' OR pc.name = 'women'
+                FROM sales_orders so
+                JOIN product_categories pc ON pc.id = so.category_id;
+                """);
+        var structured = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                .map(this::lineageFingerprint).sorted().toList();
+
+        assertTrue(fingerprints.contains(
+                        "VALUE:FUNCTION_CALL:sales_orders.order_date->semantic_flags.is_current_year"),
+                () -> "YEAR(...) equality is a value-producing function projection: "
+                        + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.stream().anyMatch(fingerprint ->
+                        fingerprint.startsWith("VALUE:")
+                                && fingerprint.contains("product_categories.name")
+                                && fingerprint.endsWith("->semantic_flags.is_womenwear")),
+                () -> "Boolean name projection must be VALUE: " + fingerprints + " events=" + structured.events());
+        assertFalse(fingerprints.stream().anyMatch(fingerprint ->
+                        fingerprint.startsWith("CONTROL:")
+                                && fingerprint.contains("product_categories.name")
+                                && fingerprint.endsWith("->semantic_flags.is_womenwear")),
+                () -> "Standalone boolean projection must not be CONTROL: " + fingerprints);
+    }
+
+    @Test
+    void nestedCaseKeepsSelectorsAndEveryWhenPredicateOutOfLeafValues() {
+        SqlStatementRecord statement = statement("""
+                UPDATE reconciliation_totals rt
+                JOIN cashier_journals cj ON cj.account_id = rt.account_id
+                SET rt.amount = CASE rt.journal_scope
+                    WHEN 'cash' THEN CASE
+                        WHEN cj.journal_type = 'receipt' THEN cj.amount
+                        ELSE rt.fallback_amount
+                    END
+                    WHEN 'manual' THEN CASE
+                        WHEN rt.is_enabled = 1 THEN rt.manual_amount
+                        ELSE 0
+                    END
+                    ELSE rt.default_amount
+                END;
+                """);
+        var structured = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+
+        assertLineageSources(lineages, "VALUE", "CASE_WHEN", "reconciliation_totals.amount",
+                List.of("cashier_journals.amount", "reconciliation_totals.fallback_amount",
+                        "reconciliation_totals.manual_amount", "reconciliation_totals.default_amount"));
+        assertLineageSources(lineages, "CONTROL", "CASE_WHEN", "reconciliation_totals.amount",
+                List.of("reconciliation_totals.journal_scope", "cashier_journals.journal_type",
+                        "reconciliation_totals.is_enabled"));
+    }
+
+    @Test
+    void aggregateWrappedCaseKeepsOuterAggregateAndPredicateOnlyCountHasNoValue() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO aggregate_rollup (total_amount, qualified_count)
+                SELECT SUM(CASE WHEN tx.flag = 'Y' THEN tx.amount ELSE 0 END),
+                       COUNT(CASE WHEN tx.flag = 'Y' THEN 1 END)
+                FROM transactions tx;
+                """);
+        var structured = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+
+        assertLineageSources(lineages, "VALUE", "AGGREGATE", "aggregate_rollup.total_amount",
+                List.of("transactions.amount"));
+        assertLineageSources(lineages, "CONTROL", "CASE_WHEN", "aggregate_rollup.total_amount",
+                List.of("transactions.flag"));
+        assertFalse(lineages.stream().anyMatch(lineage ->
+                        lineage.flowKind().name().equals("VALUE")
+                                && lineage.target().displayName().equals("aggregate_rollup.qualified_count")),
+                () -> "COUNT(CASE predicate THEN literal) must not invent VALUE sources: " + lineages);
+        assertLineageSources(lineages, "CONTROL", "CASE_WHEN", "aggregate_rollup.qualified_count",
+                List.of("transactions.flag"));
+    }
+
+    @Test
+    void scalarPredicateAggregateDoesNotOverrideSelectedCumulativeProjection() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO jsh_temp_mock_plan (mock_timestamp_str)
+                SELECT CONCAT(
+                    '2026-01-01 ',
+                    LPAD((SELECT h.hour_val
+                           FROM (
+                               SELECT hour_val,
+                                      (@running_h_sum := @running_h_sum + weight) AS h_cdf
+                               FROM jsh_temp_hour_pdf
+                           ) h
+                           WHERE h.h_cdf >= RAND() * (
+                               SELECT SUM(weight) FROM jsh_temp_hour_pdf
+                           )
+                           ORDER BY h.h_cdf
+                           LIMIT 1), 2, '0'))
+                FROM tmp_sequence;
+                """);
+        var structured = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.flowKind().name().equals("VALUE")
+                                && lineage.transformType().name().equals("CUMULATIVE")
+                                && lineage.target().displayName().equals("jsh_temp_mock_plan.mock_timestamp_str")
+                                && lineage.sources().stream().anyMatch(source ->
+                                source.displayName().equals("jsh_temp_hour_pdf.hour_val"))),
+                () -> "Selected cumulative projection must remain VALUE/CUMULATIVE: " + lineages
+                        + " events=" + structured.events());
+        assertFalse(lineages.stream().anyMatch(lineage ->
+                        lineage.flowKind().name().equals("VALUE")
+                                && lineage.transformType().name().equals("AGGREGATE")
+                                && lineage.target().displayName().equals("jsh_temp_mock_plan.mock_timestamp_str")
+                                && lineage.sources().stream().anyMatch(source ->
+                                source.displayName().equals("jsh_temp_hour_pdf.hour_val"))),
+                () -> "Predicate SUM(weight) must not override the selected VALUE transform: " + lineages);
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.flowKind().name().equals("CONTROL")
+                                && lineage.target().displayName().equals("jsh_temp_mock_plan.mock_timestamp_str")
+                                && lineage.sources().stream().anyMatch(source ->
+                                source.displayName().equals("jsh_temp_hour_pdf.weight"))),
+                () -> "Predicate aggregate sources must remain CONTROL: " + lineages
+                        + " events=" + structured.events());
+    }
+
+    private void assertLineageSources(
+            List<DataLineageCandidate> lineages,
+            String flow,
+            String transform,
+            String target,
+            List<String> expectedSources
+    ) {
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.flowKind().name().equals(flow)
+                                && lineage.transformType().name().equals(transform)
+                                && lineage.target().displayName().equals(target)
+                                && lineage.sources().stream().map(source -> source.displayName()).toList()
+                                .equals(expectedSources)),
+                () -> "Missing " + flow + "/" + transform + " " + expectedSources + " -> " + target
+                        + "; actual=" + lineages);
     }
 
     private static SqlStatementRecord statement(String sql) {

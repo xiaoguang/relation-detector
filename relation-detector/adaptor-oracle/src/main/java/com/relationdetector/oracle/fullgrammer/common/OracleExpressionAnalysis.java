@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
+import com.relationdetector.core.lineage.LineageTransformClassifier;
 
 /**
  * Expression lineage summary shared by Oracle full-grammer version visitors.
@@ -36,31 +37,8 @@ public record OracleExpressionAnalysis(
         sources.addAll(left.sources());
         sources.addAll(right.sources());
         return new OracleExpressionAnalysis(sources.stream().distinct().toList(),
-                dominant(transform, left.transform(), right.transform()), flowKind);
-    }
-
-    public static LineageTransformType dominant(LineageTransformType... transforms) {
-        LineageTransformType dominant = LineageTransformType.DIRECT;
-        for (LineageTransformType transform : transforms) {
-            if (priority(transform) > priority(dominant)) {
-                dominant = transform;
-            }
-        }
-        return dominant;
-    }
-
-    private static int priority(LineageTransformType transform) {
-        return switch (transform) {
-            case CASE_WHEN -> 8;
-            case CUMULATIVE -> 7;
-            case AGGREGATE -> 6;
-            case WINDOW_DERIVED -> 5;
-            case COALESCE -> 4;
-            case CONCAT_FORMAT -> 3;
-            case ARITHMETIC -> 2;
-            case FUNCTION_CALL -> 1;
-            default -> 0;
-        };
+                LineageTransformClassifier.dominantForFlow(
+                        flowKind, transform, left.transform(), right.transform()), flowKind);
     }
 
     public List<String> aliases() {

@@ -10,10 +10,10 @@ SELECT sr.[return_no],
        c.[name] AS [customer_name],
        so.[order_no],
        SUM(sri.[amount]) AS [return_amount],
-       SUM(sri.[quantity]) AS [return_qty]
+       SUM(sri.[return_qty]) AS [return_qty]
 FROM [dbo].[sales_returns] AS sr
 INNER JOIN [dbo].[customers] AS c ON sr.[customer_id] = c.[id]
-LEFT JOIN [dbo].[sales_orders] AS so ON sr.[sales_order_id] = so.[id]
+LEFT JOIN [dbo].[sales_orders] AS so ON sr.[order_id] = so.[id]
 INNER JOIN [dbo].[sales_return_items] AS sri ON sri.[return_id] = sr.[id]
 GROUP BY sr.[return_no], c.[name], so.[order_no];
 

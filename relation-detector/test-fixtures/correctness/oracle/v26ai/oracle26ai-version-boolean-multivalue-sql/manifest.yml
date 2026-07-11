@@ -1,0 +1,11 @@
+id: oracle26ai-version-boolean-multivalue-sql
+databaseType: ORACLE
+parserTarget: SQL
+parserMode: full-grammer
+grammarProfile: oracle/26ai
+databaseVersion: 26.1
+sourceType: PLAIN_SQL
+schema: oracle
+input: input.sql
+expectedRelations: expected-relations.json
+expectedDiagnostics: expected-diagnostics.json

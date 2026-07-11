@@ -28,7 +28,7 @@ v_start_date DATE;
 BEGIN
     v_start_date := (p_year_month || '-01');
     v_end_date := (TRUNC(v_start_date, 'MM') + INTERVAL '1' MONTH - INTERVAL '1' DAY);
-    v_workdays := EXTRACT(DAY FROM v_end_date)(10) - FLOOR(EXTRACT(DAY FROM v_end_date)(10) / 7) * 2;
+    v_workdays := EXTRACT(DAY FROM v_end_date) - FLOOR(EXTRACT(DAY FROM v_end_date) / 7) * 2;
 
     OPEN p_result FOR
     SELECT * FROM (
@@ -119,7 +119,7 @@ BEGIN
         COALESCE((SELECT COUNT(*) FROM sales_orders so
          WHERE so.warehouse_id = p_warehouse_id
            AND so.order_date BETWEEN p_start_date AND p_end_date
-           AND so.status NOT IN ('draft', 'cancelled')), 0)(19) AS count_or_qty
+           AND so.status NOT IN ('draft', 'cancelled')), 0) AS count_or_qty
     UNION ALL
     SELECT '【营业收入】', '退货冲减',
         COALESCE((SELECT SUM(sr.refund_amount) FROM sales_returns sr
@@ -129,7 +129,7 @@ BEGIN
         COALESCE((SELECT COUNT(*) FROM sales_returns sr
          WHERE sr.warehouse_id = p_warehouse_id
            AND sr.return_date BETWEEN p_start_date AND p_end_date
-           AND sr.status = 'refunded'), 0)(19)
+           AND sr.status = 'refunded'), 0)
     UNION ALL
     SELECT '【营业收入】', '净收入(销售-退货)',
         COALESCE((SELECT SUM(so.total_amount) FROM sales_orders so
@@ -193,7 +193,7 @@ BEGIN
            AND sp.salary_month BETWEEN TO_CHAR(p_start_date, 'YYYY-MM') AND TO_CHAR(p_end_date, 'YYYY-MM')), 0),
         (SELECT COUNT(DISTINCT e.id) FROM employees e
          WHERE e.id IN (SELECT manager_id FROM warehouses WHERE id = p_warehouse_id)
-            OR e.id IN (SELECT id FROM employees WHERE manager_id = (SELECT manager_id FROM warehouses WHERE id = p_warehouse_id)))(19)
+            OR e.id IN (SELECT id FROM employees WHERE manager_id = (SELECT manager_id FROM warehouses WHERE id = p_warehouse_id)))
     UNION ALL
     SELECT '【费用】', '报损损失',
         COALESCE((SELECT SUM(total_loss_amount) FROM damage_reports

@@ -1,7 +1,6 @@
 {
   "fingerprints": [
-    "CO_OCCURRENCE:dbo.account_subjects.id->dbo.budget_versions.ledger_book_id:SQL_LOG_JOIN",
-    "CO_OCCURRENCE:dbo.budget_versions.ledger_book_id->dbo.departments.id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:dbo.account_subjects.subject_code->dbo.accounts.code:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.cashier_journals.account_id->dbo.reconciliations.account_id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.cashier_journals.reference_id->dbo.sales_orders.id:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.category_dim.source_category_id->dbo.products.category_id:SQL_LOG_JOIN",
@@ -12,16 +11,18 @@
     "CO_OCCURRENCE:dbo.region_dim.city->dbo.warehouses.city:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.region_dim.province->dbo.warehouses.province:SQL_LOG_JOIN",
     "CO_OCCURRENCE:dbo.sales_orders.id->dbo.vouchers.reference_id:SQL_LOG_JOIN",
+    "FK_LIKE:dbo.budget_items.subject_id->dbo.account_subjects.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.inventory.product_id->dbo.products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.payments.order_id->dbo.sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.product_categories.parent_id->dbo.product_categories.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.project_costs.department_id->dbo.departments.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.sales_order_items.order_id->dbo.sales_orders.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:dbo.sales_order_items.product_id->dbo.products.id:SQL_LOG_JOIN,REPEATED_OBSERVATION,NAMING_MATCH",
     "FK_LIKE:dbo.sales_orders.customer_id->dbo.customers.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.sales_orders.warehouse_id->dbo.warehouses.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.voucher_items.account_id->dbo.accounts.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:dbo.voucher_items.voucher_id->dbo.vouchers.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

@@ -23,5 +23,17 @@
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Explicitly bridge Maven user properties into the forked CLI test JVM. -->
+    <correctnessFixtureProfile>smoke</correctnessFixtureProfile>
+    <correctnessFixtureFilter></correctnessFixtureFilter>
+    <correctnessFixtureParallelism></correctnessFixtureParallelism>
+    <correctnessStatementParallelism>1</correctnessStatementParallelism>
+    <correctnessFixtureTiming>false</correctnessFixtureTiming>
+    <correctnessFixtureTimingVerbose>false</correctnessFixtureTimingVerbose>
+    <correctnessFixtureTimingTop>20</correctnessFixtureTimingTop>
+    <updateCorrectnessGold>false</updateCorrectnessGold>
+    <runGeneratedReportTests>false</runGeneratedReportTests>
+    <updateCorrectnessSummary>false</updateCorrectnessSummary>
+    <updateDataLineageAudit>false</updateDataLineageAudit>
   </properties>
 </project>

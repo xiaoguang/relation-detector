@@ -422,7 +422,7 @@ store_recent_stocktake AS (
         MAX(created_at) AS last_stocktake_activity,
         COUNT(CASE WHEN created_at >= CURRENT_DATE - INTERVAL '30' DAY THEN 1 END) AS stocktake_count_30d
     FROM inventory_transactions
-    WHERE VARCHAR2(40) = 'stocktake_adjust'
+    WHERE transaction_type = 'stocktake_adjust'
     GROUP BY warehouse_id
 )
 SELECT

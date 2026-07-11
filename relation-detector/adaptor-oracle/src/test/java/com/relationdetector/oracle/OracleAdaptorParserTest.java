@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.Enums.DatabaseType;
+import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
@@ -29,6 +30,161 @@ import com.relationdetector.core.relation.TokenEventSqlRelationParser;
 import com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule;
 
 class OracleAdaptorParserTest {
+    @Test
+    void oracleTokenEventAndFullGrammerSeparateCaseValueAndControlSources() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO reconciliation_items (credit_amount)
+                SELECT CASE WHEN cj.journal_type = 'credit' THEN cj.amount ELSE 0 END
+                FROM cashier_journals cj
+                """);
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
+                new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow(),
+                new OracleFullGrammerDialectModule().sqlParser());
+
+        for (var parser : parsers) {
+            Set<String> lineages = lineage(statement, parser.parseSql(statement, null));
+            assertTrue(lineages.contains(
+                            "VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount"),
+                    () -> parser.getClass().getSimpleName() + " " + lineages);
+            assertTrue(lineages.contains(
+                            "CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount"),
+                    () -> parser.getClass().getSimpleName() + " " + lineages);
+        }
+    }
+
+    @Test
+    void oracleTokenEventAndFullGrammerSeparateScalarAggregateValueAndControls() {
+        SqlStatementRecord statement = statement("""
+                UPDATE supplier_products sp
+                SET total_order_qty = (
+                    SELECT SUM(poi.quantity)
+                    FROM purchase_order_items poi
+                    JOIN purchase_orders po ON poi.order_id = po.id
+                    WHERE poi.product_id = sp.product_id
+                      AND po.supplier_id = sp.supplier_id
+                )
+                """);
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
+                new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow(),
+                new OracleFullGrammerDialectModule().sqlParser());
+
+        for (var parser : parsers) {
+            Set<String> lineages = lineage(statement, parser.parseSql(statement, null));
+            assertTrue(lineages.contains(
+                            "VALUE:AGGREGATE:purchase_order_items.quantity->supplier_products.total_order_qty"),
+                    () -> parser.getClass().getSimpleName() + " " + lineages);
+            assertTrue(lineages.contains(
+                            "CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,"
+                                    + "purchase_order_items.product_id,supplier_products.product_id,"
+                                    + "purchase_orders.supplier_id,supplier_products.supplier_id"
+                                    + "->supplier_products.total_order_qty"),
+                    () -> parser.getClass().getSimpleName() + " " + lineages);
+        }
+    }
+
+    @Test
+    void oracleTokenEventAndFullGrammerKeepNestedAggregateCaseRoles() {
+        SqlStatementRecord statement = statement("""
+                UPDATE supplier_products sp
+                SET total_order_qty = (
+                        SELECT COALESCE(SUM(poi.received_qty), 0)
+                        FROM purchase_order_items poi
+                        JOIN purchase_orders po ON poi.order_id = po.id
+                        WHERE poi.product_id = sp.product_id
+                          AND po.supplier_id = sp.supplier_id
+                    ),
+                    quality_score = COALESCE((
+                        SELECT ROUND(COUNT(CASE WHEN ir.inspection_result = 'qualified' THEN 1 END) * 100.0
+                            / NULLIF(COUNT(*), 0), 2)
+                        FROM inspection_reports ir
+                        JOIN product_batches pb ON ir.batch_id = pb.id
+                        WHERE pb.supplier_id = sp.supplier_id
+                          AND ir.product_id = sp.product_id
+                    ), 100)
+                """);
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
+                new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow(),
+                new OracleFullGrammerDialectModule().sqlParser());
+
+        for (var parser : parsers) {
+            var result = parser.parseSql(statement, null);
+            List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, result);
+            assertLineageSource(lineages, "purchase_order_items", "received_qty",
+                    "supplier_products", "total_order_qty",
+                    LineageFlowKind.VALUE, LineageTransformType.AGGREGATE, result);
+            assertLineageSource(lineages, "inspection_reports", "inspection_result",
+                    "supplier_products", "quality_score",
+                    LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN, result);
+            assertTrue(lineages.stream().noneMatch(lineage ->
+                            lineage.flowKind() == LineageFlowKind.VALUE
+                                    && "quality_score".equals(lineage.target().column().columnName())
+                                    && lineage.sources().stream().anyMatch(source ->
+                                            "inspection_reports".equals(source.table().tableName())
+                                                    && "inspection_result".equals(source.column().columnName()))),
+                    () -> parser.getClass().getSimpleName()
+                            + " must not treat CASE predicate columns as VALUE: " + lineages
+                            + " events=" + result.events());
+        }
+    }
+
+    @Test
+    void oracleTokenEventAndFullGrammerKeepFunctionAndAggregateTransformsThroughProjection() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO contract_milestones (planned_date)
+                SELECT ADD_MONTHS(c.start_date, 2)
+                FROM contracts c;
+
+                INSERT INTO tax_invoices (tax_period)
+                SELECT TO_CHAR(po.order_date, 'YYYY-MM')
+                FROM purchase_orders po;
+
+                INSERT INTO reconciliation_items (description)
+                SELECT cj.journal_type || ' - ' || NVL(cj.counterparty, '') || ' - ' || cj.remark
+                FROM cashier_journals cj;
+
+                INSERT INTO inventory_transactions (remark)
+                SELECT 'Stocktake ' || s.stocktake_no
+                FROM stocktakes s;
+
+                MERGE INTO budget_items bi
+                USING (
+                    SELECT vi.account_id AS subject_id,
+                           SUM(CASE WHEN vi.direction = 'debit' THEN vi.amount ELSE 0 END) AS used_amount
+                    FROM voucher_items vi
+                    GROUP BY vi.account_id
+                ) src
+                ON (src.subject_id = bi.subject_id)
+                WHEN MATCHED THEN UPDATE SET used_amount = COALESCE(src.used_amount, 0)
+                """);
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
+                new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow(),
+                new OracleFullGrammerDialectModule().sqlParser());
+
+        for (var parser : parsers) {
+            Set<String> lineages = lineage(statement, parser.parseSql(statement, null));
+            assertTrue(lineages.contains(
+                            "VALUE:FUNCTION_CALL:contracts.start_date->contract_milestones.planned_date"),
+                    () -> parser.getClass().getSimpleName() + " " + lineages);
+            assertTrue(lineages.contains(
+                            "VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period"),
+                    () -> parser.getClass().getSimpleName() + " " + lineages);
+            assertTrue(lineages.contains(
+                            "VALUE:CONCAT_FORMAT:cashier_journals.journal_type,"
+                                    + "cashier_journals.counterparty,cashier_journals.remark"
+                                    + "->reconciliation_items.description"),
+                    () -> parser.getClass().getSimpleName() + " " + lineages);
+            assertTrue(lineages.contains(
+                            "VALUE:CONCAT_FORMAT:stocktakes.stocktake_no->inventory_transactions.remark"),
+                    () -> parser.getClass().getSimpleName() + " " + lineages);
+            assertTrue(lineages.contains(
+                            "VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount"),
+                    () -> parser.getClass().getSimpleName() + " " + lineages);
+            assertTrue(lineages.contains(
+                            "CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount"),
+                    () -> parser.getClass().getSimpleName() + " " + lineages);
+        }
+    }
+
     @Test
     void serviceLoaderDiscoversOracleAdaptor() {
         List<DatabaseAdaptor> adaptors = ServiceLoader.load(DatabaseAdaptor.class)
@@ -182,6 +338,27 @@ class OracleAdaptorParserTest {
     }
 
     @Test
+    void oracleFullGrammerDdlParserEmitsGeneratedColumnInventory() {
+        var result = new OracleFullGrammerDialectModule().structuredDdlParser().parseDdl("""
+                CREATE TABLE fixed_assets (
+                    original_value NUMBER(12,2),
+                    residual_value NUMBER(12,2),
+                    useful_months NUMBER(5),
+                    monthly_depreciation NUMBER(12,2) GENERATED ALWAYS AS (
+                        (original_value - residual_value) / useful_months
+                    ) VIRTUAL
+                );
+                """, "oracle-generated-column-inventory.sql", null);
+
+        assertEquals(0, result.attributes().get("syntaxErrors"));
+        assertTrue(result.events().stream().anyMatch(event ->
+                        event.type() == StructuredParseEventType.DDL_COLUMN
+                                && "fixed_assets".equals(event.attributes().get("table"))
+                                && "monthly_depreciation".equals(event.attributes().get("column"))),
+                () -> "Oracle full-grammer DDL should inventory generated columns: " + result.events());
+    }
+
+    @Test
     void oracleDdlParsersAcceptCommentOnTableAndColumnWithoutRelationshipEvents() {
         String ddl = """
                 CREATE TABLE "person_EXTEND" (
@@ -273,8 +450,10 @@ class OracleAdaptorParserTest {
                 () -> lineages.toString());
         assertTrue(lineages.contains("VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus"),
                 () -> lineages.toString());
-        assertTrue(lineages.contains("VALUE:AGGREGATE:voucher_items.direction,"
-                + "voucher_items.amount->budget_items.used_amount"), () -> lineages.toString());
+        assertTrue(lineages.contains("VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount"),
+                () -> "lineages=" + lineages + " events=" + result.events());
+        assertTrue(lineages.contains("CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount"),
+                () -> "lineages=" + lineages + " events=" + result.events());
         assertTrue(lineages.contains("VALUE:CONCAT_FORMAT:cashier_journals.journal_type,"
                 + "cashier_journals.counterparty->reconciliation_items.description"), () -> lineages.toString());
         assertTrue(lineages.contains("VALUE:DIRECT:departments.id->employees.department_id"),
@@ -315,21 +494,21 @@ class OracleAdaptorParserTest {
         assertEquals(0, result.attributes().get("syntaxErrors"));
         List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, result);
         assertLineageSource(lineages, "purchase_orders", "id", "supplier_products", "total_order_count",
-                LineageTransformType.AGGREGATE, result);
+                LineageFlowKind.VALUE, LineageTransformType.AGGREGATE, result);
         assertLineageSource(lineages, "purchase_order_items", "order_id", "supplier_products", "total_order_count",
-                LineageTransformType.AGGREGATE, result);
+                LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN, result);
         assertLineageSource(lineages, "purchase_order_items", "received_qty", "supplier_products", "total_order_qty",
-                LineageTransformType.AGGREGATE, result);
+                LineageFlowKind.VALUE, LineageTransformType.AGGREGATE, result);
         assertLineageSource(lineages, "purchase_order_items", "product_id", "supplier_products", "total_order_qty",
-                LineageTransformType.AGGREGATE, result);
+                LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN, result);
         assertLineageSource(lineages, "purchase_orders", "supplier_id", "supplier_products", "total_order_qty",
-                LineageTransformType.AGGREGATE, result);
+                LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN, result);
         assertLineageSource(lineages, "supplier_products", "product_id", "supplier_products", "total_order_qty",
-                LineageTransformType.AGGREGATE, result);
+                LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN, result);
         assertLineageSource(lineages, "supplier_products", "supplier_id", "supplier_products", "total_order_qty",
-                LineageTransformType.AGGREGATE, result);
+                LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN, result);
         assertLineageSource(lineages, "purchase_orders", "order_date", "supplier_products", "last_order_date",
-                LineageTransformType.AGGREGATE, result);
+                LineageFlowKind.VALUE, LineageTransformType.AGGREGATE, result);
     }
 
     @Test
@@ -406,7 +585,7 @@ class OracleAdaptorParserTest {
                 () -> "lineages=" + lineages + " events=" + result.events());
         assertTrue(lineages.contains("VALUE:DIRECT:positions.id->employees.position_id"),
                 () -> lineages.toString());
-        assertTrue(lineages.contains("VALUE:DIRECT:positions.base_salary->employees.salary"),
+        assertTrue(lineages.contains("VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary"),
                 () -> lineages.toString());
     }
 
@@ -572,6 +751,138 @@ class OracleAdaptorParserTest {
                         || fingerprints.contains("CO_OCCURRENCE:employees.id->purchase_orders.purchaser_id"),
                 () -> "Oracle token-event should resolve unqualified SELECT id to employees.id: "
                         + fingerprints);
+    }
+
+    @Test
+    void oracleTokenEventAndFullGrammerCoverConfirmedOracle26aiRelations() {
+        SqlStatementRecord statement = statement("""
+                SELECT cj.id
+                FROM cashier_journals cj
+                JOIN purchase_orders po ON cj.reference_id = po.id
+                WHERE cj.reference_id IN (
+                    SELECT so.id
+                    FROM sales_orders so
+                    WHERE so.customer_id = 42
+                );
+
+                SELECT d.id
+                FROM departments d
+                WHERE d.id IN (
+                    SELECT po.department_id
+                    FROM purchase_orders po
+                    WHERE po.status = 'ordered'
+                );
+
+                SELECT poi.id
+                FROM purchase_order_items poi
+                LEFT JOIN purchase_receipt_items pri ON poi.id = pri.order_item_id
+                """);
+        List<com.relationdetector.contracts.spi.Collectors.StructuredSqlParser> parsers = List.of(
+                new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow(),
+                new OracleFullGrammerDialectModule().sqlParser());
+        for (var parser : parsers) {
+            Set<String> fingerprints = relationFingerprints(statement, parser);
+
+            assertRelation(fingerprints, "cashier_journals.reference_id", "sales_orders.id", parser);
+            assertRelation(fingerprints, "cashier_journals.reference_id", "purchase_orders.id", parser);
+            assertRelation(fingerprints, "purchase_orders.department_id", "departments.id", parser);
+            assertRelation(fingerprints, "purchase_receipt_items.order_item_id", "purchase_order_items.id", parser);
+        }
+    }
+
+    @Test
+    void oracleFullGrammerFindsRelationsInsideScalarSubqueryProjections() {
+        SqlStatementRecord statement = statement("""
+                SELECT
+                    d.id,
+                    (SELECT SUM(po.total_amount)
+                     FROM purchase_orders po
+                     WHERE po.department_id = d.id) AS actual_purchase_ytd
+                FROM departments d;
+
+                SELECT
+                    (SELECT MAX(journal_date)
+                     FROM cashier_journals
+                     WHERE reference_type = 'sales_order'
+                       AND reference_id IN (
+                           SELECT id
+                           FROM sales_orders
+                           WHERE customer_id = c.id
+                       )) AS last_payment_date
+                FROM customers c
+                """);
+
+        var parser = new OracleFullGrammerDialectModule().sqlParser();
+        var result = parser.parseSql(statement, null);
+        assertTrue(result.events().stream().anyMatch(event ->
+                        event.type() == StructuredParseEventType.IN_SUBQUERY_PREDICATE
+                                && "reference_id".equals(event.attributes().get("outerColumn"))),
+                () -> result.events().toString());
+        Set<String> fingerprints = relationFingerprints(statement, parser);
+
+        assertRelation(fingerprints, "purchase_orders.department_id", "departments.id", "oracle/26ai");
+        assertRelation(fingerprints, "cashier_journals.reference_id", "sales_orders.id", "oracle/26ai");
+    }
+
+    @Test
+    void oracleFullGrammerDoesNotTreatFunctionEqualityAsDirectColumnEquality() {
+        SqlStatementRecord statement = statement("""
+                SELECT so.id
+                FROM sales_orders so
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM salary_payments sp
+                    WHERE TO_CHAR(sp.salary_month, 'YYYY') = TO_CHAR(so.order_date, 'YYYY')
+                )
+                """);
+
+        Set<String> fingerprints = relationFingerprints(
+                statement,
+                new OracleFullGrammerDialectModule().sqlParser());
+
+        assertTrue(fingerprints.stream().noneMatch(value ->
+                        value.contains("salary_payments.salary_month") && value.contains("sales_orders.order_date")),
+                () -> fingerprints.toString());
+    }
+
+    @Test
+    void oracleTokenEventFindsRoutineJoinAndCteProjectionRelations() {
+        String routine = """
+                CREATE OR REPLACE PROCEDURE sp_evaluate_supplier(
+                    p_result OUT SYS_REFCURSOR
+                ) AS
+                BEGIN
+                    OPEN p_result FOR
+                    SELECT poi.id
+                    FROM purchase_order_items poi
+                    LEFT JOIN purchase_receipt_items pri ON poi.id = pri.order_item_id;
+                END;
+                /
+                """;
+        SqlStatementRecord statement = statement(routine + "\n" + oracleSampleStatement(
+                "04-queries/09-real-world-scenarios.sql",
+                "FETCH FIRST 100 ROWS ONLY;"));
+
+        var parser = new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow();
+        var result = parser.parseSql(statement, null);
+        assertTrue(result.events().stream().anyMatch(event ->
+                        event.type() == StructuredParseEventType.PROJECTION_ITEM
+                                && "po_chain".equals(event.attributes().get("outputAlias"))
+                                && "po_id".equals(event.attributes().get("outputColumn"))
+                                && java.util.List.of("purchase_orders").equals(event.attributes().get("sourceAliases"))),
+                () -> result.events().toString());
+        assertTrue(result.events().stream().anyMatch(event ->
+                        event.type() == StructuredParseEventType.PROJECTION_ITEM
+                                && "payment_chain".equals(event.attributes().get("outputAlias"))
+                                && "reference_id".equals(event.attributes().get("outputColumn"))
+                                && java.util.List.of("cashier_journals").equals(event.attributes().get("sourceAliases"))),
+                () -> result.events().toString());
+        Set<String> fingerprints = relationFingerprints(statement, parser);
+
+        assertRelation(fingerprints, "purchase_receipt_items.order_item_id", "purchase_order_items.id",
+                "oracle token-event");
+        assertRelation(fingerprints, "cashier_journals.reference_id", "purchase_orders.id",
+                "oracle token-event");
     }
 
     @Test
@@ -766,14 +1077,15 @@ class OracleAdaptorParserTest {
             assertTrue(lineages.contains("CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel"),
                     () -> module.profile().id() + " " + lineages);
             assertTrue(lineages.contains("VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,"
-                    + "inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,"
-                    + "inventory_reservations.released_quantity,purchase_order_items.quantity,"
+                    + "inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,"
+                    + "inventory_reservations.reserved_quantity,"
+                    + "purchase_order_items.quantity,"
                     + "purchase_order_items.received_qty->mrp_run_items.net_requirement"),
                     () -> module.profile().id() + " " + lineages);
-            assertTrue(lineages.contains("VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty"),
+            assertTrue(lineages.contains("VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty"),
                     () -> module.profile().id() + " " + lineages);
-            assertTrue(lineages.contains("VALUE:AGGREGATE:inventory_reservations.reserved_quantity,"
-                    + "inventory_reservations.released_quantity->mrp_run_items.reserved_qty"),
+            assertTrue(lineages.contains("VALUE:AGGREGATE:inventory_reservations.released_quantity,"
+                    + "inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty"),
                     () -> module.profile().id() + " " + lineages);
             assertTrue(lineages.contains("VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id"),
                     () -> module.profile().id() + " " + lineages);
@@ -855,6 +1167,25 @@ class OracleAdaptorParserTest {
                     embedding VECTOR(3, FLOAT32)
                 )
                 """;
+        String sqlBoolean26ai = """
+                CREATE TABLE feature_flags (
+                    id NUMBER PRIMARY KEY,
+                    enabled BOOLEAN
+                )
+                """;
+        String multivalueInsert26ai = """
+                INSERT INTO feature_flags (id, enabled)
+                VALUES (1, TRUE), (2, FALSE)
+                """;
+        String routineWithMultivalueInsert26ai = """
+                CREATE OR REPLACE PROCEDURE seed_feature_flags
+                AS
+                BEGIN
+                    INSERT INTO feature_flags (id, enabled)
+                    VALUES (1, TRUE), (2, FALSE);
+                END;
+                /
+                """;
 
         assertSyntaxErrors(new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
                 memoptimize19c);
@@ -876,6 +1207,44 @@ class OracleAdaptorParserTest {
                 vector26ai);
         assertParses(new com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule(),
                 vector26ai);
+
+        for (FullGrammerDialectModule lowerVersion : List.of(
+                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule())) {
+            assertSyntaxErrors(lowerVersion, sqlBoolean26ai);
+            assertSyntaxErrors(lowerVersion, multivalueInsert26ai);
+            assertSyntaxErrors(lowerVersion, routineWithMultivalueInsert26ai);
+        }
+        FullGrammerDialectModule oracle26ai =
+                new com.relationdetector.oracle.fullgrammer.v26ai.OracleFullGrammerDialectModule();
+        assertParses(oracle26ai, sqlBoolean26ai);
+        assertParses(oracle26ai, multivalueInsert26ai);
+        assertParses(oracle26ai, routineWithMultivalueInsert26ai);
+    }
+
+    @Test
+    void oracleFullGrammerRejectsEmptyParenthesesOnZeroParameterProcedureAcrossVersions() {
+        List<FullGrammerDialectModule> modules = List.of(
+                new com.relationdetector.oracle.fullgrammer.v12c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v19c.OracleFullGrammerDialectModule(),
+                new com.relationdetector.oracle.fullgrammer.v21c.OracleFullGrammerDialectModule(),
+                new OracleFullGrammerDialectModule());
+        var invalid = statement("""
+                CREATE OR REPLACE PROCEDURE sp_invalid_empty_params()
+                AS
+                BEGIN
+                    NULL;
+                END;
+                /
+                """);
+
+        for (FullGrammerDialectModule module : modules) {
+            var result = module.sqlParser().parseSql(invalid, null);
+            assertTrue(((Number) result.attributes().get("syntaxErrors")).intValue() > 0,
+                    () -> module.profile().id() + " must reject Oracle zero-parameter empty parentheses; "
+                            + "attributes=" + result.attributes() + " events=" + result.events());
+        }
     }
 
     @Test
@@ -915,12 +1284,32 @@ class OracleAdaptorParserTest {
     }
 
     private Set<String> relationFingerprints(SqlStatementRecord statement) {
-        return new TokenEventSqlRelationParser(new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow())
+        return relationFingerprints(statement, new OracleDatabaseAdaptor().structuredSqlParser().orElseThrow());
+    }
+
+    private Set<String> relationFingerprints(
+            SqlStatementRecord statement,
+            com.relationdetector.contracts.spi.Collectors.StructuredSqlParser parser
+    ) {
+        return new TokenEventSqlRelationParser(parser)
                 .parse(statement).stream()
                 .map(relation -> relation.relationType() + ":"
                         + relation.source().displayName() + "->"
                         + relation.target().displayName())
                 .collect(Collectors.toSet());
+    }
+
+    private void assertRelation(
+            Set<String> fingerprints,
+            String firstEndpoint,
+            String secondEndpoint,
+            Object parser
+    ) {
+        String forward = "CO_OCCURRENCE:" + firstEndpoint + "->" + secondEndpoint;
+        String reverse = "CO_OCCURRENCE:" + secondEndpoint + "->" + firstEndpoint;
+        assertTrue(fingerprints.contains(forward) || fingerprints.contains(reverse),
+                () -> parser.getClass().getSimpleName() + " missing relation " + forward
+                        + ", actual=" + fingerprints);
     }
 
     private void assertLineageSource(
@@ -929,11 +1318,13 @@ class OracleAdaptorParserTest {
             String sourceColumn,
             String targetTable,
             String targetColumn,
+            LineageFlowKind flowKind,
             LineageTransformType transformType,
             com.relationdetector.contracts.parse.StructuredParseResult result
     ) {
         assertTrue(lineages.stream().anyMatch(lineage ->
-                        lineage.transformType() == transformType
+                        lineage.flowKind() == flowKind
+                                && lineage.transformType() == transformType
                                 && targetTable.equals(lineage.target().table().tableName())
                                 && targetColumn.equals(lineage.target().column().columnName())
                                 && lineage.sources().stream().anyMatch(source ->
@@ -941,6 +1332,7 @@ class OracleAdaptorParserTest {
                                         && sourceColumn.equals(source.column().columnName()))),
                 () -> "Expected " + sourceTable + "." + sourceColumn + " -> "
                         + targetTable + "." + targetColumn + " transform=" + transformType
+                        + " flow=" + flowKind
                         + ", lineages=" + lineages.stream().map(this::lineageFingerprint).toList()
                         + " events=" + result.events());
     }
@@ -1053,6 +1445,20 @@ class OracleAdaptorParserTest {
             return text.substring(start + 1, end).strip();
         } catch (IOException e) {
             throw new IllegalStateException("Cannot read Oracle fixture from " + path, e);
+        }
+    }
+
+    private String oracleSampleStatement(String relativePath, String terminator) {
+        Path path = workspaceRoot().resolve("sample-data/oracle/26ai").resolve(relativePath);
+        try {
+            String text = Files.readString(path);
+            int end = text.indexOf(terminator);
+            if (end < 0) {
+                throw new IllegalStateException("Missing statement terminator " + terminator + " in " + path);
+            }
+            return text.substring(0, end + terminator.length()).strip();
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot read Oracle sample statement from " + path, e);
         }
     }
 

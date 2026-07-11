@@ -180,8 +180,8 @@ public final class SemanticExtractionDocumentNormalizer {
 
 无 `focus` 时，bundle 默认覆盖全局完整候选池；`--max-relationships`、`--max-lineage`、`--max-naming`
 的默认值是 `0`，表示不限制。只有用户显式设置正数上限时，才生成有意的 preview / compact prompt view。
-有 `focus` 时只保留相关表和 evidence。所有输出都必须引用 bundle 中稳定 id；event 必须来自
-`eventCandidates`，triplet 必须来自 `tripletCandidates`。bundle-aware normalizer（例如 `openai-api`
+有 `focus` 时只保留相关表和 evidence。目标契约要求所有输出引用 bundle 中稳定 fact/candidate id；event 必须来自
+`eventCandidates`，triplet 必须来自 `tripletCandidates`。当前 bundle 的 relationship/lineage/naming `id` 含输入数组 index，且它们的 `evidenceRefs` 是 `{source,type,detail}` snapshot，不是 EvidenceGraph 的 evidence id；只有 event/triplet 等 candidate refs 是字符串 id。因此当前实现满足“同一有序 bundle 内可定位”，尚未满足跨重排、跨 scan 的稳定引用。bundle-aware normalizer（例如 `openai-api`
 写出结果时使用的路径）会根据 evidence bundle 补齐遗漏的 event / triplet / review item 候选，避免为压缩牺牲候选完整性。
 当前 `semantic normalize-extraction` CLI 只接收 raw result，不接收 evidence bundle，因此它只能做 raw-only normalization，
 不能执行候选 backfill 或 bundle id 全量解析。
@@ -221,14 +221,14 @@ LLM 返回 JSON semantic document，系统再做 deterministic normalization / v
 }
 ```
 
-`SemanticExtractionDocumentNormalizer` 会补齐稳定 id、entity refs、`semanticGraph` 和 `validation`。`validation.isRefClosed=false` 时，`isolatedEntities`、`unresolvedReferences`、`missingEvidenceRefs` 会说明问题。当前 validation 主要做非空 evidence、event/triplet ref 存在性、语义对象互引解析；它还没有把每个 `evidenceRef` 逐条解析回 evidence bundle fact id。
+`SemanticExtractionDocumentNormalizer` 会补齐 document-local id、entity refs、`semanticGraph` 和 `validation`。`validation.isRefClosed=false` 时，`isolatedEntities`、`unresolvedReferences`、`missingEvidenceRefs` 会说明问题。这里的 `isRefClosed` 只表示 normalized document 内部轻量引用检查通过：当前 validation 检查 evidence 数组非空、event/triplet ref 字段存在和语义对象互引；它不会验证 event/triplet candidate ref 或每个 `evidenceRef` 确实存在于输入 bundle，也不会验证 object-form evidence snapshot。不能把 `isRefClosed=true` 解读为完整 provenance closure。
 
 ## 6. 输出校验
 
 LLM 输出进入 catalog 前必须校验。当前代码已实现的是 normalized artifact 校验，不写 catalog：
 
 - `physicalName`、`sourceFields`、`relationship pathId` 等字段当前按 normalized document 内的 entity / section 互引做解析；逐条解析回 evidence bundle fact id 是后续增强项。
-- `evidenceRefs` 当前要求非空，并保留给人工/工具回溯；严格 bundle fact id 解析尚未在 normalizer 中实现。
+- `evidenceRefs` 当前要求非空，并保留给人工/工具回溯；严格 bundle fact/candidate id 解析尚未在 normalizer 中实现。bundle-aware overload 只负责候选 backfill，不会因此自动获得严格 ref validation。
 - event 必须带 `eventCandidateRef`，不能从 derived-only lineage 单独创造 event。
 - derived lineage 只能作为 eventCandidate 上的 `supportingDerivedLineageRefs` 辅助解释。
 - 当前 normalizer 不会自动把 `reviewStatus=BUSINESS_APPROVED` 降级；“LLM 不能写 BUSINESS_APPROVED”由 prompt、后续 catalog/review gate 和测试约束共同保证，自动降级是后续治理增强项。

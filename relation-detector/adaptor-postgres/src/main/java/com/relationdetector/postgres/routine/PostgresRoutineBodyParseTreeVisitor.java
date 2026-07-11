@@ -19,6 +19,7 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.postgres.routine.PostgresRoutineBodySqlBaseVisitor;
 import com.relationdetector.postgres.routine.PostgresRoutineBodySqlLexer;
 import com.relationdetector.postgres.routine.PostgresRoutineBodySqlParser;
@@ -287,22 +288,10 @@ public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineBo
         int count = Math.min(targetColumns.size(), selectItems.size());
         for (int index = 0; index < count; index++) {
             PostgresRoutineBodySqlParser.SelectItemContext item = selectItems.get(index);
-            if (item.expression() == null) {
-                continue;
+            for (ExpressionAnalysis source : selectItemAnalyses(item)) {
+                addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, "", targetTable,
+                        targetColumns.get(index), source, "INSERT_SELECT");
             }
-            ExpressionAnalysis source = analyze(item.expression());
-            if (source.sources().isEmpty()) {
-                continue;
-            }
-            Map<String, Object> attrs = attrs();
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumns.get(index));
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            attrs.put("mappingKind", "INSERT_SELECT");
-            add(StructuredParseEventType.INSERT_SELECT_MAPPING, item, attrs);
         }
         return null;
     }
@@ -326,20 +315,10 @@ public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineBo
             List<String> targetParts = parts(assignment.qualifiedName());
             String targetColumn = targetParts.isEmpty() ? "" : targetParts.get(targetParts.size() - 1);
             String assignmentAlias = targetParts.size() > 1 ? targetParts.get(targetParts.size() - 2) : targetAlias;
-            ExpressionAnalysis source = analyze(assignment.expression());
-            if (source.sources().isEmpty()) {
-                continue;
+            for (ExpressionAnalysis source : writeAnalyses(assignment.expression())) {
+                addWriteMapping(StructuredParseEventType.UPDATE_ASSIGNMENT, assignment, assignmentAlias,
+                        targetTable, targetColumn, source, "UPDATE_SET");
             }
-            Map<String, Object> attrs = attrs();
-            attrs.put("targetAlias", assignmentAlias);
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumn);
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            attrs.put("mappingKind", "UPDATE_SET");
-            add(StructuredParseEventType.UPDATE_ASSIGNMENT, assignment, attrs);
         }
         if (ctx.whereClause() != null) {
             visit(ctx.whereClause());
@@ -385,20 +364,10 @@ public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineBo
             List<String> targetParts = parts(assignment.qualifiedName());
             String targetColumn = targetParts.isEmpty() ? "" : targetParts.get(targetParts.size() - 1);
             String assignmentAlias = targetParts.size() > 1 ? targetParts.get(targetParts.size() - 2) : targetAlias;
-            ExpressionAnalysis source = analyze(assignment.expression());
-            if (source.sources().isEmpty()) {
-                continue;
+            for (ExpressionAnalysis source : writeAnalyses(assignment.expression())) {
+                addWriteMapping(StructuredParseEventType.MERGE_WRITE_MAPPING, assignment, assignmentAlias,
+                        targetTable, targetColumn, source, "MERGE_UPDATE");
             }
-            Map<String, Object> attrs = attrs();
-            attrs.put("targetAlias", assignmentAlias);
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumn);
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            attrs.put("mappingKind", "MERGE_UPDATE");
-            add(StructuredParseEventType.MERGE_WRITE_MAPPING, assignment, attrs);
         }
     }
 
@@ -413,20 +382,10 @@ public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineBo
         List<PostgresRoutineBodySqlParser.ExpressionContext> expressions = insertAction.expressionList().expression();
         int count = Math.min(targetColumns.size(), expressions.size());
         for (int index = 0; index < count; index++) {
-            ExpressionAnalysis source = analyze(expressions.get(index));
-            if (source.sources().isEmpty()) {
-                continue;
+            for (ExpressionAnalysis source : writeAnalyses(expressions.get(index))) {
+                addWriteMapping(StructuredParseEventType.MERGE_WRITE_MAPPING, insertAction, targetAlias,
+                        targetTable, targetColumns.get(index), source, "MERGE_INSERT");
             }
-            Map<String, Object> attrs = attrs();
-            attrs.put("targetAlias", targetAlias);
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumns.get(index));
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            attrs.put("mappingKind", "MERGE_INSERT");
-            add(StructuredParseEventType.MERGE_WRITE_MAPPING, insertAction, attrs);
         }
     }
 
@@ -434,31 +393,77 @@ public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineBo
         List<PostgresRoutineBodySqlParser.SelectItemContext> items = ctx.selectItem();
         for (int index = 0; index < items.size(); index++) {
             PostgresRoutineBodySqlParser.SelectItemContext item = items.get(index);
-            if (item.expression() == null) {
-                continue;
-            }
-            ExpressionAnalysis source = analyze(item.expression());
-            if (source.sources().isEmpty()) {
-                continue;
-            }
             String outputColumn = index < owner.columns().size() ? owner.columns().get(index) : outputColumn(item);
             if (outputColumn.isBlank()) {
                 continue;
             }
-            Map<String, Object> attrs = attrs();
-            attrs.put("outputAlias", owner.alias());
-            attrs.put("outputColumn", outputColumn);
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
+            for (ExpressionAnalysis source : selectItemAnalyses(item)) {
+                if (source.sources().isEmpty()) {
+                    continue;
+                }
+                Map<String, Object> attrs = attrs();
+                attrs.put("outputAlias", owner.alias());
+                attrs.put("outputColumn", outputColumn);
+                attrs.put("sourceAliases", source.aliases());
+                attrs.put("sourceColumns", source.columns());
+                attrs.put("transformType", source.transform().name());
+                attrs.put("flowKind", source.flowKind().name());
+                add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
+            }
         }
+    }
+
+    private List<ExpressionAnalysis> selectItemAnalyses(PostgresRoutineBodySqlParser.SelectItemContext item) {
+        if (item.expression() != null) {
+            return writeAnalyses(item.expression());
+        }
+        if (item.booleanProjection() == null) {
+            return List.of();
+        }
+        ExpressionAnalysis combined = ExpressionAnalysis.empty();
+        for (PostgresRoutineBodySqlParser.ExpressionContext expression : item.booleanProjection().expression()) {
+            combined = ExpressionAnalysis.combine(LineageTransformType.FUNCTION_CALL,
+                    LineageFlowKind.VALUE, combined, analyze(expression));
+        }
+        if (combined.sources().isEmpty()) {
+            return List.of();
+        }
+        return List.of(new ExpressionAnalysis(
+                combined.sources(), LineageTransformType.FUNCTION_CALL, LineageFlowKind.VALUE));
+    }
+
+    private void addWriteMapping(
+            StructuredParseEventType type,
+            ParserRuleContext context,
+            String targetAlias,
+            String targetTable,
+            String targetColumn,
+            ExpressionAnalysis source,
+            String mappingKind
+    ) {
+        if (source.sources().isEmpty()) {
+            return;
+        }
+        Map<String, Object> attributes = attrs();
+        if (!targetAlias.isBlank()) {
+            attributes.put("targetAlias", targetAlias);
+        }
+        attributes.put("targetTable", targetTable);
+        attributes.put("targetColumn", targetColumn);
+        attributes.put("sourceAliases", source.aliases());
+        attributes.put("sourceColumns", source.columns());
+        attributes.put("transformType", source.transform().name());
+        attributes.put("flowKind", source.flowKind().name());
+        attributes.put("mappingKind", mappingKind);
+        add(type, context, attributes);
     }
 
     private String outputColumn(PostgresRoutineBodySqlParser.SelectItemContext item) {
         if (item.identifier() != null) {
             return clean(item.identifier().getText());
+        }
+        if (item.expression() == null) {
+            return "";
         }
         ColumnRead column = singleColumn(item.expression());
         return column == null ? "" : column.column();
@@ -521,6 +526,11 @@ public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineBo
         if (expression instanceof PostgresRoutineBodySqlParser.TypeCastExpressionContext cast) {
             return analyze(cast.expression());
         }
+        if (expression instanceof PostgresRoutineBodySqlParser.UnaryMinusExpressionContext unaryMinus) {
+            ExpressionAnalysis operand = analyze(unaryMinus.expression());
+            return new ExpressionAnalysis(
+                    operand.sources(), LineageTransformType.ARITHMETIC, LineageFlowKind.VALUE);
+        }
         if (expression instanceof PostgresRoutineBodySqlParser.FunctionExpressionContext function) {
             ExpressionAnalysis args = ExpressionAnalysis.empty();
             if (function.functionCall().expressionList() != null) {
@@ -537,7 +547,7 @@ public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineBo
                 case "concat", "format", "string_agg" -> LineageTransformType.CONCAT_FORMAT;
                 default -> LineageTransformType.FUNCTION_CALL;
             };
-            LineageTransformType dominant = ExpressionAnalysis.dominant(transform, args.transform());
+            LineageTransformType dominant = LineageTransformClassifier.dominant(transform, args.transform());
             LineageFlowKind flowKind = dominant == LineageTransformType.CASE_WHEN
                     ? LineageFlowKind.CONTROL
                     : LineageFlowKind.VALUE;
@@ -569,6 +579,216 @@ public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineBo
             return analyzeScalarSubquery(scalarSubquery.selectStatement());
         }
         return ExpressionAnalysis.empty();
+    }
+
+    private List<ExpressionAnalysis> writeAnalyses(PostgresRoutineBodySqlParser.ExpressionContext expression) {
+        if (expression instanceof PostgresRoutineBodySqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
+            return scalarSubqueryWriteAnalyses(scalarSubquery.selectStatement());
+        }
+        if (expression instanceof PostgresRoutineBodySqlParser.FunctionExpressionContext functionExpression) {
+            return functionWriteAnalyses(functionExpression);
+        }
+        if (expression instanceof PostgresRoutineBodySqlParser.BinaryExpressionContext binaryExpression) {
+            return binaryWriteAnalyses(binaryExpression);
+        }
+        if (expression instanceof PostgresRoutineBodySqlParser.TypeCastExpressionContext castExpression) {
+            return writeAnalyses(castExpression.expression());
+        }
+        if (expression instanceof PostgresRoutineBodySqlParser.UnaryMinusExpressionContext unaryMinusExpression) {
+            List<ExpressionAnalysis> nested = writeAnalyses(unaryMinusExpression.expression());
+            return nested.stream()
+                    .map(analysis -> analysis.flowKind() == LineageFlowKind.CONTROL
+                            ? analysis
+                            : new ExpressionAnalysis(analysis.sources(), LineageTransformType.ARITHMETIC,
+                                    LineageFlowKind.VALUE))
+                    .toList();
+        }
+        if (!(expression instanceof PostgresRoutineBodySqlParser.CaseExpressionContext caseExpression)) {
+            ExpressionAnalysis analysis = analyze(expression);
+            return analysis.sources().isEmpty() ? List.of() : List.of(analysis);
+        }
+        ExpressionAnalysis value = ExpressionAnalysis.empty();
+        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        for (PostgresRoutineBodySqlParser.CaseWhenClauseContext clause : caseExpression.caseWhenClause()) {
+            value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.VALUE, value, analyze(clause.expression()));
+            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, control, analyze(clause.predicate()));
+        }
+        List<PostgresRoutineBodySqlParser.ExpressionContext> outerExpressions = caseExpression.expression();
+        int selectorCount = outerExpressions.size() - (caseExpression.ELSE() == null ? 0 : 1);
+        for (int index = 0; index < selectorCount; index++) {
+            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, control, analyze(outerExpressions.get(index)));
+        }
+        if (caseExpression.ELSE() != null && !outerExpressions.isEmpty()) {
+            value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.VALUE, value, analyze(outerExpressions.get(outerExpressions.size() - 1)));
+        }
+        List<ExpressionAnalysis> result = new ArrayList<>(2);
+        if (!value.sources().isEmpty()) {
+            result.add(new ExpressionAnalysis(value.sources(), LineageTransformType.CASE_WHEN, LineageFlowKind.VALUE));
+        }
+        if (!control.sources().isEmpty()) {
+            result.add(new ExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL));
+        }
+        return List.copyOf(result);
+    }
+
+    private List<ExpressionAnalysis> binaryWriteAnalyses(
+            PostgresRoutineBodySqlParser.BinaryExpressionContext binaryExpression
+    ) {
+        LineageTransformType transform = "||".equals(binaryExpression.arithmeticOperator().getText())
+                ? LineageTransformType.CONCAT_FORMAT
+                : LineageTransformType.ARITHMETIC;
+        ExpressionAnalysis value = ExpressionAnalysis.empty();
+        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        for (PostgresRoutineBodySqlParser.ExpressionContext operand : binaryExpression.expression()) {
+            for (ExpressionAnalysis analysis : writeAnalyses(operand)) {
+                if (analysis.flowKind() == LineageFlowKind.CONTROL) {
+                    control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                            LineageFlowKind.CONTROL, control, analysis);
+                } else {
+                    value = ExpressionAnalysis.combine(transform, LineageFlowKind.VALUE, value, analysis);
+                }
+            }
+        }
+        List<ExpressionAnalysis> result = new ArrayList<>(2);
+        if (!value.sources().isEmpty()) {
+            LineageTransformType valueTransform = value.transform() == LineageTransformType.AGGREGATE
+                    || value.transform() == LineageTransformType.CUMULATIVE
+                    ? value.transform()
+                    : transform;
+            result.add(new ExpressionAnalysis(value.sources(), valueTransform, LineageFlowKind.VALUE));
+        }
+        if (!control.sources().isEmpty()) {
+            result.add(new ExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL));
+        }
+        return List.copyOf(result);
+    }
+
+    private List<ExpressionAnalysis> functionWriteAnalyses(
+            PostgresRoutineBodySqlParser.FunctionExpressionContext functionExpression
+    ) {
+        PostgresRoutineBodySqlParser.FunctionCallContext function = functionExpression.functionCall();
+        String functionName = baseName(qualifiedName(function.qualifiedName())).toLowerCase(Locale.ROOT);
+        LineageTransformType outerTransform = switch (functionName) {
+            case "sum" -> functionExpression.windowClause() == null
+                    ? LineageTransformType.AGGREGATE
+                    : LineageTransformType.CUMULATIVE;
+            case "avg", "count", "min", "max" -> LineageTransformType.AGGREGATE;
+            case "coalesce" -> LineageTransformType.COALESCE;
+            case "concat", "format", "string_agg" -> LineageTransformType.CONCAT_FORMAT;
+            default -> LineageTransformType.FUNCTION_CALL;
+        };
+        ExpressionAnalysis value = ExpressionAnalysis.empty();
+        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        if (function.expressionList() != null) {
+            for (PostgresRoutineBodySqlParser.ExpressionContext argument
+                    : function.expressionList().expression()) {
+                for (ExpressionAnalysis analysis : writeAnalyses(argument)) {
+                    if (analysis.flowKind() == LineageFlowKind.CONTROL) {
+                        control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                                LineageFlowKind.CONTROL, control, analysis);
+                    } else {
+                        value = ExpressionAnalysis.combine(outerTransform,
+                                LineageFlowKind.VALUE, value, analysis);
+                    }
+                }
+            }
+        }
+        List<ExpressionAnalysis> result = new ArrayList<>(2);
+        if (!value.sources().isEmpty()) {
+            LineageTransformType valueTransform = outerTransform == LineageTransformType.AGGREGATE
+                    || outerTransform == LineageTransformType.CUMULATIVE
+                    ? outerTransform
+                    : LineageTransformClassifier.dominant(outerTransform, value.transform());
+            result.add(new ExpressionAnalysis(value.sources(), valueTransform, LineageFlowKind.VALUE));
+        }
+        if (!control.sources().isEmpty()) {
+            result.add(new ExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL));
+        }
+        return List.copyOf(result);
+    }
+
+    private List<ExpressionAnalysis> scalarSubqueryWriteAnalyses(
+            PostgresRoutineBodySqlParser.SelectStatementContext select
+    ) {
+        if (select.withClause() != null) {
+            visit(select.withClause());
+        }
+        PostgresRoutineBodySqlParser.QuerySpecificationContext query = select.querySpecification();
+        queryScopes.push(new QueryScope());
+        try {
+            if (query.fromClause() != null) {
+                visit(query.fromClause());
+            }
+            if (query.whereClause() != null) {
+                visit(query.whereClause());
+            }
+            if (query.havingClause() != null) {
+                visit(query.havingClause());
+            }
+
+            ExpressionAnalysis value = ExpressionAnalysis.empty();
+            ExpressionAnalysis control = scalarSubqueryContext(select);
+            List<PostgresRoutineBodySqlParser.SelectItemContext> items = query.selectList().selectItem();
+            if (items.size() == 1) {
+                for (ExpressionAnalysis analysis : selectItemAnalyses(items.get(0))) {
+                    if (analysis.flowKind() == LineageFlowKind.CONTROL) {
+                        control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                                LineageFlowKind.CONTROL, control, analysis);
+                    } else {
+                        value = ExpressionAnalysis.combine(analysis.transform(),
+                                LineageFlowKind.VALUE, value, analysis);
+                    }
+                }
+            }
+            List<ExpressionAnalysis> result = new ArrayList<>(2);
+            if (!value.sources().isEmpty()) {
+                result.add(new ExpressionAnalysis(value.sources(), value.transform(), LineageFlowKind.VALUE));
+            }
+            if (!control.sources().isEmpty()) {
+                result.add(new ExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL));
+            }
+            return List.copyOf(result);
+        } finally {
+            queryScopes.pop();
+        }
+    }
+
+    private ExpressionAnalysis scalarSubqueryContext(PostgresRoutineBodySqlParser.SelectStatementContext select) {
+        PostgresRoutineBodySqlParser.QuerySpecificationContext query = select.querySpecification();
+        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        if (query.fromClause() != null) {
+            for (PostgresRoutineBodySqlParser.TableReferenceContext table : query.fromClause().tableReference()) {
+                for (PostgresRoutineBodySqlParser.JoinClauseContext join : table.joinClause()) {
+                    if (join.predicate() != null) {
+                        control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                                LineageFlowKind.CONTROL, control, analyze(join.predicate()));
+                    }
+                }
+            }
+        }
+        if (query.whereClause() != null) {
+            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, control, analyze(query.whereClause().predicate()));
+        }
+        if (query.groupByClause() != null) {
+            for (PostgresRoutineBodySqlParser.ExpressionContext grouping
+                    : query.groupByClause().expressionList().expression()) {
+                control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL, control, analyze(grouping));
+            }
+        }
+        if (query.havingClause() != null) {
+            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, control, analyze(query.havingClause().predicate()));
+        }
+        return control;
     }
 
     private ExpressionAnalysis analyzeScalarSubquery(PostgresRoutineBodySqlParser.SelectStatementContext select) {
@@ -634,6 +854,12 @@ public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineBo
                         analyze(likePredicate.expression(2)));
             }
             return combined;
+        }
+        if (predicate instanceof PostgresRoutineBodySqlParser.IsNullPredicateContext isNullPredicate) {
+            return new ExpressionAnalysis(
+                    analyze(isNullPredicate.expression()).sources(),
+                    LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL);
         }
         if (predicate instanceof PostgresRoutineBodySqlParser.LiteralInPredicateContext literalInPredicate) {
             ExpressionAnalysis combined = analyze(literalInPredicate.expression());
@@ -873,31 +1099,8 @@ public final class PostgresRoutineBodyParseTreeVisitor extends PostgresRoutineBo
             sources.addAll(left.sources());
             sources.addAll(right.sources());
             return new ExpressionAnalysis(sources.stream().distinct().toList(),
-                    dominant(transform, left.transform(), right.transform()), flowKind);
-        }
-
-        static LineageTransformType dominant(LineageTransformType... transforms) {
-            LineageTransformType dominant = LineageTransformType.DIRECT;
-            for (LineageTransformType transform : transforms) {
-                if (priority(transform) > priority(dominant)) {
-                    dominant = transform;
-                }
-            }
-            return dominant;
-        }
-
-        private static int priority(LineageTransformType transform) {
-            return switch (transform) {
-                case CASE_WHEN -> 8;
-                case CUMULATIVE -> 7;
-                case AGGREGATE -> 6;
-                case WINDOW_DERIVED -> 5;
-                case COALESCE -> 4;
-                case CONCAT_FORMAT -> 3;
-                case ARITHMETIC -> 2;
-                case FUNCTION_CALL -> 1;
-                default -> 0;
-            };
+                    LineageTransformClassifier.dominantForFlow(
+                            flowKind, transform, left.transform(), right.transform()), flowKind);
         }
 
         List<String> aliases() {

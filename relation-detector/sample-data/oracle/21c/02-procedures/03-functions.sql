@@ -324,7 +324,7 @@ BEGIN
     -- 计算当月工作日(简化: 总天数 - 8天周末)
     v_total_workdays := EXTRACT(DAY FROM (
         TRUNC((p_year_month || '-01'), 'MM') + INTERVAL '1' MONTH - INTERVAL '1' DAY
-    ))(10) - 8;
+    )) - 8;
 
     SELECT COUNT(*) INTO v_absent_days
     FROM attendance

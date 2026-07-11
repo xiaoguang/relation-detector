@@ -13,6 +13,7 @@
     "FK_LIKE:dbo.damage_reports.reported_by->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
     "FK_LIKE:dbo.damage_reports.voucher_id->dbo.vouchers.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
     "FK_LIKE:dbo.damage_reports.warehouse_id->dbo.warehouses.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
+    "FK_LIKE:dbo.departments.manager_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
     "FK_LIKE:dbo.departments.parent_id->dbo.departments.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
     "FK_LIKE:dbo.employee_roles.employee_id->dbo.employees.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",
     "FK_LIKE:dbo.employee_roles.role_id->dbo.roles.id:DDL_FOREIGN_KEY,SOURCE_INDEX,TARGET_UNIQUE",

@@ -32,13 +32,23 @@ full-grammer:
 
 代码中的主要行为与设计一致：
 
-- MySQL/PostgreSQL 是当前成熟支持目标。
+- MySQL/PostgreSQL 是当前工程覆盖最广的支持目标；两者已有 versioned parser、live collectors 和完整 sample-data regression 资产，但仍保留本报告后文列出的 parser/provenance 缺口。
 - Oracle 是当前初始支持目标：已有 adaptor、Oracle token-event fallback、root correctness golden 和 `INCOMPLETE_VERSIONED` versioned full-grammer，但更广泛的 Oracle 官方语法覆盖仍是 backlog，当前状态为 `INCOMPLETE_VERSIONED`。
-- SQL Server 已接入 adaptor、root token-event baseline 和 `sqlserver/2016|2017|2019|2022|2025` versioned full-grammer sample-data golden；sample-data 已收敛为自然 ERP 业务 SQL；高密度关系探针迁入 semantic-equivalent benchmark。首批 Microsoft 官方逐版本 T-SQL 边界已经进入 `.g4`、version-only fixture 和 architecture test；更多 T-SQL family、version-only fixture 和 JDBC collectors 仍是 backlog。
+- SQL Server 已接入 adaptor、root token-event baseline 和 `sqlserver/2016|2017|2019|2022|2025` versioned full-grammer sample-data golden；sample-data 已收敛为自然 ERP 业务 SQL；高密度关系探针迁入 semantic-equivalent benchmark。首批 Microsoft 官方逐版本 T-SQL 边界已经进入 `.g4`、version-only fixture 和 architecture test。Database DDL collector 与 bounded data profiler 已实现；metadata/object collectors、更多 T-SQL family、version-only fixture 和 live runtime smoke 仍是 backlog。
 - core 不直接 import MySQL/PostgreSQL/Oracle/SQL Server full-grammer 实现；版本化 module 由 adaptor 注册。
 - Relationship 与 Data Lineage 是两个独立输出模型。
 - Simple SQL/DDL parser 和旧 SQL/DDL parser mode 配置不再是当前能力。
-- correctness fixture 以当前 parser golden 为正式基线；root token-event 与 versioned full-grammer 分别直接比对自己的 golden，不再用 token-event fallback 保护 full-grammer。
+- correctness fixture 以当前 parser golden 为回归基线；root token-event 与 versioned full-grammer 分别直接比对自己的 golden，不再用 token-event fallback 保护 full-grammer。Golden 通过只证明“输出没有偏离已审核基线”，不单独证明 SQL 资产符合真实数据库版本，也不证明每条 relation/lineage 的业务语义正确。
+
+### 验证结论的三个层级
+
+| 层级 | 能证明什么 | 不能证明什么 |
+| --- | --- | --- |
+| 架构测试 | parser ownership、token-event/full-grammer 独立、regex 边界、SPI 依赖方向。 | 某条 SQL 的 relation/lineage 一定正确。 |
+| correctness golden | 当前 parser 输出与已保存 fingerprint 一致；生产与 correctness 共用 execution service。 | golden 本身没有 false positive/false negative；目标数据库 runtime 一定接受 SQL。 |
+| SQL/版本/语义审计 | 具体 SQL、官方版本文档和 parser output 可以互相解释。 | 未审计 statement family 的完整覆盖。 |
+
+本报告中的“通过”默认只表示对应层级通过；不得把 zero diagnostics 或 count parity 升格为 SQL/语义正确性证明。
 
 ## 本轮代码结构注释审视
 
@@ -119,7 +129,7 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 ### Relationship 模型
 
-结果：通过。
+结果：结构契约通过；跨 parser SQL 语义仍需逐条审计。
 
 - `RelationType` 仍只保留 `FK_LIKE` 和 `CO_OCCURRENCE`。
 - 列级弱共现使用 `RelationSubType.COLUMN_CO_OCCURRENCE`；evidence 保留具体 SQL 谓词来源，例如 `SQL_LOG_JOIN`、`SQL_LOG_EXISTS` 或 `SQL_LOG_SUBQUERY_IN`。
@@ -128,7 +138,7 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 ### Data Lineage 模型
 
-结果：通过。
+结果：结构契约通过；部分 parser 的 transform/source-role 与 provenance 仍有已确认缺口。
 
 - `ScanResult` 已有独立 `dataLineages`。
 - Data Lineage confidence 不参与 relationship confidence。
@@ -180,11 +190,11 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 - 日常 smoke：`mvn test`。
 - 全量 correctness golden：`mvn -pl relation-detector/cli -am -Dtest=CorrectnessFixtureRunnerTest -DcorrectnessFixtureProfile=full -DcorrectnessFixtureParallelism=8 -Dsurefire.failIfNoSpecifiedTests=false test`。
 - 报告验收：显式运行 `CorrectnessSummaryGeneratorTest` 和 `DataLineageAuditGeneratorTest`，并传 `-DrunGeneratedReportTests=true`。
-- 剩余跨 parser 差异记录在 `docs/parser-audit/all-golden-semantic-review.md`，主要是 root token-event typed visitor coverage backlog 或 PostgreSQL expected version delta。
+- 跨 parser 差异需联合阅读 `docs/parser-audit/all-golden-semantic-review.md`、`parser-comparison-summary.md` 与 sample-data JSON/SQL 审计；它们不只包含 root token-event coverage 和 expected version delta，也包含 transform/source-role、provenance、derived dedupe 与版本资产真实性问题。
 
 ### DDL
 
-结果：通过。
+结果：统一 event/merger 链路通过；Oracle 版本资产与部分 token-event/full-grammer typed coverage 仍未完成官方 runtime 验证。
 
 - 当前 DDL production parser 是 token-event DDL structured parser 或被 parser selection 选中的 full-grammer DDL parser。
 - 两者都输出 `DDL_FOREIGN_KEY` / `DDL_INDEX` 事件。
@@ -192,13 +202,24 @@ full-grammer 只替换事件来源，不替换语义判断。以下逻辑仍在 
 
 ### 测试资产
 
-结果：通过。
+结果：回归框架通过；测试资产真实性与 golden 语义不能只靠 runner 自动证明。
 
 - `CorrectnessFixtureRunnerTest` 保护当前 parser golden。
 - `CorrectnessSummaryGeneratorTest` 生成轻量索引报告。
 - `DataLineageAuditGeneratorTest` 维护 lineage 审核入口。
 - full-grammer 不再通过 token-event 跨 parser 兜底；版本化 SQL/DDL golden 直接暴露 full-grammer 的 missing / extra。
 - `CliEndToEndGoldenTest` 保护从 CLI YAML/参数到 JSON 输出的完整系统链路，并复用现有 fixture golden。
+
+## 反向审计发现的当前不匹配
+
+2026-07 的结构/SQL 审计已经修复以下历史不匹配：derived lineage 按 canonical path 合并、不同 edge variant 保留为 raw observations；naming inventory 合并同 endpoint 的全部 metadata/DDL observation；Oracle natural assets 使用 `GENERATED ALWAYS AS (...) VIRTUAL` 且无参 routine 不再写空 `()`；common natural 只保留一份 canonical `payments`；已审计 CASE/scalar-subquery、trigger provenance、非平凡 self-update 和 Oracle transform gap 均由 typed context 测试保护。当前 38 份 direct/derived sample-data JSON 通过数组计数、路径去重、循环和来源可移植性检查，Oracle token-event 与四个 full-grammer profile 的 audited fact sets 一致。
+
+以下项目仍是“修订后的设计要求、当前代码尚未满足”的事实，不应通过刷新 golden 或保持 zero diagnostics 掩盖：
+
+1. **SQL Server/Oracle capability 声明与 collector 实现不完全一致。** 两个 adaptor 都声明 `METADATA` 与 `DATABASE_OBJECTS`，但对应 collector 当前返回空 snapshot/list；DDL collector 和 profiler 已实现。capability 应表达真实可用能力，或增加“placeholder/partial”状态，避免配置预检误判。
+2. **`AdaptorCapability` 尚未成为 core/CLI preflight gate。** SPI 暴露 capability set，但生产扫描路径没有基于它拒绝不支持的 source/profile 配置；Phase 3 的 capability 验收仍未完全落地。
+
+上述差异的优先级高于继续扩大数量统计。修复时应先增加具体 SQL/graph/provenance 测试，再调整实现；只有确认旧 golden 错误时才更新 golden。
 
 ## 后续技术债
 

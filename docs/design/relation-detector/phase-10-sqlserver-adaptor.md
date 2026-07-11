@@ -33,7 +33,7 @@ SQL Server 当前已经完成 **ERP sample-data correctness 全量接入**：有
 
 - Maven 模块：`adaptor-sqlserver`。
 - `DatabaseAdaptor`：`com.relationdetector.sqlserver.SqlServerDatabaseAdaptor`，通过 Java SPI 注册。
-- token-event SQL/DDL：`SqlServerTokenEventStructuredSqlParser` / `SqlServerTokenEventStructuredDdlParser`，使用 `adaptor-sqlserver` 自己的 `SqlServerRelationSqlLexer.g4` / `SqlServerRelationSqlParser.g4`。
+- token-event SQL/DDL：`SqlServerTokenEventStructuredSqlParser` / `SqlServerTokenEventStructuredDdlParser`，共同使用 adaptor-local compact combined grammar `SqlServerRelationSql.g4`。
 - full-grammer module：`sqlserver/2016`、`sqlserver/2017`、`sqlserver/2019`、`sqlserver/2022`、`sqlserver/2025`，每个 profile 使用自己 package 下的 generated lexer/parser。
 - sample-data：`sample-data/sqlserver/2016|2017|2019|2022|2025`，每版 38 个 SQL 文件。
 - correctness golden：root token-event 覆盖 `sample-data/sqlserver/2025` 的 38 个文件；五个 versioned full-grammer profile 各覆盖对应版本目录的 38 个文件，另有 version-only fixture 锁定 2017/2022/2025 的首批边界。
@@ -44,7 +44,7 @@ SQL Server 当前已经完成 **ERP sample-data correctness 全量接入**：有
 
 - 五个 SQL Server full-grammer `.g4` 来自同一个 pinned `grammars-v4/sql/tsql` 快照，但已经按 Microsoft 官方文档做了首批逐版本裁剪。更广泛的官方 T-SQL family 覆盖仍是 backlog。
 - 当前 sample-data 为跨版本业务等价 baseline，不混入高版本专属 T-SQL。后续版本专属语法应单独进入 version-only fixture。
-- SQL Server metadata collector / object collector / profiler 当前是空实现，后续需要接 JDBC catalog。
+- SQL Server metadata collector / object collector 当前仍是保守空实现；`SqlServerDatabaseDdlCollector` 已通过 `INFORMATION_SCHEMA` 生成 table DDL，`SqlServerDataProfiler` 已通过公共 `JdbcDataProfilerTemplate` 执行 bounded containment query。后续需要补齐 metadata / object catalog collector，并用 live SQL Server runtime smoke 验证 DDL/profile 查询。
 
 详细迁移审计见 `docs/parser-audit/sqlserver-migration-review.md`；版本差异清单见 `docs/parser-audit/sqlserver-version-grammar-diff.md`。
 
@@ -81,8 +81,7 @@ ANTLR grammar：
 
 ```text
 adaptor-sqlserver/src/main/antlr4/com/relationdetector/sqlserver/tokenevent
-  SqlServerRelationSqlLexer.g4
-  SqlServerRelationSqlParser.g4
+  SqlServerRelationSql.g4
 
 adaptor-sqlserver/src/main/antlr4/com/relationdetector/sqlserver/fullgrammer/v2016
 adaptor-sqlserver/src/main/antlr4/com/relationdetector/sqlserver/fullgrammer/v2017
@@ -137,11 +136,11 @@ flowchart TD
 - 预期 relationship：DDL FK/index 关系，以及 SQL predicate join / subquery relation。
 - 预期 lineage：明确字段写入、聚合写入、`UPDATE ... FROM` 与 `MERGE` 更新映射；参数、局部变量、临时表和动态 SQL 不作为物理 source。
 
-SQL Server root token-event 与 full-grammer v2025 在 correctness fixture 上当前 lineage fingerprint 数一致；full-grammer 因 typed DDL / predicate context 更完整，多识别 relationship 与 top-level naming evidence。五个 versioned full-grammer 的 sample-data 输出基本一致；该一致性来自当前 sample-data 的跨版本保守 T-SQL 子集。版本差异由 version-only fixtures 和 `SqlServerParserArchitectureTest` 单独验证。当前 CLI merged sample-data 只剩一个 full-only weak relationship candidate，详见 `docs/parser-audit/parser-comparison-summary.md`。
+SQL Server root token-event 与 versioned full-grammer 在 correctness golden 中分别验证自己的输出，不能据此声明 broad sample-data 已完全 parity。当前 natural sample-data CLI 中，token-event 为 `333 Rel / 297 Lin / 245 direct Name`，各 full-grammer 为 `338 Rel / 306 Lin / 245 direct Name`；剩余 5 个 relationship 和 9 个 lineage 差异必须按具体 SQL/context 审计，不能写成“只剩一个 weak relationship”。五个 versioned full-grammer 的 sample-data 输出一致，来自当前 sample-data 的跨版本保守 T-SQL 子集；版本差异仍由 version-only fixture 和 `SqlServerParserArchitectureTest` 单独验证。
 
 ## 后续收口
 
 1. 继续按 Microsoft Learn T-SQL 文档为 2016/2017/2019/2022/2025 扩展 source-backed 版本边界 `.g4` 差异和负向测试。
 2. 保持 SQL Server sample-data 的自然业务 SQL；如需高密度关系探测，继续扩展 semantic-equivalent benchmark，而不是把探针模板放回 sample-data。
-3. 补 SQL Server JDBC metadata / object / database DDL collector。
+3. 补 SQL Server JDBC metadata / object collector，并补 live runtime smoke；database DDL collector 与 bounded data profiler 已有实现。
 4. 扩展 semantic-equivalent benchmark，对比 MySQL 8.0、PostgreSQL、Oracle、SQL Server 在同一业务语义上的 relation / lineage 覆盖。

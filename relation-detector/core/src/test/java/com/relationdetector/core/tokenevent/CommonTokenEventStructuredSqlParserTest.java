@@ -83,18 +83,42 @@ class CommonTokenEventStructuredSqlParserTest {
     }
 
     @Test
-    void commonParserIncludesCaseWhenPredicateColumnsInControlLineage() {
+    void commonParserSeparatesCaseBranchValuesFromPredicateControls() {
         SqlStatementRecord statement = statement("""
                 INSERT INTO reconciliation_items (credit_amount)
                 SELECT CASE WHEN cj.journal_type = 'credit' THEN cj.amount ELSE 0 END
                 FROM cashier_journals cj
                 """);
 
-        Set<String> fingerprints = lineage(statement, parser.parseSql(statement, null));
+        var structured = parser.parseSql(statement, null);
+        Set<String> fingerprints = lineage(statement, structured);
 
         assertTrue(fingerprints.contains(
-                "CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount"
-                        + "->reconciliation_items.credit_amount"));
+                "VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount"));
+        assertTrue(fingerprints.contains(
+                "CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount"));
+    }
+
+    @Test
+    void commonParserSeparatesScalarProjectionValueFromLocatorControls() {
+        SqlStatementRecord statement = statement("""
+                INSERT INTO order_rollup (order_id, total_amount)
+                SELECT o.id,
+                       (SELECT SUM(oi.amount)
+                        FROM order_items oi
+                        WHERE oi.order_id = o.id)
+                FROM orders o
+                """);
+
+        var structured = parser.parseSql(statement, null);
+        Set<String> fingerprints = lineage(statement, structured);
+
+        assertTrue(fingerprints.contains(
+                "VALUE:AGGREGATE:order_items.amount->order_rollup.total_amount"),
+                () -> fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                "CONTROL:CASE_WHEN:order_items.order_id,orders.id->order_rollup.total_amount"),
+                () -> fingerprints + " events=" + structured.events());
     }
 
     @Test

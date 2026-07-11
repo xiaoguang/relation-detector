@@ -51,6 +51,38 @@ class TokenEventRelationExtractorIndependenceTest {
     }
 
     @Test
+    void copiesStatementAndEventProvenanceIntoRelationshipEvidence() {
+        SqlStatementRecord statement = new SqlStatementRecord(
+                "SELECT * FROM orders o JOIN users u ON o.user_id = u.id",
+                StatementSourceType.PROCEDURE,
+                "ROUTINE:sp_sync_orders",
+                20,
+                28,
+                Map.of(
+                        "sourceFile", "sample-data/mysql/8.0/02-procedures/sync.sql",
+                        "sourceStatementId", "sp_sync_orders",
+                        "sourceBlockId", "procedure:sp_sync_orders:1",
+                        "sourceObjectType", "ROUTINE",
+                        "sourceObjectName", "sp_sync_orders"));
+        StructuredParseResult structured = structured(List.of(
+                table("FROM", "orders", "o", 24),
+                table("JOIN", "users", "u", 24),
+                equality("o", "user_id", "u", "id", 24)
+        ));
+
+        var evidence = new TokenEventRelationExtractor().extract(statement, structured)
+                .get(0).evidence().get(0);
+
+        assertEquals("sample-data/mysql/8.0/02-procedures/sync.sql",
+                evidence.attributes().get("sourceFile"));
+        assertEquals("sp_sync_orders", evidence.attributes().get("sourceStatementId"));
+        assertEquals("procedure:sp_sync_orders:1", evidence.attributes().get("sourceBlockId"));
+        assertEquals("ROUTINE", evidence.attributes().get("sourceObjectType"));
+        assertEquals("sp_sync_orders", evidence.attributes().get("sourceObjectName"));
+        assertEquals(24L, evidence.attributes().get("sourceLine"));
+    }
+
+    @Test
     void sqlOnlyIdShapeDoesNotInferFkDirection() {
         SqlStatementRecord statement = record("SELECT * FROM invoices i JOIN accounts a ON i.account_id = a.id");
         StructuredParseResult structured = structured(List.of(

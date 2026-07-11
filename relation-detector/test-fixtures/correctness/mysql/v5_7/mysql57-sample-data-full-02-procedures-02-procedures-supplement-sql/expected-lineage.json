@@ -1,10 +1,14 @@
 {
   "fingerprints": [
-    "VALUE:AGGREGATE:inventory.reserved_quantity,sales_order_items.quantity->inventory.reserved_quantity",
-    "VALUE:AGGREGATE:sales_orders.total_amount,commission_rules.rate->sales_commissions.commission_amount",
-    "VALUE:AGGREGATE:sales_orders.total_amount->sales_commissions.sales_amount",
+    "VALUE:AGGREGATE:inventory.locked_quantity,sales_order_items.quantity->inventory.locked_quantity",
+    "VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus",
+    "VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate",
+    "VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount",
+    "VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount",
+    "VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id",
+    "VALUE:DIRECT:sales_orders.id->sales_commissions.order_id",
     "VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id",
-    "VALUE:FUNCTION_CALL:sales_orders.order_date->sales_commissions.commission_month"
+    "VALUE:FUNCTION_CALL:sales_orders.order_date->sales_commissions.period"
   ],
   "forbiddenSources": [],
   "forbiddenTargets": [],

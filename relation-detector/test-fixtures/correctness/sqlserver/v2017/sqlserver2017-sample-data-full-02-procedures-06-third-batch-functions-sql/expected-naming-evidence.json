@@ -3,7 +3,6 @@
     "naming:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.contract_milestones.contract_id->dbo.contracts.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
-    "naming:dbo.project_costs.project_id->dbo.projects.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.tax_invoices.filing_id->dbo.tax_filings.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
+    "naming:dbo.project_costs.project_id->dbo.projects.id:TABLE_ID:NAMING_MATCH"
   ]
 }

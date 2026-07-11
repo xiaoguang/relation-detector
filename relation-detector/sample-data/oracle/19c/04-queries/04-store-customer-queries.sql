@@ -402,19 +402,19 @@ monthly_store_sales AS (
 SELECT
     store_name,
     month,
-    COUNT(DISTINCT CASE WHEN VARCHAR2(40) = '新客' THEN customer_id END) AS new_customers,
-    COUNT(DISTINCT CASE WHEN VARCHAR2(40) = '老客' THEN customer_id END) AS returning_customers,
-    SUM(CASE WHEN VARCHAR2(40) = '新客' THEN total_amount ELSE 0 END) AS new_customer_sales,
-    SUM(CASE WHEN VARCHAR2(40) = '老客' THEN total_amount ELSE 0 END) AS returning_customer_sales,
-    ROUND(SUM(CASE WHEN VARCHAR2(40) = '新客' THEN total_amount ELSE 0 END) * 100.0
+    COUNT(DISTINCT CASE WHEN status_label = '新客' THEN customer_id END) AS new_customers,
+    COUNT(DISTINCT CASE WHEN status_label = '老客' THEN customer_id END) AS returning_customers,
+    SUM(CASE WHEN status_label = '新客' THEN total_amount ELSE 0 END) AS new_customer_sales,
+    SUM(CASE WHEN status_label = '老客' THEN total_amount ELSE 0 END) AS returning_customer_sales,
+    ROUND(SUM(CASE WHEN status_label = '新客' THEN total_amount ELSE 0 END) * 100.0
         / NULLIF(SUM(total_amount), 0), 2) AS new_customer_sales_pct,
-    ROUND(AVG(CASE WHEN VARCHAR2(40) = '新客' THEN total_amount END), 2) AS avg_new_order_value,
-    ROUND(AVG(CASE WHEN VARCHAR2(40) = '老客' THEN total_amount END), 2) AS avg_returning_order_value,
+    ROUND(AVG(CASE WHEN status_label = '新客' THEN total_amount END), 2) AS avg_new_order_value,
+    ROUND(AVG(CASE WHEN status_label = '老客' THEN total_amount END), 2) AS avg_returning_order_value,
     -- 新客留存率 (下月仍购买)
     ROUND(
-        COUNT(DISTINCT CASE WHEN VARCHAR2(40) = '新客' THEN customer_id END) * 100.0
+        COUNT(DISTINCT CASE WHEN status_label = '新客' THEN customer_id END) * 100.0
         / NULLIF(
-            LAG(COUNT(DISTINCT CASE WHEN VARCHAR2(40) = '新客' THEN customer_id END))
+            LAG(COUNT(DISTINCT CASE WHEN status_label = '新客' THEN customer_id END))
             OVER (PARTITION BY store_name ORDER BY month), 0
         ), 2
     ) AS new_customer_retention_pct

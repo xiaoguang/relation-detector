@@ -91,6 +91,28 @@ class ParserConfigRemovalTest {
     }
 
     @Test
+    void yamlConfigCanConfigureBoundedScanParallelism() throws Exception {
+        Path file = Files.createTempFile("relation-detector-execution", ".yml");
+        Files.writeString(file, """
+                database:
+                  type: mysql
+                sources:
+                  metadata:
+                    enabled: false
+                  logs:
+                    enabled: true
+                    files:
+                      - app.sql
+                execution:
+                  parallelism: 3
+                """);
+
+        ScanConfig config = new SimpleYamlConfigLoader().load(file);
+
+        assertEquals(3, config.executionParallelism);
+    }
+
+    @Test
     void yamlConfigCanDisableDatabaseDdlCollection() throws Exception {
         Path file = Files.createTempFile("relation-detector-database-ddl", ".yml");
         Files.writeString(file, """
@@ -531,6 +553,24 @@ class ParserConfigRemovalTest {
         assertEquals("full-grammer", args.parserMode);
         assertEquals("postgresql/16", args.grammarProfile);
         assertEquals("16.5", args.databaseVersion);
+    }
+
+    @Test
+    void cliCanOverrideConfiguredScanParallelism() {
+        Main.CliArguments args = Main.CliArguments.parse(new String[] {
+                "scan", "--config", "config.yml", "--parallelism", "4"
+        });
+
+        assertEquals(4, args.parallelism);
+    }
+
+    @Test
+    void cliCanWriteDirectViewBesideDerivedOutput() {
+        Main.CliArguments args = Main.CliArguments.parse(new String[] {
+                "scan", "--config", "config.yml", "--output", "derived.json", "--direct-output", "direct.json"
+        });
+
+        assertEquals(Path.of("direct.json"), args.directOutput);
     }
 
     @Test

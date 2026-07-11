@@ -52,6 +52,7 @@ public final class SimpleYamlConfigLoader {
 
         readDatabase(config, root.path("database"));
         readSources(config, root.path("sources"));
+        readExecution(config, root.path("execution"));
         readFilters(config, root.path("filters"));
         readOutput(config, root.path("output"));
         readNamingMatch(config, root.path("namingMatch"), file.toAbsolutePath().getParent());
@@ -125,6 +126,10 @@ public final class SimpleYamlConfigLoader {
     private void readFilters(ScanConfig config, JsonNode filters) {
         addStrings(filters.path("includeTables"), config.includeTables);
         addStrings(filters.path("excludeTables"), config.excludeTables);
+    }
+
+    private void readExecution(ScanConfig config, JsonNode execution) {
+        setIntIfPresent(execution, "parallelism", value -> config.executionParallelism = value);
     }
 
     private void readOutput(ScanConfig config, JsonNode output) {
@@ -323,6 +328,9 @@ public final class SimpleYamlConfigLoader {
         }
         if (config.derivedMaxPathLength <= 0) {
             throw new IllegalArgumentException("derivedPaths maxPathLength must be positive");
+        }
+        if (config.executionParallelism <= 0) {
+            throw new IllegalArgumentException("execution parallelism must be positive");
         }
         if (config.derivedMaxPathsPerPair < 0 || config.derivedMaxFacts < 0) {
             throw new IllegalArgumentException("derivedPaths maxPathsPerPair and maxFacts must be non-negative");

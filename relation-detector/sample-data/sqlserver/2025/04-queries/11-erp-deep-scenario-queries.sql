@@ -9,12 +9,12 @@
 SELECT pt.[task_no],
        so.[order_no],
        e.[name] AS [picker_name],
-       SUM(pti.[planned_qty]) AS [planned_qty],
+       SUM(pti.[required_qty]) AS [required_qty],
        SUM(pti.[picked_qty]) AS [picked_qty]
 FROM [dbo].[picking_tasks] AS pt
 INNER JOIN [dbo].[sales_orders] AS so ON pt.[sales_order_id] = so.[id]
-LEFT JOIN [dbo].[employees] AS e ON pt.[picker_id] = e.[id]
-INNER JOIN [dbo].[picking_task_items] AS pti ON pti.[task_id] = pt.[id]
+LEFT JOIN [dbo].[employees] AS e ON pt.[assigned_to] = e.[id]
+INNER JOIN [dbo].[picking_task_items] AS pti ON pti.[picking_task_id] = pt.[id]
 GROUP BY pt.[task_no], so.[order_no], e.[name];
 
 -- Repair order cost summary.

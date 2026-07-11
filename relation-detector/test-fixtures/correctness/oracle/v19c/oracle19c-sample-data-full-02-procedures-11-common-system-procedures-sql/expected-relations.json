@@ -1,5 +1,12 @@
 {
   "fingerprints": [
+    "CO_OCCURRENCE:employee_salary_log.approved_by->employees.id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:employees.id->warehouses.manager_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:employees.manager_id->warehouses.manager_id:SQL_LOG_JOIN",
+    "FK_LIKE:attendance.employee_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH,SQL_LOG_JOIN",
+    "FK_LIKE:employees.department_id->departments.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:employees.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:employees.position_id->positions.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:inventory.batch_id->product_batches.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:inventory.product_id->products.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_order_items.order_id->sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH",

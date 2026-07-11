@@ -17,10 +17,11 @@ INSERT INTO shipments (
  '2026-02-15', '2026-02-15',
  '上海市松江区物流园A区', '上海市闵行区申虹路88号', '上海仓收货组', '021-60000002');
 
-INSERT INTO shipping_tracks (id, shipment_id, track_time, location, status_desc, operator) VALUES
-(9001, 9001, '2026-02-13 09:20:00', '上海分拣中心', '已揽收', '系统'),
-(9002, 9001, '2026-02-14 08:30:00', '上海转运中心', '运输中', '系统'),
-(9003, 9001, '2026-02-15 15:10:00', '上海配送站', '已签收', '配送员');
+INSERT ALL
+    INTO shipping_tracks (id, shipment_id, track_time, location, status_desc, operator) VALUES (9001, 9001, '2026-02-13 09:20:00', '上海分拣中心', '已揽收', '系统')
+    INTO shipping_tracks (id, shipment_id, track_time, location, status_desc, operator) VALUES (9002, 9001, '2026-02-14 08:30:00', '上海转运中心', '运输中', '系统')
+    INTO shipping_tracks (id, shipment_id, track_time, location, status_desc, operator) VALUES (9003, 9001, '2026-02-15 15:10:00', '上海配送站', '已签收', '配送员')
+SELECT 1 FROM dual;
 
 INSERT INTO purchase_returns (
     id, return_no, purchase_order_id, purchase_receipt_id, supplier_id,

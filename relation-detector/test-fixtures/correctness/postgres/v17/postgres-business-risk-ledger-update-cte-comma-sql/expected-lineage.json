@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks"
+    "VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks"
   ],
   "forbiddenSources": [
     "p_input_ledger_json",

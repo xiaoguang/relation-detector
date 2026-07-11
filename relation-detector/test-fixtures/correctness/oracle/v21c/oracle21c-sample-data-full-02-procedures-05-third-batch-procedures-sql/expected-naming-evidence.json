@@ -1,5 +1,6 @@
 {
   "fingerprints": [
+    "naming:contract_milestones.contract_id->contracts.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

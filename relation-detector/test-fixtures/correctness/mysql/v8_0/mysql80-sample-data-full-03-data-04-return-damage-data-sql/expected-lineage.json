@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "CONTROL:CASE_WHEN:product_batches.product_id,product_batches.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id",
+    "CONTROL:CASE_WHEN:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id",
     "CONTROL:CASE_WHEN:product_batches.product_id->damage_report_items.batch_id",
     "CONTROL:CASE_WHEN:products.id->damage_report_items.unit_cost",
     "CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.product_id",

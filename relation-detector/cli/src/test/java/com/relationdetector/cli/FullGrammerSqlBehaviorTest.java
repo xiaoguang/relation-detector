@@ -645,7 +645,9 @@ class FullGrammerSqlBehaviorTest {
                 .map(FullGrammerSqlBehaviorTest::lineageFingerprint)
                 .collect(Collectors.toSet());
 
-        assertTrue(lineages.contains("VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight"
+        assertTrue(lineages.contains("VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val"
+                + "->jsh_temp_mock_plan.mock_timestamp_str"), () -> lineages.toString());
+        assertTrue(lineages.contains("CONTROL:CASE_WHEN:jsh_temp_hour_pdf.weight"
                 + "->jsh_temp_mock_plan.mock_timestamp_str"), () -> lineages.toString());
         assertFalse(lineages.stream().anyMatch(lineage -> lineage.contains("rand_tbl.")
                         || lineage.contains("h.")
@@ -654,7 +656,7 @@ class FullGrammerSqlBehaviorTest {
     }
 
     @Test
-    void mysqlKeepsOnlyAcceptedSingleSourceCaseLineageForOrgPdfWeight() {
+    void mysqlSplitsNestedCaseControlsFromScalarSubqueryControlsForOrgPdfWeight() {
         SqlStatementRecord statement = statement("""
                 INSERT INTO jsh_temp_org_pdf (org_id, weight, remark)
                 SELECT
@@ -700,6 +702,12 @@ class FullGrammerSqlBehaviorTest {
 
         assertTrue(lineages.contains("CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight"));
         assertTrue(lineages.contains("CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight"));
+        assertTrue(lineages.contains(
+                "CONTROL:CASE_WHEN:jsh_organization.id,jsh_organization.org_no,"
+                        + "jsh_organization.p_tenant_id,jsh_organization.parent_id,jsh_organization.tenant_id"
+                        + "->jsh_temp_org_pdf.weight"), () -> "Actual lineage: " + lineages);
+        assertFalse(lineages.stream().anyMatch(lineage ->
+                lineage.startsWith("VALUE:CASE_WHEN:") && lineage.endsWith("->jsh_temp_org_pdf.weight")));
         assertFalse(lineages.contains("CONTROL:CASE_WHEN:jsh_organization.id->jsh_temp_org_pdf.weight"));
         assertFalse(lineages.contains("CONTROL:CASE_WHEN:jsh_organization.tenant_id->jsh_temp_org_pdf.weight"));
         assertFalse(lineages.contains(

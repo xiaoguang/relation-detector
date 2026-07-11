@@ -366,7 +366,7 @@ END;
 --           total_order_count, total_order_qty, last_order_date
 -- ============================================================
 
-CREATE OR REPLACE PROCEDURE sp_update_supplier_metrics()
+CREATE OR REPLACE PROCEDURE sp_update_supplier_metrics
 AS
     v_row_count NUMBER(10);
 BEGIN

@@ -1,11 +1,11 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:dbo.kpi_indicators.applicable_role_id->dbo.performance_reviews.employee_id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:dbo.tax_filings.tax_period->dbo.tax_invoices.tax_period:SQL_LOG_JOIN",
     "FK_LIKE:dbo.approval_nodes.workflow_id->dbo.approval_workflows.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.contract_milestones.contract_id->dbo.contracts.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.inspection_reports.standard_id->dbo.inspection_standards.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.tax_invoices.filing_id->dbo.tax_filings.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:dbo.project_costs.project_id->dbo.projects.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

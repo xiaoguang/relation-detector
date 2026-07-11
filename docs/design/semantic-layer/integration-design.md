@@ -13,7 +13,7 @@
 - 已实现 `semantic build --input <scan-result.json> --output <dir>`，链路为 `ScanResultReader -> SemanticEvidenceBuilder -> NoopSemanticEnricher -> SemanticKgBuilder -> JSON artifacts`。
 - 已实现 `semantic extract`：构造 evidence bundle / prompt；`codex-session` provider 只写本地 prompt artifacts，不调用外部模型；`openai-api` provider 调用 OpenAI-compatible Responses API 并通过 bundle-aware normalizer 写 raw / normalized semantic extraction result。
 - 已实现 `semantic e2e`：同一次读取 scan result 后确定性写 `semantic-kg/<case-name>/` 与 `semantic-extraction/<case-name>/` artifacts，不调用模型。
-- 已实现 `semantic normalize-extraction`：把已有 JSON semantic extraction output 规范化为 ref-closed document，补齐 `semanticGraph` 与 `validation`。当前 CLI 入口是 raw-only normalization，不接收 evidence bundle，因此不会做 event/triplet/review 候选 backfill 或 bundle fact id 全量解析。
+- 已实现 `semantic normalize-extraction`：把已有 JSON semantic extraction output 规范化为 document-local graph，补齐 `semanticGraph` 与 `validation`。当前 CLI 入口是 raw-only normalization，不接收 evidence bundle，因此不会做 event/triplet/review 候选 backfill 或 bundle fact id 全量解析。当前 `validation.isRefClosed` 只是内部 entity/candidate 字段/非空 evidence 的轻量检查，不是严格 bundle provenance closure。
 
 本文后续关于 Semantic Catalog Store、Lexicon、Embedding、Question Understanding、Query Planner、SQL Draft Generator、SQL Validator 和 Answer Composer 的内容是目标设计，不是当前已落地 API。
 
@@ -167,7 +167,7 @@ EvidenceGraph {
         ↓ [codex-session: 写本地 prompt artifacts，不调用模型]
         ↓ [openai-api: 可调用大模型，并使用 bundle-aware normalization]
         ↓ [LLM 任务: 业务名/描述/同义词/实体/事件/指标/维度/lineage 解释/triplet]
-        ↓ [normalize-extraction: raw-only 生成 ref-closed semantic document]
+        ↓ [normalize-extraction: raw-only 生成 normalized semantic document 与轻量 document-local validation]
 
 Step 4: Semantic Extraction Result（当前 `semantic extract` / `normalize-extraction` 输出；Catalog 写入仍未实现）
 ─────────────────────────────────────────
@@ -441,7 +441,7 @@ Step 7: Answer（最终输出）
     ↓ codex-session: 只写 prompt / bundle / session 说明
     ↓ openai-api: 调用 Responses API，写 raw result / bundle-aware normalized result
 [semantic normalize-extraction]
-    ↓ 输出: raw-only ref-closed semantic document
+    ↓ 输出: raw-only normalized semantic document + document-local validation
 ```
 
 **目标完整治理链路：**
@@ -481,7 +481,7 @@ Step 7: Answer（最终输出）
 
 | 契约 | 不可变规则 |
 | --- | --- |
-| 所有语义对象必须带 evidenceRefs | 如果 LLM Enricher 输出的对象缺少 evidenceRefs，Catalog Store 必须拒绝 |
+| 所有语义对象必须带 evidenceRefs | 当前 normalizer 只报告缺失；未来 Catalog Store 必须拒绝缺失或无法解析到 bundle fact/candidate id 的引用 |
 | 物理名必须来自 catalog | SQL Generator 只能引用 catalog 中的表名和列名 |
 | 指标默认 SYSTEM_PROPOSED | LLM Enricher 生成的指标 reviewStatus 必须为 SYSTEM_PROPOSED |
 | SQL 必须校验 | Answer Composer 不能输出未经 Validator 校验的 SQL |

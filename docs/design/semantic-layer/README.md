@@ -15,7 +15,7 @@ Relation Detector
   -> semantic-kg.json / semantic-evidence-graph.json / semantic-build-run.json
 ```
 
-这条当前链路吸收 Semantica 官方架构中的 `ingest -> raw documents -> parse / normalize -> extract -> conflict / dedup -> KG / provenance / reasoning` 思路，但落地边界更窄：relation-detector scan result / ScanBundle 是本项目的标准 facts/evidence records；当前代码已落地到离线 KG JSON 阶段，即 `semantic-layer/semantic-core` 可以把 scan result 构建为 evidence graph 与可审计 `semantic-kg.json`，`semantic-layer/semantic-cli` 提供 `semantic build` 离线入口。当前 KG 节点范围是 `PhysicalTable`、`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`EventFact`、`Diagnostic`、derived fact 和从 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、event input/output、supported-by evidence 和 path step。
+这条当前链路吸收 Semantica 官方架构中的 `ingest -> raw documents -> parse / normalize -> extract -> conflict / dedup -> KG / provenance / reasoning` 思路，但落地边界更窄：relation-detector scan result / ScanBundle 是本项目的标准 facts/evidence records；当前代码已落地到离线 KG JSON 阶段，即 `semantic-layer/semantic-core` 可以把 scan result 构建为 evidence graph 与可审计 `semantic-kg.json`，`semantic-layer/semantic-cli` 提供 `semantic build` 离线入口。EvidenceGraph 中的事件事实类型是 `SemanticEventCandidate`，KG 渲染为 `Event` 节点；它只来自 direct non-control write lineage，derived lineage 仅作 supporting evidence。当前 KG 节点范围是 `PhysicalTable`、`PhysicalColumn`、`RelationshipFact`、`LineageFact`、`NamingEvidenceFact`、`Event`、`Diagnostic`、derived fact 和从 relationship fact materialize 的 `JoinPath`；边包括 table-column、fact source/target、event input/output、supported-by evidence 和 path step。
 
 当前还实现了语义抽取 artifact 链路：
 
@@ -33,7 +33,7 @@ Relation Detector JSON
 
 `semantic e2e` 是 deterministic 验证入口：同一次读取 scan result 后同时写 `semantic-kg/<case-name>/` 和 `semantic-extraction/<case-name>/` 的 evidence bundle / prompt artifacts，但不调用模型。当前不写 Semantic Catalog Store，不提供 lexicon、embedding、review queue 或在线问答；这些仍是后续阶段。
 
-`semantic normalize-extraction` 当前不接收 evidence bundle，因此不能补齐 LLM 漏掉的全部 event / triplet / review 候选，也不能逐条验证 `evidenceRefs` 是否解析回 bundle fact id；这类 bundle-aware backfill 当前只在 `openai-api` 写出结果的代码路径中执行。
+`semantic normalize-extraction` 当前不接收 evidence bundle，因此不能补齐 LLM 漏掉的全部 event / triplet / review 候选，也不能逐条验证 `evidenceRefs` 是否解析回 bundle fact id；这类 bundle-aware backfill 当前只在 `openai-api` 写出结果的代码路径中执行。即使走 bundle-aware 路径，当前 normalizer 也只做候选回填，不校验每个 candidate/evidence ref 确实存在于 bundle；`validation.isRefClosed` 目前只表示 normalized document 内部 entity 引用、必填 candidate ref 和非空 evidence 数组通过轻量检查。
 
 ### 目标离线构建链路
 
@@ -132,7 +132,7 @@ Semantic Layer 在这些事实之上构建业务语义，不修改 relation-dete
 - [Semantic Layer 术语表](glossary.md)
 - [Semantic Layer 示例附录](../semantic-layer-examples.md)
 - [参考亿问改进分析](yiyiwen-reference-improvement.md)
-- [Semantica：开源的本体自动化构建平台](../../../Semantica：开源的本体自动化构建平台.md)
+- Semantica 架构启发已归入[整体设计](../semantic-layer-overall-design.md)及各子系统文档；不依赖仓库外的本地研究笔记作为设计契约。
 - [集成设计与端到端数据流](integration-design.md)
 - [技术选型文档](technology-selection.md)
 - [端到端测试示例](end-to-end-examples.md)

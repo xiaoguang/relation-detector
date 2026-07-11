@@ -130,9 +130,10 @@ END;
 CREATE OR ALTER PROCEDURE [dbo].[sp_create_ar_invoice_from_sales_order]
 AS
 BEGIN
-    INSERT INTO [dbo].[ar_invoices] ([sales_order_id], [customer_id], [invoice_no], [invoice_date], [due_date], [invoice_amount], [paid_amount], [status], [created_by])
-    SELECT so.[id], so.[customer_id], CONCAT('AR-', so.[order_no]), so.[order_date], DATEADD(day, c.[credit_days], so.[order_date]),
-           so.[total_amount], so.[paid_amount], 'open', so.[salesperson_id]
+    INSERT INTO [dbo].[ar_invoices] ([ar_no], [sales_order_id], [customer_id], [invoice_date], [due_date], [invoice_amount], [paid_amount], [writeoff_amount], [status])
+    SELECT CONCAT('AR-', so.[order_no]), so.[id], so.[customer_id], so.[order_date], DATEADD(day, c.[credit_days], so.[order_date]),
+           so.[total_amount], so.[paid_amount], so.[discount_amount],
+           CASE WHEN so.[paid_amount] >= so.[total_amount] THEN 'paid' ELSE 'open' END
     FROM [dbo].[sales_orders] AS so
     INNER JOIN [dbo].[customers] AS c ON c.[id] = so.[customer_id]
     WHERE so.[status] IN ('delivered', 'paid');
@@ -143,9 +144,10 @@ END;
 CREATE OR ALTER PROCEDURE [dbo].[sp_create_ap_invoice_from_purchase_order]
 AS
 BEGIN
-    INSERT INTO [dbo].[ap_invoices] ([purchase_order_id], [supplier_id], [invoice_no], [invoice_date], [due_date], [invoice_amount], [paid_amount], [status], [created_by])
-    SELECT po.[id], po.[supplier_id], CONCAT('AP-', po.[order_no]), po.[order_date], DATEADD(day, 30, po.[order_date]),
-           po.[total_amount], po.[paid_amount], 'open', po.[purchaser_id]
+    INSERT INTO [dbo].[ap_invoices] ([ap_no], [purchase_order_id], [supplier_id], [invoice_date], [due_date], [invoice_amount], [paid_amount], [status])
+    SELECT CONCAT('AP-', po.[order_no]), po.[id], po.[supplier_id], po.[order_date], DATEADD(day, 30, po.[order_date]),
+           po.[total_amount], po.[paid_amount],
+           CASE WHEN po.[paid_amount] >= po.[total_amount] THEN 'paid' ELSE 'open' END
     FROM [dbo].[purchase_orders] AS po
     INNER JOIN [dbo].[suppliers] AS s ON s.[id] = po.[supplier_id]
     WHERE po.[status] IN ('received', 'closed');
@@ -156,19 +158,24 @@ END;
 CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_budget_usage]
 AS
 BEGIN
-    MERGE INTO [dbo].[budget_items] AS target
-    USING (
-        SELECT bv.[id] AS [budget_version_id], d.[id] AS [department_id], SUM(v.[amount]) AS [actual_amount]
-        FROM [dbo].[budget_versions] AS bv
-        INNER JOIN [dbo].[departments] AS d ON d.[id] = bv.[department_id]
-        LEFT JOIN [dbo].[vouchers] AS v ON v.[department_id] = d.[id]
-        GROUP BY bv.[id], d.[id]
-    ) AS src
-    ON target.[budget_version_id] = src.[budget_version_id] AND target.[department_id] = src.[department_id]
-    WHEN MATCHED THEN UPDATE SET
-        target.[actual_amount] = src.[actual_amount],
-        target.[remaining_amount] = target.[budget_amount] - src.[actual_amount],
-        target.[updated_at] = CURRENT_TIMESTAMP;
+    UPDATE bi
+    SET [used_amount] = COALESCE(usage_by_subject.[used_amount], 0)
+    FROM [dbo].[budget_items] AS bi
+    INNER JOIN [dbo].[account_subjects] AS subject
+        ON subject.[id] = bi.[subject_id]
+    LEFT JOIN (
+        SELECT
+            a.[code] AS [subject_code],
+            CONVERT(NVARCHAR(7), v.[voucher_date], 120) AS [period_code],
+            SUM(CASE WHEN vi.[direction] = 'debit' THEN vi.[amount] ELSE 0 END) AS [used_amount]
+        FROM [dbo].[vouchers] AS v
+        INNER JOIN [dbo].[voucher_items] AS vi ON vi.[voucher_id] = v.[id]
+        INNER JOIN [dbo].[accounts] AS a ON a.[id] = vi.[account_id]
+        WHERE v.[status] = 'posted'
+        GROUP BY a.[code], CONVERT(NVARCHAR(7), v.[voucher_date], 120)
+    ) AS usage_by_subject
+        ON usage_by_subject.[subject_code] = subject.[subject_code]
+       AND usage_by_subject.[period_code] = bi.[period_code];
 END;
 -- relation-detector-fixture-end
 
@@ -177,17 +184,23 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_apply_customer_master_data_change]
 AS
 BEGIN
     UPDATE c
-    SET [name] = mdc.[new_value],
+    SET [address] = CASE WHEN item.[field_name] IN ('registered_address', 'address') THEN item.[new_value] ELSE c.[address] END,
+        [contact_person] = CASE WHEN item.[field_name] = 'contact_person' THEN item.[new_value] ELSE c.[contact_person] END,
+        [phone] = CASE WHEN item.[field_name] = 'phone' THEN item.[new_value] ELSE c.[phone] END,
+        [email] = CASE WHEN item.[field_name] = 'email' THEN item.[new_value] ELSE c.[email] END,
         [updated_at] = CURRENT_TIMESTAMP
     FROM [dbo].[customers] AS c
-    INNER JOIN [dbo].[master_data_change_requests] AS mdc
-        ON mdc.[entity_id] = c.[id] AND mdc.[entity_type] = 'customer' AND mdc.[field_name] = 'name'
-    WHERE mdc.[status] = 'approved';
+    INNER JOIN [dbo].[master_data_change_requests] AS request
+        ON request.[master_id] = c.[id] AND request.[master_type] = 'customer'
+    INNER JOIN [dbo].[master_data_change_items] AS item
+        ON item.[request_id] = request.[id]
+    WHERE request.[status] = 'approved';
 
     INSERT INTO [dbo].[audit_log] ([employee_id], [action], [target_type], [target_id], [new_value], [created_at])
-    SELECT mdc.[approved_by], 'apply_customer_master_data_change', mdc.[entity_type], mdc.[entity_id], mdc.[new_value], CURRENT_TIMESTAMP
-    FROM [dbo].[master_data_change_requests] AS mdc
-    WHERE mdc.[status] = 'approved';
+    SELECT request.[approved_by], 'apply_customer_master_data_change', request.[master_type], request.[master_id], item.[new_value], CURRENT_TIMESTAMP
+    FROM [dbo].[master_data_change_requests] AS request
+    INNER JOIN [dbo].[master_data_change_items] AS item ON item.[request_id] = request.[id]
+    WHERE request.[status] = 'approved';
 END;
 -- relation-detector-fixture-end
 
@@ -197,27 +210,46 @@ AS
 BEGIN
     MERGE INTO [dbo].[region_dim] AS target
     USING (
-        SELECT c.[city] AS [region_code], c.[province] AS [region_name], c.[province] AS [parent_region_code]
-        FROM [dbo].[customers] AS c
-        WHERE c.[city] IS NOT NULL
-        UNION
-        SELECT s.[city], s.[province], s.[province]
-        FROM [dbo].[suppliers] AS s
-        WHERE s.[city] IS NOT NULL
+        SELECT
+            'REG-' + w.[code] AS [region_code],
+            w.[city] + N'销售区' AS [region_name],
+            w.[province],
+            w.[city],
+            w.[district],
+            w.[province] AS [sales_region],
+            'warehouse-city' AS [region_level]
+        FROM [dbo].[warehouses] AS w
     ) AS src
-    ON target.[region_code] = src.[region_code]
-    WHEN MATCHED THEN UPDATE SET target.[region_name] = src.[region_name], target.[parent_region_code] = src.[parent_region_code]
-    WHEN NOT MATCHED THEN INSERT ([region_code], [region_name], [parent_region_code]) VALUES (src.[region_code], src.[region_name], src.[parent_region_code]);
+    ON target.[province] = src.[province]
+       AND COALESCE(target.[city], '') = COALESCE(src.[city], '')
+       AND COALESCE(target.[district], '') = COALESCE(src.[district], '')
+    WHEN MATCHED THEN UPDATE SET
+        target.[region_code] = src.[region_code],
+        target.[region_name] = src.[region_name],
+        target.[sales_region] = src.[sales_region],
+        target.[region_level] = src.[region_level],
+        target.[is_active] = 1
+    WHEN NOT MATCHED THEN INSERT ([region_code], [region_name], [province], [city], [district], [sales_region], [region_level], [is_active])
+        VALUES (src.[region_code], src.[region_name], src.[province], src.[city], src.[district], src.[sales_region], src.[region_level], 1);
 
     MERGE INTO [dbo].[category_dim] AS target
     USING (
-        SELECT pc.[code] AS [category_code], pc.[name] AS [category_name], parent.[code] AS [parent_category_code]
+        SELECT pc.[id] AS [source_category_id], pc.[code] AS [category_code],
+               COALESCE(parent.[name], pc.[name]) AS [level1_name],
+               CASE WHEN parent.[id] IS NULL THEN NULL ELSE pc.[name] END AS [level2_name],
+               pc.[name] AS [leaf_name], pc.[status], CAST(pc.[created_at] AS DATE) AS [effective_from]
         FROM [dbo].[product_categories] AS pc
         LEFT JOIN [dbo].[product_categories] AS parent ON parent.[id] = pc.[parent_id]
     ) AS src
-    ON target.[category_code] = src.[category_code]
-    WHEN MATCHED THEN UPDATE SET target.[category_name] = src.[category_name], target.[parent_category_code] = src.[parent_category_code]
-    WHEN NOT MATCHED THEN INSERT ([category_code], [category_name], [parent_category_code]) VALUES (src.[category_code], src.[category_name], src.[parent_category_code]);
+    ON target.[source_category_id] = src.[source_category_id]
+    WHEN MATCHED THEN UPDATE SET
+        target.[category_code] = src.[category_code],
+        target.[level1_name] = src.[level1_name],
+        target.[level2_name] = src.[level2_name],
+        target.[leaf_name] = src.[leaf_name],
+        target.[status] = src.[status]
+    WHEN NOT MATCHED THEN INSERT ([source_category_id], [category_code], [level1_name], [level2_name], [leaf_name], [is_womenwear], [effective_from], [status])
+        VALUES (src.[source_category_id], src.[category_code], src.[level1_name], src.[level2_name], src.[leaf_name], 0, src.[effective_from], src.[status]);
 END;
 -- relation-detector-fixture-end
 
@@ -225,17 +257,18 @@ END;
 CREATE OR ALTER PROCEDURE [dbo].[sp_record_customer_payment]
 AS
 BEGIN
-    INSERT INTO [dbo].[payments] ([payment_no], [customer_id], [sales_order_id], [account_id], [payment_date], [amount], [method], [status], [created_by])
-    SELECT CONCAT('PAY-', so.[order_no]), so.[customer_id], so.[id], cj.[account_id], cj.[journal_date], cj.[amount], cj.[payment_method], 'posted', cj.[cashier_id]
+    INSERT INTO [dbo].[payments] ([payment_no], [customer_id], [order_id], [journal_id], [payment_date], [amount], [currency], [payment_method], [payment_status], [created_at])
+    SELECT CONCAT('PAY-', so.[order_no]), so.[customer_id], so.[id], cj.[id], cj.[journal_date], cj.[amount], 'CNY', so.[payment_method], cj.[status], cj.[created_at]
     FROM [dbo].[cashier_journals] AS cj
-    INNER JOIN [dbo].[sales_orders] AS so ON so.[id] = cj.[sales_order_id]
-    WHERE cj.[direction] = 'in';
+    INNER JOIN [dbo].[sales_orders] AS so
+        ON so.[id] = cj.[reference_id] AND cj.[reference_type] = 'sales_order'
+    WHERE cj.[journal_type] = 'receipt';
 
     UPDATE so
     SET [paid_amount] = so.[paid_amount] + p.[amount],
         [status] = CASE WHEN so.[paid_amount] + p.[amount] >= so.[total_amount] THEN 'paid' ELSE so.[status] END
     FROM [dbo].[sales_orders] AS so
-    INNER JOIN [dbo].[payments] AS p ON p.[sales_order_id] = so.[id];
+    INNER JOIN [dbo].[payments] AS p ON p.[order_id] = so.[id];
 END;
 -- relation-detector-fixture-end
 
@@ -243,17 +276,19 @@ END;
 CREATE OR ALTER PROCEDURE [dbo].[sp_rebuild_sales_fact]
 AS
 BEGIN
-    INSERT INTO [dbo].[sales_fact] ([sales_order_id], [sales_order_item_id], [customer_id], [product_id], [category_code], [region_code], [fiscal_date], [quantity], [gross_amount], [discount_amount], [net_amount], [payment_amount], [gross_margin])
-    SELECT so.[id], soi.[id], so.[customer_id], soi.[product_id], cd.[category_code], rd.[region_code], so.[order_date],
-           soi.[quantity], soi.[amount], soi.[discount], soi.[amount] - soi.[discount], COALESCE(p.[amount], 0),
-           soi.[amount] - soi.[discount] - COALESCE(ce.[cogs_amount], 0)
+    INSERT INTO [dbo].[sales_fact] ([order_id], [order_item_id], [customer_id], [product_id], [category_dim_id], [warehouse_id], [region_dim_id], [fiscal_date], [payment_id], [quantity_sold], [sales_amount], [paid_amount], [refund_amount], [net_sales_amount], [gross_margin_amount], [order_status], [sales_channel], [created_at])
+    SELECT so.[id], soi.[id], so.[customer_id], soi.[product_id], cd.[id], so.[warehouse_id], rd.[id], so.[order_date], p.[id],
+           soi.[quantity], soi.[amount], COALESCE(p.[amount], so.[paid_amount]), COALESCE(sr.[refund_amount], 0),
+           soi.[amount] - COALESCE(sr.[refund_amount], 0), soi.[amount] - COALESCE(ce.[cogs_amount], 0),
+           so.[status], so.[payment_method], so.[created_at]
     FROM [dbo].[sales_orders] AS so
     INNER JOIN [dbo].[sales_order_items] AS soi ON soi.[order_id] = so.[id]
     INNER JOIN [dbo].[products] AS pr ON pr.[id] = soi.[product_id]
-    LEFT JOIN [dbo].[category_dim] AS cd ON cd.[category_code] = pr.[category_code]
-    LEFT JOIN [dbo].[customers] AS c ON c.[id] = so.[customer_id]
-    LEFT JOIN [dbo].[region_dim] AS rd ON rd.[region_code] = c.[city]
-    LEFT JOIN [dbo].[payments] AS p ON p.[sales_order_id] = so.[id]
+    LEFT JOIN [dbo].[category_dim] AS cd ON cd.[source_category_id] = pr.[category_id]
+    LEFT JOIN [dbo].[warehouses] AS w ON w.[id] = so.[warehouse_id]
+    LEFT JOIN [dbo].[region_dim] AS rd ON rd.[province] = w.[province] AND rd.[city] = w.[city]
+    LEFT JOIN [dbo].[payments] AS p ON p.[order_id] = so.[id]
+    LEFT JOIN [dbo].[sales_returns] AS sr ON sr.[order_id] = so.[id]
     LEFT JOIN [dbo].[cogs_entries] AS ce ON ce.[sales_order_item_id] = soi.[id];
 END;
 -- relation-detector-fixture-end
@@ -269,10 +304,14 @@ BEGIN
     LEFT JOIN [dbo].[employee_roles] AS er ON er.[employee_id] = e.[id] AND er.[role_id] = r.[id]
     WHERE er.[id] IS NULL;
 
-    INSERT INTO [dbo].[employee_shift_assignments] ([employee_id], [shift_id], [assigned_by], [effective_date])
-    SELECT e.[id], es.[id], e.[manager_id], e.[hire_date]
+    INSERT INTO [dbo].[employee_shift_assignments] ([employee_id], [shift_id], [work_date], [status])
+    SELECT e.[id], es.[id], e.[hire_date], 'scheduled'
     FROM [dbo].[employees] AS e
-    INNER JOIN [dbo].[employee_shifts] AS es ON es.[department_id] = e.[department_id]
+    CROSS APPLY (
+        SELECT TOP (1) candidate.[id]
+        FROM [dbo].[employee_shifts] AS candidate
+        ORDER BY candidate.[start_time], candidate.[id]
+    ) AS es
     WHERE e.[status] IN ('active', 'probation');
 END;
 -- relation-detector-fixture-end

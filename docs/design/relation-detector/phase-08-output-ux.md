@@ -87,6 +87,9 @@ parser:
   grammarProfile: mysql/8.0
   databaseVersion: 8.0.36
 
+execution:
+  parallelism: 1
+
 output:
   format: json
   minConfidence: 0.30
@@ -135,6 +138,7 @@ derivedPaths:
 - `database.type` 必填。
 - 至少启用一种 source。
 - 启用文件 source 时文件必须存在。
+- `execution.parallelism` 默认 `1`，表示 scan 内按源顺序串行解析；设为正整数后，独立 file/object/log statement 可以并行解析，但每个 task 使用独立 visitor、collector、`AdaptorContext` 和 warning list，最终按原始 source order 合并。JDBC collection 本身不并行。CLI 的 `--parallelism <n>` 可覆盖该配置。
 - `parser.sql.mode`、`parser.sql.fallbackOnFailure`、`parser.ddl.mode`、`parser.ddl.fallbackOnFailure` 已移除；配置中出现这些 key 时应显式报错。MySQL/PostgreSQL/Oracle/SQL Server SQL/DDL 均通过统一 `parser.mode` 选择 full-grammer 或 token-event，ANTLR 只作为底层 lexer/parser 支撑。
 - 当前统一 parser 配置为 `parser.mode: auto|full-grammer|token-event`。默认 `auto`：能根据 `parser.grammarProfile`、`parser.databaseVersion` 或 JDBC metadata 选择版本化 full-grammer profile 时优先使用 full-grammer；不能选择 profile、版本不支持或 full-grammer hard failure 时使用 token-event fallback 并记录 warning。profile 已选中后的 syntax warning / partial result 属于所选 parser，不触发 fallback。CLI 可通过 `--parser-mode`、`--grammar-profile`、`--database-version` 覆盖 YAML。
 - `parser.grammarProfile` 使用用户可见 profile id；当前内置 profile 包括 `mysql/5.7`、`mysql/8.0`、`postgresql/16`、`postgresql/17`、`postgresql/18`、`oracle/12c`、`oracle/19c`、`oracle/21c`、`oracle/26ai`、`sqlserver/2016`、`sqlserver/2017`、`sqlserver/2019`、`sqlserver/2022`、`sqlserver/2025`。
@@ -329,7 +333,7 @@ Observation count 也只保留三段式字段：`direct*ObservationCount`、`der
 
 - `confidence` 保留两位或四位小数，内部计算用高精度。
 - 表级关系的 `column` 为 `null`。
-- relationship、data lineage 和 naming evidence 都有 `rawEvidence` / grouped `evidence` 双层模型；`rawEvidence` 保留归并前每一次观测，适合审计、排错和回放。
+- relationship、data lineage 和 naming evidence 都有 `rawEvidence` / grouped `evidence` 双层模型。设计契约要求 `rawEvidence` 保留归并前可区分的每次观测；当前 relationship/lineage 基本遵守该口径，但 metadata/DDL naming inventory 会先按 endpoint 去重，只保留同 endpoint 的首个 inventory observation。该例外是实现缺口，不能把当前 observation count 解释为完整出现次数。
 - `evidence` 默认输出，除非用户关闭 evidence；它保留归并后的摘要证据，并参与最终 confidence 计算。
 - top-level `namingEvidence` 是完整命名证据池；relationship 中的 `NAMING_MATCH` 只保存 `evidenceRef` 和方向摘要，不重复完整 raw observations。
 - 重复观测不会把同一个基础分无限叠加；摘要 evidence 记录 `count` 和样本 detail，并额外使用 `REPEATED_OBSERVATION` 表示最多 0.10 的递减增益。
@@ -338,7 +342,7 @@ Observation count 也只保留三段式字段：`direct*ObservationCount`、`der
 当前实现备注：
 
 - relationship 和 naming evidence 的 evidence type 已按现有 evidence model 输出。
-- data lineage 已有 `rawEvidence` / grouped `evidence` 双层结构和 stable source/target facts，但 lineage evidence 当前使用 `transformType/sourceType/score/source/detail/attributes`，不输出 relationship/naming evidence 那种 `type` 字段。这是 provenance typing 口径尚未完全统一的实现缺口，不表示 lineage fact 无证据，也不允许消费者用 SQL 文本重新推断结构。
+- data lineage 已有 `rawEvidence` / grouped `evidence` 双层结构和 stable source/target facts。当前 JSON writer 为 lineage evidence 统一输出 `type=DATA_LINEAGE`，并同时保留 `transformType/sourceType/score/source/detail/attributes`；消费者应使用 `flowKind` 与 `transformType` 理解值流语义，不能用 SQL 文本重新推断结构。
 - 文件来源的 `rawEvidence.source` 应输出 repo-relative path；object/routine 来源可以输出对象名。不得重新输出本机绝对路径。
 
 ## Table 输出

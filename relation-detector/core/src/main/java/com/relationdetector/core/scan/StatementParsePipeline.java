@@ -8,7 +8,6 @@ import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.metadata.MetadataTableFact;
 import com.relationdetector.contracts.model.ColumnRef;
-import com.relationdetector.contracts.model.DataLineageCandidate;
 import com.relationdetector.contracts.model.Endpoint;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
@@ -16,7 +15,6 @@ import com.relationdetector.contracts.parse.DatabaseDdlDefinition;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.spi.AdaptorContext;
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
-import com.relationdetector.core.diagnostics.DiagnosticWarnings;
 import com.relationdetector.core.parser.ParserBundle;
 import com.relationdetector.core.parser.ParserBundleSelector;
 
@@ -24,68 +22,49 @@ final class StatementParsePipeline {
     private final StatementExecutionService statementExecutionService = new StatementExecutionService();
     private final ParserBundleSelector parserBundleSelector = new ParserBundleSelector();
 
-    List<RelationshipCandidate> parseDdlFile(
+    ParserBundle selectedBundle(
             DatabaseAdaptor adaptor,
+            ScanConfig config,
+            AdaptorContext context,
+            ScanPipelineContext scanContext
+    ) {
+        return parserBundle(adaptor, config, context, scanContext);
+    }
+
+    StatementExecutionOutcome executeDdlFile(
+            ParserBundle parserBundle,
             ScanConfig config,
             Path file,
-            AdaptorContext context,
-            ScanPipelineContext scanContext
+            AdaptorContext context
     ) {
-        try {
-            StatementExecutionOutcome outcome = statementExecutionService.executeDdlFile(
-                    parserBundle(adaptor, config, context, scanContext), file, context, config);
-            scanContext.namingEvidencePool.addAll(outcome.namingEvidence());
-            return outcome.relationshipCandidates();
-        } catch (Exception ex) {
-            scanContext.result.warnings().add(DiagnosticWarnings.ddlParseFailed(file, ex));
-            return List.of();
-        }
+        return statementExecutionService.executeDdlFile(parserBundle, file, context, config);
     }
 
-    List<RelationshipCandidate> parseDatabaseDdl(
-            DatabaseAdaptor adaptor,
+    StatementExecutionOutcome executeDatabaseDdl(
+            ParserBundle parserBundle,
             ScanConfig config,
             DatabaseDdlDefinition definition,
-            AdaptorContext context,
-            ScanPipelineContext scanContext
+            AdaptorContext context
     ) {
-        try {
-            StatementExecutionOutcome outcome = statementExecutionService.executeDdlText(
-                    parserBundle(adaptor, config, context, scanContext),
-                    definition.ddl(), definition.source(), EvidenceSourceType.DATABASE_DDL, context, config);
-            scanContext.namingEvidencePool.addAll(outcome.namingEvidence());
-            return qualifyDatabaseDdlCandidates(outcome.relationshipCandidates(), definition.schema());
-        } catch (Exception ex) {
-            scanContext.result.warnings().add(DiagnosticWarnings.ddlTextParseFailed(definition.source(), definition.ddl(), ex));
-            return List.of();
-        }
+        StatementExecutionOutcome outcome = statementExecutionService.executeDdlText(
+                parserBundle, definition.ddl(), definition.source(), EvidenceSourceType.DATABASE_DDL, context, config);
+        return new StatementExecutionOutcome(
+                qualifyDatabaseDdlCandidates(outcome.relationshipCandidates(), definition.schema()),
+                outcome.lineageCandidates(),
+                outcome.namingEvidence(),
+                outcome.warnings());
     }
 
-    List<RelationshipCandidate> parseStatement(
+    StatementExecutionOutcome executeStatement(
+            ParserBundle parserBundle,
             DatabaseAdaptor adaptor,
             ScanConfig config,
             SqlStatementRecord statement,
             AdaptorContext context,
-            ScanResult result,
-            ScanPipelineContext scanContext,
-            List<DataLineageCandidate> dataLineageCandidates,
             Set<TableId> knownPhysicalTables
     ) {
-        try {
-            StatementExecutionOutcome outcome = statementExecutionService.executeSql(
-                    adaptor,
-                    config,
-                    statement,
-                    context,
-                    knownPhysicalTables,
-                    parserBundle(adaptor, config, context, scanContext));
-            dataLineageCandidates.addAll(outcome.lineageCandidates());
-            scanContext.namingEvidencePool.addAll(outcome.namingEvidence());
-            return outcome.relationshipCandidates();
-        } catch (Exception ex) {
-            result.warnings().add(DiagnosticWarnings.sqlParseFailed(statement, ex));
-            return List.of();
-        }
+        return statementExecutionService.executeSql(
+                adaptor, config, statement, context, knownPhysicalTables, parserBundle);
     }
 
     private ParserBundle parserBundle(

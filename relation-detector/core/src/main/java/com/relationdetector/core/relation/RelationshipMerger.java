@@ -337,13 +337,14 @@ public final class RelationshipMerger {
      * bonus approaches the cap and can never exceed it.
      */
     private void summarizeRepeatedEvidence(RelationshipCandidate candidate) {
+        List<Evidence> observations = deduplicateNamingReferences(candidate.evidence());
         Map<String, EvidenceAccumulator> grouped = new LinkedHashMap<>();
-        for (Evidence evidence : candidate.evidence()) {
+        for (Evidence evidence : observations) {
             String key = evidenceKey(evidence);
             grouped.computeIfAbsent(key, ignored -> new EvidenceAccumulator(evidence)).add(evidence);
         }
         candidate.rawEvidence().clear();
-        candidate.rawEvidence().addAll(candidate.evidence());
+        candidate.rawEvidence().addAll(observations);
         candidate.evidence().clear();
         for (EvidenceAccumulator accumulator : grouped.values()) {
             candidate.evidence().add(accumulator.toEvidence());
@@ -351,6 +352,23 @@ public final class RelationshipMerger {
                 candidate.evidence().add(accumulator.toRepeatedObservationEvidence());
             }
         }
+    }
+
+    private List<Evidence> deduplicateNamingReferences(List<Evidence> evidenceItems) {
+        List<Evidence> deduplicated = new ArrayList<>();
+        java.util.Set<String> namingReferences = new java.util.LinkedHashSet<>();
+        for (Evidence evidence : evidenceItems) {
+            if (evidence.type() != EvidenceType.NAMING_MATCH) {
+                deduplicated.add(evidence);
+                continue;
+            }
+            Object reference = evidence.attributes().get("evidenceRef");
+            if (reference == null || String.valueOf(reference).isBlank()
+                    || namingReferences.add(String.valueOf(reference))) {
+                deduplicated.add(evidence);
+            }
+        }
+        return deduplicated;
     }
 
     private String evidenceKey(Evidence evidence) {

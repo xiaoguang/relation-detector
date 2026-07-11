@@ -38,6 +38,28 @@ class PostgresDdlParserTest {
     }
 
     @Test
+    void postgresTokenEventDdlEmitsInventoryForOrdinaryColumns() {
+        var structured = new PostgresTokenEventStructuredDdlParser().parseDdl("""
+                CREATE TABLE public.employees (
+                  id BIGINT PRIMARY KEY,
+                  department_id BIGINT,
+                  display_name TEXT
+                );
+                """, "fixture", null);
+
+        assertTrue(structured.events().stream().anyMatch(event ->
+                event.type() == StructuredParseEventType.DDL_COLUMN
+                        && "public.employees".equals(event.attributes().get("table"))
+                        && "department_id".equals(event.attributes().get("column"))),
+                () -> "Missing ordinary DDL column inventory event. Actual=" + structured.events());
+        assertTrue(structured.events().stream().anyMatch(event ->
+                event.type() == StructuredParseEventType.DDL_COLUMN
+                        && "public.employees".equals(event.attributes().get("table"))
+                        && "display_name".equals(event.attributes().get("column"))),
+                () -> "Missing ordinary DDL column inventory event. Actual=" + structured.events());
+    }
+
+    @Test
     void postgresParserHandlesAlterTableOnlyAndIfNotExistsIndex() throws Exception {
         Path ddl = tempDir.resolve("schema.sql");
         Files.writeString(ddl, """

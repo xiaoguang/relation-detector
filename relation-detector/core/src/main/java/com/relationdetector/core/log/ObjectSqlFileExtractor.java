@@ -236,6 +236,11 @@ public final class ObjectSqlFileExtractor {
         if (sourceType == StatementSourceType.VIEW || sourceType == StatementSourceType.MATERIALIZED_VIEW) {
             return trimmed.endsWith(";");
         }
+        if (sourceType == StatementSourceType.TRIGGER
+                && currentSql != null
+                && currentSql.toUpperCase(Locale.ROOT).contains("EXECUTE FUNCTION")) {
+            return trimmed.endsWith(";");
+        }
         if (currentSql != null && currentSql.contains("$$")) {
             return trimmed.equals("$$;")
                     || upper.endsWith("$$ LANGUAGE PLPGSQL;")
@@ -340,6 +345,11 @@ public final class ObjectSqlFileExtractor {
             return StatementSourceType.PROCEDURE;
         }
         String firstObjectType = firstObjectType(sql);
+        if (firstObjectType.equals("FUNCTION")
+                && sql != null
+                && sql.toUpperCase(Locale.ROOT).contains("RETURNS TRIGGER")) {
+            return StatementSourceType.TRIGGER;
+        }
         return switch (firstObjectType) {
             case "TRIGGER" -> StatementSourceType.TRIGGER;
             case "FUNCTION" -> StatementSourceType.FUNCTION;

@@ -22,6 +22,19 @@ final class TestWorkspacePaths {
         throw new IllegalStateException("Cannot locate relation-detector workspace root");
     }
 
+    static Path repositoryRoot() {
+        Path current = relationDetectorRoot();
+        while (current != null) {
+            if (Files.isRegularFile(current.resolve("pom.xml"))
+                    && Files.isDirectory(current.resolve("docs"))
+                    && Files.isDirectory(current.resolve("relation-detector"))) {
+                return current;
+            }
+            current = current.getParent();
+        }
+        throw new IllegalStateException("Cannot locate repository root");
+    }
+
     private static boolean isRelationDetectorRoot(Path path) {
         return Files.isDirectory(path.resolve("sample-data"))
                 && Files.isDirectory(path.resolve("test-fixtures"));

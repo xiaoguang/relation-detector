@@ -53,7 +53,10 @@ CREATE OR ALTER FUNCTION [dbo].[fn_tax_invoice_audit]()
 RETURNS TABLE
 AS
 RETURN (
-    SELECT ti.[id] AS [tax_invoice_id], ti.[verified_by], tf.[prepared_by], ti.[amount], ti.[tax_amount] FROM [dbo].[tax_invoices] AS ti LEFT JOIN [dbo].[tax_filings] AS tf ON tf.[id] = ti.[filing_id]
+    SELECT ti.[id] AS [tax_invoice_id], ti.[verified_by], tf.[prepared_by],
+           ti.[amount_including_tax], ti.[tax_amount]
+    FROM [dbo].[tax_invoices] AS ti
+    LEFT JOIN [dbo].[tax_filings] AS tf ON tf.[tax_period] = ti.[tax_period]
 );
 -- relation-detector-fixture-end
 
