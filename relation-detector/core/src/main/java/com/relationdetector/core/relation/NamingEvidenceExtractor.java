@@ -71,8 +71,8 @@ public final class NamingEvidenceExtractor {
             if (event.type() != StructuredParseEventType.DDL_COLUMN) {
                 continue;
             }
-            String table = text(event.attributes(), "table");
-            String column = text(event.attributes(), "column");
+            String table = event.table();
+            String column = event.column();
             if (table.isBlank() || column.isBlank()) {
                 continue;
             }
@@ -245,7 +245,18 @@ public final class NamingEvidenceExtractor {
 
     private EndpointObservation ddlObservation(StructuredSqlEvent event, ColumnRef column) {
         Endpoint endpoint = Endpoint.column(column);
-        Map<String, Object> attributes = new LinkedHashMap<>(event.attributes());
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        attributes.put("table", event.table());
+        attributes.put("column", event.column());
+        if (event.provenance().tokenEventNative()) {
+            attributes.put("tokenEventNative", true);
+        }
+        if (event.provenance().fullGrammerNative()) {
+            attributes.put("fullGrammerNative", true);
+        }
+        if (!event.statementScope().isBlank()) {
+            attributes.put("statementScope", event.statementScope());
+        }
         attributes.put("line", event.line());
         return new EndpointObservation(endpoint, new Evidence(
                 EvidenceType.NAMING_MATCH,
@@ -338,11 +349,6 @@ public final class NamingEvidenceExtractor {
             case DDL_FOREIGN_KEY, METADATA_FOREIGN_KEY -> true;
             default -> false;
         });
-    }
-
-    private String text(Map<String, Object> attributes, String key) {
-        Object value = attributes.get(key);
-        return value == null ? "" : String.valueOf(value);
     }
 
     private String clean(String raw) {

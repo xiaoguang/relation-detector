@@ -5,46 +5,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.relationdetector.contracts.model.DataLineageCandidate;
-import com.relationdetector.contracts.model.WarningMessage;
-import com.relationdetector.contracts.parse.SqlStatementRecord;
-import com.relationdetector.contracts.parse.StructuredParseResult;
-import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
-import com.relationdetector.contracts.spi.AdaptorContext;
-import com.relationdetector.contracts.spi.DatabaseAdaptor;
-import com.relationdetector.contracts.spi.ScanScope;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
-import com.relationdetector.core.parser.ParserBundleSelector;
-import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
-import com.relationdetector.core.lineage.DataLineageMerger;
-import com.relationdetector.core.log.PlainSqlLogExtractor;
-import com.relationdetector.core.scan.ScanConfig;
-import com.relationdetector.core.common.CommonDatabaseAdaptor;
-import com.relationdetector.core.tokenevent.CommonTokenEventStructuredSqlParser;
-import com.relationdetector.mysql.MySqlDatabaseAdaptor;
-import com.relationdetector.oracle.OracleDatabaseAdaptor;
-import com.relationdetector.postgres.PostgresDatabaseAdaptor;
-import com.relationdetector.sqlserver.SqlServerDatabaseAdaptor;
 
 /**
  * Generates the human-review audit for Data Lineage correctness fixtures.
  *
  * <p>This is intentionally a test-scope maintenance tool. It makes the audit
- * deterministic from repo fixtures and the Java extractor, so no LLM is needed
- * to decide what was scanned or what candidate fingerprints were observed.
+ * deterministic from repo fixtures and their audited golden. Actual parser output
+ * is verified once by CorrectnessFixtureRunnerTest, not recomputed by this report.
  */
 final class DataLineageAuditGenerator {
     private static final int PREVIEW_MAX_LINES = 8;
@@ -175,12 +154,6 @@ final class DataLineageAuditGenerator {
             String parserTarget = required(values, "parserTarget", manifest);
             StatementSourceType sourceType = StatementSourceType.valueOf(values.getOrDefault("sourceType", "PLAIN_SQL"));
             String statementFormat = values.getOrDefault("statementFormat", "SEMICOLON");
-            String objectSourceFilter = values.getOrDefault("objectSourceFilter", "");
-            String structuredParser = values.getOrDefault("structuredParser", "");
-            String parserMode = values.getOrDefault("parserMode", "auto");
-            String grammarProfile = values.getOrDefault("grammarProfile", "");
-            String databaseVersion = values.getOrDefault("databaseVersion", "");
-            String schema = values.getOrDefault("schema", "");
             List<String> expectedLineageFingerprints = Files.exists(expectedLineageFile)
                     ? stringArray(Files.readString(expectedLineageFile), "fingerprints")
                     : List.of();
@@ -188,17 +161,8 @@ final class DataLineageAuditGenerator {
             boolean versionBoundaryUnsupported = expectedDiagnosticsContains(
                     root.resolve(values.getOrDefault("expectedDiagnostics", "expected-diagnostics.json")).normalize(),
                     "FULL_GRAMMAR_VERSION_UNSUPPORTED_SYNTAX");
-            String lower = inputText.toLowerCase(Locale.ROOT);
-            boolean shouldExtractCandidates = expectedLineageFingerprints.isEmpty()
-                    && parserTarget.equals("SQL")
-                    && !versionBoundaryUnsupported
-                    && containsValueWrite(lower);
-            List<String> candidates = shouldExtractCandidates
-                    ? lineageCandidates(databaseType, input, inputText, sourceType, statementFormat, objectSourceFilter,
-                            structuredParser, parserMode, grammarProfile, databaseVersion, schema)
-                    : List.of();
-            Decision decision = classify(parserTarget, sourceType, statementFormat, inputText,
-                    expectedLineageFingerprints, candidates, required(values, "id", manifest),
+            List<String> candidates = List.of();
+            Decision decision = classify(parserTarget, inputText, expectedLineageFingerprints,
                     versionBoundaryUnsupported);
 
             return new AuditFixture(
@@ -219,12 +183,8 @@ final class DataLineageAuditGenerator {
 
     private static Decision classify(
             String parserTarget,
-            StatementSourceType sourceType,
-            String statementFormat,
             String inputText,
             List<String> expectedLineage,
-            List<String> candidates,
-            String fixtureId,
             boolean versionBoundaryUnsupported
     ) {
         String lower = inputText.toLowerCase(Locale.ROOT);
@@ -247,60 +207,12 @@ final class DataLineageAuditGenerator {
             return new Decision(Classification.NOT_APPLICABLE,
                     "no UPDATE, INSERT SELECT, or MERGE target column write");
         }
-        if (candidates.isEmpty() && hasExplicitLocalTemporaryTable(lower)) {
+        if (hasExplicitLocalTemporaryTable(lower)) {
             return new Decision(Classification.NOT_APPLICABLE,
                     "local temporary table sources are excluded from Data Lineage v1");
         }
-        if (candidates.isEmpty()) {
-            return new Decision(Classification.NOT_APPLICABLE,
-                    "write statement has no physical table.column source in Data Lineage v1");
-        }
-        if (fixtureId.equals("commonsample-data-full-02-processes-05-erp-deep-scenario-procedures-sql")) {
-            return new Decision(Classification.NOT_APPLICABLE,
-                    "portable procedure declaration wrapper; parser-ready process bodies are covered by the sibling golden fixture");
-        }
-        Set<String> localTemporaryTables = localTemporaryTables(lower);
-        if (!localTemporaryTables.isEmpty()
-                && allCandidateSourcesAreLocalTemporaryTables(candidates, localTemporaryTables)) {
-            return new Decision(Classification.NOT_APPLICABLE,
-                    "procedure write reads only from local temporary table sources; "
-                            + "local temporary tables are excluded from Data Lineage v1");
-        }
-        if (requiresManualReview(sourceType, statementFormat, lower, fixtureId, candidates)) {
-            return new Decision(Classification.PENDING_REVIEW,
-                    "complex expression or procedure-scope lineage requires review");
-        }
-        return new Decision(Classification.SUGGESTED_GOLD,
-                "extractor produced physical table.column lineage and no review guard matched");
-    }
-
-    private static boolean requiresManualReview(
-            StatementSourceType sourceType,
-            String statementFormat,
-            String lower,
-            String fixtureId,
-            List<String> candidates
-    ) {
-        if (sourceType == StatementSourceType.PROCEDURE || sourceType == StatementSourceType.FUNCTION
-                || statementFormat.equalsIgnoreCase("OBJECT_BLOCKS")) {
-            return true;
-        }
-        if (fixtureId.contains("supply-chain")
-                || fixtureId.contains("financial")
-                || fixtureId.contains("asset-balances")) {
-            return true;
-        }
-        if (lower.contains("json_table(")
-                || lower.contains(" temporary table ")
-                || lower.contains(" create temporary ")
-                || lower.contains(" prepare ")
-                || lower.contains(" execute ")
-                || lower.contains("dense_rank()")
-                || lower.contains("ntile(")
-                || lower.contains("array_append(")) {
-            return true;
-        }
-        return candidates.stream().anyMatch(candidate -> candidate.contains("UNKNOWN_EXPRESSION"));
+        return new Decision(Classification.NOT_APPLICABLE,
+                "write statement has no physical table.column source in Data Lineage v1");
     }
 
     private static boolean containsDelete(String lower) {
@@ -313,205 +225,6 @@ final class DataLineageAuditGenerator {
 
     private static boolean hasExplicitLocalTemporaryTable(String lower) {
         return Pattern.compile("(?is)\\bcreate\\s+(?:temporary|temp)\\s+table\\b").matcher(lower).find();
-    }
-
-    private static Set<String> localTemporaryTables(String lower) {
-        Matcher matcher = Pattern.compile(
-                "(?is)\\bcreate\\s+(?:temporary|temp)\\s+table\\s+"
-                        + "(?:if\\s+not\\s+exists\\s+)?[`\"]?([a-zA-Z_][a-zA-Z0-9_]*)")
-                .matcher(lower);
-        Set<String> tables = new HashSet<>();
-        while (matcher.find()) {
-            tables.add(matcher.group(1).toLowerCase(Locale.ROOT));
-        }
-        return tables;
-    }
-
-    private static boolean allCandidateSourcesAreLocalTemporaryTables(
-            List<String> candidates,
-            Set<String> localTemporaryTables
-    ) {
-        if (candidates.isEmpty()) {
-            return false;
-        }
-        for (String candidate : candidates) {
-            String sourcePart = sourcePart(candidate);
-            if (sourcePart.isBlank()) {
-                return false;
-            }
-            for (String source : sourcePart.split(",")) {
-                String table = tableName(source.trim());
-                if (table.isBlank() || !localTemporaryTables.contains(table)) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    private static String sourcePart(String fingerprint) {
-        int firstColon = fingerprint.indexOf(':');
-        int secondColon = firstColon < 0 ? -1 : fingerprint.indexOf(':', firstColon + 1);
-        int arrow = fingerprint.indexOf("->", secondColon + 1);
-        if (secondColon < 0 || arrow < 0 || arrow <= secondColon + 1) {
-            return "";
-        }
-        return fingerprint.substring(secondColon + 1, arrow);
-    }
-
-    private static String tableName(String endpoint) {
-        int columnDot = endpoint.lastIndexOf('.');
-        if (columnDot <= 0) {
-            return "";
-        }
-        String tableOrQualified = endpoint.substring(0, columnDot);
-        int qualifierDot = tableOrQualified.lastIndexOf('.');
-        String table = qualifierDot < 0 ? tableOrQualified : tableOrQualified.substring(qualifierDot + 1);
-        return table.toLowerCase(Locale.ROOT);
-    }
-
-    private static List<String> lineageCandidates(
-            DatabaseType databaseType,
-            Path input,
-            String inputText,
-            StatementSourceType sourceType,
-            String statementFormat,
-            String objectSourceFilter,
-            String structuredParser,
-            String parserMode,
-            String grammarProfile,
-            String databaseVersion,
-            String schema
-    ) {
-        List<SqlStatementRecord> statements = statementFormat.equalsIgnoreCase("OBJECT_BLOCKS")
-                ? parseObjectBlockStatements(inputText, sourceType, input.toString(), databaseType, objectSourceFilter)
-                : new PlainSqlLogExtractor().extract(input, sourceType, warning -> { }).toList();
-        StructuredDataLineageExtractor extractor = new StructuredDataLineageExtractor();
-        StructuredSqlParser parser = structuredSqlParser(
-                databaseType,
-                structuredParser,
-                parserMode,
-                grammarProfile,
-                databaseVersion,
-                schema);
-        List<WarningMessage> warnings = new ArrayList<>();
-        AdaptorContext context = new AdaptorContext(
-                new ScanScope(null, schema, List.of(), List.of()),
-                Map.of(),
-                warnings::add);
-        List<DataLineageCandidate> candidates = new ArrayList<>();
-        for (SqlStatementRecord statement : statements) {
-            StructuredParseResult structured = parser.parseSql(statement, context);
-            candidates.addAll(extractor.extract(statement, structured));
-        }
-        return new DataLineageMerger().merge(candidates).stream()
-                .map(DataLineageAuditGenerator::fingerprint)
-                .sorted()
-                .toList();
-    }
-
-    private static StructuredSqlParser structuredSqlParser(
-            DatabaseType databaseType,
-            String structuredParser,
-            String parserMode,
-            String grammarProfile,
-            String databaseVersion,
-            String schema
-    ) {
-        if ("common-token-event".equals(structuredParser)) {
-            return new CommonTokenEventStructuredSqlParser();
-        }
-        DatabaseAdaptor adaptor = adaptor(databaseType);
-        ScanConfig config = new ScanConfig();
-        config.databaseType = databaseType;
-        config.schema = schema;
-        config.parserMode = parserMode;
-        config.grammarProfile = grammarProfile;
-        config.databaseVersion = databaseVersion;
-        config.databaseVersionSource = databaseVersion == null || databaseVersion.isBlank() ? "UNKNOWN" : "CONFIG";
-        ParserBundleSelector selector = new ParserBundleSelector();
-        return selector.select(adaptor, config, null).sqlParser();
-    }
-
-    private static DatabaseAdaptor adaptor(DatabaseType databaseType) {
-        return switch (databaseType) {
-            case COMMON -> new CommonDatabaseAdaptor();
-            case MYSQL -> new MySqlDatabaseAdaptor();
-            case POSTGRESQL -> new PostgresDatabaseAdaptor();
-            case ORACLE -> new OracleDatabaseAdaptor();
-            case SQLSERVER -> new SqlServerDatabaseAdaptor();
-        };
-    }
-
-    private static String fingerprint(DataLineageCandidate lineage) {
-        return lineage.flowKind() + ":"
-                + lineage.transformType() + ":"
-                + lineage.sources().stream()
-                        .map(com.relationdetector.contracts.model.Endpoint::displayName)
-                        .collect(Collectors.joining(","))
-                + "->" + lineage.target().displayName();
-    }
-
-    private static List<SqlStatementRecord> parseObjectBlockStatements(
-            String text,
-            StatementSourceType sourceType,
-            String sourceFile,
-            DatabaseType databaseType
-    ) {
-        return parseObjectBlockStatements(text, sourceType, sourceFile, databaseType, "");
-    }
-
-    private static List<SqlStatementRecord> parseObjectBlockStatements(
-            String text,
-            StatementSourceType sourceType,
-            String sourceFile,
-            DatabaseType databaseType,
-            String objectSourceFilter
-    ) {
-        List<SqlStatementRecord> statements = new ArrayList<>();
-        List<String> localTempTables = PlainSqlLogExtractor.localTempTablesIn(text);
-        String[] lines = text.split("\\R", -1);
-        String currentSource = null;
-        StringBuilder currentSql = new StringBuilder();
-        long startLine = 0;
-        String filter = objectSourceFilter == null ? "" : objectSourceFilter.trim();
-        for (int index = 0; index < lines.length; index++) {
-            String line = lines[index];
-            String trimmed = line.trim();
-            if (trimmed.startsWith("-- relation-detector-fixture-source:")) {
-                currentSource = trimmed.substring("-- relation-detector-fixture-source:".length()).trim();
-                currentSql.setLength(0);
-                startLine = index + 2L;
-                continue;
-            }
-            if (trimmed.equals("-- relation-detector-fixture-end")) {
-                if (currentSource != null && !currentSql.toString().isBlank()
-                        && (filter.isBlank() || currentSource.equals(filter))) {
-                    Map<String, Object> attributes = new LinkedHashMap<>();
-                    attributes.put("fixtureObjectSource", currentSource);
-                    if (!localTempTables.isEmpty()) {
-                        attributes.put("localTempTables", localTempTables);
-                    }
-                    statements.add(new SqlStatementRecord(currentSql.toString().strip(), sourceType, currentSource,
-                            startLine, index, attributes));
-                }
-                currentSource = null;
-                currentSql.setLength(0);
-                continue;
-            }
-            if (currentSource != null) {
-                currentSql.append(line).append('\n');
-            }
-        }
-        if (statements.isEmpty() && !filter.isBlank()) {
-            throw new IllegalArgumentException(
-                    "No relation-detector-fixture-source matched objectSourceFilter "
-                            + filter + " in " + sourceFile);
-        }
-        if (statements.isEmpty() && !text.isBlank()) {
-            statements.add(new SqlStatementRecord(text, sourceType, sourceFile, 1, 1, Map.of()));
-        }
-        return List.copyOf(statements);
     }
 
     private static String preview(String input) {

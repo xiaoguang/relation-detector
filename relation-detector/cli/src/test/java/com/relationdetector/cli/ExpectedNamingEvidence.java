@@ -8,11 +8,10 @@ record ExpectedNamingEvidence(
         boolean exists,
         List<String> fingerprints
 ) {
-    static ExpectedNamingEvidence readIfPresent(Path file) throws Exception {
+    static ExpectedNamingEvidence readIfPresent(Path file) {
         if (!Files.exists(file)) {
             return new ExpectedNamingEvidence(false, List.of());
         }
-        String text = Files.readString(file);
-        return new ExpectedNamingEvidence(true, CorrectnessJson.stringArray(text, "fingerprints"));
+        return CorrectnessJson.readNamingEvidence(file);
     }
 }

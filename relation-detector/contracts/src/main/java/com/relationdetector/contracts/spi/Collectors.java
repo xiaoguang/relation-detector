@@ -44,7 +44,7 @@ public final class Collectors {
      * <p>Call relationship:
      * <pre>
      * ScanEngine.scan(...)
-     *   -> DatabaseAdaptor.metadataCollector()
+     *   -> DatabaseAdaptor.collectors().metadata()
      *   -> MetadataCollector.collect(connection, scope)
      *   -> ScanEngine converts snapshot.relationships() into normal candidates
      *      before RelationshipMerger scores and merges them with DDL/SQL/log evidence.

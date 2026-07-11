@@ -67,45 +67,45 @@ public final class TokenEventRelationExtractor {
         List<RelationshipCandidate> candidates = new ArrayList<>();
         for (StructuredSqlEvent event : events) {
             if (event.type() == StructuredParseEventType.PREDICATE_EQUALITY) {
-                ColumnRef left = resolve(text(event, "leftAlias"), text(event, "leftColumn"), aliases, projections, event.line());
-                ColumnRef right = resolve(text(event, "rightAlias"), text(event, "rightColumn"), aliases, projections, event.line());
+                ColumnRef left = resolve(event.left().alias(), event.left().column(), aliases, projections, event.line());
+                ColumnRef right = resolve(event.right().alias(), event.right().column(), aliases, projections, event.line());
                 if (left == null || right == null) {
                     continue;
                 }
                 if (isIgnored(left.table(), ignoredRowsets) || isIgnored(right.table(), ignoredRowsets)) {
                     continue;
                 }
-                if (shouldEmitColumnCoOccurrence(left, right, text(event, "leftAlias"), text(event, "rightAlias"))) {
+                if (shouldEmitColumnCoOccurrence(left, right, event.left().alias(), event.right().alias())) {
                     candidates.add(columnCoOccurrenceCandidate(statement, left, right,
                             EvidenceType.SQL_LOG_JOIN,
-                            text(event, "joinKind"),
-                            text(event, "leftAlias"),
-                            text(event, "rightAlias"),
+                            event.joinKind(),
+                            event.left().alias(),
+                            event.right().alias(),
                             event.line(),
                             "ANTLR token-event column equality"));
                 }
             } else if (event.type() == StructuredParseEventType.EXISTS_PREDICATE) {
-                ColumnRef left = resolve(text(event, "leftAlias"), text(event, "leftColumn"), aliases, projections, event.line());
-                ColumnRef right = resolve(text(event, "rightAlias"), text(event, "rightColumn"), aliases, projections, event.line());
+                ColumnRef left = resolve(event.left().alias(), event.left().column(), aliases, projections, event.line());
+                ColumnRef right = resolve(event.right().alias(), event.right().column(), aliases, projections, event.line());
                 if (left == null || right == null) {
                     continue;
                 }
                 if (isIgnored(left.table(), ignoredRowsets) || isIgnored(right.table(), ignoredRowsets)) {
                     continue;
                 }
-                if (shouldEmitColumnCoOccurrence(left, right, text(event, "leftAlias"), text(event, "rightAlias"))) {
+                if (shouldEmitColumnCoOccurrence(left, right, event.left().alias(), event.right().alias())) {
                     candidates.add(columnCoOccurrenceCandidate(statement, left, right,
                             EvidenceType.SQL_LOG_EXISTS,
                             "EXISTS",
-                            text(event, "leftAlias"),
-                            text(event, "rightAlias"),
+                            event.left().alias(),
+                            event.right().alias(),
                             event.line(),
                             "ANTLR token-event EXISTS ambiguous column equality"));
                 }
             } else if (event.type() == StructuredParseEventType.JOIN_USING_COLUMNS) {
-                String leftAlias = text(event, "leftAlias");
-                String rightAlias = text(event, "rightAlias");
-                for (String column : stringList(event.attributes().get("usingColumns"))) {
+                String leftAlias = event.left().alias();
+                String rightAlias = event.right().alias();
+                for (String column : event.usingColumns()) {
                     ColumnRef left = resolve(leftAlias, column, aliases, projections, event.line());
                     ColumnRef right = resolve(rightAlias, column, aliases, projections, event.line());
                     if (left == null || right == null) {
@@ -127,9 +127,9 @@ public final class TokenEventRelationExtractor {
                     continue;
                 }
                 ColumnRef outer = resolveWithFallbackTable(
-                        text(event, "outerAlias"),
-                        text(event, "outerColumn"),
-                        text(event, "outerTable"),
+                        event.left().alias(),
+                        event.left().column(),
+                        "",
                         aliases,
                         projections,
                         event.line());
@@ -140,12 +140,12 @@ public final class TokenEventRelationExtractor {
                 if (isIgnored(outer.table(), ignoredRowsets) || isIgnored(inner.table(), ignoredRowsets)) {
                     continue;
                 }
-                if (shouldEmitColumnCoOccurrence(outer, inner, text(event, "outerAlias"), text(event, "innerAlias"))) {
+                if (shouldEmitColumnCoOccurrence(outer, inner, event.left().alias(), event.right().alias())) {
                     candidates.add(columnCoOccurrenceCandidate(statement, outer, inner,
                             EvidenceType.SQL_LOG_SUBQUERY_IN,
                             "IN_SUBQUERY",
-                            text(event, "outerAlias"),
-                            text(event, "innerAlias"),
+                            event.left().alias(),
+                            event.right().alias(),
                             event.line(),
                             "ANTLR token-event IN subquery column co-occurrence"));
                 }
@@ -153,10 +153,14 @@ public final class TokenEventRelationExtractor {
                 if (!isVerifiedColumnSubquery(event)) {
                     continue;
                 }
-                List<String> outerAliases = stringList(event.attributes().get("outerAliases"));
-                List<String> outerColumns = stringList(event.attributes().get("outerColumns"));
-                List<String> innerAliases = stringList(event.attributes().get("innerAliases"));
-                List<String> innerColumns = stringList(event.attributes().get("innerColumns"));
+                List<String> outerAliases = event.outerSources().stream()
+                        .map(com.relationdetector.contracts.parse.ExpressionSource::alias).toList();
+                List<String> outerColumns = event.outerSources().stream()
+                        .map(com.relationdetector.contracts.parse.ExpressionSource::column).toList();
+                List<String> innerAliases = event.innerSources().stream()
+                        .map(com.relationdetector.contracts.parse.ExpressionSource::alias).toList();
+                List<String> innerColumns = event.innerSources().stream()
+                        .map(com.relationdetector.contracts.parse.ExpressionSource::column).toList();
                 int count = Math.min(Math.min(outerAliases.size(), outerColumns.size()),
                         Math.min(innerAliases.size(), innerColumns.size()));
                 for (int index = 0; index < count; index++) {
@@ -188,7 +192,7 @@ public final class TokenEventRelationExtractor {
         Map<String, List<StructuredSqlEvent>> scoped = new LinkedHashMap<>();
         List<StructuredSqlEvent> ambient = new ArrayList<>();
         for (StructuredSqlEvent event : events) {
-            String scope = text(event, "statementScope");
+            String scope = event.statementScope();
             if (scope.isBlank()) {
                 ambient.add(event);
             } else {
@@ -209,7 +213,7 @@ public final class TokenEventRelationExtractor {
     }
 
     private boolean isVerifiedColumnSubquery(StructuredSqlEvent event) {
-        return Boolean.TRUE.equals(event.attributes().get("verifiedColumnSubquery"));
+        return event.verifiedColumnSubquery();
     }
 
     private List<RelationshipCandidate> deduplicate(List<RelationshipCandidate> candidates) {
@@ -244,16 +248,16 @@ public final class TokenEventRelationExtractor {
         Set<String> ambiguousAliases = new HashSet<>();
         for (StructuredSqlEvent event : events) {
             if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET) {
-                TableId tableId = tableId(text(event, "targetTable"));
-                putAlias(aliases, bindings, ambiguousAliases, text(event, "name"), tableId, event.line());
+                TableId tableId = tableId(event.targetTable());
+                putAlias(aliases, bindings, ambiguousAliases, event.name(), tableId, event.line());
                 continue;
             }
             if (event.type() != StructuredParseEventType.ROWSET_REFERENCE) {
                 continue;
             }
-            String qualified = text(event, "qualifiedTable");
-            String table = text(event, "table");
-            String alias = text(event, "alias");
+            String qualified = event.qualifiedTable();
+            String table = event.table();
+            String alias = event.alias();
             if (ignoredRowsets.contains(normalize(table))
                     || ignoredRowsets.contains(normalize(qualified))) {
                 continue;
@@ -308,8 +312,8 @@ public final class TokenEventRelationExtractor {
                 if (!isDirectValueProjection(event)) {
                     continue;
                 }
-                String outputAlias = text(event, "outputAlias");
-                String outputColumn = text(event, "outputColumn");
+                String outputAlias = event.outputAlias();
+                String outputColumn = event.outputColumn();
                 if (outputAlias.isBlank() || outputColumn.isBlank()) {
                     continue;
                 }
@@ -325,10 +329,8 @@ public final class TokenEventRelationExtractor {
     }
 
     private boolean isDirectValueProjection(StructuredSqlEvent event) {
-        String transformType = text(event, "transformType");
-        String flowKind = text(event, "flowKind");
-        return (transformType.isBlank() || "DIRECT".equalsIgnoreCase(transformType))
-                && (flowKind.isBlank() || "VALUE".equalsIgnoreCase(flowKind));
+        return event.expression().transformType() == com.relationdetector.contracts.Enums.LineageTransformType.DIRECT
+                && event.expression().flowKind() == com.relationdetector.contracts.Enums.LineageFlowKind.VALUE;
     }
 
     private ColumnRef firstResolvableSource(
@@ -336,8 +338,8 @@ public final class TokenEventRelationExtractor {
             AliasIndex aliases,
             Map<ColumnKey, ColumnRef> projections
     ) {
-        List<String> sourceAliases = stringList(event.attributes().get("sourceAliases"));
-        List<String> sourceColumns = stringList(event.attributes().get("sourceColumns"));
+        List<String> sourceAliases = event.expression().sourceAliases();
+        List<String> sourceColumns = event.expression().sourceColumns();
         int count = Math.min(sourceAliases.size(), sourceColumns.size());
         for (int index = 0; index < count; index++) {
             ColumnRef source = resolve(sourceAliases.get(index), sourceColumns.get(index), aliases, projections, event.line());
@@ -358,9 +360,9 @@ public final class TokenEventRelationExtractor {
             if (event.type() != StructuredParseEventType.ROWSET_REFERENCE) {
                 continue;
             }
-            String table = text(event, "table");
-            String qualified = text(event, "qualifiedTable");
-            String alias = text(event, "alias");
+            String table = event.table();
+            String qualified = event.qualifiedTable();
+            String alias = event.alias();
             if (alias.isBlank()
                     || (!ignoredRowsets.contains(normalize(table)) && !ignoredRowsets.contains(normalize(qualified)))) {
                 continue;
@@ -396,15 +398,15 @@ public final class TokenEventRelationExtractor {
         }
         for (StructuredSqlEvent event : events) {
             if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET) {
-                addIgnored(ignored, text(event, "name"));
+                addIgnored(ignored, event.name());
                 continue;
             }
             if (event.type() == StructuredParseEventType.IGNORED_ROWSET
                     || event.type() == StructuredParseEventType.CTE_DECLARATION
                     || event.type() == StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION) {
-                addIgnored(ignored, text(event, "name"));
-                addIgnored(ignored, text(event, "table"));
-                addIgnored(ignored, text(event, "qualifiedTable"));
+                addIgnored(ignored, event.name());
+                addIgnored(ignored, event.table());
+                addIgnored(ignored, event.qualifiedTable());
             }
         }
         return ignored;
@@ -437,12 +439,12 @@ public final class TokenEventRelationExtractor {
             AliasIndex aliases,
             Map<ColumnKey, ColumnRef> projections
     ) {
-        ColumnRef byAlias = resolve(text(event, "innerAlias"), text(event, "innerColumn"), aliases, projections, event.line());
+        ColumnRef byAlias = resolve(event.right().alias(), event.right().column(), aliases, projections, event.line());
         if (byAlias != null) {
             return byAlias;
         }
         return resolveTupleInSubqueryColumn(
-                event, text(event, "innerAlias"), text(event, "innerColumn"), aliases, projections);
+                event, event.right().alias(), event.right().column(), aliases, projections);
     }
 
     private ColumnRef resolveTupleInSubqueryColumn(
@@ -456,7 +458,7 @@ public final class TokenEventRelationExtractor {
         if (byAlias != null) {
             return byAlias;
         }
-        String table = text(event, "innerTable");
+        String table = event.innerTable();
         if (table.isBlank() || column.isBlank()) {
             return null;
         }
@@ -616,11 +618,6 @@ public final class TokenEventRelationExtractor {
             case NATIVE_LOG -> EvidenceSourceType.NATIVE_LOG;
             default -> EvidenceSourceType.PLAIN_SQL;
         };
-    }
-
-    private String text(StructuredSqlEvent event, String key) {
-        Object value = event.attributes().get(key);
-        return value == null ? "" : value.toString();
     }
 
     private String clean(String value) {

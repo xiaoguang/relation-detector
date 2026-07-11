@@ -58,10 +58,10 @@ public final class DdlRelationExtractionVisitor {
     }
 
     private void addForeignKey(StructuredSqlEvent event, DdlState state) {
-        TableId sourceTable = table(raw(event, "sourceTable"));
-        TableId targetTable = table(raw(event, "targetTable"));
-        String sourceColumn = text(event, "sourceColumn");
-        String targetColumn = text(event, "targetColumn");
+        TableId sourceTable = table(event.sourceTable());
+        TableId targetTable = table(event.targetTable());
+        String sourceColumn = clean(event.sourceColumn());
+        String targetColumn = clean(event.targetColumn());
         if (sourceColumn.isBlank() || targetColumn.isBlank()) {
             return;
         }
@@ -76,15 +76,15 @@ public final class DdlRelationExtractionVisitor {
                 state.source(),
                 "token-event DDL foreign key",
                 java.util.Map.of(
-                        "compositePosition", intValue(event, "compositePosition", 1),
-                        "compositeSize", intValue(event, "compositeSize", 1))));
+                        "compositePosition", event.compositePosition(),
+                        "compositeSize", event.compositeSize())));
         state.addCandidate(candidate);
     }
 
     private void addIndex(StructuredSqlEvent event, DdlState state) {
-        TableId table = table(raw(event, "table"));
-        String column = text(event, "column");
-        String role = text(event, "role");
+        TableId table = table(event.table());
+        String column = clean(event.column());
+        String role = clean(event.role());
         if (column.isBlank()) {
             return;
         }
@@ -136,20 +136,6 @@ public final class DdlRelationExtractionVisitor {
             parts.add(part);
         }
         return parts;
-    }
-
-    private String text(StructuredSqlEvent event, String key) {
-        return clean(raw(event, key));
-    }
-
-    private String raw(StructuredSqlEvent event, String key) {
-        Object value = event.attributes().get(key);
-        return value == null ? "" : String.valueOf(value);
-    }
-
-    private int intValue(StructuredSqlEvent event, String key, int fallback) {
-        Object value = event.attributes().get(key);
-        return value instanceof Number number ? number.intValue() : fallback;
     }
 
     private String clean(String identifier) {

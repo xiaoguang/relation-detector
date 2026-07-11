@@ -59,6 +59,7 @@ class DataProfilePipelineTest {
 
     private ScanPipelineContext contextReturning(EvidenceType type) {
         ScanConfig config = new ScanConfig();
+        config.databaseType = com.relationdetector.contracts.Enums.DatabaseType.MYSQL;
         config.dataProfileEnabled = true;
         config.discoverFromNamingEvidence = true;
         config.skipUnindexedLargeTargets = true;
@@ -66,7 +67,7 @@ class DataProfilePipelineTest {
         ScanScope scope = new ScanScope(null, null, List.of(), List.of());
         ScanResult result = new ScanResult("mysql", "test");
         ScanPipelineContext ctx = new ScanPipelineContext(
-                config,
+                config.resolve(),
                 new TestAdaptor((connection, request) -> List.of(evidence(type))),
                 scope,
                 result,
@@ -139,33 +140,27 @@ class DataProfilePipelineTest {
         }
 
         @Override
-        public MetadataCollector metadataCollector() {
-            return (connection, scope) -> new MetadataSnapshot();
+        public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
+            return new com.relationdetector.contracts.spi.AdaptorCollectors(
+                    (connection, scope) -> new MetadataSnapshot(),
+                    (connection, scope) -> List.of(),
+                    Optional.empty(),
+                    (file, hint) -> Stream.<SqlStatementRecord>empty());
         }
 
         @Override
-        public ObjectDefinitionCollector objectDefinitionCollector() {
-            return (connection, scope) -> List.of();
+        public com.relationdetector.contracts.spi.AdaptorParsers parsers() {
+            return new com.relationdetector.contracts.spi.AdaptorParsers(
+                    (statement, context) -> List.<RelationshipCandidate>of(),
+                    Optional.empty(),
+                    Optional.empty());
         }
 
         @Override
-        public SqlLogExtractor sqlLogExtractor() {
-            return (file, hint) -> Stream.<SqlStatementRecord>empty();
-        }
-
-        @Override
-        public SqlRelationParser sqlRelationParser() {
-            return (statement, context) -> List.<RelationshipCandidate>of();
-        }
-
-        @Override
-        public Optional<DataProfiler> dataProfiler() {
-            return Optional.of(profiler);
-        }
-
-        @Override
-        public EvidenceWeightAdjuster evidenceWeightAdjuster() {
-            return (evidence, context) -> evidence;
+        public com.relationdetector.contracts.spi.AdaptorProfiling profiling() {
+            return new com.relationdetector.contracts.spi.AdaptorProfiling(
+                    Optional.of(profiler),
+                    (evidence, context) -> evidence);
         }
     }
 }

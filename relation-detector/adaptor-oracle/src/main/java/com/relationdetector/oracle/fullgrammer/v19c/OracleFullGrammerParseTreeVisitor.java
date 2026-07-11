@@ -13,7 +13,7 @@ public final class OracleFullGrammerParseTreeVisitor {
     private final OracleFullGrammerParseTreeEventCollector collector;
 
     public OracleFullGrammerParseTreeVisitor(SqlStatementRecord statement) {
-        this.collector = new OracleFullGrammerParseTreeEventCollector(statement);
+        this.collector = new OracleFullGrammerParseTreeEventCollector(statement, new Oracle19cParseTreeAdapter());
     }
 
     public List<StructuredSqlEvent> collect(OracleFullGrammerParser.Sql_scriptContext root) {

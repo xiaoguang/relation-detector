@@ -66,7 +66,11 @@ class CorrectnessFixtureRunnerTest {
             assertEquals(discovered.size(), manifests.size(),
                     "full correctness profile must select every discovered fixture");
         }
-        List<FixtureExecution> executions = runFixtures(manifests);
+        List<CorrectnessFixture> fixtures = new java.util.ArrayList<>();
+        for (Path manifest : manifests) {
+            fixtures.add(CorrectnessFixture.read(manifest));
+        }
+        List<FixtureExecution> executions = runFixtures(fixtures);
         CorrectnessRunSummaryWriter.write(
                 workspaceRoot().resolve("target/correctness-run-summary.json"),
                 root,
@@ -103,7 +107,7 @@ class CorrectnessFixtureRunnerTest {
                 root.resolve("mysql/v5_7/mysql57-example/manifest.yml"),
                 "mysql57,mysql/v5_7"));
         assertTrue(CorrectnessFixtureProfileSelector.matches(root,
-                root.resolve("common/sql-basic-join/manifest.yml"),
+                root.resolve("common/common-sample-data-full-01-schema-02-views-views-sql/manifest.yml"),
                 "smoke"));
         assertFalse(CorrectnessFixtureProfileSelector.matches(root,
                 root.resolve("oracle/v12c/oracle12c-example/manifest.yml"),
@@ -111,6 +115,23 @@ class CorrectnessFixtureRunnerTest {
         assertFalse(CorrectnessFixtureProfileSelector.matches(root,
                 root.resolve("postgres/postgres-large-example/manifest.yml"),
                 "smoke"));
+    }
+
+    @Test
+    void smokeProfileCoversEveryParserCategoryExactlyOnce() throws Exception {
+        Path root = workspaceRoot().resolve("test-fixtures/correctness");
+        List<Path> selected;
+        try (Stream<Path> paths = Files.walk(root)) {
+            selected = paths
+                    .filter(path -> path.getFileName().toString().equals("manifest.yml"))
+                    .filter(path -> CorrectnessFixtureProfileSelector.matches(root, path, "smoke"))
+                    .sorted()
+                    .toList();
+        }
+
+        assertEquals(19, selected.size(), "smoke must contain one fixture for every parser category");
+        assertEquals(19, selected.stream().map(path -> parserCategory(root, path)).distinct().count(),
+                "smoke fixtures must not duplicate a parser category");
     }
 
     @Test
@@ -254,11 +275,11 @@ class CorrectnessFixtureRunnerTest {
                 fingerprints);
     }
 
-    private List<FixtureExecution> runFixtures(List<Path> manifests) {
+    private List<FixtureExecution> runFixtures(List<CorrectnessFixture> fixtures) {
         int parallelism = correctnessFixtureParallelism();
-        List<Path> executionOrder = manifests.stream()
+        List<CorrectnessFixture> executionOrder = fixtures.stream()
                 .sorted(Comparator.comparingLong(this::fixtureWeight).reversed()
-                        .thenComparing(Path::toString))
+                        .thenComparing(fixture -> fixture.path().toString()))
                 .toList();
         if (parallelism <= 1) {
             return executionOrder.stream()
@@ -269,7 +290,7 @@ class CorrectnessFixtureRunnerTest {
         ExecutorService pool = Executors.newFixedThreadPool(parallelism);
         try {
             List<Future<FixtureExecution>> futures = executionOrder.stream()
-                    .map(manifest -> pool.submit(() -> runFixtureSafely(manifest)))
+                    .map(fixture -> pool.submit(() -> runFixtureSafely(fixture)))
                     .toList();
             return futures.stream()
                     .map(this::getFixtureExecution)
@@ -288,30 +309,30 @@ class CorrectnessFixtureRunnerTest {
         }
     }
 
-    private long fixtureWeight(Path manifest) {
+    private long fixtureWeight(CorrectnessFixture fixture) {
         try {
-            return Files.size(manifest.getParent().resolve("input.sql"));
+            return Files.size(fixture.inputFile());
         } catch (Exception ignored) {
             return 0L;
         }
     }
 
-    private FixtureExecution runFixtureSafely(Path manifest) {
+    private FixtureExecution runFixtureSafely(CorrectnessFixture fixture) {
         long startNanos = System.nanoTime();
         Throwable failure = null;
         try {
-            executor.runFixture(CorrectnessFixture.read(manifest));
+            executor.runFixture(fixture);
         } catch (Throwable error) {
             failure = error;
         } finally {
             long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
             if (Boolean.getBoolean("correctnessFixtureTiming")) {
-                fixtureTimings.add(new FixtureTiming(manifest, elapsedMillis));
+                fixtureTimings.add(new FixtureTiming(fixture.path(), elapsedMillis));
                 if (Boolean.getBoolean("correctnessFixtureTimingVerbose")) {
-                    System.out.printf("correctness fixture %s %d ms%n", manifest, elapsedMillis);
+                    System.out.printf("correctness fixture %s %d ms%n", fixture.path(), elapsedMillis);
                 }
             }
-            return new FixtureExecution(manifest, failure, elapsedMillis);
+            return new FixtureExecution(fixture.path(), failure, elapsedMillis);
         }
     }
 
@@ -331,6 +352,9 @@ class CorrectnessFixtureRunnerTest {
 
     private static int correctnessFixtureParallelism() {
         if (Boolean.getBoolean("updateCorrectnessGold")) {
+            return 1;
+        }
+        if (Integer.getInteger("correctnessStatementParallelism", 1) > 1) {
             return 1;
         }
         String configured = System.getProperty("correctnessFixtureParallelism", "").trim();
@@ -354,6 +378,15 @@ class CorrectnessFixtureRunnerTest {
                 .map(String::trim)
                 .filter(filter -> !filter.isEmpty())
                 .anyMatch(value::contains);
+    }
+
+    private static String parserCategory(Path root, Path manifest) {
+        Path relative = root.relativize(manifest.getParent());
+        String dialect = relative.getName(0).toString();
+        String version = relative.getNameCount() > 1 && relative.getName(1).toString().startsWith("v")
+                ? relative.getName(1).toString()
+                : "root";
+        return dialect + "/" + version;
     }
 
     private String fingerprint(RelationshipCandidate relation) {

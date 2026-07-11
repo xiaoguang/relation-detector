@@ -9,7 +9,7 @@ import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 /**
  * Grouped parser capabilities exposed by a database adaptor.
  *
- * <p>CN: 兼容型能力对象；它不改变现有 parser SPI，只给后续瘦身提供稳定入口。
+ * <p>This is the only parser entry point in adaptor SPI v2.
  */
 public record AdaptorParsers(
         SqlRelationParser sqlRelations,

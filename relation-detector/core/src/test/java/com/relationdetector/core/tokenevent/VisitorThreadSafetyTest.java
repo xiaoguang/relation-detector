@@ -57,6 +57,6 @@ class VisitorThreadSafetyTest {
     }
 
     private String fingerprint(StructuredSqlEvent event) {
-        return event.type() + "|" + event.line() + "|" + event.attributes();
+        return event.semanticKey();
     }
 }

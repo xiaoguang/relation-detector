@@ -1,7 +1,7 @@
 {
   "fingerprints": [
     "CONTROL:CASE_WHEN:customer_profiles.risk_score->reconciliations.status",
-    "VALUE:COALESCE:reconciliation_input_items.item_qty,reconciliation_input_items.base_unit_price,currency_exchange_rates.rate,sales_orders.paid_amount->reconciliations.difference",
+    "VALUE:ARITHMETIC:reconciliation_input_items.item_qty,reconciliation_input_items.base_unit_price,currency_exchange_rates.rate,sales_orders.paid_amount->reconciliations.difference",
     "VALUE:CONCAT_FORMAT:reconciliation_input_items.cleaned_sku,master_skus.merchant_id->reconciliations.remark"
   ],
   "forbiddenSources": [],

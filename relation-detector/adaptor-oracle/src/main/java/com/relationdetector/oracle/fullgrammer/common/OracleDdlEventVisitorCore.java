@@ -1,11 +1,9 @@
 package com.relationdetector.oracle.fullgrammer.common;
 
-import java.util.Map;
 import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
 /**
@@ -25,14 +23,8 @@ public final class OracleDdlEventVisitorCore {
     ) {
         int count = Math.min(sourceColumns.size(), targetColumns.size());
         for (int index = 0; index < count; index++) {
-            Map<String, Object> attrs = core.attrs();
-            attrs.put("sourceTable", sourceTable);
-            attrs.put("sourceColumn", sourceColumns.get(index));
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumns.get(index));
-            attrs.put("compositePosition", index + 1);
-            attrs.put("compositeSize", count);
-            core.add(StructuredParseEventType.DDL_FOREIGN_KEY, ctx, attrs);
+            core.ddlForeignKey(ctx, sourceTable, sourceColumns.get(index), targetTable,
+                    targetColumns.get(index), index + 1, count);
         }
     }
 
@@ -47,12 +39,7 @@ public final class OracleDdlEventVisitorCore {
         if (table.isBlank() || column.isBlank()) {
             return;
         }
-        Map<String, Object> attrs = core.attrs();
-        attrs.put("table", table);
-        attrs.put("column", core.baseName(column));
-        attrs.put("role", role);
-        attrs.put("kind", kind);
-        core.add(StructuredParseEventType.DDL_INDEX, ctx, attrs);
+        core.ddlIndex(ctx, table, core.baseName(column), role, kind);
     }
 
     public static void addColumnEvent(
@@ -64,10 +51,7 @@ public final class OracleDdlEventVisitorCore {
         if (table.isBlank() || column.isBlank()) {
             return;
         }
-        Map<String, Object> attrs = core.attrs();
-        attrs.put("table", table);
-        attrs.put("column", core.baseName(column));
-        core.add(StructuredParseEventType.DDL_COLUMN, ctx, attrs);
+        core.ddlColumn(ctx, table, core.baseName(column));
     }
 
     public static List<StructuredSqlEvent> ddlEvents(List<StructuredSqlEvent> events) {

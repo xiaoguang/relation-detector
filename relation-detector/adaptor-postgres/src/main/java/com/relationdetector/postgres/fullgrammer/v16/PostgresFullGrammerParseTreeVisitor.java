@@ -50,7 +50,7 @@ final class PostgresFullGrammerParseTreeVisitor extends Postgres16FullGrammerPar
 
     PostgresFullGrammerParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
         this.statement = statement;
-        this.core = new PostgresSqlEventVisitorCore(statement);
+        this.core = new PostgresSqlEventVisitorCore(statement, new Postgres16ParseTreeAdapter());
         this.sink = core.sink();
     }
 

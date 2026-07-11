@@ -372,8 +372,8 @@ class PostgresTokenEventDialectBoundaryTest {
     void adaptorExposesPostgresTokenEventSqlAndDdlParsers() {
         PostgresDatabaseAdaptor adaptor = new PostgresDatabaseAdaptor();
 
-        assertEquals(PostgresTokenEventStructuredSqlParser.class, adaptor.structuredSqlParser().orElseThrow().getClass());
-        assertEquals(PostgresTokenEventStructuredDdlParser.class, adaptor.structuredDdlParser().orElseThrow().getClass());
+        assertEquals(PostgresTokenEventStructuredSqlParser.class, adaptor.parsers().structuredSql().orElseThrow().getClass());
+        assertEquals(PostgresTokenEventStructuredDdlParser.class, adaptor.parsers().structuredDdl().orElseThrow().getClass());
     }
 
     @Test
@@ -388,10 +388,10 @@ class PostgresTokenEventDialectBoundaryTest {
         assertFalse(result.attributes().containsKey("ddlEventVisitor"));
         assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.DDL_FOREIGN_KEY
-                        && "orders".equals(event.attributes().get("sourceTable"))
-                        && "user_id".equals(event.attributes().get("sourceColumn"))
-                        && "users".equals(event.attributes().get("targetTable"))
-                        && "id".equals(event.attributes().get("targetColumn"))));
+                        && "orders".equals(event.sourceTable())
+                        && "user_id".equals(event.sourceColumn())
+                        && "users".equals(event.targetTable())
+                        && "id".equals(event.targetColumn())));
     }
 
     @Test
@@ -416,10 +416,10 @@ class PostgresTokenEventDialectBoundaryTest {
         assertEquals(0, result.attributes().get("syntaxErrors"), () -> "attrs=" + result.attributes());
         java.util.List<String> fingerprints = result.events().stream()
                 .filter(event -> event.type() == StructuredParseEventType.DDL_FOREIGN_KEY)
-                .map(event -> event.attributes().get("sourceTable") + "."
-                        + event.attributes().get("sourceColumn") + "->"
-                        + event.attributes().get("targetTable") + "."
-                        + event.attributes().get("targetColumn"))
+                .map(event -> event.sourceTable() + "."
+                        + event.sourceColumn() + "->"
+                        + event.targetTable() + "."
+                        + event.targetColumn())
                 .sorted()
                 .toList();
 
@@ -430,9 +430,9 @@ class PostgresTokenEventDialectBoundaryTest {
                 "case_01.xref_p10_deleted.upi->rna.upi"), fingerprints);
         assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.DDL_INDEX
-                        && "SOURCE_INDEX".equals(event.attributes().get("role"))
-                        && "case_01.xref_p10_deleted".equals(event.attributes().get("table"))
-                        && "upi".equals(event.attributes().get("column"))));
+                        && "SOURCE_INDEX".equals(event.role())
+                        && "case_01.xref_p10_deleted".equals(event.table())
+                        && "upi".equals(event.column())));
     }
 
     @Test
@@ -444,8 +444,8 @@ class PostgresTokenEventDialectBoundaryTest {
 
         assertTrue(result.events().stream().noneMatch(event ->
                 event.type() == StructuredParseEventType.DDL_INDEX
-                        && "users".equals(event.attributes().get("table"))
-                        && "bio".equals(event.attributes().get("column"))),
+                        && "users".equals(event.table())
+                        && "bio".equals(event.column())),
                 () -> "Postgres DDL visitor must not accept MySQL FULLTEXT index as source evidence: " + result.events());
     }
 
@@ -460,8 +460,8 @@ class PostgresTokenEventDialectBoundaryTest {
                 java.util.Map.of()), null);
 
         assertTrue(result.events().stream().anyMatch(event ->
-                "orders".equals(event.attributes().get("table"))
-                        && "o".equals(event.attributes().get("alias"))));
+                "orders".equals(event.table())
+                        && "o".equals(event.alias())));
     }
 
     @Test
@@ -502,9 +502,9 @@ class PostgresTokenEventDialectBoundaryTest {
 
         assertFalse(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.TABLE_REFERENCE
-                        && ("json_to_recordset".equalsIgnoreCase(String.valueOf(event.attributes().get("table")))
-                        || "generate_series".equalsIgnoreCase(String.valueOf(event.attributes().get("table")))
-                        || "decoded".equalsIgnoreCase(String.valueOf(event.attributes().get("table"))))),
+                        && ("json_to_recordset".equalsIgnoreCase(event.table())
+                        || "generate_series".equalsIgnoreCase(event.table())
+                        || "decoded".equalsIgnoreCase(event.table()))),
                 () -> "Postgres table functions must stay scoped rowsets, not physical table events: " + result.events());
     }
 
@@ -519,13 +519,13 @@ class PostgresTokenEventDialectBoundaryTest {
                 java.util.Map.of()), null);
 
         assertFalse(result.events().stream().anyMatch(event ->
-                "orders".equals(event.attributes().get("table"))
-                        || "users".equals(event.attributes().get("table"))));
+                "orders".equals(event.table())
+                        || "users".equals(event.table())));
     }
 
     @Test
     void postgresAdaptorSqlParserUsesTokenEventRelationParser() {
-        SqlRelationParser parser = new PostgresDatabaseAdaptor().sqlRelationParser();
+        SqlRelationParser parser = new PostgresDatabaseAdaptor().parsers().sqlRelations();
         assertTrue(parser instanceof TokenEventSqlRelationParser);
 
         java.util.List<RelationshipCandidate> relationships = parser.parse(new SqlStatementRecord(

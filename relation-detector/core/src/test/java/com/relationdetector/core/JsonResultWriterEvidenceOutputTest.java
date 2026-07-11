@@ -9,9 +9,12 @@ import com.relationdetector.core.relation.*;
 
 import com.relationdetector.core.tokenevent.*;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +49,17 @@ import com.relationdetector.contracts.Enums.RelationType;
  */
 class JsonResultWriterEvidenceOutputTest {
     private static final ObjectMapper JSON = new ObjectMapper();
+
+    @Test
+    void outputStreamRenderingMatchesStringContract() throws Exception {
+        ScanResult result = new ScanResult("mysql", "erp");
+        JsonResultWriter writer = new JsonResultWriter();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        writer.write(result, output, true, true, true);
+
+        assertEquals(writer.write(result, true, true, true), output.toString(StandardCharsets.UTF_8));
+    }
 
     @Test
     void writesRawEvidenceAndGroupedEvidenceSeparately() {
@@ -143,6 +157,22 @@ class JsonResultWriterEvidenceOutputTest {
                                 .path("transformType").asText())
                         && root.path("dataLineages").get(0).path("rawEvidence").size() == 2,
                 "One lineage transform, one grouped evidence transform, and two raw evidence transforms should be emitted");
+    }
+
+    @Test
+    void lineageObservationCountIncludesFoldedOccurrences() {
+        DataLineageCandidate first = aggregateLineage("same observation");
+        DataLineageCandidate second = aggregateLineage("same observation");
+        DataLineageCandidate merged = new DataLineageMerger().merge(List.of(first, second)).get(0);
+        ScanResult result = new ScanResult("mysql", "public");
+        result.dataLineages().add(merged);
+
+        JsonNode root = readTree(new JsonResultWriter().write(result, true, true));
+
+        assertTrue(root.path("dataLineages").get(0).path("rawEvidence").size() == 1,
+                "Identical lineage observations should be folded");
+        assertTrue(root.path("summary").path("directDataLineageObservationCount").asInt() == 2,
+                "Observation summary should count folded occurrences");
     }
 
     @Test

@@ -25,8 +25,8 @@ class MySqlTokenEventDialectBoundaryTest {
     void adaptorExposesMysqlTokenEventSqlAndDdlParsers() {
         MySqlDatabaseAdaptor adaptor = new MySqlDatabaseAdaptor();
 
-        assertEquals(MySqlTokenEventStructuredSqlParser.class, adaptor.structuredSqlParser().orElseThrow().getClass());
-        assertEquals(MySqlTokenEventStructuredDdlParser.class, adaptor.structuredDdlParser().orElseThrow().getClass());
+        assertEquals(MySqlTokenEventStructuredSqlParser.class, adaptor.parsers().structuredSql().orElseThrow().getClass());
+        assertEquals(MySqlTokenEventStructuredDdlParser.class, adaptor.parsers().structuredDdl().orElseThrow().getClass());
     }
 
     @Test
@@ -41,15 +41,15 @@ class MySqlTokenEventDialectBoundaryTest {
         assertFalse(result.attributes().containsKey("ddlEventVisitor"));
         assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.DDL_COLUMN
-                        && "orders".equals(event.attributes().get("table"))
-                        && "user_id".equals(event.attributes().get("column"))),
+                        && "orders".equals(event.table())
+                        && "user_id".equals(event.column())),
                 () -> "Typed DDL visitor should emit DDL column inventory for naming evidence: " + result.events());
         assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.DDL_FOREIGN_KEY
-                        && "orders".equals(event.attributes().get("sourceTable"))
-                        && "user_id".equals(event.attributes().get("sourceColumn"))
-                        && "users".equals(event.attributes().get("targetTable"))
-                        && "id".equals(event.attributes().get("targetColumn"))));
+                        && "orders".equals(event.sourceTable())
+                        && "user_id".equals(event.sourceColumn())
+                        && "users".equals(event.targetTable())
+                        && "id".equals(event.targetColumn())));
     }
 
     @Test
@@ -61,9 +61,9 @@ class MySqlTokenEventDialectBoundaryTest {
 
         assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.DDL_INDEX
-                        && "SOURCE_INDEX".equals(event.attributes().get("role"))
-                        && "users".equals(event.attributes().get("table"))
-                        && "email".equals(event.attributes().get("column"))),
+                        && "SOURCE_INDEX".equals(event.role())
+                        && "users".equals(event.table())
+                        && "email".equals(event.column())),
                 () -> "Typed DDL visitor should emit ordinary index evidence: " + result.events());
     }
 
@@ -78,8 +78,8 @@ class MySqlTokenEventDialectBoundaryTest {
                 java.util.Map.of()), null);
 
         assertTrue(result.events().stream().anyMatch(event ->
-                "orders".equals(event.attributes().get("table"))
-                        && "o".equals(event.attributes().get("alias"))));
+                "orders".equals(event.table())
+                        && "o".equals(event.alias())));
     }
 
     @Test
@@ -119,7 +119,7 @@ class MySqlTokenEventDialectBoundaryTest {
 
     @Test
     void mysqlAdaptorSqlParserUsesTokenEventRelationParser() {
-        SqlRelationParser parser = new MySqlDatabaseAdaptor().sqlRelationParser();
+        SqlRelationParser parser = new MySqlDatabaseAdaptor().parsers().sqlRelations();
         assertTrue(parser instanceof TokenEventSqlRelationParser);
 
         java.util.List<RelationshipCandidate> relationships = parser.parse(new SqlStatementRecord(

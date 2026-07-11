@@ -12,11 +12,9 @@ import java.util.Set;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.core.ddl.DdlEventBuilder;
 import com.relationdetector.core.fullgrammer.FullGrammerTypedSqlEventSink;
 
 /**
@@ -26,21 +24,25 @@ import com.relationdetector.core.fullgrammer.FullGrammerTypedSqlEventSink;
  * regex 或名字白名单判断 SQL 结构。五个 full-grammer 版本共用这层语义映射，
  * token-event 仍由自己的 grammar/visitor 独立产生事件。</p>
  */
-public final class SqlServerParseTreeEventCollector {
-    private final Parser parser;
+public final class SqlServerParseTreeEventCollector extends SqlServerParseTreeSupport {
     private final SqlServerExpressionAnalyzer expressionAnalyzer;
     private final FullGrammerTypedSqlEventSink sqlSink;
-    private final DdlEventBuilder ddlBuilder;
+    private final SqlServerDdlEventCollector ddlCollector;
     private final boolean ddlOnly;
     private final Map<String, String> rowsetOwners = new LinkedHashMap<>();
     private final Set<String> projectionOwners = new LinkedHashSet<>();
     private final Map<ProjectionKey, Boolean> directProjections = new LinkedHashMap<>();
 
-    public SqlServerParseTreeEventCollector(Parser parser, SqlStatementRecord statement, boolean ddlOnly) {
-        this.parser = parser;
-        this.expressionAnalyzer = new SqlServerExpressionAnalyzer();
+    public SqlServerParseTreeEventCollector(
+            Parser parser,
+            SqlStatementRecord statement,
+            boolean ddlOnly,
+            com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter parseTreeAdapter
+    ) {
+        super(parser);
+        this.expressionAnalyzer = new SqlServerExpressionAnalyzer(parseTreeAdapter);
         this.sqlSink = new FullGrammerTypedSqlEventSink(statement, expressionAnalyzer);
-        this.ddlBuilder = new DdlEventBuilder(statement.sourceName());
+        this.ddlCollector = new SqlServerDdlEventCollector(parser, statement.sourceName(), this::visit);
         this.ddlOnly = ddlOnly;
     }
 
@@ -50,7 +52,7 @@ public final class SqlServerParseTreeEventCollector {
         if (!ddlOnly) {
             events.addAll(sqlSink.events());
         }
-        events.addAll(ddlBuilder.events());
+        events.addAll(ddlCollector.events());
         return events;
     }
 
@@ -74,9 +76,9 @@ public final class SqlServerParseTreeEventCollector {
             case "update_statement" -> visitUpdate(ctx);
             case "merge_statement" -> visitMerge(ctx);
             case "create_or_alter_dml_trigger" -> visitDmlTrigger(ctx);
-            case "create_table" -> visitCreateTable(ctx);
-            case "alter_table" -> visitAlterTable(ctx);
-            case "create_index" -> visitCreateIndex(ctx);
+            case "create_table" -> ddlCollector.visitCreateTable(ctx);
+            case "alter_table" -> ddlCollector.visitAlterTable(ctx);
+            case "create_index" -> ddlCollector.visitCreateIndex(ctx);
             default -> visitChildren(ctx);
         }
     }
@@ -328,125 +330,8 @@ public final class SqlServerParseTreeEventCollector {
         }
     }
 
-    private void visitCreateTable(ParserRuleContext ctx) {
-        String table = firstDirectText(ctx, "table_name").orElse("");
-        if (table.isBlank() || isLocalTemp(table)) {
-            return;
-        }
-        for (ParserRuleContext column : descendants(ctx, "column_definition")) {
-            String columnName = firstDirectText(column, "id_").orElse("");
-            if (columnName.isBlank()) {
-                continue;
-            }
-            ddlBuilder.addColumn(qualifiedTable(table), columnName, line(column));
-            if (containsDirectKeyword(column, "PRIMARY") || containsDirectKeyword(column, "UNIQUE")) {
-                ddlBuilder.addIndex(qualifiedTable(table), columnName, "TARGET_UNIQUE", "INLINE_CONSTRAINT", line(column));
-            }
-            firstDescendant(column, "foreign_key_options").ifPresent(fk -> {
-                String targetTable = firstDirectText(fk, "table_name").orElse("");
-                List<String> targetColumns = firstDirect(fk, "column_name_list").map(this::identifierList).orElse(List.of());
-                if (!targetTable.isBlank() && !targetColumns.isEmpty()) {
-                    ddlBuilder.addForeignKey(qualifiedTable(table), List.of(columnName), qualifiedTable(targetTable), targetColumns, line(fk));
-                    ddlBuilder.addIndex(qualifiedTable(table), columnName, "SOURCE_INDEX", "IMPLICIT_FK_SOURCE", line(fk));
-                    targetColumns.forEach(targetColumn ->
-                            ddlBuilder.addIndex(qualifiedTable(targetTable), targetColumn, "TARGET_UNIQUE", "REFERENCED_KEY", line(fk)));
-                }
-            });
-        }
-        for (ParserRuleContext constraint : descendants(ctx, "table_constraint")) {
-            if (containsDirectKeyword(constraint, "FOREIGN")) {
-                List<ParserRuleContext> lists = directChildren(constraint, "column_name_list");
-                Optional<ParserRuleContext> fkOptions = firstDirect(constraint, "foreign_key_options");
-                String targetTable = fkOptions.flatMap(fk -> firstDirectText(fk, "table_name")).orElse("");
-                List<String> sourceColumns = lists.isEmpty() ? List.of() : identifierList(lists.get(0));
-                List<String> targetColumns = fkOptions.flatMap(fk -> firstDirect(fk, "column_name_list"))
-                        .map(this::identifierList)
-                        .orElse(List.of());
-                if (!targetTable.isBlank() && !sourceColumns.isEmpty() && !targetColumns.isEmpty()) {
-                    ddlBuilder.addForeignKey(qualifiedTable(table), sourceColumns, qualifiedTable(targetTable), targetColumns, line(constraint));
-                    sourceColumns.forEach(sourceColumn ->
-                            ddlBuilder.addIndex(qualifiedTable(table), sourceColumn, "SOURCE_INDEX", "FK_SOURCE", line(constraint)));
-                    targetColumns.forEach(targetColumn ->
-                            ddlBuilder.addIndex(qualifiedTable(targetTable), targetColumn, "TARGET_UNIQUE", "REFERENCED_KEY", line(constraint)));
-                }
-            } else if (containsDirectKeyword(constraint, "PRIMARY") || containsDirectKeyword(constraint, "UNIQUE")) {
-                firstDirect(constraint, "column_name_list_with_order").map(this::identifierList).orElse(List.of())
-                        .forEach(column -> ddlBuilder.addIndex(qualifiedTable(table), column, "TARGET_UNIQUE", "TABLE_CONSTRAINT", line(constraint)));
-            }
-        }
-    }
-
-    private void visitAlterTable(ParserRuleContext ctx) {
-        String table = firstDirectText(ctx, "table_name").orElse("");
-        if (table.isBlank() || isLocalTemp(table)) {
-            visitChildren(ctx);
-            return;
-        }
-        for (ParserRuleContext column : descendants(ctx, "column_definition")) {
-            String columnName = firstDirectText(column, "id_").orElse("");
-            if (!columnName.isBlank()) {
-                ddlBuilder.addColumn(qualifiedTable(table), columnName, line(column));
-            }
-        }
-        for (ParserRuleContext constraint : descendants(ctx, "table_constraint")) {
-            if (!containsDirectKeyword(constraint, "FOREIGN")) {
-                continue;
-            }
-            List<ParserRuleContext> lists = directChildren(constraint, "column_name_list");
-            Optional<ParserRuleContext> fkOptions = firstDirect(constraint, "foreign_key_options");
-            String targetTable = fkOptions.flatMap(fk -> firstDirectText(fk, "table_name")).orElse("");
-            List<String> sourceColumns = lists.isEmpty() ? List.of() : identifierList(lists.get(0));
-            List<String> targetColumns = fkOptions.flatMap(fk -> firstDirect(fk, "column_name_list"))
-                    .map(this::identifierList)
-                    .orElse(List.of());
-            if (targetTable.isBlank() || sourceColumns.isEmpty() || targetColumns.isEmpty()) {
-                continue;
-            }
-            sourceColumns.forEach(sourceColumn ->
-                    ddlBuilder.addColumn(qualifiedTable(table), sourceColumn, line(constraint)));
-            targetColumns.forEach(targetColumn ->
-                    ddlBuilder.addColumn(qualifiedTable(targetTable), targetColumn, line(constraint)));
-            ddlBuilder.addForeignKey(qualifiedTable(table), sourceColumns,
-                    qualifiedTable(targetTable), targetColumns, line(constraint));
-            sourceColumns.forEach(sourceColumn ->
-                    ddlBuilder.addIndex(qualifiedTable(table), sourceColumn, "SOURCE_INDEX", "FK_SOURCE", line(constraint)));
-            targetColumns.forEach(targetColumn ->
-                    ddlBuilder.addIndex(qualifiedTable(targetTable), targetColumn, "TARGET_UNIQUE", "REFERENCED_KEY", line(constraint)));
-        }
-        visitChildren(ctx);
-    }
-
-    private void visitCreateIndex(ParserRuleContext ctx) {
-        String table = firstDirectText(ctx, "table_name").orElse("");
-        if (table.isBlank()) {
-            return;
-        }
-        String role = containsDirectKeyword(ctx, "UNIQUE") ? "TARGET_UNIQUE" : "SOURCE_INDEX";
-        firstDirect(ctx, "column_name_list_with_order").map(this::identifierList).orElse(List.of())
-                .forEach(column -> ddlBuilder.addIndex(qualifiedTable(table), column, role, "CREATE_INDEX", line(ctx)));
-    }
-
     private Optional<String> aliasForProjection(ParserRuleContext item) {
         return firstDescendant(item, "as_column_alias").flatMap(this::lastIdText);
-    }
-
-    private Optional<String> tableForAlias(ParseTree tree, String aliasOrTable) {
-        String target = clean(aliasOrTable);
-        if (target.isBlank()) {
-            return Optional.empty();
-        }
-        for (ParserRuleContext item : descendants(tree, "table_source_item")) {
-            Optional<ParserRuleContext> tableName = firstDirect(item, "full_table_name");
-            if (tableName.isEmpty()) {
-                continue;
-            }
-            String alias = firstDirect(item, "as_table_alias").flatMap(this::lastIdText).orElse("");
-            String table = clean(tableName.get().getText());
-            if (target.equalsIgnoreCase(alias) || target.equalsIgnoreCase(baseName(table))) {
-                return Optional.of(table);
-            }
-        }
-        return Optional.empty();
     }
 
     private void emitPredicateColumnEqualities(ParseTree tree, String joinKind) {
@@ -481,269 +366,6 @@ public final class SqlServerParseTreeEventCollector {
 
     private String normalize(String value) {
         return clean(value).toLowerCase(Locale.ROOT);
-    }
-
-    private boolean isEqualityComparison(ParserRuleContext predicate) {
-        return firstDirect(predicate, "comparison_operator")
-                .map(operator -> "=".equals(operator.getText()))
-                .orElse(false);
-    }
-
-    private Optional<ColumnEndpoint> singleColumnEndpoint(ParseTree expression) {
-        Optional<ParserRuleContext> directColumn = directColumnExpression(expression);
-        if (directColumn.isEmpty()) {
-            return Optional.empty();
-        }
-        List<ParserRuleContext> columns = List.of(directColumn.get());
-        if (columns.size() != 1) {
-            return Optional.empty();
-        }
-        List<String> parts = splitQualified(clean(columns.get(0).getText())).stream()
-                .map(this::cleanOne)
-                .filter(part -> !part.isBlank())
-                .toList();
-        if (parts.size() < 2) {
-            return Optional.empty();
-        }
-        return Optional.of(new ColumnEndpoint(parts.get(parts.size() - 2), parts.get(parts.size() - 1)));
-    }
-
-    private Optional<ParserRuleContext> directColumnExpression(ParseTree expression) {
-        if (!(expression instanceof ParserRuleContext ctx)) {
-            return Optional.empty();
-        }
-        List<ParserRuleContext> columns = directChildren(ctx, "full_column_name");
-        if (columns.size() != 1) {
-            List<ParserRuleContext> nestedExpressions = directChildren(ctx, "expression");
-            if (columns.isEmpty() && nestedExpressions.size() == 1) {
-                return directColumnExpression(nestedExpressions.get(0));
-            }
-            return Optional.empty();
-        }
-        for (ParserRuleContext child : directChildren(ctx)) {
-            if (child != columns.get(0) && !ruleName(child).equals("id_")) {
-                return Optional.empty();
-            }
-        }
-        return Optional.of(columns.get(0));
-    }
-
-    private Optional<String> lastIdText(ParserRuleContext ctx) {
-        List<ParserRuleContext> ids = descendants(ctx, "id_");
-        if (ids.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(clean(ids.get(ids.size() - 1).getText()));
-    }
-
-    private Optional<ParserRuleContext> firstDirect(ParserRuleContext ctx, String ruleName) {
-        for (ParserRuleContext child : directChildren(ctx)) {
-            if (ruleName(child).equals(ruleName)) {
-                return Optional.of(child);
-            }
-        }
-        return Optional.empty();
-    }
-
-    private Optional<String> firstDirectText(ParserRuleContext ctx, String ruleName) {
-        return firstDirect(ctx, ruleName).map(child -> clean(child.getText()));
-    }
-
-    private Optional<ParserRuleContext> firstDescendant(ParseTree tree, String ruleName) {
-        if (tree instanceof ParserRuleContext ctx && ruleName(ctx).equals(ruleName)) {
-            return Optional.of(ctx);
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            Optional<ParserRuleContext> match = firstDescendant(tree.getChild(index), ruleName);
-            if (match.isPresent()) {
-                return match;
-            }
-        }
-        return Optional.empty();
-    }
-
-    private List<ParserRuleContext> descendants(ParseTree tree, String ruleName) {
-        List<ParserRuleContext> result = new ArrayList<>();
-        collectDescendants(tree, ruleName, result);
-        return result;
-    }
-
-    private void collectDescendants(ParseTree tree, String ruleName, List<ParserRuleContext> result) {
-        if (tree instanceof ParserRuleContext ctx && ruleName(ctx).equals(ruleName)) {
-            result.add(ctx);
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectDescendants(tree.getChild(index), ruleName, result);
-        }
-    }
-
-    private List<ParserRuleContext> directChildren(ParserRuleContext ctx) {
-        List<ParserRuleContext> result = new ArrayList<>();
-        for (int index = 0; index < ctx.getChildCount(); index++) {
-            if (ctx.getChild(index) instanceof ParserRuleContext child) {
-                result.add(child);
-            }
-        }
-        return result;
-    }
-
-    private List<ParserRuleContext> directChildren(ParserRuleContext ctx, String ruleName) {
-        return directChildren(ctx).stream().filter(child -> ruleName(child).equals(ruleName)).toList();
-    }
-
-    private List<String> identifierList(ParserRuleContext ctx) {
-        List<String> values = new ArrayList<>();
-        for (ParserRuleContext id : descendants(ctx, "id_")) {
-            String value = clean(id.getText());
-            if (!value.isBlank()) {
-                values.add(value);
-            }
-        }
-        if (!values.isEmpty()) {
-            return values;
-        }
-        return splitTopLevelIdentifiers(ctx.getText());
-    }
-
-    private List<String> splitTopLevelIdentifiers(String text) {
-        List<String> values = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        int depth = 0;
-        for (int index = 0; index < text.length(); index++) {
-            char ch = text.charAt(index);
-            if (ch == '(') {
-                depth++;
-            } else if (ch == ')' && depth > 0) {
-                depth--;
-            }
-            if (ch == ',' && depth == 0) {
-                addIdentifier(values, current.toString());
-                current.setLength(0);
-            } else {
-                current.append(ch);
-            }
-        }
-        addIdentifier(values, current.toString());
-        return values;
-    }
-
-    private void addIdentifier(List<String> values, String raw) {
-        String value = lastIdentifier(raw);
-        if (!value.isBlank()) {
-            values.add(value);
-        }
-    }
-
-    private boolean hasDirectTerminal(ParserRuleContext ctx, String text) {
-        return directTerminalTexts(ctx).stream().anyMatch(token -> token.equalsIgnoreCase(text));
-    }
-
-    private boolean containsDirectKeyword(ParserRuleContext ctx, String text) {
-        return hasDirectTerminal(ctx, text);
-    }
-
-    private List<String> directTerminalTexts(ParserRuleContext ctx) {
-        List<String> result = new ArrayList<>();
-        for (int index = 0; index < ctx.getChildCount(); index++) {
-            if (ctx.getChild(index) instanceof TerminalNode node) {
-                result.add(node.getText());
-            }
-        }
-        return result;
-    }
-
-    private String ruleName(ParserRuleContext ctx) {
-        int index = ctx.getRuleIndex();
-        String[] names = parser.getRuleNames();
-        if (index < 0 || index >= names.length) {
-            return "";
-        }
-        return names[index];
-    }
-
-    private long line(ParserRuleContext ctx) {
-        return ctx.getStart() == null ? 1 : ctx.getStart().getLine();
-    }
-
-    private boolean isLocalTemp(String table) {
-        return clean(table).startsWith("#");
-    }
-
-    private String baseName(String raw) {
-        String value = clean(raw);
-        int dot = value.lastIndexOf('.');
-        return dot >= 0 ? value.substring(dot + 1) : value;
-    }
-
-    private String qualifiedTable(String raw) {
-        return clean(raw);
-    }
-
-    private String lastIdentifier(String raw) {
-        return baseName(raw);
-    }
-
-    private String clean(String value) {
-        if (value == null) {
-            return "";
-        }
-        String clean = value.strip();
-        if (clean.isBlank()) {
-            return "";
-        }
-        clean = removeWhitespace(clean);
-        List<String> parts = splitQualified(clean);
-        if (parts.size() > 1) {
-            return parts.stream().map(this::cleanOne).filter(part -> !part.isBlank())
-                    .reduce((left, right) -> left + "." + right).orElse("");
-        }
-        return cleanOne(clean);
-    }
-
-    private String cleanOne(String value) {
-        String clean = value.strip();
-        while ((clean.startsWith("[") && clean.endsWith("]"))
-                || (clean.startsWith("\"") && clean.endsWith("\""))
-                || (clean.startsWith("`") && clean.endsWith("`"))) {
-            clean = clean.substring(1, clean.length() - 1);
-        }
-        return clean;
-    }
-
-    private List<String> splitQualified(String text) {
-        List<String> parts = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        int bracketDepth = 0;
-        for (int index = 0; index < text.length(); index++) {
-            char ch = text.charAt(index);
-            if (ch == '[') {
-                bracketDepth++;
-            } else if (ch == ']' && bracketDepth > 0) {
-                bracketDepth--;
-            }
-            if (ch == '.' && bracketDepth == 0) {
-                parts.add(current.toString());
-                current.setLength(0);
-            } else {
-                current.append(ch);
-            }
-        }
-        parts.add(current.toString());
-        return parts;
-    }
-
-    private String removeWhitespace(String value) {
-        StringBuilder builder = new StringBuilder(value.length());
-        for (int index = 0; index < value.length(); index++) {
-            char ch = value.charAt(index);
-            if (!Character.isWhitespace(ch)) {
-                builder.append(ch);
-            }
-        }
-        return builder.toString();
-    }
-
-    private record ColumnEndpoint(String qualifier, String column) {
     }
 
     private record ProjectionKey(String owner, String column) {

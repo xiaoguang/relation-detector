@@ -122,7 +122,16 @@ class FullGrammerDdlBehaviorTest {
 
     private boolean matches(StructuredSqlEvent event, Map<String, String> expected) {
         for (Map.Entry<String, String> entry : expected.entrySet()) {
-            Object actual = event.attributes().get(entry.getKey());
+            Object actual = switch (entry.getKey()) {
+                case "sourceTable" -> event.sourceTable();
+                case "sourceColumn" -> event.sourceColumn();
+                case "targetTable" -> event.targetTable();
+                case "targetColumn" -> event.targetColumn();
+                case "table" -> event.table();
+                case "column" -> event.column();
+                case "role" -> event.role();
+                default -> throw new IllegalArgumentException("Unsupported typed DDL event field: " + entry.getKey());
+            };
             if (!entry.getValue().equals(String.valueOf(actual))) {
                 return false;
             }

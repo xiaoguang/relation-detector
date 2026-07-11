@@ -61,8 +61,8 @@ class MySql57FullGrammerVersionBoundaryTest {
 
         assertTrue(result.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.DDL_COLUMN
-                                && "orders".equals(event.attributes().get("table"))
-                                && "customer_id".equals(event.attributes().get("column"))),
+                                && "orders".equals(event.table())
+                                && "customer_id".equals(event.column())),
                 () -> "MySQL 5.7 full-grammer DDL should emit DDL_COLUMN inventory events: "
                         + result.events());
     }

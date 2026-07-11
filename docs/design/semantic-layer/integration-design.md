@@ -415,7 +415,7 @@ Step 7: Answer（最终输出）
 [relation-detector]
     ↓ 输出: scan-result.json (JSON 文件)
 [ScanResultReader]
-    ↓ 输出: ScanBundle (内存对象，保留 JSON fact arrays)
+    ↓ 输出: ScanBundle (内存对象，typed facts 保留 raw payload)
 [SemanticEvidenceBuilder]
     ↓ 输出: EvidenceGraph (内存对象)
 [NoopSemanticEnricher]
@@ -558,7 +558,7 @@ Step 7: Answer（最终输出）
 
 **当前代码预期输出：**
 
-1. ScanResultReader → ScanBundle（保留 relationships、dataLineages、derived facts、namingEvidence、diagnostics 的 JSON arrays）
+1. ScanResultReader → ScanBundle（relationships、dataLineages、derived facts、namingEvidence、diagnostics 转为 typed facts，同时保留 raw payload）
 2. SemanticEvidenceBuilder → EvidenceGraph（facts、endpoints、evidenceRefs、diagnostics、summary）
 3. NoopSemanticEnricher → EvidenceGraph（不新增、不修改 semantic fact）
 4. SemanticKgBuilder → SemanticKnowledgeGraph（PhysicalTable/PhysicalColumn/RelationshipFact/LineageFact/NamingEvidenceFact/Diagnostic 等节点和边）

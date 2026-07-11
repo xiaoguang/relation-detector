@@ -15,6 +15,10 @@ import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.parse.ExpressionTrace;
+import com.relationdetector.contracts.parse.ProjectionEvent;
+import com.relationdetector.contracts.parse.RowsetEvent;
+import com.relationdetector.contracts.parse.SourceProvenance;
 
 class ProjectionTraceResolverTest {
     @Test
@@ -97,17 +101,13 @@ class ProjectionTraceResolverTest {
     }
 
     private static StructuredSqlEvent cte(String name) {
-        return event(StructuredParseEventType.CTE_DECLARATION, Map.of(
-                "name", name,
-                "table", name,
-                "qualifiedTable", name));
+        return new RowsetEvent(StructuredParseEventType.CTE_DECLARATION, provenance(),
+                "", name, name, "", name, "", "");
     }
 
     private static StructuredSqlEvent rowset(String table, String alias) {
-        return event(StructuredParseEventType.ROWSET_REFERENCE, Map.of(
-                "table", table,
-                "qualifiedTable", table,
-                "alias", alias));
+        return new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance(),
+                "FROM", table, table, alias, "", "", "");
     }
 
     private static StructuredSqlEvent projection(
@@ -117,16 +117,14 @@ class ProjectionTraceResolverTest {
             String sourceColumn,
             String transform
     ) {
-        return event(StructuredParseEventType.PROJECTION_ITEM, Map.of(
-                "outputAlias", outputAlias,
-                "outputColumn", outputColumn,
-                "sourceAliases", List.of(sourceAlias),
-                "sourceColumns", List.of(sourceColumn),
-                "transformType", transform));
+        return new ProjectionEvent(StructuredParseEventType.PROJECTION_ITEM, provenance(),
+                outputAlias, outputColumn, ExpressionTrace.of(
+                        List.of(sourceAlias), List.of(sourceColumn), LineageFlowKind.VALUE,
+                        LineageTransformType.valueOf(transform)));
     }
 
-    private static StructuredSqlEvent event(StructuredParseEventType type, Map<String, Object> attrs) {
-        return new StructuredSqlEvent(type, "projection-trace-test.sql", 1, attrs);
+    private static SourceProvenance provenance() {
+        return SourceProvenance.source("projection-trace-test.sql", 1);
     }
 
     private static Map<String, TableId> aliases(List<StructuredSqlEvent> events) {
@@ -135,10 +133,10 @@ class ProjectionTraceResolverTest {
             if (event.type() != StructuredParseEventType.ROWSET_REFERENCE) {
                 continue;
             }
-            String table = String.valueOf(event.attributes().get("qualifiedTable"));
+            String table = event.qualifiedTable();
             TableId tableId = TableId.of(null, table);
             aliases.put(table.toLowerCase(), tableId);
-            String alias = String.valueOf(event.attributes().get("alias"));
+            String alias = event.alias();
             if (!alias.isBlank()) {
                 aliases.put(alias.toLowerCase(), tableId);
             }

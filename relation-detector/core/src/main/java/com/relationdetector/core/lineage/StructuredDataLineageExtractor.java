@@ -107,7 +107,8 @@ public final class StructuredDataLineageExtractor {
                     continue;
                 }
                 LineageTransformType transform = ProjectionTraceResolver.effectiveTransform(
-                        text(event, "transformType"), sourceResolution.transforms(), sourceResolution.flowKind());
+                        event.expression().transformType().name(),
+                        sourceResolution.transforms(), sourceResolution.flowKind());
                 LineageFlowKind flowKind = sourceResolution.flowKind();
                 AssignmentMapping mapping = assignmentMapping(event, target, sources, transform);
                 DataLineageCandidate candidate = new DataLineageCandidate(
@@ -119,8 +120,9 @@ public final class StructuredDataLineageExtractor {
                 candidate.confidence(score);
                 Map<String, Object> attributes = new LinkedHashMap<>();
                 attributes.put("tokenEventNative", true);
-                attributes.put("mappingKind", text(event, "mappingKind"));
+                attributes.put("mappingKind", event.mappingKind());
                 copySourceAttributes(statement, attributes);
+                attributes.put("sourceLine", absoluteSourceLine(statement, event));
                 candidate.attributes().putAll(attributes);
                 candidate.evidence().add(new DataLineageEvidence(
                         transform,
@@ -135,11 +137,17 @@ public final class StructuredDataLineageExtractor {
         return candidates;
     }
 
+    private long absoluteSourceLine(SqlStatementRecord statement, StructuredSqlEvent event) {
+        long eventLine = Math.max(1L, event.line());
+        long statementStart = Math.max(1L, statement.startLine());
+        return statementStart + eventLine - 1L;
+    }
+
     private List<List<StructuredSqlEvent>> scopedEventGroups(List<StructuredSqlEvent> events) {
         Map<String, List<StructuredSqlEvent>> scoped = new LinkedHashMap<>();
         List<StructuredSqlEvent> ambient = new ArrayList<>();
         for (StructuredSqlEvent event : events) {
-            String scope = text(event, "statementScope");
+            String scope = event.statementScope();
             if (scope.isBlank()) {
                 ambient.add(event);
             } else {
@@ -168,7 +176,7 @@ public final class StructuredDataLineageExtractor {
         return new AssignmentMapping(
                 Endpoint.column(target),
                 new ExpressionSourceSet(sources, transform.name()),
-                text(event, "mappingKind"));
+                event.mappingKind());
     }
 
     private void copySourceAttributes(SqlStatementRecord statement, Map<String, Object> attributes) {
@@ -191,17 +199,17 @@ public final class StructuredDataLineageExtractor {
         Map<String, TableId> aliases = new LinkedHashMap<>();
         for (StructuredSqlEvent event : events) {
             if (event.type() == StructuredParseEventType.ROWSET_REFERENCE || event.type() == StructuredParseEventType.WRITE_TARGET) {
-                String table = text(event, "qualifiedTable");
+                String table = event.qualifiedTable();
                 if (table.isBlank()) {
-                    table = text(event, "table");
+                    table = event.table();
                 }
                 if (table.isBlank()) {
                     continue;
                 }
                 TableId tableId = tableId(table);
-                aliases.put(normalize(text(event, "table")), tableId);
+                aliases.put(normalize(event.table()), tableId);
                 aliases.put(normalize(baseName(table)), tableId);
-                String alias = text(event, "alias");
+                String alias = event.alias();
                 if (!alias.isBlank()) {
                     aliases.put(normalize(alias), tableId);
                 }
@@ -211,15 +219,15 @@ public final class StructuredDataLineageExtractor {
     }
 
     private ColumnRef targetColumn(StructuredSqlEvent event, Map<String, TableId> aliases) {
-        String targetColumn = text(event, "targetColumn");
+        String targetColumn = event.targetColumn();
         if (targetColumn.isBlank()) {
             return null;
         }
-        TableId table = aliases.get(normalize(text(event, "targetAlias")));
+        TableId table = aliases.get(normalize(event.targetAlias()));
         if (table != null) {
             return ColumnRef.of(table, targetColumn);
         }
-        String targetTable = text(event, "targetTable");
+        String targetTable = event.targetTable();
         if (!targetTable.isBlank()) {
             return ColumnRef.of(tableId(targetTable), targetColumn);
         }
@@ -233,7 +241,7 @@ public final class StructuredDataLineageExtractor {
         Set<String> result = new java.util.LinkedHashSet<>();
         for (StructuredSqlEvent event : events) {
             if (event.type() == StructuredParseEventType.TRIGGER_PSEUDO_ROWSET) {
-                addIgnored(result, text(event, "name"));
+                addIgnored(result, event.name());
                 continue;
             }
             if (event.type() != StructuredParseEventType.IGNORED_ROWSET
@@ -241,9 +249,9 @@ public final class StructuredDataLineageExtractor {
                     && event.type() != StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION) {
                 continue;
             }
-            addIgnored(result, text(event, "name"));
-            addIgnored(result, text(event, "table"));
-            addIgnored(result, text(event, "qualifiedTable"));
+            addIgnored(result, event.name());
+            addIgnored(result, event.table());
+            addIgnored(result, event.qualifiedTable());
         }
         return result;
     }
@@ -265,9 +273,9 @@ public final class StructuredDataLineageExtractor {
             if (event.type() != StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION) {
                 continue;
             }
-            String table = text(event, "qualifiedTable");
+            String table = event.qualifiedTable();
             if (table.isBlank()) {
-                table = text(event, "table");
+                table = event.table();
             }
             if (!table.isBlank()) {
                 result.add(normalize(baseName(table)));
@@ -347,11 +355,6 @@ public final class StructuredDataLineageExtractor {
                     EvidenceSourceType.DATABASE_OBJECT;
             default -> EvidenceSourceType.PLAIN_SQL;
         };
-    }
-
-    private String text(StructuredSqlEvent event, String key) {
-        Object value = event.attributes().get(key);
-        return value == null ? "" : value.toString();
     }
 
     private TableId tableId(String qualified) {

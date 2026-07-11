@@ -92,19 +92,18 @@ class MySqlFullGrammerExpressionAnalyzerTest {
                 ;
                 """), null);
 
-        Map<String, Object> assignment = result.events().stream()
+        var assignment = result.events().stream()
                 .filter(event -> event.type() == StructuredParseEventType.UPDATE_ASSIGNMENT)
-                .filter(event -> "VALUE".equals(event.attributes().get("flowKind")))
+                .filter(event -> "VALUE".equals(event.expression().flowKind().name()))
                 .findFirst()
-                .orElseThrow()
-                .attributes();
+                .orElseThrow();
 
-        assertEquals("ARITHMETIC", assignment.get("transformType"));
-        assertEquals("VALUE", assignment.get("flowKind"));
-        assertTrue(((List<?>) assignment.get("sourceAliases")).contains("i"));
-        assertTrue(((List<?>) assignment.get("sourceColumns")).contains("reserved_quantity"));
-        assertTrue(((List<?>) assignment.get("sourceAliases")).contains("oi"));
-        assertTrue(((List<?>) assignment.get("sourceColumns")).contains("quantity"));
+        assertEquals("ARITHMETIC", assignment.expression().transformType().name());
+        assertEquals("VALUE", assignment.expression().flowKind().name());
+        assertTrue(assignment.expression().sourceAliases().contains("i"));
+        assertTrue(assignment.expression().sourceColumns().contains("reserved_quantity"));
+        assertTrue(assignment.expression().sourceAliases().contains("oi"));
+        assertTrue(assignment.expression().sourceColumns().contains("quantity"));
     }
 
     @Test
@@ -123,7 +122,10 @@ class MySqlFullGrammerExpressionAnalyzerTest {
 
         boolean parameterEquality = result.events().stream()
                 .filter(event -> event.type() == StructuredParseEventType.PREDICATE_EQUALITY)
-                .anyMatch(event -> event.attributes().containsValue("p_login_id"));
+                .anyMatch(event -> "p_login_id".equals(event.left().alias())
+                        || "p_login_id".equals(event.left().column())
+                        || "p_login_id".equals(event.right().alias())
+                        || "p_login_id".equals(event.right().column()));
 
         assertFalse(parameterEquality);
     }
@@ -219,18 +221,17 @@ class MySqlFullGrammerExpressionAnalyzerTest {
                 """);
         var result = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
 
-        Map<String, Object> assignment = result.events().stream()
+        var assignment = result.events().stream()
                 .filter(event -> event.type() == StructuredParseEventType.UPDATE_ASSIGNMENT)
-                .filter(event -> "VALUE".equals(event.attributes().get("flowKind")))
+                .filter(event -> "VALUE".equals(event.expression().flowKind().name()))
                 .findFirst()
-                .orElseThrow()
-                .attributes();
+                .orElseThrow();
 
-        assertEquals("ARITHMETIC", assignment.get("transformType"));
-        assertTrue(((List<?>) assignment.get("sourceAliases")).contains("cr"));
-        assertTrue(((List<?>) assignment.get("sourceColumns")).contains("total_amount"));
-        assertTrue(((List<?>) assignment.get("sourceAliases")).contains("o"));
-        assertTrue(((List<?>) assignment.get("sourceColumns")).contains("total_amount"));
+        assertEquals("ARITHMETIC", assignment.expression().transformType().name());
+        assertTrue(assignment.expression().sourceAliases().contains("cr"));
+        assertTrue(assignment.expression().sourceColumns().contains("total_amount"));
+        assertTrue(assignment.expression().sourceAliases().contains("o"));
+        assertTrue(assignment.expression().sourceColumns().contains("total_amount"));
     }
 
     @Test
@@ -299,8 +300,8 @@ class MySqlFullGrammerExpressionAnalyzerTest {
                 () -> "The CASE predicate must remain CONTROL lineage: "
                         + fingerprints + " events=" + structured.events());
         assertTrue(fingerprints.contains(
-                        "CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id->supplier_products.quality_score"),
-                () -> "JOIN/WHERE/correlated sources should remain CONTROL lineage: "
+                        "CONTROL:CASE_WHEN:inspection_reports.inspection_result,inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id->supplier_products.quality_score"),
+                () -> "CASE and locator sources should form one canonical CONTROL lineage observation: "
                         + fingerprints + " events=" + structured.events());
     }
 
@@ -423,16 +424,15 @@ class MySqlFullGrammerExpressionAnalyzerTest {
                 """);
         var result = new MySqlFullGrammerStructuredSqlParser().parseSql(statement, null);
 
-        Map<String, Object> assignment = result.events().stream()
+        var assignment = result.events().stream()
                 .filter(event -> event.type() == StructuredParseEventType.INSERT_SELECT_MAPPING)
-                .filter(event -> "due_date".equals(event.attributes().get("targetColumn")))
+                .filter(event -> "due_date".equals(event.targetColumn()))
                 .findFirst()
-                .orElseThrow()
-                .attributes();
+                .orElseThrow();
 
-        assertEquals("FUNCTION_CALL", assignment.get("transformType"));
-        assertEquals(List.of("so", "c"), assignment.get("sourceAliases"));
-        assertEquals(List.of("order_date", "credit_days"), assignment.get("sourceColumns"));
+        assertEquals("FUNCTION_CALL", assignment.expression().transformType().name());
+        assertEquals(List.of("so", "c"), assignment.expression().sourceAliases());
+        assertEquals(List.of("order_date", "credit_days"), assignment.expression().sourceColumns());
     }
 
     @Test

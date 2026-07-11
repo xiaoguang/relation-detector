@@ -38,13 +38,30 @@ public final class ScanEngine {
      * warnings, and source summary.
      */
     public ScanResult scan(ScanConfig config, DatabaseAdaptor adaptor) {
-        ScanScope scope = new ScanScope(config.catalog, config.schema, config.includeTables, config.excludeTables);
-        ScanResult result = new ScanResult(config.databaseType.name(), config.schema);
+        return scan(config.resolve(), adaptor);
+    }
+
+    /** Runs a scan from an immutable, fully resolved runtime snapshot. */
+    public ScanResult scan(ResolvedScanConfig config, DatabaseAdaptor adaptor) {
+        ResolvedScanConfig runtimeConfig = config;
+        ScanResult result = new ScanResult(config.database().databaseType().name(), config.database().schema());
+        Connection connection = null;
+        Exception connectionFailure = null;
+        try {
+            connection = openConnection(config.database());
+            runtimeConfig = discoverJdbcDatabaseVersion(config, connection);
+        } catch (Exception ex) {
+            connectionFailure = ex;
+        }
+
+        DatabaseConfig database = runtimeConfig.database();
+        ScanScope scope = new ScanScope(database.catalog(), database.schema(),
+                database.includeTables(), database.excludeTables());
         AdaptorContext context = new AdaptorContext(scope, java.util.Map.of(), result.warnings()::add);
         List<RelationshipCandidate> candidates = new ArrayList<>();
         List<DataLineageCandidate> dataLineageCandidates = new ArrayList<>();
         ScanPipelineContext pipelineContext = new ScanPipelineContext(
-                config,
+                runtimeConfig,
                 adaptor,
                 scope,
                 result,
@@ -52,32 +69,35 @@ public final class ScanEngine {
                 candidates,
                 dataLineageCandidates);
 
-        Connection connection = null;
-        try {
-            connection = openConnection(config);
-            populateJdbcDatabaseVersion(config, connection);
-            sourceCollectorPipeline.collectJdbcSources(connection, pipelineContext);
-        } catch (Exception ex) {
+        if (connectionFailure != null) {
             result.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
-                    "DB_SCAN_FAILED", ex.getMessage(), config.jdbcUrl, 0));
+                    "DB_SCAN_FAILED", connectionFailure.getMessage(), database.jdbcUrl(), 0));
+        } else {
+            try {
+                sourceCollectorPipeline.collectJdbcSources(connection, pipelineContext);
+            } catch (Exception ex) {
+                result.warnings().add(WarningMessage.warn(WarningType.PERMISSION_WARNING,
+                        "DB_SCAN_FAILED", ex.getMessage(), database.jdbcUrl(), 0));
+            }
         }
 
         try {
             sourceCollectorPipeline.collectFileSources(pipelineContext);
             evidenceEnhancementPipeline.enhance(pipelineContext);
-            dataProfilePipeline.profile(connection, pipelineContext);
-            evidenceEnhancementPipeline.enhance(pipelineContext);
+            List<RelationshipCandidate> profiledCandidates = dataProfilePipeline.profile(connection, pipelineContext);
+            evidenceEnhancementPipeline.enhanceProfiledCandidates(pipelineContext, profiledCandidates);
             return resultAssembly.assemble(pipelineContext);
         } finally {
+            pipelineContext.close();
             closeQuietly(connection);
         }
     }
 
-    private Connection openConnection(ScanConfig config) throws Exception {
-        if (config.jdbcUrl == null || config.jdbcUrl.isBlank()) {
+    private Connection openConnection(DatabaseConfig config) throws Exception {
+        if (config.jdbcUrl() == null || config.jdbcUrl().isBlank()) {
             return null;
         }
-        return DriverManager.getConnection(config.jdbcUrl, config.username, config.password);
+        return DriverManager.getConnection(config.jdbcUrl(), config.username(), config.password());
     }
 
     private void closeQuietly(Connection connection) {
@@ -90,16 +110,16 @@ public final class ScanEngine {
         }
     }
 
-    private void populateJdbcDatabaseVersion(ScanConfig config, Connection connection) {
-        if (connection == null || config == null || config.databaseVersion != null && !config.databaseVersion.isBlank()) {
-            return;
+    private ResolvedScanConfig discoverJdbcDatabaseVersion(ResolvedScanConfig config, Connection connection) {
+        if (connection == null || !config.parser().databaseVersion().isBlank()) {
+            return config;
         }
         try {
             var metaData = connection.getMetaData();
-            config.databaseVersion = metaData.getDatabaseMajorVersion() + "." + metaData.getDatabaseMinorVersion();
-            config.databaseVersionSource = "JDBC";
+            String version = metaData.getDatabaseMajorVersion() + "." + metaData.getDatabaseMinorVersion();
+            return config.withJdbcDatabaseVersion(version);
         } catch (Exception ignored) {
-            config.databaseVersionSource = "UNKNOWN";
+            return config;
         }
     }
 }

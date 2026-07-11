@@ -37,4 +37,9 @@ public final class SqlServerFullGrammerBinding implements SqlServerFullGrammerSq
     public String visitorName() {
         return "SqlServerParseTreeEventCollector";
     }
+
+    @Override
+    public com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter parseTreeAdapter() {
+        return new SqlServer2019ParseTreeAdapter();
+    }
 }

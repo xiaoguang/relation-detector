@@ -14,11 +14,13 @@ class CorrectnessSummaryGeneratorTest {
     private static final Path RELATION_DETECTOR_ROOT = TestWorkspacePaths.relationDetectorRoot();
     private static final Path SUMMARY = TestWorkspacePaths.repositoryRoot()
             .resolve("docs/generated/correctness-test-summary.md");
+    private static final GeneratedReportMemoizer GENERATED = new GeneratedReportMemoizer(
+            () -> CorrectnessSummaryGenerator.generate(RELATION_DETECTOR_ROOT));
 
     @Test
     void generatedSummaryCapturesFixtureCountsAndInputPreview() throws Exception {
         assumeGeneratedReportTestEnabled();
-        String markdown = CorrectnessSummaryGenerator.generate(RELATION_DETECTOR_ROOT);
+        String markdown = GENERATED.get();
 
         assertTrue(markdown.contains("| Total correctness fixtures | 1198 |"));
         assertTrue(markdown.contains("| SQL fixtures | 984 |"));
@@ -87,7 +89,7 @@ class CorrectnessSummaryGeneratorTest {
     @Test
     void generatedSummaryFileIsUpToDate() throws Exception {
         assumeGeneratedReportTestEnabled();
-        String markdown = CorrectnessSummaryGenerator.generate(RELATION_DETECTOR_ROOT);
+        String markdown = GENERATED.get();
         if (Boolean.getBoolean("updateCorrectnessSummary")) {
             Files.createDirectories(SUMMARY.getParent());
             Files.writeString(SUMMARY, markdown);

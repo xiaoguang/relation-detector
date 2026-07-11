@@ -1,55 +1,19 @@
 package com.relationdetector.sqlserver.tokenevent;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
-import org.antlr.v4.runtime.ParserRuleContext;
-
-import com.relationdetector.contracts.Enums.LineageFlowKind;
-import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.core.lineage.LineageTransformClassifier;
-import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
 
-/**
- * SQL Server token-event parse-tree visitor.
- *
- * <p>CN: 本 visitor 只消费 {@code SqlServerRelationSql} token-event typed
- * context，不复用 SQL Server full-grammer collector，也不通过 regex/token span
- * 判断 SQL 结构。</p>
- */
-public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelationSqlBaseVisitor<Void> {
-    private final Map<String, LineageTransformType> functionExtensions = Map.of(
-            "isnull", LineageTransformType.COALESCE);
-
-    private final SqlStatementRecord statement;
-    private final boolean ddlOnly;
-    private final TokenEventEventEmitter emitter;
-    private final List<StructuredSqlEvent> events = new ArrayList<>();
-    private final ArrayDeque<String> projectionOwners = new ArrayDeque<>();
-    private final ArrayDeque<String> ddlTables = new ArrayDeque<>();
-    private final ArrayDeque<String> joinKinds = new ArrayDeque<>();
-    private final ArrayDeque<String> statementScopes = new ArrayDeque<>();
-    private int existsDepth;
-    private int nextStatementScope = 1;
-
+/** Typed traversal facade for the SQL Server token-event structural grammar. */
+public final class SqlServerTokenEventParseTreeVisitor extends SqlServerTokenEventWriteDdlSupport {
     public SqlServerTokenEventParseTreeVisitor(SqlStatementRecord statement) {
         this(statement, false);
     }
 
     public SqlServerTokenEventParseTreeVisitor(SqlStatementRecord statement, boolean ddlOnly) {
-        this.statement = statement;
-        this.ddlOnly = ddlOnly;
-        this.emitter = new TokenEventEventEmitter(statement,
-                type -> !ddlOnly
-                        || type == StructuredParseEventType.DDL_FOREIGN_KEY
-                        || type == StructuredParseEventType.DDL_INDEX
-                        || type == StructuredParseEventType.DDL_COLUMN);
+        super(statement, ddlOnly);
     }
 
     public List<StructuredSqlEvent> collect(SqlServerRelationSqlParser.Tsql_fileContext root) {
@@ -73,31 +37,24 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
     @Override
     public Void visitCommon_table_expression(SqlServerRelationSqlParser.Common_table_expressionContext ctx) {
         String name = clean(ctx.id_().getText());
-        if (!name.isBlank()) {
-            Map<String, Object> attrs = attrs();
-            attrs.put("name", name);
-            attrs.put("table", name);
-            attrs.put("qualifiedTable", name);
-            add(StructuredParseEventType.CTE_DECLARATION, ctx, attrs);
-            add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
-            projectionOwners.push(name);
-            visit(ctx.select_statement());
-            projectionOwners.pop();
-            return null;
-        }
-        return visitChildren(ctx);
+        if (name.isBlank()) return visitChildren(ctx);
+        emitter.addRowset(events, ctx, StructuredParseEventType.CTE_DECLARATION,
+                "", name, name, "", name, "", "");
+        emitter.addRowset(events, ctx, StructuredParseEventType.IGNORED_ROWSET,
+                "", name, name, "", name, "", "CTE_DECLARATION");
+        projectionOwners.push(name);
+        visit(ctx.select_statement());
+        projectionOwners.pop();
+        return null;
     }
 
     @Override
     public Void visitQuery_specification(SqlServerRelationSqlParser.Query_specificationContext ctx) {
-        if (ctx.table_sources() != null) {
-            visit(ctx.table_sources());
-        }
-        if (ctx.search_condition_clause() != null) {
-            visit(ctx.search_condition_clause());
-        }
+        if (ctx.table_sources() != null) visit(ctx.table_sources());
+        if (ctx.search_condition_clause() != null) visit(ctx.search_condition_clause());
         if (!projectionOwners.isEmpty()) {
-            emitProjectionItems(ctx.select_list(), projectionOwners.peek(), singleProjectionQualifier(ctx.table_sources()));
+            emitProjectionItems(ctx.select_list(), projectionOwners.peek(),
+                    singleProjectionQualifier(ctx.table_sources()));
         }
         return null;
     }
@@ -105,9 +62,7 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
     @Override
     public Void visitTable_source(SqlServerRelationSqlParser.Table_sourceContext ctx) {
         visit(ctx.table_source_item());
-        for (SqlServerRelationSqlParser.Table_source_suffixContext suffix : ctx.table_source_suffix()) {
-            visit(suffix);
-        }
+        ctx.table_source_suffix().forEach(this::visit);
         return null;
     }
 
@@ -137,32 +92,23 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
         if (ctx.full_table_name() != null) {
             String qualified = qualifiedName(ctx.full_table_name());
             String table = baseName(qualified);
-            String alias = ctx.as_table_alias() == null ? "" : clean(ctx.as_table_alias().table_alias().getText());
+            String alias = ctx.as_table_alias() == null ? ""
+                    : clean(ctx.as_table_alias().table_alias().getText());
             if (isTemp(table)) {
-                Map<String, Object> attrs = attrs();
-                attrs.put("table", table);
-                attrs.put("qualifiedTable", qualified);
-                add(StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION, ctx, attrs);
-                return null;
+                emitter.addRowset(events, ctx, StructuredParseEventType.LOCAL_TEMP_TABLE_DECLARATION,
+                        "", qualified, table, "", "", "", "");
+            } else {
+                emitter.addRowset(events, ctx, StructuredParseEventType.ROWSET_REFERENCE,
+                        "FROM", qualified, table, alias, "", "", "");
             }
-            Map<String, Object> attrs = attrs();
-            attrs.put("keyword", "FROM");
-            attrs.put("qualifiedTable", qualified);
-            attrs.put("table", table);
-            if (!alias.isBlank()) {
-                attrs.put("alias", alias);
-            }
-            add(StructuredParseEventType.ROWSET_REFERENCE, ctx, attrs);
             return null;
         }
         if (ctx.derived_table() != null) {
-            String alias = ctx.as_table_alias() == null ? "" : clean(ctx.as_table_alias().table_alias().getText());
+            String alias = ctx.as_table_alias() == null ? ""
+                    : clean(ctx.as_table_alias().table_alias().getText());
             if (!alias.isBlank()) {
-                Map<String, Object> attrs = attrs();
-                attrs.put("name", alias);
-                attrs.put("table", alias);
-                attrs.put("qualifiedTable", alias);
-                add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
+                emitter.addRowset(events, ctx, StructuredParseEventType.IGNORED_ROWSET,
+                        "", alias, alias, "", alias, "", "DERIVED_TABLE");
                 projectionOwners.push(alias);
                 visit(ctx.derived_table());
                 projectionOwners.pop();
@@ -172,13 +118,10 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
             return null;
         }
         if (ctx.function_call() != null || ctx.LOCAL_ID() != null) {
-            Map<String, Object> attrs = attrs();
-            String alias = ctx.as_table_alias() == null ? ctx.getText() : clean(ctx.as_table_alias().table_alias().getText());
-            attrs.put("name", alias);
-            attrs.put("table", alias);
-            attrs.put("qualifiedTable", alias);
-            attrs.put("reason", "FUNCTION_ROWSET");
-            add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
+            String alias = ctx.as_table_alias() == null ? ctx.getText()
+                    : clean(ctx.as_table_alias().table_alias().getText());
+            emitter.addRowset(events, ctx, StructuredParseEventType.IGNORED_ROWSET,
+                    "", alias, alias, "", alias, "", "FUNCTION_ROWSET");
             return null;
         }
         return visitChildren(ctx);
@@ -193,839 +136,33 @@ public final class SqlServerTokenEventParseTreeVisitor extends SqlServerRelation
             return null;
         }
         List<SqlServerRelationSqlParser.ExpressionContext> expressions = ctx.expression();
-        if (expressions.size() >= 2 && ctx.comparison_operator() != null && "=".equals(ctx.comparison_operator().getText())) {
+        if (expressions.size() >= 2 && ctx.comparison_operator() != null
+                && "=".equals(ctx.comparison_operator().getText())) {
             ColumnRead left = singleColumn(expressions.get(0));
             ColumnRead right = singleColumn(expressions.get(1));
             if (left != null && right != null) {
-                Map<String, Object> attrs = attrs();
-                attrs.put("leftAlias", left.alias());
-                attrs.put("leftColumn", left.column());
-                attrs.put("rightAlias", right.alias());
-                attrs.put("rightColumn", right.column());
-                attrs.put("joinKind", existsDepth > 0 ? "EXISTS" : currentJoinKind());
-                add(existsDepth > 0 ? StructuredParseEventType.EXISTS_PREDICATE : StructuredParseEventType.PREDICATE_EQUALITY,
-                        ctx,
-                        attrs);
+                emitter.addPredicate(events, ctx,
+                        existsDepth > 0 ? StructuredParseEventType.EXISTS_PREDICATE
+                                : StructuredParseEventType.PREDICATE_EQUALITY,
+                        left.alias(), left.column(), right.alias(), right.column(),
+                        existsDepth > 0 ? "EXISTS" : currentJoinKind());
                 return null;
             }
         }
         if (!expressions.isEmpty() && ctx.IN() != null && ctx.subquery() != null) {
             ColumnRead outer = singleColumn(expressions.get(0));
-            SqlServerRelationSqlParser.Select_statementContext subquerySelect = ctx.subquery().select_statement();
-            ColumnRead inner = singleSelectColumn(subquerySelect);
+            SqlServerRelationSqlParser.Select_statementContext select = ctx.subquery().select_statement();
+            ColumnRead inner = singleSelectColumn(select);
             visit(ctx.subquery());
             if (outer != null && inner != null) {
-                SqlServerRelationSqlParser.Query_specificationContext query = firstQuerySpecification(subquerySelect);
-                String innerTable = tableForAlias(
-                        query == null ? null : query.table_sources(),
-                        inner.alias());
-                Map<String, Object> attrs = attrs();
-                attrs.put("outerAlias", outer.alias());
-                attrs.put("outerColumn", outer.column());
-                attrs.put("innerAlias", inner.alias());
-                attrs.put("innerColumn", inner.column());
-                attrs.put("innerTable", baseName(innerTable));
-                attrs.put("innerTableAlias", inner.alias());
-                attrs.put("verifiedColumnSubquery", true);
-                add(StructuredParseEventType.IN_SUBQUERY_PREDICATE, ctx, attrs);
+                SqlServerRelationSqlParser.Query_specificationContext query = firstQuerySpecification(select);
+                String innerTable = tableForAlias(query == null ? null : query.table_sources(), inner.alias());
+                emitter.addInSubquery(events, ctx, StructuredParseEventType.IN_SUBQUERY_PREDICATE,
+                        List.of(outer.alias()), List.of(outer.column()),
+                        List.of(inner.alias()), List.of(inner.column()), baseName(innerTable));
             }
             return null;
         }
         return visitChildren(ctx);
-    }
-
-    @Override
-    public Void visitInsert_statement(SqlServerRelationSqlParser.Insert_statementContext ctx) {
-        String targetTable = qualifiedName(ctx.ddl_object().full_table_name());
-        List<String> targetColumns = identifiers(ctx.insert_column_name_list().column_name_list());
-        visit(ctx.insert_statement_value());
-        SqlServerRelationSqlParser.Query_specificationContext query =
-                firstQuerySpecification(ctx.insert_statement_value().select_statement());
-        SqlServerRelationSqlParser.Select_listContext selectList = query == null ? null : query.select_list();
-        if (selectList == null) {
-            return null;
-        }
-        List<SqlServerRelationSqlParser.Select_list_elemContext> items = selectList.select_list_elem();
-        int count = Math.min(targetColumns.size(), items.size());
-        for (int index = 0; index < count; index++) {
-            SqlServerRelationSqlParser.ExpressionContext expression = items.get(index).expression();
-            if (expression == null) {
-                continue;
-            }
-            ExpressionAnalysis source = analyze(expression);
-            if (!source.hasSources()) {
-                continue;
-            }
-            if (!source.sources().isEmpty()) {
-                Map<String, Object> attrs = attrs();
-                attrs.put("targetTable", targetTable);
-                attrs.put("targetColumn", targetColumns.get(index));
-                attrs.put("sourceAliases", source.aliases());
-                attrs.put("sourceColumns", source.columns());
-                attrs.put("transformType", source.transform().name());
-                attrs.put("flowKind", source.flowKind().name());
-                attrs.put("mappingKind", "INSERT_SELECT");
-                add(StructuredParseEventType.INSERT_SELECT_MAPPING, items.get(index), attrs);
-            }
-            emitControlMapping(StructuredParseEventType.INSERT_SELECT_MAPPING,
-                    items.get(index), targetTable, targetColumns.get(index), source, "INSERT_SELECT");
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitUpdate_statement(SqlServerRelationSqlParser.Update_statementContext ctx) {
-        String targetAlias = qualifiedName(ctx.ddl_object().full_table_name());
-        String targetTable = targetAlias;
-        String qualifiedTargetTable = targetAlias;
-        if (ctx.table_sources() != null) {
-            visit(ctx.table_sources());
-            qualifiedTargetTable = tableForAlias(ctx.table_sources(), targetAlias);
-            targetTable = qualifiedTargetTable;
-        }
-        Map<String, Object> writeTarget = attrs();
-        writeTarget.put("qualifiedTable", qualifiedTargetTable);
-        writeTarget.put("table", baseName(qualifiedTargetTable));
-        writeTarget.put("alias", targetAlias);
-        add(StructuredParseEventType.WRITE_TARGET, ctx, writeTarget);
-        for (SqlServerRelationSqlParser.Update_elemContext elem : ctx.update_elem()) {
-            emitUpdateMapping(elem, targetTable, false);
-        }
-        if (ctx.search_condition_clause() != null) {
-            visit(ctx.search_condition_clause());
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitMerge_statement(SqlServerRelationSqlParser.Merge_statementContext ctx) {
-        String targetTable = qualifiedName(ctx.ddl_object().full_table_name());
-        String targetAlias = ctx.as_table_alias() == null ? "" : clean(ctx.as_table_alias().table_alias().getText());
-        Map<String, Object> writeTarget = attrs();
-        writeTarget.put("qualifiedTable", targetTable);
-        writeTarget.put("table", baseName(targetTable));
-        if (!targetAlias.isBlank()) {
-            writeTarget.put("alias", targetAlias);
-        }
-        add(StructuredParseEventType.WRITE_TARGET, ctx, writeTarget);
-        visit(ctx.table_sources());
-        joinKinds.push("MERGE_ON");
-        visit(ctx.search_condition());
-        joinKinds.pop();
-        for (SqlServerRelationSqlParser.Merge_when_clauseContext clause : ctx.merge_when_clause()) {
-            for (SqlServerRelationSqlParser.Update_elem_mergeContext elem : clause.update_elem_merge()) {
-                emitMergeUpdateMapping(elem, targetTable);
-            }
-            if (clause.merge_not_matched() != null) {
-                emitMergeInsertMappings(clause.merge_not_matched(), targetTable);
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitCreate_or_alter_trigger(SqlServerRelationSqlParser.Create_or_alter_triggerContext ctx) {
-        List<SqlServerRelationSqlParser.Full_table_nameContext> names = ctx.full_table_name();
-        String targetTable = names.size() < 2 ? "" : qualifiedName(names.get(1));
-        emitTriggerPseudoRowset(ctx, "inserted", targetTable);
-        emitTriggerPseudoRowset(ctx, "deleted", targetTable);
-        return visitChildren(ctx);
-    }
-
-    @Override
-    public Void visitCreate_table(SqlServerRelationSqlParser.Create_tableContext ctx) {
-        String table = qualifiedName(ctx.table_name().full_table_name());
-        ddlTables.push(table);
-        for (SqlServerRelationSqlParser.Table_elementContext element : ctx.table_element()) {
-            visit(element);
-        }
-        ddlTables.pop();
-        return null;
-    }
-
-    @Override
-    public Void visitAlter_table(SqlServerRelationSqlParser.Alter_tableContext ctx) {
-        SqlServerRelationSqlParser.Table_constraintContext constraint = ctx.table_constraint();
-        if (constraint.FOREIGN() == null || constraint.foreign_key_options() == null) {
-            return null;
-        }
-        String sourceTable = qualifiedName(ctx.table_name().full_table_name());
-        String targetTable = qualifiedName(constraint.foreign_key_options().table_name().full_table_name());
-        List<String> sourceColumns = identifiers(constraint.column_name_list());
-        List<String> targetColumns = identifiers(constraint.foreign_key_options().column_name_list());
-        sourceColumns.forEach(column -> emitter.addDdlColumnEvent(events, constraint, sourceTable, column));
-        targetColumns.forEach(column -> emitter.addDdlColumnEvent(events, constraint, targetTable, column));
-        addForeignKeyEvents(constraint, sourceTable, sourceColumns, targetTable, targetColumns);
-        return null;
-    }
-
-    @Override
-    public Void visitColumn_definition(SqlServerRelationSqlParser.Column_definitionContext ctx) {
-        String column = clean(ctx.id_().getText());
-        String table = currentDdlTable();
-        emitter.addDdlColumnEvent(events, ctx, table, column);
-        boolean primary = false;
-        boolean unique = false;
-        for (SqlServerRelationSqlParser.Column_attributeContext attr : ctx.column_attribute()) {
-            if (attr.PRIMARY() != null) {
-                primary = true;
-            }
-            if (attr.UNIQUE() != null) {
-                unique = true;
-            }
-            if (attr.foreign_key_options() != null) {
-                addForeignKeyEvents(attr, table, List.of(column),
-                        qualifiedName(attr.foreign_key_options().table_name().full_table_name()),
-                        identifiers(attr.foreign_key_options().column_name_list()));
-            }
-        }
-        if (primary || unique) {
-            addIndexEvent(table, column, "TARGET_UNIQUE", primary ? "INLINE_PRIMARY_KEY" : "INLINE_UNIQUE", ctx);
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitTable_constraint(SqlServerRelationSqlParser.Table_constraintContext ctx) {
-        if (ctx.FOREIGN() != null && ctx.foreign_key_options() != null) {
-            addForeignKeyEvents(ctx, currentDdlTable(), identifiers(ctx.column_name_list()),
-                    qualifiedName(ctx.foreign_key_options().table_name().full_table_name()),
-                    identifiers(ctx.foreign_key_options().column_name_list()));
-            return null;
-        }
-        if (ctx.PRIMARY() != null || ctx.UNIQUE() != null) {
-            String role = "TARGET_UNIQUE";
-            String kind = ctx.PRIMARY() != null ? "PRIMARY_KEY" : "UNIQUE_CONSTRAINT";
-            for (String column : identifiers(ctx.column_name_list_with_order())) {
-                addIndexEvent(currentDdlTable(), column, role, kind, ctx);
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitCreate_index(SqlServerRelationSqlParser.Create_indexContext ctx) {
-        String role = ctx.UNIQUE() == null ? "SOURCE_INDEX" : "TARGET_UNIQUE";
-        String kind = ctx.UNIQUE() == null ? "CREATE_INDEX" : "CREATE_UNIQUE_INDEX";
-        String table = qualifiedName(ctx.table_name().full_table_name());
-        for (String column : identifiers(ctx.column_name_list_with_order())) {
-            addIndexEvent(table, column, role, kind, ctx);
-        }
-        return null;
-    }
-
-    private void emitProjectionItems(
-            SqlServerRelationSqlParser.Select_listContext selectList,
-            String owner,
-            String defaultQualifier
-    ) {
-        List<SqlServerRelationSqlParser.Select_list_elemContext> items = selectList.select_list_elem();
-        for (SqlServerRelationSqlParser.Select_list_elemContext item : items) {
-            SqlServerRelationSqlParser.ExpressionContext expression = item.expression();
-            if (expression == null) {
-                continue;
-            }
-            ExpressionAnalysis source = analyze(expression, defaultQualifier);
-            if (!source.hasSources()) {
-                continue;
-            }
-            String outputColumn = outputColumn(item);
-            if (outputColumn.isBlank()) {
-                continue;
-            }
-            if (!source.sources().isEmpty()) {
-                emitProjectionItem(item, owner, outputColumn,
-                        source.aliases(), source.columns(),
-                        source.transform(), source.flowKind());
-            }
-            if (!source.controlSources().isEmpty()) {
-                emitProjectionItem(item, owner, outputColumn,
-                        source.controlAliases(), source.controlColumns(),
-                        source.controlTransform(), LineageFlowKind.CONTROL);
-            }
-        }
-    }
-
-    private void emitProjectionItem(
-            ParserRuleContext ctx,
-            String owner,
-            String outputColumn,
-            List<String> sourceAliases,
-            List<String> sourceColumns,
-            LineageTransformType transformType,
-            LineageFlowKind flowKind
-    ) {
-        Map<String, Object> attrs = attrs();
-        attrs.put("outputAlias", owner);
-        attrs.put("outputColumn", outputColumn);
-        attrs.put("sourceAliases", sourceAliases);
-        attrs.put("sourceColumns", sourceColumns);
-        attrs.put("transformType", transformType.name());
-        attrs.put("flowKind", flowKind.name());
-        add(StructuredParseEventType.PROJECTION_ITEM, ctx, attrs);
-    }
-
-    private void emitUpdateMapping(SqlServerRelationSqlParser.Update_elemContext elem, String targetTable, boolean merge) {
-        SqlServerRelationSqlParser.ExpressionContext expression = elem.expression();
-        if (expression == null) {
-            return;
-        }
-        String targetColumn = elem.full_column_name() == null
-                ? clean(elem.id_().getText())
-                : lastPart(elem.full_column_name().getText());
-        ExpressionAnalysis source = analyze(expression);
-        if (!source.hasSources()) {
-            return;
-        }
-        if (!source.sources().isEmpty()) {
-            Map<String, Object> attrs = attrs();
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumn);
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            attrs.put("mappingKind", merge ? "MERGE_UPDATE" : "UPDATE_SET");
-            add(merge ? StructuredParseEventType.MERGE_WRITE_MAPPING : StructuredParseEventType.UPDATE_ASSIGNMENT, elem, attrs);
-        }
-        emitControlMapping(merge ? StructuredParseEventType.MERGE_WRITE_MAPPING : StructuredParseEventType.UPDATE_ASSIGNMENT,
-                elem, targetTable, targetColumn, source, merge ? "MERGE_UPDATE" : "UPDATE_SET");
-    }
-
-    private void emitMergeUpdateMapping(SqlServerRelationSqlParser.Update_elem_mergeContext elem, String targetTable) {
-        SqlServerRelationSqlParser.ExpressionContext expression = elem.expression();
-        if (expression == null) {
-            return;
-        }
-        String targetColumn = elem.full_column_name() == null
-                ? clean(elem.id_().getText())
-                : lastPart(elem.full_column_name().getText());
-        ExpressionAnalysis source = analyze(expression);
-        if (!source.hasSources()) {
-            return;
-        }
-        if (!source.sources().isEmpty()) {
-            Map<String, Object> attrs = attrs();
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumn);
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            attrs.put("mappingKind", "MERGE_UPDATE");
-            add(StructuredParseEventType.MERGE_WRITE_MAPPING, elem, attrs);
-        }
-        emitControlMapping(StructuredParseEventType.MERGE_WRITE_MAPPING,
-                elem, targetTable, targetColumn, source, "MERGE_UPDATE");
-    }
-
-    private void emitMergeInsertMappings(SqlServerRelationSqlParser.Merge_not_matchedContext ctx, String targetTable) {
-        List<String> columns = identifiers(ctx.column_name_list());
-        List<SqlServerRelationSqlParser.ExpressionContext> values = ctx.values_clause().expression_list_().expression();
-        int count = Math.min(columns.size(), values.size());
-        for (int index = 0; index < count; index++) {
-            ExpressionAnalysis source = analyze(values.get(index));
-            if (!source.hasSources()) {
-                continue;
-            }
-            if (!source.sources().isEmpty()) {
-                Map<String, Object> attrs = attrs();
-                attrs.put("targetTable", targetTable);
-                attrs.put("targetColumn", columns.get(index));
-                attrs.put("sourceAliases", source.aliases());
-                attrs.put("sourceColumns", source.columns());
-                attrs.put("transformType", source.transform().name());
-                attrs.put("flowKind", source.flowKind().name());
-                attrs.put("mappingKind", "MERGE_INSERT");
-                add(StructuredParseEventType.MERGE_WRITE_MAPPING, values.get(index), attrs);
-            }
-            emitControlMapping(StructuredParseEventType.MERGE_WRITE_MAPPING,
-                    values.get(index), targetTable, columns.get(index), source, "MERGE_INSERT");
-        }
-    }
-
-    private void emitControlMapping(
-            StructuredParseEventType type,
-            ParserRuleContext ctx,
-            String targetTable,
-            String targetColumn,
-            ExpressionAnalysis source,
-            String mappingKind
-    ) {
-        if (source.controlSources().isEmpty()) {
-            return;
-        }
-        Map<String, Object> attrs = attrs();
-        attrs.put("targetTable", targetTable);
-        attrs.put("targetColumn", targetColumn);
-        attrs.put("sourceAliases", source.controlAliases());
-        attrs.put("sourceColumns", source.controlColumns());
-        attrs.put("transformType", source.controlTransform().name());
-        attrs.put("flowKind", LineageFlowKind.CONTROL.name());
-        attrs.put("mappingKind", mappingKind);
-        add(type, ctx, attrs);
-    }
-
-    private void emitTriggerPseudoRowset(ParserRuleContext ctx, String name, String targetTable) {
-        Map<String, Object> attrs = attrs();
-        attrs.put("name", name);
-        attrs.put("targetTable", clean(targetTable));
-        add(StructuredParseEventType.TRIGGER_PSEUDO_ROWSET, ctx, attrs);
-    }
-
-    private ColumnRead singleSelectColumn(SqlServerRelationSqlParser.Select_statementContext select) {
-        List<ColumnRead> columns = selectColumns(select);
-        return columns.size() == 1 ? columns.get(0) : null;
-    }
-
-    private List<ColumnRead> selectColumns(SqlServerRelationSqlParser.Select_statementContext select) {
-        SqlServerRelationSqlParser.Query_specificationContext query = firstQuerySpecification(select);
-        if (query == null) {
-            return List.of();
-        }
-        List<ColumnRead> columns = new ArrayList<>();
-        for (SqlServerRelationSqlParser.Select_list_elemContext item : query.select_list().select_list_elem()) {
-            if (item.expression() == null) {
-                return List.of();
-            }
-            ColumnRead column = singleColumn(item.expression(), singleProjectionQualifier(query.table_sources()));
-            if (column == null) {
-                return List.of();
-            }
-            columns.add(column);
-        }
-        return columns;
-    }
-
-    private SqlServerRelationSqlParser.Query_specificationContext firstQuerySpecification(
-            SqlServerRelationSqlParser.Select_statementContext select
-    ) {
-        if (select == null || select.query_expression() == null
-                || select.query_expression().query_specification().isEmpty()) {
-            return null;
-        }
-        return select.query_expression().query_specification(0);
-    }
-
-    private ColumnRead singleColumn(SqlServerRelationSqlParser.ExpressionContext expression) {
-        return singleColumn(expression, "");
-    }
-
-    private ColumnRead singleColumn(SqlServerRelationSqlParser.ExpressionContext expression, String defaultQualifier) {
-        if (expression.expression_atom().size() != 1 || !expression.binary_operator().isEmpty()) {
-            return null;
-        }
-        return singleColumn(expression.expression_atom(0), defaultQualifier);
-    }
-
-    private ColumnRead singleColumn(SqlServerRelationSqlParser.Expression_atomContext atom, String defaultQualifier) {
-        if (atom.full_column_name() != null) {
-            List<String> parts = parts(atom.full_column_name().getText());
-            if (parts.size() == 1) {
-                return defaultQualifier.isBlank() ? null : new ColumnRead(defaultQualifier, parts.get(0));
-            }
-            return new ColumnRead(parts.get(parts.size() - 2), parts.get(parts.size() - 1));
-        }
-        if (atom.expression() != null) {
-            return singleColumn(atom.expression(), defaultQualifier);
-        }
-        return null;
-    }
-
-    private ExpressionAnalysis analyze(SqlServerRelationSqlParser.ExpressionContext expression) {
-        return analyze(expression, "");
-    }
-
-    private ExpressionAnalysis analyze(SqlServerRelationSqlParser.ExpressionContext expression, String defaultQualifier) {
-        ExpressionAnalysis result = ExpressionAnalysis.empty();
-        for (SqlServerRelationSqlParser.Expression_atomContext atom : expression.expression_atom()) {
-            result = ExpressionAnalysis.combine(
-                    expression.binary_operator().isEmpty() ? result.transform() : LineageTransformType.ARITHMETIC,
-                    LineageFlowKind.VALUE,
-                    result,
-                    analyze(atom, defaultQualifier));
-        }
-        return result;
-    }
-
-    private ExpressionAnalysis analyze(SqlServerRelationSqlParser.Expression_atomContext atom, String defaultQualifier) {
-        ColumnRead column = singleColumn(atom, defaultQualifier);
-        if (column != null) {
-            return ExpressionAnalysis.of(column, LineageTransformType.DIRECT, LineageFlowKind.VALUE);
-        }
-        if (atom.function_call() != null) {
-            ExpressionAnalysis args = ExpressionAnalysis.empty();
-            if (atom.function_call().expression_list_() != null) {
-                for (SqlServerRelationSqlParser.ExpressionContext argument : atom.function_call().expression_list_().expression()) {
-                    args = ExpressionAnalysis.combine(args.transform(), args.flowKind(), args, analyze(argument, defaultQualifier));
-                }
-            }
-            String name = baseName(atom.function_call().function_name().getText()).toLowerCase(Locale.ROOT);
-            LineageTransformType transform = LineageTransformClassifier.classifyFunction(
-                    name, false, functionExtensions);
-            return new ExpressionAnalysis(args.sources(), LineageTransformClassifier.dominant(transform, args.transform()),
-                    LineageFlowKind.VALUE, args.controlSources(), args.controlTransform());
-        }
-        if (atom.case_expression() != null) {
-            return analyzeCase(atom.case_expression(), defaultQualifier);
-        }
-        if (atom.expression_atom() != null) {
-            ExpressionAnalysis nested = analyze(atom.expression_atom(), defaultQualifier);
-            return new ExpressionAnalysis(nested.sources(),
-                    LineageTransformClassifier.dominant(LineageTransformType.ARITHMETIC, nested.transform()),
-                    nested.flowKind(), nested.controlSources(), nested.controlTransform());
-        }
-        if (atom.expression() != null) {
-            return analyze(atom.expression(), defaultQualifier);
-        }
-        if (atom.select_statement() != null) {
-            return analyzeScalarSubquery(atom.select_statement());
-        }
-        return ExpressionAnalysis.empty();
-    }
-
-    private ExpressionAnalysis analyzeScalarSubquery(SqlServerRelationSqlParser.Select_statementContext select) {
-        visit(select);
-        SqlServerRelationSqlParser.Query_specificationContext query = firstQuerySpecification(select);
-        if (query == null || query.select_list().select_list_elem().size() != 1
-                || query.select_list().select_list_elem(0).expression() == null) {
-            return ExpressionAnalysis.empty();
-        }
-        String defaultQualifier = singleProjectionQualifier(query.table_sources());
-        ExpressionAnalysis value = analyze(query.select_list().select_list_elem(0).expression(), defaultQualifier);
-        ExpressionAnalysis control = ExpressionAnalysis.empty();
-        if (query.table_sources() != null) {
-            for (SqlServerRelationSqlParser.Table_sourceContext table : query.table_sources().table_source()) {
-                for (SqlServerRelationSqlParser.Table_source_suffixContext suffix : table.table_source_suffix()) {
-                    if (suffix.join_on() != null) {
-                        control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                                LineageFlowKind.CONTROL, control,
-                                analyzeSearchCondition(suffix.join_on().search_condition(), defaultQualifier));
-                    }
-                }
-            }
-        }
-        if (query.search_condition_clause() != null) {
-            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL, control,
-                    analyzeSearchCondition(query.search_condition_clause().search_condition(), defaultQualifier));
-        }
-        if (query.group_by_clause() != null) {
-            for (SqlServerRelationSqlParser.ExpressionContext grouping
-                    : query.group_by_clause().expression_list_().expression()) {
-                control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL, control, analyze(grouping, defaultQualifier));
-            }
-        }
-        if (query.having_clause() != null) {
-            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL, control,
-                    analyzeSearchCondition(query.having_clause().search_condition(), defaultQualifier));
-        }
-        return new ExpressionAnalysis(value.sources(), value.transform(), LineageFlowKind.VALUE,
-                control.sources(), LineageTransformType.CASE_WHEN);
-    }
-
-    private ExpressionAnalysis analyzeCase(
-            SqlServerRelationSqlParser.Case_expressionContext ctx,
-            String defaultQualifier
-    ) {
-        ExpressionAnalysis value = ExpressionAnalysis.empty();
-        ExpressionAnalysis control = ExpressionAnalysis.empty();
-        if (ctx.expression() != null) {
-            control = combineCaseControl(control, analyze(ctx.expression(), defaultQualifier));
-        }
-        for (SqlServerRelationSqlParser.Searched_case_whenContext when : ctx.searched_case_when()) {
-            control = combineCaseControl(control,
-                    analyzeSearchCondition(when.search_condition(), defaultQualifier));
-            value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.VALUE, value, analyze(when.expression(), defaultQualifier));
-        }
-        for (SqlServerRelationSqlParser.Simple_case_whenContext when : ctx.simple_case_when()) {
-            control = combineCaseControl(control, analyze(when.expression(0), defaultQualifier));
-            value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.VALUE, value, analyze(when.expression(1), defaultQualifier));
-        }
-        if (ctx.case_else() != null) {
-            value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.VALUE, value, analyze(ctx.case_else().expression(), defaultQualifier));
-        }
-        List<ColumnRead> controls = new ArrayList<>();
-        controls.addAll(control.sources());
-        controls.addAll(control.controlSources());
-        controls.addAll(value.controlSources());
-        LineageTransformType valueTransform = value.transform() == LineageTransformType.DIRECT
-                ? LineageTransformType.CASE_WHEN
-                : value.transform();
-        return new ExpressionAnalysis(value.sources(), valueTransform, LineageFlowKind.VALUE,
-                controls.stream().distinct().toList(), LineageTransformType.CASE_WHEN);
-    }
-
-    private ExpressionAnalysis combineCaseControl(ExpressionAnalysis left, ExpressionAnalysis right) {
-        List<ColumnRead> controls = new ArrayList<>();
-        controls.addAll(right.sources());
-        controls.addAll(right.controlSources());
-        ExpressionAnalysis normalized = new ExpressionAnalysis(
-                controls.stream().distinct().toList(),
-                LineageTransformType.CASE_WHEN,
-                LineageFlowKind.CONTROL,
-                List.of(),
-                LineageTransformType.CASE_WHEN);
-        return ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                LineageFlowKind.CONTROL, left, normalized);
-    }
-
-    private ExpressionAnalysis analyzeSearchCondition(
-            SqlServerRelationSqlParser.Search_conditionContext ctx,
-            String defaultQualifier
-    ) {
-        ExpressionAnalysis result = ExpressionAnalysis.empty();
-        for (SqlServerRelationSqlParser.PredicateContext predicate : ctx.predicate()) {
-            for (SqlServerRelationSqlParser.ExpressionContext expression : predicate.expression()) {
-                result = ExpressionAnalysis.combine(result.transform(), LineageFlowKind.CONTROL,
-                        result, analyze(expression, defaultQualifier));
-            }
-        }
-        return result;
-    }
-
-    private String outputColumn(SqlServerRelationSqlParser.Select_list_elemContext item) {
-        if (item.as_column_alias() != null) {
-            return clean(item.as_column_alias().id_().getText());
-        }
-        ColumnRead column = singleColumn(item.expression());
-        return column == null ? "" : column.column();
-    }
-
-    private String singleProjectionQualifier(SqlServerRelationSqlParser.Table_sourcesContext tableSources) {
-        if (tableSources == null || tableSources.table_source().size() != 1) {
-            return "";
-        }
-        SqlServerRelationSqlParser.Table_sourceContext source = tableSources.table_source(0);
-        if (!source.table_source_suffix().isEmpty()) {
-            return "";
-        }
-        return rowsetAlias(source.table_source_item());
-    }
-
-    private String rowsetAlias(SqlServerRelationSqlParser.Table_source_itemContext item) {
-        if (item.as_table_alias() != null) {
-            return clean(item.as_table_alias().table_alias().getText());
-        }
-        if (item.full_table_name() != null) {
-            return baseName(qualifiedName(item.full_table_name()));
-        }
-        return "";
-    }
-
-    private String tableForAlias(SqlServerRelationSqlParser.Table_sourcesContext sources, String aliasOrTable) {
-        String target = clean(aliasOrTable);
-        if (sources == null) {
-            return aliasOrTable;
-        }
-        for (SqlServerRelationSqlParser.Table_source_itemContext item : tableSourceItems(sources)) {
-            if (item.full_table_name() == null) {
-                continue;
-            }
-            String table = qualifiedName(item.full_table_name());
-            String alias = item.as_table_alias() == null ? "" : clean(item.as_table_alias().table_alias().getText());
-            if (target.equalsIgnoreCase(alias) || target.equalsIgnoreCase(baseName(table))) {
-                return table;
-            }
-        }
-        return aliasOrTable;
-    }
-
-    private List<SqlServerRelationSqlParser.Table_source_itemContext> tableSourceItems(SqlServerRelationSqlParser.Table_sourcesContext sources) {
-        List<SqlServerRelationSqlParser.Table_source_itemContext> items = new ArrayList<>();
-        for (SqlServerRelationSqlParser.Table_sourceContext source : sources.table_source()) {
-            collectTableSourceItems(source, items);
-        }
-        return items;
-    }
-
-    private void collectTableSourceItems(
-            SqlServerRelationSqlParser.Table_sourceContext source,
-            List<SqlServerRelationSqlParser.Table_source_itemContext> items
-    ) {
-        items.add(source.table_source_item());
-        for (SqlServerRelationSqlParser.Table_source_suffixContext suffix : source.table_source_suffix()) {
-            if (suffix.join_on() != null) {
-                collectTableSourceItems(suffix.join_on().table_source(), items);
-            } else if (suffix.cross_join() != null) {
-                collectTableSourceItems(suffix.cross_join().table_source(), items);
-            } else if (suffix.apply_() != null) {
-                collectTableSourceItems(suffix.apply_().table_source(), items);
-            }
-        }
-    }
-
-    private void addForeignKeyEvents(
-            ParserRuleContext ctx,
-            String sourceTable,
-            List<String> sourceColumns,
-            String targetTable,
-            List<String> targetColumns
-    ) {
-        emitter.addForeignKeyEvents(events, ctx, sourceTable, sourceColumns, targetTable, targetColumns);
-        int count = Math.min(sourceColumns.size(), targetColumns.size());
-        for (int index = 0; index < count; index++) {
-            addIndexEvent(sourceTable, sourceColumns.get(index), "SOURCE_INDEX", "FK_SOURCE", ctx);
-            addIndexEvent(targetTable, targetColumns.get(index), "TARGET_UNIQUE", "REFERENCED_KEY", ctx);
-        }
-    }
-
-    private void addIndexEvent(String table, String column, String role, String kind, ParserRuleContext ctx) {
-        emitter.addIndexEvent(events, ctx, table, column, role, kind);
-    }
-
-    private Map<String, Object> attrs() {
-        Map<String, Object> attrs = emitter.attrs();
-        if (!statementScopes.isEmpty()) {
-            attrs.put("statementScope", statementScopes.peek());
-        }
-        return attrs;
-    }
-
-    private void add(StructuredParseEventType type, ParserRuleContext ctx, Map<String, Object> attrs) {
-        emitter.add(events, type, ctx, attrs);
-    }
-
-    private String currentDdlTable() {
-        return ddlTables.isEmpty() ? "" : ddlTables.peek();
-    }
-
-    private String currentJoinKind() {
-        return joinKinds.isEmpty() ? "WHERE_OR_UNKNOWN" : joinKinds.peek();
-    }
-
-    private String joinKind(SqlServerRelationSqlParser.Join_typeContext joinType) {
-        if (joinType == null) {
-            return "JOIN";
-        }
-        String text = joinType.getText().toUpperCase(Locale.ROOT);
-        if (text.startsWith("LEFT")) {
-            return "LEFT_JOIN";
-        }
-        if (text.startsWith("RIGHT")) {
-            return "RIGHT_JOIN";
-        }
-        if (text.startsWith("FULL")) {
-            return "FULL_JOIN";
-        }
-        return "JOIN";
-    }
-
-    private List<String> identifiers(SqlServerRelationSqlParser.Column_name_listContext ctx) {
-        return ctx.id_().stream().map(id -> clean(id.getText())).toList();
-    }
-
-    private List<String> identifiers(SqlServerRelationSqlParser.Column_name_list_with_orderContext ctx) {
-        return ctx.id_().stream().map(id -> clean(id.getText())).toList();
-    }
-
-    private String qualifiedName(SqlServerRelationSqlParser.Full_table_nameContext ctx) {
-        return String.join(".", ctx.id_().stream().map(id -> clean(id.getText())).toList());
-    }
-
-    private List<String> parts(String raw) {
-        String text = raw == null ? "" : raw.trim();
-        if (text.isBlank()) {
-            return List.of();
-        }
-        return List.of(text.split("\\.")).stream()
-                .map(this::clean)
-                .filter(part -> !part.isBlank())
-                .toList();
-    }
-
-    private String lastPart(String raw) {
-        List<String> parts = parts(raw);
-        return parts.isEmpty() ? "" : parts.get(parts.size() - 1);
-    }
-
-    private String clean(String raw) {
-        if (raw == null) {
-            return "";
-        }
-        String text = raw.trim();
-        while ((text.startsWith("[") && text.endsWith("]"))
-                || (text.startsWith("\"") && text.endsWith("\""))) {
-            text = text.substring(1, text.length() - 1).trim();
-        }
-        return text;
-    }
-
-    private String baseName(String qualified) {
-        if (qualified == null) {
-            return "";
-        }
-        int dot = qualified.lastIndexOf('.');
-        return dot < 0 ? clean(qualified) : clean(qualified.substring(dot + 1));
-    }
-
-    private boolean isTemp(String table) {
-        return clean(table).startsWith("#");
-    }
-
-    private record ColumnRead(String alias, String column) {
-    }
-
-    private record ExpressionAnalysis(
-            List<ColumnRead> sources,
-            LineageTransformType transform,
-            LineageFlowKind flowKind,
-            List<ColumnRead> controlSources,
-            LineageTransformType controlTransform
-    ) {
-        static ExpressionAnalysis empty() {
-            return new ExpressionAnalysis(List.of(), LineageTransformType.DIRECT, LineageFlowKind.VALUE,
-                    List.of(), LineageTransformType.DIRECT);
-        }
-
-        static ExpressionAnalysis of(ColumnRead column, LineageTransformType transform, LineageFlowKind flowKind) {
-            return new ExpressionAnalysis(List.of(column), transform, flowKind, List.of(), LineageTransformType.DIRECT);
-        }
-
-        static ExpressionAnalysis combine(
-                LineageTransformType transform,
-                LineageFlowKind flowKind,
-                ExpressionAnalysis left,
-                ExpressionAnalysis right
-        ) {
-            List<ColumnRead> sources = new ArrayList<>();
-            sources.addAll(left.sources());
-            sources.addAll(right.sources());
-            List<ColumnRead> controlSources = new ArrayList<>();
-            controlSources.addAll(left.controlSources());
-            controlSources.addAll(right.controlSources());
-            return new ExpressionAnalysis(sources.stream().distinct().toList(),
-                    LineageTransformClassifier.dominantForFlow(
-                            flowKind, transform, left.transform(), right.transform()),
-                    flowKind,
-                    controlSources.stream().distinct().toList(),
-                    LineageTransformClassifier.dominant(left.controlTransform(), right.controlTransform()));
-        }
-
-        List<String> aliases() {
-            return sources.stream().map(ColumnRead::alias).toList();
-        }
-
-        List<String> columns() {
-            return sources.stream().map(ColumnRead::column).toList();
-        }
-
-        List<String> controlAliases() {
-            return controlSources.stream().map(ColumnRead::alias).toList();
-        }
-
-        List<String> controlColumns() {
-            return controlSources.stream().map(ColumnRead::column).toList();
-        }
-
-        boolean hasSources() {
-            return !sources.isEmpty() || !controlSources.isEmpty();
-        }
-
     }
 }

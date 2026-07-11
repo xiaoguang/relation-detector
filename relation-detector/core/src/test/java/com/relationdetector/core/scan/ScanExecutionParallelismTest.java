@@ -102,24 +102,27 @@ class ScanExecutionParallelismTest {
         @Override public Set<DatabaseType> supportedDatabaseTypes() { return Set.of(DatabaseType.MYSQL); }
         @Override public Set<AdaptorCapability> capabilities() { return Set.of(); }
         @Override public IdentifierRules identifierRules() { return identifier -> identifier; }
-        @Override public MetadataCollector metadataCollector() { return (connection, scope) -> new MetadataSnapshot(); }
-        @Override public ObjectDefinitionCollector objectDefinitionCollector() { return (connection, scope) -> List.of(); }
-        @Override public SqlLogExtractor sqlLogExtractor() {
-            return new SqlLogExtractor() {
-                @Override
-                public Stream<SqlStatementRecord> extract(Path file, LogFormatHint hint) {
-                    try {
-                        return Stream.of(new SqlStatementRecord(Files.readString(file), StatementSourceType.NATIVE_LOG,
-                                file.toString(), 1, 1, Map.of()));
-                    } catch (Exception ex) {
-                        throw new IllegalStateException(ex);
-                    }
-                }
-            };
+        @Override public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
+            return new com.relationdetector.contracts.spi.AdaptorCollectors(
+                    (connection, scope) -> new MetadataSnapshot(),
+                    (connection, scope) -> List.of(),
+                    Optional.empty(),
+                    (file, hint) -> {
+                        try {
+                            return Stream.of(new SqlStatementRecord(Files.readString(file), StatementSourceType.NATIVE_LOG,
+                                    file.toString(), 1, 1, Map.of()));
+                        } catch (Exception ex) {
+                            throw new IllegalStateException(ex);
+                        }
+                    });
         }
-        @Override public SqlRelationParser sqlRelationParser() { return (statement, context) -> List.of(); }
-        @Override public Optional<StructuredSqlParser> structuredSqlParser() { return Optional.of(parser); }
-        @Override public Optional<DataProfiler> dataProfiler() { return Optional.empty(); }
-        @Override public EvidenceWeightAdjuster evidenceWeightAdjuster() { return (evidence, context) -> evidence; }
+        @Override public com.relationdetector.contracts.spi.AdaptorParsers parsers() {
+            return new com.relationdetector.contracts.spi.AdaptorParsers(
+                    (statement, context) -> List.of(), Optional.of(parser), Optional.empty());
+        }
+        @Override public com.relationdetector.contracts.spi.AdaptorProfiling profiling() {
+            return new com.relationdetector.contracts.spi.AdaptorProfiling(
+                    Optional.empty(), (evidence, context) -> evidence);
+        }
     }
 }

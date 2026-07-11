@@ -33,7 +33,7 @@ class MySqlTokenEventParserSelectionTest {
         assertEquals(Boolean.TRUE, result.attributes().get("tokenEvent"));
         assertEquals(Boolean.TRUE, result.attributes().get("tokenEventPrimary"));
         assertTrue(result.events().stream().anyMatch(event ->
-                "orders".equals(event.attributes().get("table"))));
+                "orders".equals(event.table())));
     }
 
     @Test
@@ -49,14 +49,14 @@ class MySqlTokenEventParserSelectionTest {
 
         assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.ROWSET_REFERENCE
-                        && "orders".equals(event.attributes().get("table"))
-                        && "o".equals(event.attributes().get("alias"))));
+                        && "orders".equals(event.table())
+                        && "o".equals(event.alias())));
         assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.IGNORED_ROWSET
-                        && "JSON_TABLE".equalsIgnoreCase(String.valueOf(event.attributes().get("name")))));
+                        && "JSON_TABLE".equalsIgnoreCase(event.name())));
         var tables = result.events().stream()
                 .filter(event -> event.type() == StructuredParseEventType.ROWSET_REFERENCE)
-                .map(event -> event.attributes().get("table"))
+                .map(event -> event.table())
                 .filter(Objects::nonNull)
                 .toList();
         assertFalse(tables.stream().anyMatch(table ->
@@ -78,9 +78,9 @@ class MySqlTokenEventParserSelectionTest {
         var result = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
 
         assertFalse(result.events().stream().anyMatch(event ->
-                "system".equals(event.attributes().get("table"))
-                        || "generate_series".equals(event.attributes().get("table"))
-                        || "UNNEST".equals(event.attributes().get("table"))
-                        || "u".equals(event.attributes().get("table"))));
+                "system".equals(event.table())
+                        || "generate_series".equals(event.table())
+                        || "UNNEST".equals(event.table())
+                        || "u".equals(event.table())));
     }
 }

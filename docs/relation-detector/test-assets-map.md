@@ -103,7 +103,7 @@ PostgreSQL versioned correctness 的真实目录只有 `postgres/v16`、`postgre
 
 | 测试类 | 主要分类 | 说明 |
 | --- | --- | --- |
-| `CorrectnessFixtureRunnerTest` | DDL / SQL / warning / naming evidence | 扫描 `relation-detector/test-fixtures/correctness`，通过 `FixtureInputLoader`、`FixtureExecutionEngine`、`GoldenAssertion`、`GoldenWriter` 四层执行；SQL/DDL actual 输出复用 production `StatementExecutionService`，并比对 `expected-relations.json`、`expected-lineage.json`、`expected-diagnostics.json`、`expected-naming-evidence.json`；默认 `mvn test` 只跑 `smoke` profile，合并前传 `-DcorrectnessFixtureProfile=full -DcorrectnessFixtureParallelism=8` 跑全量 |
+| `CorrectnessFixtureRunnerTest` | DDL / SQL / warning / naming evidence | 扫描 `relation-detector/test-fixtures/correctness`，通过 `FixtureInputLoader`、`FixtureExecutionEngine`、`GoldenAssertion`、`GoldenWriter` 四层执行；SQL/DDL actual 输出复用 production `StatementExecutionService`，并比对 `expected-relations.json`、`expected-lineage.json`、`expected-diagnostics.json`、`expected-naming-evidence.json`；默认 `mvn test` 只跑 `smoke` profile，合并前用 `mvn -T 2 -Pacceptance verify` 运行全部 1198 fixtures |
 | `CorrectnessNamingEvidenceGoldenTest` | naming evidence golden | 验证 relationship 中的 `NAMING_MATCH.evidenceRef` 能在 top-level `namingEvidence.id` 中找到，并防止 relationship 本地重新发明命名证据 |
 | `CliEndToEndGoldenTest` | CLI / end-to-end / golden | JVM 内调用 CLI，从 Jackson YAML 配置和 CLI 参数进入 adaptor、ScanEngine、parser、merger、Jackson JSON writer，并复用现有 fixture golden 比对 relationship / Data Lineage / naming evidence |
 | `CorrectnessSummaryGeneratorTest` | generated report | 生成 `docs/generated/correctness-test-summary.md`；默认跳过，显式 `-DrunGeneratedReportTests=true` 才验收，显式 `-DupdateCorrectnessSummary=true` 才刷新 |

@@ -68,19 +68,19 @@ class SqlServerTokenEventParserTest {
         assertTypedComplete(result);
         List<StructuredSqlEvent> projections = result.events().stream()
                 .filter(event -> event.type() == StructuredParseEventType.PROJECTION_ITEM)
-                .filter(event -> "priced".equals(event.attributes().get("outputAlias")))
-                .filter(event -> "effective_price".equals(event.attributes().get("outputColumn")))
+                .filter(event -> "priced".equals(event.outputAlias()))
+                .filter(event -> "effective_price".equals(event.outputColumn()))
                 .toList();
         assertTrue(projections.stream().anyMatch(event ->
-                        "VALUE".equals(event.attributes().get("flowKind"))
-                                && ((List<?>) event.attributes().get("sourceColumns")).contains("supplier_price")
-                                && ((List<?>) event.attributes().get("sourceColumns")).contains("purchase_price")
-                                && !((List<?>) event.attributes().get("sourceColumns")).contains("active")),
+                        "VALUE".equals(event.expression().flowKind().name())
+                                && event.expression().sourceColumns().contains("supplier_price")
+                                && event.expression().sourceColumns().contains("purchase_price")
+                                && !event.expression().sourceColumns().contains("active")),
                 () -> "APPLY CASE projection must emit branch-only VALUE event: " + projections);
         assertTrue(projections.stream().anyMatch(event ->
-                        "CONTROL".equals(event.attributes().get("flowKind"))
-                                && "CASE_WHEN".equals(event.attributes().get("transformType"))
-                                && ((List<?>) event.attributes().get("sourceColumns")).contains("active")),
+                        "CONTROL".equals(event.expression().flowKind().name())
+                                && "CASE_WHEN".equals(event.expression().transformType().name())
+                                && event.expression().sourceColumns().contains("active")),
                 () -> "APPLY CASE projection must emit predicate CONTROL event: " + projections);
     }
     @Test
@@ -294,8 +294,8 @@ class SqlServerTokenEventParserTest {
         assertLineage(lineages, "payments", "id", "order_payment_summary", "last_payment_id");
         assertTrue(result.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.EXISTS_PREDICATE
-                                && "r".equals(event.attributes().get("leftAlias"))
-                                && "o".equals(event.attributes().get("rightAlias"))),
+                                && "r".equals(event.left().alias())
+                                && "o".equals(event.right().alias())),
                 () -> "NOT EXISTS must retain its typed correlated predicate: " + result.events());
     }
 
@@ -320,8 +320,7 @@ class SqlServerTokenEventParserTest {
 
         Set<String> transforms = result.events().stream()
                 .filter(event -> event.type() == StructuredParseEventType.MERGE_WRITE_MAPPING)
-                .map(StructuredSqlEvent::attributes)
-                .map(attributes -> String.valueOf(attributes.get("transformType")))
+                .map(event -> event.expression().transformType().name())
                 .collect(Collectors.toSet());
 
         assertTrue(transforms.contains("COALESCE"),
@@ -534,11 +533,11 @@ class SqlServerTokenEventParserTest {
 
     private boolean isExpectedInSubquery(StructuredSqlEvent event) {
         return event.type() == StructuredParseEventType.IN_SUBQUERY_PREDICATE
-                && "o".equals(event.attributes().get("outerAlias"))
-                && "customer_id".equals(event.attributes().get("outerColumn"))
-                && "c".equals(event.attributes().get("innerAlias"))
-                && "customer_id".equals(event.attributes().get("innerColumn"))
-                && "customers".equals(event.attributes().get("innerTable"));
+                && event.outerSources().stream().anyMatch(source ->
+                "o".equals(source.alias()) && "customer_id".equals(source.column()))
+                && event.innerSources().stream().anyMatch(source ->
+                "c".equals(source.alias()) && "customer_id".equals(source.column()))
+                && "customers".equals(event.innerTable());
     }
 
     private boolean isExpectedCoalesceLineage(DataLineageCandidate lineage) {

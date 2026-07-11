@@ -124,59 +124,39 @@ class ScanEngineDatabaseDdlSourceTest {
         }
 
         @Override
-        public MetadataCollector metadataCollector() {
-            return (connection, scope) -> new MetadataSnapshot();
+        public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
+            return new com.relationdetector.contracts.spi.AdaptorCollectors(
+                    (connection, scope) -> new MetadataSnapshot(),
+                    (connection, scope) -> List.of(),
+                    Optional.of((connection, scope) -> List.of(new DatabaseDdlDefinition(
+                            "shop",
+                            "orders",
+                            """
+                                    CREATE TABLE `orders` (
+                                      `id` bigint NOT NULL,
+                                      `user_id` bigint NOT NULL,
+                                      KEY `idx_orders_user_id` (`user_id`),
+                                      CONSTRAINT `fk_orders_users`
+                                        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+                                    ) ENGINE=InnoDB
+                                    """,
+                            "SHOW CREATE TABLE"))),
+                    (file, hint) -> Stream.empty());
         }
 
         @Override
-        public Optional<DatabaseDdlCollector> databaseDdlCollector() {
-            return Optional.of((connection, scope) -> List.of(new DatabaseDdlDefinition(
-                    "shop",
-                    "orders",
-                    """
-                            CREATE TABLE `orders` (
-                              `id` bigint NOT NULL,
-                              `user_id` bigint NOT NULL,
-                              KEY `idx_orders_user_id` (`user_id`),
-                              CONSTRAINT `fk_orders_users`
-                                FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-                            ) ENGINE=InnoDB
-                            """,
-                    "SHOW CREATE TABLE")));
+        public com.relationdetector.contracts.spi.AdaptorParsers parsers() {
+            return new com.relationdetector.contracts.spi.AdaptorParsers(
+                    (statement, context) -> List.of(),
+                    Optional.empty(),
+                    Optional.of(new TokenEventStructuredDdlParser(SqlDialect.MYSQL)));
         }
 
         @Override
-        public ObjectDefinitionCollector objectDefinitionCollector() {
-            return (connection, scope) -> List.of();
-        }
-
-        public Optional<StructuredDdlParser> structuredDdlParser() {
-            return Optional.of(new TokenEventStructuredDdlParser(SqlDialect.MYSQL));
-        }
-
-        @Override
-        public SqlLogExtractor sqlLogExtractor() {
-            return new SqlLogExtractor() {
-                @Override
-                public Stream<SqlStatementRecord> extract(Path file, LogFormatHint hint) {
-                    return Stream.empty();
-                }
-            };
-        }
-
-        @Override
-        public SqlRelationParser sqlRelationParser() {
-            return (statement, context) -> List.of();
-        }
-
-        @Override
-        public Optional<DataProfiler> dataProfiler() {
-            return Optional.empty();
-        }
-
-        @Override
-        public EvidenceWeightAdjuster evidenceWeightAdjuster() {
-            return (evidence, context) -> evidence;
+        public com.relationdetector.contracts.spi.AdaptorProfiling profiling() {
+            return new com.relationdetector.contracts.spi.AdaptorProfiling(
+                    Optional.empty(),
+                    (evidence, context) -> evidence);
         }
     }
 

@@ -252,42 +252,27 @@ class SqlRelationParserRunnerTest {
         }
 
         @Override
-        public MetadataCollector metadataCollector() {
-            return (connection, scope) -> new MetadataSnapshot();
-        }
-
-        public SqlLogExtractor sqlLogExtractor() {
-            return (file, hint) -> Stream.empty();
-        }
-
-        @Override
-        public SqlRelationParser sqlRelationParser() {
-            return sqlRelationParser;
+        public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
+            return new com.relationdetector.contracts.spi.AdaptorCollectors(
+                    (connection, scope) -> new MetadataSnapshot(),
+                    (connection, scope) -> List.of(),
+                    Optional.empty(),
+                    (file, hint) -> Stream.empty());
         }
 
         @Override
-        public ObjectDefinitionCollector objectDefinitionCollector() {
-            return (connection, scope) -> List.of();
+        public com.relationdetector.contracts.spi.AdaptorParsers parsers() {
+            return new com.relationdetector.contracts.spi.AdaptorParsers(
+                    sqlRelationParser,
+                    Optional.ofNullable(structuredParser),
+                    Optional.empty());
         }
 
         @Override
-        public Optional<DataProfiler> dataProfiler() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<StructuredSqlParser> structuredSqlParser() {
-            return Optional.ofNullable(structuredParser);
-        }
-
-        @Override
-        public Optional<StructuredDdlParser> structuredDdlParser() {
-            return Optional.empty();
-        }
-
-        @Override
-        public EvidenceWeightAdjuster evidenceWeightAdjuster() {
-            return (evidence, context) -> evidence;
+        public com.relationdetector.contracts.spi.AdaptorProfiling profiling() {
+            return new com.relationdetector.contracts.spi.AdaptorProfiling(
+                    Optional.empty(),
+                    (evidence, context) -> evidence);
         }
     }
 }

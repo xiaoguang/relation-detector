@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
  * Token-range helpers for full-grammer parse-tree visitors.
@@ -36,23 +35,4 @@ final class FullGrammerParseTreeTokenSupport {
                 .toList();
     }
 
-    /**
-     * Detects generated grammar context presence for narrow dialect guardrails.
-     *
-     * <p>CN: 仅用于 full-grammer visitor 内部的受控 grammar gap 判断；不能替代正式 typed override。</p>
-     */
-    static boolean containsContextNamed(ParseTree tree, String simpleNameFragment) {
-        if (tree == null) {
-            return false;
-        }
-        if (tree.getClass().getSimpleName().contains(simpleNameFragment)) {
-            return true;
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (containsContextNamed(tree.getChild(index), simpleNameFragment)) {
-                return true;
-            }
-        }
-        return false;
-    }
 }

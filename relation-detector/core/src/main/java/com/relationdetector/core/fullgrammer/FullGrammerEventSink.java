@@ -1,7 +1,5 @@
 package com.relationdetector.core.fullgrammer;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
@@ -33,11 +31,8 @@ final class FullGrammerEventSink {
      * relationship/lineage candidates。</p>
      */
     void add(StructuredSqlEvent event) {
-        Map<String, Object> attributes = new LinkedHashMap<>(event.attributes());
-        attributes.put("tokenEventNative", true);
-        attributes.put("fullGrammerNative", true);
-        attributes.put("fullGrammerContextSource", contextSource);
-        events.add(new StructuredSqlEvent(event.type(), statement.sourceName(), event.line(), attributes));
+        events.add(event.withProvenance(event.provenance()
+                .asFullGrammer(statement.sourceName(), contextSource)));
     }
 
     boolean hasType(StructuredParseEventType type) {

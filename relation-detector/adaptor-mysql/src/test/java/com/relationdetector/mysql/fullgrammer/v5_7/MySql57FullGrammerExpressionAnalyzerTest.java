@@ -143,8 +143,8 @@ class MySql57FullGrammerExpressionAnalyzerTest {
                 () -> "The CASE predicate must remain CONTROL lineage: "
                         + fingerprints + " events=" + structured.events());
         assertTrue(fingerprints.contains(
-                        "CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id->supplier_products.quality_score"),
-                () -> "JOIN/WHERE/correlated sources should remain CONTROL lineage: "
+                        "CONTROL:CASE_WHEN:inspection_reports.inspection_result,inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id->supplier_products.quality_score"),
+                () -> "CASE and locator sources should form one canonical CONTROL lineage observation: "
                         + fingerprints + " events=" + structured.events());
     }
 

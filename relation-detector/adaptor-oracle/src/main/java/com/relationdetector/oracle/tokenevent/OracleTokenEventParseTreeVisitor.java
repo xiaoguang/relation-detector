@@ -1,59 +1,15 @@
 package com.relationdetector.oracle.tokenevent;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-
-import com.relationdetector.contracts.Enums.LineageFlowKind;
-import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
-import com.relationdetector.core.lineage.LineageTransformClassifier;
-import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
-import com.relationdetector.oracle.routine.OracleRoutineScope;
-import com.relationdetector.oracle.tokenevent.OracleRelationSqlBaseVisitor;
-import com.relationdetector.oracle.tokenevent.OracleRelationSqlParser;
 
-/**
- * Parse-tree visitor for the Oracle token-event structural grammar.
- *
- * <p>CN: 本 visitor 只从 {@code OracleRelationSql.g4} 的 typed context 生成
- * SQL 结构事件。它可以读取 identifier 原文和 source location，但不通过 regex、
- * token span scanner 或特殊表/列名判断 SQL 结构。
- *
- * <p>EN: Parse-tree visitor for the Oracle SQL token-event grammar. It emits
- * structural events from typed grammar contexts, using token text only for
- * identifier spelling and source locations.
- */
-public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBaseVisitor<Void> {
-    private final Map<String, LineageTransformType> functionExtensions = Map.of(
-            "nvl", LineageTransformType.COALESCE,
-            "string_agg", LineageTransformType.CONCAT_FORMAT,
-            "listagg", LineageTransformType.CONCAT_FORMAT);
-
-    private final SqlStatementRecord statement;
-    private final TokenEventEventEmitter emitter;
-    private final List<StructuredSqlEvent> events = new ArrayList<>();
-    private final Set<String> cteNames = new LinkedHashSet<>();
-    private final ArrayDeque<ProjectionOwner> projectionOwners = new ArrayDeque<>();
-    private final ArrayDeque<QueryScope> queryScopes = new ArrayDeque<>();
-    private final ArrayDeque<String> joinKinds = new ArrayDeque<>();
-    private final ArrayDeque<String> ddlTables = new ArrayDeque<>();
-    private final OracleRoutineScope routineScope = new OracleRoutineScope();
-    private int existsDepth;
-
+/** Typed traversal facade for the Oracle token-event structural grammar. */
+public final class OracleTokenEventParseTreeVisitor extends OracleTokenEventWriteDdlSupport {
     public OracleTokenEventParseTreeVisitor(SqlStatementRecord statement) {
-        this.statement = statement;
-        this.emitter = new TokenEventEventEmitter(statement);
+        super(statement);
     }
 
     public List<StructuredSqlEvent> collect(OracleRelationSqlParser.ScriptContext root) {
@@ -69,10 +25,8 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
 
     @Override
     public Void visitBlockEndStatement(OracleRelationSqlParser.BlockEndStatementContext ctx) {
-        routineScope.leaveRoutineEnd(ctx.IF() != null
-                || ctx.LOOP() != null
-                || ctx.WHILE() != null
-                || ctx.REPEAT() != null);
+        routineScope.leaveRoutineEnd(ctx.IF() != null || ctx.LOOP() != null
+                || ctx.WHILE() != null || ctx.REPEAT() != null);
         return null;
     }
 
@@ -81,17 +35,15 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
         String name = clean(ctx.identifier().getText());
         if (!name.isBlank()) {
             cteNames.add(normalize(name));
-            Map<String, Object> attrs = attrs();
-            attrs.put("name", name);
-            attrs.put("table", name);
-            attrs.put("qualifiedTable", name);
-            add(StructuredParseEventType.CTE_DECLARATION, ctx, attrs);
-            add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
+            emitter.addRowset(events, ctx, StructuredParseEventType.CTE_DECLARATION,
+                    "", name, name, "", name, "", "");
+            emitter.addRowset(events, ctx, StructuredParseEventType.IGNORED_ROWSET,
+                    "", name, name, "", name, "", "CTE_DECLARATION");
         }
-        List<String> outputColumns = ctx.identifierList() == null
-                ? List.of()
-                : ctx.identifierList().identifier().stream().map(identifier -> clean(identifier.getText())).toList();
-        projectionOwners.push(new ProjectionOwner(name, outputColumns));
+        List<String> columns = ctx.identifierList() == null ? List.of()
+                : ctx.identifierList().identifier().stream()
+                        .map(identifier -> clean(identifier.getText())).toList();
+        projectionOwners.push(new ProjectionOwner(name, columns));
         visit(ctx.selectStatement());
         projectionOwners.pop();
         return null;
@@ -101,20 +53,11 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
     public Void visitQuerySpecification(OracleRelationSqlParser.QuerySpecificationContext ctx) {
         queryScopes.push(new QueryScope());
         try {
-            if (ctx.fromClause() != null) {
-                visit(ctx.fromClause());
-            }
-            if (ctx.whereClause() != null) {
-                visit(ctx.whereClause());
-            }
-            if (ctx.havingClause() != null) {
-                visit(ctx.havingClause());
-            }
-            if (!projectionOwners.isEmpty()) {
-                emitProjectionItems(ctx.selectList(), projectionOwners.peek());
-            } else {
-                visit(ctx.selectList());
-            }
+            if (ctx.fromClause() != null) visit(ctx.fromClause());
+            if (ctx.whereClause() != null) visit(ctx.whereClause());
+            if (ctx.havingClause() != null) visit(ctx.havingClause());
+            if (!projectionOwners.isEmpty()) emitProjectionItems(ctx.selectList(), projectionOwners.peek());
+            else visit(ctx.selectList());
         } finally {
             queryScopes.pop();
         }
@@ -126,14 +69,8 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
         String qualified = qualifiedName(ctx.qualifiedName());
         String table = baseName(qualified);
         String alias = ctx.tableAlias() == null ? "" : clean(ctx.tableAlias().identifier().getText());
-        Map<String, Object> attrs = attrs();
-        attrs.put("keyword", "FROM");
-        attrs.put("qualifiedTable", qualified);
-        attrs.put("table", table);
-        if (!alias.isBlank()) {
-            attrs.put("alias", alias);
-        }
-        add(StructuredParseEventType.ROWSET_REFERENCE, ctx, attrs);
+        emitter.addRowset(events, ctx, StructuredParseEventType.ROWSET_REFERENCE,
+                "FROM", qualified, table, alias, "", "", "");
         registerCurrentRowset(alias.isBlank() ? table : alias, qualified);
         return null;
     }
@@ -146,13 +83,9 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
             String rightAlias = rowsetAlias(join.tablePrimary());
             visit(join.tablePrimary());
             if (join.identifierList() != null) {
-                Map<String, Object> attrs = attrs();
-                attrs.put("leftAlias", leftAlias);
-                attrs.put("rightAlias", rightAlias);
-                attrs.put("usingColumns", join.identifierList().identifier().stream()
-                        .map(identifier -> clean(identifier.getText()))
-                        .toList());
-                add(StructuredParseEventType.JOIN_USING_COLUMNS, join, attrs);
+                emitter.addJoinUsing(events, join, leftAlias, rightAlias,
+                        join.identifierList().identifier().stream()
+                                .map(identifier -> clean(identifier.getText())).toList());
             }
             if (join.predicate() != null) {
                 joinKinds.push(joinKind(join));
@@ -168,11 +101,8 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
     public Void visitDerivedTablePrimary(OracleRelationSqlParser.DerivedTablePrimaryContext ctx) {
         String alias = ctx.tableAlias() == null ? "" : clean(ctx.tableAlias().identifier().getText());
         if (!alias.isBlank()) {
-            Map<String, Object> attrs = attrs();
-            attrs.put("name", alias);
-            attrs.put("table", alias);
-            attrs.put("qualifiedTable", alias);
-            add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
+            emitter.addRowset(events, ctx, StructuredParseEventType.IGNORED_ROWSET,
+                    "", alias, alias, "", alias, "", "DERIVED_TABLE");
             registerCurrentRowset(alias, alias);
             projectionOwners.push(new ProjectionOwner(alias, List.of()));
             visit(ctx.selectStatement());
@@ -185,23 +115,15 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
 
     @Override
     public Void visitComparisonPredicate(OracleRelationSqlParser.ComparisonPredicateContext ctx) {
-        if (!"=".equals(ctx.comparisonOperator().getText())) {
-            return visitChildren(ctx);
-        }
+        if (!"=".equals(ctx.comparisonOperator().getText())) return visitChildren(ctx);
         OracleColumnRead left = singleColumn(ctx.expression(0));
         OracleColumnRead right = singleColumn(ctx.expression(1));
-        if (left == null || right == null) {
-            return visitChildren(ctx);
-        }
-        Map<String, Object> attrs = attrs();
-        attrs.put("leftAlias", left.alias());
-        attrs.put("leftColumn", left.column());
-        attrs.put("rightAlias", right.alias());
-        attrs.put("rightColumn", right.column());
-        attrs.put("joinKind", existsDepth > 0 ? "EXISTS" : currentJoinKind());
-        add(existsDepth > 0 ? StructuredParseEventType.EXISTS_PREDICATE : StructuredParseEventType.PREDICATE_EQUALITY,
-                ctx,
-                attrs);
+        if (left == null || right == null) return visitChildren(ctx);
+        emitter.addPredicate(events, ctx,
+                existsDepth > 0 ? StructuredParseEventType.EXISTS_PREDICATE
+                        : StructuredParseEventType.PREDICATE_EQUALITY,
+                left.alias(), left.column(), right.alias(), right.column(),
+                existsDepth > 0 ? "EXISTS" : currentJoinKind());
         return null;
     }
 
@@ -218,37 +140,28 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
         OracleColumnRead outer = singleColumn(ctx.expression());
         OracleColumnRead inner = singleSelectColumn(ctx.selectStatement());
         visit(ctx.selectStatement());
-        if (outer == null || inner == null) {
-            return null;
+        if (outer != null && inner != null) {
+            emitter.addInSubquery(events, ctx, StructuredParseEventType.IN_SUBQUERY_PREDICATE,
+                    List.of(outer.alias()), List.of(outer.column()),
+                    List.of(inner.alias()), List.of(inner.column()), "");
         }
-        Map<String, Object> attrs = attrs();
-        attrs.put("outerAlias", outer.alias());
-        attrs.put("outerColumn", outer.column());
-        attrs.put("innerAlias", inner.alias());
-        attrs.put("innerColumn", inner.column());
-        attrs.put("innerTable", "");
-        attrs.put("innerTableAlias", inner.alias());
-        attrs.put("verifiedColumnSubquery", true);
-        add(StructuredParseEventType.IN_SUBQUERY_PREDICATE, ctx, attrs);
         return null;
     }
 
     @Override
     public Void visitTupleInSubqueryPredicate(OracleRelationSqlParser.TupleInSubqueryPredicateContext ctx) {
-        List<OracleColumnRead> outer = ctx.expressionList().expression().stream().map(this::singleColumn).toList();
+        List<OracleColumnRead> outer = ctx.expressionList().expression().stream()
+                .map(this::singleColumn).toList();
         List<OracleColumnRead> inner = selectColumns(ctx.selectStatement());
         visit(ctx.selectStatement());
-        if (outer.isEmpty() || outer.size() != inner.size() || outer.stream().anyMatch(java.util.Objects::isNull)) {
-            return null;
+        if (!outer.isEmpty() && outer.size() == inner.size()
+                && outer.stream().noneMatch(java.util.Objects::isNull)) {
+            emitter.addInSubquery(events, ctx, StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE,
+                    outer.stream().map(OracleColumnRead::alias).toList(),
+                    outer.stream().map(OracleColumnRead::column).toList(),
+                    inner.stream().map(OracleColumnRead::alias).toList(),
+                    inner.stream().map(OracleColumnRead::column).toList(), "");
         }
-        Map<String, Object> attrs = attrs();
-        attrs.put("outerAliases", outer.stream().map(OracleColumnRead::alias).toList());
-        attrs.put("outerColumns", outer.stream().map(OracleColumnRead::column).toList());
-        attrs.put("innerAliases", inner.stream().map(OracleColumnRead::alias).toList());
-        attrs.put("innerColumns", inner.stream().map(OracleColumnRead::column).toList());
-        attrs.put("innerTable", "");
-        attrs.put("verifiedColumnSubquery", true);
-        add(StructuredParseEventType.TUPLE_IN_SUBQUERY_PREDICATE, ctx, attrs);
         return null;
     }
 
@@ -267,946 +180,4 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
         visit(ctx.selectStatement());
         return null;
     }
-
-    @Override
-    public Void visitInsertSelectStatement(OracleRelationSqlParser.InsertSelectStatementContext ctx) {
-        String targetTable = qualifiedName(ctx.qualifiedName());
-        List<String> targetColumns = ctx.identifierList().identifier().stream()
-                .map(identifier -> clean(identifier.getText()))
-                .toList();
-        visit(ctx.selectStatement());
-        List<OracleRelationSqlParser.SelectItemContext> selectItems =
-                ctx.selectStatement().querySpecification().selectList().selectItem();
-        int count = Math.min(targetColumns.size(), selectItems.size());
-        for (int index = 0; index < count; index++) {
-            OracleRelationSqlParser.SelectItemContext item = selectItems.get(index);
-            if (item.expression() == null) {
-                continue;
-            }
-            for (OracleExpressionAnalysis source : writeAnalyses(item.expression())) {
-                addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, "", targetTable,
-                        targetColumns.get(index), resolveCurrentScope(source), "INSERT_SELECT");
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitUpdateStatement(OracleRelationSqlParser.UpdateStatementContext ctx) {
-        visit(ctx.tablePrimary());
-        String targetAlias = targetAlias(ctx.tablePrimary());
-        String targetTable = targetTable(ctx.tablePrimary());
-        emitWriteTarget(ctx.tablePrimary(), targetAlias, targetTable);
-        for (OracleRelationSqlParser.AssignmentContext assignment : ctx.assignmentList().assignment()) {
-            emitAssignmentMapping(assignment, targetAlias, targetTable,
-                    StructuredParseEventType.UPDATE_ASSIGNMENT, "UPDATE_SET");
-        }
-        if (ctx.whereClause() != null) {
-            visit(ctx.whereClause());
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitMergeStatement(OracleRelationSqlParser.MergeStatementContext ctx) {
-        OracleRelationSqlParser.TablePrimaryContext target = ctx.tablePrimary(0);
-        OracleRelationSqlParser.TablePrimaryContext source = ctx.tablePrimary(1);
-        visit(target);
-        visit(source);
-        String targetAlias = targetAlias(target);
-        String targetTable = targetTable(target);
-        emitWriteTarget(target, targetAlias, targetTable);
-        visit(ctx.predicate());
-        for (OracleRelationSqlParser.MergeWhenClauseContext clause : ctx.mergeWhenClause()) {
-            if (clause.mergeAction() instanceof OracleRelationSqlParser.MergeUpdateActionContext updateAction) {
-                for (OracleRelationSqlParser.AssignmentContext assignment
-                        : updateAction.assignmentList().assignment()) {
-                    emitAssignmentMapping(assignment, targetAlias, targetTable,
-                            StructuredParseEventType.MERGE_WRITE_MAPPING, "MERGE_UPDATE_SET");
-                }
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitCreateTableStatement(OracleRelationSqlParser.CreateTableStatementContext ctx) {
-        ddlTables.push(qualifiedName(ctx.qualifiedName()));
-        for (OracleRelationSqlParser.TableElementContext element : ctx.tableElement()) {
-            visit(element);
-        }
-        ddlTables.pop();
-        return null;
-    }
-
-    @Override
-    public Void visitAlterTableStatement(OracleRelationSqlParser.AlterTableStatementContext ctx) {
-        ddlTables.push(qualifiedName(ctx.qualifiedName()));
-        visit(ctx.tableForeignKey());
-        ddlTables.pop();
-        return null;
-    }
-
-    @Override
-    public Void visitTableForeignKey(OracleRelationSqlParser.TableForeignKeyContext ctx) {
-        String sourceTable = currentDdlTable();
-        List<String> sourceColumns = identifiers(ctx.identifierList(0));
-        String targetTable = qualifiedName(ctx.qualifiedName());
-        List<String> targetColumns = identifiers(ctx.identifierList(1));
-        addForeignKeyEvents(sourceTable, sourceColumns, targetTable, targetColumns, ctx);
-        return null;
-    }
-
-    @Override
-    public Void visitPrimaryKeyConstraint(OracleRelationSqlParser.PrimaryKeyConstraintContext ctx) {
-        for (String column : identifiers(ctx.identifierList())) {
-            addIndexEvent(currentDdlTable(), column, "TARGET_UNIQUE", "PRIMARY_KEY", ctx);
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitUniqueConstraint(OracleRelationSqlParser.UniqueConstraintContext ctx) {
-        for (String column : identifiers(ctx.identifierList())) {
-            addIndexEvent(currentDdlTable(), column, "TARGET_UNIQUE", "UNIQUE_CONSTRAINT", ctx);
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitTableIndexConstraint(OracleRelationSqlParser.TableIndexConstraintContext ctx) {
-        for (String column : safeIndexColumns(ctx.indexPartList())) {
-            addIndexEvent(currentDdlTable(), column, "SOURCE_INDEX", "CREATE_TABLE_INDEX", ctx);
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitColumnDefinition(OracleRelationSqlParser.ColumnDefinitionContext ctx) {
-        String table = currentDdlTable();
-        String column = clean(ctx.identifier().getText());
-        addDdlColumnEvent(table, column, ctx);
-        for (OracleRelationSqlParser.ColumnDefinitionPartContext part : ctx.columnDefinitionPart()) {
-            OracleRelationSqlParser.InlineColumnConstraintContext constraint = part.inlineColumnConstraint();
-            if (constraint == null) {
-                continue;
-            }
-            if (constraint.PRIMARY() != null) {
-                addIndexEvent(table, column, "TARGET_UNIQUE", "INLINE_PRIMARY_KEY", constraint);
-            } else if (constraint.UNIQUE() != null) {
-                addIndexEvent(table, column, "TARGET_UNIQUE", "INLINE_UNIQUE", constraint);
-            } else if (constraint.REFERENCES() != null) {
-                addForeignKeyEvents(table,
-                        List.of(column),
-                        qualifiedName(constraint.qualifiedName()),
-                        identifiers(constraint.identifierList()),
-                        constraint);
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Void visitCreateIndexStatement(OracleRelationSqlParser.CreateIndexStatementContext ctx) {
-        String table = qualifiedName(ctx.qualifiedName());
-        String role = ctx.UNIQUE() == null ? "SOURCE_INDEX" : "TARGET_UNIQUE";
-        String kind = ctx.UNIQUE() == null ? "CREATE_INDEX" : "CREATE_UNIQUE_INDEX";
-        for (String column : safeIndexColumns(ctx.indexPartList())) {
-            addIndexEvent(table, column, role, kind, ctx);
-        }
-        return null;
-    }
-
-    private void emitProjectionItems(OracleRelationSqlParser.SelectListContext ctx, ProjectionOwner owner) {
-        List<OracleRelationSqlParser.SelectItemContext> items = ctx.selectItem();
-        for (int index = 0; index < items.size(); index++) {
-            OracleRelationSqlParser.SelectItemContext item = items.get(index);
-            if (item.expression() == null) {
-                continue;
-            }
-            String outputColumn = index < owner.columns().size() ? owner.columns().get(index) : outputColumn(item);
-            if (outputColumn.isBlank()) {
-                continue;
-            }
-            for (OracleExpressionAnalysis rawSource : writeAnalyses(item.expression())) {
-                OracleExpressionAnalysis source = resolveCurrentScope(rawSource);
-                if (source.sources().isEmpty()) {
-                    continue;
-                }
-                Map<String, Object> attrs = attrs();
-                attrs.put("outputAlias", owner.alias());
-                attrs.put("outputColumn", outputColumn);
-                attrs.put("sourceAliases", source.aliases());
-                attrs.put("sourceColumns", source.columns());
-                attrs.put("transformType", source.transform().name());
-                attrs.put("flowKind", source.flowKind().name());
-                add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
-            }
-        }
-    }
-
-    private void addForeignKeyEvents(
-            String sourceTable,
-            List<String> sourceColumns,
-            String targetTable,
-            List<String> targetColumns,
-            ParserRuleContext ctx
-    ) {
-        emitter.addForeignKeyEvents(events, ctx, sourceTable, sourceColumns, targetTable, targetColumns);
-    }
-
-    private void addIndexEvent(String table, String column, String role, String kind, ParserRuleContext ctx) {
-        emitter.addIndexEvent(events, ctx, table, column, role, kind);
-    }
-
-    private void addDdlColumnEvent(String table, String column, ParserRuleContext ctx) {
-        emitter.addDdlColumnEvent(events, ctx, table, column);
-    }
-
-    private void emitWriteTarget(
-            OracleRelationSqlParser.TablePrimaryContext target,
-            String targetAlias,
-            String targetTable
-    ) {
-        Map<String, Object> writeTarget = attrs();
-        writeTarget.put("qualifiedTable", targetTable);
-        writeTarget.put("table", baseName(targetTable));
-        if (!targetAlias.isBlank()) {
-            writeTarget.put("alias", targetAlias);
-        }
-        add(StructuredParseEventType.WRITE_TARGET, target, writeTarget);
-    }
-
-    private void emitAssignmentMapping(
-            OracleRelationSqlParser.AssignmentContext assignment,
-            String targetAlias,
-            String targetTable,
-            StructuredParseEventType eventType,
-            String mappingKind
-    ) {
-        List<String> targetParts = parts(assignment.qualifiedName());
-        String targetColumn = targetParts.isEmpty() ? "" : targetParts.get(targetParts.size() - 1);
-        String assignmentAlias = targetParts.size() > 1 ? targetParts.get(targetParts.size() - 2) : targetAlias;
-        for (OracleExpressionAnalysis source : writeAnalyses(assignment.expression())) {
-            addWriteMapping(eventType, assignment, assignmentAlias, targetTable, targetColumn,
-                    resolveCurrentScope(source), mappingKind);
-        }
-    }
-
-    private void addWriteMapping(
-            StructuredParseEventType eventType,
-            ParserRuleContext context,
-            String targetAlias,
-            String targetTable,
-            String targetColumn,
-            OracleExpressionAnalysis source,
-            String mappingKind
-    ) {
-        if (source.sources().isEmpty()) {
-            return;
-        }
-        Map<String, Object> attributes = attrs();
-        if (!targetAlias.isBlank()) {
-            attributes.put("targetAlias", targetAlias);
-        }
-        attributes.put("targetTable", targetTable);
-        attributes.put("targetColumn", targetColumn);
-        attributes.put("sourceAliases", source.aliases());
-        attributes.put("sourceColumns", source.columns());
-        attributes.put("transformType", source.transform().name());
-        attributes.put("flowKind", source.flowKind().name());
-        attributes.put("mappingKind", mappingKind);
-        add(eventType, context, attributes);
-    }
-
-    private String currentDdlTable() {
-        return ddlTables.isEmpty() ? "" : ddlTables.peek();
-    }
-
-    private List<String> identifiers(OracleRelationSqlParser.IdentifierListContext ctx) {
-        if (ctx == null) {
-            return List.of();
-        }
-        return ctx.identifier().stream().map(identifier -> clean(identifier.getText())).toList();
-    }
-
-    private List<String> safeIndexColumns(OracleRelationSqlParser.IndexPartListContext ctx) {
-        if (ctx == null) {
-            return List.of();
-        }
-        List<String> columns = new ArrayList<>();
-        for (OracleRelationSqlParser.IndexPartContext part : ctx.indexPart()) {
-            if (part.identifier() != null) {
-                columns.add(clean(part.identifier().getText()));
-            }
-        }
-        return columns;
-    }
-
-    private String outputColumn(OracleRelationSqlParser.SelectItemContext item) {
-        if (item.identifier() != null) {
-            return clean(item.identifier().getText());
-        }
-        OracleColumnRead column = singleColumn(item.expression());
-        return column == null ? "" : column.column();
-    }
-
-    private OracleColumnRead singleSelectColumn(OracleRelationSqlParser.SelectStatementContext select) {
-        List<OracleColumnRead> columns = selectColumns(select);
-        return columns.size() == 1 ? columns.get(0) : null;
-    }
-
-    private List<OracleColumnRead> selectColumns(OracleRelationSqlParser.SelectStatementContext select) {
-        queryScopes.push(scopeFor(select.querySpecification()));
-        try {
-            List<OracleRelationSqlParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
-            List<OracleColumnRead> columns = new ArrayList<>();
-            for (OracleRelationSqlParser.SelectItemContext item : items) {
-                if (item.expression() == null) {
-                    return List.of();
-                }
-                OracleColumnRead column = singleColumn(item.expression());
-                if (column == null) {
-                    return List.of();
-                }
-                columns.add(column);
-            }
-            return columns;
-        } finally {
-            queryScopes.pop();
-        }
-    }
-
-    private OracleColumnRead singleColumn(OracleRelationSqlParser.ExpressionContext expression) {
-        if (expression instanceof OracleRelationSqlParser.ColumnExpressionContext columnExpression) {
-            List<String> parts = parts(columnExpression.qualifiedName());
-            if (parts.size() == 1) {
-                return new OracleColumnRead(defaultColumnAlias(), parts.get(0));
-            }
-            return new OracleColumnRead(parts.get(parts.size() - 2), parts.get(parts.size() - 1));
-        }
-        if (expression instanceof OracleRelationSqlParser.ParenExpressionContext paren) {
-            return singleColumn(paren.expression());
-        }
-        return null;
-    }
-
-    private OracleExpressionAnalysis analyze(OracleRelationSqlParser.ExpressionContext expression) {
-        if (expression instanceof OracleRelationSqlParser.ColumnExpressionContext columnExpression) {
-            OracleColumnRead column = singleColumn(columnExpression);
-            if (column == null) {
-                return OracleExpressionAnalysis.empty();
-            }
-            return OracleExpressionAnalysis.of(column, LineageTransformType.DIRECT, LineageFlowKind.VALUE);
-        }
-        if (expression instanceof OracleRelationSqlParser.ParenExpressionContext paren) {
-            return analyze(paren.expression());
-        }
-        if (expression instanceof OracleRelationSqlParser.BinaryExpressionContext binary) {
-            OracleExpressionAnalysis left = analyze(binary.expression(0));
-            OracleExpressionAnalysis right = analyze(binary.expression(1));
-            LineageTransformType transform = "||".equals(binary.arithmeticOperator().getText())
-                    ? LineageTransformType.CONCAT_FORMAT
-                    : LineageTransformType.ARITHMETIC;
-            return OracleExpressionAnalysis.withTransform(transform, LineageFlowKind.VALUE, left, right);
-        }
-        if (expression instanceof OracleRelationSqlParser.UnaryExpressionContext unary) {
-            return OracleExpressionAnalysis.withTransform(LineageTransformType.ARITHMETIC, LineageFlowKind.VALUE,
-                    analyze(unary.expression()));
-        }
-        if (expression instanceof OracleRelationSqlParser.FunctionExpressionContext function) {
-            OracleExpressionAnalysis args = OracleExpressionAnalysis.empty();
-            if (function.functionCall().expressionList() != null) {
-                for (OracleRelationSqlParser.ExpressionContext argument : function.functionCall().expressionList().expression()) {
-                    args = OracleExpressionAnalysis.combine(args.transform(), args.flowKind(), args, analyze(argument));
-                }
-            }
-            String functionName = baseName(qualifiedName(function.functionCall().qualifiedName())).toLowerCase(Locale.ROOT);
-            LineageTransformType transform = LineageTransformClassifier.classifyFunction(
-                    functionName, false, functionExtensions);
-            if (transform == LineageTransformType.AGGREGATE
-                    || transform == LineageTransformType.CONCAT_FORMAT) {
-                return new OracleExpressionAnalysis(args.sources(), transform, LineageFlowKind.VALUE);
-            }
-            if (transform == LineageTransformType.COALESCE) {
-                return new OracleExpressionAnalysis(args.sources(),
-                        LineageTransformClassifier.dominant(transform, args.transform()),
-                        LineageFlowKind.VALUE);
-            }
-            LineageTransformType dominant = LineageTransformClassifier.dominant(transform, args.transform());
-            LineageFlowKind flowKind = dominant == LineageTransformType.CASE_WHEN
-                    ? LineageFlowKind.CONTROL
-                    : LineageFlowKind.VALUE;
-            return new OracleExpressionAnalysis(args.sources(), dominant, flowKind);
-        }
-        if (expression instanceof OracleRelationSqlParser.ExtractExpressionContext extract) {
-            OracleExpressionAnalysis source = analyze(extract.expression());
-            return new OracleExpressionAnalysis(source.sources(),
-                    LineageTransformClassifier.dominant(LineageTransformType.FUNCTION_CALL, source.transform()),
-                    LineageFlowKind.VALUE);
-        }
-        if (expression instanceof OracleRelationSqlParser.CaseExpressionContext caseExpression) {
-            OracleExpressionAnalysis combined = OracleExpressionAnalysis.empty();
-            for (OracleRelationSqlParser.CaseWhenClauseContext whenClause : caseExpression.caseWhenClause()) {
-                combined = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL,
-                        combined,
-                        analyze(whenClause.predicate()));
-                combined = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL,
-                        combined,
-                        analyze(whenClause.expression()));
-            }
-            if (caseExpression.expression().size() > 0) {
-                for (OracleRelationSqlParser.ExpressionContext part : caseExpression.expression()) {
-                    combined = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                            LineageFlowKind.CONTROL,
-                            combined,
-                            analyze(part));
-                }
-            }
-            return new OracleExpressionAnalysis(combined.sources(), LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL);
-        }
-        if (expression instanceof OracleRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
-            visit(scalarSubquery.selectStatement());
-            OracleExpressionAnalysis selectedExpression = scalarSubquerySelectExpression(scalarSubquery.selectStatement());
-            if (!selectedExpression.sources().isEmpty()) {
-                return scalarSubqueryWithContext(scalarSubquery.selectStatement(), selectedExpression);
-            }
-            List<OracleColumnRead> columns = selectColumns(scalarSubquery.selectStatement());
-            if (columns.isEmpty()) {
-                return OracleExpressionAnalysis.empty();
-            }
-            return scalarSubqueryWithContext(scalarSubquery.selectStatement(),
-                    new OracleExpressionAnalysis(columns, LineageTransformType.DIRECT, LineageFlowKind.VALUE));
-        }
-        return OracleExpressionAnalysis.empty();
-    }
-
-    private List<OracleExpressionAnalysis> writeAnalyses(OracleRelationSqlParser.ExpressionContext expression) {
-        if (!containsRoleBoundary(expression)) {
-            OracleExpressionAnalysis analysis = analyze(expression);
-            return analysis.sources().isEmpty() ? List.of() : List.of(analysis);
-        }
-        OracleExpressionAnalysis value = valueOnlyAnalysis(expression);
-        OracleExpressionAnalysis control = controlOnlyAnalysis(expression);
-        List<OracleExpressionAnalysis> result = new ArrayList<>(2);
-        if (!value.sources().isEmpty()) {
-            result.add(new OracleExpressionAnalysis(value.sources(), value.transform(), LineageFlowKind.VALUE));
-        }
-        if (!control.sources().isEmpty()) {
-            result.add(new OracleExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL));
-        }
-        return List.copyOf(result);
-    }
-
-    private OracleExpressionAnalysis valueOnlyAnalysis(OracleRelationSqlParser.ExpressionContext expression) {
-        if (expression instanceof OracleRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
-            visit(scalarSubquery.selectStatement());
-            return scalarSubquerySelectValue(scalarSubquery.selectStatement());
-        }
-        if (expression instanceof OracleRelationSqlParser.CaseExpressionContext caseExpression) {
-            OracleExpressionAnalysis value = OracleExpressionAnalysis.empty();
-            for (OracleRelationSqlParser.CaseWhenClauseContext clause : caseExpression.caseWhenClause()) {
-                value = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.VALUE, value, valueOnlyAnalysis(clause.expression()));
-            }
-            List<OracleRelationSqlParser.ExpressionContext> outerExpressions = caseExpression.expression();
-            if (caseExpression.ELSE() != null && !outerExpressions.isEmpty()) {
-                value = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.VALUE, value,
-                        valueOnlyAnalysis(outerExpressions.get(outerExpressions.size() - 1)));
-            }
-            return new OracleExpressionAnalysis(value.sources(), LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.VALUE);
-        }
-        if (expression instanceof OracleRelationSqlParser.ParenExpressionContext paren) {
-            return valueOnlyAnalysis(paren.expression());
-        }
-        if (expression instanceof OracleRelationSqlParser.BinaryExpressionContext binary) {
-            OracleExpressionAnalysis combined = OracleExpressionAnalysis.combine(LineageTransformType.ARITHMETIC,
-                    LineageFlowKind.VALUE,
-                    valueOnlyAnalysis(binary.expression(0)),
-                    valueOnlyAnalysis(binary.expression(1)));
-            return new OracleExpressionAnalysis(combined.sources(), combined.transform(), LineageFlowKind.VALUE);
-        }
-        if (expression instanceof OracleRelationSqlParser.FunctionExpressionContext function) {
-            OracleExpressionAnalysis args = OracleExpressionAnalysis.empty();
-            if (function.functionCall().expressionList() != null) {
-                for (OracleRelationSqlParser.ExpressionContext argument
-                        : function.functionCall().expressionList().expression()) {
-                    args = OracleExpressionAnalysis.combine(args.transform(), LineageFlowKind.VALUE,
-                            args, valueOnlyAnalysis(argument));
-                }
-            }
-            String functionName = baseName(qualifiedName(function.functionCall().qualifiedName()))
-                    .toLowerCase(Locale.ROOT);
-            LineageTransformType transform = LineageTransformClassifier.classifyFunction(
-                    functionName, false, functionExtensions);
-            LineageTransformType effective = transform == LineageTransformType.AGGREGATE
-                    || args.transform() == LineageTransformType.AGGREGATE
-                    ? LineageTransformType.AGGREGATE
-                    : LineageTransformClassifier.dominant(transform, args.transform());
-            return new OracleExpressionAnalysis(args.sources(), effective, LineageFlowKind.VALUE);
-        }
-        OracleExpressionAnalysis analysis = analyze(expression);
-        return new OracleExpressionAnalysis(analysis.sources(), analysis.transform(), LineageFlowKind.VALUE);
-    }
-
-    private OracleExpressionAnalysis controlOnlyAnalysis(OracleRelationSqlParser.ExpressionContext expression) {
-        if (expression instanceof OracleRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
-            OracleExpressionAnalysis control = scalarSubqueryContext(scalarSubquery.selectStatement());
-            List<OracleRelationSqlParser.SelectItemContext> items =
-                    scalarSubquery.selectStatement().querySpecification().selectList().selectItem();
-            if (items.size() == 1 && items.get(0).expression() != null) {
-                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL, control, controlOnlyAnalysis(items.get(0).expression()));
-            }
-            return new OracleExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL);
-        }
-        if (expression instanceof OracleRelationSqlParser.CaseExpressionContext caseExpression) {
-            OracleExpressionAnalysis control = OracleExpressionAnalysis.empty();
-            for (OracleRelationSqlParser.CaseWhenClauseContext clause : caseExpression.caseWhenClause()) {
-                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL, control, analyze(clause.predicate()));
-                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL, control, controlOnlyAnalysis(clause.expression()));
-            }
-            List<OracleRelationSqlParser.ExpressionContext> outerExpressions = caseExpression.expression();
-            int selectorCount = outerExpressions.size() - (caseExpression.ELSE() == null ? 0 : 1);
-            for (int index = 0; index < selectorCount; index++) {
-                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL, control, analyze(outerExpressions.get(index)));
-            }
-            if (caseExpression.ELSE() != null && !outerExpressions.isEmpty()) {
-                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL, control,
-                        controlOnlyAnalysis(outerExpressions.get(outerExpressions.size() - 1)));
-            }
-            return control;
-        }
-        OracleExpressionAnalysis control = OracleExpressionAnalysis.empty();
-        for (OracleRelationSqlParser.ExpressionContext child : childExpressions(expression)) {
-            control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL, control, controlOnlyAnalysis(child));
-        }
-        return control;
-    }
-
-    private List<OracleRelationSqlParser.ExpressionContext> childExpressions(ParseTree tree) {
-        List<OracleRelationSqlParser.ExpressionContext> result = new ArrayList<>();
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (tree.getChild(index) instanceof OracleRelationSqlParser.ExpressionContext expression) {
-                result.add(expression);
-            } else if (!(tree.getChild(index) instanceof TerminalNode)) {
-                result.addAll(childExpressions(tree.getChild(index)));
-            }
-        }
-        return result;
-    }
-
-    private boolean containsRoleBoundary(ParseTree tree) {
-        if (tree instanceof OracleRelationSqlParser.CaseExpressionContext
-                || tree instanceof OracleRelationSqlParser.ScalarSubqueryExpressionContext) {
-            return true;
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (containsRoleBoundary(tree.getChild(index))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private OracleExpressionAnalysis scalarSubquerySelectValue(
-            OracleRelationSqlParser.SelectStatementContext select
-    ) {
-        queryScopes.push(scopeFor(select.querySpecification()));
-        try {
-            List<OracleRelationSqlParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
-            if (items.size() != 1 || items.get(0).expression() == null) {
-                return OracleExpressionAnalysis.empty();
-            }
-            return valueOnlyAnalysis(items.get(0).expression());
-        } finally {
-            queryScopes.pop();
-        }
-    }
-
-    private OracleExpressionAnalysis scalarSubquerySelectExpression(OracleRelationSqlParser.SelectStatementContext select) {
-        queryScopes.push(scopeFor(select.querySpecification()));
-        try {
-            List<OracleRelationSqlParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
-            if (items.size() != 1 || items.get(0).expression() == null) {
-                return OracleExpressionAnalysis.empty();
-            }
-            return analyze(items.get(0).expression());
-        } finally {
-            queryScopes.pop();
-        }
-    }
-
-    private OracleExpressionAnalysis scalarSubqueryWithContext(
-            OracleRelationSqlParser.SelectStatementContext select,
-            OracleExpressionAnalysis selectedExpression
-    ) {
-        if (!containsAggregateFunction(select.querySpecification().selectList())) {
-            return selectedExpression;
-        }
-        OracleExpressionAnalysis context = scalarSubqueryContext(select);
-        if (context.sources().isEmpty()) {
-            return selectedExpression;
-        }
-        OracleExpressionAnalysis combined = OracleExpressionAnalysis.combine(
-                selectedExpression.transform(),
-                selectedExpression.flowKind(),
-                selectedExpression,
-                context);
-        return new OracleExpressionAnalysis(combined.sources(), selectedExpression.transform(), selectedExpression.flowKind());
-    }
-
-    private boolean containsAggregateFunction(ParseTree tree) {
-        if (tree instanceof OracleRelationSqlParser.FunctionExpressionContext function) {
-            String functionName = baseName(qualifiedName(function.functionCall().qualifiedName())).toLowerCase(Locale.ROOT);
-            if (LineageTransformClassifier.classifyFunction(functionName, false, functionExtensions)
-                    == LineageTransformType.AGGREGATE) {
-                return true;
-            }
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            if (containsAggregateFunction(tree.getChild(index))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private OracleExpressionAnalysis scalarSubqueryContext(OracleRelationSqlParser.SelectStatementContext select) {
-        OracleRelationSqlParser.QuerySpecificationContext query = select.querySpecification();
-        queryScopes.push(scopeFor(query));
-        try {
-            OracleExpressionAnalysis context = OracleExpressionAnalysis.empty();
-            if (query.fromClause() != null) {
-                for (OracleRelationSqlParser.TableReferenceContext reference : query.fromClause().tableReference()) {
-                    for (OracleRelationSqlParser.JoinClauseContext join : reference.joinClause()) {
-                        if (join.predicate() != null) {
-                            context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                                    LineageFlowKind.CONTROL,
-                                    context,
-                                    analyze(join.predicate()));
-                        }
-                    }
-                }
-            }
-            if (query.whereClause() != null) {
-                context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL,
-                        context,
-                        analyze(query.whereClause().predicate()));
-            }
-            if (query.groupByClause() != null) {
-                for (OracleRelationSqlParser.ExpressionContext expression : query.groupByClause().expressionList().expression()) {
-                    context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                            LineageFlowKind.CONTROL,
-                            context,
-                            analyze(expression));
-                }
-            }
-            if (query.havingClause() != null) {
-                context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL,
-                        context,
-                        analyze(query.havingClause().predicate()));
-            }
-            return context;
-        } finally {
-            queryScopes.pop();
-        }
-    }
-
-    private OracleExpressionAnalysis analyze(OracleRelationSqlParser.PredicateContext predicate) {
-        if (predicate instanceof OracleRelationSqlParser.AndPredicateContext andPredicate) {
-            return OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL,
-                    analyze(andPredicate.predicate(0)),
-                    analyze(andPredicate.predicate(1)));
-        }
-        if (predicate instanceof OracleRelationSqlParser.OrPredicateContext orPredicate) {
-            return OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL,
-                    analyze(orPredicate.predicate(0)),
-                    analyze(orPredicate.predicate(1)));
-        }
-        if (predicate instanceof OracleRelationSqlParser.NotPredicateContext notPredicate) {
-            return analyze(notPredicate.predicate());
-        }
-        if (predicate instanceof OracleRelationSqlParser.ParenPredicateContext parenPredicate) {
-            return analyze(parenPredicate.predicate());
-        }
-        if (predicate instanceof OracleRelationSqlParser.ComparisonPredicateContext comparisonPredicate) {
-            return OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL,
-                    analyze(comparisonPredicate.expression(0)),
-                    analyze(comparisonPredicate.expression(1)));
-        }
-        if (predicate instanceof OracleRelationSqlParser.LikePredicateContext likePredicate) {
-            OracleExpressionAnalysis combined = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                    LineageFlowKind.CONTROL,
-                    analyze(likePredicate.expression(0)),
-                    analyze(likePredicate.expression(1)));
-            if (likePredicate.expression().size() > 2) {
-                combined = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL,
-                        combined,
-                        analyze(likePredicate.expression(2)));
-            }
-            return combined;
-        }
-        if (predicate instanceof OracleRelationSqlParser.IsNullPredicateContext isNullPredicate) {
-            return analyze(isNullPredicate.expression());
-        }
-        if (predicate instanceof OracleRelationSqlParser.LiteralInPredicateContext literalInPredicate) {
-            OracleExpressionAnalysis combined = analyze(literalInPredicate.expression());
-            for (OracleRelationSqlParser.ExpressionContext item : literalInPredicate.expressionList().expression()) {
-                combined = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL,
-                        combined,
-                        analyze(item));
-            }
-            return combined;
-        }
-        if (predicate instanceof OracleRelationSqlParser.InSubqueryPredicateContext inSubqueryPredicate) {
-            return analyze(inSubqueryPredicate.expression());
-        }
-        if (predicate instanceof OracleRelationSqlParser.TupleInSubqueryPredicateContext tupleInPredicate) {
-            OracleExpressionAnalysis combined = OracleExpressionAnalysis.empty();
-            for (OracleRelationSqlParser.ExpressionContext item : tupleInPredicate.expressionList().expression()) {
-                combined = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.CONTROL,
-                        combined,
-                        analyze(item));
-            }
-            return combined;
-        }
-        if (predicate instanceof OracleRelationSqlParser.ExpressionPredicateContext expressionPredicate) {
-            return analyze(expressionPredicate.expression());
-        }
-        return OracleExpressionAnalysis.empty();
-    }
-
-    private Map<String, Object> attrs() {
-        return emitter.attrs();
-    }
-
-    private void add(StructuredParseEventType type, ParserRuleContext ctx, Map<String, Object> attrs) {
-        emitter.add(events, type, ctx, attrs);
-    }
-
-    private String targetAlias(OracleRelationSqlParser.TablePrimaryContext primary) {
-        if (primary instanceof OracleRelationSqlParser.NamedTablePrimaryContext named && named.tableAlias() != null) {
-            return clean(named.tableAlias().identifier().getText());
-        }
-        return targetTable(primary);
-    }
-
-    private String rowsetAlias(OracleRelationSqlParser.TablePrimaryContext primary) {
-        if (primary instanceof OracleRelationSqlParser.NamedTablePrimaryContext named) {
-            if (named.tableAlias() != null) {
-                return clean(named.tableAlias().identifier().getText());
-            }
-            return baseName(qualifiedName(named.qualifiedName()));
-        }
-        if (primary instanceof OracleRelationSqlParser.DerivedTablePrimaryContext derived && derived.tableAlias() != null) {
-            return clean(derived.tableAlias().identifier().getText());
-        }
-        return "";
-    }
-
-    private String targetTable(OracleRelationSqlParser.TablePrimaryContext primary) {
-        if (primary instanceof OracleRelationSqlParser.NamedTablePrimaryContext named) {
-            return qualifiedName(named.qualifiedName());
-        }
-        if (primary instanceof OracleRelationSqlParser.DerivedTablePrimaryContext derived && derived.tableAlias() != null) {
-            return clean(derived.tableAlias().identifier().getText());
-        }
-        return "";
-    }
-
-    private String qualifiedName(OracleRelationSqlParser.QualifiedNameContext ctx) {
-        return String.join(".", parts(ctx));
-    }
-
-    private List<String> parts(OracleRelationSqlParser.QualifiedNameContext ctx) {
-        return ctx.identifier().stream().map(identifier -> clean(identifier.getText())).toList();
-    }
-
-    private String clean(String raw) {
-        if (raw == null) {
-            return "";
-        }
-        String trimmed = raw.trim();
-        if (trimmed.length() >= 2
-                && ((trimmed.startsWith("\"") && trimmed.endsWith("\""))
-                || (trimmed.startsWith("`") && trimmed.endsWith("`")))) {
-            return trimmed.substring(1, trimmed.length() - 1).replace(trimmed.substring(0, 1) + trimmed.substring(0, 1),
-                    trimmed.substring(0, 1));
-        }
-        return trimmed;
-    }
-
-    private String normalize(String value) {
-        return clean(value).toLowerCase(Locale.ROOT);
-    }
-
-    private String baseName(String qualified) {
-        if (qualified == null) {
-            return "";
-        }
-        int dot = qualified.lastIndexOf('.');
-        return dot < 0 ? qualified : qualified.substring(dot + 1);
-    }
-
-    private String currentJoinKind() {
-        return joinKinds.isEmpty() ? "WHERE_OR_UNKNOWN" : joinKinds.peek();
-    }
-
-    private void registerCurrentRowset(String alias, String table) {
-        if (alias == null || alias.isBlank() || queryScopes.isEmpty()) {
-            return;
-        }
-        QueryScope scope = queryScopes.peek();
-        scope.rowsetAliases().add(alias);
-        if (table != null && !table.isBlank()) {
-            scope.rowsets().put(normalize(alias), clean(table));
-        }
-    }
-
-    private OracleExpressionAnalysis resolveCurrentScope(OracleExpressionAnalysis analysis) {
-        if (queryScopes.isEmpty() || analysis.sources().isEmpty()) {
-            return analysis;
-        }
-        QueryScope scope = queryScopes.peek();
-        List<OracleColumnRead> sources = analysis.sources().stream()
-                .map(source -> new OracleColumnRead(
-                        scope.rowsets().getOrDefault(normalize(source.alias()), source.alias()),
-                        source.column()))
-                .distinct()
-                .toList();
-        return new OracleExpressionAnalysis(sources, analysis.transform(), analysis.flowKind());
-    }
-
-    private QueryScope scopeFor(OracleRelationSqlParser.QuerySpecificationContext query) {
-        QueryScope scope = new QueryScope();
-        if (query == null || query.fromClause() == null) {
-            return scope;
-        }
-        for (OracleRelationSqlParser.TableReferenceContext reference : query.fromClause().tableReference()) {
-            addScopeAlias(scope, rowsetAlias(reference.tablePrimary()));
-            for (OracleRelationSqlParser.JoinClauseContext join : reference.joinClause()) {
-                addScopeAlias(scope, rowsetAlias(join.tablePrimary()));
-            }
-        }
-        return scope;
-    }
-
-    private void addScopeAlias(QueryScope scope, String alias) {
-        if (alias != null && !alias.isBlank()) {
-            scope.rowsetAliases().add(alias);
-        }
-    }
-
-    private String defaultColumnAlias() {
-        if (queryScopes.isEmpty()) {
-            return "";
-        }
-        Set<String> aliases = queryScopes.peek().rowsetAliases();
-        return aliases.size() == 1 ? aliases.iterator().next() : "";
-    }
-
-    private String joinKind(OracleRelationSqlParser.JoinClauseContext join) {
-        if (join.joinType() == null) {
-            return "JOIN";
-        }
-        String text = join.joinType().getText().toUpperCase(Locale.ROOT);
-        if (text.startsWith("LEFT")) {
-            return "LEFT_JOIN";
-        }
-        if (text.startsWith("RIGHT")) {
-            return "RIGHT_JOIN";
-        }
-        if (text.startsWith("FULL")) {
-            return "FULL_JOIN";
-        }
-        if (text.startsWith("CROSS")) {
-            return "CROSS_JOIN";
-        }
-        return "JOIN";
-    }
-
-    private record OracleColumnRead(String alias, String column) {
-    }
-
-    private record OracleExpressionAnalysis(
-            List<OracleColumnRead> sources,
-            LineageTransformType transform,
-            LineageFlowKind flowKind
-    ) {
-        private static OracleExpressionAnalysis empty() {
-            return new OracleExpressionAnalysis(List.of(), LineageTransformType.DIRECT, LineageFlowKind.VALUE);
-        }
-
-        private static OracleExpressionAnalysis of(
-                OracleColumnRead column,
-                LineageTransformType transform,
-                LineageFlowKind flowKind
-        ) {
-            return new OracleExpressionAnalysis(List.of(column), transform, flowKind);
-        }
-
-        private static OracleExpressionAnalysis combine(
-                LineageTransformType transform,
-                LineageFlowKind flowKind,
-                OracleExpressionAnalysis left,
-                OracleExpressionAnalysis right
-        ) {
-            List<OracleColumnRead> sources = new ArrayList<>();
-            sources.addAll(left.sources());
-            sources.addAll(right.sources());
-            return new OracleExpressionAnalysis(sources.stream().distinct().toList(),
-                    LineageTransformClassifier.dominantForFlow(
-                            flowKind, transform, left.transform(), right.transform()), flowKind);
-        }
-
-        private static OracleExpressionAnalysis withTransform(
-                LineageTransformType transform,
-                LineageFlowKind flowKind,
-                OracleExpressionAnalysis... analyses
-        ) {
-            List<OracleColumnRead> sources = new ArrayList<>();
-            for (OracleExpressionAnalysis analysis : analyses) {
-                sources.addAll(analysis.sources());
-            }
-            return new OracleExpressionAnalysis(sources.stream().distinct().toList(), transform, flowKind);
-        }
-
-        private List<String> aliases() {
-            return sources.stream().map(OracleColumnRead::alias).toList();
-        }
-
-        private List<String> columns() {
-            return sources.stream().map(OracleColumnRead::column).toList();
-        }
-    }
-
-    private record ProjectionOwner(String alias, List<String> columns) {
-    }
-
-    private record QueryScope(Set<String> rowsetAliases, Map<String, String> rowsets) {
-        private QueryScope() {
-            this(new LinkedHashSet<>(), new java.util.LinkedHashMap<>());
-        }
-    }
-
 }

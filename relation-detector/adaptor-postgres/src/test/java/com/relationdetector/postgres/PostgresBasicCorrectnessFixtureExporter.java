@@ -317,7 +317,7 @@ public final class PostgresBasicCorrectnessFixtureExporter {
             PostgresDatabaseAdaptor adaptor
     ) {
         List<WarningMessage> warnings = new ArrayList<>();
-        List<SqlSample> samples = new ArrayList<>(adaptor.objectDefinitionCollector()
+        List<SqlSample> samples = new ArrayList<>(adaptor.collectors().objects()
                 .collect(connection, new ScanScope(null, schema, List.of(), List.of()), warnings::add)
                 .stream()
                 .map(definition -> new SqlSample(definition.type().name() + ":" + definition.source() + ":" + definition.name(),

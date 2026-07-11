@@ -3,7 +3,6 @@ package com.relationdetector.postgres.fullgrammer.common;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -24,6 +23,10 @@ import com.relationdetector.core.fullgrammer.FullGrammerExpressionAnalyzer;
  * version-specific subclass or hook instead of copying the whole analyzer.
  */
 public class PostgresExpressionAnalyzer extends FullGrammerExpressionAnalyzer {
+    public PostgresExpressionAnalyzer(com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter adapter) {
+        super(adapter);
+    }
+
     @Override
     public boolean prefersDialectWriteAnalyses(ParseTree expression) {
         return scalarSubquery(expression) != null;
@@ -48,8 +51,10 @@ public class PostgresExpressionAnalyzer extends FullGrammerExpressionAnalyzer {
     }
 
     private FullGrammerExpressionAnalysis scalarProjection(ParseTree scalar, String defaultQualifier) {
-        ParseTree target = firstDescendant(scalar, "Target_labelContext");
-        ParseTree projection = target == null ? null : firstExpressionDescendant(target);
+        ParseTree target = parseTreeAdapter().firstDescendant(
+                scalar, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.SELECT_TARGET_ITEM);
+        ParseTree projection = target == null ? null : parseTreeAdapter().firstDescendant(
+                target, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.ROOT_EXPRESSION);
         if (projection == null) {
             return empty("VALUE");
         }
@@ -61,13 +66,10 @@ public class PostgresExpressionAnalyzer extends FullGrammerExpressionAnalyzer {
         List<String> aliases = new ArrayList<>();
         List<String> columns = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
-        for (String context : List.of(
-                "Join_qualContext", "Where_clauseContext", "Having_clauseContext", "Group_clauseContext")) {
-            List<ParseTree> controls = new ArrayList<>();
-            collectDirectScopeContexts(scalar, scalar, context, controls);
-            for (ParseTree control : controls) {
-                append(aliases, columns, seen, analyze(control, defaultQualifier));
-            }
+        List<ParseTree> controls = new ArrayList<>();
+        collectDirectScopeContexts(scalar, scalar, controls);
+        for (ParseTree control : controls) {
+            append(aliases, columns, seen, analyze(control, defaultQualifier));
         }
         return new FullGrammerExpressionAnalysis(aliases, columns, "CASE_WHEN", "CONTROL");
     }
@@ -75,7 +77,6 @@ public class PostgresExpressionAnalyzer extends FullGrammerExpressionAnalyzer {
     private void collectDirectScopeContexts(
             ParseTree root,
             ParseTree tree,
-            String expected,
             List<ParseTree> result
     ) {
         if (tree == null) {
@@ -84,12 +85,13 @@ public class PostgresExpressionAnalyzer extends FullGrammerExpressionAnalyzer {
         if (tree != root && isScalarBoundary(tree)) {
             return;
         }
-        if (tree.getClass().getSimpleName().equals(expected)) {
+        if (parseTreeAdapter().hasRole(
+                tree, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.CONTROL_SCOPE)) {
             result.add(tree);
             return;
         }
         for (int index = 0; index < tree.getChildCount(); index++) {
-            collectDirectScopeContexts(root, tree.getChild(index), expected, result);
+            collectDirectScopeContexts(root, tree.getChild(index), result);
         }
     }
 
@@ -110,41 +112,8 @@ public class PostgresExpressionAnalyzer extends FullGrammerExpressionAnalyzer {
     }
 
     private boolean isScalarBoundary(ParseTree tree) {
-        String name = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-        return name.equals("select_with_parenscontext") || name.contains("scalarsubquery");
-    }
-
-    private ParseTree firstDescendant(ParseTree tree, String expectedSimpleName) {
-        if (tree == null) {
-            return null;
-        }
-        if (tree.getClass().getSimpleName().equals(expectedSimpleName)) {
-            return tree;
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            ParseTree found = firstDescendant(tree.getChild(index), expectedSimpleName);
-            if (found != null) {
-                return found;
-            }
-        }
-        return null;
-    }
-
-    private ParseTree firstExpressionDescendant(ParseTree tree) {
-        if (tree == null) {
-            return null;
-        }
-        String name = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-        if (name.startsWith("a_expr") || name.startsWith("b_expr") || name.startsWith("c_expr")) {
-            return tree;
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            ParseTree found = firstExpressionDescendant(tree.getChild(index));
-            if (found != null) {
-                return found;
-            }
-        }
-        return null;
+        return parseTreeAdapter().hasRole(
+                tree, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.SCALAR_SUBQUERY);
     }
 
     private void append(

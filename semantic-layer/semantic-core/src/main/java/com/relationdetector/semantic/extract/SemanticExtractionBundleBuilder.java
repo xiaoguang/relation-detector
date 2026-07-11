@@ -9,10 +9,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.relationdetector.semantic.SemanticFactIds;
 import com.relationdetector.semantic.event.SemanticEventCandidate;
 import com.relationdetector.semantic.event.SemanticEventExtractor;
 import com.relationdetector.semantic.reader.ScanBundle;
+import com.relationdetector.semantic.reader.ScanDiagnosticFact;
+import com.relationdetector.semantic.reader.ScanLineageFact;
+import com.relationdetector.semantic.reader.ScanNamingEvidenceFact;
+import com.relationdetector.semantic.reader.ScanRelationshipFact;
 
 /** Builds compact, evidence-grounded input for LLM semantic extraction. */
 public final class SemanticExtractionBundleBuilder {
@@ -57,93 +60,91 @@ public final class SemanticExtractionBundleBuilder {
     private Set<String> focusTables(ScanBundle bundle, String focus) {
         Set<String> tables = new LinkedHashSet<>();
         if (!focus.isBlank()) {
-            for (JsonNode lineage : bundle.dataLineages()) {
+            for (ScanLineageFact lineage : bundle.dataLineages()) {
                 if (lineageEvidenceMatches(lineage, focus)) {
-                    lineage.path("sources").forEach(source -> addTable(tables, source));
-                    addTable(tables, lineage.path("target"));
+                    lineage.sources().forEach(source -> addTable(tables, source));
+                    addTable(tables, lineage.target());
                 }
             }
             if (!tables.isEmpty()) {
                 return tables;
             }
         }
-        for (JsonNode relationship : bundle.relationships()) {
-            addTable(tables, relationship.path("source"));
-            addTable(tables, relationship.path("target"));
+        for (ScanRelationshipFact relationship : bundle.relationships()) {
+            addTable(tables, relationship.source());
+            addTable(tables, relationship.target());
         }
-        for (JsonNode relationship : bundle.derivedRelationships()) {
-            addTable(tables, relationship.path("source"));
-            addTable(tables, relationship.path("target"));
+        for (ScanRelationshipFact relationship : bundle.derivedRelationships()) {
+            addTable(tables, relationship.source());
+            addTable(tables, relationship.target());
         }
-        for (JsonNode lineage : bundle.dataLineages()) {
-            lineage.path("sources").forEach(source -> addTable(tables, source));
-            addTable(tables, lineage.path("target"));
+        for (ScanLineageFact lineage : bundle.dataLineages()) {
+            lineage.sources().forEach(source -> addTable(tables, source));
+            addTable(tables, lineage.target());
         }
-        for (JsonNode lineage : bundle.derivedDataLineages()) {
-            SemanticFactIds.sources(lineage).forEach(source -> {
+        for (ScanLineageFact lineage : bundle.derivedDataLineages()) {
+            lineage.sources().forEach(source -> {
                 String table = tableOf(source);
                 if (!table.isBlank()) {
                     tables.add(table);
                 }
             });
-            addTable(tables, lineage.path("target"));
+            addTable(tables, lineage.target());
         }
         return tables;
     }
 
-    private ArrayNode relationships(List<JsonNode> relationships, Set<String> focusTables, int limit, boolean derived) {
+    private ArrayNode relationships(List<ScanRelationshipFact> relationships, Set<String> focusTables, int limit,
+            boolean derived) {
         ArrayNode result = JSON.createArrayNode();
-        int index = 0;
-        for (JsonNode relationship : relationships) {
-            String source = endpoint(relationship.path("source"));
-            String target = endpoint(relationship.path("target"));
+        for (ScanRelationshipFact relationship : relationships) {
+            String source = relationship.source();
+            String target = relationship.target();
             if (!touches(source, target, focusTables)) {
-                index++;
                 continue;
             }
+            JsonNode document = relationship.document();
             ObjectNode item = result.addObject();
-            item.put("id", SemanticFactIds.relationship(relationship, derived, index));
+            item.put("id", relationship.id());
             item.put("source", source);
             item.put("target", target);
-            item.put("type", relationship.path("relationType").asText(relationship.path("kind").asText("")));
-            item.put("subType", relationship.path("relationSubType").asText(""));
-            item.put("confidence", relationship.path("confidence").asDouble(0.0));
-            item.set("evidenceRefs", evidenceRefs(relationship));
-            item.set("evidenceTypes", evidenceTypes(relationship.path("evidence")));
+            item.put("type", relationship.relationType());
+            item.put("subType", relationship.relationSubType());
+            item.put("confidence", relationship.confidence());
+            item.set("evidenceRefs", evidenceRefs(document));
+            item.set("evidenceTypes", evidenceTypes(document.path("evidence")));
             if (limited(limit) && result.size() >= limit) {
                 break;
             }
-            index++;
         }
         return result;
     }
 
-    private ArrayNode lineages(List<JsonNode> lineages, String focus, Set<String> focusTables, int limit, boolean derived) {
+    private ArrayNode lineages(List<ScanLineageFact> lineages, String focus, Set<String> focusTables, int limit,
+            boolean derived) {
         ArrayNode result = JSON.createArrayNode();
-        int index = 0;
-        for (JsonNode lineage : lineages) {
-            List<String> sources = new ArrayList<>(SemanticFactIds.sources(lineage));
-            String target = endpoint(lineage.path("target"));
+        for (ScanLineageFact lineage : lineages) {
+            List<String> sources = new ArrayList<>(lineage.sources());
+            String target = lineage.target();
             boolean focusMatch = !focus.isBlank() && lineageEvidenceMatches(lineage, focus);
             boolean tableMatch = sources.stream().anyMatch(source -> tableTouches(source, focusTables))
                     || tableTouches(target, focusTables);
             if (!focusMatch && !tableMatch) {
-                index++;
                 continue;
             }
+            JsonNode document = lineage.document();
             ObjectNode item = result.addObject();
-            item.put("id", SemanticFactIds.lineage(lineage, derived, index));
+            item.put("id", lineage.id());
             item.set("sources", strings(sources));
             item.put("target", target);
-            item.put("flowKind", lineage.path("flowKind").asText(""));
-            item.put("transformType", lineage.path("transformType").asText(""));
-            item.put("confidence", lineage.path("confidence").asDouble(0.0));
-            item.set("evidenceRefs", evidenceRefs(lineage));
-            item.set("evidenceSources", evidenceSources(lineage.path("evidence")));
+            item.put("flowKind", lineage.flowKind());
+            item.put("transformType", lineage.transformType());
+            item.put("confidence", lineage.confidence());
+            item.set("evidenceRefs", evidenceRefs(document));
+            item.set("evidenceSources", evidenceSources(document.path("evidence")));
             if (limited(limit) && result.size() >= limit) {
                 break;
             }
-            index++;
         }
         return result;
     }
@@ -184,57 +185,53 @@ public final class SemanticExtractionBundleBuilder {
         return result;
     }
 
-    private ArrayNode namingEvidence(List<JsonNode> namingEvidence, Set<String> focusTables, int limit) {
+    private ArrayNode namingEvidence(List<ScanNamingEvidenceFact> namingEvidence, Set<String> focusTables, int limit) {
         ArrayNode result = JSON.createArrayNode();
-        int index = 0;
-        for (JsonNode naming : namingEvidence) {
-            String source = endpoint(naming.path("source"));
-            String target = endpoint(naming.path("target"));
+        for (ScanNamingEvidenceFact naming : namingEvidence) {
+            String source = naming.source();
+            String target = naming.target();
             if (!touches(source, target, focusTables)) {
-                index++;
                 continue;
             }
             ObjectNode item = result.addObject();
-            item.put("id", SemanticFactIds.naming(naming, index));
+            item.put("id", naming.id());
             item.put("source", source);
             item.put("target", target);
-            item.put("rule", naming.path("rule").asText(""));
-            item.put("directionHint", naming.path("directionHint").asBoolean(false));
-            item.set("evidenceRefs", evidenceRefs(naming));
+            item.put("rule", naming.rule());
+            item.put("directionHint", naming.directionHint());
+            item.set("evidenceRefs", evidenceRefs(naming.document()));
             if (limited(limit) && result.size() >= limit) {
                 break;
             }
-            index++;
         }
         return result;
     }
 
-    private ArrayNode diagnostics(List<JsonNode> diagnostics, int limit) {
+    private ArrayNode diagnostics(List<ScanDiagnosticFact> diagnostics, int limit) {
         ArrayNode result = JSON.createArrayNode();
-        int index = 0;
-        for (JsonNode diagnostic : diagnostics) {
+        for (ScanDiagnosticFact diagnostic : diagnostics) {
             ObjectNode item = result.addObject();
-            item.put("id", SemanticFactIds.diagnostic(diagnostic, index));
-            item.put("code", diagnostic.path("code").asText(""));
-            item.put("severity", diagnostic.path("severity").asText(""));
-            item.put("message", diagnostic.path("message").asText(""));
-            item.put("source", diagnostic.path("source").asText(""));
+            item.put("id", diagnostic.id());
+            item.put("code", diagnostic.code());
+            item.put("severity", diagnostic.severity());
+            item.put("message", diagnostic.message());
+            item.put("source", diagnostic.source());
             if (limited(limit) && result.size() >= limit) {
                 break;
             }
-            index++;
         }
         return result;
     }
 
-    private boolean lineageEvidenceMatches(JsonNode lineage, String focus) {
+    private boolean lineageEvidenceMatches(ScanLineageFact lineage, String focus) {
+        JsonNode document = lineage.document();
         String lowerFocus = focus.toLowerCase();
-        for (JsonNode evidence : lineage.path("evidence")) {
+        for (JsonNode evidence : document.path("evidence")) {
             if (evidence.path("source").asText("").toLowerCase().contains(lowerFocus)) {
                 return true;
             }
         }
-        for (JsonNode evidence : lineage.path("rawEvidence")) {
+        for (JsonNode evidence : document.path("rawEvidence")) {
             if (evidence.path("source").asText("").toLowerCase().contains(lowerFocus)) {
                 return true;
             }
@@ -255,35 +252,11 @@ public final class SemanticExtractionBundleBuilder {
         return !table.isBlank() && focusTables.contains(table);
     }
 
-    private void addTable(Set<String> tables, JsonNode endpoint) {
-        String table = table(endpoint);
+    private void addTable(Set<String> tables, String endpoint) {
+        String table = tableOf(endpoint);
         if (!table.isBlank()) {
             tables.add(table);
         }
-    }
-
-    private String table(JsonNode endpoint) {
-        if (endpoint == null || !endpoint.isObject()) {
-            return "";
-        }
-        String schema = endpoint.path("schema").asText("");
-        String table = endpoint.path("table").asText("");
-        if (table.isBlank()) {
-            return "";
-        }
-        return schema.isBlank() ? table : schema + "." + table;
-    }
-
-    private String endpoint(JsonNode endpoint) {
-        if (endpoint == null || !endpoint.isObject()) {
-            return "";
-        }
-        String table = table(endpoint);
-        String column = endpoint.path("column").asText("");
-        if (table.isBlank()) {
-            return "";
-        }
-        return column.isBlank() ? table : table + "." + column;
     }
 
     private String tableOf(String endpoint) {

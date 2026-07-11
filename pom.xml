@@ -10,6 +10,7 @@
 
   <modules>
     <module>relation-detector/contracts</module>
+    <module>relation-detector/grammar</module>
     <module>relation-detector/core</module>
     <module>relation-detector/cli</module>
     <module>relation-detector/adaptor-mysql</module>
@@ -31,9 +32,36 @@
     <correctnessFixtureTiming>false</correctnessFixtureTiming>
     <correctnessFixtureTimingVerbose>false</correctnessFixtureTimingVerbose>
     <correctnessFixtureTimingTop>20</correctnessFixtureTimingTop>
+    <cliTestForkCount>1</cliTestForkCount>
     <updateCorrectnessGold>false</updateCorrectnessGold>
     <runGeneratedReportTests>false</runGeneratedReportTests>
     <updateCorrectnessSummary>false</updateCorrectnessSummary>
     <updateDataLineageAudit>false</updateDataLineageAudit>
+    <runSqlServerSampleDataIntegration>false</runSqlServerSampleDataIntegration>
+    <sqlserverSampleDataJdbcUrl></sqlserverSampleDataJdbcUrl>
+    <sqlserverSampleDataJdbcUser></sqlserverSampleDataJdbcUser>
+    <sqlserverSampleDataJdbcPassword></sqlserverSampleDataJdbcPassword>
   </properties>
+
+  <profiles>
+    <profile>
+      <id>matrix-smoke</id>
+      <properties>
+        <correctnessFixtureProfile>smoke</correctnessFixtureProfile>
+        <correctnessFixtureParallelism>8</correctnessFixtureParallelism>
+        <correctnessFixtureTiming>true</correctnessFixtureTiming>
+        <runGeneratedReportTests>false</runGeneratedReportTests>
+      </properties>
+    </profile>
+    <profile>
+      <id>acceptance</id>
+      <properties>
+        <correctnessFixtureProfile>full</correctnessFixtureProfile>
+        <correctnessFixtureParallelism>12</correctnessFixtureParallelism>
+        <correctnessFixtureTiming>true</correctnessFixtureTiming>
+        <runGeneratedReportTests>true</runGeneratedReportTests>
+        <cliTestForkCount>2</cliTestForkCount>
+      </properties>
+    </profile>
+  </profiles>
 </project>

@@ -30,7 +30,8 @@ public final class SqlServerFullGrammerStructuredSqlParser implements Structured
     public StructuredParseResult parseSql(SqlStatementRecord statement, AdaptorContext context) {
         SqlServerFullGrammerSqlBinding.ParsedTree parsed = binding.parse(statement);
         List<StructuredSqlEvent> events = parsed.syntaxErrors() == 0
-                ? new SqlServerParseTreeEventCollector(parsed.parser(), statement, false).collect(parsed.root())
+                ? new SqlServerParseTreeEventCollector(
+                        parsed.parser(), statement, false, binding.parseTreeAdapter()).collect(parsed.root())
                 : List.of();
         return result(statement, events, parsed.tokens(), parsed.syntaxErrors());
     }

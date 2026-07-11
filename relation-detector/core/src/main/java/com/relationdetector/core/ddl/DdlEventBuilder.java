@@ -1,11 +1,11 @@
 package com.relationdetector.core.ddl;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.parse.DdlEvent;
+import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 
 /**
@@ -35,27 +35,24 @@ public final class DdlEventBuilder {
     ) {
         int count = Math.min(sourceColumns.size(), targetColumns.size());
         for (int i = 0; i < count; i++) {
-            Map<String, Object> attributes = new LinkedHashMap<>();
-            attributes.put("sourceTable", sourceTable);
-            attributes.put("sourceColumn", sourceColumns.get(i));
-            attributes.put("targetTable", targetTable);
-            attributes.put("targetColumn", targetColumns.get(i));
-            attributes.put("compositePosition", i + 1);
-            attributes.put("compositeSize", count);
-            events.add(new StructuredSqlEvent(StructuredParseEventType.DDL_FOREIGN_KEY, sourceName, line, attributes));
+            events.add(new DdlEvent(StructuredParseEventType.DDL_FOREIGN_KEY,
+                    SourceProvenance.source(sourceName, line), sourceTable, sourceColumns.get(i),
+                    targetTable, targetColumns.get(i), "", "", "", "", i + 1, count));
         }
     }
 
     public void addIndex(String table, String column, String role, String kind, long line) {
-        events.add(new StructuredSqlEvent(StructuredParseEventType.DDL_INDEX, sourceName, line,
-                Map.of("table", table, "column", column, "role", role, "kind", kind)));
+        events.add(new DdlEvent(StructuredParseEventType.DDL_INDEX,
+                SourceProvenance.source(sourceName, line), "", "", "", "",
+                table, column, role, kind, 1, 1));
     }
 
     public void addColumn(String table, String column, long line) {
         if (table == null || table.isBlank() || column == null || column.isBlank()) {
             return;
         }
-        events.add(new StructuredSqlEvent(StructuredParseEventType.DDL_COLUMN, sourceName, line,
-                Map.of("table", table, "column", column)));
+        events.add(new DdlEvent(StructuredParseEventType.DDL_COLUMN,
+                SourceProvenance.source(sourceName, line), "", "", "", "",
+                table, column, "", "", 1, 1));
     }
 }

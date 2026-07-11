@@ -135,7 +135,7 @@ class PostgresFullGrammerExpressionAnalyzerTest {
 
         assertFalse(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.IN_SUBQUERY_PREDICATE
-                        && "structural_statuses".equals(event.attributes().get("innerTable"))));
+                        && "structural_statuses".equals(event.innerTable())));
 
     }
 
@@ -151,16 +151,15 @@ class PostgresFullGrammerExpressionAnalyzerTest {
                   AND fo.user_id = u.id;
                 """), null);
 
-        Map<String, Object> assignment = result.events().stream()
+        var assignment = result.events().stream()
                 .filter(event -> event.type() == StructuredParseEventType.UPDATE_ASSIGNMENT)
-                .filter(event -> "remarks".equals(event.attributes().get("targetColumn")))
+                .filter(event -> "remarks".equals(event.targetColumn()))
                 .findFirst()
-                .orElseThrow()
-                .attributes();
+                .orElseThrow();
 
-        assertEquals("CONCAT_FORMAT", assignment.get("transformType"));
-        assertEquals(List.of("u", "fo"), assignment.get("sourceAliases"));
-        assertEquals(List.of("risk_level", "rnk"), assignment.get("sourceColumns"));
+        assertEquals("CONCAT_FORMAT", assignment.expression().transformType().name());
+        assertEquals(List.of("u", "fo"), assignment.expression().sourceAliases());
+        assertEquals(List.of("risk_level", "rnk"), assignment.expression().sourceColumns());
     }
 
     @Test

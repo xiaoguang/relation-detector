@@ -31,7 +31,7 @@ class PostgresTokenEventParserSelectionTest {
         assertEquals(Boolean.TRUE, result.attributes().get("tokenEvent"));
         assertEquals(Boolean.TRUE, result.attributes().get("tokenEventPrimary"));
         assertTrue(result.events().stream().anyMatch(event ->
-                "orders".equals(event.attributes().get("table"))));
+                "orders".equals(event.table())));
     }
 
     @Test
@@ -50,18 +50,18 @@ class PostgresTokenEventParserSelectionTest {
 
         assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.CTE_DECLARATION
-                        && "recent".equals(event.attributes().get("name"))));
+                        && "recent".equals(event.name())));
         assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.IGNORED_ROWSET
-                        && ("ROWS".equals(event.attributes().get("name"))
-                        || "UNNEST".equals(event.attributes().get("name")))));
+                        && ("ROWS".equals(event.name())
+                        || "UNNEST".equals(event.name()))));
         assertFalse(result.events().stream()
                 .filter(event -> event.type() == StructuredParseEventType.ROWSET_REFERENCE)
                 .anyMatch(event ->
-                "system".equals(event.attributes().get("table"))
-                        || "generate_series".equals(event.attributes().get("table"))
-                        || "UNNEST".equals(event.attributes().get("table"))
-                        || "u".equals(event.attributes().get("table"))));
+                "system".equals(event.table())
+                        || "generate_series".equals(event.table())
+                        || "UNNEST".equals(event.table())
+                        || "u".equals(event.table())));
     }
 
     @Test
@@ -77,9 +77,9 @@ class PostgresTokenEventParserSelectionTest {
         assertFalse(result.events().stream()
                 .filter(event -> event.type() == StructuredParseEventType.ROWSET_REFERENCE)
                 .anyMatch(event ->
-                "p202501".equals(event.attributes().get("table"))
-                        || "FORCE".equals(event.attributes().get("table"))
-                        || "idx_user".equals(event.attributes().get("table"))
-                        || "jt".equals(event.attributes().get("table"))));
+                "p202501".equals(event.table())
+                        || "FORCE".equals(event.table())
+                        || "idx_user".equals(event.table())
+                        || "jt".equals(event.table())));
     }
 }

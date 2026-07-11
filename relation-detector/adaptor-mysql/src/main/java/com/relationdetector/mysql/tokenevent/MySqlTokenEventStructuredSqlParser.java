@@ -5,6 +5,7 @@ import java.util.List;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
@@ -62,5 +63,10 @@ public final class MySqlTokenEventStructuredSqlParser
             MySqlRelationSqlParser.ScriptContext root
     ) {
         return new MySqlTokenEventParseTreeVisitor(statement).collect(root);
+    }
+
+    @Override
+    protected boolean isUnknownStatement(ParseTree tree) {
+        return tree instanceof MySqlRelationSqlParser.UnknownStatementContext;
     }
 }

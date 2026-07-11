@@ -1,6 +1,5 @@
 package com.relationdetector.core.fullgrammer;
 
-import java.util.Map;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -100,16 +99,8 @@ final class WriteMappingSink {
             String targetColumn,
             FullGrammerExpressionAnalysis analysis
     ) {
-        Map<String, Object> attributes = source.nativeAttributes();
-        attributes.put("mappingKind", mappingKind);
-        attributes.put("targetAlias", source.clean(targetAlias));
-        attributes.put("targetTable", source.clean(targetTable));
-        attributes.put("targetColumn", targetColumn);
-        attributes.put("sourceAliases", analysis.sourceAliases());
-        attributes.put("sourceColumns", analysis.sourceColumns());
-        attributes.put("transformType", analysis.transformType());
-        attributes.put("flowKind", analysis.flowKind());
-        recorder.add(ctx, type, attributes);
+        recorder.write(ctx, type, mappingKind, source.clean(targetAlias),
+                source.clean(targetTable), targetColumn, analysis);
     }
 
     private boolean isNestedCaseWhen(ParseTree expression, FullGrammerExpressionAnalysis analysis) {
@@ -131,16 +122,8 @@ final class WriteMappingSink {
             if (!analysis.hasSources()) {
                 continue;
             }
-            Map<String, Object> attributes = source.nativeAttributes();
-            attributes.put("mappingKind", mappingKind);
-            attributes.put("targetAlias", source.clean(targetAlias));
-            attributes.put("targetTable", source.clean(targetTable));
-            attributes.put("targetColumn", targetColumn);
-            attributes.put("sourceAliases", analysis.sourceAliases());
-            attributes.put("sourceColumns", analysis.sourceColumns());
-            attributes.put("transformType", analysis.transformType());
-            attributes.put("flowKind", analysis.flowKind());
-            recorder.add(ctx, type, attributes);
+            recorder.write(ctx, type, mappingKind, source.clean(targetAlias),
+                    source.clean(targetTable), targetColumn, analysis);
         }
     }
 }

@@ -15,6 +15,8 @@ import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.core.scoring.ConfidenceCalculator;
+import com.relationdetector.core.evidence.EvidenceObservationAggregator;
+import com.relationdetector.core.evidence.EvidenceObservationAggregator.SummaryGroup;
 
 /**
  * relationship 候选合并器。
@@ -30,6 +32,9 @@ import com.relationdetector.core.scoring.ConfidenceCalculator;
  */
 public final class RelationshipMerger {
     private final ConfidenceCalculator calculator = new ConfidenceCalculator();
+    private final EvidenceObservationAggregator<Evidence> observations =
+            new EvidenceObservationAggregator<>();
+    private final RelationshipObservationPolicy observationPolicy = new RelationshipObservationPolicy();
 
     /**
      * 合并候选并按 minConfidence 过滤输出。
@@ -337,21 +342,47 @@ public final class RelationshipMerger {
      * bonus approaches the cap and can never exceed it.
      */
     private void summarizeRepeatedEvidence(RelationshipCandidate candidate) {
-        List<Evidence> observations = deduplicateNamingReferences(candidate.evidence());
-        Map<String, EvidenceAccumulator> grouped = new LinkedHashMap<>();
-        for (Evidence evidence : observations) {
-            String key = evidenceKey(evidence);
-            grouped.computeIfAbsent(key, ignored -> new EvidenceAccumulator(evidence)).add(evidence);
-        }
+        List<Evidence> raw = deduplicateNamingReferences(candidate.evidence());
+        var aggregation = observations.aggregate(raw, observationPolicy, false);
         candidate.rawEvidence().clear();
-        candidate.rawEvidence().addAll(observations);
+        candidate.rawEvidence().addAll(aggregation.rawObservations());
         candidate.evidence().clear();
-        for (EvidenceAccumulator accumulator : grouped.values()) {
-            candidate.evidence().add(accumulator.toEvidence());
-            if (accumulator.count() > 1 && repeatedObservationEligible(accumulator.first().type())) {
-                candidate.evidence().add(accumulator.toRepeatedObservationEvidence());
+        for (SummaryGroup<Evidence> group : aggregation.groups()) {
+            candidate.evidence().add(groupedEvidence(group));
+            if (group.count() > 1 && repeatedObservationEligible(group.first().type())) {
+                candidate.evidence().add(repeatedObservationEvidence(group));
             }
         }
+    }
+
+    private Evidence groupedEvidence(SummaryGroup<Evidence> group) {
+        Evidence first = group.first();
+        Map<String, Object> attributes = new LinkedHashMap<>(first.attributes());
+        attributes.put("count", group.count());
+        if (group.count() > 1) {
+            attributes.put("firstDetail", group.firstDetail());
+            attributes.put("lastDetail", group.lastDetail());
+            attributes.put("sampleDetails", group.sampleDetails());
+            attributes.put("sampleTruncated", group.sampleTruncated());
+        }
+        return new Evidence(
+                first.type(), first.score(), first.sourceType(), first.source(), first.detail(), attributes);
+    }
+
+    private Evidence repeatedObservationEvidence(SummaryGroup<Evidence> group) {
+        Evidence first = group.first();
+        double cap = DefaultEvidenceScores.REPEATED_OBSERVATION_MAX;
+        double score = cap * (1.0d - (1.0d / group.count()));
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        attributes.put("count", group.count());
+        attributes.put("maxScore", String.format(java.util.Locale.ROOT, "%.2f", cap));
+        attributes.put("formula", "maxScore * (1 - 1 / count)");
+        attributes.put("baseEvidenceType", first.type().name());
+        return new Evidence(
+                EvidenceType.REPEATED_OBSERVATION, BigDecimal.valueOf(score),
+                first.sourceType(), first.source(),
+                "Repeated " + first.type() + " observed " + group.count() + " times",
+                attributes);
     }
 
     private List<Evidence> deduplicateNamingReferences(List<Evidence> evidenceItems) {
@@ -369,13 +400,6 @@ public final class RelationshipMerger {
             }
         }
         return deduplicated;
-    }
-
-    private String evidenceKey(Evidence evidence) {
-        return evidence.type() + "|"
-                + evidence.sourceType() + "|"
-                + evidence.source() + "|"
-                + evidence.score();
     }
 
     private boolean repeatedObservationEligible(EvidenceType type) {
@@ -453,58 +477,37 @@ public final class RelationshipMerger {
         };
     }
 
-    private static final class EvidenceAccumulator {
-        private static final int MAX_SAMPLE_DETAILS = 5;
-        private final Evidence first;
-        private int count;
-        private String lastDetail;
-        private final List<String> sampleDetails = new ArrayList<>();
-
-        EvidenceAccumulator(Evidence first) {
-            this.first = first;
+    private static final class RelationshipObservationPolicy
+            implements EvidenceObservationAggregator.ObservationPolicy<Evidence> {
+        @Override
+        public Object exactKey(Evidence evidence) {
+            return summaryKey(evidence) + "|" + evidence.detail() + "|" + evidence.attributes();
         }
 
-        void add(Evidence evidence) {
-            count++;
-            lastDetail = evidence.detail();
-            if (sampleDetails.size() < MAX_SAMPLE_DETAILS) {
-                sampleDetails.add(evidence.detail());
-            }
+        @Override
+        public Object summaryKey(Evidence evidence) {
+            return evidence.type() + "|" + evidence.sourceType() + "|"
+                    + evidence.source() + "|" + evidence.score();
         }
 
-        Evidence toEvidence() {
-            Map<String, Object> attributes = new LinkedHashMap<>(first.attributes());
-            attributes.put("count", count);
-            if (count > 1) {
-                attributes.put("firstDetail", first.detail());
-                attributes.put("lastDetail", lastDetail);
-                attributes.put("sampleDetails", List.copyOf(sampleDetails));
-                attributes.put("sampleTruncated", count > sampleDetails.size());
-            }
-            return new Evidence(first.type(), first.score(), first.sourceType(), first.source(),
-                    first.detail(), attributes);
+        @Override
+        public int occurrenceCount(Evidence evidence) {
+            return 1;
         }
 
-        Evidence toRepeatedObservationEvidence() {
-            double cap = DefaultEvidenceScores.REPEATED_OBSERVATION_MAX;
-            double score = cap * (1.0d - (1.0d / count));
-            Map<String, Object> attributes = new LinkedHashMap<>();
-            attributes.put("count", count);
-            attributes.put("maxScore", String.format(java.util.Locale.ROOT, "%.2f", cap));
-            attributes.put("formula", "maxScore * (1 - 1 / count)");
-            attributes.put("baseEvidenceType", first.type().name());
-            return new Evidence(EvidenceType.REPEATED_OBSERVATION, BigDecimal.valueOf(score),
-                    first.sourceType(), first.source(),
-                    "Repeated " + first.type() + " observed " + count + " times",
-                    attributes);
+        @Override
+        public Map<String, Object> observationAttributes(Evidence evidence) {
+            return evidence.attributes();
         }
 
-        Evidence first() {
-            return first;
+        @Override
+        public String detail(Evidence evidence) {
+            return evidence.detail();
         }
 
-        int count() {
-            return count;
+        @Override
+        public Evidence withOccurrenceCount(Evidence evidence, int count) {
+            return evidence;
         }
     }
 

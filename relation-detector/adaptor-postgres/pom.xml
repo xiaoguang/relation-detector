@@ -13,6 +13,26 @@
   <dependencies>
     <dependency>
       <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-postgres-v16</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-postgres-v17</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-postgres-v18</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-postgres-routine</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
       <artifactId>relation-detector-core</artifactId>
       <version>${project.version}</version>
     </dependency>

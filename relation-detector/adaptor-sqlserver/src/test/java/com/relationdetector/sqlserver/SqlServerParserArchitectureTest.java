@@ -71,9 +71,8 @@ class SqlServerParserArchitectureTest {
 
     @Test
     void versionedFullGrammerUsesIndependentGeneratedGrammarFiles() {
-        Path antlrRoot = repoRoot().resolve("adaptor-sqlserver/src/main/antlr4/com/relationdetector/sqlserver/fullgrammer");
         for (String version : VERSIONS) {
-            Path versionRoot = antlrRoot.resolve(version);
+            Path versionRoot = sqlServerGrammarRoot(version);
             assertTrue(Files.exists(versionRoot.resolve("SqlServerFullGrammerLexer.g4")), version);
             assertTrue(Files.exists(versionRoot.resolve("SqlServerFullGrammerParser.g4")), version);
         }
@@ -81,15 +80,13 @@ class SqlServerParserArchitectureTest {
 
     @Test
     void versionedFullGrammerFilesExposeRealGrammarDifferences() throws IOException {
-        Path antlrRoot = repoRoot().resolve("adaptor-sqlserver/src/main/antlr4/com/relationdetector/sqlserver/fullgrammer");
-
-        String parser2016 = Files.readString(antlrRoot.resolve("v2016").resolve("SqlServerFullGrammerParser.g4"));
-        String parser2017 = Files.readString(antlrRoot.resolve("v2017").resolve("SqlServerFullGrammerParser.g4"));
-        String parser2019 = Files.readString(antlrRoot.resolve("v2019").resolve("SqlServerFullGrammerParser.g4"));
-        String parser2022 = Files.readString(antlrRoot.resolve("v2022").resolve("SqlServerFullGrammerParser.g4"));
-        String parser2025 = Files.readString(antlrRoot.resolve("v2025").resolve("SqlServerFullGrammerParser.g4"));
-        String lexer2022 = Files.readString(antlrRoot.resolve("v2022").resolve("SqlServerFullGrammerLexer.g4"));
-        String lexer2025 = Files.readString(antlrRoot.resolve("v2025").resolve("SqlServerFullGrammerLexer.g4"));
+        String parser2016 = Files.readString(sqlServerGrammarRoot("v2016").resolve("SqlServerFullGrammerParser.g4"));
+        String parser2017 = Files.readString(sqlServerGrammarRoot("v2017").resolve("SqlServerFullGrammerParser.g4"));
+        String parser2019 = Files.readString(sqlServerGrammarRoot("v2019").resolve("SqlServerFullGrammerParser.g4"));
+        String parser2022 = Files.readString(sqlServerGrammarRoot("v2022").resolve("SqlServerFullGrammerParser.g4"));
+        String parser2025 = Files.readString(sqlServerGrammarRoot("v2025").resolve("SqlServerFullGrammerParser.g4"));
+        String lexer2022 = Files.readString(sqlServerGrammarRoot("v2022").resolve("SqlServerFullGrammerLexer.g4"));
+        String lexer2025 = Files.readString(sqlServerGrammarRoot("v2025").resolve("SqlServerFullGrammerLexer.g4"));
 
         assertNotEquals(parser2016, parser2017, "2017 must add grammar beyond the 2016 baseline");
         assertEquals(parser2017, parser2019, "2019 currently inherits the 2017 syntax surface");
@@ -145,10 +142,9 @@ class SqlServerParserArchitectureTest {
 
     @Test
     void fullGrammerDoesNotUseStatementLevelUnknownFallback() throws IOException {
-        Path antlrRoot = repoRoot().resolve("adaptor-sqlserver/src/main/antlr4/com/relationdetector/sqlserver/fullgrammer");
         for (String version : VERSIONS) {
-            String parser = Files.readString(antlrRoot.resolve(version).resolve("SqlServerFullGrammerParser.g4"));
-            String lexer = Files.readString(antlrRoot.resolve(version).resolve("SqlServerFullGrammerLexer.g4"));
+            String parser = Files.readString(sqlServerGrammarRoot(version).resolve("SqlServerFullGrammerParser.g4"));
+            String lexer = Files.readString(sqlServerGrammarRoot(version).resolve("SqlServerFullGrammerLexer.g4"));
 
             assertFalse(parser.contains("unknownStatement"), version);
             assertFalse(parser.contains("looseToken"), version);
@@ -159,7 +155,7 @@ class SqlServerParserArchitectureTest {
     @Test
     void tokenEventGrammarIsACompactFallbackGrammar() throws IOException {
         Path tokenRoot = repoRoot().resolve("adaptor-sqlserver/src/main/antlr4/com/relationdetector/sqlserver/tokenevent");
-        Path fullRoot = repoRoot().resolve("adaptor-sqlserver/src/main/antlr4/com/relationdetector/sqlserver/fullgrammer/v2022");
+        Path fullRoot = sqlServerGrammarRoot("v2022");
 
         long tokenLines = lineCount(tokenRoot.resolve("SqlServerRelationSql.g4"));
         long fullLines = lineCount(fullRoot.resolve("SqlServerFullGrammerLexer.g4"))
@@ -219,6 +215,12 @@ class SqlServerParserArchitectureTest {
             current = current.getParent();
         }
         throw new IllegalStateException("Unable to locate repository root");
+    }
+
+    private static Path sqlServerGrammarRoot(String version) {
+        return repoRoot().resolve("grammar/sqlserver-" + version)
+                .resolve("src/main/antlr4/com/relationdetector/sqlserver/fullgrammer")
+                .resolve(version);
     }
 
     private static boolean isRelationDetectorRoot(Path path) {

@@ -1,10 +1,15 @@
 package com.relationdetector.core.output;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -58,7 +63,7 @@ public final class JsonResultWriter {
             boolean includeWarnings,
             boolean includeObservationCounts
     ) {
-        return write(result, includeEvidence, includeWarnings, includeObservationCounts, true);
+        return serialize(document(result, includeEvidence, includeWarnings, includeObservationCounts, true));
     }
 
     /**
@@ -70,10 +75,42 @@ public final class JsonResultWriter {
             boolean includeWarnings,
             boolean includeObservationCounts
     ) {
-        return write(result, includeEvidence, includeWarnings, includeObservationCounts, false);
+        return serialize(document(result, includeEvidence, includeWarnings, includeObservationCounts, false));
     }
 
-    private String write(
+    public void write(
+            ScanResult result,
+            OutputStream output,
+            boolean includeEvidence,
+            boolean includeWarnings,
+            boolean includeObservationCounts
+    ) throws IOException {
+        writeDocument(document(result, includeEvidence, includeWarnings, includeObservationCounts, true), output);
+    }
+
+    public void writeDirect(
+            ScanResult result,
+            OutputStream output,
+            boolean includeEvidence,
+            boolean includeWarnings,
+            boolean includeObservationCounts
+    ) throws IOException {
+        writeDocument(document(result, includeEvidence, includeWarnings, includeObservationCounts, false), output);
+    }
+
+    public void write(
+            ScanResult result,
+            Path output,
+            boolean includeEvidence,
+            boolean includeWarnings,
+            boolean includeObservationCounts
+    ) throws IOException {
+        try (OutputStream stream = Files.newOutputStream(output)) {
+            write(result, stream, includeEvidence, includeWarnings, includeObservationCounts);
+        }
+    }
+
+    private ObjectNode document(
             ScanResult result,
             boolean includeEvidence,
             boolean includeWarnings,
@@ -175,11 +212,23 @@ public final class JsonResultWriter {
             root.set("warnings", JSON.createArrayNode());
         }
 
+        return root;
+    }
+
+    private String serialize(ObjectNode root) {
         try {
             return JSON.writeValueAsString(root) + "\n";
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to render scan result JSON", e);
         }
+    }
+
+    private void writeDocument(ObjectNode root, OutputStream output) throws IOException {
+        JsonGenerator generator = JSON.getFactory().createGenerator(output);
+        generator.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+        JSON.writeValue(generator, root);
+        output.write('\n');
+        output.flush();
     }
 
     private int relationshipObservationCount(List<RelationshipCandidate> relationships) {
@@ -192,10 +241,16 @@ public final class JsonResultWriter {
 
     private int dataLineageObservationCount(List<DataLineageCandidate> lineages) {
         return lineages.stream()
-                .mapToInt(lineage -> lineage.rawEvidence().isEmpty()
-                        ? lineage.evidence().size()
-                        : lineage.rawEvidence().size())
+                .flatMap(lineage -> (lineage.rawEvidence().isEmpty()
+                        ? lineage.evidence()
+                        : lineage.rawEvidence()).stream())
+                .mapToInt(this::lineageEvidenceOccurrenceCount)
                 .sum();
+    }
+
+    private int lineageEvidenceOccurrenceCount(com.relationdetector.contracts.model.DataLineageEvidence evidence) {
+        Object value = evidence.attributes().get("occurrenceCount");
+        return value instanceof Number number ? Math.max(1, number.intValue()) : 1;
     }
 
     private int namingEvidenceObservationCount(List<NamingEvidenceCandidate> namingEvidence) {

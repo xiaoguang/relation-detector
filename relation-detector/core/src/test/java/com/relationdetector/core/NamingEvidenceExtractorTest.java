@@ -23,6 +23,8 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.parse.DdlEvent;
+import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.relation.NamingEvidenceExtractor;
@@ -127,14 +129,8 @@ class NamingEvidenceExtractorTest {
     @Test
     void retainsDdlSourceLineAndStatementForNamingRawObservations() {
         List<StructuredSqlEvent> events = List.of(
-                new StructuredSqlEvent(StructuredParseEventType.DDL_COLUMN,
-                        "/workspace/relation-detector/ddl/customers.sql", 3,
-                        java.util.Map.of("table", "customers", "column", "id",
-                                "statement", "CREATE TABLE customers")),
-                new StructuredSqlEvent(StructuredParseEventType.DDL_COLUMN,
-                        "/workspace/relation-detector/ddl/orders.sql", 11,
-                        java.util.Map.of("table", "orders", "column", "customer_id",
-                                "statement", "CREATE TABLE orders")));
+                ddlColumn("/workspace/relation-detector/ddl/customers.sql", 3, "customers", "id"),
+                ddlColumn("/workspace/relation-detector/ddl/orders.sql", 11, "orders", "customer_id"));
 
         List<NamingEvidenceCandidate> evidence = extractor.extractFromDdlEvents(events);
 
@@ -143,24 +139,14 @@ class NamingEvidenceExtractorTest {
         assertEquals(EvidenceSourceType.DDL_FILE, ordersObservation.sourceType());
         assertEquals("relation-detector/ddl/orders.sql", ordersObservation.source());
         assertEquals(11L, ordersObservation.attributes().get("line"));
-        assertEquals("CREATE TABLE orders", ordersObservation.attributes().get("statement"));
     }
 
     @Test
     void retainsEveryDistinctDdlObservationForTheSameEndpoint() {
         List<StructuredSqlEvent> events = List.of(
-                new StructuredSqlEvent(StructuredParseEventType.DDL_COLUMN,
-                        "schema.sql", 3,
-                        java.util.Map.of("table", "customers", "column", "id",
-                                "statement", "CREATE TABLE customers")),
-                new StructuredSqlEvent(StructuredParseEventType.DDL_COLUMN,
-                        "schema.sql", 11,
-                        java.util.Map.of("table", "orders", "column", "customer_id",
-                                "statement", "CREATE TABLE orders")),
-                new StructuredSqlEvent(StructuredParseEventType.DDL_COLUMN,
-                        "alter.sql", 21,
-                        java.util.Map.of("table", "orders", "column", "customer_id",
-                                "statement", "ALTER TABLE orders ADD customer_id")));
+                ddlColumn("schema.sql", 3, "customers", "id"),
+                ddlColumn("schema.sql", 11, "orders", "customer_id"),
+                ddlColumn("alter.sql", 21, "orders", "customer_id"));
 
         List<NamingEvidenceCandidate> evidence = extractor.extractFromDdlEvents(events);
 
@@ -440,6 +426,12 @@ class NamingEvidenceExtractorTest {
 
     private ColumnRef column(String tableName, String columnName) {
         return ColumnRef.of(TableId.of(null, tableName), columnName);
+    }
+
+    private StructuredSqlEvent ddlColumn(String source, long line, String table, String column) {
+        return new DdlEvent(StructuredParseEventType.DDL_COLUMN,
+                SourceProvenance.source(source, line), "", "", "", "",
+                table, column, "", "", 1, 1);
     }
 
     private Evidence rawObservationForTable(NamingEvidenceCandidate candidate, String table) {

@@ -4,6 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,6 +16,55 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 final class SemanticExtractionDocumentNormalizerTest {
     private static final ObjectMapper JSON = new ObjectMapper();
+
+    @Test
+    void delegatesTypedNormalizationInsteadOfOwningSectionImplementations() {
+        Class<?> normalizer = SemanticExtractionDocumentNormalizer.class;
+        assertTrue(Arrays.stream(normalizer.getDeclaredFields())
+                .anyMatch(field -> field.getType() == SemanticCandidateBackfill.class));
+        assertTrue(Arrays.stream(normalizer.getDeclaredFields())
+                .anyMatch(field -> field.getType() == SemanticSectionNormalizer.class));
+        assertTrue(Arrays.stream(normalizer.getDeclaredFields())
+                .anyMatch(field -> field.getType() == SemanticReviewGenerator.class));
+        assertTrue(Arrays.stream(normalizer.getDeclaredFields())
+                .anyMatch(field -> field.getType() == SemanticReferenceValidator.class));
+        assertFalse(Arrays.stream(normalizer.getDeclaredMethods())
+                .anyMatch(method -> method.getName().startsWith("normalizeEntities")
+                        || method.getName().startsWith("normalizeEvents")
+                        || method.getName().startsWith("normalizeRelations")));
+    }
+
+    @Test
+    void reusesNormalizerConcurrentlyWithoutCrossDocumentValidationState() throws Exception {
+        JsonNode raw = JSON.readTree("""
+                {
+                  "entities": [
+                    {"name": "销售事实表", "physicalName": "sales_fact", "evidenceRefs": ["e1"]}
+                  ],
+                  "events": [],
+                  "relations": [],
+                  "lineage": [],
+                  "metrics": [],
+                  "dimensions": [],
+                  "triplets": [],
+                  "reviewItems": []
+                }
+                """);
+        SemanticExtractionDocumentNormalizer normalizer = new SemanticExtractionDocumentNormalizer();
+        String expected = normalizer.normalize(raw).toString();
+        List<Callable<String>> tasks = java.util.stream.IntStream.range(0, 32)
+                .mapToObj(index -> (Callable<String>) () -> normalizer.normalize(raw).toString())
+                .toList();
+
+        var executor = Executors.newFixedThreadPool(8);
+        try {
+            for (var result : executor.invokeAll(tasks)) {
+                assertEquals(expected, result.get());
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+    }
 
     @Test
     void addsStableRefsAndGraphForSemanticExtractionDocument() throws Exception {

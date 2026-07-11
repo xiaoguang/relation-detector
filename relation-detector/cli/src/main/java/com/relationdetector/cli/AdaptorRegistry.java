@@ -5,10 +5,12 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
 
 import com.relationdetector.contracts.spi.DatabaseAdaptor;
+import com.relationdetector.contracts.spi.AdaptorApiVersion;
 import com.relationdetector.contracts.Enums.DatabaseType;
 
 /**
@@ -35,11 +37,12 @@ public final class AdaptorRegistry {
      */
     public static AdaptorRegistry load(Path pluginDir) throws Exception {
         List<DatabaseAdaptor> discovered = new ArrayList<>();
-        ServiceLoader.load(DatabaseAdaptor.class).forEach(discovered::add);
+        ServiceLoader.load(DatabaseAdaptor.class).forEach(adaptor -> addValidated(discovered, adaptor));
         if (pluginDir != null && Files.isDirectory(pluginDir)) {
             List<URL> urls = new ArrayList<>();
             try (var stream = Files.list(pluginDir)) {
                 stream.filter(path -> path.toString().endsWith(".jar"))
+                        .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
                         .forEach(path -> {
                             try {
                                 urls.add(path.toUri().toURL());
@@ -49,9 +52,25 @@ public final class AdaptorRegistry {
                         });
             }
             URLClassLoader loader = new URLClassLoader(urls.toArray(URL[]::new), AdaptorRegistry.class.getClassLoader());
-            ServiceLoader.load(DatabaseAdaptor.class, loader).forEach(discovered::add);
+            ServiceLoader.load(DatabaseAdaptor.class, loader).forEach(adaptor -> addValidated(discovered, adaptor));
         }
+        discovered.sort(Comparator.comparing(DatabaseAdaptor::id));
         return new AdaptorRegistry(discovered);
+    }
+
+    private static void addValidated(List<DatabaseAdaptor> discovered, DatabaseAdaptor adaptor) {
+        requireCurrentApi(adaptor);
+        discovered.add(adaptor);
+    }
+
+    static void requireCurrentApi(DatabaseAdaptor adaptor) {
+        int actual = adaptor.spiVersion();
+        if (actual != AdaptorApiVersion.CURRENT) {
+            throw new AdaptorException("adaptor SPI version mismatch: plugin=" + adaptor.id()
+                    + ", actual=" + actual
+                    + ", required=" + AdaptorApiVersion.CURRENT
+                    + "; recompile the plugin against the current relation-detector contracts");
+        }
     }
 
     /**

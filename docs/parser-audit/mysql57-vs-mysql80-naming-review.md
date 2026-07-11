@@ -25,8 +25,8 @@ MySQL 5.7 与 8.0 的 sample-data 不再按“数量必须相等”验收。5.7 
 
 | Parser | Fixtures | SQL / DDL | Rel | Lin | Name | Diag | DerRel | DerLin | DerName |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| MySQL full-grammer v5_7 | 38 | 32 / 6 | 330 | 281 | 971 | 0 | 999 | 70 | 727 |
-| MySQL full-grammer v8_0 | 38 | 32 / 6 | 361 | 281 | 1019 | 0 | 1077 | 59 | 771 |
+| MySQL full-grammer v5_7 | 38 | 32 / 6 | 330 | 290 | 971 | 0 | 999 | 74 | 727 |
+| MySQL full-grammer v8_0 | 38 | 32 / 6 | 361 | 288 | 1019 | 0 | 1077 | 63 | 771 |
 
 集合去重后：
 

@@ -1,17 +1,6 @@
 package com.relationdetector.contracts.spi;
 
-import java.util.Optional;
 import java.util.Set;
-
-import com.relationdetector.contracts.spi.Collectors.DataProfiler;
-import com.relationdetector.contracts.spi.Collectors.DatabaseDdlCollector;
-import com.relationdetector.contracts.spi.Collectors.EvidenceWeightAdjuster;
-import com.relationdetector.contracts.spi.Collectors.MetadataCollector;
-import com.relationdetector.contracts.spi.Collectors.ObjectDefinitionCollector;
-import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
-import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
-import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
-import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.Enums.DatabaseType;
 
@@ -27,6 +16,14 @@ import com.relationdetector.contracts.Enums.DatabaseType;
  * SQL Server/Oracle adaptors.
  */
 public interface DatabaseAdaptor {
+    /**
+     * Binary SPI version. Implementations compiled against the removed v1
+     * getter surface inherit {@code 1} and are rejected before capabilities are used.
+     */
+    default int spiVersion() {
+        return 1;
+    }
+
     String id();
 
     String displayName();
@@ -37,102 +34,9 @@ public interface DatabaseAdaptor {
 
     IdentifierRules identifierRules();
 
-    default AdaptorCollectors collectors() {
-        return new AdaptorCollectors(
-                metadataCollector(),
-                objectDefinitionCollector(),
-                databaseDdlCollector(),
-                sqlLogExtractor());
-    }
+    AdaptorCollectors collectors();
 
-    default AdaptorParsers parsers() {
-        return new AdaptorParsers(
-                sqlRelationParser(),
-                structuredSqlParser(),
-                structuredDdlParser());
-    }
+    AdaptorParsers parsers();
 
-    default AdaptorProfiling profiling() {
-        return new AdaptorProfiling(
-                dataProfiler(),
-                evidenceWeightAdjuster());
-    }
-
-    /**
-     * Compatibility bridge for older adaptor implementations.
-     *
-     * @deprecated New code should use {@link #collectors()}.
-     */
-    @Deprecated(forRemoval = false)
-    MetadataCollector metadataCollector();
-
-    /**
-     * Compatibility bridge for older adaptor implementations.
-     *
-     * @deprecated New code should use {@link #collectors()}.
-     */
-    @Deprecated(forRemoval = false)
-    ObjectDefinitionCollector objectDefinitionCollector();
-
-    /**
-     * Compatibility bridge for older adaptor implementations.
-     *
-     * @deprecated New code should use {@link #collectors()}.
-     */
-    @Deprecated(forRemoval = false)
-    default Optional<DatabaseDdlCollector> databaseDdlCollector() {
-        return Optional.empty();
-    }
-
-    /**
-     * Compatibility bridge for older adaptor implementations.
-     *
-     * @deprecated New code should use {@link #collectors()}.
-     */
-    @Deprecated(forRemoval = false)
-    SqlLogExtractor sqlLogExtractor();
-
-    /**
-     * Compatibility bridge for older adaptor implementations.
-     *
-     * @deprecated New code should use {@link #parsers()}.
-     */
-    @Deprecated(forRemoval = false)
-    SqlRelationParser sqlRelationParser();
-
-    /**
-     * Compatibility bridge for older adaptor implementations.
-     *
-     * @deprecated New code should use {@link #parsers()}.
-     */
-    @Deprecated(forRemoval = false)
-    default Optional<StructuredSqlParser> structuredSqlParser() {
-        return Optional.empty();
-    }
-
-    /**
-     * Compatibility bridge for older adaptor implementations.
-     *
-     * @deprecated New code should use {@link #parsers()}.
-     */
-    @Deprecated(forRemoval = false)
-    default Optional<StructuredDdlParser> structuredDdlParser() {
-        return Optional.empty();
-    }
-
-    /**
-     * Compatibility bridge for older adaptor implementations.
-     *
-     * @deprecated New code should use {@link #profiling()}.
-     */
-    @Deprecated(forRemoval = false)
-    Optional<DataProfiler> dataProfiler();
-
-    /**
-     * Compatibility bridge for older adaptor implementations.
-     *
-     * @deprecated New code should use {@link #profiling()}.
-     */
-    @Deprecated(forRemoval = false)
-    EvidenceWeightAdjuster evidenceWeightAdjuster();
+    AdaptorProfiling profiling();
 }

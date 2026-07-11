@@ -9,53 +9,77 @@ if [[ -z "$SCOPE" ]]; then
   exit 2
 fi
 
-run_correctness() {
-  local profile="$1"
-  mvn -pl relation-detector/cli -am \
-    -Dtest=CorrectnessFixtureRunnerTest \
-    -DcorrectnessFixtureProfile="$profile" \
-    -DcorrectnessFixtureParallelism=8 \
-    -Dsurefire.failIfNoSpecifiedTests=false test
+MODULES=(relation-detector/cli)
+TESTS=(CorrectnessFixtureRunnerTest)
+PROFILES=()
+
+append_unique() {
+  local value="$1"
+  shift
+  local existing
+  for existing in "$@"; do
+    [[ "$existing" == "$value" ]] && return 0
+  done
+  return 1
 }
 
-cd "$ROOT"
-IFS=',' read -r -a SCOPES <<< "$SCOPE"
+add_module() { append_unique "$1" "${MODULES[@]}" || MODULES+=("$1"); }
+add_test() { append_unique "$1" "${TESTS[@]}" || TESTS+=("$1"); }
+add_profile() { append_unique "$1" "${PROFILES[@]-}" || PROFILES+=("$1"); }
+
+IFS=',' read -r -a SCOPES <<<"$SCOPE"
 for requested in "${SCOPES[@]}"; do
   case "$requested" in
     core)
-      mvn -pl relation-detector/core,relation-detector/cli -am \
-        -Dtest='*Scan*,*StatementExecution*,*Lineage*,*NamingEvidence*,*DerivedPath*,SemanticEquivalentCorrectnessTest' \
-        -Dsurefire.failIfNoSpecifiedTests=false test
-      run_correctness "common"
+      add_module relation-detector/core
+      add_test '*Scan*'
+      add_test '*StatementExecution*'
+      add_test '*Lineage*'
+      add_test '*NamingEvidence*'
+      add_test '*DerivedPath*'
+      add_test SemanticEquivalentCorrectnessTest
+      add_profile common
       ;;
     mysql)
-      mvn -pl relation-detector/adaptor-mysql,relation-detector/cli -am \
-        -Dtest='*MySql*,*Parser*,*Lineage*,*Ddl*' \
-        -Dsurefire.failIfNoSpecifiedTests=false test
-      run_correctness "mysql-root,mysql/v5_7,mysql/v8_0"
+      add_module relation-detector/adaptor-mysql
+      add_test '*MySql*'
+      add_profile mysql-root
+      add_profile mysql/v5_7
+      add_profile mysql/v8_0
       ;;
     postgres)
-      mvn -pl relation-detector/adaptor-postgres,relation-detector/cli -am \
-        -Dtest='*Postgres*,*Routine*,*Parser*,*Lineage*,*Ddl*' \
-        -Dsurefire.failIfNoSpecifiedTests=false test
-      run_correctness "postgres-root,postgres/v16,postgres/v17,postgres/v18"
+      add_module relation-detector/adaptor-postgres
+      add_test '*Postgres*'
+      add_test '*Routine*'
+      add_profile postgres-root
+      add_profile postgres/v16
+      add_profile postgres/v17
+      add_profile postgres/v18
       ;;
     oracle)
-      mvn -pl relation-detector/adaptor-oracle,relation-detector/cli -am \
-        -Dtest='*Oracle*,*Parser*,*Lineage*,*Ddl*,OracleSqlAssetHygieneTest' \
-        -Dsurefire.failIfNoSpecifiedTests=false test
-      run_correctness "oracle-root,oracle/v12c,oracle/v19c,oracle/v21c,oracle/v26ai"
+      add_module relation-detector/adaptor-oracle
+      add_test '*Oracle*'
+      add_profile oracle-root
+      add_profile oracle/v12c
+      add_profile oracle/v19c
+      add_profile oracle/v21c
+      add_profile oracle/v26ai
       ;;
     sqlserver)
-      mvn -pl relation-detector/adaptor-sqlserver,relation-detector/cli -am \
-        -Dtest='*SqlServer*,*Parser*,*Lineage*,*Ddl*' \
-        -Dsurefire.failIfNoSpecifiedTests=false test
-      run_correctness "sqlserver-root,sqlserver/v2016,sqlserver/v2017,sqlserver/v2019,sqlserver/v2022,sqlserver/v2025"
+      add_module relation-detector/adaptor-sqlserver
+      add_test '*SqlServer*'
+      add_profile sqlserver-root
+      add_profile sqlserver/v2016
+      add_profile sqlserver/v2017
+      add_profile sqlserver/v2019
+      add_profile sqlserver/v2022
+      add_profile sqlserver/v2025
       ;;
     assets)
-      mvn -pl relation-detector/cli -am \
-        -Dtest='*SqlAssetHygieneTest,CommonNaturalSchemaAssetTest,CommonNaturalTypedParserAcceptanceTest,SampleDataGoldenEndpointInventoryTest' \
-        -Dsurefire.failIfNoSpecifiedTests=false test
+      add_test '*SqlAssetHygieneTest'
+      add_test CommonNaturalSchemaAssetTest
+      add_test CommonNaturalTypedParserAcceptanceTest
+      add_test SampleDataGoldenEndpointInventoryTest
       ;;
     *)
       echo "Unknown test scope: $requested" >&2
@@ -63,3 +87,18 @@ for requested in "${SCOPES[@]}"; do
       ;;
   esac
 done
+
+if [[ "${#PROFILES[@]}" -eq 0 ]]; then
+  PROFILES=(smoke)
+fi
+
+MODULE_CSV="$(IFS=,; echo "${MODULES[*]}")"
+TEST_CSV="$(IFS=,; echo "${TESTS[*]}")"
+PROFILE_CSV="$(IFS=,; echo "${PROFILES[*]}")"
+
+cd "$ROOT"
+mvn -T 2 -pl "$MODULE_CSV" -am \
+  -Dtest="$TEST_CSV" \
+  -DcorrectnessFixtureProfile="$PROFILE_CSV" \
+  -DcorrectnessFixtureParallelism=8 \
+  -Dsurefire.failIfNoSpecifiedTests=false test

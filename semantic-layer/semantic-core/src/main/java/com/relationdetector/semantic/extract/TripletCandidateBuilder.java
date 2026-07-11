@@ -5,13 +5,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.relationdetector.semantic.SemanticFactIds;
 import com.relationdetector.semantic.event.SemanticEventCandidate;
 import com.relationdetector.semantic.reader.ScanBundle;
+import com.relationdetector.semantic.reader.ScanLineageFact;
+import com.relationdetector.semantic.reader.ScanNamingEvidenceFact;
+import com.relationdetector.semantic.reader.ScanRelationshipFact;
 
 /** Builds deterministic triplet candidates so LLM triplets are not just relation mirrors. */
 final class TripletCandidateBuilder {
@@ -34,21 +36,18 @@ final class TripletCandidateBuilder {
     }
 
     private void addRelationshipTriplets(ArrayNode result, ScanBundle bundle, Set<String> focusTables, int limit) {
-        int index = 0;
         int added = 0;
-        for (JsonNode relationship : bundle.relationships()) {
-            String source = SemanticFactIds.endpoint(relationship.path("source"));
-            String target = SemanticFactIds.endpoint(relationship.path("target"));
+        for (ScanRelationshipFact relationship : bundle.relationships()) {
+            String source = relationship.source();
+            String target = relationship.target();
             if (!touches(source, target, focusTables)) {
-                index++;
                 continue;
             }
-            String ref = SemanticFactIds.relationship(relationship, false, index);
-            add(result, "triplet-candidate:relationship:" + index, "ENTITY_RELATION",
+            String ref = relationship.id();
+            add(result, "triplet-candidate:relationship:" + SemanticFactIds.slug(ref), "ENTITY_RELATION",
                     tableOf(source), "引用", tableOf(target), ref, List.of(ref));
-            add(result, "triplet-candidate:dimension:" + index, "DIMENSION_OF",
+            add(result, "triplet-candidate:dimension:" + SemanticFactIds.slug(ref), "DIMENSION_OF",
                     tableOf(target), "可作为维度分析", tableOf(source), ref, List.of(ref));
-            index++;
             added++;
             if (reachedLimit(added, limit)) {
                 break;
@@ -79,22 +78,22 @@ final class TripletCandidateBuilder {
     }
 
     private void addLineageTriplets(ArrayNode result, ScanBundle bundle, Set<String> focusTables, int limit) {
-        int index = 0;
         int added = 0;
-        for (JsonNode lineage : bundle.dataLineages()) {
-            List<String> sources = new ArrayList<>(SemanticFactIds.sources(lineage));
-            String target = SemanticFactIds.endpoint(lineage.path("target"));
+        for (ScanLineageFact lineage : bundle.dataLineages()) {
+            List<String> sources = new ArrayList<>(lineage.sources());
+            String target = lineage.target();
             if (sources.stream().noneMatch(source -> tableTouches(source, focusTables)) && !tableTouches(target, focusTables)) {
-                index++;
                 continue;
             }
-            String ref = SemanticFactIds.lineage(lineage, false, index);
+            String ref = lineage.id();
             for (String source : sources) {
-                add(result, "triplet-candidate:lineage:" + index + ":" + added, "LINEAGE_TRANSFORM",
+                add(result, "triplet-candidate:lineage:" + SemanticFactIds.slug(ref) + ":" + added,
+                        "LINEAGE_TRANSFORM",
                         source, "加工为", target, ref, List.of(ref));
                 added++;
                 if (isMetricTarget(target)) {
-                    add(result, "triplet-candidate:metric-source:" + index + ":" + added, "METRIC_SOURCE",
+                    add(result, "triplet-candidate:metric-source:" + SemanticFactIds.slug(ref) + ":" + added,
+                            "METRIC_SOURCE",
                             target, "来源于", source, ref, List.of(ref));
                     added++;
                 }
@@ -102,24 +101,20 @@ final class TripletCandidateBuilder {
                     return;
                 }
             }
-            index++;
         }
     }
 
     private void addNamingTriplets(ArrayNode result, ScanBundle bundle, Set<String> focusTables, int limit) {
-        int index = 0;
         int added = 0;
-        for (JsonNode naming : bundle.namingEvidence()) {
-            String source = SemanticFactIds.endpoint(naming.path("source"));
-            String target = SemanticFactIds.endpoint(naming.path("target"));
+        for (ScanNamingEvidenceFact naming : bundle.namingEvidence()) {
+            String source = naming.source();
+            String target = naming.target();
             if (!touches(source, target, focusTables)) {
-                index++;
                 continue;
             }
-            String ref = SemanticFactIds.naming(naming, index);
-            add(result, "triplet-candidate:naming:" + index, "NAMING_ALIAS",
+            String ref = naming.id();
+            add(result, "triplet-candidate:naming:" + SemanticFactIds.slug(ref), "NAMING_ALIAS",
                     source, "命名指向", target, ref, List.of(ref));
-            index++;
             added++;
             if (reachedLimit(added, limit)) {
                 break;

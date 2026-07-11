@@ -67,6 +67,13 @@ core/src/main/java/com/relationdetector/core/lineage/model
 
 core/src/main/java/com/relationdetector/core/ddl
   package-info.java
+
+grammar/
+  mysql-v5_7 / mysql-v8_0
+  postgres-v16 / postgres-v17 / postgres-v18 / postgres-routine
+  oracle-v12c / oracle-v19c / oracle-v21c / oracle-v26ai
+  sqlserver-v2016 / sqlserver-v2017 / sqlserver-v2019 / sqlserver-v2022 / sqlserver-v2025
+  # .g4 和 generated lexer/parser/base visitor 的独立 Maven artifacts
 ```
 
 Adaptor 负责具体数据库和大版本：
@@ -121,6 +128,12 @@ adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammer/v26ai
   OracleFullGrammerBinding
   OracleFullGrammerParseTreeVisitor
 
+adaptor-oracle/src/main/java/com/relationdetector/oracle/fullgrammer/common
+  OracleFullGrammerParseTreeEventCollector
+  OracleFullGrammerParseTreeSupport
+  OracleFullGrammerExpressionSupport / OracleExpressionTransformSupport
+  OracleFullGrammerDdlCollector / OracleFullGrammerEventEmitter
+
 adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/tokenevent
   SqlServerTokenEventStructuredSqlParser
   SqlServerTokenEventStructuredDdlParser
@@ -129,6 +142,8 @@ adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammer/commo
   SqlServerFullGrammerStructuredSqlParser
   SqlServerFullGrammerStructuredDdlParser
   SqlServerParseTreeEventCollector
+  SqlServerParseTreeSupport
+  SqlServerDdlEventCollector
   SqlServerExpressionAnalyzer
 
 adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammer/v2016|v2017|v2019|v2022|v2025
@@ -136,7 +151,9 @@ adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammer/v2016
   SqlServer*FullGrammerDialectModule
 ```
 
-版本由 package 表达，例如 `postgres.fullgrammer.v16`、`mysql.fullgrammer.v8_0`、`oracle.fullgrammer.v19c`、`sqlserver.fullgrammer.v2022`。类名不再写 `Postgres16` / `MySql80`。core 只通过 `ServiceLoader<FullGrammerDialectModule>` 加载 adaptor module，不直接 import MySQL/PostgreSQL/Oracle/SQL Server full-grammer 实现。
+版本由 package 表达，例如 `postgres.fullgrammer.v16`、`mysql.fullgrammer.v8_0`、`oracle.fullgrammer.v19c`、`sqlserver.fullgrammer.v2022`。类名不再写 `Postgres16` / `MySql80`。core 只通过 `ServiceLoader<FullGrammerDialectModule>` 加载 adaptor module，不直接 import MySQL/PostgreSQL/Oracle/SQL Server full-grammer 实现。version package 不再持有 `.g4` 或 generated Java；它们依赖 `grammar/*` 中对应的独立 artifact，只保留 binding、profile/version policy 和少量 typed context adapter。
+
+Visitor/collector 采用职责拆分的 per-parse state：遍历类只访问 typed context，共享 helper 分别处理 rowset/projection/predicate/write/DDL/expression/source provenance，不使用 static mutable state。架构测试对 parser 目录下的 visitor/collector 设置 400 行上限，防止职责再度回流到单一巨型类。
 
 ## 代码结构注释索引
 
@@ -201,13 +218,24 @@ public record StructuredParseResult(
     Map<String, Object> attributes
 ) {}
 
-public record StructuredSqlEvent(
-    StructuredParseEventType type,
-    String sourceName,
-    long line,
-    Map<String, Object> attributes
+public sealed interface StructuredSqlEvent
+    permits RowsetEvent, PredicateEvent, ProjectionEvent,
+            WriteEvent, DdlEvent, DynamicSqlEvent {
+    StructuredParseEventType type();
+    SourceProvenance provenance();
+}
+
+public record ExpressionTrace(
+    List<ExpressionSource> valueSources,
+    List<ExpressionSource> controlSources,
+    TransformType transformType,
+    ExpressionSource directColumn
 ) {}
 ```
+
+事件不再携带 parser-level `Map<String,Object> attributes`。rowset、predicate、projection、write、DDL、
+dynamic SQL 和 provenance 字段都由 sealed event / record 编译期约束；token-event 与 full-grammer
+只共享这个 typed contract，不互相 delegate。
 
 当前结构事件枚举包含：
 

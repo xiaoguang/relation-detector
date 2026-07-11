@@ -15,38 +15,23 @@
 
 ## DatabaseAdaptor 接口
 
-当前接口分为两层：新的 grouped capability 是 core 生产代码的主入口；旧方法仍保留为兼容桥，方便第三方 adaptor 渐进迁移。
+当前公开契约是 **adaptor SPI v2**。`DatabaseAdaptor` 只暴露 grouped
+capability；metadata、object、DDL、log、parser 和 profiling 的旧 getter 已从接口删除，
+不再保留双接口兼容桥。这是一次明确的二进制 SPI 升级：外部 adaptor 必须基于
+当前 `contracts` 重新编译。
 
 ```java
 public interface DatabaseAdaptor {
+  default int spiVersion() { return 1; }
   String id();
   String displayName();
   Set<DatabaseType> supportedDatabaseTypes();
   Set<AdaptorCapability> capabilities();
   IdentifierRules identifierRules();
 
-  default AdaptorCollectors collectors() { ... }
-  default AdaptorParsers parsers() { ... }
-  default AdaptorProfiling profiling() { ... }
-
-  @Deprecated(forRemoval = false)
-  MetadataCollector metadataCollector();
-  @Deprecated(forRemoval = false)
-  ObjectDefinitionCollector objectDefinitionCollector();
-  @Deprecated(forRemoval = false)
-  Optional<DatabaseDdlCollector> databaseDdlCollector();
-  @Deprecated(forRemoval = false)
-  SqlLogExtractor sqlLogExtractor();
-  @Deprecated(forRemoval = false)
-  SqlRelationParser sqlRelationParser();
-  @Deprecated(forRemoval = false)
-  Optional<StructuredSqlParser> structuredSqlParser();
-  @Deprecated(forRemoval = false)
-  Optional<StructuredDdlParser> structuredDdlParser();
-  @Deprecated(forRemoval = false)
-  Optional<DataProfiler> dataProfiler();
-  @Deprecated(forRemoval = false)
-  EvidenceWeightAdjuster evidenceWeightAdjuster();
+  AdaptorCollectors collectors();
+  AdaptorParsers parsers();
+  AdaptorProfiling profiling();
 }
 ```
 
@@ -55,10 +40,16 @@ public interface DatabaseAdaptor {
 - `id()` 例如 `mysql`、`postgresql`。
 - `supportedDatabaseTypes()` 用于匹配 YAML 中的 `database.type`。
 - `capabilities()` 声明该 adaptor 支持哪些来源和功能。
+- `spiVersion()` 是二进制 API 版本。内置 adaptor 显式返回
+  `AdaptorApiVersion.CURRENT`（当前为 2）；为了让旧二进制类可被加载并获得可读错误，
+  接口 default 返回 1。
 - `collectors()` 聚合 metadata、object definition、database DDL 和 SQL log extractor。
-- `parsers()` 聚合 legacy SQL relation parser、structured SQL parser 和 structured DDL parser。
+- `parsers()` 聚合 SQL relationship parser、structured SQL parser 和 structured DDL parser。
 - `profiling()` 聚合 data profiler 和 evidence weight adjuster。
-- `metadataCollector()`、`structuredSqlParser()` 等旧方法是兼容层；core 新代码应通过 grouped capability 访问，不再直接依赖旧方法。
+- core/CLI 只能通过这三个 grouped capability 访问 adaptor。
+- `AdaptorRegistry` 在使用任何 capability 前检查 SPI 版本。不匹配时错误包含
+  plugin id、actual、required 和“请重新编译”提示，避免运行到中途才出现
+  `NoSuchMethodError`。
 - 当前 `capabilities()` 已由 adaptor 声明，但 core/CLI 尚未把它作为统一 preflight gate；某些 adaptor 还会声明 `METADATA` / `DATABASE_OBJECTS`，而 collector 实际返回保守空结果。能力集合目前是描述性 SPI，尚不能单独证明 live capability 可用。
 
 ## 采集器接口
@@ -157,7 +148,11 @@ public record AdaptorContext(
 
 ### StructuredDdlParser
 
-DDL 不再通过旧 `DdlParser` SPI 暴露。adaptor 通过 `structuredDdlParser()` 返回 token-event DDL parser，并可通过 `FullGrammerDialectModule` 注册版本化 full-grammer DDL parser。core 的 `DdlRelationParserRunner` 负责读取 DDL 文本、按 `parser.mode` 选择结构化 parser、再用 `DdlRelationExtractionVisitor` 生成统一 `RelationshipCandidate`。
+DDL 不再通过旧 `DdlParser` SPI 暴露。adaptor 通过
+`parsers().structuredDdl()` 提供 token-event DDL parser，并可通过
+`FullGrammerDialectModule` 注册版本化 full-grammer DDL parser。core 的
+`DdlRelationParserRunner` 负责读取 DDL 文本、按 `parser.mode` 选择结构化 parser、
+再用 `DdlRelationExtractionVisitor` 生成统一 `RelationshipCandidate`。
 
 方言拆分规则：
 
@@ -191,17 +186,11 @@ public interface SqlRelationParser {
 
 ### StructuredSqlParser / StructuredDdlParser
 
-当前 SQL/DDL 文本解析统一通过 structured parser SPI 进入 core runner。ANTLR 是底层 lexer/parser 技术名；用户可见运行模式是 `token-event` 或 `full-grammer`。默认方法仍返回 `Optional.empty()`，用于第三方 adaptor 逐步接入；但缺失的一侧不会再由 core Simple parser 假装支持。
-
-```java
-default Optional<StructuredSqlParser> structuredSqlParser() {
-  return Optional.empty();
-}
-
-default Optional<StructuredDdlParser> structuredDdlParser() {
-  return Optional.empty();
-}
-```
+当前 SQL/DDL 文本解析统一通过 `adaptor.parsers()` 内的 structured parser
+进入 core runner。ANTLR 是底层 lexer/parser 技术名；用户可见运行模式是
+`token-event` 或 `full-grammer`。`AdaptorParsers` 的 structured SQL/DDL 字段是
+`Optional`，但 `DatabaseAdaptor` 本身不再提供旧式 default getter。缺失的一侧不会由
+core Simple parser 假装支持。
 
 职责：
 
@@ -218,7 +207,9 @@ default Optional<StructuredDdlParser> structuredDdlParser() {
 - SQL Server adaptor 根包只保留 `SqlServerDatabaseAdaptor` 装配入口；token-event parser 位于 `com.relationdetector.sqlserver.tokenevent`，暴露 `SqlServerTokenEventStructuredSqlParser` / `SqlServerTokenEventStructuredDdlParser`。当前 SQL Server token-event 使用 adaptor-local compact `SqlServerRelationSql.g4` typed structural grammar。
 - SQL/DDL parser 由 `ParserBundleSelector` 按 `parser.mode: auto|full-grammer|token-event` 统一选择，并一次性返回同一模式下的 SQL parser 与 DDL parser。profile/version/JDBC metadata 足够时可通过 adaptor 注册的 `FullGrammerDialectModule` 使用 full-grammer；无合理配置、profile 不支持或 full-grammer hard failure 时 fallback 到 adaptor token-event parser 并记录 warning。profile 已选中后的 syntax warning / partial result 属于 full-grammer 结果，不在 event 层委托 token-event 补齐。`parser.sql.mode`、`parser.ddl.mode` 和 simple/shadow fallback 已移除。
 - `SqlRelationParserRunner` 与 `DdlRelationParserRunner` 都从 `ParserBundle` 取 parser，不再分别重复 profile selection。SQL runner 还会复用同一个 `StructuredParseResult` 供 relationship 与 Data Lineage 抽取使用。
-- 第三方 adaptor 可以只实现 `structuredSqlParser()` 或只实现 `structuredDdlParser()`，但缺失的一侧不应再由 core simple parser 假装支持；应明确作为 future capability 或返回空/ warning。
+- 第三方 adaptor 可以在 `AdaptorParsers` 中只提供 structured SQL 或 structured DDL
+  一侧，但缺失的一侧不应由 core simple parser 假装支持；应明确返回空 capability/
+  warning。
 - 新增大版本 full-grammer 支持时，应在对应 adaptor 内新增 version package 和 `FullGrammerDialectModule`，由 core registry 通过 `ServiceLoader` 注入；core 不直接 import 方言实现类。
 - `FullGrammerDialectModule` 不属于 `DatabaseAdaptor` 接口本身；它是同一 adaptor jar 中的版本化 grammar module，通过 `META-INF/services/com.relationdetector.core.fullgrammer.FullGrammerDialectModule` 注册。这样 core 可以做统一 profile selection，而具体 grammar、generated parser、parse-tree visitor 和 expression analyzer 仍归属 MySQL/PostgreSQL/Oracle/SQL Server adaptor。
 - 版本化 full-grammer module 与 token-event parser 的职责不同：token-event 是 adaptor 暴露的宽松生产 parser / fallback；full-grammer 是 adaptor jar 额外注册的严格版本 grammar profile。parser selection 可以在两者之间选择，但 full-grammer parser 内部不再委托 token-event 生成事件。
@@ -226,15 +217,13 @@ default Optional<StructuredDdlParser> structuredDdlParser() {
 ### DatabaseDdlCollector
 
 ```java
-default Optional<DatabaseDdlCollector> databaseDdlCollector() {
-  return Optional.empty();
-}
+Optional<DatabaseDdlCollector> ddl = adaptor.collectors().databaseDdl();
 ```
 
 职责：
 
 - 从 live database 读取表定义 DDL 文本，但不直接生成关系。
-- MySQL v1 使用 `SHOW CREATE TABLE schema.table`，返回 `DatabaseDdlDefinition(schema, table, ddl, "SHOW CREATE TABLE")`。
+- MySQL 实现使用 `SHOW CREATE TABLE schema.table`，返回 `DatabaseDdlDefinition(schema, table, ddl, "SHOW CREATE TABLE")`。
 - `ScanEngine` 把返回的 DDL text 喂给 `DdlRelationParserRunner.parseText(...)`，因此统一走 `parser.mode` 选择后的 DDL extraction；默认无 profile/version 时使用 token-event DDL。
 - 解析出的 evidence 使用 `EvidenceSourceType.DATABASE_DDL`，与用户提供的 `DDL_FILE` 区分。
 - collector 必须遵守 `includeTables/excludeTables`，并且单表读取失败时记录 warning 后继续读取其它表。

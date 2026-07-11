@@ -177,8 +177,8 @@ class PostgresFullGrammerVersionBoundaryTest {
 
         assertTrue(result.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.DDL_COLUMN
-                                && "orders".equals(event.attributes().get("table"))
-                                && "customer_id".equals(event.attributes().get("column"))),
+                                && "orders".equals(event.table())
+                                && "customer_id".equals(event.column())),
                 () -> "PostgreSQL full-grammer DDL should emit DDL_COLUMN inventory events: "
                         + result.events());
     }
@@ -241,6 +241,19 @@ class PostgresFullGrammerVersionBoundaryTest {
     }
 
     private Path grammar(String version, String filename) {
-        return Path.of("src/main/antlr4/com/relationdetector/postgres/fullgrammer", version, filename);
+        Path current = Path.of("").toAbsolutePath();
+        while (current != null) {
+            Path relationRoot = Files.isDirectory(current.resolve("grammar"))
+                    ? current
+                    : current.resolve("relation-detector");
+            if (Files.isDirectory(relationRoot.resolve("grammar"))) {
+                return relationRoot.resolve("grammar/postgres-" + version)
+                        .resolve("src/main/antlr4/com/relationdetector/postgres/fullgrammer")
+                        .resolve(version)
+                        .resolve(filename);
+            }
+            current = current.getParent();
+        }
+        throw new IllegalStateException("Unable to locate relation-detector grammar modules");
     }
 }

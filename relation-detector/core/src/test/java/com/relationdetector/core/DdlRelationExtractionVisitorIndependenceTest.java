@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Test;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.parse.StructuredParseResult;
+import com.relationdetector.contracts.parse.DdlEvent;
+import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
@@ -87,14 +89,14 @@ class DdlRelationExtractionVisitorIndependenceTest {
 
     private StructuredSqlEvent fk(String sourceTable, String sourceColumn, String targetTable, String targetColumn,
                                   int position, int size) {
-        return new StructuredSqlEvent(StructuredParseEventType.DDL_FOREIGN_KEY, "ddl-events.sql", 1,
-                Map.of("sourceTable", sourceTable, "sourceColumn", sourceColumn,
-                        "targetTable", targetTable, "targetColumn", targetColumn,
-                        "compositePosition", position, "compositeSize", size));
+        return new DdlEvent(StructuredParseEventType.DDL_FOREIGN_KEY,
+                SourceProvenance.source("ddl-events.sql", 1), sourceTable, sourceColumn,
+                targetTable, targetColumn, "", "", "", "", position, size);
     }
 
     private StructuredSqlEvent index(String table, String column, String role) {
-        return new StructuredSqlEvent(StructuredParseEventType.DDL_INDEX, "ddl-events.sql", 1,
-                Map.of("table", table, "column", column, "role", role));
+        return new DdlEvent(StructuredParseEventType.DDL_INDEX,
+                SourceProvenance.source("ddl-events.sql", 1), "", "", "", "",
+                table, column, role, "", 1, 1);
     }
 }

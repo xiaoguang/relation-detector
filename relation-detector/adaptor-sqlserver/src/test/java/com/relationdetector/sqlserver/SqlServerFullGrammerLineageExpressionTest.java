@@ -259,8 +259,7 @@ class SqlServerFullGrammerLineageExpressionTest {
 
         Set<String> transforms = result.events().stream()
                 .filter(event -> event.type() == StructuredParseEventType.INSERT_SELECT_MAPPING)
-                .map(StructuredSqlEvent::attributes)
-                .map(attributes -> String.valueOf(attributes.get("transformType")))
+                .map(event -> event.expression().transformType().name())
                 .collect(Collectors.toSet());
 
         assertTrue(transforms.contains("AGGREGATE"),
@@ -305,8 +304,8 @@ class SqlServerFullGrammerLineageExpressionTest {
 
         assertTrue(result.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.DDL_COLUMN
-                                && "dbo.orders".equals(event.attributes().get("table"))
-                                && "customer_id".equals(event.attributes().get("column"))),
+                                && "dbo.orders".equals(event.table())
+                                && "customer_id".equals(event.column())),
                 () -> "SQL Server full-grammer DDL should emit DDL_COLUMN inventory events: "
                         + result.events());
     }
@@ -656,32 +655,32 @@ class SqlServerFullGrammerLineageExpressionTest {
                 () -> parser + " must parse ALTER TABLE foreign keys, attributes=" + result.attributes());
         assertTrue(result.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.DDL_FOREIGN_KEY
-                                && "dbo.departments".equals(event.attributes().get("sourceTable"))
-                                && "manager_id".equals(event.attributes().get("sourceColumn"))
-                                && "dbo.employees".equals(event.attributes().get("targetTable"))
-                                && "id".equals(event.attributes().get("targetColumn"))),
+                                && "dbo.departments".equals(event.sourceTable())
+                                && "manager_id".equals(event.sourceColumn())
+                                && "dbo.employees".equals(event.targetTable())
+                                && "id".equals(event.targetColumn())),
                 () -> parser + " must emit the schema-qualified ALTER TABLE foreign key, events=" + result.events());
         assertTrue(result.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.DDL_COLUMN
-                                && "dbo.departments".equals(event.attributes().get("table"))
-                                && "manager_id".equals(event.attributes().get("column"))),
+                                && "dbo.departments".equals(event.table())
+                                && "manager_id".equals(event.column())),
                 () -> parser + " must emit source DDL column evidence, events=" + result.events());
         assertTrue(result.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.DDL_COLUMN
-                                && "dbo.employees".equals(event.attributes().get("table"))
-                                && "id".equals(event.attributes().get("column"))),
+                                && "dbo.employees".equals(event.table())
+                                && "id".equals(event.column())),
                 () -> parser + " must emit target DDL column evidence, events=" + result.events());
         assertTrue(result.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.DDL_INDEX
-                                && "dbo.departments".equals(event.attributes().get("table"))
-                                && "manager_id".equals(event.attributes().get("column"))
-                                && "SOURCE_INDEX".equals(event.attributes().get("role"))),
+                                && "dbo.departments".equals(event.table())
+                                && "manager_id".equals(event.column())
+                                && "SOURCE_INDEX".equals(event.role())),
                 () -> parser + " must emit source index evidence, events=" + result.events());
         assertTrue(result.events().stream().anyMatch(event ->
                         event.type() == StructuredParseEventType.DDL_INDEX
-                                && "dbo.employees".equals(event.attributes().get("table"))
-                                && "id".equals(event.attributes().get("column"))
-                                && "TARGET_UNIQUE".equals(event.attributes().get("role"))),
+                                && "dbo.employees".equals(event.table())
+                                && "id".equals(event.column())
+                                && "TARGET_UNIQUE".equals(event.role())),
                 () -> parser + " must emit target index evidence, events=" + result.events());
     }
 

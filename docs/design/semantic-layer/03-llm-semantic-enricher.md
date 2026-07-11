@@ -121,6 +121,11 @@ public final class SemanticExtractionDocumentNormalizer {
 }
 ```
 
+normalizer 的 JSON 只是输入/输出边界：内部先映射为 typed `SemanticExtractionDocument` 及
+`SemanticEntity/Event/Metric/Triplet/ReviewItem` DTO，然后依次交给 `SemanticCandidateBackfill`、
+`SemanticSectionNormalizer`、`SemanticReviewGenerator`、`SemanticReferenceValidator` 和 graph assembler。
+validator state 按每次 normalize 新建，同一 normalizer 实例可被并发复用。
+
 `semantic-extraction-result.json` / normalized semantic document 必须满足：
 
 - 每个对象至少保留一个 `EvidenceRef`；缺失时当前 normalizer 不会自动降级状态，而是在 `validation.missingEvidenceRefs` 中记录。
