@@ -2,6 +2,7 @@ package com.relationdetector.core.tokenevent;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -19,10 +20,12 @@ final class TokenEventUnknownStatementDiagnostics {
     static List<WarningMessage> warnings(
             SqlStatementRecord statement,
             ParseTree root,
-            List<StructuredSqlEvent> structuredEvents
+            List<StructuredSqlEvent> structuredEvents,
+            Predicate<ParseTree> unknownStatement
     ) {
         UnknownStatementStats stats = count(root,
-                new UnknownStatementStats(0, statement.startLine(), statement.startLine()));
+                new UnknownStatementStats(0, statement.startLine(), statement.startLine()),
+                unknownStatement);
         if (statement.sourceType() != StatementSourceType.NATIVE_LOG
                 || stats.count() == 0
                 || structuredEvents == null
@@ -38,12 +41,16 @@ final class TokenEventUnknownStatementDiagnostics {
                 Map.of("unknownStatementCount", stats.count())));
     }
 
-    private static UnknownStatementStats count(ParseTree tree, UnknownStatementStats stats) {
+    private static UnknownStatementStats count(
+            ParseTree tree,
+            UnknownStatementStats stats,
+            Predicate<ParseTree> unknownStatement
+    ) {
         if (tree == null) {
             return stats;
         }
         UnknownStatementStats current = stats;
-        if (tree.getClass().getSimpleName().equals("UnknownStatementContext")) {
+        if (unknownStatement.test(tree)) {
             long line = stats.firstLine();
             if (tree instanceof ParserRuleContext context && context.getStart() != null) {
                 line = stats.statementStartLine() + Math.max(0, context.getStart().getLine() - 1);
@@ -52,7 +59,7 @@ final class TokenEventUnknownStatementDiagnostics {
                     stats.count() == 0 ? line : stats.firstLine());
         }
         for (int index = 0; index < tree.getChildCount(); index++) {
-            current = count(tree.getChild(index), current);
+            current = count(tree.getChild(index), current, unknownStatement);
         }
         return current;
     }

@@ -16,6 +16,10 @@ import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.parse.ExpressionSource;
+import com.relationdetector.contracts.parse.PredicateEvent;
+import com.relationdetector.contracts.parse.RowsetEvent;
+import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
@@ -141,10 +145,12 @@ class TokenEventRelationExtractorIndependenceTest {
         StructuredParseResult structured = structured(List.of(
                 table("FROM", "employees", "e", 1),
                 table("FROM", "employees", "e2", 1),
-                new StructuredSqlEvent(StructuredParseEventType.IN_SUBQUERY_PREDICATE, "independence.sql", 1,
-                        Map.of("outerAlias", "e", "outerColumn", "id",
-                                "innerAlias", "e2", "innerColumn", "id",
-                                "verifiedColumnSubquery", true))
+                new PredicateEvent(StructuredParseEventType.IN_SUBQUERY_PREDICATE,
+                        provenance(1), new ExpressionSource("e", "id"),
+                        new ExpressionSource("e2", "id"),
+                        List.of(new ExpressionSource("e", "id")),
+                        List.of(new ExpressionSource("e2", "id")),
+                        "", "", List.of(), true)
         ));
 
         List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
@@ -279,13 +285,18 @@ class TokenEventRelationExtractorIndependenceTest {
     }
 
     private StructuredSqlEvent table(String keyword, String table, String alias, long line) {
-        return new StructuredSqlEvent(StructuredParseEventType.ROWSET_REFERENCE, "independence.sql", line,
-                Map.of("keyword", keyword, "qualifiedTable", table, "table", table, "alias", alias));
+        return new RowsetEvent(StructuredParseEventType.ROWSET_REFERENCE, provenance(line),
+                keyword, table, table, alias, "", "", "");
     }
 
     private StructuredSqlEvent equality(String leftAlias, String leftColumn, String rightAlias, String rightColumn, long line) {
-        return new StructuredSqlEvent(StructuredParseEventType.PREDICATE_EQUALITY, "independence.sql", line,
-                Map.of("leftAlias", leftAlias, "leftColumn", leftColumn,
-                        "rightAlias", rightAlias, "rightColumn", rightColumn));
+        return new PredicateEvent(StructuredParseEventType.PREDICATE_EQUALITY,
+                provenance(line), new ExpressionSource(leftAlias, leftColumn),
+                new ExpressionSource(rightAlias, rightColumn), List.of(), List.of(),
+                "", "WHERE_OR_UNKNOWN", List.of(), false);
+    }
+
+    private SourceProvenance provenance(long line) {
+        return SourceProvenance.source("independence.sql", line);
     }
 }

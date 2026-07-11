@@ -2,6 +2,8 @@ package com.relationdetector.semantic.kg;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.Clock;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -9,17 +11,30 @@ import java.util.Map;
 
 import com.relationdetector.semantic.graph.EvidenceGraph;
 import com.relationdetector.semantic.graph.EvidenceGraphFact;
+import com.relationdetector.semantic.graph.ReferenceIndex;
 import com.relationdetector.semantic.reader.EndpointRef;
 import com.relationdetector.semantic.reader.ScanBundle;
 
 /** Materializes an evidence graph into a JSON-friendly KG. */
 public final class SemanticKgBuilder {
+    private final Clock clock;
+
+    public SemanticKgBuilder() {
+        this(Clock.systemUTC());
+    }
+
+    public SemanticKgBuilder(Clock clock) {
+        this.clock = java.util.Objects.requireNonNull(clock, "clock");
+    }
+
     public SemanticKnowledgeGraph build(EvidenceGraph graph) {
         Map<String, SemanticNode> nodes = new LinkedHashMap<>();
         Map<String, SemanticEdge> edges = new LinkedHashMap<>();
         Map<String, List<String>> endpointEvidence = new LinkedHashMap<>();
+        ReferenceIndex referenceIndex = ReferenceIndex.from(graph);
 
         for (EvidenceGraphFact fact : graph.facts()) {
+            referenceIndex.requireResolvable(fact.id(), fact.evidenceRefs());
             for (EndpointRef endpoint : fact.endpoints()) {
                 String endpointKey = endpoint.displayName();
                 endpointEvidence.computeIfAbsent(endpointKey, ignored -> new ArrayList<>()).addAll(fact.evidenceRefs());
@@ -157,11 +172,24 @@ public final class SemanticKgBuilder {
 
     private Map<String, Object> buildRun(ScanBundle bundle) {
         return Map.of(
-                "builtAt", Instant.now().toString(),
+                "builtAt", Instant.now(clock).toString(),
                 "database", Map.of("type", bundle.databaseType(), "schema", bundle.schema()),
                 "generatedAt", bundle.generatedAt(),
                 "sources", bundle.sources(),
-                "inputFiles", bundle.inputFiles().stream().map(path -> path.toAbsolutePath().toString()).toList()
+                "inputFiles", bundle.inputFiles().stream().map(this::canonicalInputPath).toList()
         );
+    }
+
+    private String canonicalInputPath(Path input) {
+        Path normalized = input.normalize();
+        if (!normalized.isAbsolute()) {
+            return normalized.toString().replace('\\', '/');
+        }
+        Path workspace = Path.of("").toAbsolutePath().normalize();
+        if (normalized.startsWith(workspace)) {
+            return workspace.relativize(normalized).toString().replace('\\', '/');
+        }
+        Path filename = normalized.getFileName();
+        return filename == null ? "external-input" : filename.toString();
     }
 }

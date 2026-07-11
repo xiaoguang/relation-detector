@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 /** Minimal OpenAI Responses API client for semantic extraction. */
 public final class OpenAiResponsesSemanticExtractor {
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-    private final HttpClient client;
+    private final ResponsesTransport transport;
     private final URI responsesEndpoint;
     private final String apiKey;
     private final String model;
@@ -30,7 +30,9 @@ public final class OpenAiResponsesSemanticExtractor {
             String reasoningEffort,
             int maxOutputTokens
     ) {
-        this(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build(), baseUrl, apiKey, model,
+        this(new HttpClientResponsesTransport(
+                        HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build()),
+                baseUrl, apiKey, model,
                 reasoningEffort, maxOutputTokens);
     }
 
@@ -42,7 +44,18 @@ public final class OpenAiResponsesSemanticExtractor {
             String reasoningEffort,
             int maxOutputTokens
     ) {
-        this.client = client;
+        this(new HttpClientResponsesTransport(client), baseUrl, apiKey, model, reasoningEffort, maxOutputTokens);
+    }
+
+    OpenAiResponsesSemanticExtractor(
+            ResponsesTransport transport,
+            String baseUrl,
+            String apiKey,
+            String model,
+            String reasoningEffort,
+            int maxOutputTokens
+    ) {
+        this.transport = transport;
         this.responsesEndpoint = responsesEndpoint(baseUrl);
         this.apiKey = apiKey == null ? "" : apiKey;
         this.model = model == null || model.isBlank() ? "gpt-5.5" : model;
@@ -62,7 +75,7 @@ public final class OpenAiResponsesSemanticExtractor {
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            TransportResponse response = transport.send(request);
             JsonNode responseJson = parseJson(response.body());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 throw new IllegalArgumentException("OpenAI Responses API failed with HTTP " + response.statusCode()
@@ -74,6 +87,22 @@ public final class OpenAiResponsesSemanticExtractor {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalArgumentException("OpenAI Responses API call interrupted", e);
+        }
+    }
+
+    @FunctionalInterface
+    interface ResponsesTransport {
+        TransportResponse send(HttpRequest request) throws IOException, InterruptedException;
+    }
+
+    record TransportResponse(int statusCode, String body) {
+    }
+
+    private record HttpClientResponsesTransport(HttpClient client) implements ResponsesTransport {
+        @Override
+        public TransportResponse send(HttpRequest request) throws IOException, InterruptedException {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return new TransportResponse(response.statusCode(), response.body());
         }
     }
 

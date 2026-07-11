@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.relationdetector.contracts.model.WarningMessage;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
@@ -66,7 +67,8 @@ public abstract class TypedDialectTokenEventStructuredSqlParser<R extends Parser
 
         antlrSupport.detectDynamicSql(statement).ifPresent(warnings::add);
         if (errors.count() == 0) {
-            warnings.addAll(TokenEventUnknownStatementDiagnostics.warnings(statement, parsed.root(), typedEvents));
+            warnings.addAll(TokenEventUnknownStatementDiagnostics.warnings(
+                    statement, parsed.root(), typedEvents, this::isUnknownStatement));
         }
         warnings.forEach(warning -> {
             if (context != null) {
@@ -97,6 +99,8 @@ public abstract class TypedDialectTokenEventStructuredSqlParser<R extends Parser
     protected abstract TypedParse<R> parseTyped(String sql, SyntaxErrorCounter errors);
 
     protected abstract List<StructuredSqlEvent> collectTypedEvents(SqlStatementRecord statement, R root);
+
+    protected abstract boolean isUnknownStatement(ParseTree tree);
 
     public record TypedParse<R extends ParserRuleContext>(
             R root,

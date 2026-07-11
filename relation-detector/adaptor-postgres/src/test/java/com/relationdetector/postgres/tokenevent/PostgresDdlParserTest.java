@@ -32,7 +32,7 @@ class PostgresDdlParserTest {
 
     @Test
     void adaptorReturnsPostgresSpecificStructuredDdlParser() {
-        var parser = new PostgresDatabaseAdaptor().structuredDdlParser().orElseThrow();
+        var parser = new PostgresDatabaseAdaptor().parsers().structuredDdl().orElseThrow();
 
         assertEquals(PostgresTokenEventStructuredDdlParser.class, parser.getClass());
     }
@@ -49,13 +49,13 @@ class PostgresDdlParserTest {
 
         assertTrue(structured.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.DDL_COLUMN
-                        && "public.employees".equals(event.attributes().get("table"))
-                        && "department_id".equals(event.attributes().get("column"))),
+                        && "public.employees".equals(event.table())
+                        && "department_id".equals(event.column())),
                 () -> "Missing ordinary DDL column inventory event. Actual=" + structured.events());
         assertTrue(structured.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.DDL_COLUMN
-                        && "public.employees".equals(event.attributes().get("table"))
-                        && "display_name".equals(event.attributes().get("column"))),
+                        && "public.employees".equals(event.table())
+                        && "display_name".equals(event.column())),
                 () -> "Missing ordinary DDL column inventory event. Actual=" + structured.events());
     }
 
@@ -301,9 +301,9 @@ class PostgresDdlParserTest {
 
         assertTrue(structured.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.DDL_INDEX
-                        && "public.users".equals(String.valueOf(event.attributes().get("table")))
-                        && "id".equals(String.valueOf(event.attributes().get("column")))
-                        && "TARGET_UNIQUE".equals(String.valueOf(event.attributes().get("role")))),
+                        && "public.users".equals(event.table())
+                        && "id".equals(event.column())
+                        && "TARGET_UNIQUE".equals(event.role())),
                 () -> "Missing structured primary-key index event. Actual=" + structured.events());
 
         List<RelationshipCandidate> relations = new DdlRelationParserRunner().parseText(

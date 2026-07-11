@@ -13,6 +13,8 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.relationdetector.semantic.SemanticFactIds;
 import com.relationdetector.semantic.reader.ScanBundle;
+import com.relationdetector.semantic.reader.ScanLineageFact;
+import com.relationdetector.semantic.reader.ScanRelationshipFact;
 
 /** Extracts deterministic event candidates from write lineage and supporting evidence. */
 public final class SemanticEventExtractor {
@@ -22,7 +24,7 @@ public final class SemanticEventExtractor {
             throw new IllegalArgumentException("scan bundle is required");
         }
         Map<String, MutableEvent> events = new LinkedHashMap<>();
-        Map<String, JsonNode> relationships = relationshipIndex(bundle);
+        Map<String, ScanRelationshipFact> relationships = relationshipIndex(bundle);
         addDirectLineages(events, bundle.dataLineages(), relationships);
         addSupportingDerivedLineages(events, bundle.derivedDataLineages());
         return events.values().stream().map(MutableEvent::toCandidate).toList();
@@ -30,48 +32,43 @@ public final class SemanticEventExtractor {
 
     private void addDirectLineages(
             Map<String, MutableEvent> events,
-            List<JsonNode> lineages,
-            Map<String, JsonNode> relationships
+            List<ScanLineageFact> lineages,
+            Map<String, ScanRelationshipFact> relationships
     ) {
-        int index = 0;
-        for (JsonNode lineage : lineages) {
+        for (ScanLineageFact lineage : lineages) {
             if (!isWriteValueLineage(lineage)) {
-                index++;
                 continue;
             }
-            String target = endpoint(lineage.path("target"));
+            String target = lineage.target();
             if (target.isBlank()) {
-                index++;
                 continue;
             }
-            EvidenceSource source = sourceOf(lineage);
+            JsonNode document = lineage.document();
+            EvidenceSource source = sourceOf(document);
             String targetTable = tableOf(target);
             String groupKey = groupKey(source, targetTable);
             MutableEvent event = events.computeIfAbsent(groupKey,
-                    ignored -> new MutableEvent(source, eventKind(lineage, targetTable), idFor(source, targetTable)));
-            String lineageRef = SemanticFactIds.lineage(lineage, false, index);
+                    ignored -> new MutableEvent(source, eventKind(document, targetTable), idFor(source, targetTable)));
+            String lineageRef = lineage.id();
             event.lineageRefs.add(lineageRef);
             event.evidenceRefs.add(lineageRef);
-            event.operationKinds.add(operationKind(lineage));
+            event.operationKinds.add(operationKind(document));
             event.outputEndpoints.add(target);
-            for (String sourceName : SemanticFactIds.sources(lineage)) {
+            for (String sourceName : lineage.sources()) {
                 event.inputEndpoints.add(sourceName);
             }
-            event.confidenceSum = event.confidenceSum.add(confidence(lineage));
+            event.confidenceSum = event.confidenceSum.add(BigDecimal.valueOf(lineage.confidence()));
             event.confidenceCount++;
             addTouchingRelationshipRefs(event, relationships);
-            index++;
         }
     }
 
-    private void addSupportingDerivedLineages(Map<String, MutableEvent> events, List<JsonNode> lineages) {
-        int index = 0;
-        for (JsonNode lineage : lineages) {
+    private void addSupportingDerivedLineages(Map<String, MutableEvent> events, List<ScanLineageFact> lineages) {
+        for (ScanLineageFact lineage : lineages) {
             if (!isWriteValueLineage(lineage)) {
-                index++;
                 continue;
             }
-            String ref = SemanticFactIds.lineage(lineage, true, index);
+            String ref = lineage.id();
             Set<String> endpoints = lineageEndpoints(lineage);
             for (MutableEvent event : events.values()) {
                 if (touchesAny(event, endpoints)) {
@@ -79,31 +76,28 @@ public final class SemanticEventExtractor {
                     event.evidenceRefs.add(ref);
                 }
             }
-            index++;
         }
     }
 
-    private boolean isWriteValueLineage(JsonNode lineage) {
-        String flowKind = lineage.path("flowKind").asText("VALUE");
-        return !"CONTROL".equalsIgnoreCase(flowKind) && lineage.path("target").isObject();
+    private boolean isWriteValueLineage(ScanLineageFact lineage) {
+        return !"CONTROL".equalsIgnoreCase(lineage.flowKind()) && !lineage.target().isBlank();
     }
 
-    private Map<String, JsonNode> relationshipIndex(ScanBundle bundle) {
-        Map<String, JsonNode> result = new LinkedHashMap<>();
-        int index = 0;
-        for (JsonNode relationship : bundle.relationships()) {
-            result.put(SemanticFactIds.relationship(relationship, false, index++), relationship);
+    private Map<String, ScanRelationshipFact> relationshipIndex(ScanBundle bundle) {
+        Map<String, ScanRelationshipFact> result = new LinkedHashMap<>();
+        for (ScanRelationshipFact relationship : bundle.relationships()) {
+            result.put(relationship.id(), relationship);
         }
         return result;
     }
 
     private void addTouchingRelationshipRefs(
             MutableEvent event,
-            Map<String, JsonNode> relationships
+            Map<String, ScanRelationshipFact> relationships
     ) {
-        for (Map.Entry<String, JsonNode> entry : relationships.entrySet()) {
-            String source = endpoint(entry.getValue().path("source"));
-            String target = endpoint(entry.getValue().path("target"));
+        for (Map.Entry<String, ScanRelationshipFact> entry : relationships.entrySet()) {
+            String source = entry.getValue().source();
+            String target = entry.getValue().target();
             if (relationshipTouchesEvent(source, target, event)) {
                 event.relationshipRefs.add(entry.getKey());
                 event.evidenceRefs.add(entry.getKey());
@@ -271,10 +265,6 @@ public final class SemanticEventExtractor {
         return lineage.path("transformType").asText("WRITE");
     }
 
-    private BigDecimal confidence(JsonNode node) {
-        return node.path("confidence").isNumber() ? node.path("confidence").decimalValue() : BigDecimal.ZERO;
-    }
-
     private String endpoint(JsonNode endpoint) {
         return SemanticFactIds.endpoint(endpoint);
     }
@@ -287,9 +277,9 @@ public final class SemanticEventExtractor {
         return index < 0 ? endpoint : endpoint.substring(0, index);
     }
 
-    private Set<String> lineageEndpoints(JsonNode lineage) {
-        Set<String> endpoints = new LinkedHashSet<>(SemanticFactIds.sources(lineage));
-        String target = endpoint(lineage.path("target"));
+    private Set<String> lineageEndpoints(ScanLineageFact lineage) {
+        Set<String> endpoints = new LinkedHashSet<>(lineage.sources());
+        String target = lineage.target();
         if (!target.isBlank()) {
             endpoints.add(target);
         }

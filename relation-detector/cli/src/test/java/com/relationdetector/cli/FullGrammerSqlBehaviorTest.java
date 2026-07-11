@@ -656,7 +656,7 @@ class FullGrammerSqlBehaviorTest {
     }
 
     @Test
-    void mysqlSplitsNestedCaseControlsFromScalarSubqueryControlsForOrgPdfWeight() {
+    void mysqlMergesNestedCaseAndScalarSubqueryControlsForOrgPdfWeight() {
         SqlStatementRecord statement = statement("""
                 INSERT INTO jsh_temp_org_pdf (org_id, weight, remark)
                 SELECT
@@ -700,18 +700,16 @@ class FullGrammerSqlBehaviorTest {
                 .map(FullGrammerSqlBehaviorTest::lineageFingerprint)
                 .collect(Collectors.toSet());
 
-        assertTrue(lineages.contains("CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight"));
-        assertTrue(lineages.contains("CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight"));
         assertTrue(lineages.contains(
-                "CONTROL:CASE_WHEN:jsh_organization.id,jsh_organization.org_no,"
+                "CONTROL:CASE_WHEN:jsh_organization.id,jsh_organization.org_abr,jsh_organization.org_no,"
                         + "jsh_organization.p_tenant_id,jsh_organization.parent_id,jsh_organization.tenant_id"
                         + "->jsh_temp_org_pdf.weight"), () -> "Actual lineage: " + lineages);
+        assertEquals(1, lineages.stream()
+                .filter(lineage -> lineage.startsWith("CONTROL:CASE_WHEN:"))
+                .filter(lineage -> lineage.endsWith("->jsh_temp_org_pdf.weight"))
+                .count(), () -> "CASE and scalar locator sources should form one canonical observation: " + lineages);
         assertFalse(lineages.stream().anyMatch(lineage ->
                 lineage.startsWith("VALUE:CASE_WHEN:") && lineage.endsWith("->jsh_temp_org_pdf.weight")));
-        assertFalse(lineages.contains("CONTROL:CASE_WHEN:jsh_organization.id->jsh_temp_org_pdf.weight"));
-        assertFalse(lineages.contains("CONTROL:CASE_WHEN:jsh_organization.tenant_id->jsh_temp_org_pdf.weight"));
-        assertFalse(lineages.contains(
-                "CONTROL:CASE_WHEN:jsh_organization.id,jsh_organization.org_abr,jsh_organization.org_no,jsh_organization.tenant_id->jsh_temp_org_pdf.weight"));
     }
 
     @Test
@@ -827,8 +825,8 @@ class FullGrammerSqlBehaviorTest {
     ) {
         return result.events().stream()
                 .filter(event -> event.type() == type)
-                .anyMatch(event -> value1.equals(event.attributes().get(key1))
-                        && value2.equals(event.attributes().get(key2)));
+                .anyMatch(event -> value1.equals(eventValue(event, key1))
+                        && value2.equals(eventValue(event, key2)));
     }
 
     private boolean hasEvent(
@@ -839,7 +837,7 @@ class FullGrammerSqlBehaviorTest {
     ) {
         return result.events().stream()
                 .filter(event -> event.type() == type)
-                .anyMatch(event -> value.equals(event.attributes().get(key)));
+                .anyMatch(event -> value.equals(eventValue(event, key)));
     }
 
     private boolean hasEvent(
@@ -852,8 +850,32 @@ class FullGrammerSqlBehaviorTest {
     ) {
         return result.events().stream()
                 .filter(event -> event.type() == type)
-                .anyMatch(event -> value1.equals(event.attributes().get(key1))
-                        && Boolean.valueOf(value2).equals(event.attributes().get(key2)));
+                .anyMatch(event -> value1.equals(eventValue(event, key1))
+                        && Boolean.valueOf(value2).equals(eventValue(event, key2)));
+    }
+
+    private Object eventValue(StructuredSqlEvent event, String key) {
+        return switch (key) {
+            case "table" -> event.table();
+            case "alias" -> event.alias();
+            case "name" -> event.name();
+            case "targetColumn" -> event.targetColumn();
+            case "outputAlias" -> event.outputAlias();
+            case "outputColumn" -> event.outputColumn();
+            case "innerTable" -> event.innerTable();
+            case "leftAlias" -> event.left().alias();
+            case "leftColumn" -> event.left().column();
+            case "rightAlias" -> event.right().alias();
+            case "rightColumn" -> event.right().column();
+            case "outerAlias" -> event.outerSources().isEmpty() ? "" : event.outerSources().get(0).alias();
+            case "outerColumn" -> event.outerSources().isEmpty() ? "" : event.outerSources().get(0).column();
+            case "innerAlias" -> event.innerSources().isEmpty() ? "" : event.innerSources().get(0).alias();
+            case "innerColumn" -> event.innerSources().isEmpty() ? "" : event.innerSources().get(0).column();
+            case "flowKind" -> event.expression().flowKind().name();
+            case "transformType" -> event.expression().transformType().name();
+            case "tokenEventNative" -> event.provenance().tokenEventNative();
+            default -> throw new IllegalArgumentException("Unsupported typed SQL event field: " + key);
+        };
     }
 
 }

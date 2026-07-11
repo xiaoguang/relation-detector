@@ -12,7 +12,7 @@ final class ResultAssembly {
     ScanResult assemble(ScanPipelineContext ctx) {
         ctx.result.relationships().addAll(relationshipMerger.merge(
                 ctx.relationshipCandidates,
-                ctx.config.minConfidence));
+                ctx.config.output().minConfidence()));
         ctx.result.dataLineages().addAll(dataLineageMerger.merge(ctx.lineageCandidates));
         ctx.result.namingEvidence().clear();
         ctx.result.namingEvidence().addAll(ctx.namingEvidencePool.merged());
@@ -20,7 +20,7 @@ final class ResultAssembly {
                 ctx.result.relationships(),
                 ctx.result.dataLineages(),
                 ctx.result.namingEvidence(),
-                ctx.config);
+                ctx.parserConfig);
         ctx.namingEvidencePool.addAll(derived.derivedNamingEvidence());
         ctx.result.namingEvidence().clear();
         ctx.result.namingEvidence().addAll(ctx.namingEvidencePool.merged());

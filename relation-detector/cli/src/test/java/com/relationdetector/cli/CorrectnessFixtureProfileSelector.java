@@ -9,10 +9,25 @@ import java.util.stream.Collectors;
 
 final class CorrectnessFixtureProfileSelector {
     private static final Set<String> SMOKE_FIXTURES = Set.of(
-            "common/sql-basic-join",
-            "mysql/basic-correctness-case-01-ddl",
-            "postgres/postgres-basic-correctness-case-01-ddl",
-            "oracle/oracle-sample-data-full-01-schema-01-tables-ddl");
+            "common/common-sample-data-full-01-schema-02-views-views-sql",
+            "mysql/basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql",
+            "mysql/v5_7/basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql",
+            "mysql/v8_0/basic-correctness-case-01-procedure-proc-create-order-mock-retail-sql",
+            "postgres/generated-comprehensive-query-sql",
+            "postgres/v16/generated-comprehensive-query-sql",
+            "postgres/v17/generated-comprehensive-query-sql",
+            "postgres/v18/generated-comprehensive-query-sql",
+            "oracle/oracle-sample-data-full-02-procedures-01-procedures-sql",
+            "oracle/v12c/oracle12c-fullgrammer-smoke-sql",
+            "oracle/v19c/oracle19c-fullgrammer-smoke-sql",
+            "oracle/v21c/oracle21c-fullgrammer-smoke-sql",
+            "oracle/v26ai/oracle26ai-fullgrammer-smoke-sql",
+            "sqlserver/sqlserver-sample-data-full-01-schema-03-triggers-sql",
+            "sqlserver/v2016/sqlserver2016-sample-data-full-01-schema-03-triggers-sql",
+            "sqlserver/v2017/sqlserver2017-sample-data-full-01-schema-03-triggers-sql",
+            "sqlserver/v2019/sqlserver2019-sample-data-full-01-schema-03-triggers-sql",
+            "sqlserver/v2022/sqlserver2022-sample-data-full-01-schema-03-triggers-sql",
+            "sqlserver/v2025/sqlserver2025-sample-data-full-01-schema-03-triggers-sql");
 
     private CorrectnessFixtureProfileSelector() {
     }

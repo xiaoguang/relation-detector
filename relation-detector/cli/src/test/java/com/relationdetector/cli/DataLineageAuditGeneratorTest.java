@@ -13,11 +13,13 @@ class DataLineageAuditGeneratorTest {
     private static final Path RELATION_DETECTOR_ROOT = TestWorkspacePaths.relationDetectorRoot();
     private static final Path AUDIT = TestWorkspacePaths.repositoryRoot()
             .resolve("docs/parser-audit/data-lineage-full-audit.md");
+    private static final GeneratedReportMemoizer GENERATED = new GeneratedReportMemoizer(
+            () -> DataLineageAuditGenerator.generate(RELATION_DETECTOR_ROOT));
 
     @Test
     void generatedAuditClassifiesLineageFixtureCoverage() throws Exception {
         assumeGeneratedReportTestEnabled();
-        String markdown = DataLineageAuditGenerator.generate(RELATION_DETECTOR_ROOT);
+        String markdown = GENERATED.get();
 
         assertTrue(markdown.contains("# Data Lineage Full Audit"));
         assertTrue(markdown.contains("| TOTAL | 1198 |"));
@@ -87,7 +89,7 @@ class DataLineageAuditGeneratorTest {
     @Test
     void generatedAuditFileIsUpToDate() throws Exception {
         assumeGeneratedReportTestEnabled();
-        String markdown = DataLineageAuditGenerator.generate(RELATION_DETECTOR_ROOT);
+        String markdown = GENERATED.get();
         if (Boolean.getBoolean("updateDataLineageAudit")) {
             Files.createDirectories(AUDIT.getParent());
             Files.writeString(AUDIT, markdown);

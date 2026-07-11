@@ -45,12 +45,12 @@ public final class ScanResultReader {
         Set<String> sources = new LinkedHashSet<>();
         List<Path> inputFiles = new ArrayList<>();
         Map<String, Integer> summary = new LinkedHashMap<>();
-        List<JsonNode> relationships = new ArrayList<>();
-        List<JsonNode> dataLineages = new ArrayList<>();
-        List<JsonNode> derivedRelationships = new ArrayList<>();
-        List<JsonNode> derivedDataLineages = new ArrayList<>();
-        List<JsonNode> namingEvidence = new ArrayList<>();
-        List<JsonNode> diagnostics = new ArrayList<>();
+        List<ScanRelationshipFact> relationships = new ArrayList<>();
+        List<ScanLineageFact> dataLineages = new ArrayList<>();
+        List<ScanRelationshipFact> derivedRelationships = new ArrayList<>();
+        List<ScanLineageFact> derivedDataLineages = new ArrayList<>();
+        List<ScanNamingEvidenceFact> namingEvidence = new ArrayList<>();
+        List<ScanDiagnosticFact> diagnostics = new ArrayList<>();
         for (ScanBundle bundle : bundles) {
             sources.addAll(bundle.sources());
             inputFiles.addAll(bundle.inputFiles());

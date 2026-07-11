@@ -1,51 +1,102 @@
 package com.relationdetector.core.tokenevent;
 
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
+import com.relationdetector.contracts.Enums.LineageFlowKind;
+import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.parse.DdlEvent;
+import com.relationdetector.contracts.parse.ExpressionSource;
+import com.relationdetector.contracts.parse.ExpressionTrace;
+import com.relationdetector.contracts.parse.PredicateEvent;
+import com.relationdetector.contracts.parse.ProjectionEvent;
+import com.relationdetector.contracts.parse.RowsetEvent;
+import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.contracts.parse.WriteEvent;
 
-/**
- * Shared event emission helper for token-event parse-tree visitors.
- */
+/** Shared strongly typed event emission helper for token-event visitors. */
 public final class TokenEventEventEmitter {
     private final SqlStatementRecord statement;
     private final Predicate<StructuredParseEventType> typeFilter;
+    private final Supplier<String> statementScope;
 
     public TokenEventEventEmitter(SqlStatementRecord statement) {
-        this(statement, ignored -> true);
+        this(statement, ignored -> true, () -> "");
     }
 
     public TokenEventEventEmitter(
             SqlStatementRecord statement,
             Predicate<StructuredParseEventType> typeFilter
     ) {
+        this(statement, typeFilter, () -> "");
+    }
+
+    public TokenEventEventEmitter(
+            SqlStatementRecord statement,
+            Predicate<StructuredParseEventType> typeFilter,
+            Supplier<String> statementScope
+    ) {
         this.statement = statement;
         this.typeFilter = typeFilter == null ? ignored -> true : typeFilter;
+        this.statementScope = statementScope == null ? () -> "" : statementScope;
     }
 
-    public Map<String, Object> attrs() {
-        Map<String, Object> attrs = new LinkedHashMap<>();
-        attrs.put("tokenEventNative", true);
-        return attrs;
+    public void addRowset(List<StructuredSqlEvent> events, ParserRuleContext ctx,
+            StructuredParseEventType type, String keyword, String qualifiedTable,
+            String table, String alias, String name, String targetTable, String reason) {
+        add(events, new RowsetEvent(type, provenance(ctx), keyword, qualifiedTable,
+                table, alias, name, targetTable, reason));
     }
 
-    public void add(
-            List<StructuredSqlEvent> events,
-            StructuredParseEventType type,
-            ParserRuleContext ctx,
-            Map<String, Object> attrs
-    ) {
-        if (!typeFilter.test(type)) {
-            return;
-        }
-        events.add(new StructuredSqlEvent(type, statement.sourceName(), line(ctx), attrs));
+    public void addPredicate(List<StructuredSqlEvent> events, ParserRuleContext ctx,
+            StructuredParseEventType type, String leftAlias, String leftColumn,
+            String rightAlias, String rightColumn, String joinKind) {
+        add(events, new PredicateEvent(type, provenance(ctx),
+                new ExpressionSource(leftAlias, leftColumn),
+                new ExpressionSource(rightAlias, rightColumn),
+                List.of(), List.of(), "", joinKind, List.of(), false));
+    }
+
+    public void addJoinUsing(List<StructuredSqlEvent> events, ParserRuleContext ctx,
+            String leftAlias, String rightAlias, List<String> columns) {
+        add(events, new PredicateEvent(StructuredParseEventType.JOIN_USING_COLUMNS,
+                provenance(ctx), new ExpressionSource(leftAlias, ""),
+                new ExpressionSource(rightAlias, ""), List.of(), List.of(), "", "",
+                columns, false));
+    }
+
+    public void addInSubquery(List<StructuredSqlEvent> events, ParserRuleContext ctx,
+            StructuredParseEventType type, List<String> outerAliases, List<String> outerColumns,
+            List<String> innerAliases, List<String> innerColumns, String innerTable) {
+        add(events, new PredicateEvent(type, provenance(ctx),
+                sourceAt(outerAliases, outerColumns, 0), sourceAt(innerAliases, innerColumns, 0),
+                sources(outerAliases, outerColumns), sources(innerAliases, innerColumns),
+                innerTable, "", List.of(), true));
+    }
+
+    public void addProjection(List<StructuredSqlEvent> events, ParserRuleContext ctx,
+            StructuredParseEventType type, String outputAlias, String outputColumn,
+            List<String> sourceAliases, List<String> sourceColumns,
+            LineageTransformType transformType, LineageFlowKind flowKind) {
+        add(events, new ProjectionEvent(type, provenance(ctx), outputAlias, outputColumn,
+                ExpressionTrace.of(sourceAliases, sourceColumns, flowKind, transformType)));
+    }
+
+    public void addWrite(List<StructuredSqlEvent> events, ParserRuleContext ctx,
+            StructuredParseEventType type, String table, String qualifiedTable, String alias,
+            String targetAlias, String targetTable, String targetColumn, String mappingKind,
+            List<String> sourceAliases, List<String> sourceColumns,
+            LineageTransformType transformType, LineageFlowKind flowKind) {
+        add(events, new WriteEvent(type, provenance(ctx), table, qualifiedTable, alias,
+                targetAlias, targetTable, targetColumn, mappingKind,
+                ExpressionTrace.of(sourceAliases, sourceColumns, flowKind, transformType)));
     }
 
     public void addForeignKeyEvents(
@@ -58,14 +109,9 @@ public final class TokenEventEventEmitter {
     ) {
         int count = Math.min(sourceColumns.size(), targetColumns.size());
         for (int index = 0; index < count; index++) {
-            Map<String, Object> attrs = attrs();
-            attrs.put("sourceTable", sourceTable);
-            attrs.put("sourceColumn", sourceColumns.get(index));
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumns.get(index));
-            attrs.put("compositePosition", index + 1);
-            attrs.put("compositeSize", count);
-            add(events, StructuredParseEventType.DDL_FOREIGN_KEY, ctx, attrs);
+            add(events, new DdlEvent(StructuredParseEventType.DDL_FOREIGN_KEY,
+                    provenance(ctx), sourceTable, sourceColumns.get(index), targetTable,
+                    targetColumns.get(index), "", "", "", "", index + 1, count));
         }
     }
 
@@ -80,22 +126,17 @@ public final class TokenEventEventEmitter {
         if (table == null || table.isBlank() || column == null || column.isBlank()) {
             return;
         }
-        Map<String, Object> attrs = attrs();
-        attrs.put("table", table);
-        attrs.put("column", column);
-        attrs.put("role", role);
-        attrs.put("kind", kind);
-        add(events, StructuredParseEventType.DDL_INDEX, ctx, attrs);
+        add(events, new DdlEvent(StructuredParseEventType.DDL_INDEX, provenance(ctx),
+                "", "", "", "", table, column, role, kind, 1, 1));
     }
 
-    public void addDdlColumnEvent(List<StructuredSqlEvent> events, ParserRuleContext ctx, String table, String column) {
+    public void addDdlColumnEvent(List<StructuredSqlEvent> events, ParserRuleContext ctx,
+            String table, String column) {
         if (table == null || table.isBlank() || column == null || column.isBlank()) {
             return;
         }
-        Map<String, Object> attrs = attrs();
-        attrs.put("table", table);
-        attrs.put("column", column);
-        add(events, StructuredParseEventType.DDL_COLUMN, ctx, attrs);
+        add(events, new DdlEvent(StructuredParseEventType.DDL_COLUMN, provenance(ctx),
+                "", "", "", "", table, column, "", "", 1, 1));
     }
 
     public long line(ParserRuleContext ctx) {
@@ -103,5 +144,31 @@ public final class TokenEventEventEmitter {
             return statement.startLine();
         }
         return statement.startLine() + Math.max(0, ctx.getStart().getLine() - 1);
+    }
+
+    private SourceProvenance provenance(ParserRuleContext ctx) {
+        return SourceProvenance.tokenEvent(statement, line(ctx), statementScope.get());
+    }
+
+    private void add(List<StructuredSqlEvent> events, StructuredSqlEvent event) {
+        if (typeFilter.test(event.type())) {
+            events.add(event);
+        }
+    }
+
+    private List<ExpressionSource> sources(List<String> aliases, List<String> columns) {
+        List<ExpressionSource> result = new ArrayList<>();
+        int count = Math.min(aliases == null ? 0 : aliases.size(), columns == null ? 0 : columns.size());
+        for (int index = 0; index < count; index++) {
+            result.add(new ExpressionSource(aliases.get(index), columns.get(index)));
+        }
+        return List.copyOf(result);
+    }
+
+    private ExpressionSource sourceAt(List<String> aliases, List<String> columns, int index) {
+        if (aliases == null || columns == null || index >= aliases.size() || index >= columns.size()) {
+            return ExpressionSource.EMPTY;
+        }
+        return new ExpressionSource(aliases.get(index), columns.get(index));
     }
 }

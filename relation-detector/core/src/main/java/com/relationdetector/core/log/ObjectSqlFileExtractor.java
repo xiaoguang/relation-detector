@@ -110,8 +110,9 @@ public final class ObjectSqlFileExtractor {
                 String sql = currentSql.toString().strip();
                 if (!sql.isBlank()) {
                     StatementSourceType inferred = inferSourceType(sourceType, currentSource, sql);
+                    String sourceBlockId = markedBlockId(currentSource);
                     statements.add(new SqlStatementRecord(sql, inferred, currentSource,
-                            startLine, index, attributes(localTempTables, sourceFile, currentSource, inferred, sql,
+                            startLine, index, attributes(localTempTables, sourceFile, sourceBlockId, inferred, sql,
                                     startLine, index)));
                 }
                 currentSource = null;
@@ -313,12 +314,37 @@ public final class ObjectSqlFileExtractor {
         attributes.put("sourceObjectKind", sourceType.name());
         String objectName = objectName(sql);
         if (objectName.isBlank()) {
-            objectName = objectName(sourceBlockId);
+            objectName = markerObjectName(sourceBlockId);
         }
         if (!objectName.isBlank()) {
             attributes.put("sourceObjectName", objectName);
         }
         return attributes;
+    }
+
+    private static String markedBlockId(String source) {
+        if (source == null || source.isBlank()) {
+            return "";
+        }
+        for (String prefix : List.of("ROUTINE:", "TRIGGER:")) {
+            if (source.regionMatches(true, 0, prefix, 0, prefix.length())) {
+                return source.substring(prefix.length()).trim();
+            }
+        }
+        return source.trim();
+    }
+
+    private static String markerObjectName(String sourceBlockId) {
+        String normalized = markedBlockId(sourceBlockId);
+        int separator = normalized.indexOf('.');
+        if (separator > 0) {
+            String namespace = normalized.substring(0, separator).toLowerCase(Locale.ROOT);
+            if (List.of("common", "mysql", "oracle", "postgres", "postgresql", "sqlserver")
+                    .contains(namespace)) {
+                normalized = normalized.substring(separator + 1);
+            }
+        }
+        return normalizeObjectName(normalized);
     }
 
     private static String semanticSourceObjectType(StatementSourceType sourceType) {

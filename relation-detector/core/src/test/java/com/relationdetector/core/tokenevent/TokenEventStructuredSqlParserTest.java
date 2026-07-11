@@ -38,14 +38,14 @@ class TokenEventStructuredSqlParserTest {
         assertEquals("ANTLR_COMMON_TOKEN_EVENT", result.backend());
         assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.ROWSET_REFERENCE
-                        && "orders".equals(event.attributes().get("table"))
-                        && "o".equals(event.attributes().get("alias"))));
+                        && "orders".equals(event.table())
+                        && "o".equals(event.alias())));
         assertTrue(result.events().stream().anyMatch(event ->
                 event.type() == StructuredParseEventType.PREDICATE_EQUALITY
-                        && "o".equals(event.attributes().get("leftAlias"))
-                        && "user_id".equals(event.attributes().get("leftColumn"))
-                        && "u".equals(event.attributes().get("rightAlias"))
-                        && "id".equals(event.attributes().get("rightColumn"))));
+                        && "o".equals(event.left().alias())
+                        && "user_id".equals(event.left().column())
+                        && "u".equals(event.right().alias())
+                        && "id".equals(event.right().column())));
     }
 
     @Test

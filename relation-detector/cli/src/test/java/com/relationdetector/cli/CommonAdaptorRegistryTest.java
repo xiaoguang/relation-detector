@@ -15,7 +15,7 @@ class CommonAdaptorRegistryTest {
 
         assertEquals("common", adaptor.id());
         assertTrue(adaptor.supportedDatabaseTypes().contains(DatabaseType.COMMON));
-        assertTrue(adaptor.structuredSqlParser().isPresent());
-        assertTrue(adaptor.structuredDdlParser().isPresent());
+        assertTrue(adaptor.parsers().structuredSql().isPresent());
+        assertTrue(adaptor.parsers().structuredDdl().isPresent());
     }
 }

@@ -13,6 +13,31 @@
   <dependencies>
     <dependency>
       <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-sqlserver-v2016</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-sqlserver-v2017</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-sqlserver-v2019</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-sqlserver-v2022</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-sqlserver-v2025</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
       <artifactId>relation-detector-core</artifactId>
       <version>${project.version}</version>
     </dependency>

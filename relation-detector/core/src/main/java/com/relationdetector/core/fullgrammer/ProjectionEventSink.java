@@ -1,7 +1,6 @@
 package com.relationdetector.core.fullgrammer;
 
 import java.util.List;
-import java.util.Map;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -65,25 +64,14 @@ final class ProjectionEventSink {
             String outputColumn,
             FullGrammerExpressionAnalysis analysis
     ) {
-        Map<String, Object> attributes = source.nativeAttributes();
-        attributes.put("outputAlias", outputAlias);
-        attributes.put("outputColumn", outputColumn);
-        attributes.put("sourceAliases", analysis.sourceAliases());
-        attributes.put("sourceColumns", analysis.sourceColumns());
-        attributes.put("transformType", analysis.transformType());
-        attributes.put("flowKind", analysis.flowKind());
-        recorder.add(ctx, StructuredParseEventType.PROJECTION_ITEM, attributes);
+        recorder.projection(ctx, StructuredParseEventType.PROJECTION_ITEM,
+                outputAlias, outputColumn, analysis);
     }
 
     void expressionSource(ParserRuleContext ctx, FullGrammerExpressionAnalysis analysis) {
         if (!analysis.hasSources()) {
             return;
         }
-        Map<String, Object> attributes = source.nativeAttributes();
-        attributes.put("sourceAliases", analysis.sourceAliases());
-        attributes.put("sourceColumns", analysis.sourceColumns());
-        attributes.put("transformType", analysis.transformType());
-        attributes.put("flowKind", analysis.flowKind());
-        recorder.add(ctx, StructuredParseEventType.EXPRESSION_SOURCE, attributes);
+        recorder.projection(ctx, StructuredParseEventType.EXPRESSION_SOURCE, "", "", analysis);
     }
 }

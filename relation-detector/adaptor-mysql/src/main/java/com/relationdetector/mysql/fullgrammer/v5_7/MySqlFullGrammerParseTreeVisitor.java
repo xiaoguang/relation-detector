@@ -1,14 +1,14 @@
 package com.relationdetector.mysql.fullgrammer.v5_7;
 
 import com.relationdetector.core.fullgrammer.*;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.mysql.fullgrammer.common.MySqlSqlEventVisitorCore;
 import com.relationdetector.mysql.fullgrammer.common.MySqlSqlEventVisitorCore.ColumnParts;
+import com.relationdetector.mysql.fullgrammer.common.MySqlExpressionContextAdapter;
+import com.relationdetector.mysql.fullgrammer.common.MySqlExpressionContextAdapter.ProjectionItem;
 import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.CommonTableExpressionContext;
 import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.CaseValueExpressionContext;
 import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.CreateTableContext;
@@ -16,7 +16,6 @@ import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.Create
 import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.DeleteStatementContext;
 import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.DerivedTableContext;
 import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.EscapedTableReferenceContext;
-import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.FieldsContext;
 import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.FunctionParameterContext;
 import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.InsertStatementContext;
 import com.relationdetector.mysql.fullgrammer.v5_7.MySqlFullGrammerParser.JoinedTableContext;
@@ -50,12 +49,12 @@ import org.antlr.v4.runtime.tree.RuleNode;
  * lineage semantics remain in core.
  */
 final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseVisitor<Void> {
-    private final SqlStatementRecord statement;
     private final FullGrammerTypedSqlEventSink sink;
     private final MySqlSqlEventVisitorCore core;
+    private final MySqlExpressionContextAdapter adapter;
 
     MySqlFullGrammerParseTreeVisitor(SqlStatementRecord statement, List<?> visibleTokens) {
-        this.statement = statement;
+        this.adapter = new MySql57ParseTreeAdapter();
         this.sink = new FullGrammerTypedSqlEventSink(statement, new MySqlExpressionAnalyzer());
         this.core = new MySqlSqlEventVisitorCore(sink);
     }
@@ -77,7 +76,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
         String table = ctx.tableRef() == null ? "" : ctx.tableRef().getText();
         String alias = ctx.tableAlias() == null ? "" : sink.firstIdentifier(ctx.tableAlias());
         sink.rowset(ctx, "FROM", table, alias);
-        rememberRowset(alias.isBlank() ? sink.baseName(table) : alias);
+        core.rememberRowset(alias.isBlank() ? sink.baseName(table) : alias);
         return visitChildren(ctx);
     }
 
@@ -87,7 +86,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
         if (!alias.isBlank()) {
             sink.ignoredRowset(ctx, alias, "DERIVED_TABLE");
             sink.rowset(ctx, "FROM", alias, alias);
-            rememberRowset(alias);
+            core.rememberRowset(alias);
             int rowsetScopeMark = sink.rowsetScopeMark();
             sink.withProjectionOwner(alias, () -> {
                 if (ctx.subquery() != null) {
@@ -106,7 +105,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
         String alias = ctx.tableAlias() == null ? "JSON_TABLE" : sink.firstIdentifier(ctx.tableAlias());
         sink.ignoredRowset(ctx, alias, "FUNCTION_ROWSET");
         sink.rowset(ctx, "JOIN", alias, alias);
-        rememberRowset(alias);
+        core.rememberRowset(alias);
         return null;
     }
 
@@ -186,15 +185,15 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
 
     @Override
     public Void visitJoinedTable(JoinedTableContext ctx) {
-        String left = lastRowsetAlias();
+        String left = core.lastRowsetAlias();
         if (ctx.tableReference() != null) {
             visit(ctx.tableReference());
         } else if (ctx.tableFactor() != null) {
             visit(ctx.tableFactor());
         }
-        String right = lastRowsetAlias();
+        String right = core.lastRowsetAlias();
         if (ctx.expr() != null) {
-            sink.predicateEqualities(ctx, ctx.expr(), joinKind(ctx));
+            sink.predicateEqualities(ctx, ctx.expr(), adapter.joinKind(ctx));
             visit(ctx.expr());
         }
         if (ctx.identifierListWithParentheses() != null && !left.isBlank() && !right.isBlank()) {
@@ -244,7 +243,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
     @Override
     public Void visitChildren(RuleNode node) {
         Void result = super.visitChildren(node);
-        if (node instanceof ParserRuleContext ctx && isExpressionContext(ctx)) {
+        if (node instanceof ParserRuleContext ctx && core.isExpressionContext(ctx)) {
             if (core.inExists()) {
                 sink.existsPredicateEqualities(ctx, ctx);
             } else {
@@ -256,7 +255,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
 
     @Override
     public Void visitUpdateStatement(UpdateStatementContext ctx) {
-        String target = firstTableName(ctx.tableReferenceList());
+        String target = adapter.firstTableName(ctx.tableReferenceList());
         sink.writeTarget(ctx, target, "");
         sink.withWriteTarget(target, () -> visitChildren(ctx));
         return null;
@@ -268,7 +267,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
             String table = ctx.tableRef().getText();
             String alias = ctx.tableAlias() == null ? "" : sink.firstIdentifier(ctx.tableAlias());
             sink.rowset(ctx, "DELETE", table, alias);
-            rememberRowset(alias.isBlank() ? sink.baseName(table) : alias);
+            core.rememberRowset(alias.isBlank() ? sink.baseName(table) : alias);
             if (ctx.whereClause() != null) {
                 visit(ctx.whereClause());
             }
@@ -285,14 +284,12 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
             return visitChildren(ctx);
         }
         visit(ctx.insertQueryExpression());
-        List<String> targets = insertTargets(ctx.insertQueryExpression().fields());
-        List<SelectItemContext> selectItems = selectItems(ctx.insertQueryExpression());
+        List<String> targets = adapter.insertTargets(ctx.insertQueryExpression().fields());
+        List<ProjectionItem> selectItems = adapter.selectItems(ctx.insertQueryExpression());
         int count = Math.min(targets.size(), selectItems.size());
         for (int index = 0; index < count; index++) {
-            SelectItemContext selectItem = selectItems.get(index);
-            if (selectItem.expr() != null) {
-                sink.insertSelect(selectItem, "", target, targets.get(index), selectItem.expr());
-            }
+            ProjectionItem selectItem = selectItems.get(index);
+            sink.insertSelect(selectItem.context(), "", target, targets.get(index), selectItem.expression());
         }
         return null;
     }
@@ -303,7 +300,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
         if (ctx.columnRef() == null || valueExpression == null) {
             return visitChildren(ctx);
         }
-        ColumnParts target = columnParts(ctx.columnRef().getText());
+        ColumnParts target = core.columnParts(ctx.columnRef().getText());
         String targetTable = target.qualifier().isBlank()
                 ? sink.currentWriteTarget()
                 : sink.tableForAlias(target.qualifier());
@@ -325,7 +322,7 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
             return visitChildren(ctx);
         }
         String outputColumn = ctx.selectAlias() == null
-                ? projectedColumnName(ctx.expr())
+                ? core.projectedColumnName(ctx.expr())
                 : sink.firstIdentifier(ctx.selectAlias());
         sink.projection(ctx, sink.currentProjectionOwner(), outputColumn, ctx.expr());
         return visitChildren(ctx);
@@ -371,99 +368,13 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
         return null;
     }
 
-    private String joinKind(JoinedTableContext ctx) {
-        if (ctx.outerJoinType() != null) {
-            return ctx.outerJoinType().getText().toUpperCase(java.util.Locale.ROOT);
-        }
-        if (ctx.innerJoinType() != null) {
-            return ctx.innerJoinType().getText().toUpperCase(java.util.Locale.ROOT);
-        }
-        if (ctx.naturalJoinType() != null) {
-            return ctx.naturalJoinType().getText().toUpperCase(java.util.Locale.ROOT);
-        }
-        return "JOIN_ON";
-    }
-
-    private String firstTableName(ParseTree tree) {
-        if (tree == null) {
-            return "";
-        }
-        if (tree instanceof SingleTableContext single && single.tableRef() != null) {
-            return single.tableRef().getText();
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            String found = firstTableName(tree.getChild(index));
-            if (!found.isBlank()) {
-                return found;
-            }
-        }
-        return "";
-    }
-
-    private List<String> insertTargets(FieldsContext fields) {
-        if (fields == null) {
-            return List.of();
-        }
-        return fields.insertIdentifier().stream()
-                .map(ParseTree::getText)
-                .map(sink::clean)
-                .filter(column -> !column.isBlank())
-                .toList();
-    }
-
-    private List<SelectItemContext> selectItems(ParseTree tree) {
-        List<SelectItemContext> result = new ArrayList<>();
-        collectSelectItems(tree, result);
-        return result;
-    }
-
     private void emitTopLevelProjectionItems(String alias, ParseTree tree) {
-        QuerySpecificationContext query = firstQuerySpecification(tree);
-        if (query == null || query.selectItemList() == null) {
-            return;
+        for (ProjectionItem item : adapter.topLevelProjectionItems(tree)) {
+            String outputColumn = item.explicitAlias() == null
+                    ? core.projectedColumnName(item.expression())
+                    : sink.firstIdentifier(item.explicitAlias());
+            sink.projection(item.context(), alias, outputColumn, item.expression());
         }
-        for (SelectItemContext item : query.selectItemList().selectItem()) {
-            if (item.expr() == null) {
-                continue;
-            }
-            String outputColumn = item.selectAlias() == null
-                    ? projectedColumnName(item.expr())
-                    : sink.firstIdentifier(item.selectAlias());
-            sink.projection(item, alias, outputColumn, item.expr());
-        }
-    }
-
-    private QuerySpecificationContext firstQuerySpecification(ParseTree tree) {
-        if (tree == null) {
-            return null;
-        }
-        if (tree instanceof QuerySpecificationContext query) {
-            return query;
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            QuerySpecificationContext found = firstQuerySpecification(tree.getChild(index));
-            if (found != null) {
-                return found;
-            }
-        }
-        return null;
-    }
-
-    private void collectSelectItems(ParseTree tree, List<SelectItemContext> result) {
-        if (tree == null) {
-            return;
-        }
-        if (tree instanceof SelectItemContext item) {
-            result.add(item);
-            return;
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectSelectItems(tree.getChild(index), result);
-        }
-    }
-
-    private String projectedColumnName(ParseTree expression) {
-        return core.projectedColumnName(expression);
     }
 
     private void rememberNonColumnParameter(FunctionParameterContext ctx) {
@@ -473,19 +384,4 @@ final class MySqlFullGrammerParseTreeVisitor extends MySqlFullGrammerParserBaseV
         com.relationdetector.mysql.routine.MySqlRoutineScopePolicy.markNonColumnIdentifier(sink, ctx.parameterName().identifier().getText());
     }
 
-    private void rememberRowset(String aliasOrTable) {
-        core.rememberRowset(aliasOrTable);
-    }
-
-    private String lastRowsetAlias() {
-        return core.lastRowsetAlias();
-    }
-
-    private ColumnParts columnParts(String raw) {
-        return core.columnParts(raw);
-    }
-
-    private boolean isExpressionContext(ParserRuleContext ctx) {
-        return core.isExpressionContext(ctx);
-    }
 }

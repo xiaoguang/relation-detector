@@ -13,21 +13,23 @@ import com.relationdetector.core.profile.DataProfileCandidateGenerator;
 final class DataProfilePipeline {
     private final DataProfileCandidateGenerator candidateGenerator = new DataProfileCandidateGenerator();
 
-    void profile(Connection connection, ScanPipelineContext ctx) {
-        if (connection == null || !ctx.config.dataProfileEnabled) {
-            return;
+    List<RelationshipCandidate> profile(Connection connection, ScanPipelineContext ctx) {
+        EvidenceConfig evidenceConfig = ctx.config.evidence();
+        if (connection == null || !evidenceConfig.dataProfileEnabled()) {
+            return List.of();
         }
+        List<RelationshipCandidate> added = new java.util.ArrayList<>();
         ctx.adaptor.profiling().dataProfiler().ifPresent(profiler -> {
             ctx.result.sources().add("data-profile");
             List<RelationshipCandidate> selected = candidateGenerator.select(
                     ctx.relationshipCandidates,
                     ctx.metadataSnapshot,
                     ctx.namingEvidencePool.merged(),
-                    ctx.config.dataProfileOptions());
+                    evidenceConfig.dataProfileOptions());
             for (RelationshipCandidate candidate : selected) {
                 boolean existingCandidate = ctx.relationshipCandidates.contains(candidate);
                 List<Evidence> evidence = profiler.profile(connection,
-                        new ProfileRequest(candidate, ctx.config.dataProfileOptions()));
+                        new ProfileRequest(candidate, evidenceConfig.dataProfileOptions()));
                 if (evidence.isEmpty()) {
                     continue;
                 }
@@ -37,9 +39,11 @@ final class DataProfilePipeline {
                 candidate.evidence().addAll(evidence);
                 if (!existingCandidate) {
                     ctx.relationshipCandidates.add(candidate);
+                    added.add(candidate);
                 }
             }
         });
+        return List.copyOf(added);
     }
 
     private boolean profileCanCreateRelationship(RelationshipCandidate candidate, List<Evidence> evidence) {

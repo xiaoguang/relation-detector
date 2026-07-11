@@ -1,6 +1,5 @@
 package com.relationdetector.core.fullgrammer;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,10 +46,6 @@ public final class FullGrammerEventMerger {
     }
 
     private static String key(StructuredSqlEvent event) {
-        List<String> attributes = new ArrayList<>();
-        event.attributes().entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> attributes.add(entry.getKey() + "=" + String.valueOf(entry.getValue())));
-        return event.type().name() + "|" + event.line() + "|" + String.join("|", attributes);
+        return event.semanticKey();
     }
 }

@@ -28,7 +28,7 @@ class MySqlDdlParserTest {
 
     @Test
     void adaptorReturnsMysqlSpecificStructuredDdlParser() {
-        var parser = new MySqlDatabaseAdaptor().structuredDdlParser().orElseThrow();
+        var parser = new MySqlDatabaseAdaptor().parsers().structuredDdl().orElseThrow();
 
         assertEquals(MySqlTokenEventStructuredDdlParser.class, parser.getClass());
     }

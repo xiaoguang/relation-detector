@@ -142,4 +142,22 @@ final class ObjectSqlFileExtractorTest {
         assertEquals("sp_update_supplier_metrics", statements.get(0).attributes().get("sourceStatementId"));
         assertEquals("sp_update_supplier_metrics", statements.get(0).attributes().get("sourceObjectName"));
     }
+
+    @Test
+    void markedOracleBodyUsesFixtureNamespaceOnlyForBlockIdentity() {
+        List<SqlStatementRecord> statements = extractor.extract("""
+                -- relation-detector-fixture-source: ROUTINE:oracle.sp_refresh_supplier_metrics
+                UPDATE supplier_products
+                SET total_order_count = 1;
+                -- relation-detector-fixture-end
+                """, StatementSourceType.PROCEDURE,
+                "sample-data/oracle/26ai/02-procedures/10-supplier-geo-procedures.sql",
+                DatabaseType.ORACLE);
+
+        assertEquals(1, statements.size());
+        assertEquals("oracle.sp_refresh_supplier_metrics", statements.get(0).attributes().get("sourceBlockId"));
+        assertEquals("oracle.sp_refresh_supplier_metrics", statements.get(0).attributes().get("sourceStatementId"));
+        assertEquals("sp_refresh_supplier_metrics", statements.get(0).attributes().get("sourceObjectName"));
+        assertEquals("ROUTINE", statements.get(0).attributes().get("sourceObjectType"));
+    }
 }

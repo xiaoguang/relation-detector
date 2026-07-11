@@ -21,7 +21,7 @@ import com.relationdetector.contracts.spi.ScanScope;
 class MySqlMetadataCollectorFactsTest {
     @Test
     void collectsCatalogFactsAndKeepsDeclaredForeignKeyRelationshipsWithinScope() {
-        MetadataSnapshot snapshot = new MySqlDatabaseAdaptor().metadataCollector().collect(
+        MetadataSnapshot snapshot = new MySqlDatabaseAdaptor().collectors().metadata().collect(
                 catalogConnection(),
                 new ScanScope(null, "shop", List.of("orders", "users"), List.of("audit_logs")));
 

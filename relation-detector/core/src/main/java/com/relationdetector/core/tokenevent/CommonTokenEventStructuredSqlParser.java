@@ -69,7 +69,11 @@ public class CommonTokenEventStructuredSqlParser implements StructuredSqlParser 
         List<StructuredSqlEvent> events = new CommonTokenEventParseTreeVisitor(statement).collect(root);
 
         antlrSupport.detectDynamicSql(statement).ifPresent(warnings::add);
-        warnings.addAll(TokenEventUnknownStatementDiagnostics.warnings(statement, root, events));
+        warnings.addAll(TokenEventUnknownStatementDiagnostics.warnings(
+                statement,
+                root,
+                events,
+                CommonRelationSqlParser.UnknownStatementContext.class::isInstance));
         warnings.forEach(warning -> {
             if (context != null) {
                 context.warn(warning);

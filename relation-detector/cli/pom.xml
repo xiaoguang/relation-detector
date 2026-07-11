@@ -47,6 +47,12 @@
       <version>5.12.1</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>mssql-jdbc</artifactId>
+      <version>12.8.1.jre11</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -66,6 +72,8 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.5.2</version>
         <configuration>
+          <forkCount>${cliTestForkCount}</forkCount>
+          <reuseForks>true</reuseForks>
           <!-- Maven user properties are not guaranteed to be inherited by a forked JVM. -->
           <systemPropertyVariables>
             <correctnessFixtureProfile>${correctnessFixtureProfile}</correctnessFixtureProfile>
@@ -79,6 +87,10 @@
             <runGeneratedReportTests>${runGeneratedReportTests}</runGeneratedReportTests>
             <updateCorrectnessSummary>${updateCorrectnessSummary}</updateCorrectnessSummary>
             <updateDataLineageAudit>${updateDataLineageAudit}</updateDataLineageAudit>
+            <runSqlServerSampleDataIntegration>${runSqlServerSampleDataIntegration}</runSqlServerSampleDataIntegration>
+            <sqlserverSampleDataJdbcUrl>${sqlserverSampleDataJdbcUrl}</sqlserverSampleDataJdbcUrl>
+            <sqlserverSampleDataJdbcUser>${sqlserverSampleDataJdbcUser}</sqlserverSampleDataJdbcUser>
+            <sqlserverSampleDataJdbcPassword>${sqlserverSampleDataJdbcPassword}</sqlserverSampleDataJdbcPassword>
           </systemPropertyVariables>
         </configuration>
       </plugin>

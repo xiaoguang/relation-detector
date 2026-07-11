@@ -1,6 +1,7 @@
 {
   "fingerprints": [
     "CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status",
+    "VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status",
     "VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id",
     "VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id",
     "VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty",
@@ -8,8 +9,7 @@
     "VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id",
     "VALUE:DIRECT:dbo.product_batches.batch_no->dbo.inventory_transactions.remark",
     "VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.reference_id",
-    "VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id",
-    "VALUE:FUNCTION_CALL:dbo.product_batches.status->dbo.product_batches.status"
+    "VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id"
   ],
   "forbiddenSources": [],
   "forbiddenTargets": [],

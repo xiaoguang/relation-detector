@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cache xmlns="http://maven.apache.org/BUILD-CACHE-CONFIG/1.2.0"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://maven.apache.org/BUILD-CACHE-CONFIG/1.2.0 https://maven.apache.org/xsd/build-cache-config-1.2.0.xsd">
+  <configuration>
+    <enabled>true</enabled>
+    <hashAlgorithm>XX</hashAlgorithm>
+    <local>
+      <!-- Keep enough revisions to avoid parallel-reactor eviction races. -->
+      <!-- Relative to the Maven invocation root; avoids creating a literal
+           ${maven.multiModuleProjectDirectory} directory on extension 1.2.3. -->
+      <location>.mvn/build-cache</location>
+      <maxBuildsCached>20</maxBuildsCached>
+    </local>
+    <remote enabled="false"/>
+  </configuration>
+  <input>
+    <global>
+      <glob>{*.java,*.g4,*.xml,*.properties,*.yml,*.yaml,*.json,*.sql,*.sh,*.py}</glob>
+      <includes>
+        <include recursive="true" glob="*.g4">src/main/antlr4</include>
+      </includes>
+    </global>
+  </input>
+  <executionControl>
+    <runAlways>
+      <plugins>
+        <plugin artifactId="maven-surefire-plugin"/>
+        <plugin artifactId="maven-failsafe-plugin"/>
+      </plugins>
+    </runAlways>
+    <reconcile>
+      <plugins>
+        <plugin artifactId="maven-surefire-plugin" goal="test">
+          <reconciles>
+            <reconcile propertyName="skip" skipValue="true"/>
+            <reconcile propertyName="skipExec" skipValue="true"/>
+            <reconcile propertyName="skipTests" skipValue="true"/>
+            <reconcile propertyName="testFailureIgnore" skipValue="true"/>
+          </reconciles>
+        </plugin>
+      </plugins>
+    </reconcile>
+  </executionControl>
+</cache>

@@ -42,34 +42,38 @@ public final class PlainSqlLogExtractor {
             Consumer<WarningMessage> warnings
     ) {
         try {
-            String text = Files.readString(file);
-            LineIndex lineIndex = LineIndex.of(text);
-            List<String> localTempTables = localTempTablesIn(text);
-            List<SqlStatementRecord> statements = new ArrayList<>();
-            for (StatementSlice slice : splitSqlStatements(text)) {
-                int startOffset = trimStart(text, slice.startOffset(), slice.endOffset());
-                int endOffset = trimEnd(text, startOffset, slice.endOffset());
-                if (startOffset < endOffset) {
-                    String sql = text.substring(startOffset, endOffset);
-                    int startLine = lineIndex.lineAt(startOffset);
-                    int endLine = lineIndex.lineAt(endOffset - 1);
-                    Map<String, Object> attributes = new LinkedHashMap<>();
-                    if (!localTempTables.isEmpty()) {
-                        attributes.put("localTempTables", localTempTables);
-                    }
-                    String normalizedFile = SourceNameNormalizer.normalize(file);
-                    attributes.put("sourceFile", normalizedFile);
-                    attributes.put("sourceStatementId", normalizedFile + ":" + startLine + "-" + endLine);
-                    attributes.put("sourceObjectType", "SQL_WRITE");
-                    statements.add(new SqlStatementRecord(sql, sourceType, normalizedFile, startLine,
-                            endLine, attributes));
-                }
-            }
-            return statements.stream();
+            return extract(Files.readString(file), file, sourceType);
         } catch (IOException ex) {
             warnings.accept(DiagnosticWarnings.sqlFileExtractFailed(file, ex));
             return Stream.empty();
         }
+    }
+
+    /** Splits already-loaded SQL text while retaining the source path in provenance. */
+    public Stream<SqlStatementRecord> extract(String text, Path sourceFile, StatementSourceType sourceType) {
+        LineIndex lineIndex = LineIndex.of(text);
+        List<String> localTempTables = localTempTablesIn(text);
+        List<SqlStatementRecord> statements = new ArrayList<>();
+        for (StatementSlice slice : splitSqlStatements(text)) {
+            int startOffset = trimStart(text, slice.startOffset(), slice.endOffset());
+            int endOffset = trimEnd(text, startOffset, slice.endOffset());
+            if (startOffset < endOffset) {
+                String sql = text.substring(startOffset, endOffset);
+                int startLine = lineIndex.lineAt(startOffset);
+                int endLine = lineIndex.lineAt(endOffset - 1);
+                Map<String, Object> attributes = new LinkedHashMap<>();
+                if (!localTempTables.isEmpty()) {
+                    attributes.put("localTempTables", localTempTables);
+                }
+                String normalizedFile = SourceNameNormalizer.normalize(sourceFile);
+                attributes.put("sourceFile", normalizedFile);
+                attributes.put("sourceStatementId", normalizedFile + ":" + startLine + "-" + endLine);
+                attributes.put("sourceObjectType", "SQL_WRITE");
+                statements.add(new SqlStatementRecord(sql, sourceType, normalizedFile, startLine,
+                        endLine, attributes));
+            }
+        }
+        return statements.stream();
     }
 
     private int trimStart(String text, int startOffset, int endOffset) {

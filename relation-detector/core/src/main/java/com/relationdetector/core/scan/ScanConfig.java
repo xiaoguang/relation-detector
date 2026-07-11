@@ -12,7 +12,11 @@ import com.relationdetector.contracts.spi.DataProfileOptions;
 import com.relationdetector.core.relation.NamingRule;
 import com.relationdetector.core.relation.NamingRuleSet;
 
-/** Runtime configuration after YAML and CLI overrides are resolved. */
+/**
+ * Mutable YAML/CLI input DTO. Production scans immediately snapshot it into a
+ * {@link ResolvedScanConfig}; callers may keep using this class to assemble
+ * configuration without exposing mutable state to a running scan.
+ */
 public final class ScanConfig {
     public DatabaseType databaseType;
     public String adaptorId;
@@ -105,5 +109,9 @@ public final class ScanConfig {
 
     public NamingRuleSet namingRuleSet() {
         return NamingRuleSet.fromConfig(namingMatchEnabled, namingMatchSystemRulesEnabled, namingMatchRules);
+    }
+
+    public ResolvedScanConfig resolve() {
+        return ResolvedScanConfig.from(this);
     }
 }

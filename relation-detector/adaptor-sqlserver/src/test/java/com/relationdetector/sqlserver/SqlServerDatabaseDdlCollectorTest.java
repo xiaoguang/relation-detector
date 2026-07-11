@@ -22,7 +22,7 @@ class SqlServerDatabaseDdlCollectorTest {
         ScanScope scope = new ScanScope(null, "dbo", List.of("orders"), List.of());
 
         List<DatabaseDdlDefinition> definitions = new SqlServerDatabaseAdaptor()
-                .databaseDdlCollector()
+                .collectors().databaseDdl()
                 .orElseThrow()
                 .collect(connection, scope);
 

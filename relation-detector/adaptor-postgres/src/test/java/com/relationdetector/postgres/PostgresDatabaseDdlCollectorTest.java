@@ -22,7 +22,7 @@ class PostgresDatabaseDdlCollectorTest {
         ScanScope scope = new ScanScope(null, "public", List.of("orders"), List.of());
 
         List<DatabaseDdlDefinition> definitions = new PostgresDatabaseAdaptor()
-                .databaseDdlCollector()
+                .collectors().databaseDdl()
                 .orElseThrow()
                 .collect(connection, scope);
 

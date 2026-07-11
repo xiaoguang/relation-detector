@@ -88,7 +88,7 @@ public final class MySqlBasicCorrectnessFixtureExporter {
                 ScanScope scope = new ScanScope(null, schema, List.of(), List.of());
 
                 List<WarningMessage> ddlWarnings = new ArrayList<>();
-                List<DatabaseDdlDefinition> definitions = adaptor.databaseDdlCollector()
+                List<DatabaseDdlDefinition> definitions = adaptor.collectors().databaseDdl()
                         .orElseThrow()
                         .collect(connection, scope, ddlWarnings::add)
                         .stream()

@@ -1,193 +1,130 @@
 package com.relationdetector.cli;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 final class CorrectnessJson {
+    private static final ObjectMapper JSON = new ObjectMapper()
+            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    private static final ObjectWriter WRITER = JSON.writerWithDefaultPrettyPrinter();
+
     private CorrectnessJson() {
     }
 
-    static String expectedRelationsJson(List<String> fingerprints, List<String> forbiddenTables) {
-        return "{\n"
-                + "  \"fingerprints\": " + stringArrayJson(fingerprints) + ",\n"
-                + "  \"forbiddenTables\": " + stringArrayJson(forbiddenTables) + "\n"
-                + "}\n";
+    static ExpectedRelations readRelations(Path file) {
+        RelationsGolden value = read(file, RelationsGolden.class);
+        return new ExpectedRelations(list(value.fingerprints()), list(value.forbiddenTables()));
     }
 
-    static String expectedLineageJson(
+    static ExpectedRelations readRelations(String text, Path source) {
+        RelationsGolden value = read(text, source, RelationsGolden.class);
+        return new ExpectedRelations(list(value.fingerprints()), list(value.forbiddenTables()));
+    }
+
+    static ExpectedLineage readLineage(Path file) {
+        LineageGolden value = read(file, LineageGolden.class);
+        return new ExpectedLineage(true,
+                list(value.fingerprints()),
+                list(value.forbiddenSources()),
+                list(value.forbiddenTargets()),
+                map(value.warningCodes()));
+    }
+
+    static ExpectedLineage readLineage(String text, Path source) {
+        LineageGolden value = read(text, source, LineageGolden.class);
+        return new ExpectedLineage(true, list(value.fingerprints()), list(value.forbiddenSources()),
+                list(value.forbiddenTargets()), map(value.warningCodes()));
+    }
+
+    static ExpectedNamingEvidence readNamingEvidence(Path file) {
+        NamingEvidenceGolden value = read(file, NamingEvidenceGolden.class);
+        return new ExpectedNamingEvidence(true, list(value.fingerprints()));
+    }
+
+    static ExpectedNamingEvidence readNamingEvidence(String text, Path source) {
+        NamingEvidenceGolden value = read(text, source, NamingEvidenceGolden.class);
+        return new ExpectedNamingEvidence(true, list(value.fingerprints()));
+    }
+
+    static ExpectedDiagnostics readDiagnostics(Path file) {
+        DiagnosticsGolden value = read(file, DiagnosticsGolden.class);
+        if (value.fixtureSha256() == null) {
+            throw new IllegalArgumentException("Missing fixtureSha256 in " + file);
+        }
+        return new ExpectedDiagnostics(value.fixtureSha256(), map(value.warningCodes()));
+    }
+
+    static ExpectedDiagnostics readDiagnostics(String text, Path source) {
+        DiagnosticsGolden value = read(text, source, DiagnosticsGolden.class);
+        if (value.fixtureSha256() == null) {
+            throw new IllegalArgumentException("Missing fixtureSha256 in " + source);
+        }
+        return new ExpectedDiagnostics(value.fixtureSha256(), map(value.warningCodes()));
+    }
+
+    static void writeRelations(Path file, ExpectedRelations value) throws Exception {
+        write(file, new RelationsGolden(value.fingerprints(), value.forbiddenTables()));
+    }
+
+    static void writeLineage(Path file, ExpectedLineage value) throws Exception {
+        write(file, new LineageGolden(value.fingerprints(), value.forbiddenSources(),
+                value.forbiddenTargets(), value.warningCodes()));
+    }
+
+    static void writeNamingEvidence(Path file, ExpectedNamingEvidence value) throws Exception {
+        write(file, new NamingEvidenceGolden(value.fingerprints()));
+    }
+
+    static void writeDiagnostics(Path file, ExpectedDiagnostics value) throws Exception {
+        write(file, new DiagnosticsGolden(value.fixtureSha256(), value.warningCodes()));
+    }
+
+    private static <T> T read(Path file, Class<T> type) {
+        try {
+            return JSON.readValue(file.toFile(), type);
+        } catch (Exception error) {
+            throw new IllegalArgumentException("Invalid correctness JSON " + file + ": " + error.getMessage(), error);
+        }
+    }
+
+    private static <T> T read(String text, Path source, Class<T> type) {
+        try {
+            return JSON.readValue(text, type);
+        } catch (Exception error) {
+            throw new IllegalArgumentException("Invalid correctness JSON " + source + ": " + error.getMessage(), error);
+        }
+    }
+
+    private static void write(Path file, Object value) throws Exception {
+        java.nio.file.Files.writeString(file, WRITER.writeValueAsString(value) + System.lineSeparator());
+    }
+
+    private static List<String> list(List<String> values) {
+        return values == null ? List.of() : List.copyOf(values);
+    }
+
+    private static Map<String, Long> map(Map<String, Long> values) {
+        return values == null ? Map.of() : Map.copyOf(values);
+    }
+
+    private record RelationsGolden(List<String> fingerprints, List<String> forbiddenTables) {
+    }
+
+    private record LineageGolden(
             List<String> fingerprints,
             List<String> forbiddenSources,
             List<String> forbiddenTargets,
             Map<String, Long> warningCodes
     ) {
-        return "{\n"
-                + "  \"fingerprints\": " + stringArrayJson(fingerprints) + ",\n"
-                + "  \"forbiddenSources\": " + stringArrayJson(forbiddenSources) + ",\n"
-                + "  \"forbiddenTargets\": " + stringArrayJson(forbiddenTargets) + ",\n"
-                + "  \"warningCodes\": " + longMapJson(warningCodes) + "\n"
-                + "}\n";
     }
 
-    static String expectedDiagnosticsJson(String fixtureSha256, Map<String, Long> warningCodes) {
-        return "{\n"
-                + "  \"fixtureSha256\": \"" + escapeJson(fixtureSha256) + "\",\n"
-                + "  \"warningCodes\": " + longMapJson(warningCodes) + "\n"
-                + "}\n";
+    private record DiagnosticsGolden(String fixtureSha256, Map<String, Long> warningCodes) {
     }
 
-    static String expectedNamingEvidenceJson(List<String> fingerprints) {
-        return "{\n"
-                + "  \"fingerprints\": " + stringArrayJson(fingerprints) + "\n"
-                + "}\n";
-    }
-
-    static String stringField(String json, String field) {
-        Matcher matcher = Pattern.compile("\"" + Pattern.quote(field) + "\"\\s*:\\s*\"([^\"]*)\"")
-                .matcher(json);
-        if (!matcher.find()) {
-            throw new IllegalArgumentException("Missing string field " + field);
-        }
-        return matcher.group(1);
-    }
-
-    static List<String> stringArray(String json, String field) {
-        String body = arrayBody(json, field);
-        if (body == null) {
-            return List.of();
-        }
-        return stringArrayFromBody(body);
-    }
-
-    static Map<String, Long> objectLongs(String json, String field) {
-        String body = objectBody(json, field);
-        if (body == null || body.isBlank()) {
-            return Map.of();
-        }
-        return objectLongsFromBody(body);
-    }
-
-    private static List<String> stringArrayFromBody(String bodyText) {
-        String body = bodyText.trim();
-        if (body.isEmpty()) {
-            return List.of();
-        }
-        List<String> values = new ArrayList<>();
-        Matcher item = Pattern.compile("\"((?:\\\\.|[^\"])*)\"").matcher(body);
-        while (item.find()) {
-            values.add(item.group(1).replace("\\\"", "\"").replace("\\\\", "\\"));
-        }
-        return List.copyOf(values);
-    }
-
-    private static Map<String, Long> objectLongsFromBody(String body) {
-        if (body.isEmpty()) {
-            return Map.of();
-        }
-        Map<String, Long> values = new LinkedHashMap<>();
-        Matcher entry = Pattern.compile("\"([^\"]+)\"\\s*:\\s*(\\d+)").matcher(body);
-        while (entry.find()) {
-            values.put(entry.group(1), Long.parseLong(entry.group(2)));
-        }
-        return values;
-    }
-
-    private static String arrayBody(String json, String field) {
-        Matcher fieldMatcher = Pattern.compile("\"" + Pattern.quote(field) + "\"\\s*:").matcher(json);
-        if (!fieldMatcher.find()) {
-            return null;
-        }
-        int start = json.indexOf('[', fieldMatcher.end());
-        if (start < 0) {
-            return null;
-        }
-        boolean inString = false;
-        boolean escaped = false;
-        for (int i = start + 1; i < json.length(); i++) {
-            char c = json.charAt(i);
-            if (escaped) {
-                escaped = false;
-                continue;
-            }
-            if (c == '\\' && inString) {
-                escaped = true;
-                continue;
-            }
-            if (c == '"') {
-                inString = !inString;
-                continue;
-            }
-            if (!inString && c == ']') {
-                return json.substring(start + 1, i).trim();
-            }
-        }
-        throw new IllegalArgumentException("Unclosed array field " + field);
-    }
-
-    private static String objectBody(String json, String field) {
-        Matcher fieldMatcher = Pattern.compile("\"" + Pattern.quote(field) + "\"\\s*:").matcher(json);
-        if (!fieldMatcher.find()) {
-            return null;
-        }
-        int start = json.indexOf('{', fieldMatcher.end());
-        if (start < 0) {
-            return null;
-        }
-        int depth = 0;
-        boolean inString = false;
-        boolean escaped = false;
-        for (int i = start; i < json.length(); i++) {
-            char c = json.charAt(i);
-            if (escaped) {
-                escaped = false;
-                continue;
-            }
-            if (c == '\\' && inString) {
-                escaped = true;
-                continue;
-            }
-            if (c == '"') {
-                inString = !inString;
-                continue;
-            }
-            if (inString) {
-                continue;
-            }
-            if (c == '{') {
-                depth++;
-            } else if (c == '}') {
-                depth--;
-                if (depth == 0) {
-                    return json.substring(start + 1, i).trim();
-                }
-            }
-        }
-        throw new IllegalArgumentException("Unclosed object field " + field);
-    }
-
-    private static String stringArrayJson(List<String> values) {
-        if (values.isEmpty()) {
-            return "[]";
-        }
-        return values.stream()
-                .map(value -> "    \"" + escapeJson(value) + "\"")
-                .collect(Collectors.joining(",\n", "[\n", "\n  ]"));
-    }
-
-    private static String longMapJson(Map<String, Long> values) {
-        if (values.isEmpty()) {
-            return "{}";
-        }
-        return values.entrySet().stream()
-                .map(entry -> "    \"" + escapeJson(entry.getKey()) + "\": " + entry.getValue())
-                .collect(Collectors.joining(",\n", "{\n", "\n  }"));
-    }
-
-    private static String escapeJson(String value) {
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
+    private record NamingEvidenceGolden(List<String> fingerprints) {
     }
 }

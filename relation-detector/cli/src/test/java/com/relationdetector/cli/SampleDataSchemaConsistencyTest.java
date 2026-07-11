@@ -46,6 +46,8 @@ import com.relationdetector.sqlserver.SqlServerDatabaseAdaptor;
 final class SampleDataSchemaConsistencySupport {
     private static final Path WORKSPACE = TestWorkspacePaths.relationDetectorRoot();
     private static final Path CORRECTNESS = WORKSPACE.resolve("test-fixtures/correctness");
+    private static final java.util.concurrent.ConcurrentMap<ProfileKey, Set<String>> DECLARED_COLUMN_CACHE =
+            new java.util.concurrent.ConcurrentHashMap<>();
 
     static void commonNaturalDeclaresEachPhysicalTableOnce() throws Exception {
         Pattern createTable = Pattern.compile(
@@ -327,12 +329,17 @@ final class SampleDataSchemaConsistencySupport {
 
     static void sampleDataGoldenEndpointsExistInTheirDialectDdlInventory() throws Exception {
         Map<ProfileKey, List<CorrectnessFixture>> groups = sampleDataFixtureGroups();
-        Set<String> findings = new LinkedHashSet<>();
+        Set<String> findings = new java.util.concurrent.ConcurrentSkipListSet<>();
 
-        for (Map.Entry<ProfileKey, List<CorrectnessFixture>> entry : groups.entrySet()) {
+        groups.entrySet().parallelStream().forEach(entry -> {
             ProfileKey profile = entry.getKey();
             List<CorrectnessFixture> fixtures = entry.getValue();
-            Set<String> declared = declaredColumns(profile);
+            Set<String> declared;
+            try {
+                declared = declaredColumns(profile);
+            } catch (Exception error) {
+                throw new IllegalStateException("Failed to build DDL inventory for " + profile.label(), error);
+            }
             for (CorrectnessFixture fixture : fixtures) {
                 if (!"SQL".equals(fixture.parserTarget())) {
                     continue;
@@ -346,7 +353,7 @@ final class SampleDataSchemaConsistencySupport {
                             profile, fixture, "lineage", endpoint, declared, findings));
                 }
             }
-        }
+        });
 
         assertTrue(findings.isEmpty(), () -> "Sample-data output endpoint(s) absent from typed DDL inventory: count="
                 + findings.size() + ", first=" + findings.stream().limit(120).toList());
@@ -470,6 +477,22 @@ final class SampleDataSchemaConsistencySupport {
     }
 
     private static Set<String> declaredColumns(ProfileKey profile) throws Exception {
+        try {
+            return DECLARED_COLUMN_CACHE.computeIfAbsent(profile, SampleDataSchemaConsistencySupport::loadDeclaredColumns);
+        } catch (InventoryBuildFailure failure) {
+            throw failure.cause;
+        }
+    }
+
+    private static Set<String> loadDeclaredColumns(ProfileKey profile) {
+        try {
+            return Set.copyOf(buildDeclaredColumns(profile));
+        } catch (Exception error) {
+            throw new InventoryBuildFailure(error);
+        }
+    }
+
+    private static Set<String> buildDeclaredColumns(ProfileKey profile) throws Exception {
         DatabaseAdaptor adaptor = adaptor(profile.databaseType());
         ScanConfig config = ddlInventoryConfig(profile);
         List<WarningMessage> warnings = new ArrayList<>();
@@ -505,10 +528,10 @@ final class SampleDataSchemaConsistencySupport {
     ) {
         if (event.type() == StructuredParseEventType.DDL_COLUMN
                 || event.type() == StructuredParseEventType.DDL_INDEX) {
-            addEndpoint(declared, event.attributes().get("table"), event.attributes().get("column"));
+            addEndpoint(declared, event.table(), event.column());
         } else if (event.type() == StructuredParseEventType.DDL_FOREIGN_KEY) {
-            addEndpoint(declared, event.attributes().get("sourceTable"), event.attributes().get("sourceColumn"));
-            addEndpoint(declared, event.attributes().get("targetTable"), event.attributes().get("targetColumn"));
+            addEndpoint(declared, event.sourceTable(), event.sourceColumn());
+            addEndpoint(declared, event.targetTable(), event.targetColumn());
         }
     }
 
@@ -643,6 +666,15 @@ final class SampleDataSchemaConsistencySupport {
     private record ProfileKey(DatabaseType databaseType, String parserMode, String grammarProfile, String databaseVersion) {
         String label() {
             return databaseType + "/" + parserMode + "/" + grammarProfile + "/" + databaseVersion;
+        }
+    }
+
+    private static final class InventoryBuildFailure extends RuntimeException {
+        private final Exception cause;
+
+        private InventoryBuildFailure(Exception cause) {
+            super(cause);
+            this.cause = cause;
         }
     }
 }

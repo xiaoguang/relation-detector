@@ -29,7 +29,7 @@ class PostgresRoutineSampleLineageTest {
         var events = PostgresRoutineBodyParser.extract(statement);
 
         assertTrue(events.stream().anyMatch(event -> event.type() == StructuredParseEventType.ROWSET_REFERENCE
-                        && "product_categories".equals(event.attributes().get("table"))),
+                        && "product_categories".equals(event.table())),
                 () -> "Routine INSERT SELECT must preserve rowset scope: " + events);
     }
 

@@ -120,51 +120,41 @@ class ScanEngineObjectWarningProvenanceTest {
         }
 
         @Override
-        public MetadataCollector metadataCollector() {
-            return (connection, scope) -> new MetadataSnapshot();
+        public com.relationdetector.contracts.spi.AdaptorCollectors collectors() {
+            return new com.relationdetector.contracts.spi.AdaptorCollectors(
+                    (connection, scope) -> new MetadataSnapshot(),
+                    (connection, scope) -> List.of(new DatabaseObjectDefinition(
+                            DatabaseObjectType.PROCEDURE,
+                            "shop",
+                            "rebuild_orders",
+                            """
+                                    CREATE PROCEDURE rebuild_orders()
+                                    BEGIN
+                                      SET @sql = 'SELECT * FROM orders';
+                                      PREPARE stmt FROM @sql;
+                                      EXECUTE stmt;
+                                    END
+                                    """,
+                            "information_schema.ROUTINES")),
+                    Optional.empty(),
+                    (file, hint) -> Stream.empty());
         }
 
         @Override
-        public ObjectDefinitionCollector objectDefinitionCollector() {
-            return (connection, scope) -> List.of(new DatabaseObjectDefinition(
-                    DatabaseObjectType.PROCEDURE,
-                    "shop",
-                    "rebuild_orders",
-                    """
-                            CREATE PROCEDURE rebuild_orders()
-                            BEGIN
-                              SET @sql = 'SELECT * FROM orders';
-                              PREPARE stmt FROM @sql;
-                              EXECUTE stmt;
-                            END
-                            """,
-                    "information_schema.ROUTINES"));
-        }
-
-        public SqlLogExtractor sqlLogExtractor() {
-            return new SqlLogExtractor() {
-                @Override
-                public Stream<SqlStatementRecord> extract(Path file, LogFormatHint hint) {
-                    return Stream.empty();
-                }
-            };
+        public com.relationdetector.contracts.spi.AdaptorParsers parsers() {
+            return new com.relationdetector.contracts.spi.AdaptorParsers(
+                    new TokenEventSqlRelationParser(
+                            new TokenEventStructuredSqlParser(SqlDialect.MYSQL),
+                            new TokenEventRelationExtractor()),
+                    Optional.empty(),
+                    Optional.empty());
         }
 
         @Override
-        public SqlRelationParser sqlRelationParser() {
-            return new TokenEventSqlRelationParser(
-                    new TokenEventStructuredSqlParser(SqlDialect.MYSQL),
-                    new TokenEventRelationExtractor());
-        }
-
-        @Override
-        public Optional<DataProfiler> dataProfiler() {
-            return Optional.empty();
-        }
-
-        @Override
-        public EvidenceWeightAdjuster evidenceWeightAdjuster() {
-            return (evidence, context) -> evidence;
+        public com.relationdetector.contracts.spi.AdaptorProfiling profiling() {
+            return new com.relationdetector.contracts.spi.AdaptorProfiling(
+                    Optional.empty(),
+                    (evidence, context) -> evidence);
         }
     }
 

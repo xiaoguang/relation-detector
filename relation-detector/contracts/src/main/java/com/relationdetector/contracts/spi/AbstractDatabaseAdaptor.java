@@ -1,26 +1,16 @@
 package com.relationdetector.contracts.spi;
 
-import java.util.Optional;
 import java.util.Set;
 
 import com.relationdetector.contracts.Enums.AdaptorCapability;
 import com.relationdetector.contracts.Enums.DatabaseType;
-import com.relationdetector.contracts.spi.Collectors.DataProfiler;
-import com.relationdetector.contracts.spi.Collectors.DatabaseDdlCollector;
-import com.relationdetector.contracts.spi.Collectors.EvidenceWeightAdjuster;
-import com.relationdetector.contracts.spi.Collectors.MetadataCollector;
-import com.relationdetector.contracts.spi.Collectors.ObjectDefinitionCollector;
-import com.relationdetector.contracts.spi.Collectors.SqlLogExtractor;
-import com.relationdetector.contracts.spi.Collectors.SqlRelationParser;
-import com.relationdetector.contracts.spi.Collectors.StructuredDdlParser;
-import com.relationdetector.contracts.spi.Collectors.StructuredSqlParser;
 
 /**
  * Small base class for adaptors that expose grouped collector/parser/profiling
  * capabilities.
  *
- * <p>CN: 新代码优先通过 grouped capabilities 访问 adaptor；这里集中保留旧 SPI
- * 方法的兼容委托，避免每个方言主类重复同一批模板方法。
+ * <p>SPI v2 exposes only grouped capabilities. This base class keeps the
+ * immutable assembly shared by built-in adaptors.
  */
 public abstract class AbstractDatabaseAdaptor implements DatabaseAdaptor {
     private final String id;
@@ -50,6 +40,11 @@ public abstract class AbstractDatabaseAdaptor implements DatabaseAdaptor {
         this.collectors = collectors;
         this.parsers = parsers;
         this.profiling = profiling;
+    }
+
+    @Override
+    public final int spiVersion() {
+        return AdaptorApiVersion.CURRENT;
     }
 
     @Override
@@ -90,59 +85,5 @@ public abstract class AbstractDatabaseAdaptor implements DatabaseAdaptor {
     @Override
     public final AdaptorProfiling profiling() {
         return profiling;
-    }
-
-    @Override
-    @Deprecated(forRemoval = false)
-    public final MetadataCollector metadataCollector() {
-        return collectors.metadata();
-    }
-
-    @Override
-    @Deprecated(forRemoval = false)
-    public final ObjectDefinitionCollector objectDefinitionCollector() {
-        return collectors.objects();
-    }
-
-    @Override
-    @Deprecated(forRemoval = false)
-    public final Optional<DatabaseDdlCollector> databaseDdlCollector() {
-        return collectors.databaseDdl();
-    }
-
-    @Override
-    @Deprecated(forRemoval = false)
-    public final SqlLogExtractor sqlLogExtractor() {
-        return collectors.logs();
-    }
-
-    @Override
-    @Deprecated(forRemoval = false)
-    public final SqlRelationParser sqlRelationParser() {
-        return parsers.sqlRelations();
-    }
-
-    @Override
-    @Deprecated(forRemoval = false)
-    public final Optional<StructuredSqlParser> structuredSqlParser() {
-        return parsers.structuredSql();
-    }
-
-    @Override
-    @Deprecated(forRemoval = false)
-    public final Optional<StructuredDdlParser> structuredDdlParser() {
-        return parsers.structuredDdl();
-    }
-
-    @Override
-    @Deprecated(forRemoval = false)
-    public final Optional<DataProfiler> dataProfiler() {
-        return profiling.dataProfiler();
-    }
-
-    @Override
-    @Deprecated(forRemoval = false)
-    public final EvidenceWeightAdjuster evidenceWeightAdjuster() {
-        return profiling.evidenceWeightAdjuster();
     }
 }

@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,6 +37,9 @@ final class SemanticKgBuildTest {
         Files.writeString(input, sampleScanResult("mysql", "shop"));
 
         ScanBundle bundle = new ScanResultReader().read(input);
+        assertEquals("orders.customer_id", bundle.relationships().get(0).source());
+        assertEquals("payments.amount", bundle.dataLineages().get(0).sources().get(0));
+        assertEquals("TABLE_ID", bundle.namingEvidence().get(0).rule());
         EvidenceGraph evidenceGraph = new SemanticEvidenceBuilder().build(bundle);
         SemanticKnowledgeGraph kg = new SemanticKgBuilder().build(evidenceGraph);
         JsonNode json = JSON.readTree(new JsonSemanticKgWriter().writeKg(kg));
@@ -88,6 +94,26 @@ final class SemanticKgBuildTest {
                 () -> new ScanResultReader().readMerged(java.util.List.of(first, second)));
 
         assertTrue(error.getMessage().contains("same database type and schema"));
+    }
+
+    @Test
+    void fixedClockBuildIsByteStableAndDoesNotExposeAbsoluteInputPaths() throws Exception {
+        Path input = tempDir.resolve("scan-result.json");
+        Files.writeString(input, sampleScanResult("mysql", "shop"));
+        EvidenceGraph graph = new SemanticEvidenceBuilder().build(new ScanResultReader().read(input));
+        Clock clock = Clock.fixed(Instant.parse("2026-07-11T12:00:00Z"), ZoneOffset.UTC);
+        SemanticKgBuilder builder = new SemanticKgBuilder(clock);
+        JsonSemanticKgWriter writer = new JsonSemanticKgWriter();
+
+        String first = writer.writeKg(builder.build(graph));
+        String second = writer.writeKg(builder.build(graph));
+
+        assertEquals(first, second);
+        JsonNode json = JSON.readTree(first);
+        assertEquals("2026-07-11T12:00:00Z", json.path("buildRun").path("builtAt").asText());
+        for (JsonNode path : json.path("buildRun").path("inputFiles")) {
+            assertFalse(Path.of(path.asText()).isAbsolute(), () -> "absolute input path leaked: " + path);
+        }
     }
 
     private static String sampleScanResult(String databaseType, String schema) {

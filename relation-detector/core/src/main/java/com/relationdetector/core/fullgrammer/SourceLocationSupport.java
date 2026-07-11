@@ -2,10 +2,8 @@ package com.relationdetector.core.fullgrammer;
 
 import java.util.ArrayList;
 import java.util.ArrayDeque;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -14,6 +12,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import com.relationdetector.contracts.parse.SourceProvenance;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 
 final class SourceLocationSupport {
@@ -25,14 +24,12 @@ final class SourceLocationSupport {
         this.statement = statement;
     }
 
-    Map<String, Object> nativeAttributes() {
-        Map<String, Object> attributes = new LinkedHashMap<>();
-        attributes.put("tokenEventNative", true);
-        attributes.put("fullGrammerNative", true);
-        if (!statementScopes.isEmpty()) {
-            attributes.put("statementScope", statementScopes.peek());
-        }
-        return attributes;
+    SourceProvenance provenance(ParserRuleContext ctx) {
+        return SourceProvenance.fullGrammer(statement, line(ctx), currentStatementScope(), "typed-context");
+    }
+
+    String currentStatementScope() {
+        return statementScopes.isEmpty() ? "" : statementScopes.peek();
     }
 
     void withStatementScope(Runnable visitor) {

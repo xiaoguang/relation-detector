@@ -8106,9 +8106,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
-- `CONTROL:CASE_WHEN:jsh_organization.org_no,jsh_organization.tenant_id,jsh_organization.p_tenant_id,jsh_organization.id,jsh_organization.parent_id->jsh_temp_org_pdf.weight`
-- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no,jsh_organization.org_abr,jsh_organization.tenant_id,jsh_organization.p_tenant_id,jsh_organization.id,jsh_organization.parent_id->jsh_temp_org_pdf.weight`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
@@ -8321,7 +8319,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score->reconciliations.status`
-- `VALUE:COALESCE:reconciliation_input_items.item_qty,reconciliation_input_items.base_unit_price,currency_exchange_rates.rate,sales_orders.paid_amount->reconciliations.difference`
+- `VALUE:ARITHMETIC:reconciliation_input_items.item_qty,reconciliation_input_items.base_unit_price,currency_exchange_rates.rate,sales_orders.paid_amount->reconciliations.difference`
 - `VALUE:CONCAT_FORMAT:reconciliation_input_items.cleaned_sku,master_skus.merchant_id->reconciliations.remark`
 
 **Forbidden Tables**
@@ -8379,7 +8377,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score->reconciliations.status`
-- `VALUE:COALESCE:reconciliation_input_items.item_qty,reconciliation_input_items.base_unit_price,currency_exchange_rates.rate,sales_orders.paid_amount->reconciliations.difference`
+- `VALUE:ARITHMETIC:reconciliation_input_items.item_qty,reconciliation_input_items.base_unit_price,currency_exchange_rates.rate,sales_orders.paid_amount->reconciliations.difference`
 - `VALUE:CONCAT_FORMAT:reconciliation_input_items.cleaned_sku,master_skus.merchant_id->reconciliations.remark`
 
 **Forbidden Tables**
@@ -10071,7 +10069,7 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
-- `VALUE:COALESCE:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
@@ -10171,9 +10169,9 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `VALUE:AGGREGATE:inventory.locked_quantity,sales_order_items.quantity->inventory.locked_quantity`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -10269,9 +10267,9 @@ _Preview truncated; see input file for full content._
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -10764,27 +10762,27 @@ _Preview truncated; see input file for full content._
 - `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
 - `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
+- `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
@@ -11009,8 +11007,8 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
 - `VALUE:ARITHMETIC:products.retail_price->consignment_inventory.unit_price`
 - `VALUE:ARITHMETIC:products.retail_price->price_change_logs.old_price`
+- `VALUE:ARITHMETIC:projects.start_date,projects.actual_end_date->project_costs.cost_date`
 - `VALUE:COALESCE:employees.manager_id->performance_reviews.reviewer_id`
-- `VALUE:COALESCE:projects.start_date,projects.actual_end_date->project_costs.cost_date`
 - `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
 - `VALUE:CONCAT_FORMAT:products.sku->serial_numbers.serial_no`
 - `VALUE:CONCAT_FORMAT:projects.name->project_costs.description`
@@ -11928,9 +11926,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
-- `CONTROL:CASE_WHEN:jsh_organization.org_no,jsh_organization.tenant_id,jsh_organization.p_tenant_id,jsh_organization.id,jsh_organization.parent_id->jsh_temp_org_pdf.weight`
-- `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no,jsh_organization.org_abr,jsh_organization.tenant_id,jsh_organization.p_tenant_id,jsh_organization.id,jsh_organization.parent_id->jsh_temp_org_pdf.weight`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
 - `VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark`
@@ -13932,7 +13928,7 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
-- `VALUE:COALESCE:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
@@ -14131,9 +14127,9 @@ _Preview truncated; see input file for full content._
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -14446,8 +14442,7 @@ _Preview truncated; see input file for full content._
 
 **Expected Data Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date->supplier_products.quality_score`
-- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:CASE_WHEN:inspection_reports.inspection_result,inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date->supplier_products.quality_score`
 - `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
 - `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
 - `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
@@ -14680,27 +14675,27 @@ _Preview truncated; see input file for full content._
 - `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
 - `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
 - `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
+- `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
 - `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
 - `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
@@ -14925,8 +14920,8 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
 - `VALUE:ARITHMETIC:products.retail_price->consignment_inventory.unit_price`
 - `VALUE:ARITHMETIC:products.retail_price->price_change_logs.old_price`
+- `VALUE:ARITHMETIC:projects.start_date,projects.actual_end_date->project_costs.cost_date`
 - `VALUE:COALESCE:employees.manager_id->performance_reviews.reviewer_id`
-- `VALUE:COALESCE:projects.start_date,projects.actual_end_date->project_costs.cost_date`
 - `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
 - `VALUE:CONCAT_FORMAT:products.sku->serial_numbers.serial_no`
 - `VALUE:CONCAT_FORMAT:projects.name->project_costs.description`
@@ -16575,7 +16570,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
-- `VALUE:ARITHMETIC:customers.address->shipping_tracks.location`
 - `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
 - `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.before_accumulated`
 - `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
@@ -16583,9 +16577,10 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
-- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.actual_delivery_date`
-- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.shipped_at`
+- `VALUE:CASE_WHEN:customers.address->shipping_tracks.location`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->invoices.invoice_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_date,sales_orders.id->shipments.shipment_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_date,sales_orders.id->shipments.tracking_no`
@@ -61507,8 +61502,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days,dbo.mrp_runs.run_date->dbo.mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
@@ -61528,6 +61521,8 @@ _Preview truncated; see input file for full content._
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.contact_person->dbo.customers.contact_person`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.email->dbo.customers.email`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.phone->dbo.customers.phone`
+- `VALUE:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `VALUE:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:CASE_WHEN:dbo.sales_orders.status->dbo.sales_orders.status`
 - `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
 - `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
@@ -61774,12 +61769,12 @@ _Preview truncated; see input file for full content._
 ```sql
 -- ============================================================
 -- SQL Server ERP natural sample data.
--- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
--- does not inflate relationship/lineage counts with synthetic relationship SQL.
--- Baseline is T-SQL 2016-compatible for all SQL Server versions.
+-- Deterministic business rows shared by SQL Server 2016-2025.
 -- ============================================================
 
--- Natural seed rows for [dbo].[ar_aging_snapshots].
+SET IDENTITY_INSERT [dbo].[ar_aging_snapshots] ON;
+INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [order_id], [invoice_amount], [paid_amount], [outstanding_amount], [due_date], [aging_days], [aging_bucket], [bad_debt_provision], [last_collection_date], [collection_notes]) VALUES (1, '2026-02-28', 1, 1, 1000.00, 400.00, 600.00, '2026-03-03', 0, 'current', 0.00, '2026-02-20', N'客户已确认三月初支付余款');
+INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [order_id], [invoice_amount], [paid_amount], [outstanding_amount]
 ```
 _Preview truncated; see input file for full content._
 
@@ -61896,9 +61891,9 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
-- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.current_qty`
-- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.initial_qty`
-- `VALUE:ARITHMETIC:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `VALUE:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
 - `VALUE:COALESCE:dbo.supplier_products.supplier_price,dbo.products.purchase_price->dbo.product_batches.purchase_price`
 - `VALUE:CONCAT_FORMAT:dbo.products.sku->dbo.product_batches.batch_no`
 - `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.inventory.shelf_location`
@@ -62075,7 +62070,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.payment_receipts.receipt_date->dbo.payments.payment_date`
 - `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
 - `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
-- `VALUE:DIRECT:dbo.product_categories.created_at->dbo.category_dim.effective_from`
 - `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
 - `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
 - `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
@@ -62127,6 +62121,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
 - `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
 - `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.product_categories.created_at->dbo.category_dim.effective_from`
 - `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month`
 - `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month_name`
 - `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_quarter`
@@ -63100,6 +63095,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
 - `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
@@ -63108,7 +63104,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.product_batches.batch_no->dbo.inventory_transactions.remark`
 - `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.reference_id`
 - `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
-- `VALUE:FUNCTION_CALL:dbo.product_batches.status->dbo.product_batches.status`
 
 **Forbidden Tables**
 
@@ -63410,8 +63405,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days,dbo.mrp_runs.run_date->dbo.mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
@@ -63427,17 +63420,20 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:dbo.sales_orders.paid_amount,dbo.payments.amount->dbo.sales_orders.paid_amount`
-- `VALUE:ARITHMETIC:dbo.sales_orders.status->dbo.sales_orders.status`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.address->dbo.customers.address`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.contact_person->dbo.customers.contact_person`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.email->dbo.customers.email`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.phone->dbo.customers.phone`
+- `VALUE:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `VALUE:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
+- `VALUE:CASE_WHEN:dbo.sales_orders.status->dbo.sales_orders.status`
 - `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
 - `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
 - `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.unit_cost`
 - `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
 - `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
 - `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.payments.payment_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
@@ -63533,7 +63529,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
 - `VALUE:FUNCTION_CALL:dbo.purchase_orders.order_date->dbo.ap_invoices.due_date`
-- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 
 **Forbidden Tables**
 
@@ -63677,12 +63672,12 @@ _Preview truncated; see input file for full content._
 ```sql
 -- ============================================================
 -- SQL Server ERP natural sample data.
--- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
--- does not inflate relationship/lineage counts with synthetic relationship SQL.
--- Baseline is T-SQL 2016-compatible for all SQL Server versions.
+-- Deterministic business rows shared by SQL Server 2016-2025.
 -- ============================================================
 
--- Natural seed rows for [dbo].[ar_aging_snapshots].
+SET IDENTITY_INSERT [dbo].[ar_aging_snapshots] ON;
+INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [order_id], [invoice_amount], [paid_amount], [outstanding_amount], [due_date], [aging_days], [aging_bucket], [bad_debt_provision], [last_collection_date], [collection_notes]) VALUES (1, '2026-02-28', 1, 1, 1000.00, 400.00, 600.00, '2026-03-03', 0, 'current', 0.00, '2026-02-20', N'客户已确认三月初支付余款');
+INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [order_id], [invoice_amount], [paid_amount], [outstanding_amount]
 ```
 _Preview truncated; see input file for full content._
 
@@ -63733,6 +63728,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.approved_by`
 - `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.reported_by`
 - `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.purchase_returns.return_no`
+- `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.damage_reports.report_no`
 - `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.damage_report_items.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.damage_report_items.product_id`
@@ -63748,7 +63744,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
 - `VALUE:DIRECT:dbo.purchase_returns.return_reason->dbo.purchase_return_items.reason`
 - `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
-- `VALUE:FUNCTION_CALL:dbo.warehouses.code->dbo.damage_reports.report_no`
 
 **Forbidden Tables**
 
@@ -63799,9 +63794,9 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
-- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.current_qty`
-- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.initial_qty`
-- `VALUE:ARITHMETIC:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `VALUE:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
 - `VALUE:COALESCE:dbo.supplier_products.supplier_price,dbo.products.purchase_price->dbo.product_batches.purchase_price`
 - `VALUE:CONCAT_FORMAT:dbo.products.sku->dbo.product_batches.batch_no`
 - `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.inventory.shelf_location`
@@ -65346,6 +65341,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
 - `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
@@ -65354,7 +65350,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.product_batches.batch_no->dbo.inventory_transactions.remark`
 - `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.reference_id`
 - `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
-- `VALUE:FUNCTION_CALL:dbo.product_batches.status->dbo.product_batches.status`
 
 **Forbidden Tables**
 
@@ -65656,8 +65651,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days,dbo.mrp_runs.run_date->dbo.mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
@@ -65673,17 +65666,20 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:dbo.sales_orders.paid_amount,dbo.payments.amount->dbo.sales_orders.paid_amount`
-- `VALUE:ARITHMETIC:dbo.sales_orders.status->dbo.sales_orders.status`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.address->dbo.customers.address`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.contact_person->dbo.customers.contact_person`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.email->dbo.customers.email`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.phone->dbo.customers.phone`
+- `VALUE:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `VALUE:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
+- `VALUE:CASE_WHEN:dbo.sales_orders.status->dbo.sales_orders.status`
 - `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
 - `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
 - `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.unit_cost`
 - `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
 - `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
 - `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.payments.payment_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
@@ -65779,7 +65775,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
 - `VALUE:FUNCTION_CALL:dbo.purchase_orders.order_date->dbo.ap_invoices.due_date`
-- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 
 **Forbidden Tables**
 
@@ -65923,12 +65918,12 @@ _Preview truncated; see input file for full content._
 ```sql
 -- ============================================================
 -- SQL Server ERP natural sample data.
--- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
--- does not inflate relationship/lineage counts with synthetic relationship SQL.
--- Baseline is T-SQL 2016-compatible for all SQL Server versions.
+-- Deterministic business rows shared by SQL Server 2016-2025.
 -- ============================================================
 
--- Natural seed rows for [dbo].[ar_aging_snapshots].
+SET IDENTITY_INSERT [dbo].[ar_aging_snapshots] ON;
+INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [order_id], [invoice_amount], [paid_amount], [outstanding_amount], [due_date], [aging_days], [aging_bucket], [bad_debt_provision], [last_collection_date], [collection_notes]) VALUES (1, '2026-02-28', 1, 1, 1000.00, 400.00, 600.00, '2026-03-03', 0, 'current', 0.00, '2026-02-20', N'客户已确认三月初支付余款');
+INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [order_id], [invoice_amount], [paid_amount], [outstanding_amount]
 ```
 _Preview truncated; see input file for full content._
 
@@ -65979,6 +65974,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.approved_by`
 - `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.reported_by`
 - `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.purchase_returns.return_no`
+- `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.damage_reports.report_no`
 - `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.damage_report_items.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.damage_report_items.product_id`
@@ -65994,7 +65990,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
 - `VALUE:DIRECT:dbo.purchase_returns.return_reason->dbo.purchase_return_items.reason`
 - `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
-- `VALUE:FUNCTION_CALL:dbo.warehouses.code->dbo.damage_reports.report_no`
 
 **Forbidden Tables**
 
@@ -66045,9 +66040,9 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
-- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.current_qty`
-- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.initial_qty`
-- `VALUE:ARITHMETIC:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `VALUE:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
 - `VALUE:COALESCE:dbo.supplier_products.supplier_price,dbo.products.purchase_price->dbo.product_batches.purchase_price`
 - `VALUE:CONCAT_FORMAT:dbo.products.sku->dbo.product_batches.batch_no`
 - `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.inventory.shelf_location`
@@ -67635,6 +67630,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
 - `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
@@ -67643,7 +67639,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.product_batches.batch_no->dbo.inventory_transactions.remark`
 - `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.reference_id`
 - `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
-- `VALUE:FUNCTION_CALL:dbo.product_batches.status->dbo.product_batches.status`
 
 **Forbidden Tables**
 
@@ -67945,8 +67940,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days,dbo.mrp_runs.run_date->dbo.mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
@@ -67962,17 +67955,20 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:dbo.sales_orders.paid_amount,dbo.payments.amount->dbo.sales_orders.paid_amount`
-- `VALUE:ARITHMETIC:dbo.sales_orders.status->dbo.sales_orders.status`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.address->dbo.customers.address`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.contact_person->dbo.customers.contact_person`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.email->dbo.customers.email`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.phone->dbo.customers.phone`
+- `VALUE:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `VALUE:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
+- `VALUE:CASE_WHEN:dbo.sales_orders.status->dbo.sales_orders.status`
 - `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
 - `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
 - `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.unit_cost`
 - `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
 - `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
 - `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.payments.payment_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
@@ -68068,7 +68064,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
 - `VALUE:FUNCTION_CALL:dbo.purchase_orders.order_date->dbo.ap_invoices.due_date`
-- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 
 **Forbidden Tables**
 
@@ -68212,12 +68207,12 @@ _Preview truncated; see input file for full content._
 ```sql
 -- ============================================================
 -- SQL Server ERP natural sample data.
--- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
--- does not inflate relationship/lineage counts with synthetic relationship SQL.
--- Baseline is T-SQL 2016-compatible for all SQL Server versions.
+-- Deterministic business rows shared by SQL Server 2016-2025.
 -- ============================================================
 
--- Natural seed rows for [dbo].[ar_aging_snapshots].
+SET IDENTITY_INSERT [dbo].[ar_aging_snapshots] ON;
+INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [order_id], [invoice_amount], [paid_amount], [outstanding_amount], [due_date], [aging_days], [aging_bucket], [bad_debt_provision], [last_collection_date], [collection_notes]) VALUES (1, '2026-02-28', 1, 1, 1000.00, 400.00, 600.00, '2026-03-03', 0, 'current', 0.00, '2026-02-20', N'客户已确认三月初支付余款');
+INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [order_id], [invoice_amount], [paid_amount], [outstanding_amount]
 ```
 _Preview truncated; see input file for full content._
 
@@ -68268,6 +68263,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.approved_by`
 - `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.reported_by`
 - `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.purchase_returns.return_no`
+- `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.damage_reports.report_no`
 - `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.damage_report_items.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.damage_report_items.product_id`
@@ -68283,7 +68279,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
 - `VALUE:DIRECT:dbo.purchase_returns.return_reason->dbo.purchase_return_items.reason`
 - `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
-- `VALUE:FUNCTION_CALL:dbo.warehouses.code->dbo.damage_reports.report_no`
 
 **Forbidden Tables**
 
@@ -68334,9 +68329,9 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
-- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.current_qty`
-- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.initial_qty`
-- `VALUE:ARITHMETIC:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `VALUE:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
 - `VALUE:COALESCE:dbo.supplier_products.supplier_price,dbo.products.purchase_price->dbo.product_batches.purchase_price`
 - `VALUE:CONCAT_FORMAT:dbo.products.sku->dbo.product_batches.batch_no`
 - `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.inventory.shelf_location`
@@ -69881,6 +69876,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
 - `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
@@ -69889,7 +69885,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.product_batches.batch_no->dbo.inventory_transactions.remark`
 - `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.reference_id`
 - `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
-- `VALUE:FUNCTION_CALL:dbo.product_batches.status->dbo.product_batches.status`
 
 **Forbidden Tables**
 
@@ -70191,8 +70186,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days,dbo.mrp_runs.run_date->dbo.mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
@@ -70208,17 +70201,20 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:dbo.sales_orders.paid_amount,dbo.payments.amount->dbo.sales_orders.paid_amount`
-- `VALUE:ARITHMETIC:dbo.sales_orders.status->dbo.sales_orders.status`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.address->dbo.customers.address`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.contact_person->dbo.customers.contact_person`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.email->dbo.customers.email`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.phone->dbo.customers.phone`
+- `VALUE:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `VALUE:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
+- `VALUE:CASE_WHEN:dbo.sales_orders.status->dbo.sales_orders.status`
 - `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
 - `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
 - `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.unit_cost`
 - `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
 - `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
 - `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.payments.payment_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
@@ -70314,7 +70310,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
 - `VALUE:FUNCTION_CALL:dbo.purchase_orders.order_date->dbo.ap_invoices.due_date`
-- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 
 **Forbidden Tables**
 
@@ -70458,12 +70453,12 @@ _Preview truncated; see input file for full content._
 ```sql
 -- ============================================================
 -- SQL Server ERP natural sample data.
--- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
--- does not inflate relationship/lineage counts with synthetic relationship SQL.
--- Baseline is T-SQL 2016-compatible for all SQL Server versions.
+-- Deterministic business rows shared by SQL Server 2016-2025.
 -- ============================================================
 
--- Natural seed rows for [dbo].[ar_aging_snapshots].
+SET IDENTITY_INSERT [dbo].[ar_aging_snapshots] ON;
+INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [order_id], [invoice_amount], [paid_amount], [outstanding_amount], [due_date], [aging_days], [aging_bucket], [bad_debt_provision], [last_collection_date], [collection_notes]) VALUES (1, '2026-02-28', 1, 1, 1000.00, 400.00, 600.00, '2026-03-03', 0, 'current', 0.00, '2026-02-20', N'客户已确认三月初支付余款');
+INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [order_id], [invoice_amount], [paid_amount], [outstanding_amount]
 ```
 _Preview truncated; see input file for full content._
 
@@ -70514,6 +70509,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.approved_by`
 - `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.reported_by`
 - `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.purchase_returns.return_no`
+- `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.damage_reports.report_no`
 - `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.damage_report_items.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.damage_report_items.product_id`
@@ -70529,7 +70525,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
 - `VALUE:DIRECT:dbo.purchase_returns.return_reason->dbo.purchase_return_items.reason`
 - `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
-- `VALUE:FUNCTION_CALL:dbo.warehouses.code->dbo.damage_reports.report_no`
 
 **Forbidden Tables**
 
@@ -70580,9 +70575,9 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
-- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.current_qty`
-- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.initial_qty`
-- `VALUE:ARITHMETIC:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `VALUE:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
 - `VALUE:COALESCE:dbo.supplier_products.supplier_price,dbo.products.purchase_price->dbo.product_batches.purchase_price`
 - `VALUE:CONCAT_FORMAT:dbo.products.sku->dbo.product_batches.batch_no`
 - `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.inventory.shelf_location`
@@ -72170,6 +72165,7 @@ _Preview truncated; see input file for full content._
 **Expected Data Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
 - `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
@@ -72178,7 +72174,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.product_batches.batch_no->dbo.inventory_transactions.remark`
 - `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.reference_id`
 - `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
-- `VALUE:FUNCTION_CALL:dbo.product_batches.status->dbo.product_batches.status`
 
 **Forbidden Tables**
 
@@ -72480,8 +72475,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
 - `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days,dbo.mrp_runs.run_date->dbo.mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
@@ -72497,17 +72490,20 @@ _Preview truncated; see input file for full content._
 - `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
 - `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.cogs_amount`
 - `VALUE:ARITHMETIC:dbo.sales_orders.paid_amount,dbo.payments.amount->dbo.sales_orders.paid_amount`
-- `VALUE:ARITHMETIC:dbo.sales_orders.status->dbo.sales_orders.status`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.address->dbo.customers.address`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.contact_person->dbo.customers.contact_person`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.email->dbo.customers.email`
 - `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.phone->dbo.customers.phone`
+- `VALUE:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `VALUE:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
+- `VALUE:CASE_WHEN:dbo.sales_orders.status->dbo.sales_orders.status`
 - `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
 - `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
 - `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.unit_cost`
 - `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
 - `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
 - `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.payments.payment_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
@@ -72603,7 +72599,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
 - `VALUE:FUNCTION_CALL:dbo.purchase_orders.order_date->dbo.ap_invoices.due_date`
-- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 
 **Forbidden Tables**
 
@@ -72747,12 +72742,12 @@ _Preview truncated; see input file for full content._
 ```sql
 -- ============================================================
 -- SQL Server ERP natural sample data.
--- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
--- does not inflate relationship/lineage counts with synthetic relationship SQL.
--- Baseline is T-SQL 2016-compatible for all SQL Server versions.
+-- Deterministic business rows shared by SQL Server 2016-2025.
 -- ============================================================
 
--- Natural seed rows for [dbo].[ar_aging_snapshots].
+SET IDENTITY_INSERT [dbo].[ar_aging_snapshots] ON;
+INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [order_id], [invoice_amount], [paid_amount], [outstanding_amount], [due_date], [aging_days], [aging_bucket], [bad_debt_provision], [last_collection_date], [collection_notes]) VALUES (1, '2026-02-28', 1, 1, 1000.00, 400.00, 600.00, '2026-03-03', 0, 'current', 0.00, '2026-02-20', N'客户已确认三月初支付余款');
+INSERT INTO [dbo].[ar_aging_snapshots] ([id], [snapshot_date], [customer_id], [order_id], [invoice_amount], [paid_amount], [outstanding_amount]
 ```
 _Preview truncated; see input file for full content._
 
@@ -72803,6 +72798,7 @@ _Preview truncated; see input file for full content._
 - `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.approved_by`
 - `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.reported_by`
 - `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.purchase_returns.return_no`
+- `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.damage_reports.report_no`
 - `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
 - `VALUE:DIRECT:dbo.inventory.batch_id->dbo.damage_report_items.batch_id`
 - `VALUE:DIRECT:dbo.inventory.product_id->dbo.damage_report_items.product_id`
@@ -72818,7 +72814,6 @@ _Preview truncated; see input file for full content._
 - `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
 - `VALUE:DIRECT:dbo.purchase_returns.return_reason->dbo.purchase_return_items.reason`
 - `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
-- `VALUE:FUNCTION_CALL:dbo.warehouses.code->dbo.damage_reports.report_no`
 
 **Forbidden Tables**
 
@@ -72869,9 +72864,9 @@ _Preview truncated; see input file for full content._
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
 - `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
 - `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
-- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.current_qty`
-- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.initial_qty`
-- `VALUE:ARITHMETIC:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `VALUE:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `VALUE:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
 - `VALUE:COALESCE:dbo.supplier_products.supplier_price,dbo.products.purchase_price->dbo.product_batches.purchase_price`
 - `VALUE:CONCAT_FORMAT:dbo.products.sku->dbo.product_batches.batch_no`
 - `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.inventory.shelf_location`

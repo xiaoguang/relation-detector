@@ -3,6 +3,7 @@ package com.relationdetector.mysql.fullgrammer.common;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.fullgrammer.FullGrammerEventMerger;
 import com.relationdetector.core.fullgrammer.FullGrammerNativeEventTypes;
+import com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter;
 import com.relationdetector.core.fullgrammer.FullGrammerTypedSqlEventSink;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,11 +17,13 @@ import org.antlr.v4.runtime.tree.ParseTree;
  */
 public final class MySqlSqlEventVisitorCore {
     private final FullGrammerTypedSqlEventSink sink;
+    private final FullGrammerParseTreeAdapter parseTreeAdapter;
     private final List<String> rowsetAliases = new ArrayList<>();
     private int existsDepth;
 
     public MySqlSqlEventVisitorCore(FullGrammerTypedSqlEventSink sink) {
         this.sink = sink;
+        this.parseTreeAdapter = sink.parseTreeAdapter();
     }
 
     public FullGrammerTypedSqlEventSink sink() {
@@ -74,14 +77,7 @@ public final class MySqlSqlEventVisitorCore {
     }
 
     public boolean isExpressionContext(org.antlr.v4.runtime.ParserRuleContext ctx) {
-        String name = ctx.getClass().getSimpleName();
-        return name.startsWith("Expr")
-                || name.startsWith("PrimaryExpr")
-                || name.startsWith("PredicateExpr")
-                || name.startsWith("SimpleExpr")
-                || name.equals("PredicateContext")
-                || name.equals("BoolPriContext")
-                || name.equals("BitExprContext");
+        return parseTreeAdapter.hasRole(ctx, FullGrammerParseTreeAdapter.Role.EXPRESSION);
     }
 
     public record ColumnParts(String qualifier, String column) {

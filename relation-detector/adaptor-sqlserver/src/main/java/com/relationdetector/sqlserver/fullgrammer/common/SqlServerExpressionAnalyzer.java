@@ -26,6 +26,12 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
     private static final Map<String, LineageTransformType> FUNCTION_EXTENSIONS = Map.of(
             "isnull", LineageTransformType.COALESCE);
 
+    public SqlServerExpressionAnalyzer(
+            com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter parseTreeAdapter
+    ) {
+        super(parseTreeAdapter);
+    }
+
     @Override
     protected boolean isCoalesceFunction(String value) {
         return LineageTransformClassifier.classifyFunction(value, false, FUNCTION_EXTENSIONS)
@@ -60,7 +66,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
         CaseAccumulator cases = new CaseAccumulator();
         collectExpressionCases(expression, defaultQualifier, cases);
         List<FullGrammerExpressionAnalysis> result = new ArrayList<>(2);
-        LineageTransformType enclosing = enclosingValueTransform(expression);
+        LineageTransformType enclosing = enclosingValueTransformOutsideCases(expression);
         if (cases.hasValues()) {
             LineageTransformType valueTransform = enclosing == LineageTransformType.DIRECT
                     ? LineageTransformType.CASE_WHEN
@@ -84,8 +90,10 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
     }
 
     private FullGrammerExpressionAnalysis scalarProjection(ParseTree scalar, String defaultQualifier) {
-        ParseTree selectItem = firstDescendant(scalar, "Select_list_elemContext");
-        ParseTree projection = selectItem == null ? null : firstDescendant(selectItem, "ExpressionContext");
+        ParseTree selectItem = parseTreeAdapter().firstDescendant(
+                scalar, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.SELECT_TARGET_ITEM);
+        ParseTree projection = selectItem == null ? null : parseTreeAdapter().firstDescendant(
+                selectItem, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.EXPRESSION);
         if (projection == null) {
             return empty("VALUE");
         }
@@ -97,7 +105,8 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
         if (tree == null) {
             return false;
         }
-        if (tree.getClass().getSimpleName().toLowerCase(Locale.ROOT).contains("case")) {
+        if (parseTreeAdapter().hasRole(
+                tree, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.CASE_EXPRESSION)) {
             return true;
         }
         for (int index = 0; index < tree.getChildCount(); index++) {
@@ -137,25 +146,30 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
                 elseValue = true;
                 continue;
             }
-            String context = child.getClass().getSimpleName();
-            if (context.equals("Switch_sectionContext")) {
+            if (parseTreeAdapter().hasRole(
+                    child, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.CASE_SWITCH_SECTION)) {
                 sawSection = true;
-                List<ParseTree> expressions = directChildren(child, "ExpressionContext");
+                List<ParseTree> expressions = parseTreeAdapter().directChildren(
+                        child, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.EXPRESSION);
                 if (expressions.size() >= 2) {
                     result.addControl(super.analyze(expressions.get(0), defaultQualifier));
                     collectExpressionCases(expressions.get(1), defaultQualifier, result);
                 }
                 continue;
             }
-            if (context.equals("Switch_search_condition_sectionContext")) {
+            if (parseTreeAdapter().hasRole(
+                    child, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.CASE_SEARCH_SECTION)) {
                 sawSection = true;
-                ParseTree condition = firstDirectChild(child, "Search_conditionContext");
-                ParseTree value = firstDirectChild(child, "ExpressionContext");
+                ParseTree condition = parseTreeAdapter().firstDirectChild(
+                        child, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.CONTROL_SCOPE);
+                ParseTree value = parseTreeAdapter().firstDirectChild(
+                        child, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.EXPRESSION);
                 result.addControl(super.analyze(condition, defaultQualifier));
                 collectExpressionCases(value, defaultQualifier, result);
                 continue;
             }
-            if (context.equals("ExpressionContext")) {
+            if (parseTreeAdapter().hasRole(
+                    child, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.EXPRESSION)) {
                 if (elseValue) {
                     collectExpressionCases(child, defaultQualifier, result);
                 } else if (!sawSection) {
@@ -166,22 +180,8 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
     }
 
     private boolean isCaseContext(ParseTree tree) {
-        return tree != null && tree.getClass().getSimpleName().equals("Case_expressionContext");
-    }
-
-    private List<ParseTree> directChildren(ParseTree tree, String simpleName) {
-        List<ParseTree> result = new ArrayList<>();
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            ParseTree child = tree.getChild(index);
-            if (child.getClass().getSimpleName().equals(simpleName)) {
-                result.add(child);
-            }
-        }
-        return result;
-    }
-
-    private ParseTree firstDirectChild(ParseTree tree, String simpleName) {
-        return directChildren(tree, simpleName).stream().findFirst().orElse(null);
+        return parseTreeAdapter().hasRole(
+                tree, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.CASE_EXPRESSION);
     }
 
     private LineageTransformType enclosingValueTransform(ParseTree tree) {
@@ -196,18 +196,61 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
         if (state.coalesce) {
             return LineageTransformType.COALESCE;
         }
+        if (state.concatFormat) {
+            return LineageTransformType.CONCAT_FORMAT;
+        }
         if (state.function) {
             return LineageTransformType.FUNCTION_CALL;
         }
         return LineageTransformType.DIRECT;
     }
 
+    private LineageTransformType enclosingValueTransformOutsideCases(ParseTree tree) {
+        TransformState state = new TransformState();
+        collectTransformsOutsideCases(tree, state);
+        if (state.aggregate) {
+            return LineageTransformType.AGGREGATE;
+        }
+        if (state.arithmetic) {
+            return LineageTransformType.ARITHMETIC;
+        }
+        if (state.coalesce) {
+            return LineageTransformType.COALESCE;
+        }
+        if (state.concatFormat) {
+            return LineageTransformType.CONCAT_FORMAT;
+        }
+        if (state.function) {
+            return LineageTransformType.FUNCTION_CALL;
+        }
+        return LineageTransformType.DIRECT;
+    }
+
+    private void collectTransformsOutsideCases(ParseTree tree, TransformState state) {
+        if (tree == null || isCaseContext(tree)) {
+            return;
+        }
+        collectCurrentTransform(tree, state);
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            collectTransformsOutsideCases(tree.getChild(index), state);
+        }
+    }
+
     private void collectTransforms(ParseTree tree, TransformState state) {
         if (tree == null) {
             return;
         }
-        String context = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-        if (context.contains("function") || context.contains("aggregate") || context.contains("convert")) {
+        collectCurrentTransform(tree, state);
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            collectTransforms(tree.getChild(index), state);
+        }
+    }
+
+    private void collectCurrentTransform(ParseTree tree, TransformState state) {
+        if (parseTreeAdapter().hasRole(
+                tree, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.FUNCTION_CALL)
+                || parseTreeAdapter().hasRole(
+                tree, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.AGGREGATE_FUNCTION)) {
             String name = firstTerminal(tree).toLowerCase(Locale.ROOT);
             LineageTransformType classified = LineageTransformClassifier.classifyFunction(
                     name, false, FUNCTION_EXTENSIONS);
@@ -215,6 +258,8 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
                 state.aggregate = true;
             } else if (classified == LineageTransformType.COALESCE) {
                 state.coalesce = true;
+            } else if (classified == LineageTransformType.CONCAT_FORMAT) {
+                state.concatFormat = true;
             } else {
                 state.function = true;
             }
@@ -227,6 +272,8 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
                 state.aggregate = true;
             } else if (classified == LineageTransformType.COALESCE) {
                 state.coalesce = true;
+            } else if (classified == LineageTransformType.CONCAT_FORMAT) {
+                state.concatFormat = true;
             } else if (token.equals("convert") || token.equals("cast") || token.equals("year")
                     || token.equals("month") || token.equals("datepart") || token.equals("datename")
                     || token.equals("dateadd") || token.equals("datediff")) {
@@ -236,9 +283,6 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
                     || token.equals("/") || token.equals("%")) {
                 state.arithmetic = true;
             }
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            collectTransforms(tree.getChild(index), state);
         }
     }
 
@@ -262,13 +306,10 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
         List<String> aliases = new ArrayList<>();
         List<String> columns = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
-        for (String context : List.of(
-                "Join_onContext", "Search_conditionContext", "Group_by_itemContext")) {
-            List<ParseTree> controls = new ArrayList<>();
-            collectDirectScopeContexts(scalar, scalar, context, controls);
-            for (ParseTree control : controls) {
-                append(aliases, columns, seen, analyze(control, defaultQualifier));
-            }
+        List<ParseTree> controls = new ArrayList<>();
+        collectDirectScopeContexts(scalar, scalar, controls);
+        for (ParseTree control : controls) {
+            append(aliases, columns, seen, analyze(control, defaultQualifier));
         }
         return new FullGrammerExpressionAnalysis(aliases, columns, "CASE_WHEN", "CONTROL");
     }
@@ -276,7 +317,6 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
     private void collectDirectScopeContexts(
             ParseTree root,
             ParseTree tree,
-            String expected,
             List<ParseTree> result
     ) {
         if (tree == null) {
@@ -285,12 +325,13 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
         if (tree != root && isScalarBoundary(tree)) {
             return;
         }
-        if (tree.getClass().getSimpleName().equals(expected)) {
+        if (parseTreeAdapter().hasRole(
+                tree, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.CONTROL_SCOPE)) {
             result.add(tree);
             return;
         }
         for (int index = 0; index < tree.getChildCount(); index++) {
-            collectDirectScopeContexts(root, tree.getChild(index), expected, result);
+            collectDirectScopeContexts(root, tree.getChild(index), result);
         }
     }
 
@@ -311,24 +352,8 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
     }
 
     private boolean isScalarBoundary(ParseTree tree) {
-        String name = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-        return name.equals("subquerycontext") || name.contains("scalarsubquery");
-    }
-
-    private ParseTree firstDescendant(ParseTree tree, String expectedSimpleName) {
-        if (tree == null) {
-            return null;
-        }
-        if (tree.getClass().getSimpleName().equals(expectedSimpleName)) {
-            return tree;
-        }
-        for (int index = 0; index < tree.getChildCount(); index++) {
-            ParseTree found = firstDescendant(tree.getChild(index), expectedSimpleName);
-            if (found != null) {
-                return found;
-            }
-        }
-        return null;
+        return parseTreeAdapter().hasRole(
+                tree, com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.SCALAR_SUBQUERY);
     }
 
     private void append(
@@ -356,6 +381,7 @@ public final class SqlServerExpressionAnalyzer extends FullGrammerExpressionAnal
         private boolean aggregate;
         private boolean arithmetic;
         private boolean coalesce;
+        private boolean concatFormat;
         private boolean function;
     }
 

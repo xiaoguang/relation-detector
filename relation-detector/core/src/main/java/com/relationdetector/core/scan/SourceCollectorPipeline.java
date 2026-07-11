@@ -6,10 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -36,24 +32,25 @@ final class SourceCollectorPipeline {
     }
 
     void collectJdbcSources(Connection connection, ScanPipelineContext ctx) {
-        if (ctx.config.metadataEnabled && connection != null) {
+        SourceConfig sources = ctx.config.sources();
+        if (sources.metadataEnabled() && connection != null) {
             ctx.result.sources().add("metadata");
             ctx.metadataSnapshot = ctx.adaptor.collectors().metadata().collect(connection, ctx.scope);
             ctx.relationshipCandidates.addAll(ctx.metadataSnapshot.relationships());
             ctx.result.warnings().addAll(ctx.metadataSnapshot.warnings());
         }
 
-        if (ctx.config.ddlEnabled && ctx.config.ddlFromDatabase && connection != null) {
+        if (sources.ddlEnabled() && sources.ddlFromDatabase() && connection != null) {
             ctx.result.sources().add("database-ddl");
             ParserBundle parserBundle = parserBundle(ctx);
             execute(ctx, collectDatabaseDdl(connection, ctx).stream()
                     .map(definition -> new ParseTask(
-                            context -> statementParser.executeDatabaseDdl(parserBundle, ctx.config, definition, context),
+                            context -> statementParser.executeDatabaseDdl(parserBundle, ctx.parserConfig, definition, context),
                             error -> DiagnosticWarnings.ddlTextParseFailed(definition.source(), definition.ddl(), error)))
                     .toList());
         }
 
-        if (ctx.config.objectsEnabled && ctx.config.objectsFromDatabase && connection != null) {
+        if (sources.objectsEnabled() && sources.objectsFromDatabase() && connection != null) {
             ctx.result.sources().add("database-objects");
             Set<TableId> databaseKnownPhysicalTables = statementParser.knownPhysicalTables(ctx.metadataSnapshot);
             ParserBundle parserBundle = parserBundle(ctx);
@@ -61,7 +58,7 @@ final class SourceCollectorPipeline {
                     .map(definition -> {
                         SqlStatementRecord statement = objectStatement(definition);
                         return new ParseTask(
-                                context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.config,
+                                context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.parserConfig,
                                         statement, context, databaseKnownPhysicalTables),
                                 error -> DiagnosticWarnings.sqlParseFailed(statement, error));
                     })
@@ -71,41 +68,42 @@ final class SourceCollectorPipeline {
     }
 
     void collectFileSources(ScanPipelineContext ctx) {
-        if (ctx.config.ddlEnabled) {
+        SourceConfig sources = ctx.config.sources();
+        if (sources.ddlEnabled()) {
             ctx.result.sources().add("ddl");
             ParserBundle parserBundle = parserBundle(ctx);
-            execute(ctx, ctx.config.ddlFiles.stream()
+            execute(ctx, sources.ddlFiles().stream()
                     .map(file -> new ParseTask(
-                            context -> statementParser.executeDdlFile(parserBundle, ctx.config, file, context),
+                            context -> statementParser.executeDdlFile(parserBundle, ctx.parserConfig, file, context),
                             error -> DiagnosticWarnings.ddlParseFailed(file, error)))
                     .toList());
         }
 
-        if (ctx.config.objectsEnabled) {
+        if (sources.objectsEnabled()) {
             ctx.result.sources().add("object-files");
             Set<TableId> fileKnownPhysicalTables = statementParser.knownPhysicalTables(ctx.metadataSnapshot);
             ParserBundle parserBundle = parserBundle(ctx);
             List<ParseTask> tasks = new ArrayList<>();
-            for (Path file : ctx.config.objectFiles) {
-                objectExtractor.extract(file, StatementSourceType.PROCEDURE, ctx.config.databaseType,
+            for (Path file : sources.objectFiles()) {
+                objectExtractor.extract(file, StatementSourceType.PROCEDURE, ctx.config.database().databaseType(),
                                 ctx.result.warnings()::add)
                         .forEach(statement -> tasks.add(new ParseTask(
-                                context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.config,
+                                context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.parserConfig,
                                         statement, context, fileKnownPhysicalTables),
                                 error -> DiagnosticWarnings.sqlParseFailed(statement, error))));
             }
             execute(ctx, tasks);
         }
 
-        if (ctx.config.logsEnabled) {
+        if (sources.logsEnabled()) {
             ctx.result.sources().add("logs");
             Set<TableId> logKnownPhysicalTables = statementParser.knownPhysicalTables(ctx.metadataSnapshot);
             ParserBundle parserBundle = parserBundle(ctx);
             List<ParseTask> tasks = new ArrayList<>();
-            for (Path file : ctx.config.logFiles) {
+            for (Path file : sources.logFiles()) {
                 extractLog(file, ctx)
                         .forEach(statement -> tasks.add(new ParseTask(
-                                context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.config,
+                                context -> statementParser.executeStatement(parserBundle, ctx.adaptor, ctx.parserConfig,
                                         statement, context, logKnownPhysicalTables),
                                 error -> DiagnosticWarnings.sqlParseFailed(statement, error))));
             }
@@ -114,40 +112,24 @@ final class SourceCollectorPipeline {
     }
 
     private ParserBundle parserBundle(ScanPipelineContext ctx) {
-        return statementParser.selectedBundle(ctx.adaptor, ctx.config, ctx.adaptorContext, ctx);
+        return statementParser.selectedBundle(ctx.adaptor, ctx.parserConfig, ctx.adaptorContext, ctx);
     }
 
     private void execute(ScanPipelineContext ctx, List<ParseTask> tasks) {
         if (tasks.isEmpty()) {
             return;
         }
-        List<TaskResult> results = ctx.config.executionParallelism <= 1 || tasks.size() == 1
+        List<TaskResult> results = ctx.config.execution().parallelism() <= 1 || tasks.size() == 1
                 ? tasks.stream().map(task -> executeTask(ctx, task)).toList()
                 : executeInParallel(ctx, tasks);
         results.forEach(result -> merge(ctx, result));
     }
 
     private List<TaskResult> executeInParallel(ScanPipelineContext ctx, List<ParseTask> tasks) {
-        int parallelism = Math.min(Math.max(1, ctx.config.executionParallelism), tasks.size());
-        ExecutorService executor = Executors.newFixedThreadPool(parallelism);
-        try {
-            List<Callable<TaskResult>> calls = tasks.stream()
-                    .<Callable<TaskResult>>map(task -> () -> executeTask(ctx, task))
-                    .toList();
-            List<Future<TaskResult>> futures = executor.invokeAll(calls);
-            List<TaskResult> results = new ArrayList<>(futures.size());
-            for (Future<TaskResult> future : futures) {
-                results.add(future.get());
-            }
-            return results;
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while parsing scan sources", ex);
-        } catch (ExecutionException ex) {
-            throw new IllegalStateException("Unexpected worker failure while parsing scan sources", ex.getCause());
-        } finally {
-            executor.shutdownNow();
-        }
+        List<Callable<TaskResult>> calls = tasks.stream()
+                .<Callable<TaskResult>>map(task -> () -> executeTask(ctx, task))
+                .toList();
+        return ctx.taskExecutor.invokeAll(calls);
     }
 
     private TaskResult executeTask(ScanPipelineContext ctx, ParseTask task) {
@@ -172,7 +154,8 @@ final class SourceCollectorPipeline {
 
     private Stream<SqlStatementRecord> extractLog(Path file, ScanPipelineContext ctx) {
         try {
-            return ctx.adaptor.collectors().logs().extract(file, ctx.config.logFormatHint, ctx.result.warnings()::add);
+            return ctx.adaptor.collectors().logs().extract(file, ctx.config.sources().logFormatHint(),
+                    ctx.result.warnings()::add);
         } catch (Exception ex) {
             ctx.result.warnings().add(DiagnosticWarnings.logExtractFailed(file, ex));
             return Stream.empty();

@@ -1,6 +1,5 @@
 package com.relationdetector.cli;
 
-import java.nio.file.Files;
 import java.util.List;
 
 import com.relationdetector.contracts.model.WarningMessage;
@@ -8,13 +7,23 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.core.log.PlainSqlLogExtractor;
 
 final class FixtureInputLoader {
+    private final TestAssetCatalog assets;
+
+    FixtureInputLoader() {
+        this(new TestAssetCatalog());
+    }
+
+    FixtureInputLoader(TestAssetCatalog assets) {
+        this.assets = assets;
+    }
+
     LoadedFixtureInput load(CorrectnessFixture fixture) throws Exception {
         return new LoadedFixtureInput(
-                Files.readString(fixture.inputFile()),
+                assets.read(fixture.inputFile()),
                 expectedRelations(fixture),
                 expectedDiagnostics(fixture),
-                ExpectedLineage.readIfPresent(fixture.expectedLineageFile()),
-                ExpectedNamingEvidence.readIfPresent(fixture.expectedNamingEvidenceFile()));
+                expectedLineage(fixture),
+                expectedNamingEvidence(fixture));
     }
 
     List<SqlStatementRecord> sqlStatements(
@@ -31,21 +40,39 @@ final class FixtureInputLoader {
                     fixture.objectSourceFilter());
         }
         return new PlainSqlLogExtractor()
-                .extract(fixture.inputFile(), fixture.sourceType(), warnings::add)
+                .extract(input, fixture.inputFile(), fixture.sourceType())
                 .toList();
     }
 
     private ExpectedRelations expectedRelations(CorrectnessFixture fixture) throws Exception {
-        if (Boolean.getBoolean("updateCorrectnessGold") && !Files.exists(fixture.expectedRelationsFile())) {
+        if (Boolean.getBoolean("updateCorrectnessGold") && !java.nio.file.Files.exists(fixture.expectedRelationsFile())) {
             return new ExpectedRelations(List.of(), List.of());
         }
-        return ExpectedRelations.read(fixture.expectedRelationsFile());
+        return assets.parse(fixture.expectedRelationsFile(), "relations",
+                text -> CorrectnessJson.readRelations(text, fixture.expectedRelationsFile()));
     }
 
     private ExpectedDiagnostics expectedDiagnostics(CorrectnessFixture fixture) throws Exception {
-        if (Boolean.getBoolean("updateCorrectnessGold") && !Files.exists(fixture.expectedDiagnosticsFile())) {
+        if (Boolean.getBoolean("updateCorrectnessGold") && !java.nio.file.Files.exists(fixture.expectedDiagnosticsFile())) {
             return new ExpectedDiagnostics("", java.util.Map.of());
         }
-        return ExpectedDiagnostics.read(fixture.expectedDiagnosticsFile());
+        return assets.parse(fixture.expectedDiagnosticsFile(), "diagnostics",
+                text -> CorrectnessJson.readDiagnostics(text, fixture.expectedDiagnosticsFile()));
+    }
+
+    private ExpectedLineage expectedLineage(CorrectnessFixture fixture) throws Exception {
+        if (!java.nio.file.Files.exists(fixture.expectedLineageFile())) {
+            return new ExpectedLineage(false, List.of(), List.of(), List.of(), java.util.Map.of());
+        }
+        return assets.parse(fixture.expectedLineageFile(), "lineage",
+                text -> CorrectnessJson.readLineage(text, fixture.expectedLineageFile()));
+    }
+
+    private ExpectedNamingEvidence expectedNamingEvidence(CorrectnessFixture fixture) throws Exception {
+        if (!java.nio.file.Files.exists(fixture.expectedNamingEvidenceFile())) {
+            return new ExpectedNamingEvidence(false, List.of());
+        }
+        return assets.parse(fixture.expectedNamingEvidenceFile(), "namingEvidence",
+                text -> CorrectnessJson.readNamingEvidence(text, fixture.expectedNamingEvidenceFile()));
     }
 }

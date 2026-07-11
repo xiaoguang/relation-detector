@@ -113,9 +113,9 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 .toList();
 
         for (String target : List.of("if_amount", "case_amount")) {
-            assertTrue(fingerprints.contains("VALUE:ARITHMETIC:orders.refund_amount,orders.total_amount->return_metrics."
+            assertTrue(fingerprints.contains("VALUE:CASE_WHEN:orders.refund_amount,orders.total_amount->return_metrics."
                             + target),
-                    () -> "Conditional branch values should preserve their arithmetic transform: " + fingerprints);
+                    () -> "Conditional branch values should use the canonical CASE transform: " + fingerprints);
             assertTrue(fingerprints.contains("CONTROL:CASE_WHEN:orders.status->return_metrics." + target),
                     () -> "Conditional predicates should remain CONTROL lineage: " + fingerprints);
         }
@@ -636,7 +636,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                             case ROWSET_REFERENCE, PREDICATE_EQUALITY, PROJECTION_ITEM, IGNORED_ROWSET -> true;
                             default -> false;
                         })
-                        .map(event -> event.type() + ":" + event.attributes())
+                        .map(event -> event.type() + ":" + event)
                         .toList()
                         .toString());
     }

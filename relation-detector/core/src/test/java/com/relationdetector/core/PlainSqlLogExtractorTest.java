@@ -180,4 +180,17 @@ class PlainSqlLogExtractorTest {
         assertTrue(statements.get(4).sql().contains("RAISE NOTICE '; -- /* quoted '' text */';"));
         assertEquals("SELECT 2;", statements.get(5).sql());
     }
+
+    @Test
+    void extractsProvidedTextWithoutReadingTheSourcePathAgain() {
+        Path source = tempDir.resolve("does-not-exist.sql");
+
+        var statements = new PlainSqlLogExtractor()
+                .extract("SELECT 1;\nSELECT 2;", source, StatementSourceType.PLAIN_SQL)
+                .toList();
+
+        assertEquals(2, statements.size());
+        assertEquals(1, statements.get(0).startLine());
+        assertEquals(2, statements.get(1).startLine());
+    }
 }

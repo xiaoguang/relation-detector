@@ -21,6 +21,7 @@
     "VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.approved_by",
     "VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.reported_by",
     "VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.purchase_returns.return_no",
+    "VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.damage_reports.report_no",
     "VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id",
     "VALUE:DIRECT:dbo.inventory.batch_id->dbo.damage_report_items.batch_id",
     "VALUE:DIRECT:dbo.inventory.product_id->dbo.damage_report_items.product_id",
@@ -35,8 +36,7 @@
     "VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id",
     "VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id",
     "VALUE:DIRECT:dbo.purchase_returns.return_reason->dbo.purchase_return_items.reason",
-    "VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id",
-    "VALUE:FUNCTION_CALL:dbo.warehouses.code->dbo.damage_reports.report_no"
+    "VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id"
   ],
   "forbiddenSources": [],
   "forbiddenTargets": [],

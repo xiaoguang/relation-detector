@@ -42,8 +42,8 @@ final class ProjectionTraceResolver {
                 if (event.type() != StructuredParseEventType.PROJECTION_ITEM) {
                     continue;
                 }
-                String outputAlias = text(event, "outputAlias");
-                String outputColumn = text(event, "outputColumn");
+                String outputAlias = event.outputAlias();
+                String outputColumn = event.outputColumn();
                 if (outputAlias.isBlank() || outputColumn.isBlank()) {
                     continue;
                 }
@@ -61,7 +61,8 @@ final class ProjectionTraceResolver {
                                     projection,
                                     resolution.sources().stream().distinct().toList(),
                                     effectiveTransform(
-                                            text(event, "transformType"), resolution.transforms(), resolution.flowKind()),
+                                            event.expression().transformType().name(),
+                                            resolution.transforms(), resolution.flowKind()),
                                     resolution.flowKind()),
                             ignoredRowsets);
                 }
@@ -93,11 +94,11 @@ final class ProjectionTraceResolver {
             Map<String, ProjectionTrace> projections,
             Set<String> ignoredRowsets
     ) {
-        List<String> sourceAliases = stringList(event.attributes().get("sourceAliases"));
-        List<String> sourceColumns = stringList(event.attributes().get("sourceColumns"));
+        List<String> sourceAliases = event.expression().sourceAliases();
+        List<String> sourceColumns = event.expression().sourceColumns();
         Map<LineageFlowKind, List<Endpoint>> endpoints = new LinkedHashMap<>();
         Map<LineageFlowKind, List<LineageTransformType>> transforms = new LinkedHashMap<>();
-        LineageFlowKind eventFlow = flowKind(text(event, "flowKind"));
+        LineageFlowKind eventFlow = event.expression().flowKind();
         int count = Math.min(sourceAliases.size(), sourceColumns.size());
         for (int index = 0; index < count; index++) {
             String sourceAlias = sourceAliases.get(index);
@@ -158,9 +159,9 @@ final class ProjectionTraceResolver {
             if (event.type() != StructuredParseEventType.ROWSET_REFERENCE) {
                 continue;
             }
-            String table = text(event, "table");
-            String qualified = text(event, "qualifiedTable");
-            String alias = text(event, "alias");
+            String table = event.table();
+            String qualified = event.qualifiedTable();
+            String alias = event.alias();
             if (alias.isBlank()
                     || (!ignoredRowsets.contains(normalize(table)) && !ignoredRowsets.contains(normalize(qualified)))) {
                 continue;
@@ -280,18 +281,6 @@ final class ProjectionTraceResolver {
         }
         LineageTransformType effective = effectiveTransform(eventTransform, sourceTransforms);
         return effective;
-    }
-
-    private static List<String> stringList(Object value) {
-        if (value instanceof List<?> list) {
-            return list.stream().map(String::valueOf).toList();
-        }
-        return List.of();
-    }
-
-    private static String text(StructuredSqlEvent event, String key) {
-        Object value = event.attributes().get(key);
-        return value == null ? "" : value.toString();
     }
 
     private static TableId tableId(String qualified) {

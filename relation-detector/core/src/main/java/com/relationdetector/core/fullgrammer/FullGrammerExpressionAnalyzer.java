@@ -24,7 +24,16 @@ import org.antlr.v4.runtime.tree.TerminalNode;
  * transform semantics are consumed by the core lineage layer.
  */
 public abstract class FullGrammerExpressionAnalyzer {
+    private final FullGrammerParseTreeAdapter parseTreeAdapter;
     private final Set<String> nonColumnIdentifiers = new LinkedHashSet<>();
+
+    protected FullGrammerExpressionAnalyzer(FullGrammerParseTreeAdapter parseTreeAdapter) {
+        this.parseTreeAdapter = java.util.Objects.requireNonNull(parseTreeAdapter, "parseTreeAdapter");
+    }
+
+    public final FullGrammerParseTreeAdapter parseTreeAdapter() {
+        return parseTreeAdapter;
+    }
 
     public void ignoreIdentifier(String identifier) {
         String clean = cleanIdentifier(identifier);
@@ -258,36 +267,19 @@ public abstract class FullGrammerExpressionAnalyzer {
     }
 
     private boolean isSwitchSectionContext(ParseTree tree) {
-        if (tree == null) {
-            return false;
-        }
-        String contextName = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-        return contextName.contains("switch") && contextName.contains("section");
+        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CASE_SWITCH_SECTION);
     }
 
     private boolean isWhenClauseListContext(ParseTree tree) {
-        if (tree == null) {
-            return false;
-        }
-        String name = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-        return name.contains("when_clause_list") || name.contains("whenclauselist");
+        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CASE_WHEN_LIST);
     }
 
     private boolean isWhenClauseContext(ParseTree tree) {
-        if (tree == null) {
-            return false;
-        }
-        String name = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-        return (name.contains("when_clause") || name.contains("whenclause"))
-                && !isWhenClauseListContext(tree);
+        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CASE_WHEN);
     }
 
     private boolean isCaseDefaultContext(ParseTree tree) {
-        if (tree == null) {
-            return false;
-        }
-        String name = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-        return name.contains("case_default") || name.contains("casedefault");
+        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CASE_DEFAULT);
     }
 
     private String terminalText(ParseTree tree) {
@@ -323,7 +315,7 @@ public abstract class FullGrammerExpressionAnalyzer {
     }
 
     private boolean isCaseContext(ParseTree tree) {
-        return tree != null && tree.getClass().getSimpleName().contains("Case");
+        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CASE_EXPRESSION);
     }
 
     private void collectExpressionSourceColumns(
@@ -361,8 +353,7 @@ public abstract class FullGrammerExpressionAnalyzer {
         if (isAggregateScalarSubqueryContext(tree)) {
             return;
         }
-        String contextName = tree.getClass().getSimpleName();
-        if (isColumnReferenceContext(contextName)) {
+        if (isColumnReferenceContext(tree)) {
             ExpressionColumn column = expressionColumn(tree.getText(), defaultQualifier);
             if (column != null) {
                 result.add(column);
@@ -375,11 +366,11 @@ public abstract class FullGrammerExpressionAnalyzer {
     }
 
     private boolean isAggregateScalarSubqueryContext(ParseTree tree) {
-        String contextName = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-        if (contextName.contains("subquery") && containsAggregateFunction(tree)) {
+        if (parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.SCALAR_SUBQUERY)
+                && containsAggregateFunction(tree)) {
             return true;
         }
-        return contextName.contains("select")
+        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.QUERY_BOUNDARY)
                 && containsAggregateFunction(tree)
                 && containsTerminal(tree, "from");
     }
@@ -429,29 +420,24 @@ public abstract class FullGrammerExpressionAnalyzer {
     }
 
     private boolean isAggregateFunctionContext(ParseTree tree) {
-        String contextName = tree.getClass().getSimpleName();
-        if (contextName.contains("Sum")) {
+        if (parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.AGGREGATE_FUNCTION)) {
             return true;
         }
-        if (!contextName.equals("FunctionCallContext") && !contextName.equals("Func_applicationContext")) {
+        if (!parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.FUNCTION_CALL)) {
             return false;
         }
         return isAggregateFunction(firstLeafText(tree).toLowerCase(Locale.ROOT));
     }
 
-    private boolean isColumnReferenceContext(String contextName) {
-        return contextName.equals("ColumnrefContext")
-                || contextName.equals("ColumnRefContext")
-                || contextName.equals("SimpleExprColumnRefContext")
-                || contextName.equals("Full_column_nameContext");
+    private boolean isColumnReferenceContext(ParseTree tree) {
+        return parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.COLUMN_REFERENCE);
     }
 
     private void collectColumns(ParseTree tree, String defaultQualifier, Set<ExpressionColumn> result) {
         if (tree == null) {
             return;
         }
-        String contextName = tree.getClass().getSimpleName();
-        if (isColumnReferenceContext(contextName)) {
+        if (isColumnReferenceContext(tree)) {
             ExpressionColumn column = expressionColumn(tree.getText(), defaultQualifier);
             if (column != null) {
                 result.add(column);
@@ -523,23 +509,22 @@ public abstract class FullGrammerExpressionAnalyzer {
         if (tree == null) {
             return;
         }
-        String contextName = tree.getClass().getSimpleName();
-        if (contextName.contains("Case")) {
+        if (parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CASE_EXPRESSION)) {
             flags.caseExpression = true;
         }
-        if (contextName.contains("Sum")) {
+        if (parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.AGGREGATE_FUNCTION)) {
             flags.aggregate = true;
             flags.functionCall = true;
         }
-        if (contextName.contains("Window") || contextName.contains("Over_clause")) {
+        if (parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.WINDOW_FUNCTION)) {
             flags.window = true;
             flags.functionCall = true;
         }
-        if (contextName.contains("Concat")) {
+        if (parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CONCAT_EXPRESSION)) {
             flags.concatFormat = true;
             flags.functionCall = true;
         }
-        if (contextName.equals("FunctionCallContext") || contextName.equals("Func_applicationContext")) {
+        if (parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.FUNCTION_CALL)) {
             classifyFunctionName(firstLeafText(tree), flags);
         }
         if (tree instanceof TerminalNode terminal) {
@@ -642,12 +627,10 @@ public abstract class FullGrammerExpressionAnalyzer {
             }
             return isRelationOperator(clean);
         }
-        String contextName = tree.getClass().getSimpleName();
-        if (contextName.contains("Func")
-                || contextName.contains("Case")
-                || contextName.contains("Sum")
-                || contextName.contains("Window")
-                || contextName.contains("Over_clause")) {
+        if (parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.FUNCTION_CALL)
+                || parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.CASE_EXPRESSION)
+                || parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.AGGREGATE_FUNCTION)
+                || parseTreeAdapter.hasRole(tree, FullGrammerParseTreeAdapter.Role.WINDOW_FUNCTION)) {
             return true;
         }
         for (int index = 0; index < tree.getChildCount(); index++) {

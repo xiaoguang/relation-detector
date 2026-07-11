@@ -11,7 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.relationdetector.contracts.Enums.DatabaseType;
 import com.relationdetector.contracts.Enums.LogFormatHint;
@@ -23,15 +23,18 @@ import com.relationdetector.core.scan.ScanConfig;
 /**
  * YAML configuration loader backed by Jackson YAML.
  *
- * <p>CN: 保留历史类名和 ScanConfig 映射语义，内部使用 Jackson YAML 读取
- * JsonNode。未知 key 继续忽略，方便配置向前兼容。
+ * <p>CN: 保留历史类名和 ScanConfig 映射语义，Jackson YAML 先读取 typed
+ * transport DTO，再映射为可覆盖的 ScanConfig。未知 key 继续忽略。
  *
  * <p>EN: Keeps the historical class name and ScanConfig mapping semantics while
- * using Jackson YAML to read JsonNode. Unknown keys are still ignored for
+ * using a typed Jackson YAML transport DTO. Unknown keys are still ignored for
  * forward-compatible configuration files.
  */
 public final class SimpleYamlConfigLoader {
-    private static final YAMLMapper YAML = new YAMLMapper();
+    private static final YAMLMapper YAML = YAMLMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .build();
     private final NamingRuleConfigLoader namingRuleConfigLoader = new NamingRuleConfigLoader();
 
     /**
@@ -43,208 +46,168 @@ public final class SimpleYamlConfigLoader {
         if (!Files.isRegularFile(file)) {
             throw new IllegalArgumentException("config file does not exist: " + file);
         }
-        ScanConfig config = new ScanConfig();
-        JsonNode root = YAML.readTree(file.toFile());
-        if (root == null || root.isMissingNode() || root.isNull()) {
-            validate(config);
-            return config;
+        ScanYamlConfigDto dto = YAML.readValue(file.toFile(), ScanYamlConfigDto.class);
+        if (dto == null) {
+            dto = new ScanYamlConfigDto();
         }
-
-        readDatabase(config, root.path("database"));
-        readSources(config, root.path("sources"));
-        readExecution(config, root.path("execution"));
-        readFilters(config, root.path("filters"));
-        readOutput(config, root.path("output"));
-        readNamingMatch(config, root.path("namingMatch"), file.toAbsolutePath().getParent());
-        readDerivedPaths(config, root.path("derivedPaths"));
-        readParser(config, root.path("parser"));
+        ScanConfig config = map(dto, file.toAbsolutePath().getParent());
 
         expandConfiguredPaths(config);
         validate(config);
         return config;
     }
 
-    private void readDatabase(ScanConfig config, JsonNode database) {
-        setIfPresent(database, "type", value ->
-                config.databaseType = DatabaseType.valueOf(value.toUpperCase().replace("-", "")));
-        setIfPresent(database, "adaptorId", value -> config.adaptorId = value);
-        setIfPresent(database, "jdbcUrl", value -> config.jdbcUrl = value);
-        setIfPresent(database, "username", value -> config.username = value);
-        setIfPresent(database, "password", value -> config.password = value);
-        setIfPresent(database, "schema", value -> config.schema = value);
-        setIfPresent(database, "catalog", value -> config.catalog = value);
+    private ScanConfig map(ScanYamlConfigDto dto, Path baseDir) {
+        ScanConfig config = new ScanConfig();
+        mapDatabase(config, dto.database);
+        mapSources(config, dto.sources);
+        if (dto.execution.parallelism != null) config.executionParallelism = dto.execution.parallelism;
+        addStrings(dto.filters.includeTables, config.includeTables);
+        addStrings(dto.filters.excludeTables, config.excludeTables);
+        mapOutput(config, dto.output);
+        mapNamingMatch(config, dto.namingMatch, baseDir);
+        mapDerivedPaths(config, dto.derivedPaths);
+        mapParser(config, dto.parser);
+        return config;
     }
 
-    private void readSources(ScanConfig config, JsonNode sources) {
-        JsonNode metadata = sources.path("metadata");
-        setBooleanIfPresent(metadata, "enabled", value -> config.metadataEnabled = value);
-
-        JsonNode ddl = sources.path("ddl");
-        setBooleanIfPresent(ddl, "enabled", value -> config.ddlEnabled = value);
-        setBooleanIfPresent(ddl, "fromDatabase", value -> config.ddlFromDatabase = value);
-        addPaths(ddl.path("files"), config.ddlFiles);
-        addPaths(ddl.path("paths"), config.ddlPaths);
-        addStrings(ddl.path("include"), config.ddlIncludes);
-
-        JsonNode objects = sources.path("objects");
-        setBooleanIfPresent(objects, "enabled", value -> config.objectsEnabled = value);
-        setBooleanIfPresent(objects, "fromDatabase", value -> config.objectsFromDatabase = value);
-        addPaths(objects.path("files"), config.objectFiles);
-        addPaths(objects.path("paths"), config.objectPaths);
-        addStrings(objects.path("include"), config.objectIncludes);
-
-        JsonNode logs = sources.path("logs");
-        setBooleanIfPresent(logs, "enabled", value -> config.logsEnabled = value);
-        setIfPresent(logs, "format", value -> config.logFormatHint = LogFormatHint.valueOf(value.toUpperCase()));
-        setBooleanIfPresent(logs, "filterSystemQueries", value -> config.logsFilterSystemQueries = value);
-        addPaths(logs.path("files"), config.logFiles);
-        addPaths(logs.path("paths"), config.logPaths);
-        addStrings(logs.path("include"), config.logIncludes);
-        addStrings(logs.path("systemSchemas"), config.logSystemSchemas);
-        addStrings(logs.path("metadataQueryMarkers"), config.logMetadataQueryMarkers);
-
-        JsonNode dataProfile = sources.path("dataProfile");
-        setBooleanIfPresent(dataProfile, "enabled", value -> config.dataProfileEnabled = value);
-        setIntIfPresent(dataProfile, "sampleRows", value -> config.sampleRows = value);
-        setIntIfPresent(dataProfile, "timeoutSeconds", value -> config.timeoutSeconds = value);
-        setIntIfPresent(dataProfile, "maxCandidatePairs", value -> config.maxCandidatePairs = value);
-        setIntIfPresent(dataProfile, "maxDistinctValues", value -> config.maxDistinctValues = value);
-        setIntIfPresent(dataProfile, "maxTargetsPerSourceColumn", value -> config.maxTargetsPerSourceColumn = value);
-        setDoubleIfPresent(dataProfile, "minContainmentRatio", value -> config.minContainmentRatio = value);
-        setDoubleIfPresent(dataProfile, "minOverlapRatio", value -> config.minOverlapRatio = value);
-        setDoubleIfPresent(dataProfile, "maxMismatchRatio", value -> config.maxMismatchRatio = value);
-        setIntIfPresent(dataProfile, "minDistinctValues", value -> config.minDistinctValues = value);
-        setIntIfPresent(dataProfile, "minRowsForNegative", value -> config.minRowsForNegative = value);
-        setBooleanIfPresent(dataProfile, "verifyDeclaredForeignKeys", value -> config.verifyDeclaredForeignKeys = value);
-        setBooleanIfPresent(dataProfile, "discoverFromNamingEvidence", value -> config.discoverFromNamingEvidence = value);
-        setBooleanIfPresent(dataProfile, "useOfflineInsertSamples", value -> config.useOfflineInsertSamples = value);
-        setIfPresent(dataProfile, "offlineSampleCompleteness", value ->
-                config.offlineSampleCompleteness = OfflineSampleCompleteness.valueOf(value.toUpperCase()));
-        setBooleanIfPresent(dataProfile, "skipUnindexedLargeTargets", value -> config.skipUnindexedLargeTargets = value);
+    private void mapDatabase(ScanConfig config, ScanYamlConfigDto.Database database) {
+        if (database.type != null) config.databaseType = DatabaseType.valueOf(resolveEnv(database.type).toUpperCase().replace("-", ""));
+        config.adaptorId = resolved(database.adaptorId);
+        config.jdbcUrl = resolved(database.jdbcUrl);
+        config.username = resolved(database.username);
+        config.password = resolved(database.password);
+        config.schema = resolved(database.schema);
+        config.catalog = resolved(database.catalog);
     }
 
-    private void readFilters(ScanConfig config, JsonNode filters) {
-        addStrings(filters.path("includeTables"), config.includeTables);
-        addStrings(filters.path("excludeTables"), config.excludeTables);
+    private void mapSources(ScanConfig config, ScanYamlConfigDto.Sources sources) {
+        if (sources.metadata.enabled != null) config.metadataEnabled = sources.metadata.enabled;
+        mapSqlSource(sources.ddl, config.ddlFiles, config.ddlPaths, config.ddlIncludes);
+        if (sources.ddl.enabled != null) config.ddlEnabled = sources.ddl.enabled;
+        if (sources.ddl.fromDatabase != null) config.ddlFromDatabase = sources.ddl.fromDatabase;
+        mapSqlSource(sources.objects, config.objectFiles, config.objectPaths, config.objectIncludes);
+        if (sources.objects.enabled != null) config.objectsEnabled = sources.objects.enabled;
+        if (sources.objects.fromDatabase != null) config.objectsFromDatabase = sources.objects.fromDatabase;
+        mapSqlSource(sources.logs, config.logFiles, config.logPaths, config.logIncludes);
+        if (sources.logs.enabled != null) config.logsEnabled = sources.logs.enabled;
+        if (sources.logs.format != null) config.logFormatHint = LogFormatHint.valueOf(resolveEnv(sources.logs.format).toUpperCase());
+        if (sources.logs.filterSystemQueries != null) config.logsFilterSystemQueries = sources.logs.filterSystemQueries;
+        addStrings(sources.logs.systemSchemas, config.logSystemSchemas);
+        addStrings(sources.logs.metadataQueryMarkers, config.logMetadataQueryMarkers);
+        mapDataProfile(config, sources.dataProfile);
     }
 
-    private void readExecution(ScanConfig config, JsonNode execution) {
-        setIntIfPresent(execution, "parallelism", value -> config.executionParallelism = value);
+    private void mapSqlSource(ScanYamlConfigDto.SqlSource source, List<Path> files, List<Path> paths,
+            List<String> includes) {
+        addPaths(source.files, files);
+        addPaths(source.paths, paths);
+        addStrings(source.include, includes);
     }
 
-    private void readOutput(ScanConfig config, JsonNode output) {
-        setIfPresent(output, "format", value -> config.outputFormat = OutputFormat.valueOf(value.toUpperCase()));
-        setDoubleIfPresent(output, "minConfidence", value -> config.minConfidence = value);
-        setBooleanIfPresent(output, "includeEvidence", value -> config.includeEvidence = value);
-        setBooleanIfPresent(output, "includeWarnings", value -> config.includeWarnings = value);
-        setBooleanIfPresent(output, "includeObservationCounts", value -> config.includeObservationCounts = value);
+    private void mapDataProfile(ScanConfig config, ScanYamlConfigDto.DataProfile profile) {
+        if (profile.enabled != null) config.dataProfileEnabled = profile.enabled;
+        if (profile.sampleRows != null) config.sampleRows = profile.sampleRows;
+        if (profile.timeoutSeconds != null) config.timeoutSeconds = profile.timeoutSeconds;
+        if (profile.maxCandidatePairs != null) config.maxCandidatePairs = profile.maxCandidatePairs;
+        if (profile.maxDistinctValues != null) config.maxDistinctValues = profile.maxDistinctValues;
+        if (profile.maxTargetsPerSourceColumn != null) config.maxTargetsPerSourceColumn = profile.maxTargetsPerSourceColumn;
+        if (profile.minContainmentRatio != null) config.minContainmentRatio = profile.minContainmentRatio;
+        if (profile.minOverlapRatio != null) config.minOverlapRatio = profile.minOverlapRatio;
+        if (profile.maxMismatchRatio != null) config.maxMismatchRatio = profile.maxMismatchRatio;
+        if (profile.minDistinctValues != null) config.minDistinctValues = profile.minDistinctValues;
+        if (profile.minRowsForNegative != null) config.minRowsForNegative = profile.minRowsForNegative;
+        if (profile.verifyDeclaredForeignKeys != null) config.verifyDeclaredForeignKeys = profile.verifyDeclaredForeignKeys;
+        if (profile.discoverFromNamingEvidence != null) config.discoverFromNamingEvidence = profile.discoverFromNamingEvidence;
+        if (profile.useOfflineInsertSamples != null) config.useOfflineInsertSamples = profile.useOfflineInsertSamples;
+        if (profile.offlineSampleCompleteness != null) config.offlineSampleCompleteness =
+                OfflineSampleCompleteness.valueOf(resolveEnv(profile.offlineSampleCompleteness).toUpperCase());
+        if (profile.skipUnindexedLargeTargets != null) config.skipUnindexedLargeTargets = profile.skipUnindexedLargeTargets;
     }
 
-    private void readNamingMatch(ScanConfig config, JsonNode namingMatch, Path baseDir) {
-        setBooleanIfPresent(namingMatch, "enabled", value -> config.namingMatchEnabled = value);
-        setBooleanIfPresent(namingMatch, "systemRulesEnabled", value -> config.namingMatchSystemRulesEnabled = value);
-        for (Path path : paths(namingMatch.path("ruleFiles"))) {
+    private void mapOutput(ScanConfig config, ScanYamlConfigDto.Output output) {
+        if (output.format != null) config.outputFormat = OutputFormat.valueOf(resolveEnv(output.format).toUpperCase());
+        if (output.minConfidence != null) config.minConfidence = output.minConfidence;
+        if (output.includeEvidence != null) config.includeEvidence = output.includeEvidence;
+        if (output.includeWarnings != null) config.includeWarnings = output.includeWarnings;
+        if (output.includeObservationCounts != null) config.includeObservationCounts = output.includeObservationCounts;
+    }
+
+    private void mapNamingMatch(ScanConfig config, ScanYamlConfigDto.NamingMatch namingMatch, Path baseDir) {
+        if (namingMatch.enabled != null) config.namingMatchEnabled = namingMatch.enabled;
+        if (namingMatch.systemRulesEnabled != null) config.namingMatchSystemRulesEnabled = namingMatch.systemRulesEnabled;
+        for (Path path : paths(namingMatch.ruleFiles)) {
             Path resolved = path.isAbsolute() || baseDir == null ? path : baseDir.resolve(path).normalize();
             config.namingMatchRuleFiles.add(resolved);
             config.namingMatchRules.addAll(namingRuleConfigLoader.loadRuleFile(resolved));
         }
-        config.namingMatchRules.addAll(namingRuleConfigLoader.readInlineRules(namingMatch.path("rules")));
+        if (namingMatch.rules != null) {
+            config.namingMatchRules.addAll(namingRuleConfigLoader.readInlineRules(namingMatch.rules));
+        }
     }
 
-    private void readDerivedPaths(ScanConfig config, JsonNode derivedPaths) {
-        setBooleanIfPresent(derivedPaths, "enabled", value -> config.derivedPathsEnabled = value);
-        setBooleanIfPresent(derivedPaths, "relationships", value -> config.derivedRelationshipsEnabled = value);
-        setBooleanIfPresent(derivedPaths, "dataLineage", value -> config.derivedDataLineageEnabled = value);
-        setBooleanIfPresent(derivedPaths, "namingEvidence", value -> config.derivedNamingEvidenceEnabled = value);
-        setBooleanIfPresent(derivedPaths, "includeNamingEdgesInRelationshipPaths",
-                value -> config.derivedIncludeNamingEdgesInRelationshipPaths = value);
-        setIntIfPresent(derivedPaths, "maxPathLength", value -> config.derivedMaxPathLength = value);
-        setIntIfPresent(derivedPaths, "maxPathsPerPair", value -> config.derivedMaxPathsPerPair = value);
-        setIntIfPresent(derivedPaths, "maxFacts", value -> config.derivedMaxFacts = value);
-        setDoubleIfPresent(derivedPaths, "confidenceDecay", value -> config.derivedConfidenceDecay = value);
-        setDoubleIfPresent(derivedPaths, "minConfidence", value -> config.derivedMinConfidence = value);
+    private void mapDerivedPaths(ScanConfig config, ScanYamlConfigDto.DerivedPaths value) {
+        if (value.enabled != null) config.derivedPathsEnabled = value.enabled;
+        if (value.relationships != null) config.derivedRelationshipsEnabled = value.relationships;
+        if (value.dataLineage != null) config.derivedDataLineageEnabled = value.dataLineage;
+        if (value.namingEvidence != null) config.derivedNamingEvidenceEnabled = value.namingEvidence;
+        if (value.includeNamingEdgesInRelationshipPaths != null) config.derivedIncludeNamingEdgesInRelationshipPaths = value.includeNamingEdgesInRelationshipPaths;
+        if (value.maxPathLength != null) config.derivedMaxPathLength = value.maxPathLength;
+        if (value.maxPathsPerPair != null) config.derivedMaxPathsPerPair = value.maxPathsPerPair;
+        if (value.maxFacts != null) config.derivedMaxFacts = value.maxFacts;
+        if (value.confidenceDecay != null) config.derivedConfidenceDecay = value.confidenceDecay;
+        if (value.minConfidence != null) config.derivedMinConfidence = value.minConfidence;
     }
 
-    private void readParser(ScanConfig config, JsonNode parser) {
+    private void mapParser(ScanConfig config, ScanYamlConfigDto.Parser parser) {
         rejectRemovedParserConfig(parser);
-        setIfPresent(parser, "mode", value -> config.parserMode = normalizeParserMode(value));
-        setIfPresent(parser, "grammarProfile", value -> config.grammarProfile = value);
-        setIfPresent(parser, "databaseVersion", value -> {
-            config.databaseVersion = value;
+        if (parser.mode != null) config.parserMode = normalizeParserMode(resolveEnv(parser.mode));
+        if (parser.grammarProfile != null) config.grammarProfile = resolveEnv(parser.grammarProfile);
+        if (parser.databaseVersion != null) {
+            config.databaseVersion = resolveEnv(parser.databaseVersion);
             config.databaseVersionSource = "CONFIG";
-        });
+        }
     }
 
-    private void rejectRemovedParserConfig(JsonNode parser) {
-        if (parser.path("sql").has("mode")) {
+    private void rejectRemovedParserConfig(ScanYamlConfigDto.Parser parser) {
+        if (parser.sql != null && parser.sql.mode != null) {
             throw new IllegalArgumentException(
                     "parser.sql.mode has been removed; use parser.mode with auto, full-grammer, or token-event");
         }
-        if (parser.path("sql").has("fallbackOnFailure")) {
+        if (parser.sql != null && parser.sql.fallbackOnFailure != null) {
             throw new IllegalArgumentException(
                     "parser.sql.fallbackOnFailure has been removed; use parser.mode with auto, full-grammer, or token-event");
         }
-        if (parser.path("ddl").has("mode")) {
+        if (parser.ddl != null && parser.ddl.mode != null) {
             throw new IllegalArgumentException(
                     "parser.ddl.mode has been removed; use parser.mode with auto, full-grammer, or token-event");
         }
-        if (parser.path("ddl").has("fallbackOnFailure")) {
+        if (parser.ddl != null && parser.ddl.fallbackOnFailure != null) {
             throw new IllegalArgumentException(
                     "parser.ddl.fallbackOnFailure has been removed; use parser.mode with auto, full-grammer, or token-event");
         }
     }
 
-    private void setIfPresent(JsonNode node, String key, StringConsumer consumer) {
-        JsonNode value = node.path(key);
-        if (!value.isMissingNode() && !value.isNull()) {
-            consumer.accept(resolveEnv(value.asText()));
+    private void addPaths(List<String> values, List<Path> target) {
+        for (String value : values == null ? List.<String>of() : values) {
+            target.add(Path.of(resolveEnv(value)));
         }
     }
 
-    private void setBooleanIfPresent(JsonNode node, String key, BooleanConsumer consumer) {
-        JsonNode value = node.path(key);
-        if (!value.isMissingNode() && !value.isNull()) {
-            consumer.accept(value.asBoolean());
-        }
-    }
-
-    private void setIntIfPresent(JsonNode node, String key, IntConsumer consumer) {
-        JsonNode value = node.path(key);
-        if (!value.isMissingNode() && !value.isNull()) {
-            consumer.accept(value.asInt());
-        }
-    }
-
-    private void setDoubleIfPresent(JsonNode node, String key, DoubleConsumer consumer) {
-        JsonNode value = node.path(key);
-        if (!value.isMissingNode() && !value.isNull()) {
-            consumer.accept(value.asDouble());
-        }
-    }
-
-    private void addPaths(JsonNode node, List<Path> target) {
-        addStrings(node, value -> target.add(Path.of(value)));
-    }
-
-    private List<Path> paths(JsonNode node) {
+    private List<Path> paths(List<String> values) {
         List<Path> result = new ArrayList<>();
-        addStrings(node, value -> result.add(Path.of(value)));
+        addPaths(values, result);
         return List.copyOf(result);
     }
 
-    private void addStrings(JsonNode node, List<String> target) {
-        addStrings(node, target::add);
+    private void addStrings(List<String> values, List<String> target) {
+        for (String value : values == null ? List.<String>of() : values) {
+            target.add(resolveEnv(value));
+        }
     }
 
-    private void addStrings(JsonNode node, StringConsumer consumer) {
-        if (node.isMissingNode() || node.isNull()) {
-            return;
-        }
-        if (node.isArray()) {
-            node.forEach(value -> consumer.accept(resolveEnv(value.asText())));
-        } else {
-            consumer.accept(resolveEnv(node.asText()));
-        }
+    private String resolved(String value) {
+        return value == null ? null : resolveEnv(value);
     }
 
     private void expandConfiguredPaths(ScanConfig config) throws IOException {
@@ -379,19 +342,4 @@ public final class SimpleYamlConfigLoader {
         return resolved;
     }
 
-    private interface StringConsumer {
-        void accept(String value);
-    }
-
-    private interface BooleanConsumer {
-        void accept(boolean value);
-    }
-
-    private interface IntConsumer {
-        void accept(int value);
-    }
-
-    private interface DoubleConsumer {
-        void accept(double value);
-    }
 }

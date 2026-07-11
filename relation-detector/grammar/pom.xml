@@ -1,0 +1,60 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.relationdetector</groupId>
+    <artifactId>relation-detector</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+  <artifactId>relation-detector-grammar</artifactId>
+  <packaging>pom</packaging>
+
+  <modules>
+    <module>mysql-v5_7</module>
+    <module>mysql-v8_0</module>
+    <module>postgres-v16</module>
+    <module>postgres-v17</module>
+    <module>postgres-v18</module>
+    <module>postgres-routine</module>
+    <module>oracle-v12c</module>
+    <module>oracle-v19c</module>
+    <module>oracle-v21c</module>
+    <module>oracle-v26ai</module>
+    <module>sqlserver-v2016</module>
+    <module>sqlserver-v2017</module>
+    <module>sqlserver-v2019</module>
+    <module>sqlserver-v2022</module>
+    <module>sqlserver-v2025</module>
+  </modules>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4-runtime</artifactId>
+      <version>4.13.2</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-maven-plugin</artifactId>
+        <version>4.13.2</version>
+        <configuration>
+          <visitor>true</visitor>
+          <listener>true</listener>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>antlr4</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

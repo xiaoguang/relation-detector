@@ -129,18 +129,18 @@ public final class ScanResultReader {
   "schema": "shop",
   "generatedAt": "2026-06-23T00:00:00Z",
   "sources": ["ddl", "object-files", "logs"],
-  "inputFiles": ["/abs/path/mysql-v8_0-full-derived-fresh.json"],
+  "inputFiles": ["relation-detector/target/.../mysql-v8_0-full-derived-fresh.json"],
   "summary": {"directRelationshipCount": 397, "totalNamingEvidenceCount": 1031},
-  "relationships": [JsonNode],
-  "dataLineages": [...],
-  "derivedRelationships": [...],
-  "derivedDataLineages": [...],
-  "namingEvidence": [...],
-  "diagnostics": [...] // 来自 relation-detector 顶层 warnings
+  "relationships": [ScanRelationshipFact],
+  "dataLineages": [ScanLineageFact],
+  "derivedRelationships": [ScanRelationshipFact],
+  "derivedDataLineages": [ScanLineageFact],
+  "namingEvidence": [ScanNamingEvidenceFact],
+  "diagnostics": [ScanDiagnosticFact] // 来自 relation-detector 顶层 warnings
 }
 ```
 
-`ScanBundle` 当前保留 relation-detector JSON 的事实数组为 `JsonNode`，避免在 reader 层复制 relation-detector schema。relation-detector 顶层 `warnings` 在 semantic reader 中映射为 `ScanBundle.diagnostics`；当前 reader 不读取独立的顶层 `diagnostics` 字段。`inputFiles` 保存调用方传入的 `Path`，`SemanticKgBuilder` 当前在 build run 中把它渲染为绝对路径；这不符合可移植 artifact 的长期目标，后续应改为显式 source id 或工作区相对路径。索引、typed semantic object 和 catalog snapshot 是后续模块职责，不是当前 reader 输出。
+`ScanBundle` 在 reader 边界把 relation-detector 事实一次性转为强类型 fact；每个 fact 同时保留原始 `document()` payload，只在 evidence/provenance 渲染时访问。下游 event、bundle 和 evidence graph 不再重复解析 endpoint、confidence、flowKind 和 stable id。relation-detector 顶层 `warnings` 映射为 `ScanBundle.diagnostics`；当前 reader 不读取独立顶层 `diagnostics` 字段。`SemanticKgBuilder` 输出的 input file 是 canonical repo-relative path，不泄漏本机绝对路径。
 
 ## 4. 处理流程图
 
@@ -158,7 +158,7 @@ flowchart TD
     F --> G{type 非空?}
     G -- 否 --> E3[抛出 MISSING_DATABASE_TYPE]
     G -- 是 --> H[遍历 relationships]
-    H --> I[拷贝 relationships / lineage / derived / naming / warnings 数组]
+    H --> I[建立 typed relationship / lineage / naming / diagnostic facts]
     I --> J[读取 summary 整数统计与 sources]
     J --> K{多输入合并?}
     K -- 是 --> L[校验 database.type/schema 一致并 append arrays]
@@ -263,7 +263,7 @@ ScanBundle read(Path path) {
     String databaseType = root.path("database").path("type").asText("");
     if (databaseType.isBlank()) throw new IllegalArgumentException("database.type is required");
 
-    // 4. 薄读取：保留 relation-detector 已合并好的 fact JSON
+    // 4. 在 reader 边界建立 typed facts，每个 fact 仍保留原始 payload
     return new ScanBundle(
         databaseType,
         root.path("database").path("schema").asText(""),
@@ -271,12 +271,12 @@ ScanBundle read(Path path) {
         readSources(root.path("summary").path("sources")),
         List.of(path),
         readIntegerSummary(root.path("summary")),
-        array(root.path("relationships")),
-        array(root.path("dataLineages")),
-        array(root.path("derivedRelationships")),
-        array(root.path("derivedDataLineages")),
-        array(root.path("namingEvidence")),
-        array(root.path("warnings"))
+        relationshipFacts(root.path("relationships")),
+        lineageFacts(root.path("dataLineages")),
+        relationshipFacts(root.path("derivedRelationships")),
+        lineageFacts(root.path("derivedDataLineages")),
+        namingFacts(root.path("namingEvidence")),
+        diagnosticFacts(root.path("warnings"))
     );
 }
 ```

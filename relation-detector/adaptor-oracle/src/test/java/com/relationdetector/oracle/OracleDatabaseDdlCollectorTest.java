@@ -22,7 +22,7 @@ class OracleDatabaseDdlCollectorTest {
         ScanScope scope = new ScanScope(null, "ERP", List.of("ORDERS"), List.of());
 
         List<DatabaseDdlDefinition> definitions = new OracleDatabaseAdaptor()
-                .databaseDdlCollector()
+                .collectors().databaseDdl()
                 .orElseThrow()
                 .collect(connection, scope);
 

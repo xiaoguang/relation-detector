@@ -13,6 +13,16 @@
   <dependencies>
     <dependency>
       <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-mysql-v5_7</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
+      <artifactId>relation-detector-grammar-mysql-v8_0</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.relationdetector</groupId>
       <artifactId>relation-detector-core</artifactId>
       <version>${project.version}</version>
     </dependency>

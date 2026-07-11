@@ -1,6 +1,7 @@
 package com.relationdetector.core.parser;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -244,7 +245,8 @@ class DialectGrammarArchitectureTest {
         Set<Path> allowed = Set.of(
                 Path.of("core/src/main/java/com/relationdetector/core/fullgrammer/SqlGrammarProfileRegistry.java"),
                 Path.of("core/src/main/java/com/relationdetector/core/log/SqlLogNoiseFilter.java"),
-                Path.of("adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer/PostgresFullGrammerVersionSyntaxGuard.java"));
+                Path.of("adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer/PostgresFullGrammerVersionSyntaxGuard.java"),
+                Path.of("cli/src/main/java/com/relationdetector/cli/BatchManifestLoader.java"));
         try (Stream<Path> stream = Files.walk(root)) {
             List<Path> offenders = stream
                     .filter(path -> path.toString().endsWith(".java"))
@@ -490,20 +492,248 @@ class DialectGrammarArchitectureTest {
     }
 
     @Test
+    void databaseAdaptorV2ExposesOnlyGroupedCapabilities() throws IOException {
+        Path root = repoRoot();
+        String adaptor = Files.readString(root.resolve(
+                "contracts/src/main/java/com/relationdetector/contracts/spi/DatabaseAdaptor.java"));
+
+        assertTrue(adaptor.contains("AdaptorCollectors collectors()"));
+        assertTrue(adaptor.contains("AdaptorParsers parsers()"));
+        assertTrue(adaptor.contains("AdaptorProfiling profiling()"));
+        for (String legacyGetter : List.of(
+                "MetadataCollector metadataCollector()",
+                "ObjectDefinitionCollector objectDefinitionCollector()",
+                "DatabaseDdlCollector databaseDdlCollector()",
+                "SqlLogExtractor sqlLogExtractor()",
+                "SqlRelationParser sqlRelationParser()",
+                "StructuredSqlParser structuredSqlParser()",
+                "StructuredDdlParser structuredDdlParser()",
+                "DataProfiler dataProfiler()",
+                "EvidenceWeightAdjuster evidenceWeightAdjuster()")) {
+            assertFalse(adaptor.contains(legacyGetter),
+                    "SPI v2 must not restore legacy getter: " + legacyGetter);
+        }
+
+        String version = Files.readString(root.resolve(
+                "contracts/src/main/java/com/relationdetector/contracts/spi/AdaptorApiVersion.java"));
+        assertTrue(version.contains("CURRENT = 2"), "adaptor SPI must remain on v2");
+    }
+
+    @Test
+    void structuredParserEventsUseOnlyTheSealedTypedContract() throws IOException {
+        Path root = repoRoot();
+        Path parseContract = root.resolve("contracts/src/main/java/com/relationdetector/contracts/parse");
+        String eventContract = Files.readString(parseContract.resolve("StructuredSqlEvent.java"));
+
+        assertTrue(eventContract.contains("public sealed interface StructuredSqlEvent"),
+                "StructuredSqlEvent must remain a sealed typed hierarchy");
+        assertFalse(eventContract.contains("attributes()") || eventContract.contains("Map<String, Object>"),
+                "StructuredSqlEvent must not restore the legacy attributes map");
+
+        List<String> typedEvents = List.of(
+                "RowsetEvent.java", "PredicateEvent.java", "ProjectionEvent.java",
+                "WriteEvent.java", "DdlEvent.java", "DynamicSqlEvent.java");
+        for (String filename : typedEvents) {
+            String text = Files.readString(parseContract.resolve(filename));
+            assertFalse(text.contains("Map<String, Object>") || text.contains(" attributes"),
+                    filename + " must expose explicit typed fields");
+        }
+
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> containsAny(path, List.of(
+                            "StructuredSqlEvent.attributes()",
+                            "event.attributes()",
+                            "new StructuredSqlEvent(")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Production parser events must use typed fields only, offenders=" + offenders);
+        }
+    }
+
+    @Test
     void fullGrammerTypedSinkDelegatesToFocusedHelpers() throws IOException {
         Path root = repoRoot();
         Path sink = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammer/FullGrammerTypedSqlEventSink.java");
         String text = Files.readString(sink);
 
         for (String helper : List.of("RowsetScopeSink", "ProjectionEventSink",
-                "PredicateEventSink", "WriteMappingSink", "SourceLocationSupport")) {
+                "PredicateEventSink", "DirectColumnTraceSupport", "SubqueryProjectionTraceSupport",
+                "WriteMappingSink", "SourceLocationSupport")) {
             assertTrue(text.contains(helper),
                     "FullGrammerTypedSqlEventSink should delegate " + helper + " responsibilities");
         }
+        assertTrue(Files.readAllLines(sink).size() <= 400,
+                "FullGrammerTypedSqlEventSink must remain a thin facade");
         assertFalse(text.contains("new StructuredSqlEvent"),
                 "StructuredSqlEvent creation belongs in FullGrammerEventRecorder");
         assertFalse(text.contains("eventKeys"),
                 "Event de-duplication belongs in FullGrammerEventRecorder");
+    }
+
+    @Test
+    void parserVisitorsAndCollectorsRemainFocused() throws IOException {
+        Path root = repoRoot();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<String> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> path.toString().contains("/fullgrammer/")
+                            || path.toString().contains("/tokenevent/")
+                            || path.toString().contains("/routine/"))
+                    .filter(path -> path.getFileName().toString().contains("Visitor")
+                            || path.getFileName().toString().contains("Collector"))
+                    .filter(path -> {
+                        try {
+                            return Files.readAllLines(path).size() > 400;
+                        } catch (IOException exception) {
+                            throw new IllegalStateException(exception);
+                        }
+                    })
+                    .map(path -> root.relativize(path) + "=" + lineCount(path))
+                    .toList();
+            assertTrue(offenders.isEmpty(),
+                    "Parser visitors/collectors must delegate focused responsibilities, offenders=" + offenders);
+        }
+    }
+
+    @Test
+    void derivedPathServiceDelegatesToFocusedInferenceComponents() throws IOException {
+        Path root = repoRoot();
+        Path service = root.resolve(
+                "core/src/main/java/com/relationdetector/core/derived/DerivedPathInferenceService.java");
+        String text = Files.readString(service);
+
+        for (String component : List.of(
+                "DerivedPathGraphBuilder",
+                "DerivedRelationshipInference",
+                "DerivedLineageInference",
+                "DerivedNamingInference")) {
+            assertTrue(text.contains(component),
+                    "DerivedPathInferenceService should delegate to " + component);
+        }
+        assertTrue(Files.readAllLines(service).size() <= 140,
+                "DerivedPathInferenceService must remain an orchestration facade");
+    }
+
+    @Test
+    void evidenceMergersShareObservationAggregationEngine() throws IOException {
+        Path root = repoRoot();
+        for (String merger : List.of(
+                "core/src/main/java/com/relationdetector/core/relation/RelationshipMerger.java",
+                "core/src/main/java/com/relationdetector/core/lineage/DataLineageMerger.java",
+                "core/src/main/java/com/relationdetector/core/relation/NamingEvidenceMerger.java")) {
+            String text = Files.readString(root.resolve(merger));
+            assertTrue(text.contains("EvidenceObservationAggregator"),
+                    merger + " must use the common observation aggregation engine");
+        }
+    }
+
+    @Test
+    void coreFullGrammerDoesNotInferGrammarStructureFromContextClassNames() throws IOException {
+        Path root = repoRoot();
+        Path fullGrammer = root.resolve("core/src/main/java/com/relationdetector/core/fullgrammer");
+
+        try (Stream<Path> stream = Files.walk(fullGrammer)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> containsAny(path, List.of(
+                            "getClass().getSimpleName()",
+                            "descendantWithClassContaining",
+                            "directChildWithClassContaining",
+                            "containsContextNamed")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Core full-grammer semantics must come from a dialect context adapter, offenders=" + offenders);
+        }
+    }
+
+    @Test
+    void coreTokenEventDoesNotInferGrammarStructureFromContextClassNames() throws IOException {
+        Path root = repoRoot();
+        Path tokenEvent = root.resolve("core/src/main/java/com/relationdetector/core/tokenevent");
+
+        try (Stream<Path> stream = Files.walk(tokenEvent)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> containsAny(path, List.of(
+                            "getClass().getSimpleName()",
+                            "getClass().getName()")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Core token-event structure checks must use typed predicates, offenders=" + offenders);
+        }
+    }
+
+    @Test
+    void dialectFullGrammerDoesNotInferGrammarStructureFromContextClassNames() throws IOException {
+        Path root = repoRoot().getParent();
+        try (Stream<Path> stream = Files.walk(root)) {
+            List<Path> offenders = stream
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("/src/main/java/"))
+                    .filter(path -> path.toString().contains("/fullgrammer/"))
+                    .filter(path -> {
+                        String filename = path.getFileName().toString();
+                        return filename.contains("ExpressionAnalyzer")
+                                || filename.contains("EventVisitorCore")
+                                || filename.contains("ParseTreeEventCollector")
+                                || filename.equals("FullGrammerTypedSqlEventSink.java");
+                    })
+                    .filter(path -> containsAny(path, List.of(
+                            "getClass().getSimpleName()",
+                            "getClass().getName()")))
+                    .map(root::relativize)
+                    .toList();
+
+            assertTrue(offenders.isEmpty(),
+                    "Dialect full-grammer semantics must use typed context adapters, offenders=" + offenders);
+        }
+    }
+
+    @Test
+    void fullGrammerDialectsProvideSemanticContextAdapters() throws IOException {
+        Path root = repoRoot();
+        List<Path> dialectRoots = List.of(
+                root.resolve("adaptor-mysql/src/main/java/com/relationdetector/mysql/fullgrammer"),
+                root.resolve("adaptor-postgres/src/main/java/com/relationdetector/postgres/fullgrammer"),
+                root.resolve("adaptor-sqlserver/src/main/java/com/relationdetector/sqlserver/fullgrammer"));
+
+        for (Path dialectRoot : dialectRoots) {
+            try (Stream<Path> stream = Files.walk(dialectRoot)) {
+                assertTrue(stream
+                                .filter(path -> path.toString().endsWith(".java"))
+                                .anyMatch(path -> containsAny(path, List.of(
+                                        "implements FullGrammerParseTreeAdapter",
+                                        "extends AbstractFullGrammerParseTreeAdapter"))),
+                        "Dialect full-grammer must provide an explicit semantic context adapter: "
+                                + root.relativize(dialectRoot));
+            }
+        }
+    }
+
+    @Test
+    void scanUsesOneExecutorAndDoesNotRepeatFullEvidenceEnhancement() throws IOException {
+        Path root = repoRoot();
+        String engine = Files.readString(root.resolve(
+                "core/src/main/java/com/relationdetector/core/scan/ScanEngine.java"));
+        String collectors = Files.readString(root.resolve(
+                "core/src/main/java/com/relationdetector/core/scan/SourceCollectorPipeline.java"));
+
+        assertEquals(1, countOccurrences(engine, "evidenceEnhancementPipeline.enhance("),
+                "A scan must not rerun the full naming/metadata enhancement after profiling");
+        assertFalse(collectors.contains("Executors.newFixedThreadPool"),
+                "Source groups must share the scan-scoped executor");
+        assertTrue(engine.contains("pipelineContext.close()"),
+                "ScanEngine must close its scan-scoped executor");
     }
 
     @Test
@@ -518,9 +748,22 @@ class DialectGrammarArchitectureTest {
 
         for (Path visitor : visitors) {
             String text = Files.readString(visitor);
-            assertTrue(text.contains("TokenEventEventEmitter"),
-                    "Token-event visitors should delegate event/source emission to TokenEventEventEmitter: "
-                            + root.relativize(visitor));
+            String packageSources;
+            try (Stream<Path> stream = Files.list(visitor.getParent())) {
+                packageSources = stream
+                        .filter(path -> path.toString().endsWith(".java"))
+                        .map(path -> {
+                            try {
+                                return Files.readString(path);
+                            } catch (IOException error) {
+                                throw new java.io.UncheckedIOException(error);
+                            }
+                        })
+                        .collect(java.util.stream.Collectors.joining("\n"));
+            }
+            assertTrue(packageSources.contains("TokenEventEventEmitter"),
+                    "Token-event visitor package should delegate event/source emission to TokenEventEventEmitter: "
+                            + root.relativize(visitor.getParent()));
             assertFalse(text.contains("new StructuredSqlEvent"),
                     "Token-event visitors should not construct StructuredSqlEvent directly: "
                             + root.relativize(visitor));
@@ -575,6 +818,37 @@ class DialectGrammarArchitectureTest {
                 "Database adaptor main classes should only assemble capabilities, offenders=" + offenders);
     }
 
+    @Test
+    void productionScanUsesImmutableResolvedConfiguration() throws IOException {
+        Path root = repoRoot();
+        String engine = Files.readString(root.resolve(
+                "core/src/main/java/com/relationdetector/core/scan/ScanEngine.java"));
+        String context = Files.readString(root.resolve(
+                "core/src/main/java/com/relationdetector/core/scan/ScanPipelineContext.java"));
+        String cliRunner = Files.readString(root.resolve(
+                "cli/src/main/java/com/relationdetector/cli/SingleScanRunner.java"));
+
+        assertTrue(engine.contains("scan(config.resolve(), adaptor)"),
+                "Mutable ScanConfig must be snapshotted at the production scan boundary");
+        assertFalse(engine.contains("config.databaseVersion ="),
+                "JDBC version discovery must return a new resolved config, not mutate the caller DTO");
+        assertTrue(context.contains("final ResolvedScanConfig config"),
+                "Scan pipeline state must hold the immutable runtime config");
+        assertTrue(cliRunner.contains("ResolvedScanConfig resolved = config.resolve()"),
+                "CLI overrides must be complete before immutable resolution");
+    }
+
+    @Test
+    void yamlLoaderUsesTypedTransportDto() throws IOException {
+        Path root = repoRoot();
+        String loader = Files.readString(root.resolve(
+                "cli/src/main/java/com/relationdetector/cli/SimpleYamlConfigLoader.java"));
+
+        assertTrue(loader.contains("readValue(file.toFile(), ScanYamlConfigDto.class)"));
+        assertFalse(loader.contains("readTree("),
+                "Scan YAML must deserialize through the typed transport model");
+    }
+
     private static boolean startsWithDialect(Path path, String dialect) {
         return path.getNameCount() > 0
                 && path.getName(0).toString().toLowerCase(Locale.ROOT).equals(dialect);
@@ -597,6 +871,24 @@ class DialectGrammarArchitectureTest {
             return needles.stream().anyMatch(text::contains);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read " + path, e);
+        }
+    }
+
+    private static int countOccurrences(String text, String needle) {
+        int count = 0;
+        int offset = 0;
+        while ((offset = text.indexOf(needle, offset)) >= 0) {
+            count++;
+            offset += needle.length();
+        }
+        return count;
+    }
+
+    private static long lineCount(Path path) {
+        try {
+            return Files.readAllLines(path).size();
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to count lines in " + path, exception);
         }
     }
 

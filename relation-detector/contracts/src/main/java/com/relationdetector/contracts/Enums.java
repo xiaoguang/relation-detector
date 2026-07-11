@@ -220,7 +220,8 @@ public final class Enums {
         INPUT_FILE_ERROR(5),
         DATABASE_CONNECTION_ERROR(10),
         SCAN_RUNTIME_ERROR(11),
-        OUTPUT_WRITE_ERROR(12);
+        OUTPUT_WRITE_ERROR(12),
+        BATCH_PARTIAL_FAILURE(13);
 
         private final int code;
 

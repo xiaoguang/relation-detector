@@ -7,9 +7,12 @@ OUT_DIR="${SAMPLE_DATA_PARSER_CLI_OUT:-$RELATION_ROOT/target/sample-data-parser-
 CONFIG_DIR="$OUT_DIR/configs"
 RESULT_DIR="$OUT_DIR/results"
 INCLUDE_DERIVED="${SAMPLE_DATA_PARSER_CLI_INCLUDE_DERIVED:-true}"
-CASE_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-3}"
+CASE_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-4}"
 SCAN_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM:-2}"
+MAX_WORKER_THREADS="${SAMPLE_DATA_PARSER_CLI_MAX_WORKER_THREADS:-8}"
 LOG_DIR="$OUT_DIR/logs"
+BATCH_MANIFEST="$OUT_DIR/batch.yml"
+BATCH_REPORT="$OUT_DIR/batch-report.json"
 
 if ! [[ "$CASE_PARALLELISM" =~ ^[1-9][0-9]*$ ]]; then
   echo "SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM must be a positive integer" >&2
@@ -19,6 +22,14 @@ if ! [[ "$SCAN_PARALLELISM" =~ ^[1-9][0-9]*$ ]]; then
   echo "SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM must be a positive integer" >&2
   exit 2
 fi
+if ! [[ "$MAX_WORKER_THREADS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "SAMPLE_DATA_PARSER_CLI_MAX_WORKER_THREADS must be a positive integer" >&2
+  exit 2
+fi
+if [[ "$SCAN_PARALLELISM" -gt "$MAX_WORKER_THREADS" ]]; then
+  echo "scan parallelism cannot exceed the batch worker budget" >&2
+  exit 2
+fi
 
 cd "$ROOT"
 
@@ -26,20 +37,55 @@ mkdir -p "$CONFIG_DIR" "$RESULT_DIR" "$LOG_DIR"
 
 if [[ "$#" -gt 0 ]]; then
   REQUESTED_CASES=("$@")
+  REQUESTED_CASE_COUNT="$#"
+elif [[ -n "${SAMPLE_DATA_PARSER_CLI_CASES:-}" ]]; then
+  IFS=',' read -r -a REQUESTED_CASES <<<"$SAMPLE_DATA_PARSER_CLI_CASES"
+  REQUESTED_CASE_COUNT="${#REQUESTED_CASES[@]}"
 else
   REQUESTED_CASES=()
+  REQUESTED_CASE_COUNT=0
 fi
+
+KNOWN_CASES=(
+  common-token-event-sample-data
+  mysql-token-event-root mysql-v5_7-full mysql-v8_0-full
+  postgres-token-event-root postgres-v16-full postgres-v17-full postgres-v18-full
+  oracle-token-event-root oracle-v12c-full oracle-v19c-full oracle-v21c-full oracle-v26ai-full
+  sqlserver-token-event-root sqlserver-v2016-full sqlserver-v2017-full sqlserver-v2019-full
+  sqlserver-v2022-full sqlserver-v2025-full
+)
+
+is_known_case() {
+  local requested="$1"
+  local known
+  for known in "${KNOWN_CASES[@]}"; do
+    [[ "$known" == "$requested" ]] && return 0
+  done
+  return 1
+}
+
+requested_index=0
+while [[ "$requested_index" -lt "$REQUESTED_CASE_COUNT" ]]; do
+  requested="${REQUESTED_CASES[$requested_index]}"
+  if ! is_known_case "$requested"; then
+    echo "Unknown sample-data parser case: $requested" >&2
+    exit 2
+  fi
+  requested_index=$((requested_index + 1))
+done
 
 should_run_case() {
   local name="$1"
-  if [[ "${#REQUESTED_CASES[@]}" -eq 0 ]]; then
+  if [[ "$REQUESTED_CASE_COUNT" -eq 0 ]]; then
     return 0
   fi
-  local requested
-  for requested in "${REQUESTED_CASES[@]}"; do
+  local requested index=0
+  while [[ "$index" -lt "$REQUESTED_CASE_COUNT" ]]; do
+    requested="${REQUESTED_CASES[$index]}"
     if [[ "$requested" == "$name" ]]; then
       return 0
     fi
+    index=$((index + 1))
   done
   return 1
 }
@@ -179,7 +225,9 @@ write_config() {
   } > "$config"
 }
 
-run_case() {
+BATCH_CASES=()
+
+prepare_case() {
   local name="$1"
   local database_type="$2"
   local parser_mode="$3"
@@ -199,34 +247,11 @@ run_case() {
     local derived_output="$RESULT_DIR/$derived_name.json"
     write_config "$config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir" false
     write_config "$derived_config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir" true
-    echo "==> $derived_name"
-    RELATION_DETECTOR_SKIP_PACKAGE=true "$RELATION_ROOT/scripts/run-cli.sh" scan \
-      --config "$derived_config" \
-      --format json \
-      --output "$derived_output" \
-      --direct-output "$output"
+    BATCH_CASES+=("$name|$derived_config|$derived_output|$output")
   else
     write_config "$config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir" false
-    echo "==> $name"
-    RELATION_DETECTOR_SKIP_PACKAGE=true "$RELATION_ROOT/scripts/run-cli.sh" scan \
-      --config "$config" \
-      --format json \
-      --output "$output"
+    BATCH_CASES+=("$name|$config|$output|")
   fi
-}
-
-PIDS=()
-PID_NAMES=()
-FAILURES=()
-
-wait_for_oldest_case() {
-  local pid="${PIDS[0]}"
-  local name="${PID_NAMES[0]}"
-  if ! wait "$pid"; then
-    FAILURES+=("$name")
-  fi
-  PIDS=("${PIDS[@]:1}")
-  PID_NAMES=("${PID_NAMES[@]:1}")
 }
 
 queue_case() {
@@ -235,36 +260,34 @@ queue_case() {
   if ! should_run_case "$name"; then
     return 0
   fi
-  (
-    started_seconds=$SECONDS
-    if run_case "$name" "$@"; then
-      status=0
-    else
-      status=$?
-    fi
-    printf 'case=%s elapsedSeconds=%s status=%s\n' "$name" \
-      "$((SECONDS - started_seconds))" "$status"
-    exit "$status"
-  ) >"$LOG_DIR/$name.log" 2>&1 &
-  PIDS+=("$!")
-  PID_NAMES+=("$name")
-  if [[ "${#PIDS[@]}" -ge "$CASE_PARALLELISM" ]]; then
-    wait_for_oldest_case
-  fi
+  prepare_case "$name" "$@"
 }
 
-wait_for_all_cases() {
-  while [[ "${#PIDS[@]}" -gt 0 ]]; do
-    wait_for_oldest_case
-  done
-  if [[ "${#FAILURES[@]}" -gt 0 ]]; then
-    echo "Sample-data parser cases failed: ${FAILURES[*]}" >&2
-    echo "See logs under: $LOG_DIR" >&2
-    return 1
-  fi
+write_batch_manifest() {
+  {
+    printf 'version: 1\n'
+    printf 'execution:\n'
+    printf '  caseParallelism: %s\n' "$CASE_PARALLELISM"
+    printf '  maxWorkerThreads: %s\n' "$MAX_WORKER_THREADS"
+    printf '  failurePolicy: continue\n'
+    printf 'report: %s\n' "$BATCH_REPORT"
+    printf 'cases:\n'
+    local item name config output direct_output
+    for item in "${BATCH_CASES[@]}"; do
+      IFS='|' read -r name config output direct_output <<<"$item"
+      printf '  - id: %s\n' "$name"
+      printf '    config: %s\n' "$config"
+      printf '    output: %s\n' "$output"
+      if [[ -n "$direct_output" ]]; then
+        printf '    directOutput: %s\n' "$direct_output"
+      fi
+    done
+  } >"$BATCH_MANIFEST"
 }
 
-mvn -q -pl relation-detector/core,relation-detector/adaptor-mysql,relation-detector/adaptor-postgres,relation-detector/adaptor-oracle,relation-detector/adaptor-sqlserver,relation-detector/cli -am -Dmaven.test.skip=true package
+if [[ "${SAMPLE_DATA_PARSER_CLI_SKIP_PACKAGE:-false}" != "true" ]]; then
+  mvn -q -pl relation-detector/core,relation-detector/adaptor-mysql,relation-detector/adaptor-postgres,relation-detector/adaptor-oracle,relation-detector/adaptor-sqlserver,relation-detector/cli -am -Dmaven.test.skip=true package
+fi
 "$RELATION_ROOT/scripts/check-no-jls-bad-classes.sh" "$ROOT"
 
 queue_case common-token-event-sample-data COMMON token-event "" "" "$RELATION_ROOT/sample-data/common-natural"
@@ -291,9 +314,17 @@ queue_case sqlserver-v2019-full SQLSERVER full-grammer sqlserver/2019 2019 "$REL
 queue_case sqlserver-v2022-full SQLSERVER full-grammer sqlserver/2022 2022 "$RELATION_ROOT/sample-data/sqlserver/2022"
 queue_case sqlserver-v2025-full SQLSERVER full-grammer sqlserver/2025 2025 "$RELATION_ROOT/sample-data/sqlserver/2025"
 
-wait_for_all_cases
+write_batch_manifest
+if ! RELATION_DETECTOR_SKIP_PACKAGE=true "$RELATION_ROOT/scripts/run-cli.sh" batch \
+  --manifest "$BATCH_MANIFEST" >"$LOG_DIR/batch.log" 2>&1; then
+  cat "$LOG_DIR/batch.log" >&2
+  exit 1
+fi
 
-REQUESTED_CASES_CSV="$(IFS=,; echo "${REQUESTED_CASES[*]-}")"
+REQUESTED_CASES_CSV=""
+if [[ "$REQUESTED_CASE_COUNT" -gt 0 ]]; then
+  REQUESTED_CASES_CSV="$(IFS=,; echo "${REQUESTED_CASES[*]}")"
+fi
 python3 - "$RESULT_DIR" "$CONFIG_DIR" "$OUT_DIR/summary.tsv" "$OUT_DIR/summary-with-derived.tsv" "$OUT_DIR/warning-codes.tsv" "$REQUESTED_CASES_CSV" <<'PY'
 import json
 import sys

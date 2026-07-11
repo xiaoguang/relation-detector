@@ -46,4 +46,17 @@ public final class EvidenceEnhancementService {
         namingEvidencePool.addAll(derivedPathInferenceService.deriveNamingEvidence(namingEvidencePool.merged(), config));
         namingMatchEvidenceEnhancer.enhance(relationshipCandidates, namingEvidencePool);
     }
+
+    public void enhanceProfiledCandidates(
+            List<RelationshipCandidate> profiledCandidates,
+            NamingEvidencePool namingEvidencePool,
+            ScanConfig config
+    ) {
+        if (profiledCandidates == null || profiledCandidates.isEmpty()) {
+            return;
+        }
+        namingEvidencePool.addAll(namingEvidenceExtractor.extractFromRelationshipCandidates(
+                profiledCandidates, config));
+        namingMatchEvidenceEnhancer.enhance(profiledCandidates, namingEvidencePool);
+    }
 }

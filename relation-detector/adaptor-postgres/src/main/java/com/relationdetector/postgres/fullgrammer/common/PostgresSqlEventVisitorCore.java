@@ -32,9 +32,12 @@ public final class PostgresSqlEventVisitorCore {
     private String mergeSource = "";
     private int existsDepth;
 
-    public PostgresSqlEventVisitorCore(SqlStatementRecord statement) {
+    public PostgresSqlEventVisitorCore(
+            SqlStatementRecord statement,
+            com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter adapter
+    ) {
         this.statement = statement;
-        this.sink = new FullGrammerTypedSqlEventSink(statement, new PostgresExpressionAnalyzer());
+        this.sink = new FullGrammerTypedSqlEventSink(statement, new PostgresExpressionAnalyzer(adapter));
     }
 
     public FullGrammerTypedSqlEventSink sink() {
@@ -152,21 +155,16 @@ public final class PostgresSqlEventVisitorCore {
     }
 
     public boolean isExpressionContext(ParserRuleContext ctx) {
-        String name = ctx.getClass().getSimpleName();
-        return name.contains("A_expr")
-                || name.contains("B_expr")
-                || name.contains("C_expr")
-                || name.contains("Func_expr")
-                || name.equals("ColumnrefContext")
-                || name.equals("Subquery_OpContext");
+        return sink.parseTreeAdapter().hasRole(ctx,
+                com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.EXPRESSION);
     }
 
     private void collectExpressionChildren(ParseTree tree, List<ParseTree> result) {
         if (tree == null) {
             return;
         }
-        String name = tree.getClass().getSimpleName();
-        if (name.equals("A_exprContext") || name.endsWith("A_exprContext")) {
+        if (sink.parseTreeAdapter().hasRole(tree,
+                com.relationdetector.core.fullgrammer.FullGrammerParseTreeAdapter.Role.ROOT_EXPRESSION)) {
             result.add(tree);
             return;
         }
