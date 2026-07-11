@@ -137,6 +137,15 @@ public abstract class FullGrammerExpressionAnalyzer {
                 collectSwitchSectionExpressions(child, controlExpressions, valueExpressions);
                 continue;
             }
+            if (isWhenClauseListContext(child)) {
+                sawSwitchSection = true;
+                collectWhenClauseListExpressions(child, controlExpressions, valueExpressions);
+                continue;
+            }
+            if (isCaseDefaultContext(child)) {
+                collectCaseDefaultExpressions(child, valueExpressions);
+                continue;
+            }
             if (!sawSwitchSection && !(child instanceof TerminalNode)) {
                 controlExpressions.add(child);
             }
@@ -203,6 +212,28 @@ public abstract class FullGrammerExpressionAnalyzer {
         }
     }
 
+    private void collectWhenClauseListExpressions(
+            ParseTree list,
+            List<ParseTree> controlExpressions,
+            List<ParseTree> valueExpressions
+    ) {
+        for (int index = 0; index < list.getChildCount(); index++) {
+            ParseTree child = list.getChild(index);
+            if (isWhenClauseContext(child)) {
+                collectSwitchSectionExpressions(child, controlExpressions, valueExpressions);
+            }
+        }
+    }
+
+    private void collectCaseDefaultExpressions(ParseTree defaultClause, List<ParseTree> valueExpressions) {
+        for (int index = 0; index < defaultClause.getChildCount(); index++) {
+            ParseTree child = defaultClause.getChild(index);
+            if (!(child instanceof TerminalNode)) {
+                valueExpressions.add(child);
+            }
+        }
+    }
+
     private FullGrammerExpressionAnalysis caseAnalysis(
             List<ParseTree> expressions,
             String defaultQualifier,
@@ -234,6 +265,31 @@ public abstract class FullGrammerExpressionAnalyzer {
         return contextName.contains("switch") && contextName.contains("section");
     }
 
+    private boolean isWhenClauseListContext(ParseTree tree) {
+        if (tree == null) {
+            return false;
+        }
+        String name = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+        return name.contains("when_clause_list") || name.contains("whenclauselist");
+    }
+
+    private boolean isWhenClauseContext(ParseTree tree) {
+        if (tree == null) {
+            return false;
+        }
+        String name = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+        return (name.contains("when_clause") || name.contains("whenclause"))
+                && !isWhenClauseListContext(tree);
+    }
+
+    private boolean isCaseDefaultContext(ParseTree tree) {
+        if (tree == null) {
+            return false;
+        }
+        String name = tree.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+        return name.contains("case_default") || name.contains("casedefault");
+    }
+
     private String terminalText(ParseTree tree) {
         if (tree instanceof TerminalNode terminal) {
             return terminal.getText().toUpperCase(Locale.ROOT);
@@ -250,10 +306,7 @@ public abstract class FullGrammerExpressionAnalyzer {
             return;
         }
         if (isCaseContext(tree)) {
-            FullGrammerExpressionAnalysis analysis = analyze(tree, defaultQualifier);
-            if (analysis.hasSources()) {
-                result.add(analysis);
-            }
+            result.addAll(caseWriteAnalyses(tree, defaultQualifier));
             return;
         }
         for (int index = 0; index < tree.getChildCount(); index++) {

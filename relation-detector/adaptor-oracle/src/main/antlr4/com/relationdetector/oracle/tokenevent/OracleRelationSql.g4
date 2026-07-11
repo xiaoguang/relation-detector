@@ -19,6 +19,7 @@ statement
     | blockEndStatement SEMI?
     | declarationStatement SEMI?
     | controlStartStatement
+    | openCursorSelectStatement SEMI?
     | selectStatement SEMI?
     | insertSelectStatement SEMI?
     | updateStatement SEMI?
@@ -68,6 +69,10 @@ controlStartStatement
     | REPEAT
     ;
 
+openCursorSelectStatement
+    : OPEN identifier FOR selectStatement
+    ;
+
 selectStatement
     : withClause? querySpecification setOperation*
     ;
@@ -90,7 +95,7 @@ cteMaterialization
     ;
 
 querySpecification
-    : SELECT selectList fromClause? whereClause? groupByClause? havingClause? orderByClause? limitClause?
+    : SELECT DISTINCT? selectList fromClause? whereClause? groupByClause? havingClause? orderByClause? limitClause?
     ;
 
 selectList
@@ -147,7 +152,7 @@ looseToken
     : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
     | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | BETWEEN | LIKE | ESCAPE | IS
     | USING | GROUP | BY | HAVING | ORDER | LIMIT | ASC | DESC | NULLS | FIRST | LAST | INSERT | INTO | UPDATE
-    | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
+    | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | EXTRACT | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | IF | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
@@ -455,7 +460,8 @@ expression
     : expression arithmeticOperator expression                            # binaryExpression
     | MINUS expression                                                    # unaryExpression
     | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
-    | functionCall windowClause?                                          # functionExpression
+    | EXTRACT LPAREN identifier FROM expression RPAREN                    # extractExpression
+    | functionCall withinGroupClause? windowClause?                       # functionExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
     | qualifiedName                                                       # columnExpression
     | literal                                                             # literalExpression
@@ -468,6 +474,10 @@ caseWhenClause
 
 functionCall
     : qualifiedName LPAREN (DISTINCT? expressionList | STAR)? functionCallOption* RPAREN
+    ;
+
+withinGroupClause
+    : WITHIN GROUP LPAREN ORDER BY functionCallOptionToken+ RPAREN
     ;
 
 windowClause
@@ -530,9 +540,9 @@ literal
 sqlToken
     : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
     | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | BETWEEN | LIKE | ESCAPE | IS
-    | USING | GROUP | BY | HAVING | ORDER | LIMIT | ASC | DESC | NULLS | FIRST | LAST | INSERT | INTO | UPDATE
+    | USING | GROUP | WITHIN | BY | HAVING | ORDER | LIMIT | ASC | DESC | NULLS | FIRST | LAST | INSERT | INTO | UPDATE
     | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | DO | NOTHING
-    | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
+    | CASE | WHEN | THEN | ELSE | END | DISTINCT | EXTRACT | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
     | ADD | CONSTRAINT
@@ -573,6 +583,7 @@ IS: I S;
 LIKE: L I K E;
 ESCAPE: E S C A P E;
 GROUP: G R O U P;
+WITHIN: W I T H I N;
 BY: B Y;
 HAVING: H A V I N G;
 ORDER: O R D E R;
@@ -595,6 +606,7 @@ RETURNING: R E T U R N I N G;
 DO: D O;
 NOTHING: N O T H I N G;
 CREATE: C R E A T E;
+OPEN: O P E N;
 ALTER: A L T E R;
 TABLE: T A B L E;
 COMMENT: C O M M E N T;
@@ -637,6 +649,7 @@ THEN: T H E N;
 ELSE: E L S E;
 END: E N D;
 DISTINCT: D I S T I N C T;
+EXTRACT: E X T R A C T;
 TRUE: T R U E;
 FALSE: F A L S E;
 NULL: N U L L;

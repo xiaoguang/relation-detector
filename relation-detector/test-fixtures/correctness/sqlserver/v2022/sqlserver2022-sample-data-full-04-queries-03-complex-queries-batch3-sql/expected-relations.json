@@ -7,7 +7,7 @@
     "FK_LIKE:dbo.purchase_returns.supplier_id->dbo.suppliers.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.sales_return_items.return_id->dbo.sales_returns.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:dbo.sales_returns.customer_id->dbo.customers.id:SQL_LOG_JOIN,NAMING_MATCH",
-    "FK_LIKE:dbo.sales_returns.sales_order_id->dbo.sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH"
+    "FK_LIKE:dbo.sales_returns.order_id->dbo.sales_orders.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []
 }

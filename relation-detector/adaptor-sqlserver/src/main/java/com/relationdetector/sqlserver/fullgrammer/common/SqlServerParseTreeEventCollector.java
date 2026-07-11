@@ -1,9 +1,13 @@
 package com.relationdetector.sqlserver.fullgrammer.common;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -19,18 +23,23 @@ import com.relationdetector.core.fullgrammer.FullGrammerTypedSqlEventSink;
  * Shared SQL Server parse-tree collector.
  *
  * <p>CN: 这个 collector 只消费 ANTLR parse-tree rule context，不按 token span、
- * regex 或名字白名单判断 SQL 结构。五个 full-grammer 版本和 token-event 可以共用
- * 这层语义映射，差异仍由各自 generated parser 负责。</p>
+ * regex 或名字白名单判断 SQL 结构。五个 full-grammer 版本共用这层语义映射，
+ * token-event 仍由自己的 grammar/visitor 独立产生事件。</p>
  */
 public final class SqlServerParseTreeEventCollector {
     private final Parser parser;
+    private final SqlServerExpressionAnalyzer expressionAnalyzer;
     private final FullGrammerTypedSqlEventSink sqlSink;
     private final DdlEventBuilder ddlBuilder;
     private final boolean ddlOnly;
+    private final Map<String, String> rowsetOwners = new LinkedHashMap<>();
+    private final Set<String> projectionOwners = new LinkedHashSet<>();
+    private final Map<ProjectionKey, Boolean> directProjections = new LinkedHashMap<>();
 
     public SqlServerParseTreeEventCollector(Parser parser, SqlStatementRecord statement, boolean ddlOnly) {
         this.parser = parser;
-        this.sqlSink = new FullGrammerTypedSqlEventSink(statement, new SqlServerExpressionAnalyzer());
+        this.expressionAnalyzer = new SqlServerExpressionAnalyzer();
+        this.sqlSink = new FullGrammerTypedSqlEventSink(statement, expressionAnalyzer);
         this.ddlBuilder = new DdlEventBuilder(statement.sourceName());
         this.ddlOnly = ddlOnly;
     }
@@ -54,7 +63,7 @@ public final class SqlServerParseTreeEventCollector {
         }
         String rule = ruleName(ctx);
         switch (rule) {
-            case "sql_clauses" -> sqlSink.withStatementScope(() -> visitChildren(ctx));
+            case "sql_clauses" -> visitSqlClause(ctx);
             case "common_table_expression" -> visitCommonTableExpression(ctx);
             case "query_specification" -> visitQuerySpecification(ctx);
             case "table_source_item" -> visitTableSourceItem(ctx);
@@ -72,6 +81,13 @@ public final class SqlServerParseTreeEventCollector {
         }
     }
 
+    private void visitSqlClause(ParserRuleContext ctx) {
+        rowsetOwners.clear();
+        projectionOwners.clear();
+        directProjections.clear();
+        sqlSink.withStatementScope(() -> visitChildren(ctx));
+    }
+
     private void visitChildren(ParseTree tree) {
         for (int index = 0; index < tree.getChildCount(); index++) {
             visit(tree.getChild(index));
@@ -80,6 +96,7 @@ public final class SqlServerParseTreeEventCollector {
 
     private void visitCommonTableExpression(ParserRuleContext ctx) {
         String name = firstDirectText(ctx, "id_").orElse("");
+        projectionOwners.add(normalize(name));
         sqlSink.cte(ctx, name);
         Optional<ParserRuleContext> select = firstDirect(ctx, "select_statement");
         if (select.isPresent()) {
@@ -115,6 +132,8 @@ public final class SqlServerParseTreeEventCollector {
                     continue;
                 }
                 String output = aliasForProjection(item).orElseGet(() -> lastIdentifier(expression.get().getText()));
+                directProjections.put(new ProjectionKey(owner, output),
+                        directColumnExpression(expression.get()).isPresent());
                 sqlSink.projection(item, owner, output, expression.get());
             }
         });
@@ -125,6 +144,7 @@ public final class SqlServerParseTreeEventCollector {
         if (fullTableName.isPresent()) {
             String table = clean(fullTableName.get().getText());
             String alias = firstDirect(ctx, "as_table_alias").flatMap(this::lastIdText).orElse("");
+            rowsetOwners.put(normalize(alias.isBlank() ? baseName(table) : alias), normalize(table));
             if (isLocalTemp(table)) {
                 sqlSink.localTempTable(ctx, table);
             } else {
@@ -136,6 +156,7 @@ public final class SqlServerParseTreeEventCollector {
         if (derived.isPresent()) {
             String alias = firstDirect(ctx, "as_table_alias").flatMap(this::lastIdText).orElse("");
             if (!alias.isBlank()) {
+                projectionOwners.add(normalize(alias));
                 sqlSink.ignoredRowset(ctx, alias, "DERIVED_TABLE");
                 sqlSink.withProjectionOwner(alias, () -> visit(derived.get()));
             } else {
@@ -173,13 +194,16 @@ public final class SqlServerParseTreeEventCollector {
         if (expressions.size() >= 2 && isEqualityComparison(ctx)) {
             Optional<ColumnEndpoint> left = singleColumnEndpoint(expressions.get(0));
             Optional<ColumnEndpoint> right = singleColumnEndpoint(expressions.get(1));
-            if (left.isPresent() && right.isPresent()) {
+            if (left.isPresent() && right.isPresent()
+                    && isDirectRelationshipEndpoint(left.get())
+                    && isDirectRelationshipEndpoint(right.get())) {
                 sqlSink.predicateEqualityColumns(ctx,
                         left.get().qualifier(), left.get().column(),
                         right.get().qualifier(), right.get().column(),
                         "WHERE_OR_UNKNOWN");
             } else {
-                sqlSink.predicateEquality(ctx, expressions.get(0), expressions.get(1), "WHERE_OR_UNKNOWN");
+                // Transformed projection aliases are lineage traces, not direct
+                // physical-column equality endpoints.
             }
         }
         if (!expressions.isEmpty() && hasDirectTerminal(ctx, "IN")) {
@@ -283,10 +307,24 @@ public final class SqlServerParseTreeEventCollector {
         }
         String targetColumn = lastIdentifier(columns.get(0).getText());
         ParserRuleContext expression = expressions.get(expressions.size() - 1);
+        // Scalar subqueries carry their own rowsets and predicates. Visit only
+        // those typed subquery contexts; traversing the whole assignment would
+        // incorrectly promote CASE predicates to structural relationships.
+        visitScalarSubqueries(expression);
         if (merge) {
             sqlSink.mergeUpdate(element, "", qualifiedTable(targetTable), targetColumn, expression);
         } else {
             sqlSink.updateAssignment(element, "", qualifiedTable(targetTable), targetColumn, expression);
+        }
+    }
+
+    private void visitScalarSubqueries(ParseTree tree) {
+        if (tree instanceof ParserRuleContext ctx && ruleName(ctx).equals("subquery")) {
+            visit(ctx);
+            return;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            visitScalarSubqueries(tree.getChild(index));
         }
     }
 
@@ -350,6 +388,31 @@ public final class SqlServerParseTreeEventCollector {
                 ddlBuilder.addColumn(qualifiedTable(table), columnName, line(column));
             }
         }
+        for (ParserRuleContext constraint : descendants(ctx, "table_constraint")) {
+            if (!containsDirectKeyword(constraint, "FOREIGN")) {
+                continue;
+            }
+            List<ParserRuleContext> lists = directChildren(constraint, "column_name_list");
+            Optional<ParserRuleContext> fkOptions = firstDirect(constraint, "foreign_key_options");
+            String targetTable = fkOptions.flatMap(fk -> firstDirectText(fk, "table_name")).orElse("");
+            List<String> sourceColumns = lists.isEmpty() ? List.of() : identifierList(lists.get(0));
+            List<String> targetColumns = fkOptions.flatMap(fk -> firstDirect(fk, "column_name_list"))
+                    .map(this::identifierList)
+                    .orElse(List.of());
+            if (targetTable.isBlank() || sourceColumns.isEmpty() || targetColumns.isEmpty()) {
+                continue;
+            }
+            sourceColumns.forEach(sourceColumn ->
+                    ddlBuilder.addColumn(qualifiedTable(table), sourceColumn, line(constraint)));
+            targetColumns.forEach(targetColumn ->
+                    ddlBuilder.addColumn(qualifiedTable(targetTable), targetColumn, line(constraint)));
+            ddlBuilder.addForeignKey(qualifiedTable(table), sourceColumns,
+                    qualifiedTable(targetTable), targetColumns, line(constraint));
+            sourceColumns.forEach(sourceColumn ->
+                    ddlBuilder.addIndex(qualifiedTable(table), sourceColumn, "SOURCE_INDEX", "FK_SOURCE", line(constraint)));
+            targetColumns.forEach(targetColumn ->
+                    ddlBuilder.addIndex(qualifiedTable(targetTable), targetColumn, "TARGET_UNIQUE", "REFERENCED_KEY", line(constraint)));
+        }
         visitChildren(ctx);
     }
 
@@ -392,7 +455,9 @@ public final class SqlServerParseTreeEventCollector {
             if (expressions.size() >= 2 && isEqualityComparison(ctx)) {
                 Optional<ColumnEndpoint> left = singleColumnEndpoint(expressions.get(0));
                 Optional<ColumnEndpoint> right = singleColumnEndpoint(expressions.get(1));
-                if (left.isPresent() && right.isPresent()) {
+                if (left.isPresent() && right.isPresent()
+                        && isDirectRelationshipEndpoint(left.get())
+                        && isDirectRelationshipEndpoint(right.get())) {
                     sqlSink.predicateEqualityColumns(ctx,
                             left.get().qualifier(), left.get().column(),
                             right.get().qualifier(), right.get().column(),
@@ -403,6 +468,19 @@ public final class SqlServerParseTreeEventCollector {
         for (int index = 0; index < tree.getChildCount(); index++) {
             emitPredicateColumnEqualities(tree.getChild(index), joinKind);
         }
+    }
+
+    private boolean isDirectRelationshipEndpoint(ColumnEndpoint endpoint) {
+        String qualifier = normalize(endpoint.qualifier());
+        String owner = rowsetOwners.getOrDefault(qualifier, qualifier);
+        if (!projectionOwners.contains(owner)) {
+            return true;
+        }
+        return Boolean.TRUE.equals(directProjections.get(new ProjectionKey(owner, endpoint.column())));
+    }
+
+    private String normalize(String value) {
+        return clean(value).toLowerCase(Locale.ROOT);
     }
 
     private boolean isEqualityComparison(ParserRuleContext predicate) {
@@ -666,5 +744,12 @@ public final class SqlServerParseTreeEventCollector {
     }
 
     private record ColumnEndpoint(String qualifier, String column) {
+    }
+
+    private record ProjectionKey(String owner, String column) {
+        private ProjectionKey {
+            owner = owner == null ? "" : owner.toLowerCase(Locale.ROOT);
+            column = column == null ? "" : column.toLowerCase(Locale.ROOT);
+        }
     }
 }

@@ -7,10 +7,22 @@ OUT_DIR="${SAMPLE_DATA_PARSER_CLI_OUT:-$RELATION_ROOT/target/sample-data-parser-
 CONFIG_DIR="$OUT_DIR/configs"
 RESULT_DIR="$OUT_DIR/results"
 INCLUDE_DERIVED="${SAMPLE_DATA_PARSER_CLI_INCLUDE_DERIVED:-true}"
+CASE_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM:-3}"
+SCAN_PARALLELISM="${SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM:-2}"
+LOG_DIR="$OUT_DIR/logs"
+
+if ! [[ "$CASE_PARALLELISM" =~ ^[1-9][0-9]*$ ]]; then
+  echo "SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM must be a positive integer" >&2
+  exit 2
+fi
+if ! [[ "$SCAN_PARALLELISM" =~ ^[1-9][0-9]*$ ]]; then
+  echo "SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM must be a positive integer" >&2
+  exit 2
+fi
 
 cd "$ROOT"
 
-mkdir -p "$CONFIG_DIR" "$RESULT_DIR"
+mkdir -p "$CONFIG_DIR" "$RESULT_DIR" "$LOG_DIR"
 
 if [[ "$#" -gt 0 ]]; then
   REQUESTED_CASES=("$@")
@@ -65,6 +77,9 @@ write_config() {
     if [[ -n "$database_version" ]]; then
       printf '  databaseVersion: "%s"\n' "$database_version"
     fi
+    printf '\n'
+    printf 'execution:\n'
+    printf '  parallelism: %s\n' "$SCAN_PARALLELISM"
     printf '\n'
     printf 'sources:\n'
     printf '  metadata:\n'
@@ -178,51 +193,105 @@ run_case() {
 
   local config="$CONFIG_DIR/$name.yml"
   local output="$RESULT_DIR/$name.json"
-  write_config "$config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir" false
-  echo "==> $name"
-  RELATION_DETECTOR_SKIP_PACKAGE=true "$RELATION_ROOT/scripts/run-cli.sh" scan \
-    --config "$config" \
-    --format json \
-    --output "$output"
   if [[ "$INCLUDE_DERIVED" == "true" ]]; then
     local derived_name="$name-derived-fresh"
     local derived_config="$CONFIG_DIR/$derived_name.yml"
     local derived_output="$RESULT_DIR/$derived_name.json"
+    write_config "$config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir" false
     write_config "$derived_config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir" true
     echo "==> $derived_name"
     RELATION_DETECTOR_SKIP_PACKAGE=true "$RELATION_ROOT/scripts/run-cli.sh" scan \
       --config "$derived_config" \
       --format json \
-      --output "$derived_output"
+      --output "$derived_output" \
+      --direct-output "$output"
+  else
+    write_config "$config" "$database_type" "$parser_mode" "$grammar_profile" "$database_version" "$sample_dir" false
+    echo "==> $name"
+    RELATION_DETECTOR_SKIP_PACKAGE=true "$RELATION_ROOT/scripts/run-cli.sh" scan \
+      --config "$config" \
+      --format json \
+      --output "$output"
+  fi
+}
+
+PIDS=()
+PID_NAMES=()
+FAILURES=()
+
+wait_for_oldest_case() {
+  local pid="${PIDS[0]}"
+  local name="${PID_NAMES[0]}"
+  if ! wait "$pid"; then
+    FAILURES+=("$name")
+  fi
+  PIDS=("${PIDS[@]:1}")
+  PID_NAMES=("${PID_NAMES[@]:1}")
+}
+
+queue_case() {
+  local name="$1"
+  shift
+  if ! should_run_case "$name"; then
+    return 0
+  fi
+  (
+    started_seconds=$SECONDS
+    if run_case "$name" "$@"; then
+      status=0
+    else
+      status=$?
+    fi
+    printf 'case=%s elapsedSeconds=%s status=%s\n' "$name" \
+      "$((SECONDS - started_seconds))" "$status"
+    exit "$status"
+  ) >"$LOG_DIR/$name.log" 2>&1 &
+  PIDS+=("$!")
+  PID_NAMES+=("$name")
+  if [[ "${#PIDS[@]}" -ge "$CASE_PARALLELISM" ]]; then
+    wait_for_oldest_case
+  fi
+}
+
+wait_for_all_cases() {
+  while [[ "${#PIDS[@]}" -gt 0 ]]; do
+    wait_for_oldest_case
+  done
+  if [[ "${#FAILURES[@]}" -gt 0 ]]; then
+    echo "Sample-data parser cases failed: ${FAILURES[*]}" >&2
+    echo "See logs under: $LOG_DIR" >&2
+    return 1
   fi
 }
 
 mvn -q -pl relation-detector/core,relation-detector/adaptor-mysql,relation-detector/adaptor-postgres,relation-detector/adaptor-oracle,relation-detector/adaptor-sqlserver,relation-detector/cli -am -Dmaven.test.skip=true package
 "$RELATION_ROOT/scripts/check-no-jls-bad-classes.sh" "$ROOT"
 
-run_case common-token-event-sample-data COMMON token-event "" "" "$RELATION_ROOT/sample-data/common-natural"
+queue_case common-token-event-sample-data COMMON token-event "" "" "$RELATION_ROOT/sample-data/common-natural"
 
-run_case mysql-token-event-root MYSQL token-event "" "" "$RELATION_ROOT/sample-data/mysql/8.0"
-run_case mysql-v5_7-full MYSQL full-grammer mysql/5.7 5.7 "$RELATION_ROOT/sample-data/mysql/5.7"
-run_case mysql-v8_0-full MYSQL full-grammer mysql/8.0 8.0 "$RELATION_ROOT/sample-data/mysql/8.0"
+queue_case mysql-token-event-root MYSQL token-event "" "" "$RELATION_ROOT/sample-data/mysql/8.0"
+queue_case mysql-v5_7-full MYSQL full-grammer mysql/5.7 5.7 "$RELATION_ROOT/sample-data/mysql/5.7"
+queue_case mysql-v8_0-full MYSQL full-grammer mysql/8.0 8.0 "$RELATION_ROOT/sample-data/mysql/8.0"
 
-run_case postgres-token-event-root POSTGRESQL token-event "" "" "$RELATION_ROOT/sample-data/postgres/18"
-run_case postgres-v16-full POSTGRESQL full-grammer postgresql/16 16 "$RELATION_ROOT/sample-data/postgres/16"
-run_case postgres-v17-full POSTGRESQL full-grammer postgresql/17 17 "$RELATION_ROOT/sample-data/postgres/17"
-run_case postgres-v18-full POSTGRESQL full-grammer postgresql/18 18 "$RELATION_ROOT/sample-data/postgres/18"
+queue_case postgres-token-event-root POSTGRESQL token-event "" "" "$RELATION_ROOT/sample-data/postgres/18"
+queue_case postgres-v16-full POSTGRESQL full-grammer postgresql/16 16 "$RELATION_ROOT/sample-data/postgres/16"
+queue_case postgres-v17-full POSTGRESQL full-grammer postgresql/17 17 "$RELATION_ROOT/sample-data/postgres/17"
+queue_case postgres-v18-full POSTGRESQL full-grammer postgresql/18 18 "$RELATION_ROOT/sample-data/postgres/18"
 
-run_case oracle-token-event-root ORACLE token-event "" "" "$RELATION_ROOT/sample-data/oracle/26ai"
-run_case oracle-v12c-full ORACLE full-grammer oracle/12c 12c "$RELATION_ROOT/sample-data/oracle/12c"
-run_case oracle-v19c-full ORACLE full-grammer oracle/19c 19c "$RELATION_ROOT/sample-data/oracle/19c"
-run_case oracle-v21c-full ORACLE full-grammer oracle/21c 21c "$RELATION_ROOT/sample-data/oracle/21c"
-run_case oracle-v26ai-full ORACLE full-grammer oracle/26ai 26ai "$RELATION_ROOT/sample-data/oracle/26ai"
+queue_case oracle-token-event-root ORACLE token-event "" "" "$RELATION_ROOT/sample-data/oracle/26ai"
+queue_case oracle-v12c-full ORACLE full-grammer oracle/12c 12c "$RELATION_ROOT/sample-data/oracle/12c"
+queue_case oracle-v19c-full ORACLE full-grammer oracle/19c 19c "$RELATION_ROOT/sample-data/oracle/19c"
+queue_case oracle-v21c-full ORACLE full-grammer oracle/21c 21c "$RELATION_ROOT/sample-data/oracle/21c"
+queue_case oracle-v26ai-full ORACLE full-grammer oracle/26ai 26ai "$RELATION_ROOT/sample-data/oracle/26ai"
 
-run_case sqlserver-token-event-root SQLSERVER token-event "" "" "$RELATION_ROOT/sample-data/sqlserver/2025"
-run_case sqlserver-v2016-full SQLSERVER full-grammer sqlserver/2016 2016 "$RELATION_ROOT/sample-data/sqlserver/2016"
-run_case sqlserver-v2017-full SQLSERVER full-grammer sqlserver/2017 2017 "$RELATION_ROOT/sample-data/sqlserver/2017"
-run_case sqlserver-v2019-full SQLSERVER full-grammer sqlserver/2019 2019 "$RELATION_ROOT/sample-data/sqlserver/2019"
-run_case sqlserver-v2022-full SQLSERVER full-grammer sqlserver/2022 2022 "$RELATION_ROOT/sample-data/sqlserver/2022"
-run_case sqlserver-v2025-full SQLSERVER full-grammer sqlserver/2025 2025 "$RELATION_ROOT/sample-data/sqlserver/2025"
+queue_case sqlserver-token-event-root SQLSERVER token-event "" "" "$RELATION_ROOT/sample-data/sqlserver/2025"
+queue_case sqlserver-v2016-full SQLSERVER full-grammer sqlserver/2016 2016 "$RELATION_ROOT/sample-data/sqlserver/2016"
+queue_case sqlserver-v2017-full SQLSERVER full-grammer sqlserver/2017 2017 "$RELATION_ROOT/sample-data/sqlserver/2017"
+queue_case sqlserver-v2019-full SQLSERVER full-grammer sqlserver/2019 2019 "$RELATION_ROOT/sample-data/sqlserver/2019"
+queue_case sqlserver-v2022-full SQLSERVER full-grammer sqlserver/2022 2022 "$RELATION_ROOT/sample-data/sqlserver/2022"
+queue_case sqlserver-v2025-full SQLSERVER full-grammer sqlserver/2025 2025 "$RELATION_ROOT/sample-data/sqlserver/2025"
+
+wait_for_all_cases
 
 REQUESTED_CASES_CSV="$(IFS=,; echo "${REQUESTED_CASES[*]-}")"
 python3 - "$RESULT_DIR" "$CONFIG_DIR" "$OUT_DIR/summary.tsv" "$OUT_DIR/summary-with-derived.tsv" "$OUT_DIR/warning-codes.tsv" "$REQUESTED_CASES_CSV" <<'PY'
@@ -333,7 +402,7 @@ for path in sorted(result_dir.glob("*.json")):
                         summary.get("relationshipCount", len(data.get("relationships") or [])))),
         str(summary.get("directDataLineageCount",
                         summary.get("dataLineageCount", len(data.get("dataLineages") or [])))),
-        str(summary.get("totalNamingEvidenceCount",
+            str(summary.get("directNamingEvidenceCount",
                         summary.get("namingEvidenceCount", len(data.get("namingEvidence") or [])))),
         str(summary.get("warningCount", len(warnings))),
         source_text,
@@ -364,7 +433,7 @@ for path in sorted(result_dir.glob("*.json")):
             str(derived_summary.get("directDataLineageCount",
                                     derived_summary.get("dataLineageCount",
                                                         len(derived_data.get("dataLineages") or [])))),
-            str(derived_summary.get("totalNamingEvidenceCount",
+            str(derived_summary.get("directNamingEvidenceCount",
                                     derived_summary.get("namingEvidenceCount",
                                                         len(derived_data.get("namingEvidence") or [])))),
             str(derived_summary.get("warningCount", len(derived_data.get("warnings") or []))),

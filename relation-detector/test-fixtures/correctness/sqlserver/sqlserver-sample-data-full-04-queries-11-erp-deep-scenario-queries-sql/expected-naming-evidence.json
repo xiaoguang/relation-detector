@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "naming:dbo.picking_task_items.task_id->dbo.picking_tasks.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.picking_task_items.picking_task_id->dbo.picking_tasks.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.picking_tasks.sales_order_id->dbo.sales_orders.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.repair_order_parts.repair_order_id->dbo.repair_orders.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.repair_orders.customer_id->dbo.customers.id:TABLE_ID:NAMING_MATCH",

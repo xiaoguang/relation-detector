@@ -63,6 +63,8 @@ public final class ScanConfig {
     public boolean includeEvidence = true;
     public boolean includeWarnings = true;
     public boolean includeObservationCounts = true;
+    /** Maximum number of independent file/object/log parse tasks in one scan. */
+    public int executionParallelism = 1;
     public boolean namingMatchEnabled = true;
     public boolean namingMatchSystemRulesEnabled = true;
     public List<Path> namingMatchRuleFiles = new ArrayList<>();

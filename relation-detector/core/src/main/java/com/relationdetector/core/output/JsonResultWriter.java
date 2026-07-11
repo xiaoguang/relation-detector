@@ -58,19 +58,53 @@ public final class JsonResultWriter {
             boolean includeWarnings,
             boolean includeObservationCounts
     ) {
-        List<NamingEvidenceCandidate> namingEvidence = result.namingEvidence();
-        List<NamingEvidenceCandidate> derivedNamingEvidence = namingEvidence.stream()
+        return write(result, includeEvidence, includeWarnings, includeObservationCounts, true);
+    }
+
+    /**
+     * Renders the direct-fact view of a completed scan without reparsing the input.
+     */
+    public String writeDirect(
+            ScanResult result,
+            boolean includeEvidence,
+            boolean includeWarnings,
+            boolean includeObservationCounts
+    ) {
+        return write(result, includeEvidence, includeWarnings, includeObservationCounts, false);
+    }
+
+    private String write(
+            ScanResult result,
+            boolean includeEvidence,
+            boolean includeWarnings,
+            boolean includeObservationCounts,
+            boolean includeDerived
+    ) {
+        List<NamingEvidenceCandidate> allNamingEvidence = result.namingEvidence();
+        List<NamingEvidenceCandidate> derivedNamingEvidence = allNamingEvidence.stream()
                 .filter(this::isDerivedNamingEvidence)
                 .toList();
-        List<NamingEvidenceCandidate> directNamingEvidence = namingEvidence.stream()
+        List<NamingEvidenceCandidate> directNamingEvidence = allNamingEvidence.stream()
                 .filter(candidate -> !isDerivedNamingEvidence(candidate))
                 .toList();
+        List<NamingEvidenceCandidate> namingEvidence = includeDerived
+                ? allNamingEvidence
+                : directNamingEvidence;
+        List<DerivedPathCandidate> derivedRelationshipFacts = includeDerived
+                ? result.derivedRelationships()
+                : List.of();
+        List<DerivedPathCandidate> derivedDataLineageFacts = includeDerived
+                ? result.derivedDataLineages()
+                : List.of();
+        List<NamingEvidenceCandidate> derivedNamingOutput = includeDerived
+                ? derivedNamingEvidence
+                : List.of();
         int directRelationshipCount = result.relationships().size();
-        int derivedRelationshipCount = result.derivedRelationships().size();
+        int derivedRelationshipCount = derivedRelationshipFacts.size();
         int directDataLineageCount = result.dataLineages().size();
-        int derivedDataLineageCount = result.derivedDataLineages().size();
+        int derivedDataLineageCount = derivedDataLineageFacts.size();
         int directNamingEvidenceCount = directNamingEvidence.size();
-        int derivedNamingEvidenceCount = derivedNamingEvidence.size();
+        int derivedNamingEvidenceCount = derivedNamingOutput.size();
 
         ObjectNode root = JSON.createObjectNode();
         ObjectNode database = root.putObject("database");
@@ -90,11 +124,11 @@ public final class JsonResultWriter {
         summary.put("totalNamingEvidenceCount", directNamingEvidenceCount + derivedNamingEvidenceCount);
         if (includeObservationCounts) {
             int directRelationshipObservations = relationshipObservationCount(result.relationships());
-            int derivedRelationshipObservations = derivedPathObservationCount(result.derivedRelationships());
+            int derivedRelationshipObservations = derivedPathObservationCount(derivedRelationshipFacts);
             int directDataLineageObservations = dataLineageObservationCount(result.dataLineages());
-            int derivedDataLineageObservations = derivedPathObservationCount(result.derivedDataLineages());
+            int derivedDataLineageObservations = derivedPathObservationCount(derivedDataLineageFacts);
             int directNamingObservations = namingEvidenceObservationCount(directNamingEvidence);
-            int derivedNamingObservations = namingEvidenceObservationCount(derivedNamingEvidence);
+            int derivedNamingObservations = namingEvidenceObservationCount(derivedNamingOutput);
             summary.put("directRelationshipObservationCount", directRelationshipObservations);
             summary.put("derivedRelationshipObservationCount", derivedRelationshipObservations);
             summary.put("totalRelationshipObservationCount",
@@ -120,11 +154,11 @@ public final class JsonResultWriter {
                 dataLineages.add(dataLineageNode(lineage, includeEvidence)));
 
         ArrayNode derivedRelationships = root.putArray("derivedRelationships");
-        result.derivedRelationships().forEach(candidate ->
+        derivedRelationshipFacts.forEach(candidate ->
                 derivedRelationships.add(derivedPathNode(candidate, includeEvidence)));
 
         ArrayNode derivedDataLineages = root.putArray("derivedDataLineages");
-        result.derivedDataLineages().forEach(candidate ->
+        derivedDataLineageFacts.forEach(candidate ->
                 derivedDataLineages.add(derivedPathNode(candidate, includeEvidence)));
 
         ArrayNode naming = root.putArray("namingEvidence");
@@ -132,7 +166,7 @@ public final class JsonResultWriter {
                 naming.add(namingEvidenceNode(candidate, includeEvidence)));
 
         ArrayNode derivedNaming = root.putArray("derivedNamingEvidence");
-        derivedNamingEvidence.forEach(candidate ->
+        derivedNamingOutput.forEach(candidate ->
                 derivedNaming.add(lightweightNamingEvidenceNode(candidate)));
 
         if (includeWarnings) {
@@ -166,8 +200,14 @@ public final class JsonResultWriter {
 
     private int namingEvidenceObservationCount(List<NamingEvidenceCandidate> namingEvidence) {
         return namingEvidence.stream()
-                .mapToInt(candidate -> candidate.rawEvidence().size())
+                .flatMap(candidate -> candidate.rawEvidence().stream())
+                .mapToInt(this::evidenceOccurrenceCount)
                 .sum();
+    }
+
+    private int evidenceOccurrenceCount(Evidence evidence) {
+        Object value = evidence.attributes().get("occurrenceCount");
+        return value instanceof Number number ? Math.max(1, number.intValue()) : 1;
     }
 
     private int derivedPathObservationCount(List<DerivedPathCandidate> candidates) {

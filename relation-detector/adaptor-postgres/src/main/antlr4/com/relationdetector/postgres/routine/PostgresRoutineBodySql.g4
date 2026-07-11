@@ -23,6 +23,7 @@ statement
     | controlStartStatement
     | selectStatement SEMI?
     | insertSelectStatement SEMI?
+    | insertValuesStatement SEMI?
     | updateStatement SEMI?
     | mergeStatement SEMI?
     | deleteStatement SEMI?
@@ -69,7 +70,11 @@ controlStartStatement
     ;
 
 selectStatement
-    : withClause? querySpecification
+    : withClause? querySpecification setOperation*
+    ;
+
+setOperation
+    : (UNION ALL? | INTERSECT | EXCEPT) querySpecification
     ;
 
 withClause
@@ -86,7 +91,7 @@ cteMaterialization
     ;
 
 querySpecification
-    : SELECT selectList fromClause? whereClause? groupByClause? havingClause? orderByClause? limitClause?
+    : SELECT DISTINCT? selectList fromClause? whereClause? groupByClause? havingClause? orderByClause? limitClause?
     ;
 
 selectList
@@ -95,8 +100,13 @@ selectList
 
 selectItem
     : STAR
+    | booleanProjection (AS? identifier)?
     | expression (AS? identifier)?
     | selectItemFallback (AS? identifier)?
+    ;
+
+booleanProjection
+    : expression comparisonOperator expression ((AND | OR) expression comparisonOperator expression)*
     ;
 
 selectItemFallback
@@ -190,7 +200,23 @@ limitClause
     ;
 
 insertSelectStatement
-    : INSERT INTO qualifiedName LPAREN identifierList RPAREN selectStatement
+    : INSERT INTO qualifiedName LPAREN identifierList RPAREN selectStatement onConflictClause? returningIntoClause?
+    ;
+
+insertValuesStatement
+    : INSERT INTO qualifiedName LPAREN identifierList RPAREN VALUES valuesRow (COMMA valuesRow)* onConflictClause? returningIntoClause?
+    ;
+
+valuesRow
+    : LPAREN expressionList RPAREN
+    ;
+
+onConflictClause
+    : ON CONFLICT (LPAREN identifierList RPAREN)? DO (NOTHING | UPDATE SET assignmentList)
+    ;
+
+returningIntoClause
+    : RETURNING expressionList INTO identifierList
     ;
 
 updateStatement
@@ -391,6 +417,7 @@ predicate
     | expression IN LPAREN selectStatement RPAREN                         # inSubqueryPredicate
     | LPAREN expressionList RPAREN IN LPAREN selectStatement RPAREN       # tupleInSubqueryPredicate
     | expression IN LPAREN expressionList RPAREN                          # literalInPredicate
+    | expression IS NOT? NULL                                             # isNullPredicate
     | expression likeOperator expression (ESCAPE expression)?             # likePredicate
     | expression comparisonOperator expression                            # comparisonPredicate
     | LPAREN predicate RPAREN                                             # parenPredicate
@@ -417,7 +444,9 @@ expression
     | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
     | functionCall windowClause?                                          # functionExpression
     | LPAREN selectStatement RPAREN                                       # scalarSubqueryExpression
+    | MINUS expression                                                    # unaryMinusExpression
     | INTERVAL STRING_LITERAL                                             # intervalLiteralExpression
+    | DATE STRING_LITERAL                                                 # dateLiteralExpression
     | qualifiedName                                                       # columnExpression
     | literal                                                             # literalExpression
     | LPAREN expression RPAREN                                            # parenExpression
@@ -473,6 +502,7 @@ qualifiedName
 identifier
     : IDENTIFIER
     | QUOTED_IDENTIFIER
+    | DATE
     ;
 
 literal
@@ -487,21 +517,27 @@ literal
 sqlToken
     : SELECT | WITH | AS | FROM | JOIN | ON | INNER | LEFT | RIGHT | FULL
     | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE
+    | IS
     | USING | GROUP | BY | HAVING | ORDER | LIMIT | INSERT | INTO | UPDATE
     | SET | DELETE | MERGE | MATCHED | VALUES | RETURNING | DO | NOTHING
+    | UNION | ALL | INTERSECT | EXCEPT | CONFLICT
     | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE | FOR
     | ADD | CONSTRAINT
     | FOREIGN | KEY | REFERENCES | PRIMARY | UNIQUE | INDEX | CONCURRENTLY | ONLY
     | INCLUDE | TABLESPACE | MATERIALIZED | ROWS | TABLESAMPLE | LATERAL | ORDINALITY | OVER
-    | INTERVAL
+    | INTERVAL | DATE
     | IDENTIFIER | QUOTED_IDENTIFIER | STRING_LITERAL | DOLLAR_QUOTED_STRING | NUMBER
     | PARAMETER | DOT | COMMA | STAR | EQ | LPAREN | RPAREN | LBRACKET | RBRACKET | PLUS
     | MINUS | SLASH | PERCENT | CONCAT | TYPE_CAST | LT | GT | LE | GE | NEQ | OTHER
     ;
 
 SELECT: S E L E C T;
+UNION: U N I O N;
+ALL: A L L;
+INTERSECT: I N T E R S E C T;
+EXCEPT: E X C E P T;
 WITH: W I T H;
 AS: A S;
 FROM: F R O M;
@@ -518,6 +554,7 @@ WHERE: W H E R E;
 AND: A N D;
 OR: O R;
 NOT: N O T;
+IS: I S;
 EXISTS: E X I S T S;
 IN: I N;
 LIKE: L I K E;
@@ -536,6 +573,7 @@ MERGE: M E R G E;
 MATCHED: M A T C H E D;
 VALUES: V A L U E S;
 RETURNING: R E T U R N I N G;
+CONFLICT: C O N F L I C T;
 DO: D O;
 NOTHING: N O T H I N G;
 CREATE: C R E A T E;
@@ -583,6 +621,7 @@ TRUE: T R U E;
 FALSE: F A L S E;
 NULL: N U L L;
 INTERVAL: I N T E R V A L;
+DATE: D A T E;
 
 DOT: '.';
 COMMA: ',';

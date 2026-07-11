@@ -14,9 +14,37 @@ import org.junit.jupiter.api.Test;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
+import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
 class PostgresFullGrammerVersionBoundaryTest {
+    @Test
+    void fullGrammerPreservesNonTrivialArithmeticSelfUpdateAcrossVersions() {
+        List<com.relationdetector.core.fullgrammer.FullGrammerDialectModule> modules = List.of(
+                new com.relationdetector.postgres.fullgrammer.v16.PostgresFullGrammerDialectModule(),
+                new com.relationdetector.postgres.fullgrammer.v17.PostgresFullGrammerDialectModule(),
+                new com.relationdetector.postgres.fullgrammer.v18.PostgresFullGrammerDialectModule());
+        SqlStatementRecord statement = statement("""
+                UPDATE pg_generated_margin_demo AS target
+                SET sales_amount = target.sales_amount * 1.05;
+                """);
+
+        for (var module : modules) {
+            var structured = module.sqlParser().parseSql(statement, null);
+            var lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+            assertTrue(lineages.stream().anyMatch(lineage ->
+                            lineage.flowKind() == com.relationdetector.contracts.Enums.LineageFlowKind.VALUE
+                                    && lineage.transformType()
+                                    == com.relationdetector.contracts.Enums.LineageTransformType.ARITHMETIC
+                                    && "pg_generated_margin_demo.sales_amount"
+                                    .equals(lineage.target().displayName())
+                                    && lineage.sources().stream().anyMatch(source ->
+                                    "pg_generated_margin_demo.sales_amount".equals(source.displayName()))),
+                    () -> module.profile().id() + " must preserve non-trivial arithmetic self-update; "
+                            + "lineages=" + lineages + " events=" + structured.events());
+        }
+    }
+
     @Test
     void postgres16GrammarDoesNotExposePostgres17OnlyKeywordTokens() throws Exception {
         Path lexer = grammar("v16", "Postgres16FullGrammerLexer.g4");

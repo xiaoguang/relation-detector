@@ -10,12 +10,14 @@ import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.core.tokenevent.TokenEventEventEmitter;
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 import com.relationdetector.oracle.tokenevent.OracleRelationSqlBaseVisitor;
@@ -33,6 +35,11 @@ import com.relationdetector.oracle.tokenevent.OracleRelationSqlParser;
  * identifier spelling and source locations.
  */
 public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBaseVisitor<Void> {
+    private final Map<String, LineageTransformType> functionExtensions = Map.of(
+            "nvl", LineageTransformType.COALESCE,
+            "string_agg", LineageTransformType.CONCAT_FORMAT,
+            "listagg", LineageTransformType.CONCAT_FORMAT);
+
     private final SqlStatementRecord statement;
     private final TokenEventEventEmitter emitter;
     private final List<StructuredSqlEvent> events = new ArrayList<>();
@@ -127,7 +134,7 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
             attrs.put("alias", alias);
         }
         add(StructuredParseEventType.ROWSET_REFERENCE, ctx, attrs);
-        registerCurrentRowset(alias.isBlank() ? table : alias);
+        registerCurrentRowset(alias.isBlank() ? table : alias, qualified);
         return null;
     }
 
@@ -166,7 +173,7 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
             attrs.put("table", alias);
             attrs.put("qualifiedTable", alias);
             add(StructuredParseEventType.IGNORED_ROWSET, ctx, attrs);
-            registerCurrentRowset(alias);
+            registerCurrentRowset(alias, alias);
             projectionOwners.push(new ProjectionOwner(alias, List.of()));
             visit(ctx.selectStatement());
             projectionOwners.pop();
@@ -276,19 +283,10 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
             if (item.expression() == null) {
                 continue;
             }
-            OracleExpressionAnalysis source = analyze(item.expression());
-            if (source.sources().isEmpty()) {
-                continue;
+            for (OracleExpressionAnalysis source : writeAnalyses(item.expression())) {
+                addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, "", targetTable,
+                        targetColumns.get(index), resolveCurrentScope(source), "INSERT_SELECT");
             }
-            Map<String, Object> attrs = attrs();
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumns.get(index));
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            attrs.put("mappingKind", "INSERT_SELECT");
-            add(StructuredParseEventType.INSERT_SELECT_MAPPING, item, attrs);
         }
         return null;
     }
@@ -426,22 +424,24 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
             if (item.expression() == null) {
                 continue;
             }
-            OracleExpressionAnalysis source = analyze(item.expression());
-            if (source.sources().isEmpty()) {
-                continue;
-            }
             String outputColumn = index < owner.columns().size() ? owner.columns().get(index) : outputColumn(item);
             if (outputColumn.isBlank()) {
                 continue;
             }
-            Map<String, Object> attrs = attrs();
-            attrs.put("outputAlias", owner.alias());
-            attrs.put("outputColumn", outputColumn);
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
+            for (OracleExpressionAnalysis rawSource : writeAnalyses(item.expression())) {
+                OracleExpressionAnalysis source = resolveCurrentScope(rawSource);
+                if (source.sources().isEmpty()) {
+                    continue;
+                }
+                Map<String, Object> attrs = attrs();
+                attrs.put("outputAlias", owner.alias());
+                attrs.put("outputColumn", outputColumn);
+                attrs.put("sourceAliases", source.aliases());
+                attrs.put("sourceColumns", source.columns());
+                attrs.put("transformType", source.transform().name());
+                attrs.put("flowKind", source.flowKind().name());
+                add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
+            }
         }
     }
 
@@ -487,20 +487,36 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
         List<String> targetParts = parts(assignment.qualifiedName());
         String targetColumn = targetParts.isEmpty() ? "" : targetParts.get(targetParts.size() - 1);
         String assignmentAlias = targetParts.size() > 1 ? targetParts.get(targetParts.size() - 2) : targetAlias;
-        OracleExpressionAnalysis source = analyze(assignment.expression());
+        for (OracleExpressionAnalysis source : writeAnalyses(assignment.expression())) {
+            addWriteMapping(eventType, assignment, assignmentAlias, targetTable, targetColumn,
+                    resolveCurrentScope(source), mappingKind);
+        }
+    }
+
+    private void addWriteMapping(
+            StructuredParseEventType eventType,
+            ParserRuleContext context,
+            String targetAlias,
+            String targetTable,
+            String targetColumn,
+            OracleExpressionAnalysis source,
+            String mappingKind
+    ) {
         if (source.sources().isEmpty()) {
             return;
         }
-        Map<String, Object> attrs = attrs();
-        attrs.put("targetAlias", assignmentAlias);
-        attrs.put("targetTable", targetTable);
-        attrs.put("targetColumn", targetColumn);
-        attrs.put("sourceAliases", source.aliases());
-        attrs.put("sourceColumns", source.columns());
-        attrs.put("transformType", source.transform().name());
-        attrs.put("flowKind", source.flowKind().name());
-        attrs.put("mappingKind", mappingKind);
-        add(eventType, assignment, attrs);
+        Map<String, Object> attributes = attrs();
+        if (!targetAlias.isBlank()) {
+            attributes.put("targetAlias", targetAlias);
+        }
+        attributes.put("targetTable", targetTable);
+        attributes.put("targetColumn", targetColumn);
+        attributes.put("sourceAliases", source.aliases());
+        attributes.put("sourceColumns", source.columns());
+        attributes.put("transformType", source.transform().name());
+        attributes.put("flowKind", source.flowKind().name());
+        attributes.put("mappingKind", mappingKind);
+        add(eventType, context, attributes);
     }
 
     private String currentDdlTable() {
@@ -606,23 +622,28 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
                 }
             }
             String functionName = baseName(qualifiedName(function.functionCall().qualifiedName())).toLowerCase(Locale.ROOT);
-            if (Set.of("sum", "avg", "count", "min", "max").contains(functionName)) {
-                return new OracleExpressionAnalysis(args.sources(), LineageTransformType.AGGREGATE, LineageFlowKind.VALUE);
+            LineageTransformType transform = LineageTransformClassifier.classifyFunction(
+                    functionName, false, functionExtensions);
+            if (transform == LineageTransformType.AGGREGATE
+                    || transform == LineageTransformType.CONCAT_FORMAT) {
+                return new OracleExpressionAnalysis(args.sources(), transform, LineageFlowKind.VALUE);
             }
-            if (Set.of("coalesce", "nvl").contains(functionName)) {
+            if (transform == LineageTransformType.COALESCE) {
                 return new OracleExpressionAnalysis(args.sources(),
-                        OracleExpressionAnalysis.dominant(LineageTransformType.COALESCE, args.transform()),
+                        LineageTransformClassifier.dominant(transform, args.transform()),
                         LineageFlowKind.VALUE);
             }
-            if (Set.of("concat", "format", "string_agg", "listagg").contains(functionName)) {
-                return new OracleExpressionAnalysis(args.sources(), LineageTransformType.CONCAT_FORMAT, LineageFlowKind.VALUE);
-            }
-            LineageTransformType dominant = OracleExpressionAnalysis.dominant(LineageTransformType.FUNCTION_CALL,
-                    args.transform());
+            LineageTransformType dominant = LineageTransformClassifier.dominant(transform, args.transform());
             LineageFlowKind flowKind = dominant == LineageTransformType.CASE_WHEN
                     ? LineageFlowKind.CONTROL
                     : LineageFlowKind.VALUE;
             return new OracleExpressionAnalysis(args.sources(), dominant, flowKind);
+        }
+        if (expression instanceof OracleRelationSqlParser.ExtractExpressionContext extract) {
+            OracleExpressionAnalysis source = analyze(extract.expression());
+            return new OracleExpressionAnalysis(source.sources(),
+                    LineageTransformClassifier.dominant(LineageTransformType.FUNCTION_CALL, source.transform()),
+                    LineageFlowKind.VALUE);
         }
         if (expression instanceof OracleRelationSqlParser.CaseExpressionContext caseExpression) {
             OracleExpressionAnalysis combined = OracleExpressionAnalysis.empty();
@@ -662,6 +683,158 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
         return OracleExpressionAnalysis.empty();
     }
 
+    private List<OracleExpressionAnalysis> writeAnalyses(OracleRelationSqlParser.ExpressionContext expression) {
+        if (!containsRoleBoundary(expression)) {
+            OracleExpressionAnalysis analysis = analyze(expression);
+            return analysis.sources().isEmpty() ? List.of() : List.of(analysis);
+        }
+        OracleExpressionAnalysis value = valueOnlyAnalysis(expression);
+        OracleExpressionAnalysis control = controlOnlyAnalysis(expression);
+        List<OracleExpressionAnalysis> result = new ArrayList<>(2);
+        if (!value.sources().isEmpty()) {
+            result.add(new OracleExpressionAnalysis(value.sources(), value.transform(), LineageFlowKind.VALUE));
+        }
+        if (!control.sources().isEmpty()) {
+            result.add(new OracleExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL));
+        }
+        return List.copyOf(result);
+    }
+
+    private OracleExpressionAnalysis valueOnlyAnalysis(OracleRelationSqlParser.ExpressionContext expression) {
+        if (expression instanceof OracleRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
+            visit(scalarSubquery.selectStatement());
+            return scalarSubquerySelectValue(scalarSubquery.selectStatement());
+        }
+        if (expression instanceof OracleRelationSqlParser.CaseExpressionContext caseExpression) {
+            OracleExpressionAnalysis value = OracleExpressionAnalysis.empty();
+            for (OracleRelationSqlParser.CaseWhenClauseContext clause : caseExpression.caseWhenClause()) {
+                value = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.VALUE, value, valueOnlyAnalysis(clause.expression()));
+            }
+            List<OracleRelationSqlParser.ExpressionContext> outerExpressions = caseExpression.expression();
+            if (caseExpression.ELSE() != null && !outerExpressions.isEmpty()) {
+                value = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.VALUE, value,
+                        valueOnlyAnalysis(outerExpressions.get(outerExpressions.size() - 1)));
+            }
+            return new OracleExpressionAnalysis(value.sources(), LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.VALUE);
+        }
+        if (expression instanceof OracleRelationSqlParser.ParenExpressionContext paren) {
+            return valueOnlyAnalysis(paren.expression());
+        }
+        if (expression instanceof OracleRelationSqlParser.BinaryExpressionContext binary) {
+            OracleExpressionAnalysis combined = OracleExpressionAnalysis.combine(LineageTransformType.ARITHMETIC,
+                    LineageFlowKind.VALUE,
+                    valueOnlyAnalysis(binary.expression(0)),
+                    valueOnlyAnalysis(binary.expression(1)));
+            return new OracleExpressionAnalysis(combined.sources(), combined.transform(), LineageFlowKind.VALUE);
+        }
+        if (expression instanceof OracleRelationSqlParser.FunctionExpressionContext function) {
+            OracleExpressionAnalysis args = OracleExpressionAnalysis.empty();
+            if (function.functionCall().expressionList() != null) {
+                for (OracleRelationSqlParser.ExpressionContext argument
+                        : function.functionCall().expressionList().expression()) {
+                    args = OracleExpressionAnalysis.combine(args.transform(), LineageFlowKind.VALUE,
+                            args, valueOnlyAnalysis(argument));
+                }
+            }
+            String functionName = baseName(qualifiedName(function.functionCall().qualifiedName()))
+                    .toLowerCase(Locale.ROOT);
+            LineageTransformType transform = LineageTransformClassifier.classifyFunction(
+                    functionName, false, functionExtensions);
+            LineageTransformType effective = transform == LineageTransformType.AGGREGATE
+                    || args.transform() == LineageTransformType.AGGREGATE
+                    ? LineageTransformType.AGGREGATE
+                    : LineageTransformClassifier.dominant(transform, args.transform());
+            return new OracleExpressionAnalysis(args.sources(), effective, LineageFlowKind.VALUE);
+        }
+        OracleExpressionAnalysis analysis = analyze(expression);
+        return new OracleExpressionAnalysis(analysis.sources(), analysis.transform(), LineageFlowKind.VALUE);
+    }
+
+    private OracleExpressionAnalysis controlOnlyAnalysis(OracleRelationSqlParser.ExpressionContext expression) {
+        if (expression instanceof OracleRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
+            OracleExpressionAnalysis control = scalarSubqueryContext(scalarSubquery.selectStatement());
+            List<OracleRelationSqlParser.SelectItemContext> items =
+                    scalarSubquery.selectStatement().querySpecification().selectList().selectItem();
+            if (items.size() == 1 && items.get(0).expression() != null) {
+                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL, control, controlOnlyAnalysis(items.get(0).expression()));
+            }
+            return new OracleExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL);
+        }
+        if (expression instanceof OracleRelationSqlParser.CaseExpressionContext caseExpression) {
+            OracleExpressionAnalysis control = OracleExpressionAnalysis.empty();
+            for (OracleRelationSqlParser.CaseWhenClauseContext clause : caseExpression.caseWhenClause()) {
+                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL, control, analyze(clause.predicate()));
+                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL, control, controlOnlyAnalysis(clause.expression()));
+            }
+            List<OracleRelationSqlParser.ExpressionContext> outerExpressions = caseExpression.expression();
+            int selectorCount = outerExpressions.size() - (caseExpression.ELSE() == null ? 0 : 1);
+            for (int index = 0; index < selectorCount; index++) {
+                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL, control, analyze(outerExpressions.get(index)));
+            }
+            if (caseExpression.ELSE() != null && !outerExpressions.isEmpty()) {
+                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL, control,
+                        controlOnlyAnalysis(outerExpressions.get(outerExpressions.size() - 1)));
+            }
+            return control;
+        }
+        OracleExpressionAnalysis control = OracleExpressionAnalysis.empty();
+        for (OracleRelationSqlParser.ExpressionContext child : childExpressions(expression)) {
+            control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, control, controlOnlyAnalysis(child));
+        }
+        return control;
+    }
+
+    private List<OracleRelationSqlParser.ExpressionContext> childExpressions(ParseTree tree) {
+        List<OracleRelationSqlParser.ExpressionContext> result = new ArrayList<>();
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            if (tree.getChild(index) instanceof OracleRelationSqlParser.ExpressionContext expression) {
+                result.add(expression);
+            } else if (!(tree.getChild(index) instanceof TerminalNode)) {
+                result.addAll(childExpressions(tree.getChild(index)));
+            }
+        }
+        return result;
+    }
+
+    private boolean containsRoleBoundary(ParseTree tree) {
+        if (tree instanceof OracleRelationSqlParser.CaseExpressionContext
+                || tree instanceof OracleRelationSqlParser.ScalarSubqueryExpressionContext) {
+            return true;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            if (containsRoleBoundary(tree.getChild(index))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private OracleExpressionAnalysis scalarSubquerySelectValue(
+            OracleRelationSqlParser.SelectStatementContext select
+    ) {
+        queryScopes.push(scopeFor(select.querySpecification()));
+        try {
+            List<OracleRelationSqlParser.SelectItemContext> items = select.querySpecification().selectList().selectItem();
+            if (items.size() != 1 || items.get(0).expression() == null) {
+                return OracleExpressionAnalysis.empty();
+            }
+            return valueOnlyAnalysis(items.get(0).expression());
+        } finally {
+            queryScopes.pop();
+        }
+    }
+
     private OracleExpressionAnalysis scalarSubquerySelectExpression(OracleRelationSqlParser.SelectStatementContext select) {
         queryScopes.push(scopeFor(select.querySpecification()));
         try {
@@ -697,7 +870,8 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
     private boolean containsAggregateFunction(ParseTree tree) {
         if (tree instanceof OracleRelationSqlParser.FunctionExpressionContext function) {
             String functionName = baseName(qualifiedName(function.functionCall().qualifiedName())).toLowerCase(Locale.ROOT);
-            if (Set.of("sum", "avg", "count", "min", "max").contains(functionName)) {
+            if (LineageTransformClassifier.classifyFunction(functionName, false, functionExtensions)
+                    == LineageTransformType.AGGREGATE) {
                 return true;
             }
         }
@@ -719,7 +893,7 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
                     for (OracleRelationSqlParser.JoinClauseContext join : reference.joinClause()) {
                         if (join.predicate() != null) {
                             context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                                    LineageFlowKind.VALUE,
+                                    LineageFlowKind.CONTROL,
                                     context,
                                     analyze(join.predicate()));
                         }
@@ -728,21 +902,21 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
             }
             if (query.whereClause() != null) {
                 context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.VALUE,
+                        LineageFlowKind.CONTROL,
                         context,
                         analyze(query.whereClause().predicate()));
             }
             if (query.groupByClause() != null) {
                 for (OracleRelationSqlParser.ExpressionContext expression : query.groupByClause().expressionList().expression()) {
                     context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                            LineageFlowKind.VALUE,
+                            LineageFlowKind.CONTROL,
                             context,
                             analyze(expression));
                 }
             }
             if (query.havingClause() != null) {
                 context = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
-                        LineageFlowKind.VALUE,
+                        LineageFlowKind.CONTROL,
                         context,
                         analyze(query.havingClause().predicate()));
             }
@@ -789,6 +963,9 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
                         analyze(likePredicate.expression(2)));
             }
             return combined;
+        }
+        if (predicate instanceof OracleRelationSqlParser.IsNullPredicateContext isNullPredicate) {
+            return analyze(isNullPredicate.expression());
         }
         if (predicate instanceof OracleRelationSqlParser.LiteralInPredicateContext literalInPredicate) {
             OracleExpressionAnalysis combined = analyze(literalInPredicate.expression());
@@ -895,11 +1072,29 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
         return joinKinds.isEmpty() ? "WHERE_OR_UNKNOWN" : joinKinds.peek();
     }
 
-    private void registerCurrentRowset(String alias) {
+    private void registerCurrentRowset(String alias, String table) {
         if (alias == null || alias.isBlank() || queryScopes.isEmpty()) {
             return;
         }
-        queryScopes.peek().rowsetAliases().add(alias);
+        QueryScope scope = queryScopes.peek();
+        scope.rowsetAliases().add(alias);
+        if (table != null && !table.isBlank()) {
+            scope.rowsets().put(normalize(alias), clean(table));
+        }
+    }
+
+    private OracleExpressionAnalysis resolveCurrentScope(OracleExpressionAnalysis analysis) {
+        if (queryScopes.isEmpty() || analysis.sources().isEmpty()) {
+            return analysis;
+        }
+        QueryScope scope = queryScopes.peek();
+        List<OracleColumnRead> sources = analysis.sources().stream()
+                .map(source -> new OracleColumnRead(
+                        scope.rowsets().getOrDefault(normalize(source.alias()), source.alias()),
+                        source.column()))
+                .distinct()
+                .toList();
+        return new OracleExpressionAnalysis(sources, analysis.transform(), analysis.flowKind());
     }
 
     private QueryScope scopeFor(OracleRelationSqlParser.QuerySpecificationContext query) {
@@ -980,7 +1175,8 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
             sources.addAll(left.sources());
             sources.addAll(right.sources());
             return new OracleExpressionAnalysis(sources.stream().distinct().toList(),
-                    dominant(transform, left.transform(), right.transform()), flowKind);
+                    LineageTransformClassifier.dominantForFlow(
+                            flowKind, transform, left.transform(), right.transform()), flowKind);
         }
 
         private static OracleExpressionAnalysis withTransform(
@@ -995,30 +1191,6 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
             return new OracleExpressionAnalysis(sources.stream().distinct().toList(), transform, flowKind);
         }
 
-        private static LineageTransformType dominant(LineageTransformType... transforms) {
-            LineageTransformType dominant = LineageTransformType.DIRECT;
-            for (LineageTransformType transform : transforms) {
-                if (priority(transform) > priority(dominant)) {
-                    dominant = transform;
-                }
-            }
-            return dominant;
-        }
-
-        private static int priority(LineageTransformType transform) {
-            return switch (transform) {
-                case CASE_WHEN -> 8;
-                case CUMULATIVE -> 7;
-                case AGGREGATE -> 6;
-                case WINDOW_DERIVED -> 5;
-                case COALESCE -> 4;
-                case CONCAT_FORMAT -> 3;
-                case ARITHMETIC -> 2;
-                case FUNCTION_CALL -> 1;
-                default -> 0;
-            };
-        }
-
         private List<String> aliases() {
             return sources.stream().map(OracleColumnRead::alias).toList();
         }
@@ -1031,9 +1203,9 @@ public final class OracleTokenEventParseTreeVisitor extends OracleRelationSqlBas
     private record ProjectionOwner(String alias, List<String> columns) {
     }
 
-    private record QueryScope(Set<String> rowsetAliases) {
+    private record QueryScope(Set<String> rowsetAliases, Map<String, String> rowsets) {
         private QueryScope() {
-            this(new LinkedHashSet<>());
+            this(new LinkedHashSet<>(), new java.util.LinkedHashMap<>());
         }
     }
 

@@ -141,7 +141,7 @@ LEFT JOIN sales_returns ON sales_returns.order_id = sales_orders.id;
 
 -- relation-detector-fixture-source: PROCEDURE:portable.sp_onboard_employee_full
 INSERT INTO employees (id, employee_no, name, gender, id_card, phone, birth_date, hire_date, department_id, position_id, manager_id, salary)
-SELECT positions.id, positions.code, positions.name, 'F', positions.code, positions.code, DATE '1990-01-01', CURRENT_DATE, departments.id, positions.id, departments.manager_id, positions.base_salary
+SELECT positions.id, positions.code, positions.name, 'F', positions.code, positions.code, DATE '1990-01-01', CURRENT_DATE, departments.id, positions.id, departments.manager_id, (positions.min_salary + positions.max_salary) / 2
 FROM departments
 JOIN positions ON positions.department_id = departments.id;
 

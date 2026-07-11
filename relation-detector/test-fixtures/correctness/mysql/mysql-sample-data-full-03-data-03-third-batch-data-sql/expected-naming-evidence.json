@@ -1,5 +1,6 @@
 {
   "fingerprints": [
+    "naming:product_batches.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

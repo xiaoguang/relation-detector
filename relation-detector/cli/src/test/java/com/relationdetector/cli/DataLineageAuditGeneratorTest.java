@@ -10,20 +10,21 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 class DataLineageAuditGeneratorTest {
-    private static final Path WORKSPACE = workspaceRoot();
-    private static final Path AUDIT = WORKSPACE.resolve("docs/parser-audit/data-lineage-full-audit.md");
+    private static final Path RELATION_DETECTOR_ROOT = TestWorkspacePaths.relationDetectorRoot();
+    private static final Path AUDIT = TestWorkspacePaths.repositoryRoot()
+            .resolve("docs/parser-audit/data-lineage-full-audit.md");
 
     @Test
     void generatedAuditClassifiesLineageFixtureCoverage() throws Exception {
         assumeGeneratedReportTestEnabled();
-        String markdown = DataLineageAuditGenerator.generate(WORKSPACE);
+        String markdown = DataLineageAuditGenerator.generate(RELATION_DETECTOR_ROOT);
 
         assertTrue(markdown.contains("# Data Lineage Full Audit"));
-        assertTrue(markdown.contains("| TOTAL | 1197 |"));
-        assertTrue(markdown.contains("| EXISTING_GOLD | 429 |"));
+        assertTrue(markdown.contains("| TOTAL | 1198 |"));
+        assertTrue(markdown.contains("| EXISTING_GOLD | 405 |"));
         assertTrue(markdown.contains("| SUGGESTED_GOLD | 0 |"));
         assertTrue(markdown.contains("| PENDING_REVIEW | 0 |"));
-        assertTrue(markdown.contains("| NOT_APPLICABLE | 768 |"));
+        assertTrue(markdown.contains("| NOT_APPLICABLE | 793 |"));
         assertTrue(markdown.contains("| Classification | `EXISTING_GOLD` |"));
         assertTrue(markdown.contains("| Classification | `NOT_APPLICABLE` |"));
         assertTrue(markdown.contains("mysql-user-spending-left-join-update-sql"));
@@ -36,8 +37,10 @@ class DataLineageAuditGeneratorTest {
         assertTrue(markdown.contains("VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit"));
         assertTrue(markdown.contains(
                 "VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,"
-                        + "transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category"
+                        + "transaction_ledgers.amount,transaction_ledgers.merchant_category"
                         + "->account_balances.compliance_notes"));
+        assertTrue(markdown.contains(
+                "CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes"));
         assertTrue(markdown.contains("VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags"));
         assertTrue(markdown.contains("VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end"));
         assertTrue(markdown.contains("postgres-sql-update-from-aliases"));
@@ -72,7 +75,7 @@ class DataLineageAuditGeneratorTest {
         assertTrue(markdown.contains("sqlserver2025-sample-data-full-04-queries-09-real-world-scenarios-sql"));
         assertTrue(markdown.contains(
                 "test-fixtures/correctness/sqlserver/v2025/sqlserver2025-sample-data-full-04-queries-09-real-world-scenarios-sql/expected-lineage.json"));
-        assertTrue(markdown.contains("VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id"));
+        assertTrue(markdown.contains("VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id"));
         assertTrue(markdown.contains("VALUE:CONCAT_FORMAT:customers.risk_level,orders.status->orders.risk_note"));
         assertTrue(markdown.contains(
                 "VALUE:ARITHMETIC:account_balances.balance,transaction_ledgers.amount->account_balances.balance"));
@@ -84,7 +87,7 @@ class DataLineageAuditGeneratorTest {
     @Test
     void generatedAuditFileIsUpToDate() throws Exception {
         assumeGeneratedReportTestEnabled();
-        String markdown = DataLineageAuditGenerator.generate(WORKSPACE);
+        String markdown = DataLineageAuditGenerator.generate(RELATION_DETECTOR_ROOT);
         if (Boolean.getBoolean("updateDataLineageAudit")) {
             Files.createDirectories(AUDIT.getParent());
             Files.writeString(AUDIT, markdown);
@@ -94,10 +97,6 @@ class DataLineageAuditGeneratorTest {
                 "Generated Data Lineage audit is stale. Refresh it with: "
                         + "mvn -pl cli -Dtest=DataLineageAuditGeneratorTest "
                         + "-DupdateDataLineageAudit=true test");
-    }
-
-    private static Path workspaceRoot() {
-        return TestWorkspacePaths.relationDetectorRoot();
     }
 
     private static void assumeGeneratedReportTestEnabled() {

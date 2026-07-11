@@ -62,7 +62,7 @@ BEGIN
         ROUND(pb.current_qty * pb.purchase_price, 2) AS batch_stock_value,
         i.shelf_location,
         -- 保质期状态
-        (pb.expiry_date - CURRENT_DATE)(10) AS days_to_expiry,
+        (pb.expiry_date - CURRENT_DATE) AS days_to_expiry,
         CASE
             WHEN pb.expiry_date < CURRENT_DATE THEN '已过期'
             WHEN pb.expiry_date <= CURRENT_DATE + INTERVAL '7' DAY THEN '7天内过期'
@@ -82,7 +82,7 @@ BEGIN
         END(10) AS urgency_level,
         -- 已过期天数
         CASE WHEN pb.expiry_date < CURRENT_DATE
-            THEN (CURRENT_DATE - pb.expiry_date)(10)
+            THEN (CURRENT_DATE - pb.expiry_date)
             ELSE 0
         END AS days_expired,
         -- 保质期使用率
@@ -498,7 +498,7 @@ BEGIN
         pb.batch_no,
         pb.production_date,
         pb.expiry_date,
-        (pb.expiry_date - CURRENT_DATE)(10) AS days_to_expiry,
+        (pb.expiry_date - CURRENT_DATE) AS days_to_expiry,
         pb.current_qty AS batch_qty,
         pb.initial_qty,
         ROUND(pb.current_qty * 100.0 / NULLIF(pb.initial_qty, 0), 2) AS remaining_pct,
@@ -560,7 +560,7 @@ BEGIN
         p.name AS product_name,
         pb.batch_no,
         pb.expiry_date,
-        (CURRENT_DATE - pb.expiry_date)(10) AS days_metric,
+        (CURRENT_DATE - pb.expiry_date) AS days_metric,
         pb.current_qty AS stock_qty,
         ROUND(pb.current_qty * pb.purchase_price, 2) AS value_or_loss,
         ('请立即下架报废处理，损失预估: ' || ROUND(pb.current_qty * pb.purchase_price, 2) || '元') AS suggested_action
@@ -582,7 +582,7 @@ BEGIN
         p.name,
         pb.batch_no,
         pb.expiry_date,
-        (pb.expiry_date - CURRENT_DATE)(10) AS days_metric,
+        (pb.expiry_date - CURRENT_DATE) AS days_metric,
         pb.current_qty AS stock_qty,
         ROUND(pb.current_qty * pb.purchase_price * 0.3, 2) AS value_or_loss,
         ('建议立即打折促销(建议7折)，或联系供应商退货。预估损失: ' ||
@@ -605,7 +605,7 @@ BEGIN
         p.name,
         pb.batch_no,
         pb.expiry_date,
-        (pb.expiry_date - CURRENT_DATE)(10) AS days_metric,
+        (pb.expiry_date - CURRENT_DATE) AS days_metric,
         pb.current_qty AS stock_qty,
         ROUND(pb.current_qty * pb.purchase_price * 0.1, 2) AS value_or_loss,
         ('库存量(' || pb.current_qty || ')超过30天预计销量，建议优先出库或促销') AS suggested_action

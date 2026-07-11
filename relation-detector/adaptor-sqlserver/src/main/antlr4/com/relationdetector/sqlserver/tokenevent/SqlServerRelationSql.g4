@@ -27,6 +27,7 @@ statement
     | create_or_alter_function SEMI?
     | create_or_alter_trigger SEMI?
     | create_table SEMI?
+    | alter_table SEMI?
     | create_index SEMI?
     | GO
     | SEMI
@@ -135,7 +136,8 @@ search_condition
     ;
 
 predicate
-    : EXISTS LPAREN subquery RPAREN
+    : NOT? EXISTS LPAREN subquery RPAREN
+    | LPAREN search_condition RPAREN
     | expression IN LPAREN subquery RPAREN
     | expression IN LPAREN expression_list_ RPAREN
     | expression BETWEEN expression AND expression
@@ -167,7 +169,11 @@ having_clause
     ;
 
 order_by_clause
-    : ORDER BY expression (COMMA expression)* (ASC | DESC)?
+    : ORDER BY order_by_expression (COMMA order_by_expression)*
+    ;
+
+order_by_expression
+    : expression (ASC | DESC)?
     ;
 
 fetch_clause
@@ -248,6 +254,10 @@ values_clause
 
 create_table
     : CREATE TABLE table_name LPAREN table_element (COMMA table_element)* RPAREN
+    ;
+
+alter_table
+    : ALTER TABLE table_name ADD table_constraint
     ;
 
 table_element
@@ -352,7 +362,20 @@ over_clause
     ;
 
 case_expression
-    : CASE (WHEN search_condition THEN expression)+ (ELSE expression)? END
+    : CASE searched_case_when+ case_else? END
+    | CASE expression simple_case_when+ case_else? END
+    ;
+
+searched_case_when
+    : WHEN search_condition THEN expression
+    ;
+
+simple_case_when
+    : WHEN expression THEN expression
+    ;
+
+case_else
+    : ELSE expression
     ;
 
 binary_operator
@@ -367,7 +390,7 @@ loose_token
     : SELECT | WITH | AS | FROM | WHERE | JOIN | INNER | LEFT | RIGHT | FULL | OUTER | CROSS | APPLY
     | ON | AND | OR | NOT | EXISTS | IN | BETWEEN | GROUP | BY | HAVING | ORDER | ASC | DESC | TOP | FETCH
     | FIRST | NEXT | ROWS | ONLY | UNION | INSERT | INTO | VALUES | UPDATE | SET | DELETE | MERGE | USING | IDENTITY_INSERT
-    | WHEN | MATCHED | THEN | CREATE | ALTER | PROCEDURE | FUNCTION | RETURNS | RETURN | TRIGGER | AFTER | BEGIN | TABLE | INDEX | UNIQUE | CLUSTERED | NONCLUSTERED
+    | WHEN | MATCHED | THEN | CREATE | ALTER | PROCEDURE | FUNCTION | RETURNS | RETURN | TRIGGER | AFTER | BEGIN | TABLE | ADD | INDEX | UNIQUE | CLUSTERED | NONCLUSTERED
     | CONSTRAINT | FOREIGN | KEY | REFERENCES | PRIMARY | NULL | IDENTITY | DEFAULT | CASE | WHEN
     | ELSE | END | IS | LIKE | CAST | COUNT | SUM | MAX | MIN | AVG | OVER | PARTITION | OFF | ID | BRACKET_ID | DOUBLE_QUOTE_ID
     | LOCAL_ID | TEMP_ID | DECIMAL_LITERAL | STRING | COMMA | DOT | STAR | EQ | PLUS | MINUS
@@ -435,6 +458,7 @@ TRIGGER: 'TRIGGER';
 AFTER: 'AFTER';
 BEGIN: 'BEGIN';
 TABLE: 'TABLE';
+ADD: 'ADD';
 INDEX: 'INDEX';
 UNIQUE: 'UNIQUE';
 CLUSTERED: 'CLUSTERED';

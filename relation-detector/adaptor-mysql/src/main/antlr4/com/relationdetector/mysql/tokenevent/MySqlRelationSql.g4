@@ -74,7 +74,7 @@ unionSelect
     ;
 
 withClause
-    : WITH commonTableExpression (COMMA commonTableExpression)*
+    : WITH RECURSIVE? commonTableExpression (COMMA commonTableExpression)*
     ;
 
 commonTableExpression
@@ -88,6 +88,7 @@ querySpecification
 selectModifier
     : STRAIGHT_JOIN
     | DISTINCT
+    | ALL
     ;
 
 selectList
@@ -291,7 +292,26 @@ columnDefinition
 
 columnDefinitionPart
     : inlineColumnConstraint
+    | generatedColumnClause
     | columnDefinitionToken
+    ;
+
+generatedColumnClause
+    : GENERATED ALWAYS? AS LPAREN generatedColumnBooleanExpression RPAREN (STORED | VIRTUAL)?
+    ;
+
+generatedColumnBooleanExpression
+    : generatedColumnComparison ((AND | OR) generatedColumnComparison)*
+    ;
+
+generatedColumnComparison
+    : generatedColumnOperand comparisonOperator generatedColumnOperand
+    | LPAREN generatedColumnBooleanExpression RPAREN
+    ;
+
+generatedColumnOperand
+    : qualifiedName
+    | literal
     ;
 
 columnDefinitionToken
@@ -313,6 +333,10 @@ columnDefinitionToken
     | BY
     | ON
     | UPDATE
+    | GENERATED
+    | ALWAYS
+    | STORED
+    | VIRTUAL
     | DOT
     | OTHER
     ;
@@ -401,9 +425,9 @@ predicate
     | predicate OR predicate                                              # orPredicate
     | NOT predicate                                                       # notPredicate
     | EXISTS LPAREN selectStatement RPAREN                                # existsPredicate
-    | expression IN LPAREN selectStatement RPAREN                         # inSubqueryPredicate
-    | LPAREN expressionList RPAREN IN LPAREN selectStatement RPAREN       # tupleInSubqueryPredicate
-    | expression IN LPAREN expressionList RPAREN                          # literalInPredicate
+    | expression NOT? IN LPAREN selectStatement RPAREN                    # inSubqueryPredicate
+    | LPAREN expressionList RPAREN NOT? IN LPAREN selectStatement RPAREN  # tupleInSubqueryPredicate
+    | expression NOT? IN LPAREN expressionList RPAREN                     # literalInPredicate
     | expression IS NOT? NULL                                             # isNullPredicate
     | expression likeOperator expression (ESCAPE expression)?             # likePredicate
     | expression NOT? BETWEEN expression AND expression                    # betweenPredicate
@@ -440,7 +464,8 @@ comparisonOperator
 
 expression
     : expression arithmeticOperator expression                            # binaryExpression
-    | CASE expression? caseWhenClause+ (ELSE expression)? END             # caseExpression
+    | (PLUS | MINUS) expression                                           # unaryExpression
+    | CASE selector=expression? caseWhenClause+ (ELSE elseBranch=expression)? END # caseExpression
     | INTERVAL expression identifier                                      # intervalExpression
     | IF LPAREN predicate COMMA expression COMMA expression RPAREN        # ifExpression
     | functionCall                                                        # functionExpression
@@ -505,10 +530,10 @@ literal
     ;
 
 sqlToken
-    : SELECT | WITH | AS | FROM | JOIN | STRAIGHT_JOIN | ON | INNER | LEFT | RIGHT | FULL
+    : SELECT | WITH | RECURSIVE | AS | FROM | JOIN | STRAIGHT_JOIN | ON | INNER | LEFT | RIGHT | FULL
     | OUTER | CROSS | WHERE | AND | OR | NOT | EXISTS | IN | LIKE | ESCAPE | BETWEEN
     | USING | GROUP | BY | HAVING | ORDER | LIMIT | UNION | INSERT | INTO | UPDATE
-    | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | TRUE | FALSE
+    | SET | DELETE | CASE | WHEN | THEN | ELSE | END | DISTINCT | ALL | TRUE | FALSE
     | NULL | CREATE | ALTER | TABLE | TEMPORARY | UNLOGGED | BEGIN | IF | ELSEIF | WHILE | DO
     | LOOP | REPEAT | DECLARE | PROCEDURE | FUNCTION | TRIGGER | OR | REPLACE
     | ADD | CONSTRAINT
@@ -521,6 +546,7 @@ sqlToken
 
 SELECT: S E L E C T;
 WITH: W I T H;
+RECURSIVE: R E C U R S I V E;
 AS: A S;
 FROM: F R O M;
 JOIN: J O I N;
@@ -538,6 +564,10 @@ CROSS: C R O S S;
 WHERE: W H E R E;
 AND: A N D;
 OR: O R;
+GENERATED: G E N E R A T E D;
+ALWAYS: A L W A Y S;
+STORED: S T O R E D;
+VIRTUAL: V I R T U A L;
 NOT: N O T;
 EXISTS: E X I S T S;
 IN: I N;
@@ -551,6 +581,7 @@ HAVING: H A V I N G;
 ORDER: O R D E R;
 LIMIT: L I M I T;
 UNION: U N I O N;
+ALL: A L L;
 INSERT: I N S E R T;
 INTO: I N T O;
 UPDATE: U P D A T E;

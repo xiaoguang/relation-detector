@@ -1,8 +1,10 @@
 {
   "fingerprints": [
+    "naming:attendance.employee_id->employees.id:TABLE_ID:NAMING_MATCH",
     "naming:boms.child_product_id->products.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:boms.parent_product_id->products.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:employees.department_id->departments.id:TABLE_ID:NAMING_MATCH",
+    "naming:employees.manager_id->employees.id:SELF_ROLE_ID:NAMING_MATCH",
     "naming:employees.position_id->positions.id:TABLE_ID:NAMING_MATCH",
     "naming:inventory.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:inventory.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH",
@@ -18,12 +20,15 @@
     "naming:sales_order_items.order_id->sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:sales_order_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
+    "naming:service_tickets.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
     "naming:supplier_products.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:supplier_products.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
     "naming:three_way_matching.invoice_id->invoices.id:TABLE_ID:NAMING_MATCH",
     "naming:three_way_matching.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:three_way_matching.purchase_order_id->purchase_orders.id:TABLE_ID:NAMING_MATCH",
     "naming:three_way_matching.purchase_receipt_id->purchase_receipts.id:TABLE_ID:NAMING_MATCH",
+    "naming:work_order_materials.product_id->products.id:TABLE_ID:NAMING_MATCH",
+    "naming:work_order_materials.work_order_id->work_orders.id:TABLE_ID:NAMING_MATCH",
     "naming:work_orders.product_id->products.id:TABLE_ID:NAMING_MATCH"
   ]
 }

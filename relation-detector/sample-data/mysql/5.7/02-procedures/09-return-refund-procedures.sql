@@ -13,12 +13,12 @@ BEGIN
         sr.id,
         SUM(sri.amount),
         SUM(sri.amount),
-        sr.created_by,
+        sr.handler_id,
         'draft'
     FROM sales_returns sr
     JOIN sales_return_items sri ON sri.return_id = sr.id
     WHERE sr.return_date BETWEEN p_start_date AND p_end_date
-    GROUP BY sr.id, sr.return_date, sr.created_by;
+    GROUP BY sr.id, sr.return_date, sr.handler_id;
 END//
 
 DELIMITER ;

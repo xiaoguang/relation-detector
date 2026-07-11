@@ -8,7 +8,7 @@
 -- 辅助函数: 生成随机工号/单号
 -- ============================================================
 
-CREATE OR REPLACE FUNCTION generate_employee_no()
+CREATE OR REPLACE FUNCTION generate_employee_no
 RETURN VARCHAR2 AS
 BEGIN
     RETURN TO_CHAR(CURRENT_DATE, 'YYYYMMDD') || LPAD((FLOOR(DBMS_RANDOM.VALUE * 9999) + 1), 4, '0');
@@ -960,7 +960,7 @@ BEGIN
     FROM cashier_journals
     WHERE account_id = p_account_id
       AND journal_date BETWEEN p_period_start AND p_period_end
-      AND VARCHAR2(40) IN ('cash_in', 'bank_in')
+      AND journal_type IN ('cash_in', 'bank_in')
       AND status = 'pending';
 
     -- 未达支出
@@ -968,7 +968,7 @@ BEGIN
     FROM cashier_journals
     WHERE account_id = p_account_id
       AND journal_date BETWEEN p_period_start AND p_period_end
-      AND VARCHAR2(40) IN ('cash_out', 'bank_out')
+      AND journal_type IN ('cash_out', 'bank_out')
       AND status = 'pending';
 
     v_difference := p_bank_balance - v_book_balance;

@@ -1,13 +1,16 @@
 package com.relationdetector.core.lineage;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.model.ColumnRef;
@@ -44,8 +47,11 @@ final class ProjectionTraceResolver {
                 if (outputAlias.isBlank() || outputColumn.isBlank()) {
                     continue;
                 }
-                SourceResolution resolved = sourceEndpoints(event, aliases, projections, ignoredRowsets);
-                if (!resolved.sources().isEmpty()) {
+                List<SourceResolution> resolved = sourceEndpoints(event, aliases, projections, ignoredRowsets);
+                for (SourceResolution resolution : resolved) {
+                    if (resolution.sources().isEmpty()) {
+                        continue;
+                    }
                     Endpoint projection = Endpoint.column(ColumnRef.of(tableId(outputAlias), outputColumn));
                     changed |= putProjection(
                             projections,
@@ -53,8 +59,10 @@ final class ProjectionTraceResolver {
                             outputColumn,
                             new ProjectionTrace(
                                     projection,
-                                    resolved.sources().stream().distinct().toList(),
-                                    effectiveTransform(text(event, "transformType"), resolved.transforms())),
+                                    resolution.sources().stream().distinct().toList(),
+                                    effectiveTransform(
+                                            text(event, "transformType"), resolution.transforms(), resolution.flowKind()),
+                                    resolution.flowKind()),
                             ignoredRowsets);
                 }
             }
@@ -64,10 +72,14 @@ final class ProjectionTraceResolver {
     }
 
     Optional<ProjectionTrace> resolve(String alias, String column) {
-        return Optional.ofNullable(traces.get(projectionKey(alias, column)));
+        ProjectionTrace value = traces.get(projectionKey(alias, column, LineageFlowKind.VALUE));
+        if (value != null) {
+            return Optional.of(value);
+        }
+        return Optional.ofNullable(traces.get(projectionKey(alias, column, LineageFlowKind.CONTROL)));
     }
 
-    SourceResolution resolveSources(
+    List<SourceResolution> resolveSources(
             StructuredSqlEvent event,
             Map<String, TableId> aliases,
             Set<String> ignoredRowsets
@@ -75,7 +87,7 @@ final class ProjectionTraceResolver {
         return sourceEndpoints(event, aliases, traces, ignoredRowsets);
     }
 
-    private static SourceResolution sourceEndpoints(
+    private static List<SourceResolution> sourceEndpoints(
             StructuredSqlEvent event,
             Map<String, TableId> aliases,
             Map<String, ProjectionTrace> projections,
@@ -83,25 +95,57 @@ final class ProjectionTraceResolver {
     ) {
         List<String> sourceAliases = stringList(event.attributes().get("sourceAliases"));
         List<String> sourceColumns = stringList(event.attributes().get("sourceColumns"));
-        List<Endpoint> endpoints = new ArrayList<>();
-        List<LineageTransformType> transforms = new ArrayList<>();
+        Map<LineageFlowKind, List<Endpoint>> endpoints = new LinkedHashMap<>();
+        Map<LineageFlowKind, List<LineageTransformType>> transforms = new LinkedHashMap<>();
+        LineageFlowKind eventFlow = flowKind(text(event, "flowKind"));
         int count = Math.min(sourceAliases.size(), sourceColumns.size());
         for (int index = 0; index < count; index++) {
             String sourceAlias = sourceAliases.get(index);
             String sourceColumn = sourceColumns.get(index);
-            ProjectionTrace projection = projections.get(projectionKey(sourceAlias, sourceColumn));
-            if (projection != null) {
-                endpoints.addAll(projection.sources());
-                transforms.add(projection.transform());
+            List<ProjectionTrace> variants = projectionVariants(projections, sourceAlias, sourceColumn);
+            if (!variants.isEmpty()) {
+                for (ProjectionTrace projection : variants) {
+                    LineageFlowKind resolvedFlow = eventFlow == LineageFlowKind.CONTROL
+                            ? LineageFlowKind.CONTROL
+                            : projection.flowKind();
+                    endpoints.computeIfAbsent(resolvedFlow, ignored -> new ArrayList<>())
+                            .addAll(projection.sources());
+                    transforms.computeIfAbsent(resolvedFlow, ignored -> new ArrayList<>())
+                            .add(projection.transform());
+                }
                 continue;
             }
             TableId table = aliases.get(normalize(sourceAlias));
             if (table != null && !sourceColumn.isBlank() && !isIgnoredRowsetTable(table, ignoredRowsets)) {
-                endpoints.add(Endpoint.column(ColumnRef.of(table, sourceColumn)));
-                transforms.add(LineageTransformType.DIRECT);
+                endpoints.computeIfAbsent(eventFlow, ignored -> new ArrayList<>())
+                        .add(Endpoint.column(ColumnRef.of(table, sourceColumn)));
+                transforms.computeIfAbsent(eventFlow, ignored -> new ArrayList<>())
+                        .add(LineageTransformType.DIRECT);
             }
         }
-        return new SourceResolution(endpoints.stream().distinct().toList(), transforms);
+        List<SourceResolution> result = new ArrayList<>();
+        for (LineageFlowKind flow : LineageFlowKind.values()) {
+            List<Endpoint> flowEndpoints = endpoints.getOrDefault(flow, List.of()).stream().distinct().toList();
+            if (!flowEndpoints.isEmpty()) {
+                result.add(new SourceResolution(flowEndpoints, transforms.getOrDefault(flow, List.of()), flow));
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private static List<ProjectionTrace> projectionVariants(
+            Map<String, ProjectionTrace> projections,
+            String alias,
+            String column
+    ) {
+        List<ProjectionTrace> variants = new ArrayList<>(2);
+        for (LineageFlowKind flow : LineageFlowKind.values()) {
+            ProjectionTrace projection = projections.get(projectionKey(alias, column, flow));
+            if (projection != null) {
+                variants.add(projection);
+            }
+        }
+        return variants;
     }
 
     private static boolean copyIgnoredRowsetAliases(
@@ -138,13 +182,13 @@ final class ProjectionTraceResolver {
             ProjectionTrace projection,
             Set<String> ignoredRowsets
     ) {
-        String key = projectionKey(alias, column);
+        String key = projectionKey(alias, column, projection.flowKind());
         if (parseProjectionKey(key).alias().isBlank()
                 || parseProjectionKey(key).column().isBlank()) {
             return false;
         }
         boolean changed = putProjectionKey(projections, key, projection, ignoredRowsets);
-        String baseKey = projectionKey(baseName(alias), column);
+        String baseKey = projectionKey(baseName(alias), column, projection.flowKind());
         if (!baseKey.equals(key)) {
             changed |= putProjectionKey(projections, baseKey, projection, ignoredRowsets);
         }
@@ -158,30 +202,34 @@ final class ProjectionTraceResolver {
             Set<String> ignoredRowsets
     ) {
         ProjectionTrace existing = projections.get(key);
-        if (existing == null || isBetterProjection(projection, existing, ignoredRowsets)) {
+        if (existing == null) {
             projections.put(key, projection);
+            return true;
+        }
+        ProjectionTrace merged = mergeProjection(existing, projection);
+        if (!merged.equals(existing)) {
+            projections.put(key, merged);
             return true;
         }
         return false;
     }
 
-    private static boolean isBetterProjection(
-            ProjectionTrace candidate,
-            ProjectionTrace existing,
-            Set<String> ignoredRowsets
-    ) {
-        return projectionResolutionScore(candidate, ignoredRowsets) > projectionResolutionScore(existing, ignoredRowsets);
-    }
-
-    private static int projectionResolutionScore(ProjectionTrace projection, Set<String> ignoredRowsets) {
-        int score = 0;
-        for (Endpoint source : projection.sources()) {
-            if (source.column() == null) {
-                continue;
-            }
-            score += ignoredRowsets.contains(normalize(source.table().tableName())) ? 1 : 4;
-        }
-        return score;
+    /**
+     * A projection key may be emitted once for every UNION/UNION ALL branch.
+     * Preserve every branch source instead of selecting the first or best one.
+     */
+    private static ProjectionTrace mergeProjection(ProjectionTrace existing, ProjectionTrace candidate) {
+        LinkedHashSet<Endpoint> sources = new LinkedHashSet<>();
+        sources.addAll(existing.sources());
+        sources.addAll(candidate.sources());
+        List<Endpoint> orderedSources = sources.stream()
+                .sorted(Comparator.comparing(Endpoint::normalizedKey))
+                .toList();
+        return new ProjectionTrace(
+                existing.projection(),
+                orderedSources,
+                LineageTransformClassifier.dominant(existing.transform(), candidate.transform()),
+                existing.flowKind());
     }
 
     private static boolean isIgnoredRowsetTable(TableId table, Set<String> ignoredRowsets) {
@@ -220,6 +268,18 @@ final class ProjectionTraceResolver {
             return LineageTransformType.WINDOW_DERIVED;
         }
         return transform;
+    }
+
+    static LineageTransformType effectiveTransform(
+            String eventTransform,
+            List<LineageTransformType> sourceTransforms,
+            LineageFlowKind flowKind
+    ) {
+        if (flowKind == LineageFlowKind.CONTROL) {
+            return LineageTransformType.CASE_WHEN;
+        }
+        LineageTransformType effective = effectiveTransform(eventTransform, sourceTransforms);
+        return effective;
     }
 
     private static List<String> stringList(Object value) {
@@ -261,22 +321,39 @@ final class ProjectionTraceResolver {
         return clean(value).toLowerCase(Locale.ROOT);
     }
 
-    private static String projectionKey(String alias, String column) {
-        return normalize(alias) + "." + normalize(column);
+    private static String projectionKey(String alias, String column, LineageFlowKind flowKind) {
+        return normalize(alias) + "." + normalize(column) + "|" + flowKind.name();
     }
 
     private static ProjectionKey parseProjectionKey(String key) {
-        int dot = key.lastIndexOf('.');
+        int separator = key.lastIndexOf('|');
+        String endpoint = separator < 0 ? key : key.substring(0, separator);
+        LineageFlowKind flowKind = separator < 0
+                ? LineageFlowKind.VALUE
+                : flowKind(key.substring(separator + 1));
+        int dot = endpoint.lastIndexOf('.');
         if (dot < 0) {
-            return new ProjectionKey(key, "");
+            return new ProjectionKey(endpoint, "", flowKind);
         }
-        return new ProjectionKey(key.substring(0, dot), key.substring(dot + 1));
+        return new ProjectionKey(endpoint.substring(0, dot), endpoint.substring(dot + 1), flowKind);
     }
 
-    record SourceResolution(List<Endpoint> sources, List<LineageTransformType> transforms) {
+    private static LineageFlowKind flowKind(String value) {
+        try {
+            return LineageFlowKind.valueOf(value);
+        } catch (RuntimeException ignored) {
+            return LineageFlowKind.VALUE;
+        }
     }
 
-    private record ProjectionKey(String alias, String column) {
+    record SourceResolution(
+            List<Endpoint> sources,
+            List<LineageTransformType> transforms,
+            LineageFlowKind flowKind
+    ) {
+    }
+
+    private record ProjectionKey(String alias, String column, LineageFlowKind flowKind) {
         boolean matches(String rowset) {
             String normalized = rowset == null ? "" : rowset.toLowerCase(Locale.ROOT);
             int dot = normalized.lastIndexOf('.');

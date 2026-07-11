@@ -8,8 +8,10 @@
     "naming:products.category_id->product_categories.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:purchase_return_items.batch_id->product_batches.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:purchase_return_items.return_id->purchase_returns.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:sales_orders.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_return_items.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_return_items.return_id->sales_returns.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:sales_returns.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
     "naming:sales_returns.warehouse_id->warehouses.id:TABLE_ID:NAMING_MATCH"
   ]
 }

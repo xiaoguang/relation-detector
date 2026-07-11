@@ -40,6 +40,7 @@
     "naming:leave_records.employee_id->employees.id:TABLE_ID:NAMING_MATCH",
     "naming:ledger_books.tenant_id->tenants.id:TABLE_ID:NAMING_MATCH",
     "naming:payment_receipts.account_id->accounts.id:TABLE_ID:NAMING_MATCH",
+    "naming:payments.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
     "naming:performance_reviews.employee_id->employees.id:TABLE_ID:NAMING_MATCH",
     "naming:positions.department_id->departments.id:TABLE_ID:NAMING_MATCH",
     "naming:price_change_logs.product_id->products.id:TABLE_ID:NAMING_MATCH",

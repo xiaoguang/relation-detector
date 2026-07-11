@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "CONTROL:FUNCTION_CALL:dbo.product_batches.expiry_date->dbo.product_batches.status",
+    "CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status",
     "VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status",
     "VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id",
     "VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id",

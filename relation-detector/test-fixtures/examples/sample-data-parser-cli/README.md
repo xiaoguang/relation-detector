@@ -47,6 +47,31 @@ Set `SAMPLE_DATA_PARSER_CLI_INCLUDE_DERIVED=false` to run only the direct parser
 `summary.tsv` contains direct outputs only; `summary-with-derived.tsv` adds `DerRel`,
 `DerLin`, and `DerName` for the derived-enabled outputs.
 
+When derived output is enabled, each parser case is scanned once. The CLI writes the
+direct-only view with `--direct-output` and the derived view with `--output`, so the
+second JSON does not repeat parsing or source collection. The default runner uses up to
+three independent parser cases at once and up to two independent statement/file tasks
+inside each scan. Override those bounded settings when the host has less capacity:
+
+```bash
+SAMPLE_DATA_PARSER_CLI_CASE_PARALLELISM=2 \
+SAMPLE_DATA_PARSER_CLI_SCAN_PARALLELISM=1 \
+  bash relation-detector/test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh
+```
+
+Case logs are retained under `relation-detector/target/sample-data-parser-cli/logs/`.
+The compact summary columns mean `Rel` = direct relationships, `Lin` = direct lineage,
+`Name` = direct naming evidence, and `Der*` = the corresponding derived counts.
+
+Run the explicit serial-versus-parallel consistency check for all 38 JSON artifacts:
+
+```bash
+bash relation-detector/scripts/verify-sample-data-parser-concurrency.sh
+```
+
+It canonicalizes each JSON document after removing `generatedAt`; any relationship,
+lineage, naming evidence, observation, or diagnostic difference fails the check.
+
 The common benchmark output is:
 
 ```text

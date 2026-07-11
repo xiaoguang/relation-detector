@@ -1,0 +1,5 @@
+{
+  "fingerprints": [
+    "naming:tenant_orders.tenant_id->tenants.id:TABLE_ID:NAMING_MATCH"
+  ]
+}

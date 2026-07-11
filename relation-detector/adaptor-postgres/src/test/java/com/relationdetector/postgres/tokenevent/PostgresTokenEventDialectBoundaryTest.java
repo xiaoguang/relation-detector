@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import com.relationdetector.contracts.model.DataLineageCandidate;
@@ -22,6 +24,36 @@ import com.relationdetector.postgres.PostgresDatabaseAdaptor;
  * Verifies that PostgreSQL owns PostgreSQL-flavored token-event parser selection.
  */
 class PostgresTokenEventDialectBoundaryTest {
+    @Test
+    void postgresTokenEventSeparatesScalarAggregateValueAndControls() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                UPDATE supplier_products sp
+                SET total_order_qty = (
+                    SELECT SUM(poi.quantity)
+                    FROM purchase_order_items poi
+                    JOIN purchase_orders po ON poi.order_id = po.id
+                    WHERE poi.product_id = sp.product_id
+                      AND po.supplier_id = sp.supplier_id
+                );
+                """, StatementSourceType.PLAIN_SQL, "fixture.sql", 1, 1, java.util.Map.of());
+
+        var structured = new PostgresTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains(
+                        "VALUE:AGGREGATE:purchase_order_items.quantity->supplier_products.total_order_qty"),
+                () -> fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.stream().anyMatch(value -> value.startsWith("CONTROL:CASE_WHEN:")
+                        && value.contains("purchase_order_items.order_id")
+                        && value.contains("purchase_orders.id")
+                        && value.contains("supplier_products.product_id")
+                        && value.endsWith("->supplier_products.total_order_qty")),
+                () -> fingerprints + " events=" + structured.events());
+    }
+
     @Test
     void postgresTokenEventExtractsPlpgsqlRoutineBodyLineage() {
         SqlStatementRecord statement = new SqlStatementRecord("""
@@ -96,10 +128,12 @@ class PostgresTokenEventDialectBoundaryTest {
                 .toList();
 
         assertEquals(java.util.List.of(
-                "CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount",
-                "CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount",
+                "CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount",
+                "CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount",
                 "VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date",
-                "VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty->reconciliation_items.description",
+                "VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount",
+                "VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount",
+                "VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty->reconciliation_items.description",
                 "VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id",
                 "VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date",
                 "VALUE:DIRECT:sales_orders.customer_id->ar_aging_snapshots.customer_id",
@@ -139,7 +173,7 @@ class PostgresTokenEventDialectBoundaryTest {
         assertTrue(fingerprints.contains("VALUE:AGGREGATE:orders.pay_amount->users.total_spent"),
                 () -> "Derived aggregate projection should flow into UPDATE target: " + fingerprints
                         + " events=" + result.events() + " attrs=" + result.attributes());
-        assertTrue(fingerprints.contains("CONTROL:AGGREGATE:orders.pay_amount->users.level"),
+        assertTrue(fingerprints.contains("CONTROL:CASE_WHEN:orders.pay_amount->users.level"),
                 () -> "CASE over derived aggregate should control UPDATE target: " + fingerprints
                         + " events=" + result.events() + " attrs=" + result.attributes());
     }
@@ -178,7 +212,7 @@ class PostgresTokenEventDialectBoundaryTest {
                 .toList();
 
         assertTrue(fingerprints.contains(
-                "VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks"),
+                "VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks"),
                 () -> "CTE UPDATE FROM concat should resolve projection lineage through typed grammar: "
                         + fingerprints + " events=" + result.events() + " attrs=" + result.attributes());
     }

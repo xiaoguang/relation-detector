@@ -17,21 +17,22 @@
 -- 1. 部门数据 (5个顶层部门，各有子部门)
 -- ============================================================
 
-INSERT INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES
-(1, NULL, '总经办', 'HQ', 5000000.00, 20),
-(2, NULL, '销售部', 'SALES', 8000000.00, 80),
-(3, NULL, '采购部', 'PURCH', 3000000.00, 30),
-(4, NULL, '财务部', 'FIN', 2000000.00, 20),
-(5, NULL, '仓储物流部', 'WH', 4000000.00, 50),
-(6, NULL, '信息技术部', 'IT', 3000000.00, 25),
-(7, NULL, '人力资源部', 'HR', 1500000.00, 15),
-(8, 2, '华东销售大区', 'SALES_EAST', 3000000.00, 30),
-(9, 2, '华南销售大区', 'SALES_SOUTH', 2500000.00, 25),
-(10, 2, '华北销售大区', 'SALES_NORTH', 2500000.00, 25),
-(11, 3, '原材料采购组', 'PURCH_RAW', 1500000.00, 15),
-(12, 3, '设备采购组', 'PURCH_EQUIP', 1500000.00, 15),
-(13, 5, '主仓库', 'WH_MAIN', 2000000.00, 25),
-(14, 5, '配送中心', 'WH_DIST', 2000000.00, 25);
+INSERT ALL
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (1, NULL, '总经办', 'HQ', 5000000.00, 20)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (2, NULL, '销售部', 'SALES', 8000000.00, 80)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (3, NULL, '采购部', 'PURCH', 3000000.00, 30)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (4, NULL, '财务部', 'FIN', 2000000.00, 20)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (5, NULL, '仓储物流部', 'WH', 4000000.00, 50)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (6, NULL, '信息技术部', 'IT', 3000000.00, 25)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (7, NULL, '人力资源部', 'HR', 1500000.00, 15)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (8, 2, '华东销售大区', 'SALES_EAST', 3000000.00, 30)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (9, 2, '华南销售大区', 'SALES_SOUTH', 2500000.00, 25)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (10, 2, '华北销售大区', 'SALES_NORTH', 2500000.00, 25)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (11, 3, '原材料采购组', 'PURCH_RAW', 1500000.00, 15)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (12, 3, '设备采购组', 'PURCH_EQUIP', 1500000.00, 15)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (13, 5, '主仓库', 'WH_MAIN', 2000000.00, 25)
+    INTO departments (id, parent_id, name, code, budget, headcount_plan) VALUES (14, 5, '配送中心', 'WH_DIST', 2000000.00, 25)
+SELECT 1 FROM dual;
 
 
 -- ============================================================
@@ -39,49 +40,50 @@ INSERT INTO departments (id, parent_id, name, code, budget, headcount_plan) VALU
 -- 层级关系: 1-3=基层, 4-6=主管, 7-9=经理, 10-12=总监, 13-15=高管
 -- ============================================================
 
-INSERT INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES
+INSERT ALL
 -- 总经办
-(1, 1, '总经理', 'CEO', 15, 50000, 100000, 1),
-(2, 1, '副总经理', 'VP', 13, 35000, 60000, 2),
-(3, 1, '总经理助理', 'CEO_ASST', 8, 15000, 25000, 2),
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (1, 1, '总经理', 'CEO', 15, 50000, 100000, 1)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (2, 1, '副总经理', 'VP', 13, 35000, 60000, 2)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (3, 1, '总经理助理', 'CEO_ASST', 8, 15000, 25000, 2)
 -- 销售部
-(4, 2, '销售总监', 'SALES_DIR', 12, 30000, 50000, 1),
-(5, 2, '销售经理', 'SALES_MGR', 9, 18000, 30000, 3),
-(6, 2, '销售主管', 'SALES_SUP', 6, 10000, 18000, 6),
-(7, 2, '销售代表', 'SALES_REP', 3, 5000, 12000, 40),
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (4, 2, '销售总监', 'SALES_DIR', 12, 30000, 50000, 1)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (5, 2, '销售经理', 'SALES_MGR', 9, 18000, 30000, 3)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (6, 2, '销售主管', 'SALES_SUP', 6, 10000, 18000, 6)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (7, 2, '销售代表', 'SALES_REP', 3, 5000, 12000, 40)
 -- 大区销售
-(8, 8, '大区销售经理', 'REG_MGR', 9, 18000, 28000, 1),
-(9, 8, '区域销售代表', 'REG_REP', 3, 5000, 12000, 15),
-(10, 9, '大区销售经理', 'REG_MGR', 9, 18000, 28000, 1),
-(11, 9, '区域销售代表', 'REG_REP', 3, 5000, 12000, 12),
-(12, 10, '大区销售经理', 'REG_MGR', 9, 18000, 28000, 1),
-(13, 10, '区域销售代表', 'REG_REP', 3, 5000, 12000, 12),
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (8, 8, '大区销售经理', 'REG_MGR', 9, 18000, 28000, 1)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (9, 8, '区域销售代表', 'REG_REP', 3, 5000, 12000, 15)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (10, 9, '大区销售经理', 'REG_MGR', 9, 18000, 28000, 1)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (11, 9, '区域销售代表', 'REG_REP', 3, 5000, 12000, 12)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (12, 10, '大区销售经理', 'REG_MGR', 9, 18000, 28000, 1)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (13, 10, '区域销售代表', 'REG_REP', 3, 5000, 12000, 12)
 -- 采购部
-(14, 3, '采购总监', 'PURCH_DIR', 12, 28000, 45000, 1),
-(15, 3, '采购经理', 'PURCH_MGR', 9, 16000, 25000, 2),
-(16, 3, '采购专员', 'PURCH_SPEC', 4, 7000, 13000, 15),
-(17, 3, '供应商管理专员', 'SUPP_MGR', 5, 8000, 14000, 5),
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (14, 3, '采购总监', 'PURCH_DIR', 12, 28000, 45000, 1)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (15, 3, '采购经理', 'PURCH_MGR', 9, 16000, 25000, 2)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (16, 3, '采购专员', 'PURCH_SPEC', 4, 7000, 13000, 15)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (17, 3, '供应商管理专员', 'SUPP_MGR', 5, 8000, 14000, 5)
 -- 财务部
-(18, 4, '财务总监', 'FIN_DIR', 12, 30000, 50000, 1),
-(19, 4, '财务经理', 'FIN_MGR', 9, 18000, 28000, 1),
-(20, 4, '会计', 'ACCOUNTANT', 5, 8000, 15000, 5),
-(21, 4, '出纳', 'CASHIER', 4, 6000, 12000, 3),
-(22, 4, '审计专员', 'AUDITOR', 6, 10000, 18000, 3),
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (18, 4, '财务总监', 'FIN_DIR', 12, 30000, 50000, 1)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (19, 4, '财务经理', 'FIN_MGR', 9, 18000, 28000, 1)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (20, 4, '会计', 'ACCOUNTANT', 5, 8000, 15000, 5)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (21, 4, '出纳', 'CASHIER', 4, 6000, 12000, 3)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (22, 4, '审计专员', 'AUDITOR', 6, 10000, 18000, 3)
 -- 仓储物流部
-(23, 5, '仓储总监', 'WH_DIR', 11, 25000, 40000, 1),
-(24, 5, '仓库经理', 'WH_MGR', 8, 15000, 22000, 2),
-(25, 5, '仓库管理员', 'WH_KEEPER', 3, 5000, 10000, 20),
-(26, 5, '质检员', 'QC', 4, 6000, 11000, 8),
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (23, 5, '仓储总监', 'WH_DIR', 11, 25000, 40000, 1)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (24, 5, '仓库经理', 'WH_MGR', 8, 15000, 22000, 2)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (25, 5, '仓库管理员', 'WH_KEEPER', 3, 5000, 10000, 20)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (26, 5, '质检员', 'QC', 4, 6000, 11000, 8)
 -- 信息技术部
-(27, 6, 'IT总监', 'IT_DIR', 11, 28000, 45000, 1),
-(28, 6, 'IT经理', 'IT_MGR', 8, 18000, 28000, 2),
-(29, 6, '开发工程师', 'DEV', 5, 12000, 25000, 10),
-(30, 6, '运维工程师', 'OPS', 5, 10000, 20000, 5),
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (27, 6, 'IT总监', 'IT_DIR', 11, 28000, 45000, 1)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (28, 6, 'IT经理', 'IT_MGR', 8, 18000, 28000, 2)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (29, 6, '开发工程师', 'DEV', 5, 12000, 25000, 10)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (30, 6, '运维工程师', 'OPS', 5, 10000, 20000, 5)
 -- 人力资源部
-(31, 7, 'HR总监', 'HR_DIR', 11, 25000, 40000, 1),
-(32, 7, 'HR经理', 'HR_MGR', 8, 15000, 22000, 1),
-(33, 7, 'HR专员', 'HR_SPEC', 4, 7000, 12000, 5),
-(34, 7, '培训专员', 'TRAINER', 5, 8000, 13000, 3);
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (31, 7, 'HR总监', 'HR_DIR', 11, 25000, 40000, 1)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (32, 7, 'HR经理', 'HR_MGR', 8, 15000, 22000, 1)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (33, 7, 'HR专员', 'HR_SPEC', 4, 7000, 12000, 5)
+    INTO positions (id, department_id, name, code, level, min_salary, max_salary, headcount) VALUES (34, 7, '培训专员', 'TRAINER', 5, 8000, 13000, 3)
+SELECT 1 FROM dual;
 
 
 -- ============================================================
@@ -89,97 +91,98 @@ INSERT INTO positions (id, department_id, name, code, level, min_salary, max_sal
 -- 汇报链: 员工 -> 主管 -> 经理 -> 总监 -> VP -> CEO
 -- ============================================================
 
-INSERT INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date,
-    department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES
+INSERT ALL
 -- 总经办 (3人)
-(1, 'EMP202001001', '张建国', 'M', '310101197505121234', '13800001001', 'zhangjg@erp.com', '1975-05-12', '2020-01-01', 1, 1, NULL, 80000.00, '工商银行', '6222021001000001', 'active'),
-(2, 'EMP202001002', '李向前', 'M', '310101198003152345', '13800001002', 'lixq@erp.com', '1980-03-15', '2020-03-01', 1, 2, 1, 50000.00, '工商银行', '6222021001000002', 'active'),
-(3, 'EMP202001003', '王芳芳', 'F', '310101199008203456', '13800001003', 'wangff@erp.com', '1990-08-20', '2020-06-01', 1, 3, 1, 18000.00, '建设银行', '6227002002000003', 'active'),
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (1, 'EMP202001001', '张建国', 'M', '310101197505121234', '13800001001', 'zhangjg@erp.com', '1975-05-12', '2020-01-01', 1, 1, NULL, 80000.00, '工商银行', '6222021001000001', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (2, 'EMP202001002', '李向前', 'M', '310101198003152345', '13800001002', 'lixq@erp.com', '1980-03-15', '2020-03-01', 1, 2, 1, 50000.00, '工商银行', '6222021001000002', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (3, 'EMP202001003', '王芳芳', 'F', '310101199008203456', '13800001003', 'wangff@erp.com', '1990-08-20', '2020-06-01', 1, 3, 1, 18000.00, '建设银行', '6227002002000003', 'active')
 -- 销售部 (12人)
-(4, 'EMP202002001', '陈大伟', 'M', '310101198206104567', '13800002001', 'chendw@erp.com', '1982-06-10', '2020-02-01', 2, 4, 1, 40000.00, '工商银行', '6222021001000004', 'active'),
-(5, 'EMP202002002', '赵明明', 'M', '310101198511115678', '13800002002', 'zhaomm@erp.com', '1985-11-11', '2020-04-01', 2, 5, 4, 22000.00, '建设银行', '6227002002000005', 'active'),
-(6, 'EMP202002003', '孙丽丽', 'F', '310101199103206789', '13800002003', 'sunll@erp.com', '1991-03-20', '2020-07-01', 2, 5, 4, 20000.00, '农业银行', '6228483003000006', 'active'),
-(7, 'EMP202002004', '周文博', 'M', '310101199207158901', '13800002004', 'zhouwb@erp.com', '1992-07-15', '2021-01-01', 2, 6, 5, 15000.00, '工商银行', '6222021001000007', 'active'),
-(8, 'EMP202002005', '吴晓燕', 'F', '310101199312100123', '13800002005', 'wuxy@erp.com', '1993-12-10', '2021-03-01', 2, 6, 5, 14000.00, '建设银行', '6227002002000008', 'active'),
-(9, 'EMP202002006', '郑强', 'M', '310101199405250234', '13800002006', 'zhengq@erp.com', '1994-05-25', '2021-06-01', 2, 7, 7, 8000.00, '农业银行', '6228483003000009', 'active'),
-(10, 'EMP202002007', '冯雪梅', 'F', '310101199508303456', '13800002007', 'fengxm@erp.com', '1995-08-30', '2021-09-01', 2, 7, 7, 7500.00, '工商银行', '6222021001000010', 'active'),
-(11, 'EMP202002008', '蒋涛', 'M', '310101199611054567', '13800002008', 'jiangt@erp.com', '1996-11-05', '2022-01-01', 2, 7, 8, 7000.00, '建设银行', '6227002002000011', 'active'),
-(12, 'EMP202002009', '沈蓉', 'F', '310101199702145678', '13800002009', 'shenr@erp.com', '1997-02-14', '2022-03-01', 2, 7, 8, 6500.00, '农业银行', '6228483003000012', 'active'),
-(13, 'EMP202002010', '韩磊', 'M', '310101199804206789', '13800002010', 'hanl@erp.com', '1998-04-20', '2022-06-01', 2, 7, 7, 8000.00, '工商银行', '6222021001000013', 'active'),
-(14, 'EMP202002011', '杨洋', 'F', '310101199906308901', '13800002011', 'yangy@erp.com', '1999-06-30', '2022-09-01', 2, 7, 8, 7000.00, '建设银行', '6227002002000014', 'active'),
-(15, 'EMP202002012', '朱峰', 'M', '310101199008150123', '13800002012', 'zhuf@erp.com', '1990-08-15', '2022-11-01', 2, 7, 7, 7500.00, '农业银行', '6228483003000015', 'resigned'), -- 已离职
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (4, 'EMP202002001', '陈大伟', 'M', '310101198206104567', '13800002001', 'chendw@erp.com', '1982-06-10', '2020-02-01', 2, 4, 1, 40000.00, '工商银行', '6222021001000004', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (5, 'EMP202002002', '赵明明', 'M', '310101198511115678', '13800002002', 'zhaomm@erp.com', '1985-11-11', '2020-04-01', 2, 5, 4, 22000.00, '建设银行', '6227002002000005', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (6, 'EMP202002003', '孙丽丽', 'F', '310101199103206789', '13800002003', 'sunll@erp.com', '1991-03-20', '2020-07-01', 2, 5, 4, 20000.00, '农业银行', '6228483003000006', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (7, 'EMP202002004', '周文博', 'M', '310101199207158901', '13800002004', 'zhouwb@erp.com', '1992-07-15', '2021-01-01', 2, 6, 5, 15000.00, '工商银行', '6222021001000007', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (8, 'EMP202002005', '吴晓燕', 'F', '310101199312100123', '13800002005', 'wuxy@erp.com', '1993-12-10', '2021-03-01', 2, 6, 5, 14000.00, '建设银行', '6227002002000008', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (9, 'EMP202002006', '郑强', 'M', '310101199405250234', '13800002006', 'zhengq@erp.com', '1994-05-25', '2021-06-01', 2, 7, 7, 8000.00, '农业银行', '6228483003000009', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (10, 'EMP202002007', '冯雪梅', 'F', '310101199508303456', '13800002007', 'fengxm@erp.com', '1995-08-30', '2021-09-01', 2, 7, 7, 7500.00, '工商银行', '6222021001000010', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (11, 'EMP202002008', '蒋涛', 'M', '310101199611054567', '13800002008', 'jiangt@erp.com', '1996-11-05', '2022-01-01', 2, 7, 8, 7000.00, '建设银行', '6227002002000011', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (12, 'EMP202002009', '沈蓉', 'F', '310101199702145678', '13800002009', 'shenr@erp.com', '1997-02-14', '2022-03-01', 2, 7, 8, 6500.00, '农业银行', '6228483003000012', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (13, 'EMP202002010', '韩磊', 'M', '310101199804206789', '13800002010', 'hanl@erp.com', '1998-04-20', '2022-06-01', 2, 7, 7, 8000.00, '工商银行', '6222021001000013', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (14, 'EMP202002011', '杨洋', 'F', '310101199906308901', '13800002011', 'yangy@erp.com', '1999-06-30', '2022-09-01', 2, 7, 8, 7000.00, '建设银行', '6227002002000014', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (15, 'EMP202002012', '朱峰', 'M', '310101199008150123', '13800002012', 'zhuf@erp.com', '1990-08-15', '2022-11-01', 2, 7, 7, 7500.00, '农业银行', '6228483003000015', 'resigned')
+ -- 已离职
 -- 销售大区
-(16, 'EMP202003001', '秦海龙', 'M', '310101198407200234', '13800003001', 'qinhl@erp.com', '1984-07-20', '2021-01-01', 8, 8, 4, 22000.00, '工商银行', '6222021001000016', 'active'),
-(17, 'EMP202003002', '尤佳', 'F', '310101199301103456', '13800003002', 'youj@erp.com', '1993-01-10', '2021-04-01', 8, 9, 16, 9000.00, '建设银行', '6227002002000017', 'active'),
-(18, 'EMP202003003', '许志远', 'M', '310101199505205678', '13800003003', 'xuzy@erp.com', '1995-05-20', '2021-07-01', 8, 9, 16, 8500.00, '农业银行', '6228483003000018', 'active'),
-(19, 'EMP202003004', '何丽', 'F', '310101199608106789', '13800003004', 'hel@erp.com', '1996-08-10', '2022-02-01', 8, 9, 16, 8000.00, '工商银行', '6222021001000019', 'active'),
-(20, 'EMP202003005', '吕刚', 'M', '310101198809250123', '13800003005', 'lvg@erp.com', '1988-09-25', '2021-02-01', 9, 10, 4, 22000.00, '建设银行', '6227002002000020', 'active'),
-(21, 'EMP202003006', '施慧', 'F', '310101199411300234', '13800003006', 'shih@erp.com', '1994-11-30', '2021-05-01', 9, 11, 20, 8500.00, '农业银行', '6228483003000021', 'active'),
-(22, 'EMP202003007', '张明', 'M', '310101199612153456', '13800003007', 'zhangm@erp.com', '1996-12-15', '2022-01-01', 9, 11, 20, 8000.00, '工商银行', '6222021001000022', 'active'),
-(23, 'EMP202003008', '孔祥瑞', 'M', '310101198706050123', '13800003008', 'kongxr@erp.com', '1987-06-05', '2021-03-01', 10, 12, 4, 22000.00, '建设银行', '6227002002000023', 'active'),
-(24, 'EMP202003009', '曹颖', 'F', '310101199310120234', '13800003009', 'caoy@erp.com', '1993-10-12', '2021-06-01', 10, 13, 23, 8500.00, '农业银行', '6228483003000024', 'active'),
-(25, 'EMP202003010', '严华', 'M', '310101199507253456', '13800003010', 'yanh@erp.com', '1995-07-25', '2022-03-01', 10, 13, 23, 7500.00, '工商银行', '6222021001000025', 'active'),
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (16, 'EMP202003001', '秦海龙', 'M', '310101198407200234', '13800003001', 'qinhl@erp.com', '1984-07-20', '2021-01-01', 8, 8, 4, 22000.00, '工商银行', '6222021001000016', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (17, 'EMP202003002', '尤佳', 'F', '310101199301103456', '13800003002', 'youj@erp.com', '1993-01-10', '2021-04-01', 8, 9, 16, 9000.00, '建设银行', '6227002002000017', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (18, 'EMP202003003', '许志远', 'M', '310101199505205678', '13800003003', 'xuzy@erp.com', '1995-05-20', '2021-07-01', 8, 9, 16, 8500.00, '农业银行', '6228483003000018', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (19, 'EMP202003004', '何丽', 'F', '310101199608106789', '13800003004', 'hel@erp.com', '1996-08-10', '2022-02-01', 8, 9, 16, 8000.00, '工商银行', '6222021001000019', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (20, 'EMP202003005', '吕刚', 'M', '310101198809250123', '13800003005', 'lvg@erp.com', '1988-09-25', '2021-02-01', 9, 10, 4, 22000.00, '建设银行', '6227002002000020', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (21, 'EMP202003006', '施慧', 'F', '310101199411300234', '13800003006', 'shih@erp.com', '1994-11-30', '2021-05-01', 9, 11, 20, 8500.00, '农业银行', '6228483003000021', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (22, 'EMP202003007', '张明', 'M', '310101199612153456', '13800003007', 'zhangm@erp.com', '1996-12-15', '2022-01-01', 9, 11, 20, 8000.00, '工商银行', '6222021001000022', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (23, 'EMP202003008', '孔祥瑞', 'M', '310101198706050123', '13800003008', 'kongxr@erp.com', '1987-06-05', '2021-03-01', 10, 12, 4, 22000.00, '建设银行', '6227002002000023', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (24, 'EMP202003009', '曹颖', 'F', '310101199310120234', '13800003009', 'caoy@erp.com', '1993-10-12', '2021-06-01', 10, 13, 23, 8500.00, '农业银行', '6228483003000024', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (25, 'EMP202003010', '严华', 'M', '310101199507253456', '13800003010', 'yanh@erp.com', '1995-07-25', '2022-03-01', 10, 13, 23, 7500.00, '工商银行', '6222021001000025', 'active')
 -- 采购部 (8人)
-(26, 'EMP202004001', '金石开', 'M', '310101198103150567', '13800004001', 'jinsk@erp.com', '1981-03-15', '2020-02-15', 3, 14, 2, 38000.00, '建设银行', '6227002002000026', 'active'),
-(27, 'EMP202004002', '魏然', 'M', '310101198608200678', '13800004002', 'weir@erp.com', '1986-08-20', '2020-05-01', 3, 15, 26, 22000.00, '农业银行', '6228483003000027', 'active'),
-(28, 'EMP202004003', '苏晓', 'F', '310101199209100789', '13800004003', 'sux@erp.com', '1992-09-10', '2021-03-01', 3, 16, 27, 11000.00, '工商银行', '6222021001000028', 'active'),
-(29, 'EMP202004004', '潘越', 'M', '310101199404150890', '13800004004', 'pany@erp.com', '1994-04-15', '2021-07-01', 3, 16, 27, 10000.00, '建设银行', '6227002002000029', 'active'),
-(30, 'EMP202004005', '葛畅', 'F', '310101199511200901', '13800004005', 'gec@erp.com', '1995-11-20', '2022-01-01', 3, 16, 27, 9000.00, '农业银行', '6228483003000030', 'active'),
-(31, 'EMP202004006', '范剑', 'M', '310101199307250123', '13800004006', 'fanj@erp.com', '1993-07-25', '2021-05-01', 3, 15, 26, 20000.00, '工商银行', '6222021001000031', 'active'),
-(32, 'EMP202004007', '方圆', 'F', '310101199612300234', '13800004007', 'fangy@erp.com', '1996-12-30', '2022-04-01', 3, 17, 27, 10000.00, '建设银行', '6227002002000032', 'active'),
-(33, 'EMP202004008', '彭勃', 'M', '310101199808050345', '13800004008', 'pengb@erp.com', '1998-08-05', '2022-08-01', 3, 17, 27, 9000.00, '农业银行', '6228483003000033', 'active'),
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (26, 'EMP202004001', '金石开', 'M', '310101198103150567', '13800004001', 'jinsk@erp.com', '1981-03-15', '2020-02-15', 3, 14, 2, 38000.00, '建设银行', '6227002002000026', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (27, 'EMP202004002', '魏然', 'M', '310101198608200678', '13800004002', 'weir@erp.com', '1986-08-20', '2020-05-01', 3, 15, 26, 22000.00, '农业银行', '6228483003000027', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (28, 'EMP202004003', '苏晓', 'F', '310101199209100789', '13800004003', 'sux@erp.com', '1992-09-10', '2021-03-01', 3, 16, 27, 11000.00, '工商银行', '6222021001000028', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (29, 'EMP202004004', '潘越', 'M', '310101199404150890', '13800004004', 'pany@erp.com', '1994-04-15', '2021-07-01', 3, 16, 27, 10000.00, '建设银行', '6227002002000029', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (30, 'EMP202004005', '葛畅', 'F', '310101199511200901', '13800004005', 'gec@erp.com', '1995-11-20', '2022-01-01', 3, 16, 27, 9000.00, '农业银行', '6228483003000030', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (31, 'EMP202004006', '范剑', 'M', '310101199307250123', '13800004006', 'fanj@erp.com', '1993-07-25', '2021-05-01', 3, 15, 26, 20000.00, '工商银行', '6222021001000031', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (32, 'EMP202004007', '方圆', 'F', '310101199612300234', '13800004007', 'fangy@erp.com', '1996-12-30', '2022-04-01', 3, 17, 27, 10000.00, '建设银行', '6227002002000032', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (33, 'EMP202004008', '彭勃', 'M', '310101199808050345', '13800004008', 'pengb@erp.com', '1998-08-05', '2022-08-01', 3, 17, 27, 9000.00, '农业银行', '6228483003000033', 'active')
 -- 财务部 (8人)
-(34, 'EMP202005001', '鲁智深', 'M', '310101197810060456', '13800005001', 'luzs@erp.com', '1978-10-06', '2020-01-15', 4, 18, 1, 42000.00, '工商银行', '6222021001000034', 'active'),
-(35, 'EMP202005002', '马超', 'M', '310101198512200567', '13800005002', 'mac@erp.com', '1985-12-20', '2020-04-01', 4, 19, 34, 22000.00, '建设银行', '6227002002000035', 'active'),
-(36, 'EMP202005003', '花荣', 'M', '310101199103150678', '13800005003', 'huar@erp.com', '1991-03-15', '2021-01-01', 4, 20, 35, 12000.00, '农业银行', '6228483003000036', 'active'),
-(37, 'EMP202005004', '柴进', 'M', '310101199308200789', '13800005004', 'chaij@erp.com', '1993-08-20', '2021-05-01', 4, 20, 35, 11000.00, '工商银行', '6222021001000037', 'active'),
-(38, 'EMP202005005', '李应', 'F', '310101199510250890', '13800005005', 'liy@erp.com', '1995-10-25', '2022-02-01', 4, 20, 35, 10000.00, '建设银行', '6227002002000038', 'active'),
-(39, 'EMP202005006', '燕青', 'F', '310101199706300901', '13800005006', 'yanq@erp.com', '1997-06-30', '2022-06-01', 4, 21, 35, 9000.00, '农业银行', '6228483003000039', 'active'),
-(40, 'EMP202005007', '戴宗', 'M', '310101199201150123', '13800005007', 'daiz@erp.com', '1992-01-15', '2021-03-01', 4, 21, 35, 8500.00, '工商银行', '6222021001000040', 'active'),
-(41, 'EMP202005008', '阮小七', 'M', '310101199409200234', '13800005008', 'ruanxq@erp.com', '1994-09-20', '2022-01-01', 4, 22, 35, 13000.00, '建设银行', '6227002002000041', 'active'),
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (34, 'EMP202005001', '鲁智深', 'M', '310101197810060456', '13800005001', 'luzs@erp.com', '1978-10-06', '2020-01-15', 4, 18, 1, 42000.00, '工商银行', '6222021001000034', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (35, 'EMP202005002', '马超', 'M', '310101198512200567', '13800005002', 'mac@erp.com', '1985-12-20', '2020-04-01', 4, 19, 34, 22000.00, '建设银行', '6227002002000035', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (36, 'EMP202005003', '花荣', 'M', '310101199103150678', '13800005003', 'huar@erp.com', '1991-03-15', '2021-01-01', 4, 20, 35, 12000.00, '农业银行', '6228483003000036', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (37, 'EMP202005004', '柴进', 'M', '310101199308200789', '13800005004', 'chaij@erp.com', '1993-08-20', '2021-05-01', 4, 20, 35, 11000.00, '工商银行', '6222021001000037', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (38, 'EMP202005005', '李应', 'F', '310101199510250890', '13800005005', 'liy@erp.com', '1995-10-25', '2022-02-01', 4, 20, 35, 10000.00, '建设银行', '6227002002000038', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (39, 'EMP202005006', '燕青', 'F', '310101199706300901', '13800005006', 'yanq@erp.com', '1997-06-30', '2022-06-01', 4, 21, 35, 9000.00, '农业银行', '6228483003000039', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (40, 'EMP202005007', '戴宗', 'M', '310101199201150123', '13800005007', 'daiz@erp.com', '1992-01-15', '2021-03-01', 4, 21, 35, 8500.00, '工商银行', '6222021001000040', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (41, 'EMP202005008', '阮小七', 'M', '310101199409200234', '13800005008', 'ruanxq@erp.com', '1994-09-20', '2022-01-01', 4, 22, 35, 13000.00, '建设银行', '6227002002000041', 'active')
 -- 仓储物流部 (12人)
-(42, 'EMP202006001', '史进', 'M', '310101198002150345', '13800006001', 'shij@erp.com', '1980-02-15', '2020-03-01', 5, 23, 2, 35000.00, '农业银行', '6228483003000042', 'active'),
-(43, 'EMP202006002', '穆弘', 'M', '310101198507100456', '13800006002', 'muh@erp.com', '1985-07-10', '2020-06-01', 5, 24, 42, 18000.00, '工商银行', '6222021001000043', 'active'),
-(44, 'EMP202006003', '李俊', 'M', '310101199012250567', '13800006003', 'lij@erp.com', '1990-12-25', '2021-02-01', 5, 24, 42, 18000.00, '建设银行', '6227002002000044', 'active'),
-(45, 'EMP202006004', '张横', 'M', '310101199305100678', '13800006004', 'zhangh@erp.com', '1993-05-10', '2021-06-01', 5, 25, 43, 8000.00, '农业银行', '6228483003000045', 'active'),
-(46, 'EMP202006005', '张顺', 'M', '310101199510150789', '13800006005', 'zhangs@erp.com', '1995-10-15', '2022-01-01', 5, 25, 43, 7500.00, '工商银行', '6222021001000046', 'active'),
-(47, 'EMP202006006', '阮小二', 'M', '310101199703200890', '13800006006', 'ruanxe@erp.com', '1997-03-20', '2022-05-01', 5, 25, 43, 7000.00, '建设银行', '6227002002000047', 'active'),
-(48, 'EMP202006007', '阮小五', 'M', '310101199808250901', '13800006007', 'ruanxw@erp.com', '1998-08-25', '2022-09-01', 5, 25, 44, 7000.00, '农业银行', '6228483003000048', 'active'),
-(49, 'EMP202006008', '童威', 'M', '310101199201300123', '13800006008', 'tongw@erp.com', '1992-01-30', '2021-04-01', 5, 25, 44, 7500.00, '工商银行', '6222021001000049', 'active'),
-(50, 'EMP202006009', '童猛', 'M', '310101199406150234', '13800006009', 'tongm@erp.com', '1994-06-15', '2021-08-01', 5, 25, 44, 7200.00, '建设银行', '6227002002000050', 'active'),
-(51, 'EMP202006010', '孟康', 'M', '310101199111200345', '13800006010', 'mengk@erp.com', '1991-11-20', '2021-01-01', 5, 26, 43, 9000.00, '农业银行', '6228483003000051', 'active'),
-(52, 'EMP202006011', '侯健', 'M', '310101199504250456', '13800006011', 'houj@erp.com', '1995-04-25', '2022-03-01', 5, 26, 43, 8500.00, '工商银行', '6222021001000052', 'active'),
-(53, 'EMP202006012', '陈达', 'M', '310101199709300567', '13800006012', 'chend@erp.com', '1997-09-30', '2022-07-01', 5, 26, 44, 8000.00, '建设银行', '6227002002000053', 'active'),
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (42, 'EMP202006001', '史进', 'M', '310101198002150345', '13800006001', 'shij@erp.com', '1980-02-15', '2020-03-01', 5, 23, 2, 35000.00, '农业银行', '6228483003000042', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (43, 'EMP202006002', '穆弘', 'M', '310101198507100456', '13800006002', 'muh@erp.com', '1985-07-10', '2020-06-01', 5, 24, 42, 18000.00, '工商银行', '6222021001000043', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (44, 'EMP202006003', '李俊', 'M', '310101199012250567', '13800006003', 'lij@erp.com', '1990-12-25', '2021-02-01', 5, 24, 42, 18000.00, '建设银行', '6227002002000044', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (45, 'EMP202006004', '张横', 'M', '310101199305100678', '13800006004', 'zhangh@erp.com', '1993-05-10', '2021-06-01', 5, 25, 43, 8000.00, '农业银行', '6228483003000045', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (46, 'EMP202006005', '张顺', 'M', '310101199510150789', '13800006005', 'zhangs@erp.com', '1995-10-15', '2022-01-01', 5, 25, 43, 7500.00, '工商银行', '6222021001000046', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (47, 'EMP202006006', '阮小二', 'M', '310101199703200890', '13800006006', 'ruanxe@erp.com', '1997-03-20', '2022-05-01', 5, 25, 43, 7000.00, '建设银行', '6227002002000047', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (48, 'EMP202006007', '阮小五', 'M', '310101199808250901', '13800006007', 'ruanxw@erp.com', '1998-08-25', '2022-09-01', 5, 25, 44, 7000.00, '农业银行', '6228483003000048', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (49, 'EMP202006008', '童威', 'M', '310101199201300123', '13800006008', 'tongw@erp.com', '1992-01-30', '2021-04-01', 5, 25, 44, 7500.00, '工商银行', '6222021001000049', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (50, 'EMP202006009', '童猛', 'M', '310101199406150234', '13800006009', 'tongm@erp.com', '1994-06-15', '2021-08-01', 5, 25, 44, 7200.00, '建设银行', '6227002002000050', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (51, 'EMP202006010', '孟康', 'M', '310101199111200345', '13800006010', 'mengk@erp.com', '1991-11-20', '2021-01-01', 5, 26, 43, 9000.00, '农业银行', '6228483003000051', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (52, 'EMP202006011', '侯健', 'M', '310101199504250456', '13800006011', 'houj@erp.com', '1995-04-25', '2022-03-01', 5, 26, 43, 8500.00, '工商银行', '6222021001000052', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (53, 'EMP202006012', '陈达', 'M', '310101199709300567', '13800006012', 'chend@erp.com', '1997-09-30', '2022-07-01', 5, 26, 44, 8000.00, '建设银行', '6227002002000053', 'active')
 -- 信息技术部 (8人)
-(54, 'EMP202007001', '杨春', 'M', '310101198309150678', '13800007001', 'yangc@erp.com', '1983-09-15', '2020-02-01', 6, 27, 2, 38000.00, '农业银行', '6228483003000054', 'active'),
-(55, 'EMP202007002', '石秀', 'M', '310101198804200789', '13800007002', 'shix@erp.com', '1988-04-20', '2020-05-01', 6, 28, 54, 22000.00, '工商银行', '6222021001000055', 'active'),
-(56, 'EMP202007003', '解珍', 'M', '310101199306250890', '13800007003', 'xiez@erp.com', '1993-06-25', '2021-04-01', 6, 28, 54, 20000.00, '建设银行', '6227002002000056', 'active'),
-(57, 'EMP202007004', '解宝', 'M', '310101199511300901', '13800007004', 'xieb@erp.com', '1995-11-30', '2022-01-01', 6, 29, 55, 18000.00, '农业银行', '6228483003000057', 'active'),
-(58, 'EMP202007005', '邹渊', 'M', '310101199704150123', '13800007005', 'zouy@erp.com', '1997-04-15', '2022-06-01', 6, 29, 55, 16000.00, '工商银行', '6222021001000058', 'active'),
-(59, 'EMP202007006', '邹润', 'M', '310101199808200234', '13800007006', 'zour@erp.com', '1998-08-20', '2022-10-01', 6, 29, 56, 15000.00, '建设银行', '6227002002000059', 'active'),
-(60, 'EMP202007007', '孙新', 'M', '310101199210250345', '13800007007', 'sunx@erp.com', '1992-10-25', '2021-05-01', 6, 30, 55, 14000.00, '农业银行', '6228483003000060', 'active'),
-(61, 'EMP202007008', '顾大嫂', 'F', '310101199503300456', '13800007008', 'guds@erp.com', '1995-03-30', '2022-04-01', 6, 30, 56, 12000.00, '工商银行', '6222021001000061', 'active'),
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (54, 'EMP202007001', '杨春', 'M', '310101198309150678', '13800007001', 'yangc@erp.com', '1983-09-15', '2020-02-01', 6, 27, 2, 38000.00, '农业银行', '6228483003000054', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (55, 'EMP202007002', '石秀', 'M', '310101198804200789', '13800007002', 'shix@erp.com', '1988-04-20', '2020-05-01', 6, 28, 54, 22000.00, '工商银行', '6222021001000055', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (56, 'EMP202007003', '解珍', 'M', '310101199306250890', '13800007003', 'xiez@erp.com', '1993-06-25', '2021-04-01', 6, 28, 54, 20000.00, '建设银行', '6227002002000056', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (57, 'EMP202007004', '解宝', 'M', '310101199511300901', '13800007004', 'xieb@erp.com', '1995-11-30', '2022-01-01', 6, 29, 55, 18000.00, '农业银行', '6228483003000057', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (58, 'EMP202007005', '邹渊', 'M', '310101199704150123', '13800007005', 'zouy@erp.com', '1997-04-15', '2022-06-01', 6, 29, 55, 16000.00, '工商银行', '6222021001000058', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (59, 'EMP202007006', '邹润', 'M', '310101199808200234', '13800007006', 'zour@erp.com', '1998-08-20', '2022-10-01', 6, 29, 56, 15000.00, '建设银行', '6227002002000059', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (60, 'EMP202007007', '孙新', 'M', '310101199210250345', '13800007007', 'sunx@erp.com', '1992-10-25', '2021-05-01', 6, 30, 55, 14000.00, '农业银行', '6228483003000060', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (61, 'EMP202007008', '顾大嫂', 'F', '310101199503300456', '13800007008', 'guds@erp.com', '1995-03-30', '2022-04-01', 6, 30, 56, 12000.00, '工商银行', '6222021001000061', 'active')
 -- 人力资源部 (6人)
-(62, 'EMP202008001', '扈三娘', 'F', '310101198605150567', '13800008001', 'husn@erp.com', '1986-05-15', '2020-04-01', 7, 31, 2, 32000.00, '建设银行', '6227002002000062', 'active'),
-(63, 'EMP202008002', '孙二娘', 'F', '310101199010200678', '13800008002', 'sune@erp.com', '1990-10-20', '2021-01-01', 7, 32, 62, 18000.00, '农业银行', '6228483003000063', 'active'),
-(64, 'EMP202008003', '顾大嫂', 'F', '310101199403150789', '13800008003', 'guds2@erp.com', '1994-03-15', '2021-06-01', 7, 33, 63, 10000.00, '工商银行', '6222021001000064', 'active'),
-(65, 'EMP202008004', '琼英', 'F', '310101199607200890', '13800008004', 'qiongy@erp.com', '1996-07-20', '2022-02-01', 7, 33, 63, 9000.00, '建设银行', '6227002002000065', 'active'),
-(66, 'EMP202008005', '李师师', 'F', '310101199812250901', '13800008005', 'liss@erp.com', '1998-12-25', '2022-08-01', 7, 34, 63, 10000.00, '农业银行', '6228483003000066', 'active'),
-(67, 'EMP202008006', '林娘子', 'F', '310101199105300123', '13800008006', 'linz@erp.com', '1991-05-30', '2021-03-01', 7, 33, 63, 9500.00, '工商银行', '6222021001000067', 'active'),
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (62, 'EMP202008001', '扈三娘', 'F', '310101198605150567', '13800008001', 'husn@erp.com', '1986-05-15', '2020-04-01', 7, 31, 2, 32000.00, '建设银行', '6227002002000062', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (63, 'EMP202008002', '孙二娘', 'F', '310101199010200678', '13800008002', 'sune@erp.com', '1990-10-20', '2021-01-01', 7, 32, 62, 18000.00, '农业银行', '6228483003000063', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (64, 'EMP202008003', '顾大嫂', 'F', '310101199403150789', '13800008003', 'guds2@erp.com', '1994-03-15', '2021-06-01', 7, 33, 63, 10000.00, '工商银行', '6222021001000064', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (65, 'EMP202008004', '琼英', 'F', '310101199607200890', '13800008004', 'qiongy@erp.com', '1996-07-20', '2022-02-01', 7, 33, 63, 9000.00, '建设银行', '6227002002000065', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (66, 'EMP202008005', '李师师', 'F', '310101199812250901', '13800008005', 'liss@erp.com', '1998-12-25', '2022-08-01', 7, 34, 63, 10000.00, '农业银行', '6228483003000066', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (67, 'EMP202008006', '林娘子', 'F', '310101199105300123', '13800008006', 'linz@erp.com', '1991-05-30', '2021-03-01', 7, 33, 63, 9500.00, '工商银行', '6222021001000067', 'active')
 -- 额外员工 (13人，补充分散到各部门)
-(68, 'EMP202009001', '刘唐', 'M', '310101198907150234', '13800009001', 'liut@erp.com', '1989-07-15', '2021-03-01', 2, 7, 7, 7800.00, '建设银行', '6227002002000068', 'active'),
-(69, 'EMP202009002', '公孙胜', 'M', '310101198210250345', '13800009002', 'gongs@erp.com', '1982-10-25', '2020-08-01', 2, 6, 5, 15000.00, '农业银行', '6228483003000069', 'active'),
-(70, 'EMP202009003', '关胜', 'M', '310101198503300456', '13800009003', 'guans@erp.com', '1985-03-30', '2020-09-01', 3, 16, 27, 11000.00, '工商银行', '6222021001000070', 'active'),
-(71, 'EMP202009004', '林冲', 'M', '310101198807150567', '13800009004', 'linc@erp.com', '1988-07-15', '2021-02-01', 5, 25, 43, 8000.00, '建设银行', '6227002002000071', 'active'),
-(72, 'EMP202009005', '秦明', 'M', '310101199012200678', '13800009005', 'qinm@erp.com', '1990-12-20', '2021-07-01', 5, 25, 44, 7500.00, '农业银行', '6228483003000072', 'active'),
-(73, 'EMP202009006', '呼延灼', 'M', '310101199305250789', '13800009006', 'huyz@erp.com', '1993-05-25', '2022-01-01', 6, 29, 55, 17000.00, '工商银行', '6222021001000073', 'active'),
-(74, 'EMP202009007', '花荣', 'M', '310101199508300890', '13800009007', 'huar2@erp.com', '1995-08-30', '2022-05-01', 6, 29, 56, 15000.00, '建设银行', '6227002002000074', 'active'),
-(75, 'EMP202009008', '柴进', 'M', '310101199711050901', '13800009008', 'chaij2@erp.com', '1997-11-05', '2022-09-01', 4, 20, 35, 10000.00, '农业银行', '6228483003000075', 'active'),
-(76, 'EMP202009009', '朱仝', 'M', '310101199202140123', '13800009009', 'zhut@erp.com', '1992-02-14', '2021-04-01', 2, 7, 8, 7200.00, '工商银行', '6222021001000076', 'active'),
-(77, 'EMP202009010', '鲁智深', 'M', '310101199404200234', '13800009010', 'luzs2@erp.com', '1994-04-20', '2021-09-01', 3, 16, 31, 9500.00, '建设银行', '6227002002000077', 'active'),
-(78, 'EMP202009011', '武松', 'M', '310101199606300345', '13800009011', 'wus@erp.com', '1996-06-30', '2022-03-01', 5, 26, 44, 8500.00, '农业银行', '6228483003000078', 'active'),
-(79, 'EMP202009012', '董平', 'M', '310101199808150456', '13800009012', 'dongp@erp.com', '1998-08-15', '2022-07-01', 6, 30, 56, 13000.00, '工商银行', '6222021001000079', 'active'),
-(80, 'EMP202009013', '张清', 'M', '310101199110200567', '13800009013', 'zhangq@erp.com', '1991-10-20', '2021-01-01', 2, 7, 6, 8200.00, '建设银行', '6227002002000080', 'active');
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (68, 'EMP202009001', '刘唐', 'M', '310101198907150234', '13800009001', 'liut@erp.com', '1989-07-15', '2021-03-01', 2, 7, 7, 7800.00, '建设银行', '6227002002000068', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (69, 'EMP202009002', '公孙胜', 'M', '310101198210250345', '13800009002', 'gongs@erp.com', '1982-10-25', '2020-08-01', 2, 6, 5, 15000.00, '农业银行', '6228483003000069', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (70, 'EMP202009003', '关胜', 'M', '310101198503300456', '13800009003', 'guans@erp.com', '1985-03-30', '2020-09-01', 3, 16, 27, 11000.00, '工商银行', '6222021001000070', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (71, 'EMP202009004', '林冲', 'M', '310101198807150567', '13800009004', 'linc@erp.com', '1988-07-15', '2021-02-01', 5, 25, 43, 8000.00, '建设银行', '6227002002000071', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (72, 'EMP202009005', '秦明', 'M', '310101199012200678', '13800009005', 'qinm@erp.com', '1990-12-20', '2021-07-01', 5, 25, 44, 7500.00, '农业银行', '6228483003000072', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (73, 'EMP202009006', '呼延灼', 'M', '310101199305250789', '13800009006', 'huyz@erp.com', '1993-05-25', '2022-01-01', 6, 29, 55, 17000.00, '工商银行', '6222021001000073', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (74, 'EMP202009007', '花荣', 'M', '310101199508300890', '13800009007', 'huar2@erp.com', '1995-08-30', '2022-05-01', 6, 29, 56, 15000.00, '建设银行', '6227002002000074', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (75, 'EMP202009008', '柴进', 'M', '310101199711050901', '13800009008', 'chaij2@erp.com', '1997-11-05', '2022-09-01', 4, 20, 35, 10000.00, '农业银行', '6228483003000075', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (76, 'EMP202009009', '朱仝', 'M', '310101199202140123', '13800009009', 'zhut@erp.com', '1992-02-14', '2021-04-01', 2, 7, 8, 7200.00, '工商银行', '6222021001000076', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (77, 'EMP202009010', '鲁智深', 'M', '310101199404200234', '13800009010', 'luzs2@erp.com', '1994-04-20', '2021-09-01', 3, 16, 31, 9500.00, '建设银行', '6227002002000077', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (78, 'EMP202009011', '武松', 'M', '310101199606300345', '13800009011', 'wus@erp.com', '1996-06-30', '2022-03-01', 5, 26, 44, 8500.00, '农业银行', '6228483003000078', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (79, 'EMP202009012', '董平', 'M', '310101199808150456', '13800009012', 'dongp@erp.com', '1998-08-15', '2022-07-01', 6, 30, 56, 13000.00, '工商银行', '6222021001000079', 'active')
+    INTO employees (id, employee_no, name, gender, id_card, phone, email, birth_date, hire_date, department_id, position_id, manager_id, salary, bank_name, bank_account, status) VALUES (80, 'EMP202009013', '张清', 'M', '310101199110200567', '13800009013', 'zhangq@erp.com', '1991-10-20', '2021-01-01', 2, 7, 6, 8200.00, '建设银行', '6227002002000080', 'active')
+SELECT 1 FROM dual;
 
 
 -- ============================================================
@@ -205,87 +208,193 @@ UPDATE departments SET manager_id = 23 WHERE id = 10; -- 华北-孔祥瑞
 -- 权限继承: 子权限通过parent_id挂在父权限下
 -- ============================================================
 
-INSERT INTO roles (id, name, code, description, is_system) VALUES
-(1, '超级管理员', 'super_admin', '系统最高权限', 1),
-(2, '部门经理', 'dept_manager', '部门管理权限', 1),
-(3, '销售人员', 'sales', '销售相关权限', 1),
-(4, '采购人员', 'purchaser', '采购相关权限', 1),
-(5, '出纳', 'cashier', '出纳相关权限', 1),
-(6, '会计', 'accountant', '会计相关权限', 1),
-(7, '审计', 'auditor', '审计相关权限', 1),
-(8, '仓库管理员', 'warehouse', '仓储相关权限', 1),
-(9, 'HR', 'hr', '人力资源相关权限', 1);
+INSERT ALL
+    INTO roles (id, name, code, description, is_system) VALUES (1, '超级管理员', 'super_admin', '系统最高权限', 1)
+    INTO roles (id, name, code, description, is_system) VALUES (2, '部门经理', 'dept_manager', '部门管理权限', 1)
+    INTO roles (id, name, code, description, is_system) VALUES (3, '销售人员', 'sales', '销售相关权限', 1)
+    INTO roles (id, name, code, description, is_system) VALUES (4, '采购人员', 'purchaser', '采购相关权限', 1)
+    INTO roles (id, name, code, description, is_system) VALUES (5, '出纳', 'cashier', '出纳相关权限', 1)
+    INTO roles (id, name, code, description, is_system) VALUES (6, '会计', 'accountant', '会计相关权限', 1)
+    INTO roles (id, name, code, description, is_system) VALUES (7, '审计', 'auditor', '审计相关权限', 1)
+    INTO roles (id, name, code, description, is_system) VALUES (8, '仓库管理员', 'warehouse', '仓储相关权限', 1)
+    INTO roles (id, name, code, description, is_system) VALUES (9, 'HR', 'hr', '人力资源相关权限', 1)
+SELECT 1 FROM dual;
 
-INSERT INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES
+INSERT ALL
 -- 销售权限
-(1, NULL, '销售管理', 'sales_mgmt', 'menu', '/sales', 'read'),
-(2, 1, '创建销售单', 'sales_create', 'button', '/sales/order/create', 'create'),
-(3, 1, '查看销售单', 'sales_view', 'button', '/sales/order/view', 'read'),
-(4, 1, '销售退库', 'sales_return', 'button', '/sales/return', 'create'),
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (1, NULL, '销售管理', 'sales_mgmt', 'menu', '/sales', 'read')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (2, 1, '创建销售单', 'sales_create', 'button', '/sales/order/create', 'create')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (3, 1, '查看销售单', 'sales_view', 'button', '/sales/order/view', 'read')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (4, 1, '销售退库', 'sales_return', 'button', '/sales/return', 'create')
 -- 采购权限
-(5, NULL, '采购管理', 'purchase_mgmt', 'menu', '/purchase', 'read'),
-(6, 5, '创建请购单', 'purchase_req', 'button', '/purchase/requisition', 'create'),
-(7, 5, '创建采购单', 'purchase_order', 'button', '/purchase/order', 'create'),
-(8, 5, '审批请购单', 'purchase_approve', 'button', '/purchase/requisition/approve', 'approve'),
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (5, NULL, '采购管理', 'purchase_mgmt', 'menu', '/purchase', 'read')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (6, 5, '创建请购单', 'purchase_req', 'button', '/purchase/requisition', 'create')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (7, 5, '创建采购单', 'purchase_order', 'button', '/purchase/order', 'create')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (8, 5, '审批请购单', 'purchase_approve', 'button', '/purchase/requisition/approve', 'approve')
 -- 库存权限
-(9, NULL, '库存管理', 'inventory_mgmt', 'menu', '/inventory', 'read'),
-(10, 9, '入库操作', 'inventory_in', 'button', '/inventory/receive', 'create'),
-(11, 9, '盘点操作', 'inventory_stocktake', 'button', '/inventory/stocktake', 'update'),
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (9, NULL, '库存管理', 'inventory_mgmt', 'menu', '/inventory', 'read')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (10, 9, '入库操作', 'inventory_in', 'button', '/inventory/receive', 'create')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (11, 9, '盘点操作', 'inventory_stocktake', 'button', '/inventory/stocktake', 'update')
 -- 财务权限
-(12, NULL, '财务管理', 'finance_mgmt', 'menu', '/finance', 'read'),
-(13, 12, '凭证管理', 'finance_voucher', 'menu', '/finance/voucher', 'create'),
-(14, 12, '出纳日记账', 'finance_cashier', 'menu', '/finance/cashier', 'create'),
-(15, 12, '对账', 'finance_recon', 'button', '/finance/reconciliation', 'create'),
-(16, 12, '结算', 'finance_settlement', 'button', '/finance/settlement', 'create'),
-(17, 12, '工资发放', 'finance_salary', 'button', '/finance/salary', 'create'),
-(18, 12, '审计日志', 'finance_audit', 'menu', '/finance/audit', 'read'),
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (12, NULL, '财务管理', 'finance_mgmt', 'menu', '/finance', 'read')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (13, 12, '凭证管理', 'finance_voucher', 'menu', '/finance/voucher', 'create')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (14, 12, '出纳日记账', 'finance_cashier', 'menu', '/finance/cashier', 'create')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (15, 12, '对账', 'finance_recon', 'button', '/finance/reconciliation', 'create')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (16, 12, '结算', 'finance_settlement', 'button', '/finance/settlement', 'create')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (17, 12, '工资发放', 'finance_salary', 'button', '/finance/salary', 'create')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (18, 12, '审计日志', 'finance_audit', 'menu', '/finance/audit', 'read')
 -- HR权限
-(19, NULL, '人事管理', 'hr_mgmt', 'menu', '/hr', 'read'),
-(20, 19, '员工入职', 'hr_hire', 'button', '/hr/employee/hire', 'create'),
-(21, 19, '员工晋升', 'hr_promote', 'button', '/hr/employee/promote', 'update'),
-(22, 19, '员工离职', 'hr_resign', 'button', '/hr/employee/resign', 'update'),
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (19, NULL, '人事管理', 'hr_mgmt', 'menu', '/hr', 'read')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (20, 19, '员工入职', 'hr_hire', 'button', '/hr/employee/hire', 'create')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (21, 19, '员工晋升', 'hr_promote', 'button', '/hr/employee/promote', 'update')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (22, 19, '员工离职', 'hr_resign', 'button', '/hr/employee/resign', 'update')
 -- 系统权限
-(23, NULL, '系统管理', 'system_mgmt', 'menu', '/system', 'read'),
-(24, 23, '角色管理', 'system_role', 'menu', '/system/role', 'create'),
-(25, 23, '数据导出', 'system_export', 'button', '/system/export', 'export');
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (23, NULL, '系统管理', 'system_mgmt', 'menu', '/system', 'read')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (24, 23, '角色管理', 'system_role', 'menu', '/system/role', 'create')
+    INTO permissions (id, parent_id, name, code, resource_type, resource_path, action) VALUES (25, 23, '数据导出', 'system_export', 'button', '/system/export', 'export')
+SELECT 1 FROM dual;
 
 -- 角色-权限分配
-INSERT INTO role_permissions (role_id, permission_id) VALUES
+INSERT ALL
 -- 超级管理员: 所有权限
-(1, 1),(1, 2),(1, 3),(1, 4),(1, 5),(1, 6),(1, 7),(1, 8),
-(1, 9),(1, 10),(1, 11),(1, 12),(1, 13),(1, 14),(1, 15),(1, 16),(1, 17),(1, 18),
-(1, 19),(1, 20),(1, 21),(1, 22),(1, 23),(1, 24),(1, 25),
+    INTO role_permissions (role_id, permission_id) VALUES (1, 1)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 2)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 3)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 4)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 5)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 6)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 7)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 8)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 9)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 10)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 11)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 12)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 13)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 14)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 15)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 16)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 17)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 18)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 19)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 20)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 21)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 22)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 23)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 24)
+    INTO role_permissions (role_id, permission_id) VALUES (1, 25)
 -- 销售人员
-(3, 1),(3, 2),(3, 3),(3, 4),
+    INTO role_permissions (role_id, permission_id) VALUES (3, 1)
+    INTO role_permissions (role_id, permission_id) VALUES (3, 2)
+    INTO role_permissions (role_id, permission_id) VALUES (3, 3)
+    INTO role_permissions (role_id, permission_id) VALUES (3, 4)
 -- 采购人员
-(4, 5),(4, 6),(4, 7),(4, 8),
+    INTO role_permissions (role_id, permission_id) VALUES (4, 5)
+    INTO role_permissions (role_id, permission_id) VALUES (4, 6)
+    INTO role_permissions (role_id, permission_id) VALUES (4, 7)
+    INTO role_permissions (role_id, permission_id) VALUES (4, 8)
 -- 出纳
-(5, 12),(5, 14),(5, 16),(5, 17),
+    INTO role_permissions (role_id, permission_id) VALUES (5, 12)
+    INTO role_permissions (role_id, permission_id) VALUES (5, 14)
+    INTO role_permissions (role_id, permission_id) VALUES (5, 16)
+    INTO role_permissions (role_id, permission_id) VALUES (5, 17)
 -- 会计
-(6, 12),(6, 13),(6, 15),(6, 16),(6, 17),
+    INTO role_permissions (role_id, permission_id) VALUES (6, 12)
+    INTO role_permissions (role_id, permission_id) VALUES (6, 13)
+    INTO role_permissions (role_id, permission_id) VALUES (6, 15)
+    INTO role_permissions (role_id, permission_id) VALUES (6, 16)
+    INTO role_permissions (role_id, permission_id) VALUES (6, 17)
 -- 审计
-(7, 12),(7, 15),(7, 18),
+    INTO role_permissions (role_id, permission_id) VALUES (7, 12)
+    INTO role_permissions (role_id, permission_id) VALUES (7, 15)
+    INTO role_permissions (role_id, permission_id) VALUES (7, 18)
 -- 仓库管理员
-(8, 9),(8, 10),(8, 11),
+    INTO role_permissions (role_id, permission_id) VALUES (8, 9)
+    INTO role_permissions (role_id, permission_id) VALUES (8, 10)
+    INTO role_permissions (role_id, permission_id) VALUES (8, 11)
 -- HR
-(9, 19),(9, 20),(9, 21),(9, 22),
+    INTO role_permissions (role_id, permission_id) VALUES (9, 19)
+    INTO role_permissions (role_id, permission_id) VALUES (9, 20)
+    INTO role_permissions (role_id, permission_id) VALUES (9, 21)
+    INTO role_permissions (role_id, permission_id) VALUES (9, 22)
 -- 部门经理
-(2, 1),(2, 3),(2, 5),(2, 6),(2, 8),(2, 9),(2, 11),(2, 19),(2, 20),(2, 21);
+    INTO role_permissions (role_id, permission_id) VALUES (2, 1)
+    INTO role_permissions (role_id, permission_id) VALUES (2, 3)
+    INTO role_permissions (role_id, permission_id) VALUES (2, 5)
+    INTO role_permissions (role_id, permission_id) VALUES (2, 6)
+    INTO role_permissions (role_id, permission_id) VALUES (2, 8)
+    INTO role_permissions (role_id, permission_id) VALUES (2, 9)
+    INTO role_permissions (role_id, permission_id) VALUES (2, 11)
+    INTO role_permissions (role_id, permission_id) VALUES (2, 19)
+    INTO role_permissions (role_id, permission_id) VALUES (2, 20)
+    INTO role_permissions (role_id, permission_id) VALUES (2, 21)
+SELECT 1 FROM dual;
 
 -- 员工-角色分配
-INSERT INTO employee_roles (employee_id, role_id) VALUES
-(1, 1),    -- 张建国-超级管理员
-(2, 1),    -- 李向前-超级管理员
-(4, 2),    -- 陈大伟-部门经理
-(5, 3),(6, 3),(7, 3),(8, 3),(9, 3),(10, 3),(11, 3),(12, 3),(13, 3),(14, 3),
-(16, 2),(17, 3),(18, 3),(19, 3),
-(20, 2),(21, 3),(22, 3),
-(23, 2),(24, 3),(25, 3),
-(26, 2),(27, 4),(28, 4),(29, 4),(30, 4),(31, 4),(32, 4),(33, 4),
-(34, 2),(35, 6),(36, 6),(37, 6),(38, 6),(39, 5),(40, 5),(41, 7),
-(42, 2),(43, 8),(44, 8),(45, 8),(46, 8),(47, 8),(48, 8),(49, 8),(50, 8),(51, 8),(52, 8),(53, 8),
-(54, 2),(55, 2),(56, 2),
-(62, 2),(63, 9),(64, 9),(65, 9),(66, 9),(67, 9);
+INSERT ALL
+    INTO employee_roles (employee_id, role_id) VALUES (1, 1)
+    -- 张建国-超级管理员
+    INTO employee_roles (employee_id, role_id) VALUES (2, 1)
+    -- 李向前-超级管理员
+    INTO employee_roles (employee_id, role_id) VALUES (4, 2)
+    -- 陈大伟-部门经理
+    INTO employee_roles (employee_id, role_id) VALUES (5, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (6, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (7, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (8, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (9, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (10, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (11, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (12, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (13, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (14, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (16, 2)
+    INTO employee_roles (employee_id, role_id) VALUES (17, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (18, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (19, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (20, 2)
+    INTO employee_roles (employee_id, role_id) VALUES (21, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (22, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (23, 2)
+    INTO employee_roles (employee_id, role_id) VALUES (24, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (25, 3)
+    INTO employee_roles (employee_id, role_id) VALUES (26, 2)
+    INTO employee_roles (employee_id, role_id) VALUES (27, 4)
+    INTO employee_roles (employee_id, role_id) VALUES (28, 4)
+    INTO employee_roles (employee_id, role_id) VALUES (29, 4)
+    INTO employee_roles (employee_id, role_id) VALUES (30, 4)
+    INTO employee_roles (employee_id, role_id) VALUES (31, 4)
+    INTO employee_roles (employee_id, role_id) VALUES (32, 4)
+    INTO employee_roles (employee_id, role_id) VALUES (33, 4)
+    INTO employee_roles (employee_id, role_id) VALUES (34, 2)
+    INTO employee_roles (employee_id, role_id) VALUES (35, 6)
+    INTO employee_roles (employee_id, role_id) VALUES (36, 6)
+    INTO employee_roles (employee_id, role_id) VALUES (37, 6)
+    INTO employee_roles (employee_id, role_id) VALUES (38, 6)
+    INTO employee_roles (employee_id, role_id) VALUES (39, 5)
+    INTO employee_roles (employee_id, role_id) VALUES (40, 5)
+    INTO employee_roles (employee_id, role_id) VALUES (41, 7)
+    INTO employee_roles (employee_id, role_id) VALUES (42, 2)
+    INTO employee_roles (employee_id, role_id) VALUES (43, 8)
+    INTO employee_roles (employee_id, role_id) VALUES (44, 8)
+    INTO employee_roles (employee_id, role_id) VALUES (45, 8)
+    INTO employee_roles (employee_id, role_id) VALUES (46, 8)
+    INTO employee_roles (employee_id, role_id) VALUES (47, 8)
+    INTO employee_roles (employee_id, role_id) VALUES (48, 8)
+    INTO employee_roles (employee_id, role_id) VALUES (49, 8)
+    INTO employee_roles (employee_id, role_id) VALUES (50, 8)
+    INTO employee_roles (employee_id, role_id) VALUES (51, 8)
+    INTO employee_roles (employee_id, role_id) VALUES (52, 8)
+    INTO employee_roles (employee_id, role_id) VALUES (53, 8)
+    INTO employee_roles (employee_id, role_id) VALUES (54, 2)
+    INTO employee_roles (employee_id, role_id) VALUES (55, 2)
+    INTO employee_roles (employee_id, role_id) VALUES (56, 2)
+    INTO employee_roles (employee_id, role_id) VALUES (62, 2)
+    INTO employee_roles (employee_id, role_id) VALUES (63, 9)
+    INTO employee_roles (employee_id, role_id) VALUES (64, 9)
+    INTO employee_roles (employee_id, role_id) VALUES (65, 9)
+    INTO employee_roles (employee_id, role_id) VALUES (66, 9)
+    INTO employee_roles (employee_id, role_id) VALUES (67, 9)
+SELECT 1 FROM dual;
 
 
 -- ============================================================
@@ -293,25 +402,26 @@ INSERT INTO employee_roles (employee_id, role_id) VALUES
 -- 关系: parent_id自引用形成树形结构
 -- ============================================================
 
-INSERT INTO product_categories (id, parent_id, name, code, sort_order) VALUES
-(1, NULL, '电子产品', 'ELECTRONICS', 1),
-(2, NULL, '食品饮料', 'FOOD_BEV', 2),
-(3, NULL, '办公用品', 'OFFICE', 3),
-(4, NULL, '日用百货', 'DAILY', 4),
-(5, NULL, '服装鞋帽', 'CLOTHING', 5),
-(6, 1, '手机配件', 'PHONE_ACC', 1),
-(7, 1, '电脑配件', 'PC_ACC', 2),
-(8, 1, '智能设备', 'SMART_DEV', 3),
-(9, 2, '休闲食品', 'SNACKS', 1),
-(10, 2, '饮料冲调', 'DRINKS', 2),
-(11, 2, '生鲜食材', 'FRESH', 3),
-(12, 3, '文具', 'STATIONERY', 1),
-(13, 3, '办公设备', 'OFFICE_EQUIP', 2),
-(14, 4, '清洁用品', 'CLEANING', 1),
-(15, 4, '厨房用品', 'KITCHEN', 2),
-(16, 5, '男装', 'MENSWEAR', 1),
-(17, 5, '女装', 'WOMENSWEAR', 2),
-(18, 5, '运动鞋服', 'SPORTSWEAR', 3);
+INSERT ALL
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (1, NULL, '电子产品', 'ELECTRONICS', 1)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (2, NULL, '食品饮料', 'FOOD_BEV', 2)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (3, NULL, '办公用品', 'OFFICE', 3)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (4, NULL, '日用百货', 'DAILY', 4)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (5, NULL, '服装鞋帽', 'CLOTHING', 5)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (6, 1, '手机配件', 'PHONE_ACC', 1)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (7, 1, '电脑配件', 'PC_ACC', 2)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (8, 1, '智能设备', 'SMART_DEV', 3)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (9, 2, '休闲食品', 'SNACKS', 1)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (10, 2, '饮料冲调', 'DRINKS', 2)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (11, 2, '生鲜食材', 'FRESH', 3)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (12, 3, '文具', 'STATIONERY', 1)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (13, 3, '办公设备', 'OFFICE_EQUIP', 2)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (14, 4, '清洁用品', 'CLEANING', 1)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (15, 4, '厨房用品', 'KITCHEN', 2)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (16, 5, '男装', 'MENSWEAR', 1)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (17, 5, '女装', 'WOMENSWEAR', 2)
+    INTO product_categories (id, parent_id, name, code, sort_order) VALUES (18, 5, '运动鞋服', 'SPORTSWEAR', 3)
+SELECT 1 FROM dual;
 
 
 -- ============================================================
@@ -323,79 +433,80 @@ INSERT INTO product_categories (id, parent_id, name, code, sort_order) VALUES
 --           shelf_life_days用于过期预警
 -- ============================================================
 
-INSERT INTO products (id, sku, name, category_id, unit, spec, brand, barcode,
-    purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES
+INSERT ALL
 -- 电子产品
-(1, 'ELEC-001', '无线蓝牙耳机 Pro', 6, '个', 'TWS 5.0', 'SoundMax', '6901234560001', 85.00, 150.00, 299.00, 20, 200, 1, 730),
-(2, 'ELEC-002', 'Type-C数据线 1.5m', 6, '根', 'USB 3.1', 'TechLink', '6901234560002', 5.50, 12.00, 25.00, 50, 500, 0, 0),
-(3, 'ELEC-003', '手机充电器 65W', 6, '个', 'GaN PD快充', 'PowerUp', '6901234560003', 35.00, 65.00, 129.00, 30, 300, 1, 1095),
-(4, 'ELEC-004', '机械键盘 RGB', 7, '个', '87键 Cherry轴', 'KeyCraft', '6901234560004', 180.00, 320.00, 599.00, 10, 100, 1, 1095),
-(5, 'ELEC-005', '无线鼠标 静音', 7, '个', '2.4G+蓝牙', 'ClickPro', '6901234560005', 45.00, 80.00, 159.00, 20, 200, 1, 730),
-(6, 'ELEC-006', '4K显示器 27寸', 7, '台', 'IPS 3840x2160', 'ViewPro', '6901234560006', 1200.00, 1800.00, 2999.00, 5, 50, 1, 1825),
-(7, 'ELEC-007', '智能手表', 8, '块', 'AMOLED 46mm', 'SmartWear', '6901234560007', 350.00, 600.00, 999.00, 10, 100, 1, 730),
-(8, 'ELEC-008', '智能音箱', 8, '台', 'AI语音助手', 'SoundMax', '6901234560008', 120.00, 200.00, 399.00, 15, 150, 1, 730),
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (1, 'ELEC-001', '无线蓝牙耳机 Pro', 6, '个', 'TWS 5.0', 'SoundMax', '6901234560001', 85.00, 150.00, 299.00, 20, 200, 1, 730)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (2, 'ELEC-002', 'Type-C数据线 1.5m', 6, '根', 'USB 3.1', 'TechLink', '6901234560002', 5.50, 12.00, 25.00, 50, 500, 0, 0)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (3, 'ELEC-003', '手机充电器 65W', 6, '个', 'GaN PD快充', 'PowerUp', '6901234560003', 35.00, 65.00, 129.00, 30, 300, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (4, 'ELEC-004', '机械键盘 RGB', 7, '个', '87键 Cherry轴', 'KeyCraft', '6901234560004', 180.00, 320.00, 599.00, 10, 100, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (5, 'ELEC-005', '无线鼠标 静音', 7, '个', '2.4G+蓝牙', 'ClickPro', '6901234560005', 45.00, 80.00, 159.00, 20, 200, 1, 730)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (6, 'ELEC-006', '4K显示器 27寸', 7, '台', 'IPS 3840x2160', 'ViewPro', '6901234560006', 1200.00, 1800.00, 2999.00, 5, 50, 1, 1825)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (7, 'ELEC-007', '智能手表', 8, '块', 'AMOLED 46mm', 'SmartWear', '6901234560007', 350.00, 600.00, 999.00, 10, 100, 1, 730)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (8, 'ELEC-008', '智能音箱', 8, '台', 'AI语音助手', 'SoundMax', '6901234560008', 120.00, 200.00, 399.00, 15, 150, 1, 730)
 -- 食品饮料
-(9, 'FOOD-001', '原味薯片 120g', 9, '袋', '充氮包装', '脆脆乐', '6901234560009', 3.50, 6.00, 9.90, 100, 1000, 1, 270),
-(10, 'FOOD-002', '坚果混合装 500g', 9, '袋', '每日坚果', '健康果园', '6901234560010', 25.00, 40.00, 69.00, 50, 500, 1, 180),
-(11, 'FOOD-003', '巧克力礼盒 300g', 9, '盒', '比利时进口', '甜蜜坊', '6901234560011', 35.00, 55.00, 99.00, 30, 300, 1, 365),
-(12, 'FOOD-004', '矿泉水 550ml*24', 10, '箱', '天然矿泉水', '清泉', '6901234560012', 18.00, 28.00, 45.00, 80, 800, 1, 365),
-(13, 'FOOD-005', '有机绿茶 250g', 10, '罐', '明前龙井', '茗茶坊', '6901234560013', 45.00, 75.00, 138.00, 20, 200, 1, 540),
-(14, 'FOOD-006', '速溶咖啡 100条', 10, '盒', '三合一', '晨醒', '6901234560014', 28.00, 45.00, 79.00, 40, 400, 1, 540),
-(15, 'FOOD-007', '冷冻鸡胸肉 1kg', 11, '袋', '去皮去骨', '鲜优', '6901234560015', 18.00, 28.00, 39.00, 50, 500, 1, 90),
-(16, 'FOOD-008', '进口牛排 250g', 11, '盒', '澳洲安格斯', '鲜优', '6901234560016', 55.00, 85.00, 148.00, 30, 300, 1, 60),
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (9, 'FOOD-001', '原味薯片 120g', 9, '袋', '充氮包装', '脆脆乐', '6901234560009', 3.50, 6.00, 9.90, 100, 1000, 1, 270)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (10, 'FOOD-002', '坚果混合装 500g', 9, '袋', '每日坚果', '健康果园', '6901234560010', 25.00, 40.00, 69.00, 50, 500, 1, 180)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (11, 'FOOD-003', '巧克力礼盒 300g', 9, '盒', '比利时进口', '甜蜜坊', '6901234560011', 35.00, 55.00, 99.00, 30, 300, 1, 365)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (12, 'FOOD-004', '矿泉水 550ml*24', 10, '箱', '天然矿泉水', '清泉', '6901234560012', 18.00, 28.00, 45.00, 80, 800, 1, 365)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (13, 'FOOD-005', '有机绿茶 250g', 10, '罐', '明前龙井', '茗茶坊', '6901234560013', 45.00, 75.00, 138.00, 20, 200, 1, 540)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (14, 'FOOD-006', '速溶咖啡 100条', 10, '盒', '三合一', '晨醒', '6901234560014', 28.00, 45.00, 79.00, 40, 400, 1, 540)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (15, 'FOOD-007', '冷冻鸡胸肉 1kg', 11, '袋', '去皮去骨', '鲜优', '6901234560015', 18.00, 28.00, 39.00, 50, 500, 1, 90)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (16, 'FOOD-008', '进口牛排 250g', 11, '盒', '澳洲安格斯', '鲜优', '6901234560016', 55.00, 85.00, 148.00, 30, 300, 1, 60)
 -- 办公用品
-(17, 'OFF-001', 'A4复印纸 500张*5包', 12, '箱', '70g/㎡', '纸立方', '6901234560017', 55.00, 80.00, 129.00, 30, 300, 0, 0),
-(18, 'OFF-002', '中性笔 0.5mm 12支装', 12, '盒', '黑色', '写乐', '6901234560018', 8.00, 15.00, 24.00, 50, 500, 0, 0),
-(19, 'OFF-003', '笔记本 A5 皮面', 12, '本', '192页', '纸立方', '6901234560019', 12.00, 20.00, 35.00, 40, 400, 0, 0),
-(20, 'OFF-004', '打印机 激光多功能', 13, '台', 'A4黑白双面', 'PrintPro', '6901234560020', 850.00, 1300.00, 1999.00, 5, 30, 1, 1095),
-(21, 'OFF-005', '碎纸机 办公型', 13, '台', '段状 15张/次', 'SecurePro', '6901234560021', 280.00, 420.00, 699.00, 5, 30, 1, 1095),
-(22, 'OFF-006', '办公椅 人体工学', 13, '把', '网布 可升降', '舒适办公', '6901234560022', 450.00, 700.00, 1299.00, 3, 20, 1, 1825),
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (17, 'OFF-001', 'A4复印纸 500张*5包', 12, '箱', '70g/㎡', '纸立方', '6901234560017', 55.00, 80.00, 129.00, 30, 300, 0, 0)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (18, 'OFF-002', '中性笔 0.5mm 12支装', 12, '盒', '黑色', '写乐', '6901234560018', 8.00, 15.00, 24.00, 50, 500, 0, 0)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (19, 'OFF-003', '笔记本 A5 皮面', 12, '本', '192页', '纸立方', '6901234560019', 12.00, 20.00, 35.00, 40, 400, 0, 0)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (20, 'OFF-004', '打印机 激光多功能', 13, '台', 'A4黑白双面', 'PrintPro', '6901234560020', 850.00, 1300.00, 1999.00, 5, 30, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (21, 'OFF-005', '碎纸机 办公型', 13, '台', '段状 15张/次', 'SecurePro', '6901234560021', 280.00, 420.00, 699.00, 5, 30, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (22, 'OFF-006', '办公椅 人体工学', 13, '把', '网布 可升降', '舒适办公', '6901234560022', 450.00, 700.00, 1299.00, 3, 20, 1, 1825)
 -- 日用百货
-(23, 'DAILY-001', '洗衣液 3kg', 14, '桶', '薰衣草香', '洁丽', '6901234560023', 18.00, 28.00, 45.00, 60, 600, 1, 730),
-(24, 'DAILY-002', '洗洁精 1.5kg', 14, '瓶', '柠檬味', '洁丽', '6901234560024', 8.00, 12.00, 19.90, 60, 600, 1, 730),
-(25, 'DAILY-003', '纸巾 3层*10卷', 14, '提', '原生木浆', '柔柔', '6901234560025', 15.00, 22.00, 35.00, 80, 800, 1, 1095),
-(26, 'DAILY-004', '不粘锅 32cm', 15, '口', '麦饭石涂层', '厨神', '6901234560026', 85.00, 130.00, 229.00, 10, 100, 1, 1095),
-(27, 'DAILY-005', '保温杯 500ml', 15, '个', '316不锈钢', '暖芯', '6901234560027', 35.00, 55.00, 99.00, 20, 200, 1, 1095),
-(28, 'DAILY-006', '保鲜盒套装 10件', 15, '套', 'PP材质', '厨神', '6901234560028', 25.00, 40.00, 69.00, 25, 250, 1, 1825),
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (23, 'DAILY-001', '洗衣液 3kg', 14, '桶', '薰衣草香', '洁丽', '6901234560023', 18.00, 28.00, 45.00, 60, 600, 1, 730)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (24, 'DAILY-002', '洗洁精 1.5kg', 14, '瓶', '柠檬味', '洁丽', '6901234560024', 8.00, 12.00, 19.90, 60, 600, 1, 730)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (25, 'DAILY-003', '纸巾 3层*10卷', 14, '提', '原生木浆', '柔柔', '6901234560025', 15.00, 22.00, 35.00, 80, 800, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (26, 'DAILY-004', '不粘锅 32cm', 15, '口', '麦饭石涂层', '厨神', '6901234560026', 85.00, 130.00, 229.00, 10, 100, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (27, 'DAILY-005', '保温杯 500ml', 15, '个', '316不锈钢', '暖芯', '6901234560027', 35.00, 55.00, 99.00, 20, 200, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (28, 'DAILY-006', '保鲜盒套装 10件', 15, '套', 'PP材质', '厨神', '6901234560028', 25.00, 40.00, 69.00, 25, 250, 1, 1825)
 -- 服装鞋帽
-(29, 'CLOTH-001', '男士商务衬衫', 16, '件', '纯棉免烫 白色', '绅士', '6901234560029', 65.00, 110.00, 199.00, 20, 200, 1, 1095),
-(30, 'CLOTH-002', '男士休闲裤', 16, '条', '弹力棉 卡其色', '绅士', '6901234560030', 55.00, 95.00, 179.00, 20, 200, 1, 1095),
-(31, 'CLOTH-003', '男士羽绒服', 16, '件', '90%白鸭绒', '暖冬', '6901234560031', 280.00, 450.00, 899.00, 10, 100, 1, 1095),
-(32, 'CLOTH-004', '女士连衣裙', 17, '条', '雪纺碎花', '时尚佳人', '6901234560032', 75.00, 130.00, 259.00, 15, 150, 1, 730),
-(33, 'CLOTH-005', '女士真丝围巾', 17, '条', '100%桑蚕丝', '时尚佳人', '6901234560033', 45.00, 80.00, 169.00, 15, 150, 1, 1095),
-(34, 'CLOTH-006', '女士羊绒大衣', 17, '件', '100%山羊绒', '奢品', '6901234560034', 580.00, 950.00, 1899.00, 5, 50, 1, 1825),
-(35, 'CLOTH-007', '运动跑鞋', 18, '双', '飞织面料 气垫', '速跑', '6901234560035', 120.00, 200.00, 399.00, 15, 150, 1, 730),
-(36, 'CLOTH-008', '运动T恤', 18, '件', '速干面料', '速跑', '6901234560036', 35.00, 60.00, 119.00, 25, 250, 1, 730),
-(37, 'CLOTH-009', '运动短裤', 18, '条', '弹力速干', '速跑', '6901234560037', 28.00, 50.00, 99.00, 25, 250, 1, 730),
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (29, 'CLOTH-001', '男士商务衬衫', 16, '件', '纯棉免烫 白色', '绅士', '6901234560029', 65.00, 110.00, 199.00, 20, 200, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (30, 'CLOTH-002', '男士休闲裤', 16, '条', '弹力棉 卡其色', '绅士', '6901234560030', 55.00, 95.00, 179.00, 20, 200, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (31, 'CLOTH-003', '男士羽绒服', 16, '件', '90%白鸭绒', '暖冬', '6901234560031', 280.00, 450.00, 899.00, 10, 100, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (32, 'CLOTH-004', '女士连衣裙', 17, '条', '雪纺碎花', '时尚佳人', '6901234560032', 75.00, 130.00, 259.00, 15, 150, 1, 730)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (33, 'CLOTH-005', '女士真丝围巾', 17, '条', '100%桑蚕丝', '时尚佳人', '6901234560033', 45.00, 80.00, 169.00, 15, 150, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (34, 'CLOTH-006', '女士羊绒大衣', 17, '件', '100%山羊绒', '奢品', '6901234560034', 580.00, 950.00, 1899.00, 5, 50, 1, 1825)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (35, 'CLOTH-007', '运动跑鞋', 18, '双', '飞织面料 气垫', '速跑', '6901234560035', 120.00, 200.00, 399.00, 15, 150, 1, 730)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (36, 'CLOTH-008', '运动T恤', 18, '件', '速干面料', '速跑', '6901234560036', 35.00, 60.00, 119.00, 25, 250, 1, 730)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (37, 'CLOTH-009', '运动短裤', 18, '条', '弹力速干', '速跑', '6901234560037', 28.00, 50.00, 99.00, 25, 250, 1, 730)
 -- 更多商品
-(38, 'ELEC-009', '移动电源 20000mAh', 6, '个', '22.5W快充', 'PowerUp', '6901234560038', 65.00, 110.00, 199.00, 20, 200, 1, 730),
-(39, 'ELEC-010', '蓝牙音箱 便携', 8, '台', 'IPX7防水', 'SoundMax', '6901234560039', 75.00, 130.00, 249.00, 15, 150, 1, 730),
-(40, 'FOOD-009', '橄榄油 1L', 11, '瓶', '特级初榨', '橄榄园', '6901234560040', 45.00, 70.00, 119.00, 30, 300, 1, 540),
-(41, 'FOOD-010', '蜂蜜 500g', 11, '瓶', '洋槐蜜', '甜蜜坊', '6901234560041', 22.00, 35.00, 59.00, 30, 300, 1, 730),
-(42, 'OFF-007', '白板 120*90cm', 13, '块', '磁性双面', '纸立方', '6901234560042', 85.00, 130.00, 229.00, 5, 30, 0, 0),
-(43, 'DAILY-007', '垃圾桶 12L', 14, '个', '不锈钢', '洁丽', '6901234560043', 25.00, 40.00, 69.00, 30, 300, 1, 1825),
-(44, 'DAILY-008', '收纳箱 60L', 14, '个', 'PP材质 带盖', '收纳家', '6901234560044', 28.00, 45.00, 79.00, 20, 200, 1, 1825),
-(45, 'CLOTH-010', '商务皮鞋', 16, '双', '头层牛皮', '绅士', '6901234560045', 180.00, 300.00, 599.00, 10, 100, 1, 1095),
-(46, 'ELEC-011', 'USB-C HUB 7合1', 7, '个', 'HDMI+USB3.0', 'TechLink', '6901234560046', 75.00, 130.00, 249.00, 15, 150, 1, 1095),
-(47, 'FOOD-011', '红枣 1kg', 9, '袋', '新疆和田', '健康果园', '6901234560047', 28.00, 45.00, 79.00, 40, 400, 1, 365),
-(48, 'OFF-008', '文件夹 A4 20个装', 12, '包', 'PP材质', '纸立方', '6901234560048', 15.00, 25.00, 39.00, 40, 400, 0, 0),
-(49, 'DAILY-009', '雨伞 折叠', 14, '把', '自动开合', '晴雨', '6901234560049', 18.00, 30.00, 55.00, 30, 300, 1, 1095),
-(50, 'CLOTH-011', '棒球帽', 18, '顶', '纯棉 可调节', '速跑', '6901234560050', 15.00, 25.00, 49.00, 30, 300, 1, 1095);
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (38, 'ELEC-009', '移动电源 20000mAh', 6, '个', '22.5W快充', 'PowerUp', '6901234560038', 65.00, 110.00, 199.00, 20, 200, 1, 730)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (39, 'ELEC-010', '蓝牙音箱 便携', 8, '台', 'IPX7防水', 'SoundMax', '6901234560039', 75.00, 130.00, 249.00, 15, 150, 1, 730)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (40, 'FOOD-009', '橄榄油 1L', 11, '瓶', '特级初榨', '橄榄园', '6901234560040', 45.00, 70.00, 119.00, 30, 300, 1, 540)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (41, 'FOOD-010', '蜂蜜 500g', 11, '瓶', '洋槐蜜', '甜蜜坊', '6901234560041', 22.00, 35.00, 59.00, 30, 300, 1, 730)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (42, 'OFF-007', '白板 120*90cm', 13, '块', '磁性双面', '纸立方', '6901234560042', 85.00, 130.00, 229.00, 5, 30, 0, 0)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (43, 'DAILY-007', '垃圾桶 12L', 14, '个', '不锈钢', '洁丽', '6901234560043', 25.00, 40.00, 69.00, 30, 300, 1, 1825)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (44, 'DAILY-008', '收纳箱 60L', 14, '个', 'PP材质 带盖', '收纳家', '6901234560044', 28.00, 45.00, 79.00, 20, 200, 1, 1825)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (45, 'CLOTH-010', '商务皮鞋', 16, '双', '头层牛皮', '绅士', '6901234560045', 180.00, 300.00, 599.00, 10, 100, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (46, 'ELEC-011', 'USB-C HUB 7合1', 7, '个', 'HDMI+USB3.0', 'TechLink', '6901234560046', 75.00, 130.00, 249.00, 15, 150, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (47, 'FOOD-011', '红枣 1kg', 9, '袋', '新疆和田', '健康果园', '6901234560047', 28.00, 45.00, 79.00, 40, 400, 1, 365)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (48, 'OFF-008', '文件夹 A4 20个装', 12, '包', 'PP材质', '纸立方', '6901234560048', 15.00, 25.00, 39.00, 40, 400, 0, 0)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (49, 'DAILY-009', '雨伞 折叠', 14, '把', '自动开合', '晴雨', '6901234560049', 18.00, 30.00, 55.00, 30, 300, 1, 1095)
+    INTO products (id, sku, name, category_id, unit, spec, brand, barcode, purchase_price, wholesale_price, retail_price, min_stock, max_stock, batch_managed, shelf_life_days) VALUES (50, 'CLOTH-011', '棒球帽', 18, '顶', '纯棉 可调节', '速跑', '6901234560050', 15.00, 25.00, 49.00, 30, 300, 1, 1095)
+SELECT 1 FROM dual;
 
 
 -- ============================================================
 -- 8. 供应商
 -- ============================================================
 
-INSERT INTO suppliers (id, name, code, contact_person, phone, email, address, bank_name, bank_account, tax_id, credit_level) VALUES
-(1, '深圳电子科技有限公司', 'SUP001', '王经理', '0755-88880001', 'wang@szetech.com', '深圳市南山区科技园', '招商银行', '6225881234560001', '9144030010000001', 'A'),
-(2, '杭州食品工贸有限公司', 'SUP002', '陈经理', '0571-88880002', 'chen@hzfood.com', '杭州市余杭区食品工业园', '工商银行', '6222021234560002', '9133010010000002', 'A'),
-(3, '广州服装批发有限公司', 'SUP003', '林经理', '020-88880003', 'lin@gzcloth.com', '广州市白云区服装城', '建设银行', '6227001234560003', '9144010010000003', 'B'),
-(4, '上海办公用品有限公司', 'SUP004', '赵经理', '021-88880004', 'zhao@shoffice.com', '上海市浦东新区', '农业银行', '6228481234560004', '9131010010000004', 'A'),
-(5, '北京智能设备有限公司', 'SUP005', '刘经理', '010-88880005', 'liu@bjsmart.com', '北京市海淀区中关村', '招商银行', '6225881234560005', '9111010010000005', 'B'),
-(6, '成都日用品有限公司', 'SUP006', '周经理', '028-88880006', 'zhou@cddaily.com', '成都市高新区', '工商银行', '6222021234560006', '9151010010000006', 'C'),
-(7, '武汉食品饮料有限公司', 'SUP007', '吴经理', '027-88880007', 'wu@whdrink.com', '武汉市东西湖区', '建设银行', '6227001234560007', '9142010010000007', 'B'),
-(8, '南京电器商贸有限公司', 'SUP008', '郑经理', '025-88880008', 'zheng@njelec.com', '南京市江宁区', '农业银行', '6228481234560008', '9132010010000008', 'A');
+INSERT ALL
+    INTO suppliers (id, name, code, contact_person, phone, email, address, bank_name, bank_account, tax_id, credit_level) VALUES (1, '深圳电子科技有限公司', 'SUP001', '王经理', '0755-88880001', 'wang@szetech.com', '深圳市南山区科技园', '招商银行', '6225881234560001', '9144030010000001', 'A')
+    INTO suppliers (id, name, code, contact_person, phone, email, address, bank_name, bank_account, tax_id, credit_level) VALUES (2, '杭州食品工贸有限公司', 'SUP002', '陈经理', '0571-88880002', 'chen@hzfood.com', '杭州市余杭区食品工业园', '工商银行', '6222021234560002', '9133010010000002', 'A')
+    INTO suppliers (id, name, code, contact_person, phone, email, address, bank_name, bank_account, tax_id, credit_level) VALUES (3, '广州服装批发有限公司', 'SUP003', '林经理', '020-88880003', 'lin@gzcloth.com', '广州市白云区服装城', '建设银行', '6227001234560003', '9144010010000003', 'B')
+    INTO suppliers (id, name, code, contact_person, phone, email, address, bank_name, bank_account, tax_id, credit_level) VALUES (4, '上海办公用品有限公司', 'SUP004', '赵经理', '021-88880004', 'zhao@shoffice.com', '上海市浦东新区', '农业银行', '6228481234560004', '9131010010000004', 'A')
+    INTO suppliers (id, name, code, contact_person, phone, email, address, bank_name, bank_account, tax_id, credit_level) VALUES (5, '北京智能设备有限公司', 'SUP005', '刘经理', '010-88880005', 'liu@bjsmart.com', '北京市海淀区中关村', '招商银行', '6225881234560005', '9111010010000005', 'B')
+    INTO suppliers (id, name, code, contact_person, phone, email, address, bank_name, bank_account, tax_id, credit_level) VALUES (6, '成都日用品有限公司', 'SUP006', '周经理', '028-88880006', 'zhou@cddaily.com', '成都市高新区', '工商银行', '6222021234560006', '9151010010000006', 'C')
+    INTO suppliers (id, name, code, contact_person, phone, email, address, bank_name, bank_account, tax_id, credit_level) VALUES (7, '武汉食品饮料有限公司', 'SUP007', '吴经理', '027-88880007', 'wu@whdrink.com', '武汉市东西湖区', '建设银行', '6227001234560007', '9142010010000007', 'B')
+    INTO suppliers (id, name, code, contact_person, phone, email, address, bank_name, bank_account, tax_id, credit_level) VALUES (8, '南京电器商贸有限公司', 'SUP008', '郑经理', '025-88880008', 'zheng@njelec.com', '南京市江宁区', '农业银行', '6228481234560008', '9132010010000008', 'A')
+SELECT 1 FROM dual;
 
 
 -- ============================================================
@@ -403,79 +514,117 @@ INSERT INTO suppliers (id, name, code, contact_person, phone, email, address, ba
 -- 每个商品关联2-3个供应商，其中一个为优选
 -- ============================================================
 
-INSERT INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES
-(1, 1, 82.00, 7, 10, 1), (1, 2, 5.00, 3, 100, 1), (1, 3, 33.00, 5, 20, 1),
-(1, 4, 175.00, 10, 5, 1), (1, 5, 43.00, 5, 10, 1), (1, 6, 1150.00, 14, 2, 1),
-(5, 7, 340.00, 7, 5, 1), (5, 8, 115.00, 7, 5, 1),
-(2, 9, 3.20, 3, 50, 1), (2, 10, 24.00, 5, 20, 1), (2, 11, 33.00, 7, 10, 1),
-(7, 12, 17.00, 3, 30, 1), (2, 13, 43.00, 5, 10, 1), (2, 14, 27.00, 5, 20, 1),
-(2, 15, 17.00, 2, 20, 1), (2, 16, 53.00, 3, 10, 1),
-(4, 17, 52.00, 5, 10, 1), (4, 18, 7.50, 3, 50, 1), (4, 19, 11.00, 3, 20, 1),
-(4, 20, 820.00, 10, 2, 1), (4, 21, 270.00, 7, 2, 1), (4, 22, 430.00, 10, 2, 1),
-(6, 23, 17.00, 5, 20, 1), (6, 24, 7.50, 3, 30, 1), (6, 25, 14.00, 5, 30, 1),
-(6, 26, 82.00, 7, 5, 1), (6, 27, 33.00, 5, 10, 1), (6, 28, 24.00, 5, 10, 1),
-(3, 29, 62.00, 7, 10, 1), (3, 30, 52.00, 7, 10, 1), (3, 31, 270.00, 10, 5, 1),
-(3, 32, 72.00, 7, 5, 1), (3, 33, 43.00, 5, 10, 1), (3, 34, 560.00, 14, 2, 1),
-(3, 35, 115.00, 7, 5, 1), (3, 36, 33.00, 5, 10, 1), (3, 37, 27.00, 5, 10, 1),
-(1, 38, 62.00, 5, 10, 1), (5, 39, 72.00, 7, 5, 1),
-(2, 40, 43.00, 5, 10, 1), (2, 41, 21.00, 5, 10, 1),
-(4, 42, 80.00, 7, 3, 1), (6, 43, 24.00, 5, 10, 1), (6, 44, 27.00, 5, 10, 1),
-(3, 45, 175.00, 10, 5, 1), (1, 46, 72.00, 5, 10, 1),
-(2, 47, 27.00, 5, 15, 1), (4, 48, 14.00, 3, 20, 1),
-(6, 49, 17.00, 5, 10, 1), (3, 50, 14.00, 5, 15, 1),
+INSERT ALL
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (1, 1, 82.00, 7, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (1, 2, 5.00, 3, 100, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (1, 3, 33.00, 5, 20, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (1, 4, 175.00, 10, 5, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (1, 5, 43.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (1, 6, 1150.00, 14, 2, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (5, 7, 340.00, 7, 5, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (5, 8, 115.00, 7, 5, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (2, 9, 3.20, 3, 50, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (2, 10, 24.00, 5, 20, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (2, 11, 33.00, 7, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (7, 12, 17.00, 3, 30, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (2, 13, 43.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (2, 14, 27.00, 5, 20, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (2, 15, 17.00, 2, 20, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (2, 16, 53.00, 3, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (4, 17, 52.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (4, 18, 7.50, 3, 50, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (4, 19, 11.00, 3, 20, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (4, 20, 820.00, 10, 2, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (4, 21, 270.00, 7, 2, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (4, 22, 430.00, 10, 2, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (6, 23, 17.00, 5, 20, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (6, 24, 7.50, 3, 30, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (6, 25, 14.00, 5, 30, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (6, 26, 82.00, 7, 5, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (6, 27, 33.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (6, 28, 24.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (3, 29, 62.00, 7, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (3, 30, 52.00, 7, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (3, 31, 270.00, 10, 5, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (3, 32, 72.00, 7, 5, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (3, 33, 43.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (3, 34, 560.00, 14, 2, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (3, 35, 115.00, 7, 5, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (3, 36, 33.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (3, 37, 27.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (1, 38, 62.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (5, 39, 72.00, 7, 5, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (2, 40, 43.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (2, 41, 21.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (4, 42, 80.00, 7, 3, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (6, 43, 24.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (6, 44, 27.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (3, 45, 175.00, 10, 5, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (1, 46, 72.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (2, 47, 27.00, 5, 15, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (4, 48, 14.00, 3, 20, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (6, 49, 17.00, 5, 10, 1)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (3, 50, 14.00, 5, 15, 1)
 -- 备用供应商
-(8, 1, 85.00, 10, 10, 0), (8, 4, 178.00, 14, 5, 0),
-(7, 9, 3.50, 5, 50, 0), (7, 10, 25.00, 7, 20, 0),
-(5, 20, 840.00, 14, 2, 0), (8, 21, 275.00, 10, 2, 0),
-(6, 29, 64.00, 10, 10, 0), (6, 32, 74.00, 10, 5, 0);
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (8, 1, 85.00, 10, 10, 0)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (8, 4, 178.00, 14, 5, 0)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (7, 9, 3.50, 5, 50, 0)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (7, 10, 25.00, 7, 20, 0)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (5, 20, 840.00, 14, 2, 0)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (8, 21, 275.00, 10, 2, 0)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (6, 29, 64.00, 10, 10, 0)
+    INTO supplier_products (supplier_id, product_id, supplier_price, lead_time_days, min_order_qty, is_preferred) VALUES (6, 32, 74.00, 10, 5, 0)
+SELECT 1 FROM dual;
 
 
 -- ============================================================
 -- 10. 仓库 (4个仓库)
 -- ============================================================
 
-INSERT INTO warehouses (id, name, code, address, manager_id, type, capacity_m3) VALUES
-(1, '华东主仓库', 'WH001', '上海市松江区物流园A区', 43, 'main', 5000.000),
-(2, '华南配送中心', 'WH002', '广州市番禺区物流园B区', 44, 'transit', 3500.000),
-(3, '退货处理仓', 'WH003', '上海市松江区物流园C区', 43, 'return_stats', 1000.000),
-(4, '冷链仓库', 'WH004', '上海市青浦区冷链园', 44, 'cold', 2000.000);
+INSERT ALL
+    INTO warehouses (id, name, code, address, manager_id, type, capacity_m3) VALUES (1, '华东主仓库', 'WH001', '上海市松江区物流园A区', 43, 'main', 5000.000)
+    INTO warehouses (id, name, code, address, manager_id, type, capacity_m3) VALUES (2, '华南配送中心', 'WH002', '广州市番禺区物流园B区', 44, 'transit', 3500.000)
+    INTO warehouses (id, name, code, address, manager_id, type, capacity_m3) VALUES (3, '退货处理仓', 'WH003', '上海市松江区物流园C区', 43, 'return_stats', 1000.000)
+    INTO warehouses (id, name, code, address, manager_id, type, capacity_m3) VALUES (4, '冷链仓库', 'WH004', '上海市青浦区冷链园', 44, 'cold', 2000.000)
+SELECT 1 FROM dual;
 
 
 -- ============================================================
 -- 11. 客户 (30个客户)
 -- ============================================================
 
-INSERT INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES
-(1, 'CUST001', '华东商贸有限公司', 'company', '张总', '021-66660001', 'zhang@easttrade.com', '上海市黄浦区', 500000.00, 30, 'gold'),
-(2, 'CUST002', '华南零售连锁有限公司', 'company', '李总', '020-66660002', 'li@southretail.com', '广州市天河区', 300000.00, 30, 'silver'),
-(3, 'CUST003', '北京科技发展有限公司', 'company', '王总', '010-66660003', 'wang@bjtechdev.com', '北京市朝阳区', 400000.00, 45, 'gold'),
-(4, 'CUST004', '成都生活超市有限公司', 'company', '陈总', '028-66660004', 'chen@cdlife.com', '成都市锦江区', 200000.00, 30, 'silver'),
-(5, 'CUST005', '武汉百货有限公司', 'company', '刘总', '027-66660005', 'liu@whgoods.com', '武汉市江汉区', 250000.00, 30, 'silver'),
-(6, 'CUST006', '南京进出口贸易有限公司', 'company', '赵总', '025-66660006', 'zhao@njtrade.com', '南京市鼓楼区', 600000.00, 60, 'platinum'),
-(7, 'CUST007', '杭州市民超市有限公司', 'company', '孙总', '0571-66660007', 'sun@hzsuper.com', '杭州市西湖区', 350000.00, 30, 'gold'),
-(8, 'CUST008', '深圳电子市场有限公司', 'company', '周总', '0755-66660008', 'zhou@szmarket.com', '深圳市福田区', 450000.00, 45, 'gold'),
-(9, 'CUST009', '重庆百货大楼有限公司', 'company', '吴总', '023-66660009', 'wu@cqstore.com', '重庆市渝中区', 300000.00, 30, 'silver'),
-(10, 'CUST010', '西安商贸有限公司', 'company', '郑总', '029-66660010', 'zheng@xatrade.com', '西安市雁塔区', 200000.00, 30, 'silver'),
-(11, 'CUST011', '青岛海产品有限公司', 'company', '冯总', '0532-66660011', 'feng@qdseafood.com', '青岛市市南区', 150000.00, 30, 'normal'),
-(12, 'CUST012', '大连港贸易有限公司', 'company', '蒋总', '0411-66660012', 'jiang@dlport.com', '大连市中山区', 350000.00, 45, 'silver'),
-(13, 'CUST013', '厦门贸易有限公司', 'company', '沈总', '0592-66660013', 'shen@xmtrade.com', '厦门市思明区', 250000.00, 30, 'silver'),
-(14, 'CUST014', '天津商贸有限公司', 'company', '韩总', '022-66660014', 'han@tjtrade.com', '天津市和平区', 300000.00, 30, 'silver'),
-(15, 'CUST015', '苏州工业园区商贸', 'company', '杨总', '0512-66660015', 'yang@sztrade.com', '苏州市工业园区', 400000.00, 45, 'gold'),
-(16, 'CUST016', '张三', 'individual', '张三', '13900000016', 'zhangsan@email.com', '上海市浦东新区', 10000.00, 15, 'normal'),
-(17, 'CUST017', '李四', 'individual', '李四', '13900000017', 'lisi@email.com', '北京市海淀区', 15000.00, 15, 'normal'),
-(18, 'CUST018', '王五', 'individual', '王五', '13900000018', 'wangwu@email.com', '广州市番禺区', 8000.00, 15, 'normal'),
-(19, 'CUST019', '市教育局', 'government', '赵科长', '021-88880019', 'zhao@edu.gov.cn', '上海市', 100000.00, 60, 'gold'),
-(20, 'CUST020', '市交通局', 'government', '钱科长', '010-88880020', 'qian@trans.gov.cn', '北京市', 150000.00, 60, 'gold'),
-(21, 'CUST021', '市公安局', 'government', '孙科长', '020-88880021', 'sun@police.gov.cn', '广州市', 120000.00, 60, 'gold'),
-(22, 'CUST022', '合肥百货有限公司', 'company', '朱总', '0551-66660022', 'zhu@hfgods.com', '合肥市庐阳区', 200000.00, 30, 'silver'),
-(23, 'CUST023', '长沙商贸有限公司', 'company', '秦总', '0731-66660023', 'qin@cstrade.com', '长沙市芙蓉区', 180000.00, 30, 'normal'),
-(24, 'CUST024', '昆明花卉商贸有限公司', 'company', '许总', '0871-66660024', 'xu@kmflower.com', '昆明市五华区', 150000.00, 30, 'normal'),
-(25, 'CUST025', '贵阳特产有限公司', 'company', '何总', '0851-66660025', 'he@gyspecial.com', '贵阳市南明区', 120000.00, 30, 'normal'),
-(26, 'CUST026', '拉萨旅游商贸有限公司', 'company', '吕总', '0891-66660026', 'lv@lstravel.com', '拉萨市城关区', 100000.00, 45, 'normal'),
-(27, 'CUST027', '乌鲁木齐商贸有限公司', 'company', '施总', '0991-66660027', 'shi@wltrade.com', '乌鲁木齐市天山区', 180000.00, 45, 'normal'),
-(28, 'CUST028', '南宁百货有限公司', 'company', '曹总', '0771-66660028', 'cao@nnstore.com', '南宁市青秀区', 200000.00, 30, 'silver'),
-(29, 'CUST029', '福州商贸有限公司', 'company', '严总', '0591-66660029', 'yan@fztrade.com', '福州市鼓楼区', 220000.00, 30, 'silver'),
-(30, 'CUST030', '海口贸易有限公司', 'company', '华总', '0898-66660030', 'hua@hktrade.com', '海口市龙华区', 160000.00, 30, 'normal');
+INSERT ALL
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (1, 'CUST001', '华东商贸有限公司', 'company', '张总', '021-66660001', 'zhang@easttrade.com', '上海市黄浦区', 500000.00, 30, 'gold')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (2, 'CUST002', '华南零售连锁有限公司', 'company', '李总', '020-66660002', 'li@southretail.com', '广州市天河区', 300000.00, 30, 'silver')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (3, 'CUST003', '北京科技发展有限公司', 'company', '王总', '010-66660003', 'wang@bjtechdev.com', '北京市朝阳区', 400000.00, 45, 'gold')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (4, 'CUST004', '成都生活超市有限公司', 'company', '陈总', '028-66660004', 'chen@cdlife.com', '成都市锦江区', 200000.00, 30, 'silver')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (5, 'CUST005', '武汉百货有限公司', 'company', '刘总', '027-66660005', 'liu@whgoods.com', '武汉市江汉区', 250000.00, 30, 'silver')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (6, 'CUST006', '南京进出口贸易有限公司', 'company', '赵总', '025-66660006', 'zhao@njtrade.com', '南京市鼓楼区', 600000.00, 60, 'platinum')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (7, 'CUST007', '杭州市民超市有限公司', 'company', '孙总', '0571-66660007', 'sun@hzsuper.com', '杭州市西湖区', 350000.00, 30, 'gold')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (8, 'CUST008', '深圳电子市场有限公司', 'company', '周总', '0755-66660008', 'zhou@szmarket.com', '深圳市福田区', 450000.00, 45, 'gold')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (9, 'CUST009', '重庆百货大楼有限公司', 'company', '吴总', '023-66660009', 'wu@cqstore.com', '重庆市渝中区', 300000.00, 30, 'silver')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (10, 'CUST010', '西安商贸有限公司', 'company', '郑总', '029-66660010', 'zheng@xatrade.com', '西安市雁塔区', 200000.00, 30, 'silver')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (11, 'CUST011', '青岛海产品有限公司', 'company', '冯总', '0532-66660011', 'feng@qdseafood.com', '青岛市市南区', 150000.00, 30, 'normal')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (12, 'CUST012', '大连港贸易有限公司', 'company', '蒋总', '0411-66660012', 'jiang@dlport.com', '大连市中山区', 350000.00, 45, 'silver')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (13, 'CUST013', '厦门贸易有限公司', 'company', '沈总', '0592-66660013', 'shen@xmtrade.com', '厦门市思明区', 250000.00, 30, 'silver')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (14, 'CUST014', '天津商贸有限公司', 'company', '韩总', '022-66660014', 'han@tjtrade.com', '天津市和平区', 300000.00, 30, 'silver')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (15, 'CUST015', '苏州工业园区商贸', 'company', '杨总', '0512-66660015', 'yang@sztrade.com', '苏州市工业园区', 400000.00, 45, 'gold')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (16, 'CUST016', '张三', 'individual', '张三', '13900000016', 'zhangsan@email.com', '上海市浦东新区', 10000.00, 15, 'normal')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (17, 'CUST017', '李四', 'individual', '李四', '13900000017', 'lisi@email.com', '北京市海淀区', 15000.00, 15, 'normal')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (18, 'CUST018', '王五', 'individual', '王五', '13900000018', 'wangwu@email.com', '广州市番禺区', 8000.00, 15, 'normal')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (19, 'CUST019', '市教育局', 'government', '赵科长', '021-88880019', 'zhao@edu.gov.cn', '上海市', 100000.00, 60, 'gold')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (20, 'CUST020', '市交通局', 'government', '钱科长', '010-88880020', 'qian@trans.gov.cn', '北京市', 150000.00, 60, 'gold')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (21, 'CUST021', '市公安局', 'government', '孙科长', '020-88880021', 'sun@police.gov.cn', '广州市', 120000.00, 60, 'gold')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (22, 'CUST022', '合肥百货有限公司', 'company', '朱总', '0551-66660022', 'zhu@hfgods.com', '合肥市庐阳区', 200000.00, 30, 'silver')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (23, 'CUST023', '长沙商贸有限公司', 'company', '秦总', '0731-66660023', 'qin@cstrade.com', '长沙市芙蓉区', 180000.00, 30, 'normal')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (24, 'CUST024', '昆明花卉商贸有限公司', 'company', '许总', '0871-66660024', 'xu@kmflower.com', '昆明市五华区', 150000.00, 30, 'normal')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (25, 'CUST025', '贵阳特产有限公司', 'company', '何总', '0851-66660025', 'he@gyspecial.com', '贵阳市南明区', 120000.00, 30, 'normal')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (26, 'CUST026', '拉萨旅游商贸有限公司', 'company', '吕总', '0891-66660026', 'lv@lstravel.com', '拉萨市城关区', 100000.00, 45, 'normal')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (27, 'CUST027', '乌鲁木齐商贸有限公司', 'company', '施总', '0991-66660027', 'shi@wltrade.com', '乌鲁木齐市天山区', 180000.00, 45, 'normal')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (28, 'CUST028', '南宁百货有限公司', 'company', '曹总', '0771-66660028', 'cao@nnstore.com', '南宁市青秀区', 200000.00, 30, 'silver')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (29, 'CUST029', '福州商贸有限公司', 'company', '严总', '0591-66660029', 'yan@fztrade.com', '福州市鼓楼区', 220000.00, 30, 'silver')
+    INTO customers (id, code, name, type, contact_person, phone, email, address, credit_limit, credit_days, leave_type) VALUES (30, 'CUST030', '海口贸易有限公司', 'company', '华总', '0898-66660030', 'hua@hktrade.com', '海口市龙华区', 160000.00, 30, 'normal')
+SELECT 1 FROM dual;
 
 
 -- ============================================================
@@ -484,29 +633,30 @@ INSERT INTO customers (id, code, name, type, contact_person, phone, email, addre
 -- 余额方向: debit=借方, credit=贷方
 -- ============================================================
 
-INSERT INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES
+INSERT ALL
 -- 资产类
-(1, '1001', NULL, '库存现金', 'asset', 'debit', 1, 0, NULL, NULL, 500000.00),
-(2, '1002', NULL, '银行存款', 'asset', 'debit', 0, 1, NULL, NULL, 0),
-(3, '100201', 2, '工商银行-基本户', 'asset', 'debit', 0, 1, '工商银行', '6222021001000001', 5000000.00),
-(4, '100202', 2, '建设银行-一般户', 'asset', 'debit', 0, 1, '建设银行', '6227002002000001', 2000000.00),
-(5, '100203', 2, '农业银行-纳税户', 'asset', 'debit', 0, 1, '农业银行', '6228483003000001', 1000000.00),
-(6, '1122', NULL, '应收账款', 'asset', 'debit', 0, 0, NULL, NULL, 0),
-(7, '112201', 6, '应收客户款', 'asset', 'debit', 0, 0, NULL, NULL, 1500000.00),
-(8, '1403', NULL, '库存商品', 'asset', 'debit', 0, 0, NULL, NULL, 3000000.00),
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (1, '1001', NULL, '库存现金', 'asset', 'debit', 1, 0, NULL, NULL, 500000.00)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (2, '1002', NULL, '银行存款', 'asset', 'debit', 0, 1, NULL, NULL, 0)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (3, '100201', 2, '工商银行-基本户', 'asset', 'debit', 0, 1, '工商银行', '6222021001000001', 5000000.00)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (4, '100202', 2, '建设银行-一般户', 'asset', 'debit', 0, 1, '建设银行', '6227002002000001', 2000000.00)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (5, '100203', 2, '农业银行-纳税户', 'asset', 'debit', 0, 1, '农业银行', '6228483003000001', 1000000.00)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (6, '1122', NULL, '应收账款', 'asset', 'debit', 0, 0, NULL, NULL, 0)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (7, '112201', 6, '应收客户款', 'asset', 'debit', 0, 0, NULL, NULL, 1500000.00)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (8, '1403', NULL, '库存商品', 'asset', 'debit', 0, 0, NULL, NULL, 3000000.00)
 -- 负债类
-(9, '2202', NULL, '应付账款', 'liability', 'credit', 0, 0, NULL, NULL, 0),
-(10, '220201', 9, '应付供应商款', 'liability', 'credit', 0, 0, NULL, NULL, 800000.00),
-(11, '220202', 9, '应付工资', 'liability', 'credit', 0, 0, NULL, NULL, 0),
-(12, '2221', NULL, '应交税费', 'liability', 'credit', 0, 0, NULL, NULL, 200000.00),
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (9, '2202', NULL, '应付账款', 'liability', 'credit', 0, 0, NULL, NULL, 0)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (10, '220201', 9, '应付供应商款', 'liability', 'credit', 0, 0, NULL, NULL, 800000.00)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (11, '220202', 9, '应付工资', 'liability', 'credit', 0, 0, NULL, NULL, 0)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (12, '2221', NULL, '应交税费', 'liability', 'credit', 0, 0, NULL, NULL, 200000.00)
 -- 权益类
-(13, '4001', NULL, '实收资本', 'equity', 'credit', 0, 0, NULL, NULL, 10000000.00),
-(14, '4103', NULL, '本年利润', 'equity', 'credit', 0, 0, NULL, NULL, 0),
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (13, '4001', NULL, '实收资本', 'equity', 'credit', 0, 0, NULL, NULL, 10000000.00)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (14, '4103', NULL, '本年利润', 'equity', 'credit', 0, 0, NULL, NULL, 0)
 -- 收入类
-(15, '6001', NULL, '主营业务收入', 'revenue', 'credit', 0, 0, NULL, NULL, 0),
-(16, '6051', NULL, '其他业务收入', 'revenue', 'credit', 0, 0, NULL, NULL, 0),
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (15, '6001', NULL, '主营业务收入', 'revenue', 'credit', 0, 0, NULL, NULL, 0)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (16, '6051', NULL, '其他业务收入', 'revenue', 'credit', 0, 0, NULL, NULL, 0)
 -- 成本费用类
-(17, '6401', NULL, '主营业务成本', 'cost', 'debit', 0, 0, NULL, NULL, 0),
-(18, '6601', NULL, '销售费用', 'expense', 'debit', 0, 0, NULL, NULL, 0),
-(19, '6602', NULL, '管理费用', 'expense', 'debit', 0, 0, NULL, NULL, 0),
-(20, '6603', NULL, '财务费用', 'expense', 'debit', 0, 0, NULL, NULL, 0);
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (17, '6401', NULL, '主营业务成本', 'cost', 'debit', 0, 0, NULL, NULL, 0)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (18, '6601', NULL, '销售费用', 'expense', 'debit', 0, 0, NULL, NULL, 0)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (19, '6602', NULL, '管理费用', 'expense', 'debit', 0, 0, NULL, NULL, 0)
+    INTO accounts (id, code, parent_id, name, account_type, balance_direction, is_cash, is_bank, bank_name, bank_account, current_balance) VALUES (20, '6603', NULL, '财务费用', 'expense', 'debit', 0, 0, NULL, NULL, 0)
+SELECT 1 FROM dual;

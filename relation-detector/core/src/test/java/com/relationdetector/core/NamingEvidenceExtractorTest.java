@@ -12,6 +12,8 @@ import com.relationdetector.contracts.Enums.EvidenceSourceType;
 import com.relationdetector.contracts.Enums.EvidenceType;
 import com.relationdetector.contracts.Enums.RelationSubType;
 import com.relationdetector.contracts.Enums.RelationType;
+import com.relationdetector.contracts.Enums.StructuredParseEventType;
+import com.relationdetector.contracts.metadata.MetadataColumnFact;
 import com.relationdetector.contracts.metadata.MetadataSnapshot;
 import com.relationdetector.contracts.model.ColumnRef;
 import com.relationdetector.contracts.model.Endpoint;
@@ -20,6 +22,7 @@ import com.relationdetector.contracts.model.NamingEvidenceCandidate;
 import com.relationdetector.contracts.model.RelationshipCandidate;
 import com.relationdetector.contracts.model.TableId;
 import com.relationdetector.contracts.parse.StructuredParseResult;
+import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.contracts.scoring.DefaultEvidenceScores;
 import com.relationdetector.core.parse.SqlDialect;
 import com.relationdetector.core.relation.NamingEvidenceExtractor;
@@ -109,6 +112,83 @@ class NamingEvidenceExtractorTest {
         assertTrue(candidate.evidence().stream()
                 .anyMatch(item -> item.type() == EvidenceType.NAMING_MATCH
                         && evidence.get(0).id().equals(item.attributes().get("evidenceRef"))));
+    }
+
+    @Test
+    void retainsStructuralRelationshipEvidenceAsNamingRawObservation() {
+        RelationshipCandidate candidate = sqlPredicate("orders", "customer_id", "customers", "id");
+        Evidence structuralEvidence = candidate.evidence().get(0);
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromRelationshipCandidates(List.of(candidate));
+
+        assertEquals(List.of(structuralEvidence), evidence.get(0).rawEvidence());
+    }
+
+    @Test
+    void retainsDdlSourceLineAndStatementForNamingRawObservations() {
+        List<StructuredSqlEvent> events = List.of(
+                new StructuredSqlEvent(StructuredParseEventType.DDL_COLUMN,
+                        "/workspace/relation-detector/ddl/customers.sql", 3,
+                        java.util.Map.of("table", "customers", "column", "id",
+                                "statement", "CREATE TABLE customers")),
+                new StructuredSqlEvent(StructuredParseEventType.DDL_COLUMN,
+                        "/workspace/relation-detector/ddl/orders.sql", 11,
+                        java.util.Map.of("table", "orders", "column", "customer_id",
+                                "statement", "CREATE TABLE orders")));
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromDdlEvents(events);
+
+        assertEquals(1, evidence.size());
+        Evidence ordersObservation = rawObservationForTable(evidence.get(0), "orders");
+        assertEquals(EvidenceSourceType.DDL_FILE, ordersObservation.sourceType());
+        assertEquals("relation-detector/ddl/orders.sql", ordersObservation.source());
+        assertEquals(11L, ordersObservation.attributes().get("line"));
+        assertEquals("CREATE TABLE orders", ordersObservation.attributes().get("statement"));
+    }
+
+    @Test
+    void retainsEveryDistinctDdlObservationForTheSameEndpoint() {
+        List<StructuredSqlEvent> events = List.of(
+                new StructuredSqlEvent(StructuredParseEventType.DDL_COLUMN,
+                        "schema.sql", 3,
+                        java.util.Map.of("table", "customers", "column", "id",
+                                "statement", "CREATE TABLE customers")),
+                new StructuredSqlEvent(StructuredParseEventType.DDL_COLUMN,
+                        "schema.sql", 11,
+                        java.util.Map.of("table", "orders", "column", "customer_id",
+                                "statement", "CREATE TABLE orders")),
+                new StructuredSqlEvent(StructuredParseEventType.DDL_COLUMN,
+                        "alter.sql", 21,
+                        java.util.Map.of("table", "orders", "column", "customer_id",
+                                "statement", "ALTER TABLE orders ADD customer_id")));
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromDdlEvents(events);
+
+        assertEquals(1, evidence.size());
+        assertEquals(3, evidence.get(0).rawEvidence().size(),
+                "Both DDL observations for orders.customer_id must remain auditable");
+        assertEquals(List.of(3L, 11L, 21L), evidence.get(0).rawEvidence().stream()
+                .map(item -> item.attributes().get("line"))
+                .sorted((left, right) -> Long.compare(((Number) left).longValue(), ((Number) right).longValue()))
+                .toList());
+    }
+
+    @Test
+    void retainsCatalogColumnIdentityForMetadataNamingRawObservations() {
+        MetadataSnapshot metadata = new MetadataSnapshot();
+        metadata.columnFacts().add(new MetadataColumnFact("sales", "orders", "customer_id",
+                "bigint", "bigint", false, null, "", null, 3));
+        metadata.columnFacts().add(new MetadataColumnFact("crm", "customers", "id",
+                "bigint", "bigint", false, null, "", null, 1));
+
+        List<NamingEvidenceCandidate> evidence = extractor.extractFromMetadata(metadata);
+
+        assertEquals(1, evidence.size());
+        Evidence ordersObservation = rawObservationForTable(evidence.get(0), "orders");
+        assertEquals(EvidenceSourceType.METADATA, ordersObservation.sourceType());
+        assertEquals("sales", ordersObservation.attributes().get("catalogSchema"));
+        assertEquals("orders", ordersObservation.attributes().get("catalogTable"));
+        assertEquals("customer_id", ordersObservation.attributes().get("catalogColumn"));
     }
 
     @Test
@@ -360,6 +440,14 @@ class NamingEvidenceExtractorTest {
 
     private ColumnRef column(String tableName, String columnName) {
         return ColumnRef.of(TableId.of(null, tableName), columnName);
+    }
+
+    private Evidence rawObservationForTable(NamingEvidenceCandidate candidate, String table) {
+        return candidate.rawEvidence().stream()
+                .filter(evidence -> table.equals(evidence.attributes().get("catalogTable"))
+                        || table.equals(evidence.attributes().get("table")))
+                .findFirst()
+                .orElseThrow();
     }
 
     private void assertEndpoint(String table, String column, Endpoint endpoint) {

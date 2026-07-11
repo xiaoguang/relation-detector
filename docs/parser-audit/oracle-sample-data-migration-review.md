@@ -47,31 +47,29 @@ The sample-data-only cross-parser comparison is:
 
 | Parser family | Fixture | SQL / DDL | Relation fingerprints | Lineage fingerprints | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 9 | 6 / 3 | 319 | 105 | 248 | 0 |
-| MySQL token-event root sample-data | 38 | 32 / 6 | 347 | 242 | 238 | 0 |
-| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 337 | 264 | 242 | 0 |
-| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 366 | 253 | 244 | 0 |
-| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 352 | 205 | 241 | 0 |
-| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 352 | 206 | 241 | 0 |
-| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 352 | 206 | 241 | 0 |
-| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 352 | 205 | 241 | 0 |
-| Oracle token-event root sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 343 | 266 | 251 | 0 |
-| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
-| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
-| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
-| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
-| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
+| common token-event sample-data | 9 | 6 / 3 | 315 | 109 | 250 | 0 |
+| MySQL token-event root sample-data | 38 | 32 / 6 | 352 | 286 | 248 | 0 |
+| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 330 | 280 | 244 | 0 |
+| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 361 | 279 | 248 | 0 |
+| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 347 | 205 | 246 | 0 |
+| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 347 | 206 | 246 | 0 |
+| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 347 | 206 | 246 | 0 |
+| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 347 | 205 | 246 | 0 |
+| Oracle token-event root sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 333 | 297 | 245 | 0 |
+| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
 
 The Oracle full-grammer sample-data lineage now covers the previously confirmed root token-event procedure lineage from `02-procedures/13-erp-deep-scenario-procedures.sql`, including sales fact rebuild, MRP planning, picking task generation and repair-part inventory issue mappings. The fix is in typed grammar / generated parse-tree visitor behavior plus one Oracle SQL asset correction from the invalid `(-rop.quantity)(10)` fragment to the Oracle unary expression `-rop.quantity`.
 
-Current source-set audit note: merged Oracle token-event and full-grammer counts now align on natural sample-data, but token-event is still narrower for nested scalar aggregate updates in `02-procedures/10-supplier-geo-procedures.sql`. In `sp_update_supplier_metrics`, full-grammer includes additional sources from `purchase_returns`, `purchase_return_items`, `product_batches`, and `inspection_reports` join/filter columns for `supplier_products.return_rate` and `supplier_products.quality_score`. This is a token-event source tracing gap hidden by the merged count table.
-
-Current provenance audit note: Oracle routine evidence can still serialize `sourceStatementId` / `sourceBlockId` with a trailing `)` for `sp_update_supplier_metrics)`. This does not change relation/lineage facts, but the source id should be canonicalized in a future provenance cleanup.
+Current audit note: Oracle token-event and all four full-grammer profiles align on the audited direct relation/lineage/naming counts. Token-event scalar aggregate updates include their selected aggregate sources and predicate/correlated control sources. Routine `sourceStatementId` / `sourceBlockId` values are canonicalized without the historical trailing `)`.
 
 ## Translation Method
 

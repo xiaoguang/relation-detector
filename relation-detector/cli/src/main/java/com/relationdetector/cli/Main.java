@@ -45,6 +45,15 @@ public final class Main {
                         Files.createDirectories(parent);
                     }
                 }
+                if (cli.directOutput != null) {
+                    if (cli.output == null) {
+                        throw new IllegalArgumentException("--direct-output requires --output for the derived result");
+                    }
+                    Path parent = cli.directOutput.toAbsolutePath().getParent();
+                    if (parent != null) {
+                        Files.createDirectories(parent);
+                    }
+                }
                 if (cli.minConfidence != null) {
                     config.minConfidence = cli.minConfidence;
                 }
@@ -58,17 +67,28 @@ public final class Main {
                     config.databaseVersion = cli.databaseVersion;
                     config.databaseVersionSource = "CONFIG";
                 }
+                if (cli.parallelism != null) {
+                    config.executionParallelism = cli.parallelism;
+                }
                 AdaptorRegistry registry = AdaptorRegistry.load(cli.pluginDir);
                 DatabaseAdaptor adaptor = registry.resolve(config.databaseType, config.adaptorId);
                 var result = new ScanEngine().scan(config, adaptor);
+                if (cli.directOutput != null && config.outputFormat != OutputFormat.JSON) {
+                    throw new IllegalArgumentException("--direct-output is only available with JSON output");
+                }
+                JsonResultWriter jsonWriter = new JsonResultWriter();
                 String rendered = config.outputFormat == OutputFormat.TABLE
                         ? new TableResultWriter().write(result)
-                        : new JsonResultWriter().write(result, config.includeEvidence, config.includeWarnings,
+                        : jsonWriter.write(result, config.includeEvidence, config.includeWarnings,
                                 config.includeObservationCounts);
                 if (cli.output == null) {
                     System.out.print(rendered);
                 } else {
                     Files.writeString(cli.output, rendered);
+                }
+                if (cli.directOutput != null) {
+                    Files.writeString(cli.directOutput, jsonWriter.writeDirect(result, config.includeEvidence,
+                            config.includeWarnings, config.includeObservationCounts));
                 }
                 return ErrorCode.OK.code();
             } catch (IllegalArgumentException ex) {
@@ -94,11 +114,13 @@ public final class Main {
                       --config <file>       YAML configuration file. Required.
                       --format <format>     json or table. Overrides output.format.
                       --output <file>       Write output to file. Defaults to stdout.
+                      --direct-output <file> Write a direct-only JSON view beside --output.
                       --plugin-dir <dir>    Directory containing external adaptor jars.
                       --min-confidence <n>  Override output.minConfidence.
                       --parser-mode <mode>   auto, full-grammer, or token-event.
                       --grammar-profile <id> Override parser.grammarProfile.
                       --database-version <v> Override parser.databaseVersion.
+                      --parallelism <n>       Parse independent file/object/log statements with up to n workers.
                       --help                Show this help.
                     """;
         }
@@ -109,11 +131,13 @@ public final class Main {
         Path config;
         OutputFormat format;
         Path output;
+        Path directOutput;
         Path pluginDir;
         Double minConfidence;
         String parserMode;
         String grammarProfile;
         String databaseVersion;
+        Integer parallelism;
 
         static CliArguments parse(String[] args) {
             CliArguments parsed = new CliArguments();
@@ -128,11 +152,13 @@ public final class Main {
                     case "--config" -> parsed.config = Path.of(requireValue(args, index++, arg));
                     case "--format" -> parsed.format = OutputFormat.valueOf(requireValue(args, index++, arg).toUpperCase());
                     case "--output" -> parsed.output = Path.of(requireValue(args, index++, arg));
+                    case "--direct-output" -> parsed.directOutput = Path.of(requireValue(args, index++, arg));
                     case "--plugin-dir" -> parsed.pluginDir = Path.of(requireValue(args, index++, arg));
                     case "--min-confidence" -> parsed.minConfidence = Double.parseDouble(requireValue(args, index++, arg));
                     case "--parser-mode" -> parsed.parserMode = normalizeParserMode(requireValue(args, index++, arg));
                     case "--grammar-profile" -> parsed.grammarProfile = requireValue(args, index++, arg);
                     case "--database-version" -> parsed.databaseVersion = requireValue(args, index++, arg);
+                    case "--parallelism" -> parsed.parallelism = positiveInt(requireValue(args, index++, arg), arg);
                     default -> throw new IllegalArgumentException("Unknown argument: " + arg);
                 }
             }
@@ -146,6 +172,14 @@ public final class Main {
                 default -> throw new IllegalArgumentException(
                         "--parser-mode must be one of auto, full-grammer, token-event");
             };
+        }
+
+        private static int positiveInt(String value, String option) {
+            int parsed = Integer.parseInt(value);
+            if (parsed <= 0) {
+                throw new IllegalArgumentException(option + " must be positive");
+            }
+            return parsed;
         }
 
         private static String requireValue(String[] args, int index, String option) {

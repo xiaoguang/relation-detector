@@ -25,17 +25,17 @@ MySQL 5.7 与 8.0 的 sample-data 不再按“数量必须相等”验收。5.7 
 
 | Parser | Fixtures | SQL / DDL | Rel | Lin | Name | Diag | DerRel | DerLin | DerName |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| MySQL full-grammer v5_7 | 38 | 32 / 6 | 337 | 264 | 937 | 0 | 1043 | 60 | 695 |
-| MySQL full-grammer v8_0 | 38 | 32 / 6 | 366 | 253 | 990 | 0 | 1077 | 59 | 746 |
+| MySQL full-grammer v5_7 | 38 | 32 / 6 | 330 | 281 | 971 | 0 | 999 | 70 | 727 |
+| MySQL full-grammer v8_0 | 38 | 32 / 6 | 361 | 281 | 1019 | 0 | 1077 | 59 | 771 |
 
 集合去重后：
 
 | Set | v5_7 | v8_0 | Intersection | v5_7 only | v8_0 only |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| direct relationships | 337 | 366 | 329 | 8 | 37 |
-| direct lineage source-target pairs | 351 | 367 | 332 | 19 | 35 |
-| top-level namingEvidence total | 937 | 990 | 919 | 18 | 71 |
-| top-level namingEvidence direct only | 242 | 244 | 238 | 4 | 6 |
+| direct relationships | 330 | 361 | 328 | 2 | 33 |
+| direct lineage source-target pairs | 381 | 410 | 365 | 16 | 45 |
+| top-level namingEvidence total | 971 | 1019 | 971 | 0 | 48 |
+| top-level namingEvidence direct only | 244 | 248 | 244 | 0 | 4 |
 
 ## 本轮确认并修复的 false positive
 
@@ -56,33 +56,29 @@ SQL 上下文在 `relation-detector/sample-data/mysql/8.0/04-queries/09-real-wor
 
 ## v5_7-only 差异判断
 
-v5_7-only direct naming evidence 只有 4 条：
+v5_7 direct naming evidence is now a complete subset of v8_0: there are no v5_7-only direct naming facts. The two v5_7-only direct relationships are natural compatibility-query equalities:
 
-| Evidence | 判断 |
+| Relationship | 判断 |
 | --- | --- |
-| `boms.component_product_id -> products.id` | `EXPECTED_SQL_ASSET_DELTA`：5.7 兼容资产使用 `component_product_id`。 |
-| `boms.product_id -> products.id` | `EXPECTED_SQL_ASSET_DELTA`：5.7 兼容资产保留直接 product 维度命名。 |
-| `mrp_run_items.mrp_run_id -> mrp_runs.id` | `EXPECTED_SQL_ASSET_DELTA`：5.7 改写使用完整 `mrp_run_id`。 |
-| `mrp_runs.production_plan_id -> production_plans.id` | `EXPECTED_SQL_ASSET_DELTA`：5.7 改写使用完整 `production_plan_id`。 |
+| `employee_roles.role_id -> role_permissions.role_id` | `EXPECTED_SQL_ASSET_DELTA`: the 5.7 compatibility query joins the two role-assignment tables directly. |
+| `product_batches.product_id -> purchase_order_items.product_id` | `EXPECTED_SQL_ASSET_DELTA`: the 5.7 return/batch rewrite uses this direct typed equality instead of the 8.0 statement shape. |
 
-v5_7-only lineage 主要来自 5.7 兼容过程中的自然改写，例如薪资生成 voucher、销售提成更新、退货凭证写入和库存预留自更新。这些都能从 5.7 SQL 的 `INSERT ... SELECT` / `UPDATE` 结构解释，当前不判定为 parser gap。
+The 16 v5_7-only lineage source-target pairs come from natural 5.7 compatibility processes: payroll voucher creation, return voucher creation, commission period projection, and locked-inventory updates. Each is backed by a typed `INSERT ... SELECT` or `UPDATE` expression and is classified as `EXPECTED_SQL_ASSET_DELTA`, not a parser gap.
 
 ## v8_0-only 差异判断
 
-v8_0-only direct naming evidence 只有 6 条：
+v8_0-only direct naming evidence has 4 entries:
 
 | Evidence | 判断 |
 | --- | --- |
-| `employees.manager_id -> employees.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖员工自引用管理关系。 |
-| `production_operations.predecessor_operation_id -> production_operations.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖工序前置关系。 |
 | `purchase_receipt_items.order_item_id -> purchase_order_items.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖采购收货明细到订单明细。 |
 | `serial_numbers.purchase_receipt_id -> purchase_receipts.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖序列号入库来源。 |
 | `serial_numbers.return_id -> sales_returns.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖序列号退货来源。 |
 | `serial_numbers.sales_order_id -> sales_orders.id` | `EXPECTED_SQL_ASSET_DELTA`：8.0 资产覆盖序列号销售来源。 |
 
-v8_0-only relationship 中仍有 37 条，其中多为自然查询/过程中的弱 `CO_OCCURRENCE`，例如审批节点 level/workflow、账龄 bucket、polymorphic `reference_id` / `party_id`、生产 BOM parent/child、供应商质量和退货率分析。这些不是 `NAMING_MATCH`，不会单独提升为命名事实；当前作为 SQL predicate 弱证据保留。
+v8_0-only relationship has 33 entries. They are primarily natural-query/routine `CO_OCCURRENCE` facts from 8.0 statement shapes, including polymorphic `reference_id` / `party_id`, BOM parent/child, workflow, supplier-quality, and return analysis. They are not promoted to `NAMING_MATCH` without a matching top-level naming-evidence fact.
 
-v8_0-only lineage source-target pair 有 35 条，集中在供应商质量/采购表现更新、序列号/退货来源和若干 8.0 自然 SQL 派生写入：
+v8_0-only lineage source-target pair has 45 entries, concentrated in supplier-quality/procurement-performance updates, serial/return provenance, and natural 8.0 derived writes:
 
 - `inspection_reports.inspection_result -> supplier_products.quality_score`
 - `purchase_order_items` / `purchase_orders` / `supplier_products` / `purchase_returns` 聚合到 `supplier_products.return_rate`

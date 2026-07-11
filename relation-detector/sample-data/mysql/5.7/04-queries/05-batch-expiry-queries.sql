@@ -54,27 +54,27 @@ WHERE po.status <> 'cancelled'
 GROUP BY po.id, s.id, s.name, poi.product_id;
 
 SELECT
-    sf.fiscal_month,
+    fc.fiscal_month,
     r.sales_region,
     cat.level1_name AS category_name,
     SUM(sf.sales_amount) AS sales_amount,
     COUNT(DISTINCT sf.order_id) AS order_count,
     SUM(sf.quantity_sold) AS quantity_sold
 FROM sales_fact sf
-JOIN region_dim r ON sf.region_id = r.id
-JOIN category_dim cat ON sf.category_id = cat.id
+JOIN region_dim r ON sf.region_dim_id = r.id
+JOIN category_dim cat ON sf.category_dim_id = cat.id
 JOIN fiscal_calendar fc ON sf.fiscal_date = fc.calendar_date
 WHERE fc.current_fiscal_year = 1
-GROUP BY sf.fiscal_month, r.sales_region, cat.level1_name;
+GROUP BY fc.fiscal_month, r.sales_region, cat.level1_name;
 
 SELECT
     parent.id AS parent_product_id,
     child.id AS component_product_id,
     b.quantity AS component_quantity
 FROM boms b
-JOIN products parent ON b.product_id = parent.id
-JOIN products child ON b.component_product_id = child.id
-WHERE b.is_active = 1;
+JOIN products parent ON b.parent_product_id = parent.id
+JOIN products child ON b.child_product_id = child.id
+WHERE b.status = 'active';
 
 SELECT
     pb.product_id,

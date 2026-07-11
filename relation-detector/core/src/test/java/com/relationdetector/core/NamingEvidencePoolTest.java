@@ -37,6 +37,24 @@ class NamingEvidencePoolTest {
         assertEquals(2, merged.get(0).evidence().attributes().get("count"));
     }
 
+    @Test
+    void foldsIdenticalRawObservationsButRetainsOccurrenceCount() {
+        NamingEvidencePool pool = new NamingEvidencePool();
+        Endpoint source = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id"));
+        Endpoint target = Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id"));
+        NamingEvidenceCandidate duplicate = new NamingEvidenceCandidate(source, target,
+                evidence("same statement"), "TABLE_ID", true);
+
+        pool.add(duplicate);
+        pool.add(duplicate);
+
+        NamingEvidenceCandidate merged = pool.merged().get(0);
+        assertEquals(1, merged.rawEvidence().size(),
+                "Parser duplicates at the same source location should not look like distinct observations");
+        assertEquals(2, merged.rawEvidence().get(0).attributes().get("occurrenceCount"));
+        assertEquals(2, merged.evidence().attributes().get("count"));
+    }
+
     private Evidence evidence(String detail) {
         return new Evidence(
                 EvidenceType.NAMING_MATCH,

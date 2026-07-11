@@ -33,6 +33,7 @@ Oracle 当前处于“adaptor + token-event baseline + `INCOMPLETE_VERSIONED` fu
 - full-grammer module：`oracle/12c`、`oracle/19c`、`oracle/21c`、`oracle/26ai` 通过 `FullGrammerDialectModule` 注册；每个版本使用自己的 split lexer/parser grammar，并带有首批官方版本边界差异，运行属性 `grammarCoverage=INCOMPLETE_VERSIONED`。
 - sample-data：`sample-data/oracle/12c|19c|21c|26ai`，每版 38 个 SQL 文件。
 - correctness golden：root token-event 保留会产生 relationship / lineage / diagnostics、或承载 Oracle DDL / 版本边界语法的 sample-data fixture；四个 versioned full-grammer 目录覆盖对应 `sample-data/oracle/<version>` 的保留 fixture，并保留 profile smoke / version-only fixture。
+- live database DDL：`OracleDatabaseDdlCollector` 通过 `ALL_TABLES` 与 `DBMS_METADATA.GET_DDL` 读取 table DDL；`OracleDataProfiler` 通过公共 `JdbcDataProfilerTemplate` 执行 bounded containment query。Oracle metadata / object collectors 仍是保守空实现。
 
 已实现的官方版本边界：
 
@@ -50,6 +51,7 @@ Oracle 当前处于“adaptor + token-event baseline + `INCOMPLETE_VERSIONED` fu
 - Oracle full-grammer 不再持有或调用 Oracle token-event parser delegate；versioned sample-data golden 通过各版本 generated parser 直接验收。
 - Oracle sample-data 是从 ERP 样例迁移而来，已进入 parser correctness golden；Oracle SQL 资产卫生测试会拒绝 PostgreSQL/MySQL 残留语法，例如 `LANGUAGE plpgsql`、`::TYPE`、`WITH RECURSIVE`、`LIMIT`、`string_agg`、`jsonb_*`、`->>`、`AUTO_INCREMENT`、`ENGINE=` 和 `ON DUPLICATE KEY UPDATE`。真实 Oracle 实例 runtime smoke 仍待补充。
 - Oracle full-grammer 的版本 `.g4` 不再声明 PostgreSQL/MySQL 结构性语法：`LIMIT`、`UNLOGGED`、`CONCURRENTLY`、PostgreSQL `::` cast / JSON arrow、`TABLESAMPLE`、`WITH ORDINALITY`、`DO NOTHING` 和 materialized CTE 等都会在 versioned full-grammer 层失败，而不是被宽松 statement fallback 吞掉。
+- Oracle natural assets 已统一为跨版本可表达的 `GENERATED ALWAYS AS (...) VIRTUAL`；布尔比较生成列使用 `CASE WHEN ... THEN 1 ELSE 0 END`。无参 function/procedure definition 不再写空 `()`，四个 versioned grammar 对这种空参数括号产生 parse failure/unsupported diagnostic。未经官方来源确认的 `STORED` generated-column syntax 不进入 natural assets 或版本正向 fixture。
 
 这些缺口记录在 `docs/parser-audit/oracle-sample-data-migration-review.md`，属于 `PARSER_GAP_BACKLOG` / `OFFICIAL_GRAMMAR_BACKLOG` / `RUNTIME_SMOKE_PENDING`，不是需要业务口径审核的 `REVIEW_NEEDED`。
 
@@ -183,25 +185,25 @@ Oracle correctness 当前统计：
 
 | Parser family | Fixture | SQL / DDL | Relationship fingerprints | Lineage fingerprints | NAMING_MATCH | Diagnostics |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| common token-event sample-data | 9 | 6 / 3 | 319 | 105 | 248 | 0 |
-| MySQL token-event root sample-data | 38 | 32 / 6 | 347 | 242 | 238 | 0 |
-| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 337 | 264 | 242 | 0 |
-| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 366 | 253 | 244 | 0 |
-| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 352 | 205 | 241 | 0 |
-| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 352 | 206 | 241 | 0 |
-| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 352 | 206 | 241 | 0 |
-| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 352 | 205 | 241 | 0 |
-| Oracle token-event root sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 358 | 217 | 239 | 0 |
-| SQL Server token-event root sample-data | 38 | 32 / 6 | 343 | 266 | 251 | 0 |
-| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
-| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
-| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
-| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
-| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 344 | 266 | 251 | 0 |
+| common token-event sample-data | 9 | 6 / 3 | 315 | 109 | 250 | 0 |
+| MySQL token-event root sample-data | 38 | 32 / 6 | 352 | 286 | 248 | 0 |
+| MySQL full-grammer v5_7 sample-data | 38 | 32 / 6 | 330 | 281 | 244 | 0 |
+| MySQL full-grammer v8_0 sample-data | 38 | 32 / 6 | 361 | 281 | 248 | 0 |
+| PostgreSQL token-event root sample-data | 38 | 32 / 6 | 347 | 205 | 246 | 0 |
+| PostgreSQL full-grammer v16 sample-data | 38 | 32 / 6 | 347 | 206 | 246 | 0 |
+| PostgreSQL full-grammer v17 sample-data | 38 | 32 / 6 | 347 | 206 | 246 | 0 |
+| PostgreSQL full-grammer v18 sample-data | 38 | 32 / 6 | 347 | 205 | 246 | 0 |
+| Oracle token-event root sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| Oracle full-grammer v12c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| Oracle full-grammer v19c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| Oracle full-grammer v21c sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| Oracle full-grammer v26ai sample-data | 38 | 32 / 6 | 365 | 217 | 248 | 0 |
+| SQL Server token-event root sample-data | 38 | 32 / 6 | 333 | 297 | 245 | 0 |
+| SQL Server full-grammer v2016 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammer v2017 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammer v2019 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammer v2022 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
+| SQL Server full-grammer v2025 sample-data | 38 | 32 / 6 | 338 | 306 | 245 | 0 |
 
 ## 后续收口
 

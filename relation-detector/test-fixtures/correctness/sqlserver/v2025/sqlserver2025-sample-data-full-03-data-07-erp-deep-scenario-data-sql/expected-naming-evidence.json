@@ -1,14 +1,16 @@
 {
   "fingerprints": [
+    "naming:dbo.budget_items.subject_id->dbo.account_subjects.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.cogs_entries.sales_order_item_id->dbo.sales_order_items.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.inventory.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.payments.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.product_categories.parent_id->dbo.product_categories.id:SELF_ROLE_ID:NAMING_MATCH",
-    "naming:dbo.project_costs.department_id->dbo.departments.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.sales_order_items.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
     "naming:dbo.sales_order_items.product_id->dbo.products.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.sales_orders.customer_id->dbo.customers.id:TABLE_ID:NAMING_MATCH",
     "naming:dbo.sales_orders.warehouse_id->dbo.warehouses.id:TABLE_ID:NAMING_MATCH",
-    "naming:dbo.sales_returns.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH"
+    "naming:dbo.sales_returns.order_id->dbo.sales_orders.id:ID_SUFFIX_TO_ID:NAMING_MATCH",
+    "naming:dbo.voucher_items.account_id->dbo.accounts.id:TABLE_ID:NAMING_MATCH",
+    "naming:dbo.voucher_items.voucher_id->dbo.vouchers.id:TABLE_ID:NAMING_MATCH"
   ]
 }

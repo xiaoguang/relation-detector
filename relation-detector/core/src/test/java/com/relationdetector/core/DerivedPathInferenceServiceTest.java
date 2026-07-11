@@ -241,6 +241,57 @@ class DerivedPathInferenceServiceTest {
     }
 
     @Test
+    void relationshipPathUsesTopLevelNamingPoolEvenWhenRelationshipHasNoNamingEvidence() {
+        ScanConfig config = enabledConfig();
+        Endpoint salesFactCategoryId = col("dbo", "sales_fact", "category_dim_id");
+        Endpoint categoryDimId = col("dbo", "category_dim", "id");
+        Endpoint categoryDimSourceId = col("dbo", "category_dim", "source_category_id");
+        Endpoint productCategoriesId = col("dbo", "product_categories", "id");
+        NamingEvidencePool namingPool = new NamingEvidencePool();
+        namingPool.add(naming(salesFactCategoryId, categoryDimId));
+
+        DerivedPathInferenceResult result = service.infer(
+                List.of(
+                        fk(salesFactCategoryId, categoryDimId),
+                        fk(categoryDimSourceId, productCategoriesId)),
+                List.of(),
+                namingPool.merged(),
+                config);
+
+        NamingEvidenceCandidate derivedNaming = result.derivedNamingEvidence().stream()
+                .filter(candidate -> candidate.source().equals(salesFactCategoryId)
+                        && candidate.target().equals(productCategoriesId))
+                .findFirst()
+                .orElseThrow();
+        assertEquals("TRANSITIVE_NAMING_PATH", derivedNaming.rule());
+        assertTrue(result.derivedRelationships().stream()
+                .filter(candidate -> candidate.source().equals(salesFactCategoryId)
+                        && candidate.target().equals(productCategoriesId))
+                .flatMap(candidate -> candidate.evidence().stream())
+                .anyMatch(evidence -> derivedNaming.id().equals(evidence.attributes().get("evidenceRef"))));
+    }
+
+    @Test
+    void relationshipEmbeddedNamingEvidenceCannotReplaceTopLevelNamingPool() {
+        ScanConfig config = enabledConfig();
+        Endpoint orderItemOrderId = col("order_items", "order_id");
+        Endpoint ordersId = col("orders", "id");
+        Endpoint ordersCustomerId = col("orders", "customer_id");
+        Endpoint customersId = col("customers", "id");
+        RelationshipCandidate first = fk(orderItemOrderId, ordersId);
+        first.evidence().add(naming(orderItemOrderId, ordersId).evidence());
+
+        DerivedPathInferenceResult result = service.infer(
+                List.of(first, fk(ordersCustomerId, customersId)),
+                List.of(),
+                List.of(),
+                config);
+
+        assertTrue(result.derivedNamingEvidence().isEmpty(),
+                "Relationship-local NAMING_MATCH must not bypass the top-level naming evidence pool");
+    }
+
+    @Test
     void relationshipCanReferenceDerivedNamingEvidenceFromTopLevelPool() {
         ScanConfig config = enabledConfig();
         Endpoint a = col("a", "r");
@@ -289,6 +340,29 @@ class DerivedPathInferenceServiceTest {
         assertEquals(1, result.derivedDataLineages().size());
         assertEquals(a, result.derivedDataLineages().get(0).source());
         assertEquals(c, result.derivedDataLineages().get(0).target());
+    }
+
+    @Test
+    void lineageVariantsMergeIntoOneCanonicalDerivedPath() {
+        ScanConfig config = enabledConfig();
+        Endpoint a = col("a", "amount");
+        Endpoint b = col("b", "amount");
+        Endpoint c = col("c", "amount");
+
+        DerivedPathInferenceResult result = service.infer(List.of(), List.of(
+                lineage(a, b, LineageFlowKind.VALUE, LineageTransformType.DIRECT,
+                        Map.of("mappingKind", "INSERT_SELECT")),
+                lineage(a, b, LineageFlowKind.VALUE, LineageTransformType.COALESCE,
+                        Map.of("mappingKind", "INSERT_SELECT")),
+                lineage(b, c, LineageFlowKind.VALUE)
+        ), List.of(), config);
+
+        List<DerivedPathCandidate> aToC = result.derivedDataLineages().stream()
+                .filter(candidate -> candidate.source().equals(a) && candidate.target().equals(c))
+                .toList();
+        assertEquals(1, aToC.size(), "One canonical endpoint path should produce one derived fact");
+        assertEquals(2, aToC.get(0).rawEvidence().size(),
+                "Distinct edge variants should remain available as raw path observations");
     }
 
     @Test

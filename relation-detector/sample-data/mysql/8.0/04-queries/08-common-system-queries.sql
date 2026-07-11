@@ -412,8 +412,8 @@ SELECT
 FROM purchase_orders po
 JOIN suppliers s ON po.supplier_id = s.id
 LEFT JOIN purchase_receipts pr ON po.id = pr.order_id
-LEFT JOIN invoices inv ON po.id = inv.reference_id AND inv.reference_type = 'purchase_order'
 LEFT JOIN three_way_matching twm ON po.id = twm.purchase_order_id
+LEFT JOIN invoices inv ON twm.invoice_id = inv.id
 WHERE po.order_date >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
 ORDER BY po.order_date DESC
 LIMIT 50;

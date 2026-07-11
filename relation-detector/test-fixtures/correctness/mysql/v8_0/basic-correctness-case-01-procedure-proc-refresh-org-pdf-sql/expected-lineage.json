@@ -1,7 +1,8 @@
 {
   "fingerprints": [
+    "CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight",
     "CONTROL:CASE_WHEN:jsh_organization.org_no,jsh_organization.tenant_id,jsh_organization.p_tenant_id,jsh_organization.id,jsh_organization.parent_id->jsh_temp_org_pdf.weight",
-    "VALUE:CASE_WHEN:jsh_organization.org_no,jsh_organization.org_abr->jsh_temp_org_pdf.weight",
+    "CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight",
     "VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end",
     "VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id",
     "VALUE:DIRECT:jsh_organization.org_abr->jsh_temp_org_pdf.remark"

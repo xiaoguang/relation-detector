@@ -1,0 +1,5 @@
+{
+  "fingerprints": [
+    "naming:documents.account_id->accounts.id:TABLE_ID:NAMING_MATCH"
+  ]
+}

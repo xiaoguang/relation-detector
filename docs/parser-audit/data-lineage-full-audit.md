@@ -8,11 +8,11 @@ The report lists every correctness fixture and explains whether Data Lineage v1 
 
 | Classification | Count |
 | --- | ---: |
-| TOTAL | 1197 |
-| EXISTING_GOLD | 429 |
+| TOTAL | 1198 |
+| EXISTING_GOLD | 405 |
 | SUGGESTED_GOLD | 0 |
 | PENDING_REVIEW | 0 |
-| NOT_APPLICABLE | 768 |
+| NOT_APPLICABLE | 793 |
 
 ## `common-sample-data-portable-ddl`
 
@@ -676,7 +676,8 @@ WHERE o.total_amount IN (
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:customer_scores.score,customer_scores.base_score->customer_scores.score_bucket`
+- `CONTROL:CASE_WHEN:customer_scores.score->customer_scores.score_bucket`
+- `VALUE:CASE_WHEN:customer_scores.score,customer_scores.base_score->customer_scores.score_bucket`
 
 **Extractor Candidate Fingerprints**
 
@@ -3382,6 +3383,9 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.change_amount`
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
 - `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
 - `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
 - `VALUE:ARITHMETIC:jsh_material_current_stock.current_number,jsh_depot_item.oper_number->jsh_material_current_stock.current_number`
@@ -3435,6 +3439,8 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `VALUE:AGGREGATE:jsh_depot_item.all_price->jsh_depot_head.total_price`
+- `VALUE:AGGREGATE:jsh_depot_item.tax_last_money->jsh_depot_head.discount_last_money`
 - `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.all_price`
 - `VALUE:ARITHMETIC:jsh_depot_item.oper_number,jsh_material_extend.purchase_decimal->jsh_depot_item.tax_last_money`
 - `VALUE:DIRECT:jsh_depot_item.basic_number->jsh_depot_item.basic_number`
@@ -4594,6 +4600,7 @@ JOIN information_schema.TABLE_CONSTRAINTS tc
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
+- `CONTROL:CASE_WHEN:warehouse_inventory.product_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,supplier_manifests.manifest_id->order_items.estimated_cost`
 - `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
@@ -4663,7 +4670,7 @@ INNER JOIN (
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -4697,7 +4704,7 @@ SET
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -4904,6 +4911,7 @@ BEGIN
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no,jsh_organization.tenant_id,jsh_organization.p_tenant_id,jsh_organization.id,jsh_organization.parent_id->jsh_temp_org_pdf.weight`
 - `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
@@ -4939,8 +4947,10 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
-- `VALUE:DIRECT:jsh_orga_user_rel.user_id,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id,jsh_orga_user_rel.delete_flag->jsh_temp_mock_plan.user_id`
+- `CONTROL:CASE_WHEN:jsh_orga_user_rel.delete_flag,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id->jsh_temp_mock_plan.user_id`
+- `CONTROL:CASE_WHEN:jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -4972,16 +4982,23 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_apply->biz_bill_item_fact_new.purchaseApplyLinkNo`
-- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_number->biz_bill_item_fact_new.purchaseOrderLinkNo`
-- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.another_depot_id->biz_bill_item_fact_new.inWarehouseId`
-- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.depot_id->biz_bill_item_fact_new.outWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type->biz_bill_item_fact_new.inWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type->biz_bill_item_fact_new.outWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type->biz_bill_item_fact_new.purchaseApplyLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type->biz_bill_item_fact_new.purchaseOrderLinkNo`
 - `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.inventoryDirection`
 - `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.salesDirection`
-- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.customerId`
-- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.memberId`
-- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.supplierId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.customerId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.memberId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.supplierId`
 - `VALUE:AGGREGATE:jsh_orga_user_rel.orga_id->biz_bill_item_fact_new.storeId`
+- `VALUE:CASE_WHEN:jsh_depot_head.link_apply->biz_bill_item_fact_new.purchaseApplyLinkNo`
+- `VALUE:CASE_WHEN:jsh_depot_head.link_number->biz_bill_item_fact_new.purchaseOrderLinkNo`
+- `VALUE:CASE_WHEN:jsh_depot_head.organ_id->biz_bill_item_fact_new.customerId`
+- `VALUE:CASE_WHEN:jsh_depot_head.organ_id->biz_bill_item_fact_new.memberId`
+- `VALUE:CASE_WHEN:jsh_depot_head.organ_id->biz_bill_item_fact_new.supplierId`
+- `VALUE:CASE_WHEN:jsh_depot_item.another_depot_id->biz_bill_item_fact_new.inWarehouseId`
+- `VALUE:CASE_WHEN:jsh_depot_item.depot_id->biz_bill_item_fact_new.outWarehouseId`
 - `VALUE:COALESCE:jsh_depot_item.tax_last_money,jsh_depot_item.all_price->biz_bill_item_fact_new.amount`
 - `VALUE:DIRECT:jsh_depot_head.creator->biz_bill_item_fact_new.creator`
 - `VALUE:DIRECT:jsh_depot_head.id->biz_bill_item_fact_new.sourceOrderId`
@@ -5846,7 +5863,7 @@ INNER JOIN (
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -5880,7 +5897,7 @@ SET
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -6275,9 +6292,13 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
-- `VALUE:COALESCE:sales_order_items.product_id,sales_order_items.batch_id,sales_order_items.quantity->inventory_transactions.after_qty`
-- `VALUE:COALESCE:sales_order_items.product_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `VALUE:COALESCE:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
@@ -6313,8 +6334,10 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
@@ -6350,11 +6373,15 @@ CREATE PROCEDURE sp_create_department(
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:AGGREGATE:inventory.reserved_quantity,sales_order_items.quantity->inventory.reserved_quantity`
-- `VALUE:AGGREGATE:sales_orders.total_amount,commission_rules.rate->sales_commissions.commission_amount`
-- `VALUE:AGGREGATE:sales_orders.total_amount->sales_commissions.sales_amount`
+- `VALUE:AGGREGATE:inventory.locked_quantity,sales_order_items.quantity->inventory.locked_quantity`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
+- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
+- `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
+- `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
 - `VALUE:DIRECT:sales_orders.salesperson_id->sales_commissions.employee_id`
-- `VALUE:FUNCTION_CALL:sales_orders.order_date->sales_commissions.commission_month`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->sales_commissions.period`
 
 **Extractor Candidate Fingerprints**
 
@@ -6366,11 +6393,11 @@ CREATE PROCEDURE sp_create_department(
 -- relation-detector-fixture-source: ROUTINE:erp_system.sp_mysql57_salesperson_performance
 CREATE PROCEDURE sp_mysql57_salesperson_performance(IN p_start_date DATE, IN p_end_date DATE)
 BEGIN
-    INSERT INTO sales_commissions (employee_id, commission_month, sales_amount, commission_amount, status)
+    INSERT INTO sales_commissions (employee_id, order_id, order_item_id, period,
+        base_amount, commission_rate, commission_amount, bonus, status, calculated_at)
     SELECT
         so.salesperson_id,
-        DATE_FORMAT(so.order_date, '%Y-%m'),
-        SUM(so.total_amount),
+        so.id,
 ```
 
 ## `mysql57sample-data-full-02-procedures-03-functions-sql`
@@ -6600,7 +6627,7 @@ BEGIN
 - `VALUE:AGGREGATE:sales_return_items.amount->vouchers.total_credit`
 - `VALUE:AGGREGATE:sales_return_items.amount->vouchers.total_debit`
 - `VALUE:CONCAT_FORMAT:sales_returns.id->vouchers.voucher_no`
-- `VALUE:DIRECT:sales_returns.created_by->vouchers.prepared_by`
+- `VALUE:DIRECT:sales_returns.handler_id->vouchers.prepared_by`
 - `VALUE:DIRECT:sales_returns.id->vouchers.reference_id`
 - `VALUE:DIRECT:sales_returns.return_date->vouchers.voucher_date`
 
@@ -6746,25 +6773,26 @@ BEGIN
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
-- `CONTROL:CASE_WHEN:product_categories.id,product_categories.name->category_dim.level2_name`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:inventory_reservations.released_quantity,inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,standard_costs.labor_cost,standard_costs.material_cost,standard_costs.overhead_cost,work_orders.planned_quantity->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
@@ -6772,11 +6800,20 @@ BEGIN
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
 - `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
+- `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
@@ -6785,7 +6822,6 @@ BEGIN
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
@@ -6817,9 +6853,6 @@ BEGIN
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
-- `VALUE:DIRECT:positions.base_salary->employees.salary`
-- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
 - `VALUE:DIRECT:positions.id->employees.position_id`
 - `VALUE:DIRECT:product_categories.code->category_dim.category_code`
 - `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
@@ -6856,10 +6889,6 @@ BEGIN
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
 - `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
-- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.fiscal_month`
-- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
-- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.fiscal_year`
-- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -6868,7 +6897,11 @@ BEGIN
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_end`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
@@ -6904,8 +6937,17 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:sales_orders.customer_id->shipping_tracks.location`
-- `VALUE:AGGREGATE:fixed_assets.id->fixed_assets.accumulated_depreciation`
+- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_name`
+- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_phone`
+- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.to_address`
+- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipping_tracks.location`
+- `CONTROL:CASE_WHEN:depreciation_log.asset_id,fixed_assets.id->fixed_assets.accumulated_depreciation`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:AGGREGATE:depreciation_log.depreciation_amount->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
@@ -6917,8 +6959,9 @@ USE erp_system;
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.shipped_at`
-- `VALUE:ARITHMETIC:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
-- `VALUE:ARITHMETIC:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `VALUE:CASE_WHEN:customers.address->shipping_tracks.location`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->invoices.invoice_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_date,sales_orders.id->shipments.shipment_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_date,sales_orders.id->shipments.tracking_no`
@@ -6926,20 +6969,17 @@ USE erp_system;
 - `VALUE:DIRECT:boms.id->work_orders.bom_id`
 - `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
 - `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
 - `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
 - `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
-- `VALUE:DIRECT:purchase_orders.status->invoices.status`
 - `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
 - `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
-- `VALUE:DIRECT:sales_orders.customer_id->shipments.receiver_name`
-- `VALUE:DIRECT:sales_orders.customer_id->shipments.receiver_phone`
-- `VALUE:DIRECT:sales_orders.customer_id->shipments.to_address`
 - `VALUE:DIRECT:sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:sales_orders.status->shipments.status`
 - `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
 - `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
 - `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
-- `VALUE:DIRECT:work_orders.status->work_order_materials.status`
 - `VALUE:FUNCTION_CALL:purchase_orders.order_date->invoices.due_date`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->shipments.estimated_delivery_date`
 - `VALUE:FUNCTION_CALL:shipments.shipped_at->shipping_tracks.track_time`
@@ -6975,8 +7015,12 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:product_batches.product_id,products.id->serial_numbers.batch_id`
+- `CONTROL:CASE_WHEN:product_batches.product_id->consignment_inventory.batch_id`
+- `CONTROL:CASE_WHEN:products.id->consignment_inventory.unit_price`
 - `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
 - `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:products.retail_price->consignment_inventory.unit_price`
 - `VALUE:ARITHMETIC:products.retail_price->price_change_logs.old_price`
 - `VALUE:COALESCE:employees.manager_id->performance_reviews.reviewer_id`
 - `VALUE:COALESCE:projects.start_date,projects.actual_end_date->project_costs.cost_date`
@@ -6985,8 +7029,9 @@ USE erp_system;
 - `VALUE:CONCAT_FORMAT:projects.name->project_costs.description`
 - `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
 - `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:product_batches.id->consignment_inventory.batch_id`
+- `VALUE:DIRECT:product_batches.id->serial_numbers.batch_id`
 - `VALUE:DIRECT:products.id->price_change_logs.product_id`
-- `VALUE:DIRECT:products.id->serial_numbers.batch_id`
 - `VALUE:DIRECT:products.id->serial_numbers.product_id`
 - `VALUE:DIRECT:products.retail_price->price_change_logs.new_price`
 - `VALUE:DIRECT:projects.id->project_costs.project_id`
@@ -7032,16 +7077,21 @@ INSERT INTO contracts (contract_no, contract_type, party_type, party_id, subject
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:product_batches.product_id->damage_report_items.batch_id`
+- `CONTROL:CASE_WHEN:products.id->damage_report_items.unit_cost`
+- `CONTROL:CASE_WHEN:purchase_receipts.order_id,purchase_orders.id->purchase_returns.purchase_receipt_id`
+- `VALUE:AGGREGATE:product_batches.id->purchase_return_items.batch_id`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.refund_received`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.total_amount`
 - `VALUE:DIRECT:damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:products.purchase_price->damage_report_items.unit_cost`
+- `VALUE:DIRECT:purchase_order_items.product_id->purchase_return_items.product_id`
+- `VALUE:DIRECT:purchase_order_items.unit_price->purchase_return_items.unit_price`
 - `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_receipt_id`
 - `VALUE:DIRECT:purchase_orders.supplier_id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:purchase_receipts.id->purchase_returns.purchase_receipt_id`
 - `VALUE:DIRECT:purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.product_id`
-- `VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.unit_price`
 
 **Extractor Candidate Fingerprints**
 
@@ -7601,6 +7651,7 @@ BEGIN
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:jsh_organization.org_abr->jsh_temp_org_pdf.weight`
+- `CONTROL:CASE_WHEN:jsh_organization.org_no,jsh_organization.tenant_id,jsh_organization.p_tenant_id,jsh_organization.id,jsh_organization.parent_id->jsh_temp_org_pdf.weight`
 - `CONTROL:CASE_WHEN:jsh_organization.org_no->jsh_temp_org_pdf.weight`
 - `VALUE:CUMULATIVE:jsh_temp_org_pdf.weight->jsh_temp_org_pdf.cdf_end`
 - `VALUE:DIRECT:jsh_organization.id->jsh_temp_org_pdf.org_id`
@@ -7636,8 +7687,10 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val,jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
-- `VALUE:DIRECT:jsh_orga_user_rel.user_id,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id,jsh_orga_user_rel.delete_flag->jsh_temp_mock_plan.user_id`
+- `CONTROL:CASE_WHEN:jsh_orga_user_rel.delete_flag,jsh_orga_user_rel.orga_id,jsh_temp_org_pdf.org_id->jsh_temp_mock_plan.user_id`
+- `CONTROL:CASE_WHEN:jsh_temp_hour_pdf.weight->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:CUMULATIVE:jsh_temp_hour_pdf.hour_val->jsh_temp_mock_plan.mock_timestamp_str`
+- `VALUE:DIRECT:jsh_orga_user_rel.user_id->jsh_temp_mock_plan.user_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -7669,16 +7722,23 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_apply->biz_bill_item_fact_new.purchaseApplyLinkNo`
-- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_head.link_number->biz_bill_item_fact_new.purchaseOrderLinkNo`
-- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.another_depot_id->biz_bill_item_fact_new.inWarehouseId`
-- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type,jsh_depot_item.depot_id->biz_bill_item_fact_new.outWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type->biz_bill_item_fact_new.inWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type->biz_bill_item_fact_new.outWarehouseId`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type->biz_bill_item_fact_new.purchaseApplyLinkNo`
+- `CONTROL:CASE_WHEN:jsh_depot_head.sub_type->biz_bill_item_fact_new.purchaseOrderLinkNo`
 - `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.inventoryDirection`
 - `CONTROL:CASE_WHEN:jsh_depot_head.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.salesDirection`
-- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.customerId`
-- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.memberId`
-- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type,jsh_depot_head.organ_id->biz_bill_item_fact_new.supplierId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.customerId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.memberId`
+- `CONTROL:CASE_WHEN:jsh_supplier.type,jsh_depot_head.sub_type->biz_bill_item_fact_new.supplierId`
 - `VALUE:AGGREGATE:jsh_orga_user_rel.orga_id->biz_bill_item_fact_new.storeId`
+- `VALUE:CASE_WHEN:jsh_depot_head.link_apply->biz_bill_item_fact_new.purchaseApplyLinkNo`
+- `VALUE:CASE_WHEN:jsh_depot_head.link_number->biz_bill_item_fact_new.purchaseOrderLinkNo`
+- `VALUE:CASE_WHEN:jsh_depot_head.organ_id->biz_bill_item_fact_new.customerId`
+- `VALUE:CASE_WHEN:jsh_depot_head.organ_id->biz_bill_item_fact_new.memberId`
+- `VALUE:CASE_WHEN:jsh_depot_head.organ_id->biz_bill_item_fact_new.supplierId`
+- `VALUE:CASE_WHEN:jsh_depot_item.another_depot_id->biz_bill_item_fact_new.inWarehouseId`
+- `VALUE:CASE_WHEN:jsh_depot_item.depot_id->biz_bill_item_fact_new.outWarehouseId`
 - `VALUE:COALESCE:jsh_depot_item.tax_last_money,jsh_depot_item.all_price->biz_bill_item_fact_new.amount`
 - `VALUE:DIRECT:jsh_depot_head.creator->biz_bill_item_fact_new.creator`
 - `VALUE:DIRECT:jsh_depot_head.id->biz_bill_item_fact_new.sourceOrderId`
@@ -7820,9 +7880,10 @@ CREATE PROCEDURE sp_cross_border_reconciliation_engine(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 
 **Extractor Candidate Fingerprints**
 
@@ -7855,9 +7916,10 @@ CREATE PROCEDURE sp_financial_asset_wash_update_comma(
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
 - `VALUE:COALESCE:account_balances.risk_flags->account_balances.risk_flags`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 
 **Extractor Candidate Fingerprints**
 
@@ -8473,7 +8535,8 @@ JOIN information_schema.TABLE_CONSTRAINTS tc
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customer_profiles.risk_score,warehouse_inventory.stock_available,order_items.quantity->warehouse_inventory.last_audit_status`
-- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.product_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,supplier_manifests.manifest_id,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
+- `CONTROL:CASE_WHEN:warehouse_inventory.product_id,supplier_manifests.product_id,warehouse_inventory.primary_supplier_id,supplier_manifests.supplier_id,supplier_manifests.manifest_id->order_items.estimated_cost`
+- `VALUE:AGGREGATE:supplier_manifests.supply_price,warehouse_inventory.default_unit_cost,order_items.quantity->order_items.estimated_cost`
 - `VALUE:ARITHMETIC:warehouse_inventory.stock_reserved,order_items.quantity->warehouse_inventory.stock_reserved`
 
 **Extractor Candidate Fingerprints**
@@ -8542,7 +8605,7 @@ INNER JOIN (
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -8576,7 +8639,7 @@ SET
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -8971,9 +9034,13 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
-- `VALUE:COALESCE:sales_order_items.product_id,sales_order_items.batch_id,sales_order_items.quantity->inventory_transactions.after_qty`
-- `VALUE:COALESCE:sales_order_items.product_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `VALUE:COALESCE:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
@@ -9009,8 +9076,10 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
@@ -9322,11 +9391,16 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date->supplier_products.quality_score`
 - `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
-- `VALUE:AGGREGATE:purchase_order_items.received_qty,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
-- `VALUE:AGGREGATE:purchase_orders.id,purchase_order_items.order_id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
-- `VALUE:AGGREGATE:purchase_orders.order_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
-- `VALUE:AGGREGATE:purchase_return_items.return_qty,purchase_order_items.received_qty,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id,purchase_orders.order_date,purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,purchase_return_items.product_id,purchase_returns.return_date->supplier_products.return_rate`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
+- `CONTROL:CASE_WHEN:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date->supplier_products.return_rate`
+- `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
+- `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
+- `VALUE:AGGREGATE:purchase_return_items.return_qty,purchase_order_items.received_qty->supplier_products.return_rate`
 
 **Extractor Candidate Fingerprints**
 
@@ -9432,25 +9506,26 @@ BEGIN
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
-- `CONTROL:CASE_WHEN:product_categories.id,product_categories.name->category_dim.level2_name`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:inventory_reservations.released_quantity,inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,standard_costs.labor_cost,standard_costs.material_cost,standard_costs.overhead_cost,work_orders.planned_quantity->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
@@ -9458,11 +9533,20 @@ BEGIN
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
 - `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
+- `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
@@ -9471,7 +9555,6 @@ BEGIN
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
@@ -9503,9 +9586,6 @@ BEGIN
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
-- `VALUE:DIRECT:positions.base_salary->employees.salary`
-- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
 - `VALUE:DIRECT:positions.id->employees.position_id`
 - `VALUE:DIRECT:product_categories.code->category_dim.category_code`
 - `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
@@ -9542,10 +9622,6 @@ BEGIN
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
 - `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
-- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.fiscal_month`
-- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
-- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.fiscal_year`
-- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -9554,7 +9630,11 @@ BEGIN
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_end`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
@@ -9590,8 +9670,17 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:sales_orders.customer_id->shipping_tracks.location`
-- `VALUE:AGGREGATE:fixed_assets.id->fixed_assets.accumulated_depreciation`
+- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_name`
+- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_phone`
+- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.to_address`
+- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipping_tracks.location`
+- `CONTROL:CASE_WHEN:depreciation_log.asset_id,fixed_assets.id->fixed_assets.accumulated_depreciation`
+- `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
+- `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:AGGREGATE:depreciation_log.depreciation_amount->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
@@ -9603,8 +9692,9 @@ USE erp_system;
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.shipped_at`
-- `VALUE:ARITHMETIC:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
-- `VALUE:ARITHMETIC:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `VALUE:CASE_WHEN:customers.address->shipping_tracks.location`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->invoices.invoice_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_date,sales_orders.id->shipments.shipment_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_date,sales_orders.id->shipments.tracking_no`
@@ -9612,20 +9702,17 @@ USE erp_system;
 - `VALUE:DIRECT:boms.id->work_orders.bom_id`
 - `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
 - `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
 - `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
 - `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
-- `VALUE:DIRECT:purchase_orders.status->invoices.status`
 - `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
 - `VALUE:DIRECT:purchase_orders.total_amount->invoices.total_amount`
-- `VALUE:DIRECT:sales_orders.customer_id->shipments.receiver_name`
-- `VALUE:DIRECT:sales_orders.customer_id->shipments.receiver_phone`
-- `VALUE:DIRECT:sales_orders.customer_id->shipments.to_address`
 - `VALUE:DIRECT:sales_orders.id->shipments.order_id`
-- `VALUE:DIRECT:sales_orders.status->shipments.status`
 - `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
 - `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
 - `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
-- `VALUE:DIRECT:work_orders.status->work_order_materials.status`
 - `VALUE:FUNCTION_CALL:purchase_orders.order_date->invoices.due_date`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->shipments.estimated_delivery_date`
 - `VALUE:FUNCTION_CALL:shipments.shipped_at->shipping_tracks.track_time`
@@ -9661,8 +9748,12 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:product_batches.product_id,products.id->serial_numbers.batch_id`
+- `CONTROL:CASE_WHEN:product_batches.product_id->consignment_inventory.batch_id`
+- `CONTROL:CASE_WHEN:products.id->consignment_inventory.unit_price`
 - `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
 - `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:products.retail_price->consignment_inventory.unit_price`
 - `VALUE:ARITHMETIC:products.retail_price->price_change_logs.old_price`
 - `VALUE:COALESCE:employees.manager_id->performance_reviews.reviewer_id`
 - `VALUE:COALESCE:projects.start_date,projects.actual_end_date->project_costs.cost_date`
@@ -9671,8 +9762,9 @@ USE erp_system;
 - `VALUE:CONCAT_FORMAT:projects.name->project_costs.description`
 - `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
 - `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:product_batches.id->consignment_inventory.batch_id`
+- `VALUE:DIRECT:product_batches.id->serial_numbers.batch_id`
 - `VALUE:DIRECT:products.id->price_change_logs.product_id`
-- `VALUE:DIRECT:products.id->serial_numbers.batch_id`
 - `VALUE:DIRECT:products.id->serial_numbers.product_id`
 - `VALUE:DIRECT:products.retail_price->price_change_logs.new_price`
 - `VALUE:DIRECT:projects.id->project_costs.project_id`
@@ -9718,16 +9810,24 @@ INSERT INTO contracts (contract_no, contract_type, party_type, party_id, subject
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id`
+- `CONTROL:CASE_WHEN:product_batches.product_id->damage_report_items.batch_id`
+- `CONTROL:CASE_WHEN:products.id->damage_report_items.unit_cost`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.product_id`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.unit_price`
+- `CONTROL:CASE_WHEN:purchase_receipts.order_id,purchase_orders.id->purchase_returns.purchase_receipt_id`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.refund_received`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.total_amount`
 - `VALUE:DIRECT:damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:products.purchase_price->damage_report_items.unit_cost`
+- `VALUE:DIRECT:purchase_order_items.product_id->purchase_return_items.product_id`
+- `VALUE:DIRECT:purchase_order_items.unit_price->purchase_return_items.unit_price`
 - `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_receipt_id`
 - `VALUE:DIRECT:purchase_orders.supplier_id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:purchase_receipts.id->purchase_returns.purchase_receipt_id`
 - `VALUE:DIRECT:purchase_returns.id->purchase_return_items.return_id`
-- `VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.batch_id`
-- `VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.product_id`
-- `VALUE:DIRECT:purchase_returns.purchase_order_id->purchase_return_items.unit_price`
 
 **Extractor Candidate Fingerprints**
 
@@ -10141,8 +10241,13 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
+- `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
-- `VALUE:COALESCE:sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
@@ -10178,8 +10283,10 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
@@ -10250,9 +10357,9 @@ CREATE PROCEDURE sp_transfer_inventory(
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
 - `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
-- `VALUE:COALESCE:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -10425,7 +10532,11 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:CASE_WHEN:inspection_reports.inspection_result,inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date->supplier_products.quality_score`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
+- `CONTROL:CASE_WHEN:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date->supplier_products.return_rate`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
@@ -10535,27 +10646,26 @@ BEGIN
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
-- `CONTROL:CASE_WHEN:product_categories.id,product_categories.name->category_dim.level2_name`
-- `CONTROL:CASE_WHEN:product_categories.name->category_dim.is_womenwear`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:inventory_reservations.released_quantity,inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,standard_costs.labor_cost,standard_costs.material_cost,standard_costs.overhead_cost,work_orders.planned_quantity->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
@@ -10563,19 +10673,28 @@ BEGIN
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
 - `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
+- `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
+- `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
 - `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:production_plans.plan_month,production_plans.id->mrp_runs.run_no`
@@ -10607,12 +10726,10 @@ BEGIN
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
-- `VALUE:DIRECT:positions.base_salary->employees.salary`
-- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
 - `VALUE:DIRECT:positions.id->employees.position_id`
 - `VALUE:DIRECT:product_categories.code->category_dim.category_code`
 - `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
+- `VALUE:DIRECT:product_categories.name->category_dim.is_womenwear`
 - `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
 - `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
@@ -10657,6 +10774,7 @@ BEGIN
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_end`
 - `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
@@ -10692,14 +10810,21 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_name`
+- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.receiver_phone`
+- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipments.to_address`
+- `CONTROL:CASE_WHEN:customers.id,sales_orders.customer_id->shipping_tracks.location`
+- `CONTROL:CASE_WHEN:depreciation_log.asset_id,fixed_assets.id->fixed_assets.accumulated_depreciation`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
+- `VALUE:AGGREGATE:depreciation_log.depreciation_amount->fixed_assets.accumulated_depreciation`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.actual_consumed`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.completed_quantity->work_order_materials.issued_qty`
 - `VALUE:ARITHMETIC:boms.quantity,work_orders.planned_quantity->work_order_materials.required_qty`
+- `VALUE:ARITHMETIC:customers.address->shipping_tracks.location`
 - `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.after_accumulated`
 - `VALUE:ARITHMETIC:fixed_assets.monthly_depreciation->depreciation_log.before_accumulated`
 - `VALUE:ARITHMETIC:fixed_assets.purchase_amount,fixed_assets.monthly_depreciation->depreciation_log.after_net_value`
@@ -10707,6 +10832,8 @@ USE erp_system;
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:ARITHMETIC:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.shipped_at`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_date,purchase_orders.id->invoices.invoice_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_date,sales_orders.id->shipments.shipment_no`
@@ -10715,6 +10842,9 @@ USE erp_system;
 - `VALUE:DIRECT:boms.id->work_orders.bom_id`
 - `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
 - `VALUE:DIRECT:boms.unit->work_order_materials.unit`
+- `VALUE:DIRECT:customers.address->shipments.to_address`
+- `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
+- `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
 - `VALUE:DIRECT:fixed_assets.id->depreciation_log.asset_id`
 - `VALUE:DIRECT:fixed_assets.monthly_depreciation->depreciation_log.depreciation_amount`
 - `VALUE:DIRECT:purchase_orders.supplier_id->invoices.supplier_id`
@@ -10758,16 +10888,22 @@ USE erp_system;
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:product_batches.product_id,products.id->serial_numbers.batch_id`
+- `CONTROL:CASE_WHEN:product_batches.product_id->consignment_inventory.batch_id`
+- `CONTROL:CASE_WHEN:products.id->consignment_inventory.unit_price`
 - `VALUE:ARITHMETIC:contracts.start_date->contract_milestones.planned_date`
 - `VALUE:ARITHMETIC:contracts.total_amount->contract_milestones.amount`
+- `VALUE:ARITHMETIC:products.retail_price->consignment_inventory.unit_price`
 - `VALUE:ARITHMETIC:products.retail_price->price_change_logs.old_price`
+- `VALUE:ARITHMETIC:projects.start_date,projects.actual_end_date->project_costs.cost_date`
 - `VALUE:COALESCE:employees.manager_id->performance_reviews.reviewer_id`
-- `VALUE:COALESCE:projects.start_date,projects.actual_end_date->project_costs.cost_date`
 - `VALUE:CONCAT_FORMAT:employees.id->performance_reviews.review_no`
 - `VALUE:CONCAT_FORMAT:products.sku->serial_numbers.serial_no`
 - `VALUE:CONCAT_FORMAT:projects.name->project_costs.description`
 - `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
 - `VALUE:DIRECT:employees.id->performance_reviews.employee_id`
+- `VALUE:DIRECT:product_batches.id->consignment_inventory.batch_id`
+- `VALUE:DIRECT:product_batches.id->serial_numbers.batch_id`
 - `VALUE:DIRECT:products.id->price_change_logs.product_id`
 - `VALUE:DIRECT:products.id->serial_numbers.product_id`
 - `VALUE:DIRECT:products.retail_price->price_change_logs.new_price`
@@ -10814,11 +10950,23 @@ INSERT INTO contracts (contract_no, contract_type, party_type, party_id, subject
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id`
+- `CONTROL:CASE_WHEN:product_batches.product_id->damage_report_items.batch_id`
+- `CONTROL:CASE_WHEN:products.id->damage_report_items.unit_cost`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.product_id`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.unit_price`
+- `CONTROL:CASE_WHEN:purchase_receipts.order_id,purchase_orders.id->purchase_returns.purchase_receipt_id`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.refund_received`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->purchase_returns.total_amount`
 - `VALUE:DIRECT:damage_reports.id->damage_report_items.report_id`
+- `VALUE:DIRECT:product_batches.id->damage_report_items.batch_id`
+- `VALUE:DIRECT:product_batches.id->purchase_return_items.batch_id`
+- `VALUE:DIRECT:products.purchase_price->damage_report_items.unit_cost`
+- `VALUE:DIRECT:purchase_order_items.product_id->purchase_return_items.product_id`
+- `VALUE:DIRECT:purchase_order_items.unit_price->purchase_return_items.unit_price`
 - `VALUE:DIRECT:purchase_orders.id->purchase_returns.purchase_order_id`
 - `VALUE:DIRECT:purchase_orders.supplier_id->purchase_returns.supplier_id`
+- `VALUE:DIRECT:purchase_receipts.id->purchase_returns.purchase_receipt_id`
 - `VALUE:DIRECT:purchase_returns.id->purchase_return_items.return_id`
 
 **Extractor Candidate Fingerprints**
@@ -12737,8 +12885,10 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
@@ -13058,24 +13208,28 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name`
+- `CONTROL:CASE_WHEN:product_categories.name->category_dim.is_womenwear`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:inventory_reservations.released_quantity,inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,standard_costs.labor_cost,standard_costs.material_cost,standard_costs.overhead_cost,work_orders.planned_quantity->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
@@ -13083,19 +13237,28 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
 - `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
-- `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
 - `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
+- `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
@@ -13104,6 +13267,7 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:accounting_periods.id->fiscal_calendar.accounting_period_id`
 - `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
 - `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
@@ -13127,10 +13291,10 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
-- `VALUE:DIRECT:positions.base_salary->employees.salary`
-- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
 - `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:product_categories.code->category_dim.category_code`
+- `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
+- `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
 - `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
@@ -13161,6 +13325,7 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -13168,6 +13333,13 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 
 **Extractor Candidate Fingerprints**
 
@@ -13248,8 +13420,8 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
 -- ============================================================
 
-INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
-(1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+INSERT ALL
+    INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES (1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active')
 ```
 
 ## `oracle12c-sample-data-full-03-data-04-erp-deep-scenario-data-sql`
@@ -13334,8 +13506,8 @@ INSERT INTO shipments (
 
 - `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
@@ -13357,13 +13529,14 @@ INSERT INTO shipments (
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
 - `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
-- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.tax_period`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
 - `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
 - `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
 - `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
 - `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
@@ -13381,7 +13554,6 @@ INSERT INTO shipments (
 - `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
 - `VALUE:DIRECT:boms.unit->work_order_materials.unit`
 - `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
-- `VALUE:DIRECT:contracts.start_date->contract_milestones.planned_date`
 - `VALUE:DIRECT:customers.address->shipments.to_address`
 - `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
 - `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
@@ -13411,6 +13583,8 @@ INSERT INTO shipments (
 - `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
 - `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
 - `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+- `VALUE:FUNCTION_CALL:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period`
 
 **Extractor Candidate Fingerprints**
 
@@ -14090,8 +14264,10 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
@@ -14411,24 +14587,28 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name`
+- `CONTROL:CASE_WHEN:product_categories.name->category_dim.is_womenwear`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:inventory_reservations.released_quantity,inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,standard_costs.labor_cost,standard_costs.material_cost,standard_costs.overhead_cost,work_orders.planned_quantity->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
@@ -14436,19 +14616,28 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
 - `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
-- `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
 - `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
+- `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
@@ -14457,6 +14646,7 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:accounting_periods.id->fiscal_calendar.accounting_period_id`
 - `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
 - `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
@@ -14480,10 +14670,10 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
-- `VALUE:DIRECT:positions.base_salary->employees.salary`
-- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
 - `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:product_categories.code->category_dim.category_code`
+- `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
+- `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
 - `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
@@ -14514,6 +14704,7 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -14521,6 +14712,13 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 
 **Extractor Candidate Fingerprints**
 
@@ -14601,8 +14799,8 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
 -- ============================================================
 
-INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
-(1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+INSERT ALL
+    INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES (1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active')
 ```
 
 ## `oracle19c-sample-data-full-03-data-04-erp-deep-scenario-data-sql`
@@ -14687,8 +14885,8 @@ INSERT INTO shipments (
 
 - `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
@@ -14710,13 +14908,14 @@ INSERT INTO shipments (
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
 - `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
-- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.tax_period`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
 - `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
 - `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
 - `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
 - `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
@@ -14734,7 +14933,6 @@ INSERT INTO shipments (
 - `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
 - `VALUE:DIRECT:boms.unit->work_order_materials.unit`
 - `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
-- `VALUE:DIRECT:contracts.start_date->contract_milestones.planned_date`
 - `VALUE:DIRECT:customers.address->shipments.to_address`
 - `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
 - `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
@@ -14764,6 +14962,8 @@ INSERT INTO shipments (
 - `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
 - `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
 - `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+- `VALUE:FUNCTION_CALL:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period`
 
 **Extractor Candidate Fingerprints**
 
@@ -15472,8 +15672,10 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
@@ -15793,24 +15995,28 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name`
+- `CONTROL:CASE_WHEN:product_categories.name->category_dim.is_womenwear`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:inventory_reservations.released_quantity,inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,standard_costs.labor_cost,standard_costs.material_cost,standard_costs.overhead_cost,work_orders.planned_quantity->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
@@ -15818,19 +16024,28 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
 - `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
-- `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
 - `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
+- `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
@@ -15839,6 +16054,7 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:accounting_periods.id->fiscal_calendar.accounting_period_id`
 - `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
 - `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
@@ -15862,10 +16078,10 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
-- `VALUE:DIRECT:positions.base_salary->employees.salary`
-- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
 - `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:product_categories.code->category_dim.category_code`
+- `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
+- `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
 - `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
@@ -15896,6 +16112,7 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -15903,6 +16120,13 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 
 **Extractor Candidate Fingerprints**
 
@@ -15983,8 +16207,8 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
 -- ============================================================
 
-INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
-(1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+INSERT ALL
+    INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES (1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active')
 ```
 
 ## `oracle21c-sample-data-full-03-data-04-erp-deep-scenario-data-sql`
@@ -16069,8 +16293,8 @@ INSERT INTO shipments (
 
 - `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
@@ -16092,13 +16316,14 @@ INSERT INTO shipments (
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
 - `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
-- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.tax_period`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
 - `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
 - `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
 - `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
 - `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
@@ -16116,7 +16341,6 @@ INSERT INTO shipments (
 - `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
 - `VALUE:DIRECT:boms.unit->work_order_materials.unit`
 - `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
-- `VALUE:DIRECT:contracts.start_date->contract_milestones.planned_date`
 - `VALUE:DIRECT:customers.address->shipments.to_address`
 - `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
 - `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
@@ -16146,6 +16370,8 @@ INSERT INTO shipments (
 - `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
 - `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
 - `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+- `VALUE:FUNCTION_CALL:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period`
 
 **Extractor Candidate Fingerprints**
 
@@ -16856,8 +17082,10 @@ GROUP BY c.id;
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
@@ -17177,24 +17405,28 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name`
+- `CONTROL:CASE_WHEN:product_categories.name->category_dim.is_womenwear`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:inventory_reservations.released_quantity,inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,standard_costs.labor_cost,standard_costs.material_cost,standard_costs.overhead_cost,work_orders.planned_quantity->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
@@ -17202,19 +17434,28 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
 - `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
-- `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
 - `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
+- `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
@@ -17223,6 +17464,7 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:accounting_periods.id->fiscal_calendar.accounting_period_id`
 - `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
 - `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
@@ -17246,10 +17488,10 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
-- `VALUE:DIRECT:positions.base_salary->employees.salary`
-- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
 - `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:product_categories.code->category_dim.category_code`
+- `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
+- `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
 - `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
@@ -17280,6 +17522,7 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -17287,6 +17530,13 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 
 **Extractor Candidate Fingerprints**
 
@@ -17367,8 +17617,8 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
 -- ============================================================
 
-INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
-(1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+INSERT ALL
+    INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES (1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active')
 ```
 
 ## `oracle26ai-sample-data-full-03-data-04-erp-deep-scenario-data-sql`
@@ -17453,8 +17703,8 @@ INSERT INTO shipments (
 
 - `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
@@ -17476,13 +17726,14 @@ INSERT INTO shipments (
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.invoice_date`
 - `VALUE:ARITHMETIC:purchase_orders.order_date->invoices.verified_at`
 - `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.invoice_date`
-- `VALUE:ARITHMETIC:purchase_orders.order_date->tax_invoices.tax_period`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->invoices.tax_amount`
 - `VALUE:ARITHMETIC:purchase_orders.total_amount->tax_invoices.amount_excluding_tax`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_aging_snapshots.due_date`
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
 - `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
 - `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
 - `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
 - `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
@@ -17500,7 +17751,6 @@ INSERT INTO shipments (
 - `VALUE:DIRECT:boms.parent_product_id->work_orders.product_id`
 - `VALUE:DIRECT:boms.unit->work_order_materials.unit`
 - `VALUE:DIRECT:contracts.id->contract_milestones.contract_id`
-- `VALUE:DIRECT:contracts.start_date->contract_milestones.planned_date`
 - `VALUE:DIRECT:customers.address->shipments.to_address`
 - `VALUE:DIRECT:customers.contact_person->shipments.receiver_name`
 - `VALUE:DIRECT:customers.phone->shipments.receiver_phone`
@@ -17530,6 +17780,8 @@ INSERT INTO shipments (
 - `VALUE:DIRECT:sales_orders.warehouse_id->shipments.warehouse_id`
 - `VALUE:DIRECT:shipments.id->shipping_tracks.shipment_id`
 - `VALUE:DIRECT:work_orders.id->work_order_materials.work_order_id`
+- `VALUE:FUNCTION_CALL:contracts.start_date->contract_milestones.planned_date`
+- `VALUE:FUNCTION_CALL:purchase_orders.order_date->tax_invoices.tax_period`
 
 **Extractor Candidate Fingerprints**
 
@@ -18164,6 +18416,38 @@ INSERT INTO sales_fact (
     warehouse_id,
 ```
 
+## `oracle26ai-version-boolean-multivalue-sql`
+
+| Field | Value |
+| --- | --- |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
+| Database | `ORACLE` |
+| Parser target | `SQL` |
+| Source type | `PLAIN_SQL` |
+| Input | `test-fixtures/correctness/oracle/v26ai/oracle26ai-version-boolean-multivalue-sql/input.sql` |
+| Expected lineage | None |
+
+**Expected Lineage Fingerprints**
+
+- None
+
+**Extractor Candidate Fingerprints**
+
+- None
+
+**Input Preview**
+
+```sql
+CREATE TABLE feature_flags (
+    id NUMBER PRIMARY KEY,
+    enabled BOOLEAN
+);
+
+INSERT INTO feature_flags (id, enabled)
+VALUES (1, TRUE), (2, FALSE);
+```
+
 ## `oracle26ai-version-vector-sql`
 
 | Field | Value |
@@ -18207,8 +18491,10 @@ CREATE TABLE product_embeddings (
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
 - `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
@@ -18528,24 +18814,28 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name`
+- `CONTROL:CASE_WHEN:product_categories.name->category_dim.is_womenwear`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
+- `CONTROL:CASE_WHEN:sales_orders.order_date->fiscal_calendar.is_current_fiscal_year`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
-- `VALUE:AGGREGATE:inventory_reservations.reserved_quantity,inventory_reservations.released_quantity->mrp_run_items.reserved_qty`
+- `VALUE:AGGREGATE:inventory_reservations.released_quantity,inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,work_orders.planned_quantity,standard_costs.material_cost,standard_costs.labor_cost,standard_costs.overhead_cost->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,standard_costs.labor_cost,standard_costs.material_cost,standard_costs.overhead_cost,work_orders.planned_quantity->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
 - `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
@@ -18553,19 +18843,28 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
 - `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
-- `VALUE:AGGREGATE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
+- `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
 - `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
 - `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
 - `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
+- `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
@@ -18574,6 +18873,7 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:accounting_periods.id->fiscal_calendar.accounting_period_id`
 - `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
 - `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
@@ -18597,10 +18897,10 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:payments.id->sales_fact.payment_id`
-- `VALUE:DIRECT:positions.base_salary->employees.housing_fund_base`
-- `VALUE:DIRECT:positions.base_salary->employees.salary`
-- `VALUE:DIRECT:positions.base_salary->employees.social_security_base`
 - `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:product_categories.code->category_dim.category_code`
+- `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
+- `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
 - `VALUE:DIRECT:production_plans.id->mrp_runs.plan_id`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
@@ -18631,6 +18931,7 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -18638,6 +18939,13 @@ CREATE OR REPLACE PROCEDURE sp_post_stocktake(
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 
 **Extractor Candidate Fingerprints**
 
@@ -18718,8 +19026,8 @@ INSERT INTO commission_rules (id, name, product_category_id, min_amount, max_amo
 --       库存盘点/调拨/预留、工艺路线/工序、班次排班
 -- ============================================================
 
-INSERT INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES
-(1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active'),
+INSERT ALL
+    INTO tenants (id, tenant_code, tenant_name, legal_entity_name, tax_no, status) VALUES (1, 'T001', '华东运营主体', '上海华东智造商贸有限公司', '91310000MA1ERP001X', 'active')
 ```
 
 ## `oraclesample-data-full-03-data-04-erp-deep-scenario-data-sql`
@@ -18804,8 +19112,8 @@ INSERT INTO shipments (
 
 - `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
@@ -18833,6 +19141,8 @@ INSERT INTO shipments (
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
 - `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
 - `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
 - `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
 - `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
@@ -22254,7 +22564,7 @@ WITH user_financial_snapshot AS (
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:ledger_system_a.balance,ledger_system_b.balance->asset_balances.discrepancy_flag`
-- `VALUE:COALESCE:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
+- `VALUE:ARITHMETIC:ledger_system_a.balance,ledger_system_b.balance->asset_balances.computed_balance`
 - `VALUE:DIRECT:staff_assignments.operator_name->asset_balances.last_checked_by`
 
 **Extractor Candidate Fingerprints**
@@ -22483,7 +22793,7 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -22516,7 +22826,7 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -22749,7 +23059,7 @@ WHERE p.shop_id = s.id
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -24974,8 +25284,9 @@ CREATE TRIGGER rna_audit BEFORE UPDATE ON case_01.rna FOR EACH ROW EXECUTE FUNCT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -25009,8 +25320,9 @@ WITH user_financial_snapshot AS (
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -25274,7 +25586,7 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -25307,7 +25619,7 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -25540,7 +25852,7 @@ WHERE p.shop_id = s.id
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -25574,7 +25886,9 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.level`
+- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.total_spent`
+- `VALUE:AGGREGATE:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -26747,8 +27061,13 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
@@ -26784,9 +27103,11 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -26855,7 +27176,9 @@ CREATE OR REPLACE PROCEDURE sp_transfer_inventory(
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -26994,7 +27317,11 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date,inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
+- `CONTROL:CASE_WHEN:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,purchase_orders.supplier_id,purchase_orders.order_date->supplier_products.return_rate`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
@@ -27072,47 +27399,68 @@ DECLARE
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:inventory_reservations.released_quantity,inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,standard_costs.labor_cost,standard_costs.material_cost,standard_costs.overhead_cost,work_orders.planned_quantity->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
 - `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
+- `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
+- `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
-- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:accounting_periods.id->fiscal_calendar.accounting_period_id`
 - `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
 - `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:departments.id->employees.department_id`
 - `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
@@ -27131,6 +27479,11 @@ DECLARE
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:product_categories.code->category_dim.category_code`
+- `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
+- `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
 - `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
@@ -27160,6 +27513,7 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -27167,6 +27521,10 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 
 **Extractor Candidate Fingerprints**
 
@@ -27201,8 +27559,8 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 
 - `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
@@ -27231,6 +27589,8 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
 - `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
 - `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
 - `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
 - `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
@@ -27912,8 +28272,9 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -27947,8 +28308,9 @@ WITH user_financial_snapshot AS (
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -28212,7 +28574,7 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -28245,7 +28607,7 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -28478,7 +28840,7 @@ WHERE p.shop_id = s.id
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -28512,7 +28874,9 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.level`
+- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.total_spent`
+- `VALUE:AGGREGATE:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -30142,8 +30506,13 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
@@ -30179,9 +30548,11 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -30250,7 +30621,9 @@ CREATE OR REPLACE PROCEDURE sp_transfer_inventory(
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -30389,7 +30762,11 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date,inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
+- `CONTROL:CASE_WHEN:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,purchase_orders.supplier_id,purchase_orders.order_date->supplier_products.return_rate`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
@@ -30467,47 +30844,68 @@ DECLARE
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:inventory_reservations.released_quantity,inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,standard_costs.labor_cost,standard_costs.material_cost,standard_costs.overhead_cost,work_orders.planned_quantity->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
 - `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
+- `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
+- `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
-- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:accounting_periods.id->fiscal_calendar.accounting_period_id`
 - `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
 - `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:departments.id->employees.department_id`
 - `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
@@ -30526,6 +30924,11 @@ DECLARE
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:product_categories.code->category_dim.category_code`
+- `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
+- `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
 - `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
@@ -30555,6 +30958,7 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -30562,6 +30966,10 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 
 **Extractor Candidate Fingerprints**
 
@@ -30596,8 +31004,8 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 
 - `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
@@ -30626,6 +31034,8 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
 - `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
 - `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
 - `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
 - `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
@@ -31307,8 +31717,9 @@ DECLARE
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -31342,8 +31753,9 @@ WITH user_financial_snapshot AS (
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:transaction_ledgers.direction->account_balances.compliance_notes`
 - `VALUE:ARITHMETIC:account_balances.max_credit_limit->account_balances.adjusted_limit`
-- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.direction,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
+- `VALUE:CONCAT_FORMAT:users.country_code,transaction_ledgers.created_at,transaction_ledgers.amount,transaction_ledgers.merchant_category->account_balances.compliance_notes`
 - `VALUE:FUNCTION_CALL:account_balances.risk_flags->account_balances.risk_flags`
 
 **Extractor Candidate Fingerprints**
@@ -31607,7 +32019,7 @@ WHERE isc.snapshot_id = i.id
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -31640,7 +32052,7 @@ fraud_orders AS (
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:CONCAT_FORMAT:users.risk_level,orders.user_id,orders.amount->order_ledgers.remarks`
+- `VALUE:CONCAT_FORMAT:users.risk_level,orders.amount,orders.user_id->order_ledgers.remarks`
 
 **Extractor Candidate Fingerprints**
 
@@ -31873,7 +32285,7 @@ WHERE p.shop_id = s.id
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -31907,7 +32319,9 @@ SET total_spent = COALESCE(o_summary.actual_total, 0.00),
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:orders.pay_amount->users.level`
+- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.level`
+- `CONTROL:CASE_WHEN:orders.user_id,users.id,orders.order_status->users.total_spent`
+- `VALUE:AGGREGATE:orders.pay_amount->users.level`
 - `VALUE:AGGREGATE:orders.pay_amount->users.total_spent`
 
 **Extractor Candidate Fingerprints**
@@ -33501,8 +33915,13 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
@@ -33538,9 +33957,11 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -33609,7 +34030,9 @@ CREATE OR REPLACE PROCEDURE sp_transfer_inventory(
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -33748,7 +34171,11 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date,inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
+- `CONTROL:CASE_WHEN:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,purchase_orders.supplier_id,purchase_orders.order_date->supplier_products.return_rate`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
@@ -33826,47 +34253,68 @@ DECLARE
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:inventory_reservations.released_quantity,inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,standard_costs.labor_cost,standard_costs.material_cost,standard_costs.overhead_cost,work_orders.planned_quantity->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
 - `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
+- `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
+- `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
-- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:accounting_periods.id->fiscal_calendar.accounting_period_id`
 - `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
 - `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:departments.id->employees.department_id`
 - `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
@@ -33885,6 +34333,11 @@ DECLARE
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:product_categories.code->category_dim.category_code`
+- `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
+- `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
 - `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
@@ -33914,6 +34367,7 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -33921,6 +34375,10 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 
 **Extractor Candidate Fingerprints**
 
@@ -33955,8 +34413,8 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 
 - `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
@@ -33985,6 +34443,8 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
 - `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
 - `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
 - `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
 - `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
@@ -34391,8 +34851,13 @@ SELECT
 
 **Expected Lineage Fingerprints**
 
+- `CONTROL:CASE_WHEN:inventory.batch_id->product_batches.current_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.after_qty`
+- `CONTROL:CASE_WHEN:inventory.product_id,sales_order_items.product_id,inventory.warehouse_id,inventory.batch_id,sales_order_items.batch_id->inventory_transactions.before_qty`
 - `VALUE:AGGREGATE:inventory.quantity->product_batches.current_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,sales_order_items.quantity->inventory_transactions.after_qty`
+- `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
 - `VALUE:DIRECT:sales_order_items.batch_id->inventory_transactions.batch_id`
 - `VALUE:DIRECT:sales_order_items.product_id->inventory_transactions.product_id`
 - `VALUE:DIRECT:sales_order_items.quantity->inventory_transactions.quantity_change`
@@ -34428,9 +34893,11 @@ BEGIN
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:cashier_journals.journal_type,cashier_journals.amount->reconciliation_items.debit_amount`
-- `VALUE:COALESCE:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:cashier_journals.journal_type->reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:cashier_journals.amount->reconciliation_items.debit_amount`
+- `VALUE:CONCAT_FORMAT:cashier_journals.journal_type,cashier_journals.counterparty,cashier_journals.remark->reconciliation_items.description`
 - `VALUE:DIRECT:cashier_journals.id->reconciliation_items.journal_id`
 - `VALUE:DIRECT:cashier_journals.journal_date->reconciliation_items.transaction_date`
 
@@ -34499,7 +34966,9 @@ CREATE OR REPLACE PROCEDURE sp_transfer_inventory(
 
 - `VALUE:ARITHMETIC:sales_commissions.bonus->sales_commissions.bonus`
 - `VALUE:ARITHMETIC:sales_commissions.commission_amount,sales_commissions.base_amount->sales_commissions.commission_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_commissions.commission_amount`
+- `VALUE:ARITHMETIC:sales_order_items.amount,commission_rules.commission_rate->sales_commissions.commission_amount`
+- `VALUE:COALESCE:commission_rules.bonus->sales_commissions.bonus`
+- `VALUE:COALESCE:commission_rules.commission_rate->sales_commissions.commission_rate`
 - `VALUE:DIRECT:sales_order_items.amount->sales_commissions.base_amount`
 - `VALUE:DIRECT:sales_order_items.id->sales_commissions.order_item_id`
 - `VALUE:DIRECT:sales_orders.id->sales_commissions.order_id`
@@ -34638,7 +35107,11 @@ CREATE OR REPLACE PROCEDURE sp_approve_sales_return(
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:CASE_WHEN:inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:CASE_WHEN:inspection_reports.batch_id,product_batches.id,product_batches.supplier_id,supplier_products.supplier_id,inspection_reports.product_id,supplier_products.product_id,inspection_reports.inspection_date,inspection_reports.inspection_result->supplier_products.quality_score`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.last_order_date`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_count`
+- `CONTROL:CASE_WHEN:purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,supplier_products.product_id,purchase_orders.supplier_id,supplier_products.supplier_id->supplier_products.total_order_qty`
+- `CONTROL:CASE_WHEN:purchase_returns.id,purchase_return_items.return_id,purchase_returns.supplier_id,supplier_products.supplier_id,purchase_return_items.product_id,supplier_products.product_id,purchase_returns.return_date,purchase_order_items.order_id,purchase_orders.id,purchase_order_items.product_id,purchase_orders.supplier_id,purchase_orders.order_date->supplier_products.return_rate`
 - `VALUE:AGGREGATE:purchase_order_items.received_qty->supplier_products.total_order_qty`
 - `VALUE:AGGREGATE:purchase_orders.id->supplier_products.total_order_count`
 - `VALUE:AGGREGATE:purchase_orders.order_date->supplier_products.last_order_date`
@@ -34716,47 +35189,68 @@ DECLARE
 **Expected Lineage Fingerprints**
 
 - `CONTROL:CASE_WHEN:customers.type->sales_fact.sales_channel`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.address->customers.address`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.contact_person->customers.contact_person`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.email->customers.email`
-- `CONTROL:CASE_WHEN:master_data_change_items.field_name,master_data_change_items.new_value,customers.phone->customers.phone`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.address`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.contact_person`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.email`
+- `CONTROL:CASE_WHEN:master_data_change_items.field_name->customers.phone`
+- `CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name`
 - `CONTROL:CASE_WHEN:purchase_orders.paid_amount,purchase_orders.total_amount->ap_invoices.status`
 - `CONTROL:CASE_WHEN:sales_orders.paid_amount,sales_orders.total_amount->ar_invoices.status`
+- `CONTROL:CASE_WHEN:voucher_items.direction->budget_items.used_amount`
 - `VALUE:AGGREGATE:finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.finished_qty`
+- `VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty`
 - `VALUE:AGGREGATE:inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.unit_cost`
 - `VALUE:AGGREGATE:inventory_location_balances.location_id->picking_task_items.location_id`
+- `VALUE:AGGREGATE:inventory_reservations.released_quantity,inventory_reservations.reserved_quantity->mrp_run_items.reserved_qty`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,finished_goods_receipts.received_qty,work_orders.completed_quantity->work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes->work_order_costs.variance_amount`
+- `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost,operation_reports.labor_minutes,standard_costs.labor_cost,standard_costs.material_cost,standard_costs.overhead_cost,work_orders.planned_quantity->work_order_costs.variance_amount`
 - `VALUE:AGGREGATE:material_issue_items.issued_qty,material_issue_items.unit_cost->work_order_costs.material_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.labor_cost`
 - `VALUE:AGGREGATE:operation_reports.labor_minutes->work_order_costs.overhead_cost`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty`
+- `VALUE:AGGREGATE:purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.planned_receipt_qty`
 - `VALUE:AGGREGATE:repair_order_parts.quantity,repair_order_parts.unit_cost->repair_orders.actual_cost`
+- `VALUE:AGGREGATE:sales_order_items.amount,sales_returns.refund_amount->sales_fact.net_sales_amount`
 - `VALUE:AGGREGATE:sales_order_items.quantity,inventory_cost_layers.unit_cost,products.purchase_price->cogs_entries.cogs_amount`
+- `VALUE:AGGREGATE:sales_returns.refund_amount->sales_fact.refund_amount`
+- `VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id`
+- `VALUE:AGGREGATE:voucher_items.amount->budget_items.used_amount`
+- `VALUE:ARITHMETIC:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory.quantity`
+- `VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
 - `VALUE:ARITHMETIC:inventory_location_balances.locked_quantity,picking_task_items.required_qty->inventory_location_balances.locked_quantity`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.housing_fund_base`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.salary`
+- `VALUE:ARITHMETIC:positions.min_salary,positions.max_salary->employees.social_security_base`
 - `VALUE:ARITHMETIC:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change`
+- `VALUE:ARITHMETIC:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
 - `VALUE:ARITHMETIC:sales_order_items.quantity,sales_order_items.returned_qty->picking_task_items.required_qty`
 - `VALUE:ARITHMETIC:sales_orders.order_date,customers.credit_days->ar_invoices.due_date`
-- `VALUE:COALESCE:inventory.quantity,finished_goods_receipts.received_qty->inventory_transactions.after_qty`
-- `VALUE:COALESCE:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:sales_orders.order_date->fiscal_calendar.period_end`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.address->customers.address`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.contact_person->customers.contact_person`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.email->customers.email`
+- `VALUE:CASE_WHEN:master_data_change_items.new_value,customers.phone->customers.phone`
+- `VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name`
 - `VALUE:COALESCE:inventory.quantity->inventory_transactions.before_qty`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.net_requirement`
-- `VALUE:COALESCE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate->mrp_run_items.suggested_order_qty`
-- `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.due_date`
+- `VALUE:COALESCE:payments.amount,sales_orders.paid_amount->sales_fact.paid_amount`
+- `VALUE:COALESCE:product_categories.name->category_dim.level1_name`
 - `VALUE:COALESCE:purchase_orders.actual_delivery_date,purchase_orders.order_date->ap_invoices.invoice_date`
-- `VALUE:COALESCE:sales_order_items.amount,sales_order_items.quantity,products.purchase_price->sales_fact.gross_margin_amount`
-- `VALUE:COALESCE:sales_order_items.amount->sales_fact.net_sales_amount`
-- `VALUE:COALESCE:sales_orders.paid_amount->sales_fact.paid_amount`
-- `VALUE:COALESCE:voucher_items.direction,voucher_items.amount->budget_items.used_amount`
 - `VALUE:COALESCE:work_order_costs.unit_cost,finished_goods_receipts.unit_cost->inventory_cost_layers.unit_cost`
 - `VALUE:CONCAT_FORMAT:finished_goods_receipts.receipt_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:purchase_orders.order_no->ap_invoices.ap_no`
 - `VALUE:CONCAT_FORMAT:repair_orders.repair_no->inventory_transactions.remark`
 - `VALUE:CONCAT_FORMAT:sales_orders.id->picking_tasks.task_no`
 - `VALUE:CONCAT_FORMAT:sales_orders.order_no->ar_invoices.ar_no`
+- `VALUE:DIRECT:accounting_periods.id->fiscal_calendar.accounting_period_id`
 - `VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id`
 - `VALUE:DIRECT:category_dim.id->sales_fact.category_dim_id`
 - `VALUE:DIRECT:customers.name->cashier_journals.counterparty`
+- `VALUE:DIRECT:departments.id->employees.department_id`
 - `VALUE:DIRECT:employee_shifts.id->employee_shift_assignments.shift_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory.batch_id`
 - `VALUE:DIRECT:finished_goods_receipts.batch_id->inventory_cost_layers.batch_id`
@@ -34775,6 +35269,11 @@ DECLARE
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:finished_goods_receipts.warehouse_id->inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:payments.id->sales_fact.payment_id`
+- `VALUE:DIRECT:positions.id->employees.position_id`
+- `VALUE:DIRECT:product_categories.code->category_dim.category_code`
+- `VALUE:DIRECT:product_categories.id->category_dim.source_category_id`
+- `VALUE:DIRECT:product_categories.name->category_dim.leaf_name`
 - `VALUE:DIRECT:production_plans.product_id->mrp_run_items.parent_product_id`
 - `VALUE:DIRECT:purchase_orders.id->ap_invoices.purchase_order_id`
 - `VALUE:DIRECT:purchase_orders.paid_amount->ap_invoices.paid_amount`
@@ -34804,6 +35303,7 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.id->picking_tasks.sales_order_id`
 - `VALUE:DIRECT:sales_orders.id->sales_fact.order_id`
 - `VALUE:DIRECT:sales_orders.order_date->ar_invoices.invoice_date`
+- `VALUE:DIRECT:sales_orders.order_date->fiscal_calendar.calendar_date`
 - `VALUE:DIRECT:sales_orders.order_date->sales_fact.fiscal_date`
 - `VALUE:DIRECT:sales_orders.paid_amount->ar_invoices.paid_amount`
 - `VALUE:DIRECT:sales_orders.status->sales_fact.order_status`
@@ -34811,6 +35311,10 @@ DECLARE
 - `VALUE:DIRECT:sales_orders.warehouse_id->picking_tasks.warehouse_id`
 - `VALUE:DIRECT:sales_orders.warehouse_id->sales_fact.warehouse_id`
 - `VALUE:DIRECT:work_orders.id->work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:product_categories.name->category_dim.is_womenwear`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_code`
+- `VALUE:FUNCTION_CALL:sales_orders.order_date->fiscal_calendar.period_start`
 
 **Extractor Candidate Fingerprints**
 
@@ -34845,8 +35349,8 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 
 - `CONTROL:CASE_WHEN:contracts.status->contract_milestones.status`
 - `CONTROL:CASE_WHEN:purchase_orders.status->invoices.status`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.actual_delivery_date`
-- `CONTROL:CASE_WHEN:sales_orders.status,sales_orders.order_date->shipments.delivered_at`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.actual_delivery_date`
+- `CONTROL:CASE_WHEN:sales_orders.status->shipments.delivered_at`
 - `CONTROL:CASE_WHEN:sales_orders.status->shipments.status`
 - `CONTROL:CASE_WHEN:shipments.status->shipping_tracks.status_desc`
 - `CONTROL:CASE_WHEN:work_orders.status->work_order_materials.status`
@@ -34875,6 +35379,8 @@ CREATE OR REPLACE PROCEDURE sp_run_mrp_for_plan(
 - `VALUE:ARITHMETIC:sales_orders.order_date->shipments.estimated_delivery_date`
 - `VALUE:ARITHMETIC:sales_orders.total_amount->shipments.shipping_fee`
 - `VALUE:ARITHMETIC:shipments.shipped_at->shipping_tracks.track_time`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.actual_delivery_date`
+- `VALUE:CASE_WHEN:sales_orders.order_date->shipments.delivered_at`
 - `VALUE:COALESCE:employees.manager_id,employees.id->performance_reviews.reviewer_id`
 - `VALUE:CONCAT_FORMAT:boms.id->work_orders.order_no`
 - `VALUE:CONCAT_FORMAT:customers.address->shipping_tracks.location`
@@ -36496,26 +37002,13 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:COALESCE:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:COALESCE:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:COALESCE:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:COALESCE:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:COALESCE:dbo.roles.id->dbo.role_permissions.role_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
+- `CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status`
+- `VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.departments.manager_id->dbo.employee_roles.granted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36530,8 +37023,8 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_01_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_org_security_relationships
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_org_security_relationships]
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-02-procedures-supplement-sql`
@@ -36548,26 +37041,10 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:COALESCE:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:COALESCE:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.supplier_products.supplier_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price`
+- `VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.supplier_price->dbo.products.purchase_price`
 
 **Extractor Candidate Fingerprints**
 
@@ -36582,8 +37059,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_02_procedures_supplement_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_supplier_product_metrics
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_product_metrics]
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-03-functions-sql`
@@ -36610,13 +37087,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
+-- relation-detector-fixture-source:sqlserver.fn_department_hierarchy
+CREATE OR ALTER FUNCTION [dbo].[fn_department_hierarchy]()
+RETURNS TABLE
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-04-procedures-supplement-sql`
@@ -36633,26 +37110,16 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.commission_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_commissions.order_item_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_commissions.period`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.sales_commissions.employee_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36667,8 +37134,8 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_04_procedures_supplement_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_sales_commissions
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_sales_commissions]
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-05-third-batch-procedures-sql`
@@ -36685,26 +37152,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status`
+- `VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty`
+- `VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status`
+- `VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.boms.unit->dbo.work_order_materials.unit`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36719,8 +37172,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_05_third_batch_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_rebuild_work_order_material_plan
+CREATE OR ALTER PROCEDURE [dbo].[sp_rebuild_work_order_material_plan]
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-06-third-batch-functions-sql`
@@ -36747,13 +37200,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+-- relation-detector-fixture-source:sqlserver.fn_contract_milestone_status
+CREATE OR ALTER FUNCTION [dbo].[fn_contract_milestone_status]()
+RETURNS TABLE
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-07-store-customer-procedures-sql`
@@ -36770,26 +37223,9 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- `VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36804,8 +37240,8 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_07_store_customer_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_customer_balance_from_orders
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_customer_balance_from_orders]
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
@@ -36822,26 +37258,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `VALUE:CASE_WHEN:dbo.product_batches.status->dbo.product_batches.status`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.product_batches.batch_no->dbo.inventory_transactions.remark`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -36856,8 +37282,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_08_batch_expiry_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_mark_expiring_batches
+CREATE OR ALTER PROCEDURE [dbo].[sp_mark_expiring_batches]
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-09-return-refund-procedures-sql`
@@ -36874,26 +37300,15 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
+- `VALUE:DIRECT:dbo.sales_returns.handler_id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_returns.refund_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.sales_returns.return_date->dbo.cashier_journals.journal_date`
+- `VALUE:DIRECT:dbo.sales_returns.return_reason->dbo.cashier_journals.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -36908,8 +37323,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_09_return_refund_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_post_sales_return_refunds
+CREATE OR ALTER PROCEDURE [dbo].[sp_post_sales_return_refunds]
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
@@ -36926,26 +37341,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:COALESCE:dbo.accounts.id->dbo.voucher_items.account_id`
-- `VALUE:COALESCE:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.damage_report_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level`
+- `CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km`
 
 **Extractor Candidate Fingerprints**
 
@@ -36960,8 +37357,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_10_supplier_geo_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_supplier_geo_quality
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_geo_quality]
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-11-common-system-procedures-sql`
@@ -36978,26 +37375,15 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->dbo.cashier_journals.account_id`
-- `VALUE:COALESCE:dbo.accounts.id->dbo.reconciliations.account_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.reviewed_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.salary_payments.employee_id`
-- `VALUE:COALESCE:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.salary_payments.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.settlements.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.reconciliations.account_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.salary_payments.employee_id`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.cashier_journals.remark->dbo.reconciliation_items.description`
 - `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.settlements.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37012,8 +37398,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_11_common_system_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_build_cashier_reconciliation_items
+CREATE OR ALTER PROCEDURE [dbo].[sp_build_cashier_reconciliation_items]
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
@@ -37030,26 +37416,17 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_commissions.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.prepared_by`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.commission_rules.product_category_id`
-- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_commissions.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.shipments.order_id`
-- `VALUE:COALESCE:dbo.settlements.id->dbo.settlement_items.settlement_id`
-- `VALUE:COALESCE:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.prepared_by`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.shipments.order_id`
-- `VALUE:DIRECT:dbo.settlements.id->dbo.settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.shipments.warehouse_id`
+- `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity`
+- `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.stocktake_items.book_quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.stocktake_items.counted_quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.stocktake_items.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.stocktake_items.variance_reason->dbo.inventory_transactions.remark`
+- `VALUE:DIRECT:dbo.stocktakes.created_by->dbo.inventory_transactions.operator_id`
+- `VALUE:DIRECT:dbo.stocktakes.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.stocktakes.warehouse_id->dbo.inventory_transactions.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37064,8 +37441,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_12_enterprise_extension_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_post_stocktake_variance
+CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 ```
 
 ## `sqlserver-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
@@ -37082,103 +37459,145 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
-- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
-- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
-- `VALUE:AGGREGATE:dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.inventory.locked_quantity->dbo.mrp_run_items.on_hand_qty`
-- `VALUE:AGGREGATE:dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity->dbo.mrp_run_items.reserved_qty`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.work_orders.planned_quantity,dbo.standard_costs.material_cost,dbo.standard_costs.labor_cost,dbo.standard_costs.overhead_cost->dbo.work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost->dbo.work_order_costs.material_cost`
-- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.address`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.contact_person`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.email`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.phone`
+- `CONTROL:CASE_WHEN:dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `CONTROL:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.purchase_orders.paid_amount,dbo.purchase_orders.total_amount->dbo.ap_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.payments.amount,dbo.sales_orders.total_amount->dbo.sales_orders.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `CONTROL:CASE_WHEN:dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
-- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days->dbo.mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days,dbo.mrp_runs.run_date->dbo.mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
-- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory.quantity`
+- `VALUE:AGGREGATE:dbo.voucher_items.amount->dbo.budget_items.used_amount`
+- `VALUE:ARITHMETIC:dbo.inventory.available_quantity,dbo.repair_order_parts.quantity->dbo.inventory.available_quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory.quantity`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory_transactions.after_qty`
-- `VALUE:ARITHMETIC:dbo.inventory_location_balances.locked_quantity,dbo.picking_task_items.required_qty->dbo.inventory_location_balances.locked_quantity`
-- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate->dbo.mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity->dbo.mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:dbo.repair_order_parts.quantity->dbo.inventory_transactions.quantity_change`
-- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
-- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
-- `VALUE:COALESCE:dbo.cashier_journals.journal_type,dbo.cashier_journals.counterparty,dbo.cashier_journals.remark->dbo.reconciliation_items.description`
-- `VALUE:COALESCE:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:COALESCE:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.cogs_entries.cogs_amount->dbo.sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.paid_amount,dbo.payments.amount->dbo.sales_orders.paid_amount`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.address->dbo.customers.address`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.contact_person->dbo.customers.contact_person`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.email->dbo.customers.email`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.phone->dbo.customers.phone`
+- `VALUE:CASE_WHEN:dbo.sales_orders.status->dbo.sales_orders.status`
 - `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
-- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
-- `VALUE:COALESCE:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.invoices.supplier_id`
-- `VALUE:COALESCE:dbo.work_order_costs.unit_cost,dbo.finished_goods_receipts.unit_cost->dbo.inventory_cost_layers.unit_cost`
-- `VALUE:CONCAT_FORMAT:dbo.finished_goods_receipts.receipt_no->dbo.inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:dbo.production_plans.plan_month,dbo.production_plans.id->dbo.mrp_runs.run_no`
-- `VALUE:CONCAT_FORMAT:dbo.repair_order_parts.id->dbo.inventory_transactions.remark`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
+- `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
+- `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.payments.payment_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
 - `VALUE:DIRECT:dbo.boms.child_product_id->dbo.mrp_run_items.component_product_id`
-- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
-- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
-- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
-- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:dbo.boms.parent_product_id->dbo.mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:dbo.cashier_journals.amount->dbo.payments.amount`
+- `VALUE:DIRECT:dbo.cashier_journals.created_at->dbo.payments.created_at`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.payments.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.payments.payment_date`
+- `VALUE:DIRECT:dbo.cashier_journals.status->dbo.payments.payment_status`
+- `VALUE:DIRECT:dbo.category_dim.id->dbo.sales_fact.category_dim_id`
+- `VALUE:DIRECT:dbo.employee_shifts.id->dbo.employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:dbo.employees.hire_date->dbo.employee_shift_assignments.work_date`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_shift_assignments.employee_id`
+- `VALUE:DIRECT:dbo.employees.manager_id->dbo.employee_roles.granted_by`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_cost_layers.source_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_transactions.reference_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_cost_layers.product_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory.last_stocktake_date`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory_cost_layers.receipt_date`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.original_qty`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_by->dbo.inventory_transactions.operator_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.quantity_change`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
 - `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
-- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_run_items.run_id`
-- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_runs.plan_id`
-- `VALUE:DIRECT:dbo.production_plans.product_id->dbo.mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `VALUE:DIRECT:dbo.inventory_location_balances.location_id->dbo.picking_task_items.location_id`
+- `VALUE:DIRECT:dbo.master_data_change_items.new_value->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.master_data_change_requests.approved_by->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.master_data_change_requests.master_id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.master_data_change_requests.master_type->dbo.audit_log.target_type`
+- `VALUE:DIRECT:dbo.mrp_runs.id->dbo.mrp_run_items.run_id`
+- `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
+- `VALUE:DIRECT:dbo.picking_tasks.id->dbo.picking_task_items.picking_task_id`
+- `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
+- `VALUE:DIRECT:dbo.product_categories.created_at->dbo.category_dim.effective_from`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.level1_name`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.level2_name`
+- `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_date->dbo.ap_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.purchase_orders.paid_amount->dbo.ap_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.ap_invoices.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_orders.total_amount->dbo.ap_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.region_dim.id->dbo.sales_fact.region_dim_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:dbo.repair_order_parts.product_id->dbo.inventory_transactions.product_id`
 - `VALUE:DIRECT:dbo.repair_order_parts.repair_order_id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.repair_orders.technician_id->dbo.inventory_transactions.operator_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_fact.sales_amount`
 - `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
 - `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
 - `VALUE:DIRECT:dbo.sales_order_items.id->dbo.picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
 - `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
 - `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.picking_task_items.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.sales_fact.product_id`
 - `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
 - `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.picking_task_items.required_qty`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.sales_fact.quantity_sold`
+- `VALUE:DIRECT:dbo.sales_orders.created_at->dbo.sales_fact.created_at`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.ar_invoices.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payments.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.discount_amount->dbo.ar_invoices.writeoff_amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
 - `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_task_items.task_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payments.order_id`
 - `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_tasks.sales_order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.order_no->dbo.cashier_journals.remark`
-- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.ar_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_fact.fiscal_date`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.ar_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.payments.payment_method`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.sales_fact.sales_channel`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.picking_tasks.assigned_to`
+- `VALUE:DIRECT:dbo.sales_orders.status->dbo.sales_fact.order_status`
+- `VALUE:DIRECT:dbo.sales_orders.total_amount->dbo.ar_invoices.invoice_amount`
 - `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.picking_tasks.warehouse_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.sales_fact.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.city`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.region_name`
+- `VALUE:DIRECT:dbo.warehouses.code->dbo.region_dim.region_code`
+- `VALUE:DIRECT:dbo.warehouses.district->dbo.region_dim.district`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
+- `VALUE:DIRECT:dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.purchase_orders.order_date->dbo.ap_invoices.due_date`
 
 **Extractor Candidate Fingerprints**
 
@@ -37193,16 +37612,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_13_erp_deep_scenario_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_run_mrp_for_plan
+CREATE OR ALTER PROCEDURE [dbo].[sp_run_mrp_for_plan]
 ```
 
 ## `sqlserver-sample-data-full-03-data-01-master-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -37211,26 +37630,7 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -37240,21 +37640,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[departments] ([parent_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[departments].
 ```
 
 ## `sqlserver-sample-data-full-03-data-02-supplementary-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -37263,26 +37663,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -37292,21 +37673,21 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[inventory] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[reconciliation_items].
 ```
 
 ## `sqlserver-sample-data-full-03-data-03-third-batch-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -37315,26 +37696,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -37344,13 +37706,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[purchase_receipt_items] ([batch_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[ar_aging_snapshots].
 ```
 
 ## `sqlserver-sample-data-full-03-data-04-return-damage-data-sql`
@@ -37367,25 +37729,42 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
+- `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.amount`
+- `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.return_qty`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_at`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_by`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.status`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_reports.total_loss_amount`
+- `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.damage_reports.total_quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_report_items.loss_amount`
+- `VALUE:ARITHMETIC:dbo.purchase_order_items.received_qty,dbo.purchase_order_items.unit_price->dbo.purchase_return_items.amount`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.paid_amount->dbo.purchase_returns.refund_received`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.total_amount->dbo.purchase_returns.total_amount`
+- `VALUE:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.return_qty`
+- `VALUE:CASE_WHEN:dbo.purchase_receipts.receipt_date->dbo.purchase_returns.approved_at`
+- `VALUE:CASE_WHEN:dbo.purchase_receipts.receiver_id->dbo.purchase_returns.approved_by`
+- `VALUE:COALESCE:dbo.purchase_receipts.receipt_date,dbo.purchase_orders.actual_delivery_date,dbo.purchase_orders.order_date->dbo.purchase_returns.return_date`
+- `VALUE:COALESCE:dbo.purchase_receipts.warehouse_id->dbo.purchase_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.approved_by`
+- `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.reported_by`
+- `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.purchase_returns.return_no`
+- `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.damage_reports.report_no`
 - `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.damage_report_items.quantity`
 - `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.products.purchase_price->dbo.damage_report_items.unit_cost`
+- `VALUE:DIRECT:dbo.purchase_order_items.product_id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_order_items.unit_price->dbo.purchase_return_items.unit_price`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
 - `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.purchase_returns.return_reason->dbo.purchase_return_items.reason`
 - `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
 
 **Extractor Candidate Fingerprints**
@@ -37395,14 +37774,14 @@ SELECT p.[id]
 **Input Preview**
 
 ```sql
--- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- ============================================================
+-- Natural purchase-return and warehouse-damage transactions.
+-- T-SQL 2016-compatible baseline shared by all SQL Server sample versions.
 
-INSERT INTO [dbo].[purchase_returns] ([handler_id])
-SELECT p.[id]
+INSERT INTO [dbo].[purchase_returns] (
+    [return_no], [purchase_order_id], [purchase_receipt_id], [supplier_id],
+    [warehouse_id], [handler_id], [return_date], [return_reason], [return_type],
+    [total_amount], [refund_received], [status], [approved_by], [approved_at], [created_at]
+)
 ```
 
 ## `sqlserver-sample-data-full-03-data-05-massive-data-generator-sql`
@@ -37419,26 +37798,29 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id`
+- `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `VALUE:ARITHMETIC:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:COALESCE:dbo.supplier_products.supplier_price,dbo.products.purchase_price->dbo.product_batches.purchase_price`
+- `VALUE:CONCAT_FORMAT:dbo.products.sku->dbo.product_batches.batch_no`
+- `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.inventory.shelf_location`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.product_batches.current_qty->dbo.inventory.available_quantity`
+- `VALUE:DIRECT:dbo.product_batches.current_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.product_id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.supplier_products.supplier_id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -37447,22 +37829,22 @@ SELECT p.[id]
 **Input Preview**
 
 ```sql
--- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- ============================================================
+-- Natural bulk inventory initialization used for scale-oriented sample data.
+-- The procedure creates operational batches, warehouse balances, and opening
+-- inventory transactions from existing product, supplier, and warehouse facts.
 
-INSERT INTO [dbo].[cashier_journals] ([account_id])
-SELECT p.[id]
+-- relation-detector-fixture-source:sqlserver.sp_seed_inventory_capacity
+CREATE OR ALTER PROCEDURE [dbo].[sp_seed_inventory_capacity]
+AS
+BEGIN
 ```
 
 ## `sqlserver-sample-data-full-03-data-06-enterprise-extension-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -37471,26 +37853,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.boms.id->dbo.work_orders.bom_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.fixed_assets.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.fixed_assets.custodian_id`
-- `VALUE:DIRECT:dbo.fixed_assets.id->dbo.depreciation_log.asset_id`
-- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.boms.child_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.boms.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.three_way_matching.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.work_orders.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.work_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -37500,13 +37863,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[promotion_products] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[consignment_consumptions].
 ```
 
 ## `sqlserver-sample-data-full-03-data-07-erp-deep-scenario-data-sql`
@@ -37523,26 +37886,115 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.approval_workflows.id->dbo.approval_nodes.workflow_id`
-- `VALUE:DIRECT:dbo.contracts.id->dbo.contract_milestones.contract_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.service_tickets.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.inspection_reports.inspector_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.service_tickets.assigned_to`
-- `VALUE:DIRECT:dbo.employees.id->dbo.tax_filings.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.tax_invoices.verified_by`
-- `VALUE:DIRECT:dbo.inspection_standards.id->dbo.inspection_reports.standard_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inspection_reports.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inspection_reports.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inspection_standards.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.service_tickets.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.work_order_materials.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.service_tickets.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.ap_aging_snapshots.supplier_id`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.difference_reason`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.is_matched`
+- `CONTROL:CASE_WHEN:dbo.payment_receipts.amount,dbo.sales_orders.paid_amount->dbo.payments.payment_status`
+- `CONTROL:CASE_WHEN:dbo.payment_receipts.amount->dbo.payments.failure_reason`
+- `CONTROL:CASE_WHEN:dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:CASE_WHEN:dbo.product_categories.name->dbo.category_dim.is_womenwear`
+- `CONTROL:CASE_WHEN:dbo.purchase_orders.paid_amount,dbo.purchase_orders.total_amount->dbo.ap_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.order_date->dbo.fiscal_calendar.is_current_fiscal_year`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount->dbo.payment_receipts.status`
+- `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
+- `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
+- `VALUE:AGGREGATE:dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
+- `VALUE:AGGREGATE:dbo.voucher_items.amount->dbo.budget_items.used_amount`
+- `VALUE:ARITHMETIC:dbo.cashier_journals.counterparty,dbo.cashier_journals.reference_type->dbo.reconciliation_items.description`
+- `VALUE:ARITHMETIC:dbo.payment_receipts.receipt_no->dbo.payments.payment_no`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.cogs_entries.cogs_amount->dbo.sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_start`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_no->dbo.payment_receipts.receipt_no`
+- `VALUE:ARITHMETIC:dbo.warehouses.city->dbo.region_dim.region_name`
+- `VALUE:ARITHMETIC:dbo.warehouses.code->dbo.region_dim.region_code`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.remark->dbo.reconciliation_items.difference_reason`
+- `VALUE:CASE_WHEN:dbo.product_categories.name->dbo.category_dim.level2_name`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
+- `VALUE:COALESCE:dbo.product_categories.name->dbo.category_dim.level1_name`
+- `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
+- `VALUE:DIRECT:dbo.accounting_periods.id->dbo.fiscal_calendar.accounting_period_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.payments.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.category_dim.id->dbo.sales_fact.category_dim_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `VALUE:DIRECT:dbo.payment_receipts.amount->dbo.payments.amount`
+- `VALUE:DIRECT:dbo.payment_receipts.confirmed_at->dbo.payments.created_at`
+- `VALUE:DIRECT:dbo.payment_receipts.currency->dbo.payments.currency`
+- `VALUE:DIRECT:dbo.payment_receipts.id->dbo.payment_receipt_allocations.receipt_id`
+- `VALUE:DIRECT:dbo.payment_receipts.id->dbo.payments.receipt_id`
+- `VALUE:DIRECT:dbo.payment_receipts.receipt_date->dbo.payments.payment_date`
+- `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
+- `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
+- `VALUE:DIRECT:dbo.product_categories.created_at->dbo.category_dim.effective_from`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
+- `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
+- `VALUE:DIRECT:dbo.purchase_orders.expected_delivery_date->dbo.ap_invoices.due_date`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_date->dbo.ap_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.purchase_orders.paid_amount->dbo.ap_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.ap_invoices.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_orders.total_amount->dbo.ap_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.region_dim.id->dbo.sales_fact.region_dim_id`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_fact.sales_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.sales_fact.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.sales_fact.quantity_sold`
+- `VALUE:DIRECT:dbo.sales_orders.created_at->dbo.sales_fact.created_at`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.ar_invoices.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payment_receipts.party_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payments.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.discount_amount->dbo.ar_invoices.writeoff_amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payments.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.ar_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.fiscal_calendar.calendar_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.payment_receipts.receipt_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_fact.fiscal_date`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.ar_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.payment_receipt_allocations.allocated_amount`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.payment_receipts.amount`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.payments.payment_method`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.sales_fact.sales_channel`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.payment_receipts.handled_by`
+- `VALUE:DIRECT:dbo.sales_orders.status->dbo.sales_fact.order_status`
+- `VALUE:DIRECT:dbo.sales_orders.total_amount->dbo.ar_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.sales_orders.updated_at->dbo.cogs_entries.posted_at`
+- `VALUE:DIRECT:dbo.sales_orders.updated_at->dbo.payment_receipts.confirmed_at`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.sales_fact.warehouse_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.cogs_entries.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.city`
+- `VALUE:DIRECT:dbo.warehouses.district->dbo.region_dim.district`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
+- `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_code`
 
 **Extractor Candidate Fingerprints**
 
@@ -37552,13 +38004,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[work_order_materials] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[production_plans].
 ```
 
 ## `sqlserver-sample-data-full-04-queries-01-complex-queries-sql`
@@ -37588,7 +38040,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer sales summary by region and category.
@@ -37621,7 +38073,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Sales order payment status.
@@ -37654,7 +38106,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer return and refund summary.
@@ -37687,7 +38139,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Cashier journal reconciliation overview.
@@ -37720,7 +38172,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Batch expiry risk by product and warehouse.
@@ -37753,7 +38205,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Sales return item reason analysis.
@@ -37786,7 +38238,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Supplier purchase and receipt scorecard.
@@ -37819,7 +38271,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Production planning demand overview.
@@ -37852,7 +38304,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Inventory valuation by product and warehouse.
@@ -37885,7 +38337,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Payment request approval amount.
@@ -37918,7 +38370,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Picking task execution summary.
@@ -37971,26 +38423,13 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:COALESCE:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:COALESCE:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:COALESCE:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:COALESCE:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:COALESCE:dbo.roles.id->dbo.role_permissions.role_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
+- `CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status`
+- `VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.departments.manager_id->dbo.employee_roles.granted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38005,8 +38444,8 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_01_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_org_security_relationships
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_org_security_relationships]
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-02-procedures-supplement-sql`
@@ -38023,26 +38462,10 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:COALESCE:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:COALESCE:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.supplier_products.supplier_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price`
+- `VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.supplier_price->dbo.products.purchase_price`
 
 **Extractor Candidate Fingerprints**
 
@@ -38057,8 +38480,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_02_procedures_supplement_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_supplier_product_metrics
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_product_metrics]
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-03-functions-sql`
@@ -38085,13 +38508,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
+-- relation-detector-fixture-source:sqlserver.fn_department_hierarchy
+CREATE OR ALTER FUNCTION [dbo].[fn_department_hierarchy]()
+RETURNS TABLE
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-04-procedures-supplement-sql`
@@ -38108,26 +38531,16 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.commission_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_commissions.order_item_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_commissions.period`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.sales_commissions.employee_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38142,8 +38555,8 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_04_procedures_supplement_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_sales_commissions
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_sales_commissions]
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-05-third-batch-procedures-sql`
@@ -38160,26 +38573,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status`
+- `VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty`
+- `VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status`
+- `VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.boms.unit->dbo.work_order_materials.unit`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38194,8 +38593,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_05_third_batch_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_rebuild_work_order_material_plan
+CREATE OR ALTER PROCEDURE [dbo].[sp_rebuild_work_order_material_plan]
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-06-third-batch-functions-sql`
@@ -38222,13 +38621,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+-- relation-detector-fixture-source:sqlserver.fn_contract_milestone_status
+CREATE OR ALTER FUNCTION [dbo].[fn_contract_milestone_status]()
+RETURNS TABLE
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-07-store-customer-procedures-sql`
@@ -38245,26 +38644,9 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- `VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38279,8 +38661,8 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_07_store_customer_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_customer_balance_from_orders
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_customer_balance_from_orders]
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
@@ -38297,26 +38679,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.product_batches.batch_no->dbo.inventory_transactions.remark`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
+- `VALUE:FUNCTION_CALL:dbo.product_batches.status->dbo.product_batches.status`
 
 **Extractor Candidate Fingerprints**
 
@@ -38331,8 +38703,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_08_batch_expiry_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_mark_expiring_batches
+CREATE OR ALTER PROCEDURE [dbo].[sp_mark_expiring_batches]
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-09-return-refund-procedures-sql`
@@ -38349,26 +38721,15 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
+- `VALUE:DIRECT:dbo.sales_returns.handler_id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_returns.refund_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.sales_returns.return_date->dbo.cashier_journals.journal_date`
+- `VALUE:DIRECT:dbo.sales_returns.return_reason->dbo.cashier_journals.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -38383,8 +38744,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_09_return_refund_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_post_sales_return_refunds
+CREATE OR ALTER PROCEDURE [dbo].[sp_post_sales_return_refunds]
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
@@ -38401,26 +38762,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:COALESCE:dbo.accounts.id->dbo.voucher_items.account_id`
-- `VALUE:COALESCE:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.damage_report_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level`
+- `CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km`
 
 **Extractor Candidate Fingerprints**
 
@@ -38435,8 +38778,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_10_supplier_geo_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_supplier_geo_quality
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_geo_quality]
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-11-common-system-procedures-sql`
@@ -38453,26 +38796,15 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->dbo.cashier_journals.account_id`
-- `VALUE:COALESCE:dbo.accounts.id->dbo.reconciliations.account_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.reviewed_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.salary_payments.employee_id`
-- `VALUE:COALESCE:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.salary_payments.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.settlements.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.reconciliations.account_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.salary_payments.employee_id`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.cashier_journals.remark->dbo.reconciliation_items.description`
 - `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.settlements.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38487,8 +38819,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_11_common_system_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_build_cashier_reconciliation_items
+CREATE OR ALTER PROCEDURE [dbo].[sp_build_cashier_reconciliation_items]
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
@@ -38505,26 +38837,17 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_commissions.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.prepared_by`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.commission_rules.product_category_id`
-- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_commissions.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.shipments.order_id`
-- `VALUE:COALESCE:dbo.settlements.id->dbo.settlement_items.settlement_id`
-- `VALUE:COALESCE:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.prepared_by`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.shipments.order_id`
-- `VALUE:DIRECT:dbo.settlements.id->dbo.settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.shipments.warehouse_id`
+- `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity`
+- `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.stocktake_items.book_quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.stocktake_items.counted_quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.stocktake_items.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.stocktake_items.variance_reason->dbo.inventory_transactions.remark`
+- `VALUE:DIRECT:dbo.stocktakes.created_by->dbo.inventory_transactions.operator_id`
+- `VALUE:DIRECT:dbo.stocktakes.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.stocktakes.warehouse_id->dbo.inventory_transactions.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38539,8 +38862,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_12_enterprise_extension_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_post_stocktake_variance
+CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 ```
 
 ## `sqlserver2016-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
@@ -38557,103 +38880,145 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
-- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
-- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
-- `VALUE:AGGREGATE:dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.inventory.locked_quantity->dbo.mrp_run_items.on_hand_qty`
-- `VALUE:AGGREGATE:dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity->dbo.mrp_run_items.reserved_qty`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.work_orders.planned_quantity,dbo.standard_costs.material_cost,dbo.standard_costs.labor_cost,dbo.standard_costs.overhead_cost->dbo.work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost->dbo.work_order_costs.material_cost`
-- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.address`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.contact_person`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.email`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.phone`
+- `CONTROL:CASE_WHEN:dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `CONTROL:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.purchase_orders.paid_amount,dbo.purchase_orders.total_amount->dbo.ap_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.payments.amount,dbo.sales_orders.total_amount->dbo.sales_orders.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `CONTROL:CASE_WHEN:dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
-- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days->dbo.mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days,dbo.mrp_runs.run_date->dbo.mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
-- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory.quantity`
+- `VALUE:AGGREGATE:dbo.voucher_items.amount->dbo.budget_items.used_amount`
+- `VALUE:ARITHMETIC:dbo.inventory.available_quantity,dbo.repair_order_parts.quantity->dbo.inventory.available_quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory.quantity`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory_transactions.after_qty`
-- `VALUE:ARITHMETIC:dbo.inventory_location_balances.locked_quantity,dbo.picking_task_items.required_qty->dbo.inventory_location_balances.locked_quantity`
-- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate->dbo.mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity->dbo.mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:dbo.repair_order_parts.quantity->dbo.inventory_transactions.quantity_change`
-- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
-- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
-- `VALUE:COALESCE:dbo.cashier_journals.journal_type,dbo.cashier_journals.counterparty,dbo.cashier_journals.remark->dbo.reconciliation_items.description`
-- `VALUE:COALESCE:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:COALESCE:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.cogs_entries.cogs_amount->dbo.sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.paid_amount,dbo.payments.amount->dbo.sales_orders.paid_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.status->dbo.sales_orders.status`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.address->dbo.customers.address`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.contact_person->dbo.customers.contact_person`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.email->dbo.customers.email`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.phone->dbo.customers.phone`
 - `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
-- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
-- `VALUE:COALESCE:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.invoices.supplier_id`
-- `VALUE:COALESCE:dbo.work_order_costs.unit_cost,dbo.finished_goods_receipts.unit_cost->dbo.inventory_cost_layers.unit_cost`
-- `VALUE:CONCAT_FORMAT:dbo.finished_goods_receipts.receipt_no->dbo.inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:dbo.production_plans.plan_month,dbo.production_plans.id->dbo.mrp_runs.run_no`
-- `VALUE:CONCAT_FORMAT:dbo.repair_order_parts.id->dbo.inventory_transactions.remark`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
+- `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
+- `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.payments.payment_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
 - `VALUE:DIRECT:dbo.boms.child_product_id->dbo.mrp_run_items.component_product_id`
-- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
-- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
-- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
-- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:dbo.boms.parent_product_id->dbo.mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:dbo.cashier_journals.amount->dbo.payments.amount`
+- `VALUE:DIRECT:dbo.cashier_journals.created_at->dbo.payments.created_at`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.payments.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.payments.payment_date`
+- `VALUE:DIRECT:dbo.cashier_journals.status->dbo.payments.payment_status`
+- `VALUE:DIRECT:dbo.category_dim.id->dbo.sales_fact.category_dim_id`
+- `VALUE:DIRECT:dbo.employee_shifts.id->dbo.employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:dbo.employees.hire_date->dbo.employee_shift_assignments.work_date`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_shift_assignments.employee_id`
+- `VALUE:DIRECT:dbo.employees.manager_id->dbo.employee_roles.granted_by`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_cost_layers.source_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_transactions.reference_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_cost_layers.product_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory.last_stocktake_date`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory_cost_layers.receipt_date`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.original_qty`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_by->dbo.inventory_transactions.operator_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.quantity_change`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
 - `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
-- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_run_items.run_id`
-- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_runs.plan_id`
-- `VALUE:DIRECT:dbo.production_plans.product_id->dbo.mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `VALUE:DIRECT:dbo.inventory_location_balances.location_id->dbo.picking_task_items.location_id`
+- `VALUE:DIRECT:dbo.master_data_change_items.new_value->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.master_data_change_requests.approved_by->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.master_data_change_requests.master_id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.master_data_change_requests.master_type->dbo.audit_log.target_type`
+- `VALUE:DIRECT:dbo.mrp_runs.id->dbo.mrp_run_items.run_id`
+- `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
+- `VALUE:DIRECT:dbo.picking_tasks.id->dbo.picking_task_items.picking_task_id`
+- `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
+- `VALUE:DIRECT:dbo.product_categories.created_at->dbo.category_dim.effective_from`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.level1_name`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.level2_name`
+- `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_date->dbo.ap_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.purchase_orders.paid_amount->dbo.ap_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.ap_invoices.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_orders.total_amount->dbo.ap_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.region_dim.id->dbo.sales_fact.region_dim_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:dbo.repair_order_parts.product_id->dbo.inventory_transactions.product_id`
 - `VALUE:DIRECT:dbo.repair_order_parts.repair_order_id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.repair_orders.technician_id->dbo.inventory_transactions.operator_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_fact.sales_amount`
 - `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
 - `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
 - `VALUE:DIRECT:dbo.sales_order_items.id->dbo.picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
 - `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
 - `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.picking_task_items.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.sales_fact.product_id`
 - `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
 - `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.picking_task_items.required_qty`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.sales_fact.quantity_sold`
+- `VALUE:DIRECT:dbo.sales_orders.created_at->dbo.sales_fact.created_at`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.ar_invoices.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payments.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.discount_amount->dbo.ar_invoices.writeoff_amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
 - `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_task_items.task_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payments.order_id`
 - `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_tasks.sales_order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.order_no->dbo.cashier_journals.remark`
-- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.ar_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_fact.fiscal_date`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.ar_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.payments.payment_method`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.sales_fact.sales_channel`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.picking_tasks.assigned_to`
+- `VALUE:DIRECT:dbo.sales_orders.status->dbo.sales_fact.order_status`
+- `VALUE:DIRECT:dbo.sales_orders.total_amount->dbo.ar_invoices.invoice_amount`
 - `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.picking_tasks.warehouse_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.sales_fact.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.city`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.region_name`
+- `VALUE:DIRECT:dbo.warehouses.code->dbo.region_dim.region_code`
+- `VALUE:DIRECT:dbo.warehouses.district->dbo.region_dim.district`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
+- `VALUE:DIRECT:dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.purchase_orders.order_date->dbo.ap_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 
 **Extractor Candidate Fingerprints**
 
@@ -38668,16 +39033,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_13_erp_deep_scenario_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_run_mrp_for_plan
+CREATE OR ALTER PROCEDURE [dbo].[sp_run_mrp_for_plan]
 ```
 
 ## `sqlserver2016-sample-data-full-03-data-01-master-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -38686,26 +39051,7 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -38715,21 +39061,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[departments] ([parent_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[departments].
 ```
 
 ## `sqlserver2016-sample-data-full-03-data-02-supplementary-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -38738,26 +39084,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -38767,21 +39094,21 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[inventory] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[reconciliation_items].
 ```
 
 ## `sqlserver2016-sample-data-full-03-data-03-third-batch-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -38790,26 +39117,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -38819,13 +39127,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[purchase_receipt_items] ([batch_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[ar_aging_snapshots].
 ```
 
 ## `sqlserver2016-sample-data-full-03-data-04-return-damage-data-sql`
@@ -38842,26 +39150,43 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
+- `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.amount`
+- `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.return_qty`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_at`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_by`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.status`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_reports.total_loss_amount`
+- `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.damage_reports.total_quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_report_items.loss_amount`
+- `VALUE:ARITHMETIC:dbo.purchase_order_items.received_qty,dbo.purchase_order_items.unit_price->dbo.purchase_return_items.amount`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.paid_amount->dbo.purchase_returns.refund_received`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.total_amount->dbo.purchase_returns.total_amount`
+- `VALUE:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.return_qty`
+- `VALUE:CASE_WHEN:dbo.purchase_receipts.receipt_date->dbo.purchase_returns.approved_at`
+- `VALUE:CASE_WHEN:dbo.purchase_receipts.receiver_id->dbo.purchase_returns.approved_by`
+- `VALUE:COALESCE:dbo.purchase_receipts.receipt_date,dbo.purchase_orders.actual_delivery_date,dbo.purchase_orders.order_date->dbo.purchase_returns.return_date`
+- `VALUE:COALESCE:dbo.purchase_receipts.warehouse_id->dbo.purchase_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.approved_by`
+- `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.reported_by`
+- `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.purchase_returns.return_no`
 - `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.damage_report_items.quantity`
 - `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.products.purchase_price->dbo.damage_report_items.unit_cost`
+- `VALUE:DIRECT:dbo.purchase_order_items.product_id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_order_items.unit_price->dbo.purchase_return_items.unit_price`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
 - `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.purchase_returns.return_reason->dbo.purchase_return_items.reason`
 - `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:FUNCTION_CALL:dbo.warehouses.code->dbo.damage_reports.report_no`
 
 **Extractor Candidate Fingerprints**
 
@@ -38870,14 +39195,14 @@ SELECT p.[id]
 **Input Preview**
 
 ```sql
--- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- ============================================================
+-- Natural purchase-return and warehouse-damage transactions.
+-- T-SQL 2016-compatible baseline shared by all SQL Server sample versions.
 
-INSERT INTO [dbo].[purchase_returns] ([handler_id])
-SELECT p.[id]
+INSERT INTO [dbo].[purchase_returns] (
+    [return_no], [purchase_order_id], [purchase_receipt_id], [supplier_id],
+    [warehouse_id], [handler_id], [return_date], [return_reason], [return_type],
+    [total_amount], [refund_received], [status], [approved_by], [approved_at], [created_at]
+)
 ```
 
 ## `sqlserver2016-sample-data-full-03-data-05-massive-data-generator-sql`
@@ -38894,26 +39219,29 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id`
+- `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `VALUE:ARITHMETIC:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:COALESCE:dbo.supplier_products.supplier_price,dbo.products.purchase_price->dbo.product_batches.purchase_price`
+- `VALUE:CONCAT_FORMAT:dbo.products.sku->dbo.product_batches.batch_no`
+- `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.inventory.shelf_location`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.product_batches.current_qty->dbo.inventory.available_quantity`
+- `VALUE:DIRECT:dbo.product_batches.current_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.product_id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.supplier_products.supplier_id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -38922,22 +39250,22 @@ SELECT p.[id]
 **Input Preview**
 
 ```sql
--- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- ============================================================
+-- Natural bulk inventory initialization used for scale-oriented sample data.
+-- The procedure creates operational batches, warehouse balances, and opening
+-- inventory transactions from existing product, supplier, and warehouse facts.
 
-INSERT INTO [dbo].[cashier_journals] ([account_id])
-SELECT p.[id]
+-- relation-detector-fixture-source:sqlserver.sp_seed_inventory_capacity
+CREATE OR ALTER PROCEDURE [dbo].[sp_seed_inventory_capacity]
+AS
+BEGIN
 ```
 
 ## `sqlserver2016-sample-data-full-03-data-06-enterprise-extension-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -38946,26 +39274,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.boms.id->dbo.work_orders.bom_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.fixed_assets.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.fixed_assets.custodian_id`
-- `VALUE:DIRECT:dbo.fixed_assets.id->dbo.depreciation_log.asset_id`
-- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.boms.child_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.boms.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.three_way_matching.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.work_orders.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.work_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -38975,13 +39284,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[promotion_products] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[consignment_consumptions].
 ```
 
 ## `sqlserver2016-sample-data-full-03-data-07-erp-deep-scenario-data-sql`
@@ -38998,26 +39307,115 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.approval_workflows.id->dbo.approval_nodes.workflow_id`
-- `VALUE:DIRECT:dbo.contracts.id->dbo.contract_milestones.contract_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.service_tickets.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.inspection_reports.inspector_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.service_tickets.assigned_to`
-- `VALUE:DIRECT:dbo.employees.id->dbo.tax_filings.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.tax_invoices.verified_by`
-- `VALUE:DIRECT:dbo.inspection_standards.id->dbo.inspection_reports.standard_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inspection_reports.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inspection_reports.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inspection_standards.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.service_tickets.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.work_order_materials.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.service_tickets.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.ap_aging_snapshots.supplier_id`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.difference_reason`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.is_matched`
+- `CONTROL:CASE_WHEN:dbo.payment_receipts.amount,dbo.sales_orders.paid_amount->dbo.payments.payment_status`
+- `CONTROL:CASE_WHEN:dbo.payment_receipts.amount->dbo.payments.failure_reason`
+- `CONTROL:CASE_WHEN:dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:CASE_WHEN:dbo.product_categories.name->dbo.category_dim.is_womenwear`
+- `CONTROL:CASE_WHEN:dbo.purchase_orders.paid_amount,dbo.purchase_orders.total_amount->dbo.ap_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.order_date->dbo.fiscal_calendar.is_current_fiscal_year`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount->dbo.payment_receipts.status`
+- `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
+- `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
+- `VALUE:AGGREGATE:dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
+- `VALUE:AGGREGATE:dbo.voucher_items.amount->dbo.budget_items.used_amount`
+- `VALUE:ARITHMETIC:dbo.cashier_journals.counterparty,dbo.cashier_journals.reference_type->dbo.reconciliation_items.description`
+- `VALUE:ARITHMETIC:dbo.payment_receipts.receipt_no->dbo.payments.payment_no`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.cogs_entries.cogs_amount->dbo.sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_start`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_no->dbo.payment_receipts.receipt_no`
+- `VALUE:ARITHMETIC:dbo.warehouses.city->dbo.region_dim.region_name`
+- `VALUE:ARITHMETIC:dbo.warehouses.code->dbo.region_dim.region_code`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.remark->dbo.reconciliation_items.difference_reason`
+- `VALUE:CASE_WHEN:dbo.product_categories.name->dbo.category_dim.level2_name`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
+- `VALUE:COALESCE:dbo.product_categories.name->dbo.category_dim.level1_name`
+- `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
+- `VALUE:DIRECT:dbo.accounting_periods.id->dbo.fiscal_calendar.accounting_period_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.payments.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.category_dim.id->dbo.sales_fact.category_dim_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `VALUE:DIRECT:dbo.payment_receipts.amount->dbo.payments.amount`
+- `VALUE:DIRECT:dbo.payment_receipts.confirmed_at->dbo.payments.created_at`
+- `VALUE:DIRECT:dbo.payment_receipts.currency->dbo.payments.currency`
+- `VALUE:DIRECT:dbo.payment_receipts.id->dbo.payment_receipt_allocations.receipt_id`
+- `VALUE:DIRECT:dbo.payment_receipts.id->dbo.payments.receipt_id`
+- `VALUE:DIRECT:dbo.payment_receipts.receipt_date->dbo.payments.payment_date`
+- `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
+- `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
+- `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
+- `VALUE:DIRECT:dbo.purchase_orders.expected_delivery_date->dbo.ap_invoices.due_date`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_date->dbo.ap_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.purchase_orders.paid_amount->dbo.ap_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.ap_invoices.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_orders.total_amount->dbo.ap_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.region_dim.id->dbo.sales_fact.region_dim_id`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_fact.sales_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.sales_fact.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.sales_fact.quantity_sold`
+- `VALUE:DIRECT:dbo.sales_orders.created_at->dbo.sales_fact.created_at`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.ar_invoices.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payment_receipts.party_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payments.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.discount_amount->dbo.ar_invoices.writeoff_amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payments.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.ar_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.fiscal_calendar.calendar_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.payment_receipts.receipt_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_fact.fiscal_date`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.ar_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.payment_receipt_allocations.allocated_amount`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.payment_receipts.amount`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.payments.payment_method`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.sales_fact.sales_channel`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.payment_receipts.handled_by`
+- `VALUE:DIRECT:dbo.sales_orders.status->dbo.sales_fact.order_status`
+- `VALUE:DIRECT:dbo.sales_orders.total_amount->dbo.ar_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.sales_orders.updated_at->dbo.cogs_entries.posted_at`
+- `VALUE:DIRECT:dbo.sales_orders.updated_at->dbo.payment_receipts.confirmed_at`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.sales_fact.warehouse_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.cogs_entries.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.city`
+- `VALUE:DIRECT:dbo.warehouses.district->dbo.region_dim.district`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
+- `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.product_categories.created_at->dbo.category_dim.effective_from`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_code`
 
 **Extractor Candidate Fingerprints**
 
@@ -39027,13 +39425,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[work_order_materials] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[production_plans].
 ```
 
 ## `sqlserver2016-sample-data-full-04-queries-01-complex-queries-sql`
@@ -39063,7 +39461,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer sales summary by region and category.
@@ -39096,7 +39494,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Sales order payment status.
@@ -39129,7 +39527,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer return and refund summary.
@@ -39162,7 +39560,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Cashier journal reconciliation overview.
@@ -39195,7 +39593,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Batch expiry risk by product and warehouse.
@@ -39228,7 +39626,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Sales return item reason analysis.
@@ -39261,7 +39659,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Supplier purchase and receipt scorecard.
@@ -39294,7 +39692,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Production planning demand overview.
@@ -39327,7 +39725,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Inventory valuation by product and warehouse.
@@ -39360,7 +39758,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Payment request approval amount.
@@ -39393,7 +39791,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Picking task execution summary.
@@ -39479,26 +39877,13 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:COALESCE:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:COALESCE:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:COALESCE:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:COALESCE:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:COALESCE:dbo.roles.id->dbo.role_permissions.role_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
+- `CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status`
+- `VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.departments.manager_id->dbo.employee_roles.granted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39513,8 +39898,8 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_01_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_org_security_relationships
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_org_security_relationships]
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-02-procedures-supplement-sql`
@@ -39531,26 +39916,10 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:COALESCE:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:COALESCE:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.supplier_products.supplier_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price`
+- `VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.supplier_price->dbo.products.purchase_price`
 
 **Extractor Candidate Fingerprints**
 
@@ -39565,8 +39934,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_02_procedures_supplement_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_supplier_product_metrics
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_product_metrics]
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-03-functions-sql`
@@ -39593,13 +39962,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
+-- relation-detector-fixture-source:sqlserver.fn_department_hierarchy
+CREATE OR ALTER FUNCTION [dbo].[fn_department_hierarchy]()
+RETURNS TABLE
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-04-procedures-supplement-sql`
@@ -39616,26 +39985,16 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.commission_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_commissions.order_item_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_commissions.period`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.sales_commissions.employee_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39650,8 +40009,8 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_04_procedures_supplement_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_sales_commissions
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_sales_commissions]
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-05-third-batch-procedures-sql`
@@ -39668,26 +40027,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status`
+- `VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty`
+- `VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status`
+- `VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.boms.unit->dbo.work_order_materials.unit`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39702,8 +40047,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_05_third_batch_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_rebuild_work_order_material_plan
+CREATE OR ALTER PROCEDURE [dbo].[sp_rebuild_work_order_material_plan]
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-06-third-batch-functions-sql`
@@ -39730,13 +40075,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+-- relation-detector-fixture-source:sqlserver.fn_contract_milestone_status
+CREATE OR ALTER FUNCTION [dbo].[fn_contract_milestone_status]()
+RETURNS TABLE
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-07-store-customer-procedures-sql`
@@ -39753,26 +40098,9 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- `VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39787,8 +40115,8 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_07_store_customer_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_customer_balance_from_orders
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_customer_balance_from_orders]
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
@@ -39805,26 +40133,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.product_batches.batch_no->dbo.inventory_transactions.remark`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
+- `VALUE:FUNCTION_CALL:dbo.product_batches.status->dbo.product_batches.status`
 
 **Extractor Candidate Fingerprints**
 
@@ -39839,8 +40157,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_08_batch_expiry_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_mark_expiring_batches
+CREATE OR ALTER PROCEDURE [dbo].[sp_mark_expiring_batches]
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-09-return-refund-procedures-sql`
@@ -39857,26 +40175,15 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
+- `VALUE:DIRECT:dbo.sales_returns.handler_id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_returns.refund_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.sales_returns.return_date->dbo.cashier_journals.journal_date`
+- `VALUE:DIRECT:dbo.sales_returns.return_reason->dbo.cashier_journals.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -39891,8 +40198,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_09_return_refund_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_post_sales_return_refunds
+CREATE OR ALTER PROCEDURE [dbo].[sp_post_sales_return_refunds]
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
@@ -39909,26 +40216,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:COALESCE:dbo.accounts.id->dbo.voucher_items.account_id`
-- `VALUE:COALESCE:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.damage_report_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level`
+- `CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km`
 
 **Extractor Candidate Fingerprints**
 
@@ -39943,8 +40232,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_10_supplier_geo_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_supplier_geo_quality
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_geo_quality]
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-11-common-system-procedures-sql`
@@ -39961,26 +40250,15 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->dbo.cashier_journals.account_id`
-- `VALUE:COALESCE:dbo.accounts.id->dbo.reconciliations.account_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.reviewed_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.salary_payments.employee_id`
-- `VALUE:COALESCE:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.salary_payments.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.settlements.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.reconciliations.account_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.salary_payments.employee_id`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.cashier_journals.remark->dbo.reconciliation_items.description`
 - `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.settlements.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -39995,8 +40273,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_11_common_system_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_build_cashier_reconciliation_items
+CREATE OR ALTER PROCEDURE [dbo].[sp_build_cashier_reconciliation_items]
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
@@ -40013,26 +40291,17 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_commissions.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.prepared_by`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.commission_rules.product_category_id`
-- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_commissions.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.shipments.order_id`
-- `VALUE:COALESCE:dbo.settlements.id->dbo.settlement_items.settlement_id`
-- `VALUE:COALESCE:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.prepared_by`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.shipments.order_id`
-- `VALUE:DIRECT:dbo.settlements.id->dbo.settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.shipments.warehouse_id`
+- `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity`
+- `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.stocktake_items.book_quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.stocktake_items.counted_quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.stocktake_items.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.stocktake_items.variance_reason->dbo.inventory_transactions.remark`
+- `VALUE:DIRECT:dbo.stocktakes.created_by->dbo.inventory_transactions.operator_id`
+- `VALUE:DIRECT:dbo.stocktakes.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.stocktakes.warehouse_id->dbo.inventory_transactions.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -40047,8 +40316,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_12_enterprise_extension_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_post_stocktake_variance
+CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 ```
 
 ## `sqlserver2017-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
@@ -40065,103 +40334,145 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
-- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
-- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
-- `VALUE:AGGREGATE:dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.inventory.locked_quantity->dbo.mrp_run_items.on_hand_qty`
-- `VALUE:AGGREGATE:dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity->dbo.mrp_run_items.reserved_qty`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.work_orders.planned_quantity,dbo.standard_costs.material_cost,dbo.standard_costs.labor_cost,dbo.standard_costs.overhead_cost->dbo.work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost->dbo.work_order_costs.material_cost`
-- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.address`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.contact_person`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.email`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.phone`
+- `CONTROL:CASE_WHEN:dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `CONTROL:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.purchase_orders.paid_amount,dbo.purchase_orders.total_amount->dbo.ap_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.payments.amount,dbo.sales_orders.total_amount->dbo.sales_orders.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `CONTROL:CASE_WHEN:dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
-- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days->dbo.mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days,dbo.mrp_runs.run_date->dbo.mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
-- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory.quantity`
+- `VALUE:AGGREGATE:dbo.voucher_items.amount->dbo.budget_items.used_amount`
+- `VALUE:ARITHMETIC:dbo.inventory.available_quantity,dbo.repair_order_parts.quantity->dbo.inventory.available_quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory.quantity`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory_transactions.after_qty`
-- `VALUE:ARITHMETIC:dbo.inventory_location_balances.locked_quantity,dbo.picking_task_items.required_qty->dbo.inventory_location_balances.locked_quantity`
-- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate->dbo.mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity->dbo.mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:dbo.repair_order_parts.quantity->dbo.inventory_transactions.quantity_change`
-- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
-- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
-- `VALUE:COALESCE:dbo.cashier_journals.journal_type,dbo.cashier_journals.counterparty,dbo.cashier_journals.remark->dbo.reconciliation_items.description`
-- `VALUE:COALESCE:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:COALESCE:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.cogs_entries.cogs_amount->dbo.sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.paid_amount,dbo.payments.amount->dbo.sales_orders.paid_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.status->dbo.sales_orders.status`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.address->dbo.customers.address`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.contact_person->dbo.customers.contact_person`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.email->dbo.customers.email`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.phone->dbo.customers.phone`
 - `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
-- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
-- `VALUE:COALESCE:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.invoices.supplier_id`
-- `VALUE:COALESCE:dbo.work_order_costs.unit_cost,dbo.finished_goods_receipts.unit_cost->dbo.inventory_cost_layers.unit_cost`
-- `VALUE:CONCAT_FORMAT:dbo.finished_goods_receipts.receipt_no->dbo.inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:dbo.production_plans.plan_month,dbo.production_plans.id->dbo.mrp_runs.run_no`
-- `VALUE:CONCAT_FORMAT:dbo.repair_order_parts.id->dbo.inventory_transactions.remark`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
+- `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
+- `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.payments.payment_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
 - `VALUE:DIRECT:dbo.boms.child_product_id->dbo.mrp_run_items.component_product_id`
-- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
-- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
-- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
-- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:dbo.boms.parent_product_id->dbo.mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:dbo.cashier_journals.amount->dbo.payments.amount`
+- `VALUE:DIRECT:dbo.cashier_journals.created_at->dbo.payments.created_at`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.payments.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.payments.payment_date`
+- `VALUE:DIRECT:dbo.cashier_journals.status->dbo.payments.payment_status`
+- `VALUE:DIRECT:dbo.category_dim.id->dbo.sales_fact.category_dim_id`
+- `VALUE:DIRECT:dbo.employee_shifts.id->dbo.employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:dbo.employees.hire_date->dbo.employee_shift_assignments.work_date`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_shift_assignments.employee_id`
+- `VALUE:DIRECT:dbo.employees.manager_id->dbo.employee_roles.granted_by`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_cost_layers.source_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_transactions.reference_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_cost_layers.product_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory.last_stocktake_date`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory_cost_layers.receipt_date`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.original_qty`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_by->dbo.inventory_transactions.operator_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.quantity_change`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
 - `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
-- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_run_items.run_id`
-- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_runs.plan_id`
-- `VALUE:DIRECT:dbo.production_plans.product_id->dbo.mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `VALUE:DIRECT:dbo.inventory_location_balances.location_id->dbo.picking_task_items.location_id`
+- `VALUE:DIRECT:dbo.master_data_change_items.new_value->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.master_data_change_requests.approved_by->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.master_data_change_requests.master_id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.master_data_change_requests.master_type->dbo.audit_log.target_type`
+- `VALUE:DIRECT:dbo.mrp_runs.id->dbo.mrp_run_items.run_id`
+- `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
+- `VALUE:DIRECT:dbo.picking_tasks.id->dbo.picking_task_items.picking_task_id`
+- `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
+- `VALUE:DIRECT:dbo.product_categories.created_at->dbo.category_dim.effective_from`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.level1_name`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.level2_name`
+- `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_date->dbo.ap_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.purchase_orders.paid_amount->dbo.ap_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.ap_invoices.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_orders.total_amount->dbo.ap_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.region_dim.id->dbo.sales_fact.region_dim_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:dbo.repair_order_parts.product_id->dbo.inventory_transactions.product_id`
 - `VALUE:DIRECT:dbo.repair_order_parts.repair_order_id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.repair_orders.technician_id->dbo.inventory_transactions.operator_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_fact.sales_amount`
 - `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
 - `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
 - `VALUE:DIRECT:dbo.sales_order_items.id->dbo.picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
 - `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
 - `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.picking_task_items.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.sales_fact.product_id`
 - `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
 - `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.picking_task_items.required_qty`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.sales_fact.quantity_sold`
+- `VALUE:DIRECT:dbo.sales_orders.created_at->dbo.sales_fact.created_at`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.ar_invoices.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payments.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.discount_amount->dbo.ar_invoices.writeoff_amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
 - `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_task_items.task_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payments.order_id`
 - `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_tasks.sales_order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.order_no->dbo.cashier_journals.remark`
-- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.ar_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_fact.fiscal_date`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.ar_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.payments.payment_method`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.sales_fact.sales_channel`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.picking_tasks.assigned_to`
+- `VALUE:DIRECT:dbo.sales_orders.status->dbo.sales_fact.order_status`
+- `VALUE:DIRECT:dbo.sales_orders.total_amount->dbo.ar_invoices.invoice_amount`
 - `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.picking_tasks.warehouse_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.sales_fact.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.city`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.region_name`
+- `VALUE:DIRECT:dbo.warehouses.code->dbo.region_dim.region_code`
+- `VALUE:DIRECT:dbo.warehouses.district->dbo.region_dim.district`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
+- `VALUE:DIRECT:dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.purchase_orders.order_date->dbo.ap_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 
 **Extractor Candidate Fingerprints**
 
@@ -40176,16 +40487,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_13_erp_deep_scenario_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_run_mrp_for_plan
+CREATE OR ALTER PROCEDURE [dbo].[sp_run_mrp_for_plan]
 ```
 
 ## `sqlserver2017-sample-data-full-03-data-01-master-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -40194,26 +40505,7 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -40223,21 +40515,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[departments] ([parent_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[departments].
 ```
 
 ## `sqlserver2017-sample-data-full-03-data-02-supplementary-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -40246,26 +40538,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -40275,21 +40548,21 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[inventory] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[reconciliation_items].
 ```
 
 ## `sqlserver2017-sample-data-full-03-data-03-third-batch-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -40298,26 +40571,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -40327,13 +40581,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[purchase_receipt_items] ([batch_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[ar_aging_snapshots].
 ```
 
 ## `sqlserver2017-sample-data-full-03-data-04-return-damage-data-sql`
@@ -40350,26 +40604,43 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
+- `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.amount`
+- `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.return_qty`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_at`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_by`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.status`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_reports.total_loss_amount`
+- `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.damage_reports.total_quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_report_items.loss_amount`
+- `VALUE:ARITHMETIC:dbo.purchase_order_items.received_qty,dbo.purchase_order_items.unit_price->dbo.purchase_return_items.amount`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.paid_amount->dbo.purchase_returns.refund_received`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.total_amount->dbo.purchase_returns.total_amount`
+- `VALUE:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.return_qty`
+- `VALUE:CASE_WHEN:dbo.purchase_receipts.receipt_date->dbo.purchase_returns.approved_at`
+- `VALUE:CASE_WHEN:dbo.purchase_receipts.receiver_id->dbo.purchase_returns.approved_by`
+- `VALUE:COALESCE:dbo.purchase_receipts.receipt_date,dbo.purchase_orders.actual_delivery_date,dbo.purchase_orders.order_date->dbo.purchase_returns.return_date`
+- `VALUE:COALESCE:dbo.purchase_receipts.warehouse_id->dbo.purchase_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.approved_by`
+- `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.reported_by`
+- `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.purchase_returns.return_no`
 - `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.damage_report_items.quantity`
 - `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.products.purchase_price->dbo.damage_report_items.unit_cost`
+- `VALUE:DIRECT:dbo.purchase_order_items.product_id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_order_items.unit_price->dbo.purchase_return_items.unit_price`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
 - `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.purchase_returns.return_reason->dbo.purchase_return_items.reason`
 - `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:FUNCTION_CALL:dbo.warehouses.code->dbo.damage_reports.report_no`
 
 **Extractor Candidate Fingerprints**
 
@@ -40378,14 +40649,14 @@ SELECT p.[id]
 **Input Preview**
 
 ```sql
--- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- ============================================================
+-- Natural purchase-return and warehouse-damage transactions.
+-- T-SQL 2016-compatible baseline shared by all SQL Server sample versions.
 
-INSERT INTO [dbo].[purchase_returns] ([handler_id])
-SELECT p.[id]
+INSERT INTO [dbo].[purchase_returns] (
+    [return_no], [purchase_order_id], [purchase_receipt_id], [supplier_id],
+    [warehouse_id], [handler_id], [return_date], [return_reason], [return_type],
+    [total_amount], [refund_received], [status], [approved_by], [approved_at], [created_at]
+)
 ```
 
 ## `sqlserver2017-sample-data-full-03-data-05-massive-data-generator-sql`
@@ -40402,26 +40673,29 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id`
+- `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `VALUE:ARITHMETIC:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:COALESCE:dbo.supplier_products.supplier_price,dbo.products.purchase_price->dbo.product_batches.purchase_price`
+- `VALUE:CONCAT_FORMAT:dbo.products.sku->dbo.product_batches.batch_no`
+- `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.inventory.shelf_location`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.product_batches.current_qty->dbo.inventory.available_quantity`
+- `VALUE:DIRECT:dbo.product_batches.current_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.product_id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.supplier_products.supplier_id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -40430,22 +40704,22 @@ SELECT p.[id]
 **Input Preview**
 
 ```sql
--- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- ============================================================
+-- Natural bulk inventory initialization used for scale-oriented sample data.
+-- The procedure creates operational batches, warehouse balances, and opening
+-- inventory transactions from existing product, supplier, and warehouse facts.
 
-INSERT INTO [dbo].[cashier_journals] ([account_id])
-SELECT p.[id]
+-- relation-detector-fixture-source:sqlserver.sp_seed_inventory_capacity
+CREATE OR ALTER PROCEDURE [dbo].[sp_seed_inventory_capacity]
+AS
+BEGIN
 ```
 
 ## `sqlserver2017-sample-data-full-03-data-06-enterprise-extension-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -40454,26 +40728,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.boms.id->dbo.work_orders.bom_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.fixed_assets.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.fixed_assets.custodian_id`
-- `VALUE:DIRECT:dbo.fixed_assets.id->dbo.depreciation_log.asset_id`
-- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.boms.child_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.boms.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.three_way_matching.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.work_orders.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.work_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -40483,13 +40738,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[promotion_products] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[consignment_consumptions].
 ```
 
 ## `sqlserver2017-sample-data-full-03-data-07-erp-deep-scenario-data-sql`
@@ -40506,26 +40761,115 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.approval_workflows.id->dbo.approval_nodes.workflow_id`
-- `VALUE:DIRECT:dbo.contracts.id->dbo.contract_milestones.contract_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.service_tickets.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.inspection_reports.inspector_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.service_tickets.assigned_to`
-- `VALUE:DIRECT:dbo.employees.id->dbo.tax_filings.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.tax_invoices.verified_by`
-- `VALUE:DIRECT:dbo.inspection_standards.id->dbo.inspection_reports.standard_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inspection_reports.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inspection_reports.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inspection_standards.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.service_tickets.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.work_order_materials.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.service_tickets.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.ap_aging_snapshots.supplier_id`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.difference_reason`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.is_matched`
+- `CONTROL:CASE_WHEN:dbo.payment_receipts.amount,dbo.sales_orders.paid_amount->dbo.payments.payment_status`
+- `CONTROL:CASE_WHEN:dbo.payment_receipts.amount->dbo.payments.failure_reason`
+- `CONTROL:CASE_WHEN:dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:CASE_WHEN:dbo.product_categories.name->dbo.category_dim.is_womenwear`
+- `CONTROL:CASE_WHEN:dbo.purchase_orders.paid_amount,dbo.purchase_orders.total_amount->dbo.ap_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.order_date->dbo.fiscal_calendar.is_current_fiscal_year`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount->dbo.payment_receipts.status`
+- `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
+- `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
+- `VALUE:AGGREGATE:dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
+- `VALUE:AGGREGATE:dbo.voucher_items.amount->dbo.budget_items.used_amount`
+- `VALUE:ARITHMETIC:dbo.cashier_journals.counterparty,dbo.cashier_journals.reference_type->dbo.reconciliation_items.description`
+- `VALUE:ARITHMETIC:dbo.payment_receipts.receipt_no->dbo.payments.payment_no`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.cogs_entries.cogs_amount->dbo.sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_start`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_no->dbo.payment_receipts.receipt_no`
+- `VALUE:ARITHMETIC:dbo.warehouses.city->dbo.region_dim.region_name`
+- `VALUE:ARITHMETIC:dbo.warehouses.code->dbo.region_dim.region_code`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.remark->dbo.reconciliation_items.difference_reason`
+- `VALUE:CASE_WHEN:dbo.product_categories.name->dbo.category_dim.level2_name`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
+- `VALUE:COALESCE:dbo.product_categories.name->dbo.category_dim.level1_name`
+- `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
+- `VALUE:DIRECT:dbo.accounting_periods.id->dbo.fiscal_calendar.accounting_period_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.payments.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.category_dim.id->dbo.sales_fact.category_dim_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `VALUE:DIRECT:dbo.payment_receipts.amount->dbo.payments.amount`
+- `VALUE:DIRECT:dbo.payment_receipts.confirmed_at->dbo.payments.created_at`
+- `VALUE:DIRECT:dbo.payment_receipts.currency->dbo.payments.currency`
+- `VALUE:DIRECT:dbo.payment_receipts.id->dbo.payment_receipt_allocations.receipt_id`
+- `VALUE:DIRECT:dbo.payment_receipts.id->dbo.payments.receipt_id`
+- `VALUE:DIRECT:dbo.payment_receipts.receipt_date->dbo.payments.payment_date`
+- `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
+- `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
+- `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
+- `VALUE:DIRECT:dbo.purchase_orders.expected_delivery_date->dbo.ap_invoices.due_date`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_date->dbo.ap_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.purchase_orders.paid_amount->dbo.ap_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.ap_invoices.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_orders.total_amount->dbo.ap_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.region_dim.id->dbo.sales_fact.region_dim_id`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_fact.sales_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.sales_fact.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.sales_fact.quantity_sold`
+- `VALUE:DIRECT:dbo.sales_orders.created_at->dbo.sales_fact.created_at`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.ar_invoices.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payment_receipts.party_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payments.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.discount_amount->dbo.ar_invoices.writeoff_amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payments.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.ar_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.fiscal_calendar.calendar_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.payment_receipts.receipt_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_fact.fiscal_date`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.ar_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.payment_receipt_allocations.allocated_amount`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.payment_receipts.amount`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.payments.payment_method`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.sales_fact.sales_channel`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.payment_receipts.handled_by`
+- `VALUE:DIRECT:dbo.sales_orders.status->dbo.sales_fact.order_status`
+- `VALUE:DIRECT:dbo.sales_orders.total_amount->dbo.ar_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.sales_orders.updated_at->dbo.cogs_entries.posted_at`
+- `VALUE:DIRECT:dbo.sales_orders.updated_at->dbo.payment_receipts.confirmed_at`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.sales_fact.warehouse_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.cogs_entries.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.city`
+- `VALUE:DIRECT:dbo.warehouses.district->dbo.region_dim.district`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
+- `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.product_categories.created_at->dbo.category_dim.effective_from`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_code`
 
 **Extractor Candidate Fingerprints**
 
@@ -40535,13 +40879,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[work_order_materials] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[production_plans].
 ```
 
 ## `sqlserver2017-sample-data-full-04-queries-01-complex-queries-sql`
@@ -40571,7 +40915,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer sales summary by region and category.
@@ -40604,7 +40948,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Sales order payment status.
@@ -40637,7 +40981,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer return and refund summary.
@@ -40670,7 +41014,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Cashier journal reconciliation overview.
@@ -40703,7 +41047,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Batch expiry risk by product and warehouse.
@@ -40736,7 +41080,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Sales return item reason analysis.
@@ -40769,7 +41113,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Supplier purchase and receipt scorecard.
@@ -40802,7 +41146,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Production planning demand overview.
@@ -40835,7 +41179,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Inventory valuation by product and warehouse.
@@ -40868,7 +41212,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Payment request approval amount.
@@ -40901,7 +41245,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Picking task execution summary.
@@ -41020,26 +41364,13 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:COALESCE:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:COALESCE:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:COALESCE:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:COALESCE:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:COALESCE:dbo.roles.id->dbo.role_permissions.role_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
+- `CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status`
+- `VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.departments.manager_id->dbo.employee_roles.granted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41054,8 +41385,8 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_01_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_org_security_relationships
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_org_security_relationships]
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-02-procedures-supplement-sql`
@@ -41072,26 +41403,10 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:COALESCE:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:COALESCE:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.supplier_products.supplier_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price`
+- `VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.supplier_price->dbo.products.purchase_price`
 
 **Extractor Candidate Fingerprints**
 
@@ -41106,8 +41421,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_02_procedures_supplement_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_supplier_product_metrics
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_product_metrics]
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-03-functions-sql`
@@ -41134,13 +41449,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
+-- relation-detector-fixture-source:sqlserver.fn_department_hierarchy
+CREATE OR ALTER FUNCTION [dbo].[fn_department_hierarchy]()
+RETURNS TABLE
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-04-procedures-supplement-sql`
@@ -41157,26 +41472,16 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.commission_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_commissions.order_item_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_commissions.period`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.sales_commissions.employee_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41191,8 +41496,8 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_04_procedures_supplement_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_sales_commissions
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_sales_commissions]
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-05-third-batch-procedures-sql`
@@ -41209,26 +41514,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status`
+- `VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty`
+- `VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status`
+- `VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.boms.unit->dbo.work_order_materials.unit`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41243,8 +41534,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_05_third_batch_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_rebuild_work_order_material_plan
+CREATE OR ALTER PROCEDURE [dbo].[sp_rebuild_work_order_material_plan]
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-06-third-batch-functions-sql`
@@ -41271,13 +41562,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+-- relation-detector-fixture-source:sqlserver.fn_contract_milestone_status
+CREATE OR ALTER FUNCTION [dbo].[fn_contract_milestone_status]()
+RETURNS TABLE
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-07-store-customer-procedures-sql`
@@ -41294,26 +41585,9 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- `VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41328,8 +41602,8 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_07_store_customer_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_customer_balance_from_orders
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_customer_balance_from_orders]
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
@@ -41346,26 +41620,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.product_batches.batch_no->dbo.inventory_transactions.remark`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
+- `VALUE:FUNCTION_CALL:dbo.product_batches.status->dbo.product_batches.status`
 
 **Extractor Candidate Fingerprints**
 
@@ -41380,8 +41644,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_08_batch_expiry_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_mark_expiring_batches
+CREATE OR ALTER PROCEDURE [dbo].[sp_mark_expiring_batches]
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-09-return-refund-procedures-sql`
@@ -41398,26 +41662,15 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
+- `VALUE:DIRECT:dbo.sales_returns.handler_id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_returns.refund_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.sales_returns.return_date->dbo.cashier_journals.journal_date`
+- `VALUE:DIRECT:dbo.sales_returns.return_reason->dbo.cashier_journals.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -41432,8 +41685,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_09_return_refund_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_post_sales_return_refunds
+CREATE OR ALTER PROCEDURE [dbo].[sp_post_sales_return_refunds]
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
@@ -41450,26 +41703,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:COALESCE:dbo.accounts.id->dbo.voucher_items.account_id`
-- `VALUE:COALESCE:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.damage_report_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level`
+- `CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km`
 
 **Extractor Candidate Fingerprints**
 
@@ -41484,8 +41719,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_10_supplier_geo_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_supplier_geo_quality
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_geo_quality]
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-11-common-system-procedures-sql`
@@ -41502,26 +41737,15 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->dbo.cashier_journals.account_id`
-- `VALUE:COALESCE:dbo.accounts.id->dbo.reconciliations.account_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.reviewed_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.salary_payments.employee_id`
-- `VALUE:COALESCE:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.salary_payments.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.settlements.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.reconciliations.account_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.salary_payments.employee_id`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.cashier_journals.remark->dbo.reconciliation_items.description`
 - `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.settlements.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41536,8 +41760,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_11_common_system_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_build_cashier_reconciliation_items
+CREATE OR ALTER PROCEDURE [dbo].[sp_build_cashier_reconciliation_items]
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
@@ -41554,26 +41778,17 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_commissions.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.prepared_by`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.commission_rules.product_category_id`
-- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_commissions.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.shipments.order_id`
-- `VALUE:COALESCE:dbo.settlements.id->dbo.settlement_items.settlement_id`
-- `VALUE:COALESCE:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.prepared_by`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.shipments.order_id`
-- `VALUE:DIRECT:dbo.settlements.id->dbo.settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.shipments.warehouse_id`
+- `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity`
+- `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.stocktake_items.book_quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.stocktake_items.counted_quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.stocktake_items.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.stocktake_items.variance_reason->dbo.inventory_transactions.remark`
+- `VALUE:DIRECT:dbo.stocktakes.created_by->dbo.inventory_transactions.operator_id`
+- `VALUE:DIRECT:dbo.stocktakes.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.stocktakes.warehouse_id->dbo.inventory_transactions.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41588,8 +41803,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_12_enterprise_extension_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_post_stocktake_variance
+CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 ```
 
 ## `sqlserver2019-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
@@ -41606,103 +41821,145 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
-- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
-- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
-- `VALUE:AGGREGATE:dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.inventory.locked_quantity->dbo.mrp_run_items.on_hand_qty`
-- `VALUE:AGGREGATE:dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity->dbo.mrp_run_items.reserved_qty`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.work_orders.planned_quantity,dbo.standard_costs.material_cost,dbo.standard_costs.labor_cost,dbo.standard_costs.overhead_cost->dbo.work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost->dbo.work_order_costs.material_cost`
-- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.address`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.contact_person`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.email`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.phone`
+- `CONTROL:CASE_WHEN:dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `CONTROL:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.purchase_orders.paid_amount,dbo.purchase_orders.total_amount->dbo.ap_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.payments.amount,dbo.sales_orders.total_amount->dbo.sales_orders.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `CONTROL:CASE_WHEN:dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
-- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days->dbo.mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days,dbo.mrp_runs.run_date->dbo.mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
-- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory.quantity`
+- `VALUE:AGGREGATE:dbo.voucher_items.amount->dbo.budget_items.used_amount`
+- `VALUE:ARITHMETIC:dbo.inventory.available_quantity,dbo.repair_order_parts.quantity->dbo.inventory.available_quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory.quantity`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory_transactions.after_qty`
-- `VALUE:ARITHMETIC:dbo.inventory_location_balances.locked_quantity,dbo.picking_task_items.required_qty->dbo.inventory_location_balances.locked_quantity`
-- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate->dbo.mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity->dbo.mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:dbo.repair_order_parts.quantity->dbo.inventory_transactions.quantity_change`
-- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
-- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
-- `VALUE:COALESCE:dbo.cashier_journals.journal_type,dbo.cashier_journals.counterparty,dbo.cashier_journals.remark->dbo.reconciliation_items.description`
-- `VALUE:COALESCE:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:COALESCE:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.cogs_entries.cogs_amount->dbo.sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.paid_amount,dbo.payments.amount->dbo.sales_orders.paid_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.status->dbo.sales_orders.status`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.address->dbo.customers.address`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.contact_person->dbo.customers.contact_person`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.email->dbo.customers.email`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.phone->dbo.customers.phone`
 - `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
-- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
-- `VALUE:COALESCE:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.invoices.supplier_id`
-- `VALUE:COALESCE:dbo.work_order_costs.unit_cost,dbo.finished_goods_receipts.unit_cost->dbo.inventory_cost_layers.unit_cost`
-- `VALUE:CONCAT_FORMAT:dbo.finished_goods_receipts.receipt_no->dbo.inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:dbo.production_plans.plan_month,dbo.production_plans.id->dbo.mrp_runs.run_no`
-- `VALUE:CONCAT_FORMAT:dbo.repair_order_parts.id->dbo.inventory_transactions.remark`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
+- `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
+- `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.payments.payment_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
 - `VALUE:DIRECT:dbo.boms.child_product_id->dbo.mrp_run_items.component_product_id`
-- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
-- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
-- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
-- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:dbo.boms.parent_product_id->dbo.mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:dbo.cashier_journals.amount->dbo.payments.amount`
+- `VALUE:DIRECT:dbo.cashier_journals.created_at->dbo.payments.created_at`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.payments.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.payments.payment_date`
+- `VALUE:DIRECT:dbo.cashier_journals.status->dbo.payments.payment_status`
+- `VALUE:DIRECT:dbo.category_dim.id->dbo.sales_fact.category_dim_id`
+- `VALUE:DIRECT:dbo.employee_shifts.id->dbo.employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:dbo.employees.hire_date->dbo.employee_shift_assignments.work_date`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_shift_assignments.employee_id`
+- `VALUE:DIRECT:dbo.employees.manager_id->dbo.employee_roles.granted_by`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_cost_layers.source_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_transactions.reference_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_cost_layers.product_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory.last_stocktake_date`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory_cost_layers.receipt_date`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.original_qty`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_by->dbo.inventory_transactions.operator_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.quantity_change`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
 - `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
-- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_run_items.run_id`
-- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_runs.plan_id`
-- `VALUE:DIRECT:dbo.production_plans.product_id->dbo.mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `VALUE:DIRECT:dbo.inventory_location_balances.location_id->dbo.picking_task_items.location_id`
+- `VALUE:DIRECT:dbo.master_data_change_items.new_value->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.master_data_change_requests.approved_by->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.master_data_change_requests.master_id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.master_data_change_requests.master_type->dbo.audit_log.target_type`
+- `VALUE:DIRECT:dbo.mrp_runs.id->dbo.mrp_run_items.run_id`
+- `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
+- `VALUE:DIRECT:dbo.picking_tasks.id->dbo.picking_task_items.picking_task_id`
+- `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
+- `VALUE:DIRECT:dbo.product_categories.created_at->dbo.category_dim.effective_from`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.level1_name`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.level2_name`
+- `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_date->dbo.ap_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.purchase_orders.paid_amount->dbo.ap_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.ap_invoices.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_orders.total_amount->dbo.ap_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.region_dim.id->dbo.sales_fact.region_dim_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:dbo.repair_order_parts.product_id->dbo.inventory_transactions.product_id`
 - `VALUE:DIRECT:dbo.repair_order_parts.repair_order_id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.repair_orders.technician_id->dbo.inventory_transactions.operator_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_fact.sales_amount`
 - `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
 - `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
 - `VALUE:DIRECT:dbo.sales_order_items.id->dbo.picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
 - `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
 - `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.picking_task_items.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.sales_fact.product_id`
 - `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
 - `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.picking_task_items.required_qty`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.sales_fact.quantity_sold`
+- `VALUE:DIRECT:dbo.sales_orders.created_at->dbo.sales_fact.created_at`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.ar_invoices.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payments.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.discount_amount->dbo.ar_invoices.writeoff_amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
 - `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_task_items.task_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payments.order_id`
 - `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_tasks.sales_order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.order_no->dbo.cashier_journals.remark`
-- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.ar_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_fact.fiscal_date`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.ar_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.payments.payment_method`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.sales_fact.sales_channel`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.picking_tasks.assigned_to`
+- `VALUE:DIRECT:dbo.sales_orders.status->dbo.sales_fact.order_status`
+- `VALUE:DIRECT:dbo.sales_orders.total_amount->dbo.ar_invoices.invoice_amount`
 - `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.picking_tasks.warehouse_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.sales_fact.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.city`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.region_name`
+- `VALUE:DIRECT:dbo.warehouses.code->dbo.region_dim.region_code`
+- `VALUE:DIRECT:dbo.warehouses.district->dbo.region_dim.district`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
+- `VALUE:DIRECT:dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.purchase_orders.order_date->dbo.ap_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 
 **Extractor Candidate Fingerprints**
 
@@ -41717,16 +41974,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_13_erp_deep_scenario_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_run_mrp_for_plan
+CREATE OR ALTER PROCEDURE [dbo].[sp_run_mrp_for_plan]
 ```
 
 ## `sqlserver2019-sample-data-full-03-data-01-master-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -41735,26 +41992,7 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -41764,21 +42002,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[departments] ([parent_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[departments].
 ```
 
 ## `sqlserver2019-sample-data-full-03-data-02-supplementary-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -41787,26 +42025,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -41816,21 +42035,21 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[inventory] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[reconciliation_items].
 ```
 
 ## `sqlserver2019-sample-data-full-03-data-03-third-batch-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -41839,26 +42058,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -41868,13 +42068,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[purchase_receipt_items] ([batch_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[ar_aging_snapshots].
 ```
 
 ## `sqlserver2019-sample-data-full-03-data-04-return-damage-data-sql`
@@ -41891,26 +42091,43 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
+- `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.amount`
+- `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.return_qty`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_at`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_by`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.status`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_reports.total_loss_amount`
+- `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.damage_reports.total_quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_report_items.loss_amount`
+- `VALUE:ARITHMETIC:dbo.purchase_order_items.received_qty,dbo.purchase_order_items.unit_price->dbo.purchase_return_items.amount`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.paid_amount->dbo.purchase_returns.refund_received`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.total_amount->dbo.purchase_returns.total_amount`
+- `VALUE:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.return_qty`
+- `VALUE:CASE_WHEN:dbo.purchase_receipts.receipt_date->dbo.purchase_returns.approved_at`
+- `VALUE:CASE_WHEN:dbo.purchase_receipts.receiver_id->dbo.purchase_returns.approved_by`
+- `VALUE:COALESCE:dbo.purchase_receipts.receipt_date,dbo.purchase_orders.actual_delivery_date,dbo.purchase_orders.order_date->dbo.purchase_returns.return_date`
+- `VALUE:COALESCE:dbo.purchase_receipts.warehouse_id->dbo.purchase_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.approved_by`
+- `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.reported_by`
+- `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.purchase_returns.return_no`
 - `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.damage_report_items.quantity`
 - `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.products.purchase_price->dbo.damage_report_items.unit_cost`
+- `VALUE:DIRECT:dbo.purchase_order_items.product_id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_order_items.unit_price->dbo.purchase_return_items.unit_price`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
 - `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.purchase_returns.return_reason->dbo.purchase_return_items.reason`
 - `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:FUNCTION_CALL:dbo.warehouses.code->dbo.damage_reports.report_no`
 
 **Extractor Candidate Fingerprints**
 
@@ -41919,14 +42136,14 @@ SELECT p.[id]
 **Input Preview**
 
 ```sql
--- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- ============================================================
+-- Natural purchase-return and warehouse-damage transactions.
+-- T-SQL 2016-compatible baseline shared by all SQL Server sample versions.
 
-INSERT INTO [dbo].[purchase_returns] ([handler_id])
-SELECT p.[id]
+INSERT INTO [dbo].[purchase_returns] (
+    [return_no], [purchase_order_id], [purchase_receipt_id], [supplier_id],
+    [warehouse_id], [handler_id], [return_date], [return_reason], [return_type],
+    [total_amount], [refund_received], [status], [approved_by], [approved_at], [created_at]
+)
 ```
 
 ## `sqlserver2019-sample-data-full-03-data-05-massive-data-generator-sql`
@@ -41943,26 +42160,29 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id`
+- `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `VALUE:ARITHMETIC:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:COALESCE:dbo.supplier_products.supplier_price,dbo.products.purchase_price->dbo.product_batches.purchase_price`
+- `VALUE:CONCAT_FORMAT:dbo.products.sku->dbo.product_batches.batch_no`
+- `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.inventory.shelf_location`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.product_batches.current_qty->dbo.inventory.available_quantity`
+- `VALUE:DIRECT:dbo.product_batches.current_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.product_id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.supplier_products.supplier_id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -41971,22 +42191,22 @@ SELECT p.[id]
 **Input Preview**
 
 ```sql
--- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- ============================================================
+-- Natural bulk inventory initialization used for scale-oriented sample data.
+-- The procedure creates operational batches, warehouse balances, and opening
+-- inventory transactions from existing product, supplier, and warehouse facts.
 
-INSERT INTO [dbo].[cashier_journals] ([account_id])
-SELECT p.[id]
+-- relation-detector-fixture-source:sqlserver.sp_seed_inventory_capacity
+CREATE OR ALTER PROCEDURE [dbo].[sp_seed_inventory_capacity]
+AS
+BEGIN
 ```
 
 ## `sqlserver2019-sample-data-full-03-data-06-enterprise-extension-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -41995,26 +42215,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.boms.id->dbo.work_orders.bom_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.fixed_assets.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.fixed_assets.custodian_id`
-- `VALUE:DIRECT:dbo.fixed_assets.id->dbo.depreciation_log.asset_id`
-- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.boms.child_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.boms.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.three_way_matching.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.work_orders.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.work_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -42024,13 +42225,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[promotion_products] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[consignment_consumptions].
 ```
 
 ## `sqlserver2019-sample-data-full-03-data-07-erp-deep-scenario-data-sql`
@@ -42047,26 +42248,115 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.approval_workflows.id->dbo.approval_nodes.workflow_id`
-- `VALUE:DIRECT:dbo.contracts.id->dbo.contract_milestones.contract_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.service_tickets.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.inspection_reports.inspector_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.service_tickets.assigned_to`
-- `VALUE:DIRECT:dbo.employees.id->dbo.tax_filings.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.tax_invoices.verified_by`
-- `VALUE:DIRECT:dbo.inspection_standards.id->dbo.inspection_reports.standard_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inspection_reports.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inspection_reports.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inspection_standards.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.service_tickets.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.work_order_materials.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.service_tickets.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.ap_aging_snapshots.supplier_id`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.difference_reason`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.is_matched`
+- `CONTROL:CASE_WHEN:dbo.payment_receipts.amount,dbo.sales_orders.paid_amount->dbo.payments.payment_status`
+- `CONTROL:CASE_WHEN:dbo.payment_receipts.amount->dbo.payments.failure_reason`
+- `CONTROL:CASE_WHEN:dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:CASE_WHEN:dbo.product_categories.name->dbo.category_dim.is_womenwear`
+- `CONTROL:CASE_WHEN:dbo.purchase_orders.paid_amount,dbo.purchase_orders.total_amount->dbo.ap_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.order_date->dbo.fiscal_calendar.is_current_fiscal_year`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount->dbo.payment_receipts.status`
+- `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
+- `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
+- `VALUE:AGGREGATE:dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
+- `VALUE:AGGREGATE:dbo.voucher_items.amount->dbo.budget_items.used_amount`
+- `VALUE:ARITHMETIC:dbo.cashier_journals.counterparty,dbo.cashier_journals.reference_type->dbo.reconciliation_items.description`
+- `VALUE:ARITHMETIC:dbo.payment_receipts.receipt_no->dbo.payments.payment_no`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.cogs_entries.cogs_amount->dbo.sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_start`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_no->dbo.payment_receipts.receipt_no`
+- `VALUE:ARITHMETIC:dbo.warehouses.city->dbo.region_dim.region_name`
+- `VALUE:ARITHMETIC:dbo.warehouses.code->dbo.region_dim.region_code`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.remark->dbo.reconciliation_items.difference_reason`
+- `VALUE:CASE_WHEN:dbo.product_categories.name->dbo.category_dim.level2_name`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
+- `VALUE:COALESCE:dbo.product_categories.name->dbo.category_dim.level1_name`
+- `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
+- `VALUE:DIRECT:dbo.accounting_periods.id->dbo.fiscal_calendar.accounting_period_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.payments.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.category_dim.id->dbo.sales_fact.category_dim_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `VALUE:DIRECT:dbo.payment_receipts.amount->dbo.payments.amount`
+- `VALUE:DIRECT:dbo.payment_receipts.confirmed_at->dbo.payments.created_at`
+- `VALUE:DIRECT:dbo.payment_receipts.currency->dbo.payments.currency`
+- `VALUE:DIRECT:dbo.payment_receipts.id->dbo.payment_receipt_allocations.receipt_id`
+- `VALUE:DIRECT:dbo.payment_receipts.id->dbo.payments.receipt_id`
+- `VALUE:DIRECT:dbo.payment_receipts.receipt_date->dbo.payments.payment_date`
+- `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
+- `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
+- `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
+- `VALUE:DIRECT:dbo.purchase_orders.expected_delivery_date->dbo.ap_invoices.due_date`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_date->dbo.ap_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.purchase_orders.paid_amount->dbo.ap_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.ap_invoices.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_orders.total_amount->dbo.ap_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.region_dim.id->dbo.sales_fact.region_dim_id`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_fact.sales_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.sales_fact.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.sales_fact.quantity_sold`
+- `VALUE:DIRECT:dbo.sales_orders.created_at->dbo.sales_fact.created_at`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.ar_invoices.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payment_receipts.party_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payments.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.discount_amount->dbo.ar_invoices.writeoff_amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payments.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.ar_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.fiscal_calendar.calendar_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.payment_receipts.receipt_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_fact.fiscal_date`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.ar_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.payment_receipt_allocations.allocated_amount`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.payment_receipts.amount`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.payments.payment_method`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.sales_fact.sales_channel`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.payment_receipts.handled_by`
+- `VALUE:DIRECT:dbo.sales_orders.status->dbo.sales_fact.order_status`
+- `VALUE:DIRECT:dbo.sales_orders.total_amount->dbo.ar_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.sales_orders.updated_at->dbo.cogs_entries.posted_at`
+- `VALUE:DIRECT:dbo.sales_orders.updated_at->dbo.payment_receipts.confirmed_at`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.sales_fact.warehouse_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.cogs_entries.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.city`
+- `VALUE:DIRECT:dbo.warehouses.district->dbo.region_dim.district`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
+- `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.product_categories.created_at->dbo.category_dim.effective_from`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_code`
 
 **Extractor Candidate Fingerprints**
 
@@ -42076,13 +42366,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[work_order_materials] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[production_plans].
 ```
 
 ## `sqlserver2019-sample-data-full-04-queries-01-complex-queries-sql`
@@ -42112,7 +42402,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer sales summary by region and category.
@@ -42145,7 +42435,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Sales order payment status.
@@ -42178,7 +42468,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer return and refund summary.
@@ -42211,7 +42501,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Cashier journal reconciliation overview.
@@ -42244,7 +42534,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Batch expiry risk by product and warehouse.
@@ -42277,7 +42567,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Sales return item reason analysis.
@@ -42310,7 +42600,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Supplier purchase and receipt scorecard.
@@ -42343,7 +42633,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Production planning demand overview.
@@ -42376,7 +42666,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Inventory valuation by product and warehouse.
@@ -42409,7 +42699,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Payment request approval amount.
@@ -42442,7 +42732,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Picking task execution summary.
@@ -42528,26 +42818,13 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:COALESCE:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:COALESCE:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:COALESCE:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:COALESCE:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:COALESCE:dbo.roles.id->dbo.role_permissions.role_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
+- `CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status`
+- `VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.departments.manager_id->dbo.employee_roles.granted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42562,8 +42839,8 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_01_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_org_security_relationships
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_org_security_relationships]
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-02-procedures-supplement-sql`
@@ -42580,26 +42857,10 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:COALESCE:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:COALESCE:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.supplier_products.supplier_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price`
+- `VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.supplier_price->dbo.products.purchase_price`
 
 **Extractor Candidate Fingerprints**
 
@@ -42614,8 +42875,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_02_procedures_supplement_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_supplier_product_metrics
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_product_metrics]
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-03-functions-sql`
@@ -42642,13 +42903,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
+-- relation-detector-fixture-source:sqlserver.fn_department_hierarchy
+CREATE OR ALTER FUNCTION [dbo].[fn_department_hierarchy]()
+RETURNS TABLE
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-04-procedures-supplement-sql`
@@ -42665,26 +42926,16 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.commission_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_commissions.order_item_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_commissions.period`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.sales_commissions.employee_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42699,8 +42950,8 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_04_procedures_supplement_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_sales_commissions
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_sales_commissions]
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-05-third-batch-procedures-sql`
@@ -42717,26 +42968,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status`
+- `VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty`
+- `VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status`
+- `VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.boms.unit->dbo.work_order_materials.unit`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42751,8 +42988,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_05_third_batch_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_rebuild_work_order_material_plan
+CREATE OR ALTER PROCEDURE [dbo].[sp_rebuild_work_order_material_plan]
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-06-third-batch-functions-sql`
@@ -42779,13 +43016,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+-- relation-detector-fixture-source:sqlserver.fn_contract_milestone_status
+CREATE OR ALTER FUNCTION [dbo].[fn_contract_milestone_status]()
+RETURNS TABLE
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-07-store-customer-procedures-sql`
@@ -42802,26 +43039,9 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- `VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -42836,8 +43056,8 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_07_store_customer_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_customer_balance_from_orders
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_customer_balance_from_orders]
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
@@ -42854,26 +43074,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.product_batches.batch_no->dbo.inventory_transactions.remark`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
+- `VALUE:FUNCTION_CALL:dbo.product_batches.status->dbo.product_batches.status`
 
 **Extractor Candidate Fingerprints**
 
@@ -42888,8 +43098,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_08_batch_expiry_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_mark_expiring_batches
+CREATE OR ALTER PROCEDURE [dbo].[sp_mark_expiring_batches]
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-09-return-refund-procedures-sql`
@@ -42906,26 +43116,15 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
+- `VALUE:DIRECT:dbo.sales_returns.handler_id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_returns.refund_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.sales_returns.return_date->dbo.cashier_journals.journal_date`
+- `VALUE:DIRECT:dbo.sales_returns.return_reason->dbo.cashier_journals.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -42940,8 +43139,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_09_return_refund_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_post_sales_return_refunds
+CREATE OR ALTER PROCEDURE [dbo].[sp_post_sales_return_refunds]
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
@@ -42958,26 +43157,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:COALESCE:dbo.accounts.id->dbo.voucher_items.account_id`
-- `VALUE:COALESCE:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.damage_report_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level`
+- `CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km`
 
 **Extractor Candidate Fingerprints**
 
@@ -42992,8 +43173,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_10_supplier_geo_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_supplier_geo_quality
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_geo_quality]
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-11-common-system-procedures-sql`
@@ -43010,26 +43191,15 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->dbo.cashier_journals.account_id`
-- `VALUE:COALESCE:dbo.accounts.id->dbo.reconciliations.account_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.reviewed_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.salary_payments.employee_id`
-- `VALUE:COALESCE:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.salary_payments.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.settlements.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.reconciliations.account_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.salary_payments.employee_id`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.cashier_journals.remark->dbo.reconciliation_items.description`
 - `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.settlements.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -43044,8 +43214,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_11_common_system_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_build_cashier_reconciliation_items
+CREATE OR ALTER PROCEDURE [dbo].[sp_build_cashier_reconciliation_items]
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
@@ -43062,26 +43232,17 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_commissions.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.prepared_by`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.commission_rules.product_category_id`
-- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_commissions.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.shipments.order_id`
-- `VALUE:COALESCE:dbo.settlements.id->dbo.settlement_items.settlement_id`
-- `VALUE:COALESCE:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.prepared_by`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.shipments.order_id`
-- `VALUE:DIRECT:dbo.settlements.id->dbo.settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.shipments.warehouse_id`
+- `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity`
+- `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.stocktake_items.book_quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.stocktake_items.counted_quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.stocktake_items.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.stocktake_items.variance_reason->dbo.inventory_transactions.remark`
+- `VALUE:DIRECT:dbo.stocktakes.created_by->dbo.inventory_transactions.operator_id`
+- `VALUE:DIRECT:dbo.stocktakes.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.stocktakes.warehouse_id->dbo.inventory_transactions.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -43096,8 +43257,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_12_enterprise_extension_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_post_stocktake_variance
+CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 ```
 
 ## `sqlserver2022-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
@@ -43114,103 +43275,145 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
-- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
-- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
-- `VALUE:AGGREGATE:dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.inventory.locked_quantity->dbo.mrp_run_items.on_hand_qty`
-- `VALUE:AGGREGATE:dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity->dbo.mrp_run_items.reserved_qty`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.work_orders.planned_quantity,dbo.standard_costs.material_cost,dbo.standard_costs.labor_cost,dbo.standard_costs.overhead_cost->dbo.work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost->dbo.work_order_costs.material_cost`
-- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.address`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.contact_person`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.email`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.phone`
+- `CONTROL:CASE_WHEN:dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `CONTROL:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.purchase_orders.paid_amount,dbo.purchase_orders.total_amount->dbo.ap_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.payments.amount,dbo.sales_orders.total_amount->dbo.sales_orders.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `CONTROL:CASE_WHEN:dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
-- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days->dbo.mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days,dbo.mrp_runs.run_date->dbo.mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
-- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory.quantity`
+- `VALUE:AGGREGATE:dbo.voucher_items.amount->dbo.budget_items.used_amount`
+- `VALUE:ARITHMETIC:dbo.inventory.available_quantity,dbo.repair_order_parts.quantity->dbo.inventory.available_quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory.quantity`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory_transactions.after_qty`
-- `VALUE:ARITHMETIC:dbo.inventory_location_balances.locked_quantity,dbo.picking_task_items.required_qty->dbo.inventory_location_balances.locked_quantity`
-- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate->dbo.mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity->dbo.mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:dbo.repair_order_parts.quantity->dbo.inventory_transactions.quantity_change`
-- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
-- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
-- `VALUE:COALESCE:dbo.cashier_journals.journal_type,dbo.cashier_journals.counterparty,dbo.cashier_journals.remark->dbo.reconciliation_items.description`
-- `VALUE:COALESCE:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:COALESCE:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.cogs_entries.cogs_amount->dbo.sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.paid_amount,dbo.payments.amount->dbo.sales_orders.paid_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.status->dbo.sales_orders.status`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.address->dbo.customers.address`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.contact_person->dbo.customers.contact_person`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.email->dbo.customers.email`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.phone->dbo.customers.phone`
 - `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
-- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
-- `VALUE:COALESCE:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.invoices.supplier_id`
-- `VALUE:COALESCE:dbo.work_order_costs.unit_cost,dbo.finished_goods_receipts.unit_cost->dbo.inventory_cost_layers.unit_cost`
-- `VALUE:CONCAT_FORMAT:dbo.finished_goods_receipts.receipt_no->dbo.inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:dbo.production_plans.plan_month,dbo.production_plans.id->dbo.mrp_runs.run_no`
-- `VALUE:CONCAT_FORMAT:dbo.repair_order_parts.id->dbo.inventory_transactions.remark`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
+- `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
+- `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.payments.payment_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
 - `VALUE:DIRECT:dbo.boms.child_product_id->dbo.mrp_run_items.component_product_id`
-- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
-- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
-- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
-- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:dbo.boms.parent_product_id->dbo.mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:dbo.cashier_journals.amount->dbo.payments.amount`
+- `VALUE:DIRECT:dbo.cashier_journals.created_at->dbo.payments.created_at`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.payments.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.payments.payment_date`
+- `VALUE:DIRECT:dbo.cashier_journals.status->dbo.payments.payment_status`
+- `VALUE:DIRECT:dbo.category_dim.id->dbo.sales_fact.category_dim_id`
+- `VALUE:DIRECT:dbo.employee_shifts.id->dbo.employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:dbo.employees.hire_date->dbo.employee_shift_assignments.work_date`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_shift_assignments.employee_id`
+- `VALUE:DIRECT:dbo.employees.manager_id->dbo.employee_roles.granted_by`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_cost_layers.source_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_transactions.reference_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_cost_layers.product_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory.last_stocktake_date`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory_cost_layers.receipt_date`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.original_qty`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_by->dbo.inventory_transactions.operator_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.quantity_change`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
 - `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
-- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_run_items.run_id`
-- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_runs.plan_id`
-- `VALUE:DIRECT:dbo.production_plans.product_id->dbo.mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `VALUE:DIRECT:dbo.inventory_location_balances.location_id->dbo.picking_task_items.location_id`
+- `VALUE:DIRECT:dbo.master_data_change_items.new_value->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.master_data_change_requests.approved_by->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.master_data_change_requests.master_id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.master_data_change_requests.master_type->dbo.audit_log.target_type`
+- `VALUE:DIRECT:dbo.mrp_runs.id->dbo.mrp_run_items.run_id`
+- `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
+- `VALUE:DIRECT:dbo.picking_tasks.id->dbo.picking_task_items.picking_task_id`
+- `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
+- `VALUE:DIRECT:dbo.product_categories.created_at->dbo.category_dim.effective_from`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.level1_name`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.level2_name`
+- `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_date->dbo.ap_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.purchase_orders.paid_amount->dbo.ap_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.ap_invoices.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_orders.total_amount->dbo.ap_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.region_dim.id->dbo.sales_fact.region_dim_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:dbo.repair_order_parts.product_id->dbo.inventory_transactions.product_id`
 - `VALUE:DIRECT:dbo.repair_order_parts.repair_order_id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.repair_orders.technician_id->dbo.inventory_transactions.operator_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_fact.sales_amount`
 - `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
 - `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
 - `VALUE:DIRECT:dbo.sales_order_items.id->dbo.picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
 - `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
 - `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.picking_task_items.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.sales_fact.product_id`
 - `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
 - `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.picking_task_items.required_qty`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.sales_fact.quantity_sold`
+- `VALUE:DIRECT:dbo.sales_orders.created_at->dbo.sales_fact.created_at`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.ar_invoices.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payments.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.discount_amount->dbo.ar_invoices.writeoff_amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
 - `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_task_items.task_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payments.order_id`
 - `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_tasks.sales_order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.order_no->dbo.cashier_journals.remark`
-- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.ar_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_fact.fiscal_date`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.ar_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.payments.payment_method`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.sales_fact.sales_channel`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.picking_tasks.assigned_to`
+- `VALUE:DIRECT:dbo.sales_orders.status->dbo.sales_fact.order_status`
+- `VALUE:DIRECT:dbo.sales_orders.total_amount->dbo.ar_invoices.invoice_amount`
 - `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.picking_tasks.warehouse_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.sales_fact.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.city`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.region_name`
+- `VALUE:DIRECT:dbo.warehouses.code->dbo.region_dim.region_code`
+- `VALUE:DIRECT:dbo.warehouses.district->dbo.region_dim.district`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
+- `VALUE:DIRECT:dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.purchase_orders.order_date->dbo.ap_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 
 **Extractor Candidate Fingerprints**
 
@@ -43225,16 +43428,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_13_erp_deep_scenario_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_run_mrp_for_plan
+CREATE OR ALTER PROCEDURE [dbo].[sp_run_mrp_for_plan]
 ```
 
 ## `sqlserver2022-sample-data-full-03-data-01-master-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -43243,26 +43446,7 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -43272,21 +43456,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[departments] ([parent_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[departments].
 ```
 
 ## `sqlserver2022-sample-data-full-03-data-02-supplementary-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -43295,26 +43479,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -43324,21 +43489,21 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[inventory] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[reconciliation_items].
 ```
 
 ## `sqlserver2022-sample-data-full-03-data-03-third-batch-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -43347,26 +43512,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -43376,13 +43522,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[purchase_receipt_items] ([batch_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[ar_aging_snapshots].
 ```
 
 ## `sqlserver2022-sample-data-full-03-data-04-return-damage-data-sql`
@@ -43399,26 +43545,43 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
+- `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.amount`
+- `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.return_qty`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_at`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_by`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.status`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_reports.total_loss_amount`
+- `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.damage_reports.total_quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_report_items.loss_amount`
+- `VALUE:ARITHMETIC:dbo.purchase_order_items.received_qty,dbo.purchase_order_items.unit_price->dbo.purchase_return_items.amount`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.paid_amount->dbo.purchase_returns.refund_received`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.total_amount->dbo.purchase_returns.total_amount`
+- `VALUE:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.return_qty`
+- `VALUE:CASE_WHEN:dbo.purchase_receipts.receipt_date->dbo.purchase_returns.approved_at`
+- `VALUE:CASE_WHEN:dbo.purchase_receipts.receiver_id->dbo.purchase_returns.approved_by`
+- `VALUE:COALESCE:dbo.purchase_receipts.receipt_date,dbo.purchase_orders.actual_delivery_date,dbo.purchase_orders.order_date->dbo.purchase_returns.return_date`
+- `VALUE:COALESCE:dbo.purchase_receipts.warehouse_id->dbo.purchase_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.approved_by`
+- `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.reported_by`
+- `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.purchase_returns.return_no`
 - `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.damage_report_items.quantity`
 - `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.products.purchase_price->dbo.damage_report_items.unit_cost`
+- `VALUE:DIRECT:dbo.purchase_order_items.product_id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_order_items.unit_price->dbo.purchase_return_items.unit_price`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
 - `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.purchase_returns.return_reason->dbo.purchase_return_items.reason`
 - `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:FUNCTION_CALL:dbo.warehouses.code->dbo.damage_reports.report_no`
 
 **Extractor Candidate Fingerprints**
 
@@ -43427,14 +43590,14 @@ SELECT p.[id]
 **Input Preview**
 
 ```sql
--- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- ============================================================
+-- Natural purchase-return and warehouse-damage transactions.
+-- T-SQL 2016-compatible baseline shared by all SQL Server sample versions.
 
-INSERT INTO [dbo].[purchase_returns] ([handler_id])
-SELECT p.[id]
+INSERT INTO [dbo].[purchase_returns] (
+    [return_no], [purchase_order_id], [purchase_receipt_id], [supplier_id],
+    [warehouse_id], [handler_id], [return_date], [return_reason], [return_type],
+    [total_amount], [refund_received], [status], [approved_by], [approved_at], [created_at]
+)
 ```
 
 ## `sqlserver2022-sample-data-full-03-data-05-massive-data-generator-sql`
@@ -43451,26 +43614,29 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id`
+- `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `VALUE:ARITHMETIC:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:COALESCE:dbo.supplier_products.supplier_price,dbo.products.purchase_price->dbo.product_batches.purchase_price`
+- `VALUE:CONCAT_FORMAT:dbo.products.sku->dbo.product_batches.batch_no`
+- `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.inventory.shelf_location`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.product_batches.current_qty->dbo.inventory.available_quantity`
+- `VALUE:DIRECT:dbo.product_batches.current_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.product_id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.supplier_products.supplier_id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -43479,22 +43645,22 @@ SELECT p.[id]
 **Input Preview**
 
 ```sql
--- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- ============================================================
+-- Natural bulk inventory initialization used for scale-oriented sample data.
+-- The procedure creates operational batches, warehouse balances, and opening
+-- inventory transactions from existing product, supplier, and warehouse facts.
 
-INSERT INTO [dbo].[cashier_journals] ([account_id])
-SELECT p.[id]
+-- relation-detector-fixture-source:sqlserver.sp_seed_inventory_capacity
+CREATE OR ALTER PROCEDURE [dbo].[sp_seed_inventory_capacity]
+AS
+BEGIN
 ```
 
 ## `sqlserver2022-sample-data-full-03-data-06-enterprise-extension-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -43503,26 +43669,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.boms.id->dbo.work_orders.bom_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.fixed_assets.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.fixed_assets.custodian_id`
-- `VALUE:DIRECT:dbo.fixed_assets.id->dbo.depreciation_log.asset_id`
-- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.boms.child_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.boms.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.three_way_matching.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.work_orders.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.work_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -43532,13 +43679,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[promotion_products] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[consignment_consumptions].
 ```
 
 ## `sqlserver2022-sample-data-full-03-data-07-erp-deep-scenario-data-sql`
@@ -43555,26 +43702,115 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.approval_workflows.id->dbo.approval_nodes.workflow_id`
-- `VALUE:DIRECT:dbo.contracts.id->dbo.contract_milestones.contract_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.service_tickets.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.inspection_reports.inspector_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.service_tickets.assigned_to`
-- `VALUE:DIRECT:dbo.employees.id->dbo.tax_filings.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.tax_invoices.verified_by`
-- `VALUE:DIRECT:dbo.inspection_standards.id->dbo.inspection_reports.standard_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inspection_reports.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inspection_reports.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inspection_standards.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.service_tickets.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.work_order_materials.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.service_tickets.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.ap_aging_snapshots.supplier_id`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.difference_reason`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.is_matched`
+- `CONTROL:CASE_WHEN:dbo.payment_receipts.amount,dbo.sales_orders.paid_amount->dbo.payments.payment_status`
+- `CONTROL:CASE_WHEN:dbo.payment_receipts.amount->dbo.payments.failure_reason`
+- `CONTROL:CASE_WHEN:dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:CASE_WHEN:dbo.product_categories.name->dbo.category_dim.is_womenwear`
+- `CONTROL:CASE_WHEN:dbo.purchase_orders.paid_amount,dbo.purchase_orders.total_amount->dbo.ap_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.order_date->dbo.fiscal_calendar.is_current_fiscal_year`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount->dbo.payment_receipts.status`
+- `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
+- `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
+- `VALUE:AGGREGATE:dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
+- `VALUE:AGGREGATE:dbo.voucher_items.amount->dbo.budget_items.used_amount`
+- `VALUE:ARITHMETIC:dbo.cashier_journals.counterparty,dbo.cashier_journals.reference_type->dbo.reconciliation_items.description`
+- `VALUE:ARITHMETIC:dbo.payment_receipts.receipt_no->dbo.payments.payment_no`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.cogs_entries.cogs_amount->dbo.sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_start`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_no->dbo.payment_receipts.receipt_no`
+- `VALUE:ARITHMETIC:dbo.warehouses.city->dbo.region_dim.region_name`
+- `VALUE:ARITHMETIC:dbo.warehouses.code->dbo.region_dim.region_code`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.remark->dbo.reconciliation_items.difference_reason`
+- `VALUE:CASE_WHEN:dbo.product_categories.name->dbo.category_dim.level2_name`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
+- `VALUE:COALESCE:dbo.product_categories.name->dbo.category_dim.level1_name`
+- `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
+- `VALUE:DIRECT:dbo.accounting_periods.id->dbo.fiscal_calendar.accounting_period_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.payments.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.category_dim.id->dbo.sales_fact.category_dim_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `VALUE:DIRECT:dbo.payment_receipts.amount->dbo.payments.amount`
+- `VALUE:DIRECT:dbo.payment_receipts.confirmed_at->dbo.payments.created_at`
+- `VALUE:DIRECT:dbo.payment_receipts.currency->dbo.payments.currency`
+- `VALUE:DIRECT:dbo.payment_receipts.id->dbo.payment_receipt_allocations.receipt_id`
+- `VALUE:DIRECT:dbo.payment_receipts.id->dbo.payments.receipt_id`
+- `VALUE:DIRECT:dbo.payment_receipts.receipt_date->dbo.payments.payment_date`
+- `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
+- `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
+- `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
+- `VALUE:DIRECT:dbo.purchase_orders.expected_delivery_date->dbo.ap_invoices.due_date`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_date->dbo.ap_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.purchase_orders.paid_amount->dbo.ap_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.ap_invoices.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_orders.total_amount->dbo.ap_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.region_dim.id->dbo.sales_fact.region_dim_id`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_fact.sales_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.sales_fact.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.sales_fact.quantity_sold`
+- `VALUE:DIRECT:dbo.sales_orders.created_at->dbo.sales_fact.created_at`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.ar_invoices.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payment_receipts.party_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payments.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.discount_amount->dbo.ar_invoices.writeoff_amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payments.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.ar_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.fiscal_calendar.calendar_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.payment_receipts.receipt_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_fact.fiscal_date`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.ar_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.payment_receipt_allocations.allocated_amount`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.payment_receipts.amount`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.payments.payment_method`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.sales_fact.sales_channel`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.payment_receipts.handled_by`
+- `VALUE:DIRECT:dbo.sales_orders.status->dbo.sales_fact.order_status`
+- `VALUE:DIRECT:dbo.sales_orders.total_amount->dbo.ar_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.sales_orders.updated_at->dbo.cogs_entries.posted_at`
+- `VALUE:DIRECT:dbo.sales_orders.updated_at->dbo.payment_receipts.confirmed_at`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.sales_fact.warehouse_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.cogs_entries.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.city`
+- `VALUE:DIRECT:dbo.warehouses.district->dbo.region_dim.district`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
+- `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.product_categories.created_at->dbo.category_dim.effective_from`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_code`
 
 **Extractor Candidate Fingerprints**
 
@@ -43584,13 +43820,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[work_order_materials] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[production_plans].
 ```
 
 ## `sqlserver2022-sample-data-full-04-queries-01-complex-queries-sql`
@@ -43620,7 +43856,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer sales summary by region and category.
@@ -43653,7 +43889,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Sales order payment status.
@@ -43686,7 +43922,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer return and refund summary.
@@ -43719,7 +43955,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Cashier journal reconciliation overview.
@@ -43752,7 +43988,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Batch expiry risk by product and warehouse.
@@ -43785,7 +44021,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Sales return item reason analysis.
@@ -43818,7 +44054,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Supplier purchase and receipt scorecard.
@@ -43851,7 +44087,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Production planning demand overview.
@@ -43884,7 +44120,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Inventory valuation by product and warehouse.
@@ -43917,7 +44153,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Payment request approval amount.
@@ -43950,7 +44186,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Picking task execution summary.
@@ -44069,26 +44305,13 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:COALESCE:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:COALESCE:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:COALESCE:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:COALESCE:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:COALESCE:dbo.roles.id->dbo.role_permissions.role_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
+- `CONTROL:CASE_WHEN:dbo.departments.headcount_plan->dbo.departments.status`
+- `VALUE:DIRECT:dbo.departments.code->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.departments.id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.departments.manager_id->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.departments.manager_id->dbo.employee_roles.granted_by`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44103,8 +44326,8 @@ CREATE OR ALTER TRIGGER [dbo].[tr_departments_1_audit] ON [dbo].[departments]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_01_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_org_security_relationships
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_org_security_relationships]
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-02-procedures-supplement-sql`
@@ -44121,26 +44344,10 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:COALESCE:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:COALESCE:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.supplier_products.supplier_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.quantity->dbo.supplier_products.total_order_qty`
+- `VALUE:AGGREGATE:dbo.purchase_order_items.unit_price->dbo.supplier_products.supplier_price`
+- `VALUE:AGGREGATE:dbo.purchase_orders.order_date->dbo.supplier_products.last_order_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.supplier_price->dbo.products.purchase_price`
 
 **Extractor Candidate Fingerprints**
 
@@ -44155,8 +44362,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_01_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_02_procedures_supplement_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_supplier_product_metrics
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_product_metrics]
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-03-functions-sql`
@@ -44183,13 +44390,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_02_procedures_supplement_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
+-- relation-detector-fixture-source:sqlserver.fn_department_hierarchy
+CREATE OR ALTER FUNCTION [dbo].[fn_department_hierarchy]()
+RETURNS TABLE
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-04-procedures-supplement-sql`
@@ -44206,26 +44413,16 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.bonus`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.sales_commissions.total_commission`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount->dbo.sales_commissions.total_commission`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.base_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.bonus`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_commissions.commission_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_commissions.order_item_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_commissions.period`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.sales_commissions.employee_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44240,8 +44437,8 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_1]()
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_04_procedures_supplement_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_sales_commissions
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_sales_commissions]
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-05-third-batch-procedures-sql`
@@ -44258,26 +44455,12 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:COALESCE:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.work_order_materials.required_qty->dbo.work_orders.status`
+- `VALUE:ARITHMETIC:dbo.work_orders.planned_quantity,dbo.boms.quantity->dbo.work_order_materials.required_qty`
+- `VALUE:CASE_WHEN:dbo.work_orders.status->dbo.work_orders.status`
+- `VALUE:DIRECT:dbo.boms.child_product_id->dbo.work_order_materials.product_id`
+- `VALUE:DIRECT:dbo.boms.unit->dbo.work_order_materials.unit`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44292,8 +44475,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_04_procedures_supplement_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_05_third_batch_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_rebuild_work_order_material_plan
+CREATE OR ALTER PROCEDURE [dbo].[sp_rebuild_work_order_material_plan]
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-06-third-batch-functions-sql`
@@ -44320,13 +44503,13 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_05_third_batch_procedures_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server natural business table-valued functions.
+-- These are business reporting functions, not relation coverage fixtures.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.fn_relation_extra_1
-CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
+-- relation-detector-fixture-source:sqlserver.fn_contract_milestone_status
+CREATE OR ALTER FUNCTION [dbo].[fn_contract_milestone_status]()
+RETURNS TABLE
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-07-store-customer-procedures-sql`
@@ -44343,26 +44526,9 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- `VALUE:AGGREGATE:dbo.sales_orders.total_amount,dbo.sales_orders.paid_amount->dbo.customers.balance`
+- `VALUE:DIRECT:dbo.customers.code->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.customers.id->dbo.audit_log.target_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44377,8 +44543,8 @@ CREATE OR ALTER FUNCTION [dbo].[fn_relation_extra_1]()
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_07_store_customer_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_customer_balance_from_orders
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_customer_balance_from_orders]
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-08-batch-expiry-procedures-sql`
@@ -44395,26 +44561,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.product_batches.status`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.product_batches.batch_no->dbo.inventory_transactions.remark`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
+- `VALUE:FUNCTION_CALL:dbo.product_batches.status->dbo.product_batches.status`
 
 **Extractor Candidate Fingerprints**
 
@@ -44429,8 +44585,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_07_store_customer_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_08_batch_expiry_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_mark_expiring_batches
+CREATE OR ALTER PROCEDURE [dbo].[sp_mark_expiring_batches]
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-09-return-refund-procedures-sql`
@@ -44447,26 +44603,15 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.purchase_return_items.product_id`
-- `VALUE:COALESCE:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:CONCAT_FORMAT:dbo.sales_returns.return_no->dbo.cashier_journals.journal_no`
+- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
+- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
+- `VALUE:DIRECT:dbo.sales_returns.handler_id->dbo.cashier_journals.cashier_id`
+- `VALUE:DIRECT:dbo.sales_returns.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_returns.refund_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_returns.refund_voucher_id->dbo.cashier_journals.voucher_id`
+- `VALUE:DIRECT:dbo.sales_returns.return_date->dbo.cashier_journals.journal_date`
+- `VALUE:DIRECT:dbo.sales_returns.return_reason->dbo.cashier_journals.remark`
 
 **Extractor Candidate Fingerprints**
 
@@ -44481,8 +44626,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_08_batch_expiry_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_09_return_refund_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_post_sales_return_refunds
+CREATE OR ALTER PROCEDURE [dbo].[sp_post_sales_return_refunds]
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-10-supplier-geo-procedures-sql`
@@ -44499,26 +44644,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:COALESCE:dbo.accounts.id->dbo.voucher_items.account_id`
-- `VALUE:COALESCE:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:COALESCE:dbo.product_batches.id->dbo.damage_report_items.batch_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.voucher_items.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
-- `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level`
+- `CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km`
 
 **Extractor Candidate Fingerprints**
 
@@ -44533,8 +44660,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_09_return_refund_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_10_supplier_geo_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_refresh_supplier_geo_quality
+CREATE OR ALTER PROCEDURE [dbo].[sp_refresh_supplier_geo_quality]
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-11-common-system-procedures-sql`
@@ -44551,26 +44678,15 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.accounts.id->dbo.cashier_journals.account_id`
-- `VALUE:COALESCE:dbo.accounts.id->dbo.reconciliations.account_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.prepared_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.reconciliations.reviewed_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.salary_payments.employee_id`
-- `VALUE:COALESCE:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.salary_payments.voucher_id`
-- `VALUE:COALESCE:dbo.vouchers.id->dbo.settlements.voucher_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.reconciliations.account_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.salary_payments.employee_id`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `VALUE:ARITHMETIC:dbo.reconciliations.book_balance,dbo.reconciliations.unreconciled_income,dbo.reconciliations.unreconciled_expense->dbo.reconciliations.adjusted_balance`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.cashier_journals.remark->dbo.reconciliation_items.description`
 - `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.settlements.voucher_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44585,8 +44701,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_10_supplier_geo_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_11_common_system_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_build_cashier_reconciliation_items
+CREATE OR ALTER PROCEDURE [dbo].[sp_build_cashier_reconciliation_items]
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-12-enterprise-extension-procedures-sql`
@@ -44603,26 +44719,17 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:COALESCE:dbo.employees.id->dbo.sales_commissions.employee_id`
-- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.approved_by`
-- `VALUE:COALESCE:dbo.employees.id->dbo.settlements.prepared_by`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.commission_rules.product_category_id`
-- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.sales_commissions.order_id`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.shipments.order_id`
-- `VALUE:COALESCE:dbo.settlements.id->dbo.settlement_items.settlement_id`
-- `VALUE:COALESCE:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
-- `VALUE:COALESCE:dbo.warehouses.id->dbo.shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.settlements.prepared_by`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.shipments.order_id`
-- `VALUE:DIRECT:dbo.settlements.id->dbo.settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.shipments.id->dbo.shipping_tracks.shipment_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.shipments.warehouse_id`
+- `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity,dbo.inventory.locked_quantity->dbo.inventory.available_quantity`
+- `VALUE:AGGREGATE:dbo.stocktake_items.counted_quantity->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.stocktake_items.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.stocktake_items.book_quantity->dbo.inventory_transactions.before_qty`
+- `VALUE:DIRECT:dbo.stocktake_items.counted_quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.stocktake_items.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.stocktake_items.variance_quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.stocktake_items.variance_reason->dbo.inventory_transactions.remark`
+- `VALUE:DIRECT:dbo.stocktakes.created_by->dbo.inventory_transactions.operator_id`
+- `VALUE:DIRECT:dbo.stocktakes.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.stocktakes.warehouse_id->dbo.inventory_transactions.warehouse_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -44637,8 +44744,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_11_common_system_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_12_enterprise_extension_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_post_stocktake_variance
+CREATE OR ALTER PROCEDURE [dbo].[sp_post_stocktake_variance]
 ```
 
 ## `sqlserver2025-sample-data-full-02-procedures-13-erp-deep-scenario-procedures-sql`
@@ -44655,103 +44762,145 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
-- `CONTROL:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
-- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
-- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
-- `VALUE:AGGREGATE:dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
-- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.inventory.locked_quantity->dbo.mrp_run_items.on_hand_qty`
-- `VALUE:AGGREGATE:dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity->dbo.mrp_run_items.reserved_qty`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.finished_goods_receipts.received_qty,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost,dbo.operation_reports.labor_minutes,dbo.work_orders.planned_quantity,dbo.standard_costs.material_cost,dbo.standard_costs.labor_cost,dbo.standard_costs.overhead_cost->dbo.work_order_costs.variance_amount`
-- `VALUE:AGGREGATE:dbo.material_issue_items.issued_qty,dbo.material_issue_items.unit_cost->dbo.work_order_costs.material_cost`
-- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.labor_cost`
-- `VALUE:AGGREGATE:dbo.operation_reports.labor_minutes->dbo.work_order_costs.overhead_cost`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.net_requirement`
-- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate,dbo.inventory.quantity,dbo.inventory.locked_quantity,dbo.inventory_reservations.reserved_quantity,dbo.inventory_reservations.released_quantity,dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.address`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.contact_person`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.email`
+- `CONTROL:CASE_WHEN:dbo.master_data_change_items.field_name->dbo.customers.phone`
+- `CONTROL:CASE_WHEN:dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `CONTROL:CASE_WHEN:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
+- `CONTROL:CASE_WHEN:dbo.purchase_orders.paid_amount,dbo.purchase_orders.total_amount->dbo.ap_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.payments.amount,dbo.sales_orders.total_amount->dbo.sales_orders.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `CONTROL:CASE_WHEN:dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.inventory.available_quantity->dbo.mrp_run_items.on_hand_qty`
+- `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed,dbo.work_orders.completed_quantity->dbo.work_order_costs.unit_cost`
+- `VALUE:AGGREGATE:dbo.product_batches.purchase_price,dbo.work_order_materials.actual_consumed->dbo.work_order_costs.material_cost`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.net_requirement`
+- `VALUE:AGGREGATE:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.inventory.available_quantity->dbo.mrp_run_items.suggested_order_qty`
 - `VALUE:AGGREGATE:dbo.purchase_order_items.quantity,dbo.purchase_order_items.received_qty->dbo.mrp_run_items.planned_receipt_qty`
-- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days->dbo.mrp_run_items.suggested_due_date`
+- `VALUE:AGGREGATE:dbo.supplier_products.lead_time_days,dbo.mrp_runs.run_date->dbo.mrp_run_items.suggested_due_date`
 - `VALUE:AGGREGATE:dbo.supplier_products.supplier_id->dbo.mrp_run_items.suggested_supplier_id`
-- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory.quantity`
+- `VALUE:AGGREGATE:dbo.voucher_items.amount->dbo.budget_items.used_amount`
+- `VALUE:ARITHMETIC:dbo.inventory.available_quantity,dbo.repair_order_parts.quantity->dbo.inventory.available_quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory.quantity`
 - `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.repair_order_parts.quantity->dbo.inventory_transactions.after_qty`
-- `VALUE:ARITHMETIC:dbo.inventory_location_balances.locked_quantity,dbo.picking_task_items.required_qty->dbo.inventory_location_balances.locked_quantity`
-- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity,dbo.boms.scrap_rate->dbo.mrp_run_items.gross_requirement`
+- `VALUE:ARITHMETIC:dbo.production_plans.planned_production_qty,dbo.boms.quantity->dbo.mrp_run_items.gross_requirement`
 - `VALUE:ARITHMETIC:dbo.repair_order_parts.quantity->dbo.inventory_transactions.quantity_change`
-- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
-- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
-- `VALUE:COALESCE:dbo.cashier_journals.journal_type,dbo.cashier_journals.counterparty,dbo.cashier_journals.remark->dbo.reconciliation_items.description`
-- `VALUE:COALESCE:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:COALESCE:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:COALESCE:dbo.inventory.quantity,dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.after_qty`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.cogs_entries.cogs_amount->dbo.sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.paid_amount,dbo.payments.amount->dbo.sales_orders.paid_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.status->dbo.sales_orders.status`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.address->dbo.customers.address`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.contact_person->dbo.customers.contact_person`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.email->dbo.customers.email`
+- `VALUE:CASE_WHEN:dbo.master_data_change_items.new_value,dbo.customers.phone->dbo.customers.phone`
 - `VALUE:COALESCE:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
-- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
-- `VALUE:COALESCE:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:COALESCE:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:COALESCE:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:COALESCE:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:COALESCE:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:COALESCE:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:COALESCE:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
-- `VALUE:COALESCE:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:COALESCE:dbo.suppliers.id->dbo.invoices.supplier_id`
-- `VALUE:COALESCE:dbo.work_order_costs.unit_cost,dbo.finished_goods_receipts.unit_cost->dbo.inventory_cost_layers.unit_cost`
-- `VALUE:CONCAT_FORMAT:dbo.finished_goods_receipts.receipt_no->dbo.inventory_transactions.remark`
-- `VALUE:CONCAT_FORMAT:dbo.production_plans.plan_month,dbo.production_plans.id->dbo.mrp_runs.run_no`
-- `VALUE:CONCAT_FORMAT:dbo.repair_order_parts.id->dbo.inventory_transactions.remark`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
+- `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
+- `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
+- `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.payments.payment_no`
 - `VALUE:CONCAT_FORMAT:dbo.sales_orders.order_no->dbo.picking_tasks.task_no`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.cashier_journals.account_id`
 - `VALUE:DIRECT:dbo.boms.child_product_id->dbo.mrp_run_items.component_product_id`
-- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
-- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
-- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.customers.name->dbo.cashier_journals.counterparty`
-- `VALUE:DIRECT:dbo.employees.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_cost_layers.batch_id`
+- `VALUE:DIRECT:dbo.boms.parent_product_id->dbo.mrp_run_items.parent_product_id`
+- `VALUE:DIRECT:dbo.cashier_journals.amount->dbo.payments.amount`
+- `VALUE:DIRECT:dbo.cashier_journals.created_at->dbo.payments.created_at`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.payments.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.payments.payment_date`
+- `VALUE:DIRECT:dbo.cashier_journals.status->dbo.payments.payment_status`
+- `VALUE:DIRECT:dbo.category_dim.id->dbo.sales_fact.category_dim_id`
+- `VALUE:DIRECT:dbo.employee_shifts.id->dbo.employee_shift_assignments.shift_id`
+- `VALUE:DIRECT:dbo.employees.hire_date->dbo.employee_shift_assignments.work_date`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
+- `VALUE:DIRECT:dbo.employees.id->dbo.employee_shift_assignments.employee_id`
+- `VALUE:DIRECT:dbo.employees.manager_id->dbo.employee_roles.granted_by`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.batch_id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_cost_layers.source_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.id->dbo.inventory_transactions.reference_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_cost_layers.product_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.product_id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory.last_stocktake_date`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.receipt_date->dbo.inventory_cost_layers.receipt_date`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.original_qty`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_cost_layers.remaining_qty`
+- `VALUE:DIRECT:dbo.finished_goods_receipts.received_by->dbo.inventory_transactions.operator_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.received_qty->dbo.inventory_transactions.quantity_change`
-- `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_cost_layers.warehouse_id`
 - `VALUE:DIRECT:dbo.finished_goods_receipts.warehouse_id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
 - `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.before_qty`
-- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_run_items.run_id`
-- `VALUE:DIRECT:dbo.production_plans.id->dbo.mrp_runs.plan_id`
-- `VALUE:DIRECT:dbo.production_plans.product_id->dbo.mrp_run_items.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `VALUE:DIRECT:dbo.inventory_location_balances.location_id->dbo.picking_task_items.location_id`
+- `VALUE:DIRECT:dbo.master_data_change_items.new_value->dbo.audit_log.new_value`
+- `VALUE:DIRECT:dbo.master_data_change_requests.approved_by->dbo.audit_log.employee_id`
+- `VALUE:DIRECT:dbo.master_data_change_requests.master_id->dbo.audit_log.target_id`
+- `VALUE:DIRECT:dbo.master_data_change_requests.master_type->dbo.audit_log.target_type`
+- `VALUE:DIRECT:dbo.mrp_runs.id->dbo.mrp_run_items.run_id`
+- `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
+- `VALUE:DIRECT:dbo.picking_tasks.id->dbo.picking_task_items.picking_task_id`
+- `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
+- `VALUE:DIRECT:dbo.product_categories.created_at->dbo.category_dim.effective_from`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.level1_name`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.level2_name`
+- `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_date->dbo.ap_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.purchase_orders.paid_amount->dbo.ap_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.ap_invoices.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_orders.total_amount->dbo.ap_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.region_dim.id->dbo.sales_fact.region_dim_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.repair_order_parts.issued_from_warehouse_id->dbo.inventory_transactions.warehouse_id`
 - `VALUE:DIRECT:dbo.repair_order_parts.product_id->dbo.inventory_transactions.product_id`
 - `VALUE:DIRECT:dbo.repair_order_parts.repair_order_id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.repair_orders.technician_id->dbo.inventory_transactions.operator_id`
+- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_fact.sales_amount`
 - `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
 - `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.picking_task_items.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
 - `VALUE:DIRECT:dbo.sales_order_items.id->dbo.picking_task_items.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
 - `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
 - `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.picking_task_items.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.sales_fact.product_id`
 - `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
 - `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.picking_task_items.required_qty`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cashier_journals.reference_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.sales_fact.quantity_sold`
+- `VALUE:DIRECT:dbo.sales_orders.created_at->dbo.sales_fact.created_at`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.ar_invoices.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payments.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.discount_amount->dbo.ar_invoices.writeoff_amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
 - `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_task_items.task_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payments.order_id`
 - `VALUE:DIRECT:dbo.sales_orders.id->dbo.picking_tasks.sales_order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.order_no->dbo.cashier_journals.remark`
-- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.cashier_journals.amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.ar_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_fact.fiscal_date`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.ar_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.payments.payment_method`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.sales_fact.sales_channel`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.picking_tasks.assigned_to`
+- `VALUE:DIRECT:dbo.sales_orders.status->dbo.sales_fact.order_status`
+- `VALUE:DIRECT:dbo.sales_orders.total_amount->dbo.ar_invoices.invoice_amount`
 - `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.picking_tasks.warehouse_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.sales_fact.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.city`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.region_name`
+- `VALUE:DIRECT:dbo.warehouses.code->dbo.region_dim.region_code`
+- `VALUE:DIRECT:dbo.warehouses.district->dbo.region_dim.district`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
+- `VALUE:DIRECT:dbo.work_orders.completed_quantity->dbo.work_order_costs.finished_qty`
+- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_costs.work_order_id`
+- `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.purchase_orders.order_date->dbo.ap_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.picking_tasks.wave_no`
 
 **Extractor Candidate Fingerprints**
 
@@ -44766,16 +44915,16 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_12_enterprise_extension_procedures_1]
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
 -- ============================================================
 
--- relation-detector-fixture-source:sqlserver.sp_13_erp_deep_scenario_procedures_1
-CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
+-- relation-detector-fixture-source:sqlserver.sp_run_mrp_for_plan
+CREATE OR ALTER PROCEDURE [dbo].[sp_run_mrp_for_plan]
 ```
 
 ## `sqlserver2025-sample-data-full-03-data-01-master-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -44784,26 +44933,7 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->dbo.departments.parent_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.employees.department_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.positions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.attendance.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_roles.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employee_salary_log.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.employees.manager_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.leave_records.employee_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.warehouses.manager_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.permissions.parent_id`
-- `VALUE:DIRECT:dbo.permissions.id->dbo.role_permissions.permission_id`
-- `VALUE:DIRECT:dbo.positions.id->dbo.employees.position_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.product_categories.parent_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.supplier_products.product_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.employee_roles.role_id`
-- `VALUE:DIRECT:dbo.roles.id->dbo.role_permissions.role_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.product_batches.supplier_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.supplier_products.supplier_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -44813,21 +44943,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_13_erp_deep_scenario_procedures_1]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[departments] ([parent_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[departments].
 ```
 
 ## `sqlserver2025-sample-data-full-03-data-02-supplementary-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -44836,26 +44966,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.departments.id->dbo.purchase_requisitions.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_orders.purchaser_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_receipts.receiver_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_requisitions.requester_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory_transactions.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inventory_transactions.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_receipt_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_requisition_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_order_items.order_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_receipts.order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_receipt_items.receipt_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_orders.requisition_id`
-- `VALUE:DIRECT:dbo.purchase_requisitions.id->dbo.purchase_requisition_items.requisition_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_orders.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory_transactions.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_receipts.warehouse_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -44865,21 +44976,21 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[inventory] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[reconciliation_items].
 ```
 
 ## `sqlserver2025-sample-data-full-03-data-03-third-batch-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -44888,26 +44999,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_orders.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.sales_returns.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_orders.salesperson_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.sales_returns.handler_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_receipt_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_order_items.batch_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.sales_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_order_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.sales_return_items.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_order_items.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_returns.order_id`
-- `VALUE:DIRECT:dbo.sales_returns.id->dbo.sales_return_items.return_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.purchase_returns.supplier_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.sales_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.purchase_returns.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.sales_returns.warehouse_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -44917,13 +45009,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[purchase_receipt_items] ([batch_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[ar_aging_snapshots].
 ```
 
 ## `sqlserver2025-sample-data-full-03-data-04-return-damage-data-sql`
@@ -44940,26 +45032,43 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.accounts.id->dbo.accounts.parent_id`
-- `VALUE:DIRECT:dbo.accounts.id->dbo.voucher_items.account_id`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_loss_amount`
+- `CONTROL:CASE_WHEN:dbo.product_batches.expiry_date->dbo.damage_reports.total_quantity`
+- `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.amount`
+- `CONTROL:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.return_qty`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_at`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.approved_by`
+- `CONTROL:CASE_WHEN:dbo.purchase_receipts.inspection_result->dbo.purchase_returns.status`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_reports.total_loss_amount`
+- `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.damage_reports.total_quantity`
+- `VALUE:ARITHMETIC:dbo.inventory.quantity,dbo.products.purchase_price->dbo.damage_report_items.loss_amount`
+- `VALUE:ARITHMETIC:dbo.purchase_order_items.received_qty,dbo.purchase_order_items.unit_price->dbo.purchase_return_items.amount`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.paid_amount->dbo.purchase_returns.refund_received`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.total_amount->dbo.purchase_returns.total_amount`
+- `VALUE:CASE_WHEN:dbo.purchase_order_items.received_qty->dbo.purchase_return_items.return_qty`
+- `VALUE:CASE_WHEN:dbo.purchase_receipts.receipt_date->dbo.purchase_returns.approved_at`
+- `VALUE:CASE_WHEN:dbo.purchase_receipts.receiver_id->dbo.purchase_returns.approved_by`
+- `VALUE:COALESCE:dbo.purchase_receipts.receipt_date,dbo.purchase_orders.actual_delivery_date,dbo.purchase_orders.order_date->dbo.purchase_returns.return_date`
+- `VALUE:COALESCE:dbo.purchase_receipts.warehouse_id->dbo.purchase_returns.warehouse_id`
+- `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.approved_by`
+- `VALUE:COALESCE:dbo.warehouses.manager_id->dbo.damage_reports.reported_by`
+- `VALUE:CONCAT_FORMAT:dbo.purchase_orders.order_no->dbo.purchase_returns.return_no`
 - `VALUE:DIRECT:dbo.damage_reports.id->dbo.damage_report_items.report_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.executed_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.damage_reports.reported_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.purchase_returns.handler_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.posted_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.vouchers.reviewed_by`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.damage_report_items.batch_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.damage_report_items.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.damage_report_items.quantity`
 - `VALUE:DIRECT:dbo.product_batches.id->dbo.purchase_return_items.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.damage_report_items.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.products.purchase_price->dbo.damage_report_items.unit_cost`
+- `VALUE:DIRECT:dbo.purchase_order_items.product_id->dbo.purchase_return_items.product_id`
+- `VALUE:DIRECT:dbo.purchase_order_items.unit_price->dbo.purchase_return_items.unit_price`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.purchase_returns.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.purchaser_id->dbo.purchase_returns.handler_id`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.purchase_returns.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.purchase_returns.purchase_receipt_id`
 - `VALUE:DIRECT:dbo.purchase_returns.id->dbo.purchase_return_items.return_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.damage_reports.voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.purchase_returns.refund_voucher_id`
-- `VALUE:DIRECT:dbo.vouchers.id->dbo.voucher_items.voucher_id`
+- `VALUE:DIRECT:dbo.purchase_returns.return_reason->dbo.purchase_return_items.reason`
 - `VALUE:DIRECT:dbo.warehouses.id->dbo.damage_reports.warehouse_id`
+- `VALUE:FUNCTION_CALL:dbo.warehouses.code->dbo.damage_reports.report_no`
 
 **Extractor Candidate Fingerprints**
 
@@ -44968,14 +45077,14 @@ SELECT p.[id]
 **Input Preview**
 
 ```sql
--- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- ============================================================
+-- Natural purchase-return and warehouse-damage transactions.
+-- T-SQL 2016-compatible baseline shared by all SQL Server sample versions.
 
-INSERT INTO [dbo].[purchase_returns] ([handler_id])
-SELECT p.[id]
+INSERT INTO [dbo].[purchase_returns] (
+    [return_no], [purchase_order_id], [purchase_receipt_id], [supplier_id],
+    [warehouse_id], [handler_id], [return_date], [return_reason], [return_type],
+    [total_amount], [refund_received], [status], [approved_by], [approved_at], [created_at]
+)
 ```
 
 ## `sqlserver2025-sample-data-full-03-data-05-massive-data-generator-sql`
@@ -44992,26 +45101,29 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.cashier_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.cashier_journals.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.commission_rules.product_category_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_products.promotion_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliation_items.reconciliation_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.account_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.reconciliations.reviewed_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.salary_payments.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.employee_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.sales_commissions.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlement_items.settlement_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.approved_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.prepared_by`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.settlements.voucher_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.order_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipments.warehouse_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.shipping_tracks.shipment_id`
+- `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `CONTROL:CASE_WHEN:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `CONTROL:CASE_WHEN:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.current_qty`
+- `VALUE:ARITHMETIC:dbo.products.min_stock->dbo.product_batches.initial_qty`
+- `VALUE:ARITHMETIC:dbo.products.shelf_life_days->dbo.product_batches.expiry_date`
+- `VALUE:COALESCE:dbo.supplier_products.supplier_price,dbo.products.purchase_price->dbo.product_batches.purchase_price`
+- `VALUE:CONCAT_FORMAT:dbo.products.sku->dbo.product_batches.batch_no`
+- `VALUE:CONCAT_FORMAT:dbo.warehouses.code->dbo.inventory.shelf_location`
+- `VALUE:DIRECT:dbo.inventory.batch_id->dbo.inventory_transactions.batch_id`
+- `VALUE:DIRECT:dbo.inventory.id->dbo.inventory_transactions.reference_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_transactions.product_id`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.after_qty`
+- `VALUE:DIRECT:dbo.inventory.quantity->dbo.inventory_transactions.quantity_change`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_transactions.warehouse_id`
+- `VALUE:DIRECT:dbo.product_batches.current_qty->dbo.inventory.available_quantity`
+- `VALUE:DIRECT:dbo.product_batches.current_qty->dbo.inventory.quantity`
+- `VALUE:DIRECT:dbo.product_batches.id->dbo.inventory.batch_id`
+- `VALUE:DIRECT:dbo.product_batches.product_id->dbo.inventory.product_id`
+- `VALUE:DIRECT:dbo.products.id->dbo.product_batches.product_id`
+- `VALUE:DIRECT:dbo.supplier_products.supplier_id->dbo.product_batches.supplier_id`
+- `VALUE:DIRECT:dbo.warehouses.id->dbo.inventory.warehouse_id`
+- `VALUE:DIRECT:dbo.warehouses.manager_id->dbo.inventory_transactions.operator_id`
 
 **Extractor Candidate Fingerprints**
 
@@ -45020,22 +45132,22 @@ SELECT p.[id]
 **Input Preview**
 
 ```sql
--- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- ============================================================
+-- Natural bulk inventory initialization used for scale-oriented sample data.
+-- The procedure creates operational batches, warehouse balances, and opening
+-- inventory transactions from existing product, supplier, and warehouse facts.
 
-INSERT INTO [dbo].[cashier_journals] ([account_id])
-SELECT p.[id]
+-- relation-detector-fixture-source:sqlserver.sp_seed_inventory_capacity
+CREATE OR ALTER PROCEDURE [dbo].[sp_seed_inventory_capacity]
+AS
+BEGIN
 ```
 
 ## `sqlserver2025-sample-data-full-03-data-06-enterprise-extension-data-sql`
 
 | Field | Value |
 | --- | --- |
-| Classification | `EXISTING_GOLD` |
-| Reason | fixture already has expected-lineage.json |
+| Classification | `NOT_APPLICABLE` |
+| Reason | write statement has no physical table.column source in Data Lineage v1 |
 | Database | `SQLSERVER` |
 | Parser target | `SQL` |
 | Source type | `PLAIN_SQL` |
@@ -45044,26 +45156,7 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.boms.id->dbo.work_orders.bom_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.invoices.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.promotion_usages.customer_id`
-- `VALUE:DIRECT:dbo.departments.id->dbo.fixed_assets.department_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.fixed_assets.custodian_id`
-- `VALUE:DIRECT:dbo.fixed_assets.id->dbo.depreciation_log.asset_id`
-- `VALUE:DIRECT:dbo.invoices.id->dbo.three_way_matching.invoice_id`
-- `VALUE:DIRECT:dbo.product_categories.id->dbo.promotion_products.category_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.boms.child_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.boms.parent_product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.promotion_products.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.three_way_matching.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.work_orders.product_id`
-- `VALUE:DIRECT:dbo.promotions.id->dbo.promotion_usages.promotion_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.three_way_matching.purchase_order_id`
-- `VALUE:DIRECT:dbo.purchase_receipts.id->dbo.three_way_matching.purchase_receipt_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.promotion_usages.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.invoices.supplier_id`
-- `VALUE:DIRECT:dbo.warehouses.id->dbo.work_orders.warehouse_id`
-- `VALUE:DIRECT:dbo.work_orders.id->dbo.work_order_materials.work_order_id`
+- None
 
 **Extractor Candidate Fingerprints**
 
@@ -45073,13 +45166,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[promotion_products] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[consignment_consumptions].
 ```
 
 ## `sqlserver2025-sample-data-full-03-data-07-erp-deep-scenario-data-sql`
@@ -45096,26 +45189,115 @@ SELECT p.[id]
 
 **Expected Lineage Fingerprints**
 
-- `VALUE:DIRECT:dbo.approval_workflows.id->dbo.approval_nodes.workflow_id`
-- `VALUE:DIRECT:dbo.contracts.id->dbo.contract_milestones.contract_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.ar_aging_snapshots.customer_id`
-- `VALUE:DIRECT:dbo.customers.id->dbo.service_tickets.customer_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.approved_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.contracts.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.inspection_reports.inspector_id`
-- `VALUE:DIRECT:dbo.employees.id->dbo.service_tickets.assigned_to`
-- `VALUE:DIRECT:dbo.employees.id->dbo.tax_filings.prepared_by`
-- `VALUE:DIRECT:dbo.employees.id->dbo.tax_invoices.verified_by`
-- `VALUE:DIRECT:dbo.inspection_standards.id->dbo.inspection_reports.standard_id`
-- `VALUE:DIRECT:dbo.product_batches.id->dbo.inspection_reports.batch_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inspection_reports.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.inspection_standards.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.service_tickets.product_id`
-- `VALUE:DIRECT:dbo.products.id->dbo.work_order_materials.product_id`
-- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_aging_snapshots.order_id`
-- `VALUE:DIRECT:dbo.sales_orders.id->dbo.service_tickets.order_id`
-- `VALUE:DIRECT:dbo.suppliers.id->dbo.ap_aging_snapshots.supplier_id`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.credit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.journal_type->dbo.reconciliation_items.debit_amount`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.difference_reason`
+- `CONTROL:CASE_WHEN:dbo.cashier_journals.status->dbo.reconciliation_items.is_matched`
+- `CONTROL:CASE_WHEN:dbo.payment_receipts.amount,dbo.sales_orders.paid_amount->dbo.payments.payment_status`
+- `CONTROL:CASE_WHEN:dbo.payment_receipts.amount->dbo.payments.failure_reason`
+- `CONTROL:CASE_WHEN:dbo.product_categories.id->dbo.category_dim.level2_name`
+- `CONTROL:CASE_WHEN:dbo.product_categories.name->dbo.category_dim.is_womenwear`
+- `CONTROL:CASE_WHEN:dbo.purchase_orders.paid_amount,dbo.purchase_orders.total_amount->dbo.ap_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.order_date->dbo.fiscal_calendar.is_current_fiscal_year`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount,dbo.sales_orders.total_amount->dbo.ar_invoices.status`
+- `CONTROL:CASE_WHEN:dbo.sales_orders.paid_amount->dbo.payment_receipts.status`
+- `CONTROL:CASE_WHEN:dbo.voucher_items.direction->dbo.budget_items.used_amount`
+- `VALUE:AGGREGATE:dbo.inventory.quantity,dbo.products.purchase_price->dbo.inventory_valuation_snapshots.inventory_value`
+- `VALUE:AGGREGATE:dbo.inventory.quantity->dbo.inventory_valuation_snapshots.quantity`
+- `VALUE:AGGREGATE:dbo.products.purchase_price->dbo.inventory_valuation_snapshots.unit_cost`
+- `VALUE:AGGREGATE:dbo.voucher_items.amount->dbo.budget_items.used_amount`
+- `VALUE:ARITHMETIC:dbo.cashier_journals.counterparty,dbo.cashier_journals.reference_type->dbo.reconciliation_items.description`
+- `VALUE:ARITHMETIC:dbo.payment_receipts.receipt_no->dbo.payments.payment_no`
+- `VALUE:ARITHMETIC:dbo.purchase_orders.order_no->dbo.ap_invoices.ap_no`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.cogs_entries.cogs_amount->dbo.sales_fact.gross_margin_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.amount,dbo.sales_returns.refund_amount->dbo.sales_fact.net_sales_amount`
+- `VALUE:ARITHMETIC:dbo.sales_order_items.quantity,dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.cogs_amount`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_end`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_start`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_no->dbo.ar_invoices.ar_no`
+- `VALUE:ARITHMETIC:dbo.sales_orders.order_no->dbo.payment_receipts.receipt_no`
+- `VALUE:ARITHMETIC:dbo.warehouses.city->dbo.region_dim.region_name`
+- `VALUE:ARITHMETIC:dbo.warehouses.code->dbo.region_dim.region_code`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.credit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.amount->dbo.reconciliation_items.debit_amount`
+- `VALUE:CASE_WHEN:dbo.cashier_journals.remark->dbo.reconciliation_items.difference_reason`
+- `VALUE:CASE_WHEN:dbo.product_categories.name->dbo.category_dim.level2_name`
+- `VALUE:COALESCE:dbo.inventory_cost_layers.unit_cost,dbo.products.purchase_price->dbo.cogs_entries.unit_cost`
+- `VALUE:COALESCE:dbo.payments.amount,dbo.sales_orders.paid_amount->dbo.sales_fact.paid_amount`
+- `VALUE:COALESCE:dbo.product_categories.name->dbo.category_dim.level1_name`
+- `VALUE:COALESCE:dbo.sales_returns.refund_amount->dbo.sales_fact.refund_amount`
+- `VALUE:DIRECT:dbo.accounting_periods.id->dbo.fiscal_calendar.accounting_period_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.payments.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.id->dbo.reconciliation_items.journal_id`
+- `VALUE:DIRECT:dbo.cashier_journals.journal_date->dbo.reconciliation_items.transaction_date`
+- `VALUE:DIRECT:dbo.category_dim.id->dbo.sales_fact.category_dim_id`
+- `VALUE:DIRECT:dbo.inventory.product_id->dbo.inventory_valuation_snapshots.product_id`
+- `VALUE:DIRECT:dbo.inventory.warehouse_id->dbo.inventory_valuation_snapshots.warehouse_id`
+- `VALUE:DIRECT:dbo.payment_receipts.amount->dbo.payments.amount`
+- `VALUE:DIRECT:dbo.payment_receipts.confirmed_at->dbo.payments.created_at`
+- `VALUE:DIRECT:dbo.payment_receipts.currency->dbo.payments.currency`
+- `VALUE:DIRECT:dbo.payment_receipts.id->dbo.payment_receipt_allocations.receipt_id`
+- `VALUE:DIRECT:dbo.payment_receipts.id->dbo.payments.receipt_id`
+- `VALUE:DIRECT:dbo.payment_receipts.receipt_date->dbo.payments.payment_date`
+- `VALUE:DIRECT:dbo.payments.id->dbo.sales_fact.payment_id`
+- `VALUE:DIRECT:dbo.product_categories.code->dbo.category_dim.category_code`
+- `VALUE:DIRECT:dbo.product_categories.id->dbo.category_dim.source_category_id`
+- `VALUE:DIRECT:dbo.product_categories.name->dbo.category_dim.leaf_name`
+- `VALUE:DIRECT:dbo.product_categories.status->dbo.category_dim.status`
+- `VALUE:DIRECT:dbo.purchase_orders.expected_delivery_date->dbo.ap_invoices.due_date`
+- `VALUE:DIRECT:dbo.purchase_orders.id->dbo.ap_invoices.purchase_order_id`
+- `VALUE:DIRECT:dbo.purchase_orders.order_date->dbo.ap_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.purchase_orders.paid_amount->dbo.ap_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.purchase_orders.supplier_id->dbo.ap_invoices.supplier_id`
+- `VALUE:DIRECT:dbo.purchase_orders.total_amount->dbo.ap_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.reconciliations.id->dbo.reconciliation_items.reconciliation_id`
+- `VALUE:DIRECT:dbo.region_dim.id->dbo.sales_fact.region_dim_id`
+- `VALUE:DIRECT:dbo.sales_order_items.amount->dbo.sales_fact.sales_amount`
+- `VALUE:DIRECT:dbo.sales_order_items.batch_id->dbo.cogs_entries.batch_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.cogs_entries.sales_order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.id->dbo.sales_fact.order_item_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.cogs_entries.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.product_id->dbo.sales_fact.product_id`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.cogs_entries.quantity`
+- `VALUE:DIRECT:dbo.sales_order_items.quantity->dbo.sales_fact.quantity_sold`
+- `VALUE:DIRECT:dbo.sales_orders.created_at->dbo.sales_fact.created_at`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.ar_invoices.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payment_receipts.party_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.payments.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.customer_id->dbo.sales_fact.customer_id`
+- `VALUE:DIRECT:dbo.sales_orders.discount_amount->dbo.ar_invoices.writeoff_amount`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.ar_invoices.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.cogs_entries.sales_order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payment_receipt_allocations.reference_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.payments.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.id->dbo.sales_fact.order_id`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.ar_invoices.invoice_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.fiscal_calendar.calendar_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.payment_receipts.receipt_date`
+- `VALUE:DIRECT:dbo.sales_orders.order_date->dbo.sales_fact.fiscal_date`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.ar_invoices.paid_amount`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.payment_receipt_allocations.allocated_amount`
+- `VALUE:DIRECT:dbo.sales_orders.paid_amount->dbo.payment_receipts.amount`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.payments.payment_method`
+- `VALUE:DIRECT:dbo.sales_orders.payment_method->dbo.sales_fact.sales_channel`
+- `VALUE:DIRECT:dbo.sales_orders.salesperson_id->dbo.payment_receipts.handled_by`
+- `VALUE:DIRECT:dbo.sales_orders.status->dbo.sales_fact.order_status`
+- `VALUE:DIRECT:dbo.sales_orders.total_amount->dbo.ar_invoices.invoice_amount`
+- `VALUE:DIRECT:dbo.sales_orders.updated_at->dbo.cogs_entries.posted_at`
+- `VALUE:DIRECT:dbo.sales_orders.updated_at->dbo.payment_receipts.confirmed_at`
+- `VALUE:DIRECT:dbo.sales_orders.warehouse_id->dbo.sales_fact.warehouse_id`
+- `VALUE:DIRECT:dbo.vouchers.id->dbo.cogs_entries.voucher_id`
+- `VALUE:DIRECT:dbo.warehouses.city->dbo.region_dim.city`
+- `VALUE:DIRECT:dbo.warehouses.district->dbo.region_dim.district`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.province`
+- `VALUE:DIRECT:dbo.warehouses.province->dbo.region_dim.sales_region`
+- `VALUE:FUNCTION_CALL:dbo.customers.credit_days,dbo.sales_orders.order_date->dbo.ar_invoices.due_date`
+- `VALUE:FUNCTION_CALL:dbo.product_categories.created_at->dbo.category_dim.effective_from`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_month_name`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_quarter`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.fiscal_year`
+- `VALUE:FUNCTION_CALL:dbo.sales_orders.order_date->dbo.fiscal_calendar.period_code`
 
 **Extractor Candidate Fingerprints**
 
@@ -45125,13 +45307,13 @@ SELECT p.[id]
 
 ```sql
 -- ============================================================
--- SQL Server ERP sample data translated from MySQL 8.0 business sample.
--- This corpus is intentionally T-SQL 2016-compatible so the same business
--- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
+-- SQL Server ERP natural sample data.
+-- Seed and transaction rows use ordinary INSERT VALUES so natural sample-data
+-- does not inflate relationship/lineage counts with synthetic relationship SQL.
+-- Baseline is T-SQL 2016-compatible for all SQL Server versions.
 -- ============================================================
 
-INSERT INTO [dbo].[work_order_materials] ([product_id])
-SELECT p.[id]
+-- Natural seed rows for [dbo].[production_plans].
 ```
 
 ## `sqlserver2025-sample-data-full-04-queries-01-complex-queries-sql`
@@ -45161,7 +45343,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer sales summary by region and category.
@@ -45194,7 +45376,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Sales order payment status.
@@ -45227,7 +45409,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Customer return and refund summary.
@@ -45260,7 +45442,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Cashier journal reconciliation overview.
@@ -45293,7 +45475,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Batch expiry risk by product and warehouse.
@@ -45326,7 +45508,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Sales return item reason analysis.
@@ -45359,7 +45541,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Supplier purchase and receipt scorecard.
@@ -45392,7 +45574,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Production planning demand overview.
@@ -45425,7 +45607,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Inventory valuation by product and warehouse.
@@ -45458,7 +45640,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Payment request approval amount.
@@ -45491,7 +45673,7 @@ SELECT p.[id]
 -- SQL Server ERP natural business query samples.
 -- These queries are intentionally T-SQL 2016-compatible so the same business
 -- semantics can be exercised by SQL Server 2016/2017/2019/2022/2025.
--- High-density relationship probes live under test-fixtures/semantic-equivalent.
+-- High-density relationship coverage cases live under test-fixtures/semantic-equivalent.
 -- ============================================================
 
 -- Picking task execution summary.

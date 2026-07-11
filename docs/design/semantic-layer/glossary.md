@@ -94,6 +94,8 @@ Evidence 可以来自 metadata、DDL、SQL、procedure、trigger、comment、sca
 
 EvidenceRef 建议包含 scanRunId、scanVersion、parserMode、grammarProfile、sourceHash、detectorVersion、payloadSnapshot、reviewDecisionId 等字段，用于复现语义对象的来源。
 
+当前 artifact 实现还没有达到这一完整定义：KG evidence id 由 owner fact id 和数组 index 组成；semantic extraction bundle 中 relationship/lineage/naming 的 `evidenceRefs` 当前是 `{source,type,detail}` provenance snapshot，而 event/triplet candidate 使用字符串 fact id。它们可用于当前文件内审计，但不保证跨重排、跨 scan 稳定。该差异属于实现缺口，不改变 EvidenceRef 的目标定义。
+
 ### ScanBundle
 
 语义层消费 relation-detector 输出前的标准化事实包。

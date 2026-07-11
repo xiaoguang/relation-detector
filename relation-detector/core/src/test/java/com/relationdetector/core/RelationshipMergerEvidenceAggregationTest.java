@@ -85,6 +85,27 @@ class RelationshipMergerEvidenceAggregationTest {
     }
 
     @Test
+    void deduplicatesNamingRawReferencesWithoutCollapsingStructuralObservations() {
+        RelationshipCandidate first = sqlLogJoin("query.sql", "line 10: o.user_id = u.id");
+        RelationshipCandidate second = sqlLogJoin("query.sql", "line 38: o.user_id = u.id");
+        first.evidence().add(namingReference("naming:orders.user_id->users.id:TABLE_ID"));
+        second.evidence().add(namingReference("naming:orders.user_id->users.id:TABLE_ID"));
+
+        RelationshipCandidate merged = merger.merge(List.of(first, second), 0.0d).get(0);
+
+        assertEquals(2, merged.rawEvidence().stream()
+                .filter(item -> item.type() == EvidenceType.SQL_LOG_JOIN)
+                .count(), "Distinct structural SQL observations must remain in rawEvidence");
+        assertEquals(1, merged.rawEvidence().stream()
+                .filter(item -> item.type() == EvidenceType.NAMING_MATCH)
+                .count(), "A relationship must reference each top-level naming fact only once");
+        assertEquals(1, evidence(merged, EvidenceType.NAMING_MATCH).attributes().get("count"),
+                "Duplicate naming references must not inflate grouped observation count");
+        assertEquals(2, evidence(merged, EvidenceType.REPEATED_OBSERVATION).attributes().get("count"),
+                "Only the two structural observations should contribute repetition");
+    }
+
+    @Test
     void repeatedObservationBonusApproachesAbsoluteCap() {
         List<RelationshipCandidate> observations = java.util.stream.IntStream.rangeClosed(1, 100)
                 .mapToObj(i -> sqlLogJoin("app.log", "line " + i + ": o.user_id = u.id"))
@@ -290,6 +311,20 @@ class RelationshipMergerEvidenceAggregationTest {
                 Endpoint.column(ColumnRef.of(TableId.of(null, "users"), "id")),
                 RelationType.FK_LIKE,
                 RelationSubType.INFERRED_JOIN_FK);
+    }
+
+    private Evidence namingReference(String evidenceRef) {
+        return new Evidence(EvidenceType.NAMING_MATCH,
+                BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                EvidenceSourceType.NAMING_HEURISTIC,
+                "naming",
+                "orders.user_id matches users.id",
+                java.util.Map.of(
+                        "evidenceRef", evidenceRef,
+                        "namingRule", "TABLE_ID",
+                        "suggestedSourceEndpoint", "orders.user_id",
+                        "suggestedTargetEndpoint", "users.id",
+                        "directionHint", true));
     }
 
     private void assertEvidenceCount(RelationshipCandidate relation, EvidenceType type, int count) {

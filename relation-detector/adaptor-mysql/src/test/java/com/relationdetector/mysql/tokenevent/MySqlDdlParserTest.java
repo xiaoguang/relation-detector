@@ -129,6 +129,48 @@ class MySqlDdlParserTest {
     }
 
     @Test
+    void generatedStoredColumnsDoNotHideFollowingDeclaredForeignKeys() throws Exception {
+        Path ddl = tempDir.resolve("three-way-matching.sql");
+        Files.writeString(ddl, """
+                CREATE TABLE three_way_matching (
+                  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  purchase_order_id BIGINT UNSIGNED NOT NULL,
+                  purchase_receipt_id BIGINT UNSIGNED NOT NULL,
+                  supplier_invoice_id BIGINT UNSIGNED NOT NULL,
+                  matched_by BIGINT UNSIGNED,
+                  po_quantity DECIMAL(18,4) NOT NULL,
+                  receipt_quantity DECIMAL(18,4) NOT NULL,
+                  invoice_quantity DECIMAL(18,4) NOT NULL,
+                  po_price DECIMAL(18,2) NOT NULL,
+                  receipt_price DECIMAL(18,2) NOT NULL,
+                  invoice_price DECIMAL(18,2) NOT NULL,
+                  quantity_match TINYINT(1)
+                    GENERATED ALWAYS AS (
+                      po_quantity = receipt_quantity AND receipt_quantity = invoice_quantity
+                    ) STORED,
+                  price_match TINYINT(1)
+                    GENERATED ALWAYS AS (
+                      po_price = receipt_price AND receipt_price = invoice_price
+                    ) STORED,
+                  CONSTRAINT fk_twm_po FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id),
+                  CONSTRAINT fk_twm_pr FOREIGN KEY (purchase_receipt_id) REFERENCES purchase_receipts(id),
+                  CONSTRAINT fk_twm_invoice FOREIGN KEY (supplier_invoice_id) REFERENCES supplier_invoices(id),
+                  CONSTRAINT fk_twm_matcher FOREIGN KEY (matched_by) REFERENCES employees(id)
+                ) ENGINE=InnoDB;
+                """);
+
+        List<RelationshipCandidate> relations = parseDdl(ddl);
+
+        assertHasEvidence(relations, "three_way_matching.purchase_order_id", "purchase_orders.id",
+                EvidenceType.DDL_FOREIGN_KEY);
+        assertHasEvidence(relations, "three_way_matching.purchase_receipt_id", "purchase_receipts.id",
+                EvidenceType.DDL_FOREIGN_KEY);
+        assertHasEvidence(relations, "three_way_matching.supplier_invoice_id", "supplier_invoices.id",
+                EvidenceType.DDL_FOREIGN_KEY);
+        assertHasEvidence(relations, "three_way_matching.matched_by", "employees.id",
+                EvidenceType.DDL_FOREIGN_KEY);
+    }
+
     private void assertHasEvidence(
             List<RelationshipCandidate> relations,
             String source,

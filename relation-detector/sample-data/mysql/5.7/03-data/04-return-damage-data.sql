@@ -33,11 +33,22 @@ LIMIT 15;
 INSERT INTO purchase_return_items (return_id, product_id, batch_id, return_qty, unit_price)
 SELECT
     pr.id,
-    (SELECT product_id FROM purchase_order_items WHERE order_id = pr.purchase_order_id LIMIT 1),
-    (SELECT id FROM product_batches WHERE product_id = (SELECT product_id FROM purchase_order_items WHERE order_id = pr.purchase_order_id LIMIT 1) LIMIT 1),
+    poi.product_id,
+    first_batch.batch_id,
     FLOOR(5 + RAND() * 20),
-    (SELECT unit_price FROM purchase_order_items WHERE order_id = pr.purchase_order_id LIMIT 1)
-FROM purchase_returns pr;
+    poi.unit_price
+FROM purchase_returns pr
+JOIN (
+    SELECT order_id, MIN(id) AS order_item_id
+    FROM purchase_order_items
+    GROUP BY order_id
+) first_item ON first_item.order_id = pr.purchase_order_id
+JOIN purchase_order_items poi ON poi.id = first_item.order_item_id
+LEFT JOIN (
+    SELECT product_id, MIN(id) AS batch_id
+    FROM product_batches
+    GROUP BY product_id
+) first_batch ON first_batch.product_id = poi.product_id;
 
 -- 报损数据
 INSERT INTO damage_reports (report_no, warehouse_id, report_type, report_date,

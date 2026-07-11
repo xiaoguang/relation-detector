@@ -61,11 +61,11 @@ WHERE EXISTS (
 -- purchase_receipt_order
 SELECT purchase_receipts.id, purchase_orders.id
 FROM purchase_receipts
-JOIN purchase_orders ON purchase_receipts.purchase_order_id = purchase_orders.id
+JOIN purchase_orders ON purchase_receipts.order_id = purchase_orders.id
 WHERE EXISTS (
   SELECT 1
   FROM purchase_orders
-  WHERE purchase_orders.id = purchase_receipts.purchase_order_id
+  WHERE purchase_orders.id = purchase_receipts.order_id
 );
 
 -- sales_order_customer
@@ -81,21 +81,21 @@ WHERE EXISTS (
 -- sales_item_order
 SELECT sales_order_items.id, sales_orders.id
 FROM sales_order_items
-JOIN sales_orders ON sales_order_items.sales_order_id = sales_orders.id
+JOIN sales_orders ON sales_order_items.order_id = sales_orders.id
 WHERE EXISTS (
   SELECT 1
   FROM sales_orders
-  WHERE sales_orders.id = sales_order_items.sales_order_id
+  WHERE sales_orders.id = sales_order_items.order_id
 );
 
 -- return_order
 SELECT sales_returns.id, sales_orders.id
 FROM sales_returns
-JOIN sales_orders ON sales_returns.sales_order_id = sales_orders.id
+JOIN sales_orders ON sales_returns.order_id = sales_orders.id
 WHERE EXISTS (
   SELECT 1
   FROM sales_orders
-  WHERE sales_orders.id = sales_returns.sales_order_id
+  WHERE sales_orders.id = sales_returns.order_id
 );
 
 -- voucher_account
@@ -111,11 +111,11 @@ WHERE EXISTS (
 -- shipment_order
 SELECT shipments.id, sales_orders.id
 FROM shipments
-JOIN sales_orders ON shipments.sales_order_id = sales_orders.id
+JOIN sales_orders ON shipments.order_id = sales_orders.id
 WHERE EXISTS (
   SELECT 1
   FROM sales_orders
-  WHERE sales_orders.id = shipments.sales_order_id
+  WHERE sales_orders.id = shipments.order_id
 );
 
 -- invoice_customer

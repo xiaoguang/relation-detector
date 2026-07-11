@@ -3,7 +3,7 @@
     "VALUE:AGGREGATE:sales_return_items.amount->vouchers.total_credit",
     "VALUE:AGGREGATE:sales_return_items.amount->vouchers.total_debit",
     "VALUE:CONCAT_FORMAT:sales_returns.id->vouchers.voucher_no",
-    "VALUE:DIRECT:sales_returns.created_by->vouchers.prepared_by",
+    "VALUE:DIRECT:sales_returns.handler_id->vouchers.prepared_by",
     "VALUE:DIRECT:sales_returns.id->vouchers.reference_id",
     "VALUE:DIRECT:sales_returns.return_date->vouchers.voucher_date"
   ],

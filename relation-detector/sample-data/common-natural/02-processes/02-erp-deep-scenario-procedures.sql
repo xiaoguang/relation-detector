@@ -2,8 +2,8 @@
 
 CREATE PROCEDURE sp_run_mrp_for_plan()
 BEGIN ATOMIC
-  INSERT INTO mrp_runs (id, plan_id, created_by)
-  SELECT production_plans.id, production_plans.id, production_plans.planner_id
+  INSERT INTO mrp_runs (run_no, plan_id, run_date, demand_source, created_by)
+  SELECT production_plans.plan_no, production_plans.id, CURRENT_DATE, 'production_plan', production_plans.planner_id
   FROM production_plans;
 
   INSERT INTO mrp_run_items (run_id, parent_product_id, component_product_id, suggested_supplier_id)
@@ -119,28 +119,39 @@ BEGIN ATOMIC
   FROM sales_orders
   LEFT JOIN accounting_periods ON accounting_periods.period_code = '2026-02';
 
-  INSERT INTO region_dim (id, region_code, region_name, province, city, district, sales_region, region_level, is_active)
-  SELECT warehouses.id, warehouses.code, warehouses.name, warehouses.province, warehouses.city, warehouses.district, '华东', 'city', TRUE
+  INSERT INTO region_dim (region_code, region_name, province, city, district, sales_region, region_level, is_active)
+  SELECT warehouses.code, warehouses.name, warehouses.province, warehouses.city, warehouses.district, '华东', 'city', TRUE
   FROM warehouses;
 END;
 
-CREATE PROCEDURE sp_record_customer_payment()
+CREATE PROCEDURE sp_record_customer_receipt_and_payment()
 BEGIN ATOMIC
-  INSERT INTO payment_receipts (id, receipt_no, receipt_type, party_type, party_id, account_id, receipt_date, amount, currency, status, handled_by)
-  SELECT sales_orders.id, sales_orders.order_no, 'customer_receipt', 'customer', sales_orders.customer_id, accounts.id, sales_orders.order_date, sales_orders.paid_amount, 'CNY', 'confirmed', sales_orders.salesperson_id
+  INSERT INTO payment_receipts (receipt_no, receipt_type, party_type, party_id, account_id, receipt_date, amount, currency, status, handled_by)
+  SELECT CONCAT('RCPT-', sales_orders.order_no), 'customer_receipt', 'customer', sales_orders.customer_id, accounts.id, sales_orders.order_date, sales_orders.paid_amount, 'CNY', 'confirmed', sales_orders.salesperson_id
   FROM sales_orders
   JOIN accounts ON accounts.id = 1;
 
-  INSERT INTO payments (id, payment_no, customer_id, order_id, receipt_id, payment_date, amount, currency, payment_method, payment_status)
-  SELECT payment_receipts.id, payment_receipts.receipt_no, payment_receipts.party_id, payment_receipts.id, payment_receipts.id, payment_receipts.receipt_date, payment_receipts.amount, payment_receipts.currency, 'transfer', 'paid'
-  FROM payment_receipts
-  WHERE payment_receipts.party_type = 'customer';
+  INSERT INTO payment_receipt_allocations (receipt_id, reference_type, reference_id, allocated_amount)
+  SELECT payment_receipts.id, 'sales_order', sales_orders.id, payment_receipts.amount
+  FROM sales_orders
+  JOIN payment_receipts ON payment_receipts.receipt_no = CONCAT('RCPT-', sales_orders.order_no);
+
+  INSERT INTO payments (payment_no, customer_id, order_id, receipt_id, payment_date, amount, currency, payment_method, payment_status)
+  SELECT CONCAT('PAY-', payment_receipts.receipt_no), payment_receipts.party_id, sales_orders.id, payment_receipts.id,
+         payment_receipts.receipt_date, payment_receipts.amount, payment_receipts.currency,
+         sales_orders.payment_method,
+         CASE WHEN payment_receipts.status = 'confirmed' THEN 'paid' ELSE 'pending' END
+  FROM payment_receipt_allocations
+  JOIN payment_receipts ON payment_receipts.id = payment_receipt_allocations.receipt_id
+  JOIN sales_orders ON sales_orders.id = payment_receipt_allocations.reference_id
+  WHERE payment_receipt_allocations.reference_type = 'sales_order'
+    AND payment_receipts.party_type = 'customer';
 END;
 
 CREATE PROCEDURE sp_rebuild_sales_fact()
 BEGIN ATOMIC
-  INSERT INTO sales_fact (id, order_id, order_item_id, customer_id, product_id, category_dim_id, warehouse_id, region_dim_id, fiscal_date, payment_id, quantity_sold, sales_amount, paid_amount, refund_amount, net_sales_amount, gross_margin_amount, order_status, sales_channel)
-  SELECT sales_order_items.id, sales_orders.id, sales_order_items.id, sales_orders.customer_id, sales_order_items.product_id, category_dim.id, sales_orders.warehouse_id, region_dim.id, sales_orders.order_date, payments.id, sales_order_items.quantity, sales_order_items.amount, payments.amount, sales_returns.refund_amount, sales_order_items.amount - sales_returns.refund_amount, sales_order_items.amount - products.purchase_price, sales_orders.status, 'direct'
+  INSERT INTO sales_fact (order_id, order_item_id, customer_id, product_id, category_dim_id, warehouse_id, region_dim_id, fiscal_date, payment_id, quantity_sold, sales_amount, paid_amount, refund_amount, net_sales_amount, gross_margin_amount, order_status, sales_channel)
+  SELECT sales_orders.id, sales_order_items.id, sales_orders.customer_id, sales_order_items.product_id, category_dim.id, sales_orders.warehouse_id, region_dim.id, sales_orders.order_date, payments.id, sales_order_items.quantity, sales_order_items.amount, payments.amount, sales_returns.refund_amount, sales_order_items.amount - sales_returns.refund_amount, sales_order_items.amount - products.purchase_price, sales_orders.status, 'direct'
   FROM sales_order_items
   JOIN sales_orders ON sales_orders.id = sales_order_items.order_id
   JOIN products ON products.id = sales_order_items.product_id
@@ -155,7 +166,7 @@ END;
 CREATE PROCEDURE sp_onboard_employee_full()
 BEGIN ATOMIC
   INSERT INTO employees (id, employee_no, name, gender, id_card, phone, birth_date, hire_date, department_id, position_id, manager_id, salary)
-  SELECT positions.id, positions.code, positions.name, 'F', positions.code, positions.code, DATE '1990-01-01', CURRENT_DATE, departments.id, positions.id, departments.manager_id, positions.base_salary
+  SELECT positions.id, positions.code, positions.name, 'F', positions.code, positions.code, DATE '1990-01-01', CURRENT_DATE, departments.id, positions.id, departments.manager_id, (positions.min_salary + positions.max_salary) / 2
   FROM departments
   JOIN positions ON positions.department_id = departments.id;
 

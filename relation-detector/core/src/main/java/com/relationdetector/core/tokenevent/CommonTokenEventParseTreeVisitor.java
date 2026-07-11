@@ -17,6 +17,7 @@ import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.antlr.common.CommonRelationSqlBaseVisitor;
 import com.relationdetector.core.antlr.common.CommonRelationSqlParser;
+import com.relationdetector.core.lineage.LineageTransformClassifier;
 
 /**
  * Parse-tree visitor for the common portable SQL token-event grammar.
@@ -227,6 +228,12 @@ public final class CommonTokenEventParseTreeVisitor extends CommonRelationSqlBas
     }
 
     @Override
+    public Void visitScalarSubqueryExpression(CommonRelationSqlParser.ScalarSubqueryExpressionContext ctx) {
+        visit(ctx.selectStatement());
+        return null;
+    }
+
+    @Override
     public Void visitInsertSelectStatement(CommonRelationSqlParser.InsertSelectStatementContext ctx) {
         String targetTable = qualifiedName(ctx.qualifiedName());
         List<String> targetColumns = ctx.identifierList().identifier().stream()
@@ -241,19 +248,10 @@ public final class CommonTokenEventParseTreeVisitor extends CommonRelationSqlBas
             if (item.expression() == null) {
                 continue;
             }
-            ExpressionAnalysis source = analyze(item.expression());
-            if (source.sources().isEmpty()) {
-                continue;
+            for (ExpressionAnalysis source : writeAnalyses(item.expression())) {
+                addWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, item, targetTable,
+                        targetColumns.get(index), "", source, "INSERT_SELECT");
             }
-            Map<String, Object> attrs = attrs();
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumns.get(index));
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            attrs.put("mappingKind", "INSERT_SELECT");
-            add(StructuredParseEventType.INSERT_SELECT_MAPPING, item, attrs);
         }
         return null;
     }
@@ -274,20 +272,10 @@ public final class CommonTokenEventParseTreeVisitor extends CommonRelationSqlBas
             List<String> targetParts = parts(assignment.qualifiedName());
             String targetColumn = targetParts.isEmpty() ? "" : targetParts.get(targetParts.size() - 1);
             String assignmentAlias = targetParts.size() > 1 ? targetParts.get(targetParts.size() - 2) : targetAlias;
-            ExpressionAnalysis source = analyze(assignment.expression());
-            if (source.sources().isEmpty()) {
-                continue;
+            for (ExpressionAnalysis source : writeAnalyses(assignment.expression())) {
+                addWriteMapping(StructuredParseEventType.UPDATE_ASSIGNMENT, assignment, targetTable,
+                        targetColumn, assignmentAlias, source, "UPDATE_SET");
             }
-            Map<String, Object> attrs = attrs();
-            attrs.put("targetAlias", assignmentAlias);
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumn);
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            attrs.put("mappingKind", "UPDATE_SET");
-            add(StructuredParseEventType.UPDATE_ASSIGNMENT, assignment, attrs);
         }
         if (ctx.whereClause() != null) {
             visit(ctx.whereClause());
@@ -390,23 +378,50 @@ public final class CommonTokenEventParseTreeVisitor extends CommonRelationSqlBas
             if (item.expression() == null) {
                 continue;
             }
-            ExpressionAnalysis source = analyze(item.expression());
-            if (source.sources().isEmpty()) {
-                continue;
-            }
             String outputColumn = index < owner.columns().size() ? owner.columns().get(index) : outputColumn(item);
             if (outputColumn.isBlank()) {
                 continue;
             }
-            Map<String, Object> attrs = attrs();
-            attrs.put("outputAlias", owner.alias());
-            attrs.put("outputColumn", outputColumn);
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
+            for (ExpressionAnalysis source : writeAnalyses(item.expression())) {
+                if (source.sources().isEmpty()) {
+                    continue;
+                }
+                Map<String, Object> attrs = attrs();
+                attrs.put("outputAlias", owner.alias());
+                attrs.put("outputColumn", outputColumn);
+                attrs.put("sourceAliases", source.aliases());
+                attrs.put("sourceColumns", source.columns());
+                attrs.put("transformType", source.transform().name());
+                attrs.put("flowKind", source.flowKind().name());
+                add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
+            }
         }
+    }
+
+    private void addWriteMapping(
+            StructuredParseEventType type,
+            ParserRuleContext context,
+            String targetTable,
+            String targetColumn,
+            String targetAlias,
+            ExpressionAnalysis source,
+            String mappingKind
+    ) {
+        if (source.sources().isEmpty()) {
+            return;
+        }
+        Map<String, Object> attributes = attrs();
+        if (!targetAlias.isBlank()) {
+            attributes.put("targetAlias", targetAlias);
+        }
+        attributes.put("targetTable", targetTable);
+        attributes.put("targetColumn", targetColumn);
+        attributes.put("sourceAliases", source.aliases());
+        attributes.put("sourceColumns", source.columns());
+        attributes.put("transformType", source.transform().name());
+        attributes.put("flowKind", source.flowKind().name());
+        attributes.put("mappingKind", mappingKind);
+        add(type, context, attributes);
     }
 
     private void addForeignKeyEvents(
@@ -527,7 +542,7 @@ public final class CommonTokenEventParseTreeVisitor extends CommonRelationSqlBas
                 case "concat", "format", "string_agg" -> LineageTransformType.CONCAT_FORMAT;
                 default -> LineageTransformType.FUNCTION_CALL;
             };
-            LineageTransformType dominant = ExpressionAnalysis.dominant(transform, args.transform());
+            LineageTransformType dominant = LineageTransformClassifier.dominant(transform, args.transform());
             LineageFlowKind flowKind = dominant == LineageTransformType.CASE_WHEN
                     ? LineageFlowKind.CONTROL
                     : LineageFlowKind.VALUE;
@@ -564,6 +579,89 @@ public final class CommonTokenEventParseTreeVisitor extends CommonRelationSqlBas
             return new ExpressionAnalysis(columns, LineageTransformType.DIRECT, LineageFlowKind.VALUE);
         }
         return ExpressionAnalysis.empty();
+    }
+
+    private List<ExpressionAnalysis> writeAnalyses(CommonRelationSqlParser.ExpressionContext expression) {
+        if (expression instanceof CommonRelationSqlParser.ScalarSubqueryExpressionContext scalarSubquery) {
+            return scalarSubqueryWriteAnalyses(scalarSubquery.selectStatement());
+        }
+        if (!(expression instanceof CommonRelationSqlParser.CaseExpressionContext caseExpression)) {
+            ExpressionAnalysis analysis = analyze(expression);
+            return analysis.sources().isEmpty() ? List.of() : List.of(analysis);
+        }
+        ExpressionAnalysis value = ExpressionAnalysis.empty();
+        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        for (CommonRelationSqlParser.CaseWhenClauseContext clause : caseExpression.caseWhenClause()) {
+            value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.VALUE, value, analyze(clause.expression()));
+            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, control, analyze(clause.predicate()));
+        }
+        List<CommonRelationSqlParser.ExpressionContext> outerExpressions = caseExpression.expression();
+        int selectorCount = outerExpressions.size() - (caseExpression.ELSE() == null ? 0 : 1);
+        for (int index = 0; index < selectorCount; index++) {
+            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, control, analyze(outerExpressions.get(index)));
+        }
+        if (caseExpression.ELSE() != null && !outerExpressions.isEmpty()) {
+            value = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.VALUE, value, analyze(outerExpressions.get(outerExpressions.size() - 1)));
+        }
+        List<ExpressionAnalysis> result = new ArrayList<>(2);
+        if (!value.sources().isEmpty()) {
+            result.add(new ExpressionAnalysis(value.sources(), LineageTransformType.CASE_WHEN, LineageFlowKind.VALUE));
+        }
+        if (!control.sources().isEmpty()) {
+            result.add(new ExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN, LineageFlowKind.CONTROL));
+        }
+        return List.copyOf(result);
+    }
+
+    private List<ExpressionAnalysis> scalarSubqueryWriteAnalyses(
+            CommonRelationSqlParser.SelectStatementContext select
+    ) {
+        visit(select);
+        CommonRelationSqlParser.QuerySpecificationContext query = select.querySpecification();
+        List<CommonRelationSqlParser.SelectItemContext> items = query.selectList().selectItem();
+        if (items.size() != 1 || items.get(0).expression() == null) {
+            return List.of();
+        }
+        ExpressionAnalysis value = analyze(items.get(0).expression());
+        ExpressionAnalysis control = ExpressionAnalysis.empty();
+        if (query.fromClause() != null) {
+            for (CommonRelationSqlParser.TableReferenceContext table : query.fromClause().tableReference()) {
+                for (CommonRelationSqlParser.JoinClauseContext join : table.joinClause()) {
+                    if (join.predicate() != null) {
+                        control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                                LineageFlowKind.CONTROL, control, analyze(join.predicate()));
+                    }
+                }
+            }
+        }
+        if (query.whereClause() != null) {
+            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, control, analyze(query.whereClause().predicate()));
+        }
+        if (query.groupByClause() != null) {
+            for (CommonRelationSqlParser.ExpressionContext grouping
+                    : query.groupByClause().expressionList().expression()) {
+                control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL, control, analyze(grouping));
+            }
+        }
+        if (query.havingClause() != null) {
+            control = ExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL, control, analyze(query.havingClause().predicate()));
+        }
+        List<ExpressionAnalysis> result = new ArrayList<>(2);
+        if (!value.sources().isEmpty()) {
+            result.add(new ExpressionAnalysis(value.sources(), value.transform(), LineageFlowKind.VALUE));
+        }
+        if (!control.sources().isEmpty()) {
+            result.add(new ExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL));
+        }
+        return List.copyOf(result);
     }
 
     private ExpressionAnalysis analyze(CommonRelationSqlParser.PredicateContext predicate) {
@@ -758,31 +856,8 @@ public final class CommonTokenEventParseTreeVisitor extends CommonRelationSqlBas
             sources.addAll(left.sources());
             sources.addAll(right.sources());
             return new ExpressionAnalysis(sources.stream().distinct().toList(),
-                    dominant(transform, left.transform(), right.transform()), flowKind);
-        }
-
-        static LineageTransformType dominant(LineageTransformType... transforms) {
-            LineageTransformType dominant = LineageTransformType.DIRECT;
-            for (LineageTransformType transform : transforms) {
-                if (priority(transform) > priority(dominant)) {
-                    dominant = transform;
-                }
-            }
-            return dominant;
-        }
-
-        private static int priority(LineageTransformType transform) {
-            return switch (transform) {
-                case CASE_WHEN -> 8;
-                case CUMULATIVE -> 7;
-                case AGGREGATE -> 6;
-                case WINDOW_DERIVED -> 5;
-                case COALESCE -> 4;
-                case CONCAT_FORMAT -> 3;
-                case ARITHMETIC -> 2;
-                case FUNCTION_CALL -> 1;
-                default -> 0;
-            };
+                    LineageTransformClassifier.dominantForFlow(
+                            flowKind, transform, left.transform(), right.transform()), flowKind);
         }
 
         List<String> aliases() {

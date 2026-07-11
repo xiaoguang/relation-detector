@@ -1,5 +1,8 @@
 {
-  "fingerprints": [],
+  "fingerprints": [
+    "FK_LIKE:categories.parent_id->categories.id:SQL_LOG_JOIN,NAMING_MATCH",
+    "FK_LIKE:employees.manager_id->employees.id:SQL_LOG_JOIN,NAMING_MATCH"
+  ],
   "forbiddenTables": [
     "employee_tree",
     "category_path"

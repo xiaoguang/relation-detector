@@ -204,6 +204,34 @@ class JsonResultWriterEvidenceOutputTest {
     }
 
     @Test
+    void directViewExcludesDerivedFactsAndTransitiveNamingEvidence() {
+        Endpoint orderId = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "id"));
+        Endpoint customerId = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id"));
+        Endpoint accountId = Endpoint.column(ColumnRef.of(TableId.of(null, "accounts"), "id"));
+        ScanResult result = new ScanResult("mysql", "public");
+        result.derivedRelationships().add(new DerivedPathCandidate(
+                DerivedPathKind.RELATIONSHIP, orderId, accountId, List.of(orderId, customerId, accountId)));
+        result.namingEvidence().add(new NamingEvidenceCandidate(
+                orderId,
+                accountId,
+                new Evidence(EvidenceType.NAMING_MATCH, BigDecimal.valueOf(DefaultEvidenceScores.NAMING_MATCH),
+                        EvidenceSourceType.INFERENCE, "derived", "transitive naming", Map.of("derived", true)),
+                "TRANSITIVE_NAMING_PATH",
+                true));
+
+        JsonNode root = readTree(new JsonResultWriter().writeDirect(result, true, true, true));
+
+        assertTrue(root.path("derivedRelationships").isEmpty(), "direct view must omit derived relationships");
+        assertTrue(root.path("derivedDataLineages").isEmpty(), "direct view must omit derived lineages");
+        assertTrue(root.path("namingEvidence").isEmpty(), "direct view must omit derived naming evidence");
+        assertTrue(root.path("derivedNamingEvidence").isEmpty(), "direct view must omit derived naming view");
+        assertTrue(root.path("summary").path("totalRelationshipCount").asInt() == 0,
+                "direct summary must exclude derived relationship facts");
+        assertTrue(root.path("summary").path("totalNamingEvidenceCount").asInt() == 0,
+                "direct summary must exclude derived naming facts");
+    }
+
+    @Test
     void writesDerivedNamingEvidenceAsLightweightReferences() {
         ScanResult result = new ScanResult("mysql", "public");
         Endpoint directSource = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id"));
@@ -330,6 +358,29 @@ class JsonResultWriterEvidenceOutputTest {
                 "Grouped naming evidence should list bounded sample details");
         assertTrue(root.path("namingEvidence").size() == 1,
                 "Only one top-level namingEvidence item should be emitted for the same endpoint/rule");
+    }
+
+    @Test
+    void namingObservationSummaryCountsFoldedOccurrences() {
+        ScanResult result = new ScanResult("mysql", "public");
+        Endpoint source = Endpoint.column(ColumnRef.of(TableId.of(null, "orders"), "customer_id"));
+        Endpoint target = Endpoint.column(ColumnRef.of(TableId.of(null, "customers"), "id"));
+        NamingEvidenceCandidate duplicate = namingEvidence(
+                source, target, "line 10: orders.customer_id = customers.id");
+        NamingEvidencePool pool = new NamingEvidencePool();
+        pool.add(duplicate);
+        pool.add(duplicate);
+        result.namingEvidence().addAll(pool.merged());
+
+        JsonNode root = readTree(new JsonResultWriter().write(result, true, true));
+
+        assertTrue(root.path("namingEvidence").get(0).path("rawEvidence").size() == 1,
+                "Identical parser observations should stay folded in rawEvidence");
+        assertTrue(root.path("namingEvidence").get(0).path("rawEvidence").get(0)
+                        .path("attributes").path("occurrenceCount").asInt() == 2,
+                "Folded raw evidence should expose occurrenceCount");
+        assertTrue(root.path("summary").path("totalNamingEvidenceObservationCount").asInt() == 2,
+                "Observation summary should retain the true number of folded occurrences");
     }
 
     @Test

@@ -7,13 +7,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
-
-class DialectSqlAssetHygieneTest {
+/**
+ * Shared, immutable SQL-asset checks. Dialect-specific JUnit entry points live in
+ * {@code *SqlAssetHygieneTest} classes so a focused scope does not discover every
+ * dialect's filesystem scan.
+ */
+final class DialectSqlAssetHygieneSupport {
     private static final List<ForbiddenSqlPattern> MYSQL_FORBIDDEN = List.of(
             forbidden("PostgreSQL PL/pgSQL language marker", "\\bLANGUAGE\\s+plpgsql\\b"),
             forbidden("PostgreSQL cast operator", "::[A-Za-z_][A-Za-z0-9_]*(?:\\([^)]*\\))?"),
@@ -92,8 +96,23 @@ class DialectSqlAssetHygieneTest {
             forbidden("MySQL ON DUPLICATE KEY UPDATE", "\\bON\\s+DUPLICATE\\s+KEY\\s+UPDATE\\b"),
             forbidden("MySQL DELIMITER command", "^\\s*DELIMITER\\b"),
             forbidden("MySQL backtick quoted identifier", "`"),
+            forbidden("non-Oracle stored generated column", "\\bGENERATED\\s+ALWAYS\\s+AS\\s*\\([^;]+\\)\\s+STORED\\b"),
+            forbidden("Oracle zero-parameter routine definition with empty parentheses",
+                    "\\bCREATE\\s+OR\\s+REPLACE\\s+(?:PROCEDURE|FUNCTION)\\s+[A-Za-z0-9_.$#]+\\s*\\(\\s*\\)"),
+            forbidden("Oracle boolean comparison used directly as a generated expression",
+                    "\\bGENERATED\\s+ALWAYS\\s+AS\\s*\\(\\s*[A-Za-z0-9_.$#]+\\s*=\\s*[A-Za-z0-9_.$#]+"),
+            forbidden("Mechanical migration produced postfix numeric cast artifact",
+                    "\\)\\s*\\(\\s*\\d+(?:\\s*,\\s*\\d+)?\\s*\\)"),
+            forbidden("Oracle EXTRACT does not support QUARTER",
+                    "\\bEXTRACT\\s*\\(\\s*QUARTER\\s+FROM\\b"),
+            forbidden("Oracle natural baseline must not project EXTRACT comparison as SQL BOOLEAN",
+                    "^\\s*EXTRACT\\s*\\([^\\n]+\\)\\s*(?:=|<>|!=|<=|>=|<|>)\\s*[^,;]+,\\s*$"),
+            forbidden("Oracle natural baseline must not project OR-combined comparisons as SQL BOOLEAN",
+                    "^\\s*[A-Za-z_$#][A-Za-z0-9_.$#]*\\s*=\\s*[^,;\\n]+\\s+OR\\s+[^,;\\n]+,\\s*$"),
             forbidden("Mechanical migration produced VARCHAR2 pseudo column reference",
                     "\\b[A-Za-z_][A-Za-z0-9_]*\\s*\\.\\s*VARCHAR2\\s*\\("),
+            forbidden("Mechanical migration produced VARCHAR2 pseudo expression",
+                    "\\bVARCHAR2\\s*\\([^)]*\\)\\s*(?:=|IN\\b)"),
             forbidden("Mechanical migration produced VARCHAR2 pseudo DDL/variable name", "^\\s*VARCHAR2\\s*\\("));
 
     private static final List<ForbiddenSqlPattern> SQLSERVER_FORBIDDEN = List.of(
@@ -122,42 +141,36 @@ class DialectSqlAssetHygieneTest {
             forbidden("unqualified DDL [table] reference mixes SQL Server sample-data canonical table identity",
                     "\\b(?:CREATE\\s+TABLE|ALTER\\s+TABLE|DELETE\\s+FROM)\\s+\\[[^\\]]+\\](?!\\s*\\.)"));
 
-    @Test
-    void mysqlSqlAssetsDoNotContainPostgresOrOracleDialectResidue() throws IOException {
+    static void mysqlSqlAssetsDoNotContainPostgresOrOracleDialectResidue() throws IOException {
         assertNoForbiddenDialectResidue("MySQL", List.of(
                 repoRoot().resolve("sample-data/mysql"),
                 repoRoot().resolve("test-fixtures/correctness/mysql")), MYSQL_FORBIDDEN);
     }
 
-    @Test
-    void mysql57SampleDataDoesNotContainMysql80OnlySyntax() throws IOException {
+    static void mysql57SampleDataDoesNotContainMysql80OnlySyntax() throws IOException {
         assertNoForbiddenDialectResidue("MySQL 5.7", List.of(
                 repoRoot().resolve("sample-data/mysql/5.7")), MYSQL57_FORBIDDEN);
     }
 
-    @Test
-    void postgresSqlAssetsDoNotContainMysqlOrOracleDialectResidue() throws IOException {
+    static void postgresSqlAssetsDoNotContainMysqlOrOracleDialectResidue() throws IOException {
         assertNoForbiddenDialectResidue("PostgreSQL", List.of(
                 repoRoot().resolve("sample-data/postgres"),
                 repoRoot().resolve("test-fixtures/correctness/postgres")), POSTGRES_FORBIDDEN);
     }
 
-    @Test
-    void oracleSqlAssetsDoNotContainPostgresOrMysqlDialectResidue() throws IOException {
+    static void oracleSqlAssetsDoNotContainPostgresOrMysqlDialectResidue() throws IOException {
         assertNoForbiddenDialectResidue("Oracle", List.of(
                 repoRoot().resolve("sample-data/oracle"),
                 repoRoot().resolve("test-fixtures/correctness/oracle")), ORACLE_FORBIDDEN);
     }
 
-    @Test
-    void sqlServerSqlAssetsDoNotContainOtherDialectResidue() throws IOException {
+    static void sqlServerSqlAssetsDoNotContainOtherDialectResidue() throws IOException {
         assertNoForbiddenDialectResidue("SQL Server", List.of(
                 repoRoot().resolve("sample-data/sqlserver"),
                 repoRoot().resolve("test-fixtures/correctness/sqlserver")), SQLSERVER_FORBIDDEN);
     }
 
-    @Test
-    void sqlServerSqlAssetsUseCanonicalSchemaQualifiedTableReferences() throws IOException {
+    static void sqlServerSqlAssetsUseCanonicalSchemaQualifiedTableReferences() throws IOException {
         assertNoSqlAssetFindings(
                 "SQL Server sample-data/correctness intentionally uses [schema].[table] as the canonical table reference form; unqualified [table] would mix table identity within the same asset set",
                 List.of(
@@ -165,8 +178,7 @@ class DialectSqlAssetHygieneTest {
                 repoRoot().resolve("test-fixtures/correctness/sqlserver")), SQLSERVER_CANONICAL_TABLE_REFERENCES);
     }
 
-    @Test
-    void sqlServerSampleDataFilesAreCoveredByRootAndVersionedCorrectnessFixtures() throws IOException {
+    static void sqlServerSampleDataFilesAreCoveredByRootAndVersionedCorrectnessFixtures() throws IOException {
         Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
         Path correctnessRoot = repoRoot().resolve("test-fixtures/correctness/sqlserver");
         Set<Path> rootFixtureInputs = manifestInputs(correctnessRoot, correctnessRoot);
@@ -213,8 +225,7 @@ class DialectSqlAssetHygieneTest {
         assertTrue(missing.isEmpty(), "SQL Server sample-data SQL files must all be correctness-covered: " + missing);
     }
 
-    @Test
-    void sqlServerSampleDataKeepsComparableErpSemanticDensity() throws IOException {
+    static void sqlServerSampleDataKeepsComparableErpSemanticDensity() throws IOException {
         Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
         List<String> findings = new ArrayList<>();
         try (Stream<Path> versions = Files.list(sampleRoot)) {
@@ -246,8 +257,7 @@ class DialectSqlAssetHygieneTest {
                         + findings);
     }
 
-    @Test
-    void sqlServerDeepScenarioIncludesInventoryMrpAndCostFlowProcedures() throws IOException {
+    static void sqlServerDeepScenarioIncludesInventoryMrpAndCostFlowProcedures() throws IOException {
         Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
         List<String> findings = new ArrayList<>();
         List<String> requiredProcedures = List.of(
@@ -275,8 +285,7 @@ class DialectSqlAssetHygieneTest {
                         + findings);
     }
 
-    @Test
-    void sqlServerSampleDataDoesNotCarryRelationProbeBenchmarkTemplates() throws IOException {
+    static void sqlServerSampleDataDoesNotCarryRelationProbeBenchmarkTemplates() throws IOException {
         Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
         List<String> findings = new ArrayList<>();
         try (Stream<Path> versions = Files.list(sampleRoot)) {
@@ -294,8 +303,32 @@ class DialectSqlAssetHygieneTest {
                         + findings);
     }
 
-    @Test
-    void sqlServerSampleDataDoesNotUseNumberedRelationProbeProcedures() throws IOException {
+    static void sqlServerDataFilesHaveDistinctBusinessContentsWithinEachVersion() throws IOException {
+        Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
+        List<String> findings = new ArrayList<>();
+        try (Stream<Path> versions = Files.list(sampleRoot)) {
+            for (Path versionDir : versions.filter(Files::isDirectory).sorted().toList()) {
+                Map<String, List<Path>> byContent = new java.util.LinkedHashMap<>();
+                try (Stream<Path> dataFiles = Files.list(versionDir.resolve("03-data"))) {
+                    for (Path file : dataFiles
+                            .filter(Files::isRegularFile)
+                            .filter(path -> path.toString().endsWith(".sql"))
+                            .sorted()
+                            .toList()) {
+                        String normalized = stripSqlComments(Files.readString(file)).replaceAll("\\s+", " ").trim();
+                        byContent.computeIfAbsent(normalized, ignored -> new ArrayList<>()).add(file);
+                    }
+                }
+                byContent.values().stream()
+                        .filter(files -> files.size() > 1)
+                        .forEach(files -> findings.add(versionDir.getFileName() + " duplicate data assets "
+                                + files.stream().map(path -> path.getFileName().toString()).toList()));
+            }
+        }
+        assertTrue(findings.isEmpty(), "SQL Server data fixtures must represent distinct business assets: " + findings);
+    }
+
+    static void sqlServerSampleDataDoesNotUseNumberedRelationProbeProcedures() throws IOException {
         Path sampleRoot = repoRoot().resolve("sample-data/sqlserver");
         List<String> findings = new ArrayList<>();
         Pattern numberedProbeProcedure = Pattern.compile(
@@ -346,8 +379,7 @@ class DialectSqlAssetHygieneTest {
                         + findings);
     }
 
-    @Test
-    void commonNaturalSampleDataDoesNotContainParserCoverageBodies() throws IOException {
+    static void commonNaturalSampleDataDoesNotContainParserCoverageBodies() throws IOException {
         Path naturalRoot = repoRoot().resolve("sample-data/common-natural");
         Path coverageRoot = repoRoot().resolve("sample-data/common-parser-coverage");
         assertTrue(Files.isDirectory(naturalRoot), "Expected common natural sample-data root");
@@ -367,16 +399,14 @@ class DialectSqlAssetHygieneTest {
         }
     }
 
-    @Test
-    void sampleDataParserCliRunsCommonNaturalRoot() throws IOException {
+    static void sampleDataParserCliRunsCommonNaturalRoot() throws IOException {
         String script = Files.readString(repoRoot()
                 .resolve("test-fixtures/examples/sample-data-parser-cli/run-all-sample-data-parsers.sh"));
-        assertTrue(script.contains("run_case common-token-event-sample-data COMMON token-event \"\" \"\" \"$RELATION_ROOT/sample-data/common-natural\""),
-                "Common sample-data CLI row must use common-natural, not the parser coverage/mixed portable root");
+        assertTrue(script.contains("queue_case common-token-event-sample-data COMMON token-event \"\" \"\" \"$RELATION_ROOT/sample-data/common-natural\""),
+                "Common sample-data CLI case must use common-natural, not the parser coverage/mixed portable root");
     }
 
-    @Test
-    void semanticEquivalentContainsRelationProbeBenchmark() throws IOException {
+    static void semanticEquivalentContainsRelationProbeBenchmark() throws IOException {
         Path benchmarkRoot = repoRoot().resolve("test-fixtures/semantic-equivalent/relation-probe");
         assertTrue(Files.isDirectory(benchmarkRoot), "Expected semantic-equivalent relation-probe benchmark");
         int probes = relationProbeTemplates(benchmarkRoot);
@@ -444,7 +474,61 @@ class DialectSqlAssetHygieneTest {
         if (path.toString().contains("/oracle/") && containsTopLevelUpdateFrom(sqlText)) {
             findings.add(repoRoot().relativize(path) + " -> PostgreSQL UPDATE FROM statement");
         }
+        if (path.toString().contains("/oracle/")
+                && !isOracleVersionOnlyFixture(path)
+                && containsOracleMultivalueInsert(sqlText)) {
+            findings.add(repoRoot().relativize(path)
+                    + " -> Oracle natural baseline must not use multivalue INSERT VALUES");
+        }
         return findings;
+    }
+
+    private static boolean isOracleVersionOnlyFixture(Path path) {
+        Path parent = path.getParent();
+        return parent != null && parent.getFileName().toString().contains("-version-");
+    }
+
+    private static boolean containsOracleMultivalueInsert(String sqlText) {
+        var valuesMatcher = Pattern.compile("(?i)\\bVALUES\\b").matcher(sqlText);
+        while (valuesMatcher.find()) {
+            int tupleStart = skipWhitespace(sqlText, valuesMatcher.end());
+            if (tupleStart >= sqlText.length() || sqlText.charAt(tupleStart) != '(') {
+                continue;
+            }
+            int tupleEnd = matchingParenthesis(sqlText, tupleStart);
+            if (tupleEnd < 0) {
+                continue;
+            }
+            int separator = skipWhitespace(sqlText, tupleEnd + 1);
+            if (separator < sqlText.length() && sqlText.charAt(separator) == ',') {
+                int nextTuple = skipWhitespace(sqlText, separator + 1);
+                if (nextTuple < sqlText.length() && sqlText.charAt(nextTuple) == '(') {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static int skipWhitespace(String text, int start) {
+        int index = start;
+        while (index < text.length() && Character.isWhitespace(text.charAt(index))) {
+            index++;
+        }
+        return index;
+    }
+
+    private static int matchingParenthesis(String text, int start) {
+        int depth = 0;
+        for (int index = start; index < text.length(); index++) {
+            char ch = text.charAt(index);
+            if (ch == '(') {
+                depth++;
+            } else if (ch == ')' && --depth == 0) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     private static Set<Path> manifestInputs(Path searchRoot, Path correctnessRoot) throws IOException {
@@ -456,7 +540,7 @@ class DialectSqlAssetHygieneTest {
                     .filter(Files::isRegularFile)
                     .filter(path -> path.getFileName().toString().equals("manifest.yml"))
                     .filter(path -> isManifestDirectChildOfSearchRoot(path, searchRoot, correctnessRoot))
-                    .map(DialectSqlAssetHygieneTest::manifestInputPath)
+                    .map(DialectSqlAssetHygieneSupport::manifestInputPath)
                     .filter(path -> !path.toString().isBlank())
                     .collect(java.util.stream.Collectors.toSet());
         }

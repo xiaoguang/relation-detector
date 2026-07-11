@@ -14,6 +14,7 @@ import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 
+import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StatementSourceType;
 import com.relationdetector.contracts.model.DataLineageCandidate;
@@ -25,6 +26,104 @@ import com.relationdetector.core.relation.NamingEvidenceExtractor;
 import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
 class MySqlTokenEventProcedureRelationBehaviorTest {
+    @Test
+    void unaryMinusKeepsItsPhysicalOperandAsArithmeticValue() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO inventory_transactions (quantity_change, after_qty)
+                SELECT -rop.quantity, i.quantity - rop.quantity
+                FROM repair_order_parts rop
+                JOIN inventory i ON i.product_id = rop.product_id;
+                """, StatementSourceType.PLAIN_SQL, "mysql-unary-minus.sql", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new StructuredDataLineageExtractor()
+                .extract(statement, structured)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains(
+                        "VALUE:ARITHMETIC:repair_order_parts.quantity->inventory_transactions.quantity_change"),
+                () -> "Unary minus must retain its typed operand: " + fingerprints
+                        + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "VALUE:ARITHMETIC:inventory.quantity,repair_order_parts.quantity->inventory_transactions.after_qty"),
+                () -> "Subtraction must retain both typed operands: " + fingerprints
+                        + " events=" + structured.events());
+    }
+
+    @Test
+    void nestedScalarBatchProjectionKeepsValuesSeparateFromCorrelatedControls() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO purchase_return_items (return_id, product_id, batch_id)
+                SELECT
+                    pr.id,
+                    (SELECT product_id
+                     FROM purchase_order_items
+                     WHERE order_id = pr.purchase_order_id
+                     LIMIT 1),
+                    (SELECT id
+                     FROM product_batches
+                     WHERE product_id = (SELECT product_id
+                                         FROM purchase_order_items
+                                         WHERE order_id = pr.purchase_order_id
+                                         LIMIT 1)
+                     LIMIT 1)
+                FROM purchase_returns pr;
+                """, StatementSourceType.PLAIN_SQL, "mysql-purchase-return-items.sql", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new StructuredDataLineageExtractor()
+                .extract(statement, structured)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains("VALUE:DIRECT:product_batches.id->purchase_return_items.batch_id"),
+                () -> "Scalar projection should be VALUE lineage: " + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "CONTROL:CASE_WHEN:product_batches.product_id,purchase_order_items.product_id,purchase_order_items.order_id,purchase_returns.purchase_order_id->purchase_return_items.batch_id"),
+                () -> "Nested scalar predicates and correlation should be CONTROL lineage: "
+                        + fingerprints + " events=" + structured.events());
+        assertFalse(fingerprints.stream().anyMatch(fingerprint ->
+                        fingerprint.contains("product_batches.order_id")),
+                () -> "No source may leak through the product_batches qualifier: " + fingerprints);
+    }
+
+    @Test
+    void ifAndCaseKeepBranchValuesSeparateFromPredicateControlsAndTraceSubtraction() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO return_metrics (if_amount, case_amount, due_date)
+                SELECT
+                    IF(o.status = 'refunded', 0 - o.refund_amount, o.total_amount),
+                    CASE WHEN o.status = 'refunded' THEN 0 - o.refund_amount ELSE o.total_amount END,
+                    DATE_ADD(o.order_date, INTERVAL c.credit_days DAY)
+                FROM orders o
+                JOIN customers c ON o.customer_id = c.id;
+                """, StatementSourceType.PLAIN_SQL, "mysql-conditional-transform.sql", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new StructuredDataLineageExtractor()
+                .extract(statement, structured)
+                .stream()
+                .map(this::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        for (String target : List.of("if_amount", "case_amount")) {
+            assertTrue(fingerprints.contains("VALUE:ARITHMETIC:orders.refund_amount,orders.total_amount->return_metrics."
+                            + target),
+                    () -> "Conditional branch values should preserve their arithmetic transform: " + fingerprints);
+            assertTrue(fingerprints.contains("CONTROL:CASE_WHEN:orders.status->return_metrics." + target),
+                    () -> "Conditional predicates should remain CONTROL lineage: " + fingerprints);
+        }
+        assertTrue(fingerprints.contains(
+                        "VALUE:FUNCTION_CALL:orders.order_date,customers.credit_days->return_metrics.due_date"),
+                () -> "DATE_ADD should preserve typed function arguments: " + fingerprints);
+    }
+
     @Test
     void extractsProcedureBodyInsertSelectAndUpdateJoinLineage() {
         SqlStatementRecord statement = new SqlStatementRecord("""
@@ -142,7 +241,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 .toList();
 
         assertEquals(List.of(
-                "VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty",
+                "VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty",
                 "VALUE:AGGREGATE:supplier_products.supplier_id->mrp_run_items.suggested_supplier_id",
                 "VALUE:DIRECT:boms.child_product_id->mrp_run_items.component_product_id"), fingerprints,
                 () -> "INSERT SELECT should resolve derived aggregate projection aliases back to physical sources: "
@@ -203,8 +302,8 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 .toList();
 
         assertEquals(List.of(
-                "VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement",
-                "VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.quantity,inventory.locked_quantity,inventory_reservations.reserved_quantity,inventory_reservations.released_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty",
+                "VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.net_requirement",
+                "VALUE:AGGREGATE:production_plans.planned_production_qty,boms.quantity,boms.scrap_rate,inventory.locked_quantity,inventory.quantity,inventory_reservations.released_quantity,inventory_reservations.reserved_quantity,purchase_order_items.quantity,purchase_order_items.received_qty->mrp_run_items.suggested_order_qty",
                 "VALUE:AGGREGATE:supplier_products.lead_time_days->mrp_run_items.suggested_due_date"), fingerprints,
                 () -> "Nested functions in INSERT SELECT should keep derived aggregate sources: "
                         + structured.events());
@@ -379,13 +478,13 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
 
         assertTrue(lineages.stream().anyMatch(lineage ->
                         lineage.flowKind() == com.relationdetector.contracts.Enums.LineageFlowKind.VALUE
-                                && lineage.transformType() == LineageTransformType.COALESCE
+                                && lineage.transformType() == LineageTransformType.ARITHMETIC
                                 && "inventory_transactions".equals(lineage.target().table().tableName())
                                 && "after_qty".equals(lineage.target().column().columnName())
                                 && lineage.sources().stream().anyMatch(source ->
                                 "sales_order_items".equals(source.table().tableName())
                                         && "quantity".equals(source.column().columnName()))),
-                () -> "soi.quantity in COALESCE(...) + soi.quantity is a valid source for after_qty, not a false positive: "
+                () -> "soi.quantity in COALESCE(...) + soi.quantity is a valid arithmetic source for after_qty: "
                         + fingerprints + " events=" + structured.events());
     }
 
@@ -412,10 +511,19 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 .map(this::lineageFingerprint)
                 .toList();
 
+        assertFalse(lineages.stream().anyMatch(lineage ->
+                        lineage.flowKind() == com.relationdetector.contracts.Enums.LineageFlowKind.VALUE
+                                && "supplier_products".equals(lineage.target().table().tableName())
+                                && "quality_score".equals(lineage.target().column().columnName())
+                                && lineage.sources().stream().anyMatch(source ->
+                                "inspection_reports".equals(source.table().tableName())
+                                        && "inspection_result".equals(source.column().columnName()))),
+                () -> "A predicate-only CASE source must not become VALUE lineage: "
+                        + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "inspection_reports", "inspection_result",
                 "supplier_products", "quality_score", LineageTransformType.CASE_WHEN,
-                com.relationdetector.contracts.Enums.LineageFlowKind.VALUE,
-                () -> "CASE inside a scalar subquery SELECT projection is a value input for quality_score: "
+                com.relationdetector.contracts.Enums.LineageFlowKind.CONTROL,
+                () -> "The aggregate CASE predicate must remain CONTROL lineage: "
                         + fingerprints + " events=" + structured.events());
         assertLineageSource(lineages, "inspection_reports", "batch_id",
                 "supplier_products", "quality_score", LineageTransformType.CASE_WHEN,
@@ -451,7 +559,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 .toList();
 
         assertTrue(fingerprints.contains(
-                        "VALUE:AGGREGATE:inventory.quantity,inventory.locked_quantity->mrp_run_items.on_hand_qty"),
+                        "VALUE:AGGREGATE:inventory.locked_quantity,inventory.quantity->mrp_run_items.on_hand_qty"),
                 () -> "Full routine block should keep derived inventory aggregate lineage: " + fingerprints
                         + " events=" + structured.events());
         assertTrue(fingerprints.contains(
@@ -493,8 +601,12 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 () -> "INSERT SELECT ... ON DUPLICATE KEY UPDATE should still emit category dimension lineage: "
                         + fingerprints + " attrs=" + structured.attributes() + " events=" + structured.events());
         assertTrue(fingerprints.contains(
-                        "CONTROL:CASE_WHEN:product_categories.id,product_categories.name->category_dim.level2_name"),
-                () -> "CASE expression lineage should survive ON DUPLICATE KEY UPDATE tails: "
+                        "VALUE:CASE_WHEN:product_categories.name->category_dim.level2_name"),
+                () -> "CASE branch values should survive ON DUPLICATE KEY UPDATE tails: "
+                        + fingerprints + " attrs=" + structured.attributes() + " events=" + structured.events());
+        assertTrue(fingerprints.contains(
+                        "CONTROL:CASE_WHEN:product_categories.id->category_dim.level2_name"),
+                () -> "CASE predicates should survive ON DUPLICATE KEY UPDATE tails: "
                         + fingerprints + " attrs=" + structured.attributes() + " events=" + structured.events());
     }
 
@@ -514,6 +626,7 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
                 .toList();
 
         assertEquals(List.of(
+                "CO_OCCURRENCE:jsh_depot_head.id->jsh_depot_item.header_id:SQL_LOG_JOIN",
                 "CO_OCCURRENCE:jsh_depot_item.depot_id->jsh_material_current_stock.depot_id:SQL_LOG_JOIN",
                 "CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material.id:SQL_LOG_JOIN",
                 "CO_OCCURRENCE:jsh_depot_item.material_id->jsh_material_current_stock.material_id:SQL_LOG_JOIN",
@@ -626,6 +739,181 @@ class MySqlTokenEventProcedureRelationBehaviorTest {
         assertDirectionalNaming(relations, "serial_numbers.purchase_receipt_id", "purchase_receipts.id", fingerprints);
         assertDirectionalNaming(relations, "serial_numbers.sales_order_id", "sales_orders.id", fingerprints);
         assertDirectionalNaming(relations, "serial_numbers.return_id", "sales_returns.id", fingerprints);
+    }
+
+    @Test
+    void standaloneBooleanProjectionsRemainValueAndPreserveFunctionTransform() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO semantic_flags (is_current_year, is_womenwear)
+                SELECT YEAR(so.order_date) = 2026,
+                       pc.name = '女装' OR pc.name = 'women'
+                FROM sales_orders so
+                JOIN product_categories pc ON pc.id = so.category_id;
+                """, StatementSourceType.PLAIN_SQL, "mysql-boolean-projection.sql", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                .map(this::lineageFingerprint).sorted().toList();
+
+        assertTrue(fingerprints.contains(
+                        "VALUE:FUNCTION_CALL:sales_orders.order_date->semantic_flags.is_current_year"),
+                () -> "YEAR(...) equality is a value-producing function projection: "
+                        + fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.stream().anyMatch(fingerprint ->
+                        fingerprint.startsWith("VALUE:")
+                                && fingerprint.contains("product_categories.name")
+                                && fingerprint.endsWith("->semantic_flags.is_womenwear")),
+                () -> "Boolean name projection must be VALUE: " + fingerprints + " events=" + structured.events());
+        assertFalse(fingerprints.stream().anyMatch(fingerprint ->
+                        fingerprint.startsWith("CONTROL:")
+                                && fingerprint.contains("product_categories.name")
+                                && fingerprint.endsWith("->semantic_flags.is_womenwear")),
+                () -> "Standalone boolean projection must not be CONTROL: " + fingerprints);
+    }
+
+    @Test
+    void nestedCaseKeepsSelectorsAndEveryWhenPredicateOutOfLeafValues() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                UPDATE reconciliation_totals rt
+                JOIN cashier_journals cj ON cj.account_id = rt.account_id
+                SET rt.amount = CASE rt.journal_scope
+                    WHEN 'cash' THEN CASE
+                        WHEN cj.journal_type = 'receipt' THEN cj.amount
+                        ELSE rt.fallback_amount
+                    END
+                    WHEN 'manual' THEN CASE
+                        WHEN rt.is_enabled = 1 THEN rt.manual_amount
+                        ELSE 0
+                    END
+                    ELSE rt.default_amount
+                END;
+                """, StatementSourceType.PLAIN_SQL, "mysql-nested-case.sql", 1, 1, Map.of());
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+
+        assertLineageSources(lineages, LineageFlowKind.VALUE, LineageTransformType.CASE_WHEN,
+                "reconciliation_totals.amount", List.of("cashier_journals.amount",
+                        "reconciliation_totals.fallback_amount", "reconciliation_totals.manual_amount",
+                        "reconciliation_totals.default_amount"));
+        assertLineageSources(lineages, LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN,
+                "reconciliation_totals.amount", List.of("reconciliation_totals.journal_scope",
+                        "cashier_journals.journal_type", "reconciliation_totals.is_enabled"));
+    }
+
+    @Test
+    void aggregateWrappedCaseKeepsOuterAggregateAndPredicateOnlyCountHasNoValue() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO aggregate_rollup (total_amount, qualified_count)
+                SELECT SUM(CASE WHEN tx.flag = 'Y' THEN tx.amount ELSE 0 END),
+                       COUNT(CASE WHEN tx.flag = 'Y' THEN 1 END)
+                FROM transactions tx;
+                """, StatementSourceType.PLAIN_SQL, "mysql-aggregate-case.sql", 1, 1, Map.of());
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<DataLineageCandidate> lineages = new StructuredDataLineageExtractor().extract(statement, structured);
+
+        assertLineageSources(lineages, LineageFlowKind.VALUE, LineageTransformType.AGGREGATE,
+                "aggregate_rollup.total_amount", List.of("transactions.amount"));
+        assertLineageSources(lineages, LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN,
+                "aggregate_rollup.total_amount", List.of("transactions.flag"));
+        assertFalse(lineages.stream().anyMatch(lineage ->
+                        lineage.flowKind() == LineageFlowKind.VALUE
+                                && lineage.target().displayName().equals("aggregate_rollup.qualified_count")),
+                () -> "COUNT(CASE predicate THEN literal) must not invent VALUE sources: " + lineages);
+        assertLineageSources(lineages, LineageFlowKind.CONTROL, LineageTransformType.CASE_WHEN,
+                "aggregate_rollup.qualified_count", List.of("transactions.flag"));
+    }
+
+    private void assertLineageSources(
+            List<DataLineageCandidate> lineages,
+            LineageFlowKind flow,
+            LineageTransformType transform,
+            String target,
+            List<String> expectedSources
+    ) {
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.flowKind() == flow
+                                && lineage.transformType() == transform
+                                && lineage.target().displayName().equals(target)
+                                && lineage.sources().stream().map(source -> source.displayName()).toList()
+                                .equals(expectedSources)),
+                () -> "Missing " + flow + "/" + transform + " " + expectedSources + " -> " + target
+                        + "; actual=" + lineages);
+    }
+
+    @Test
+    void tokenEventTraversesAllConfirmedNaturalEqualityShapes() {
+        List<String> sqlStatements = List.of(
+                "SELECT * FROM inventory i JOIN sales_orders so ON i.warehouse_id = so.warehouse_id",
+                "SELECT * FROM sales_orders so JOIN sales_returns sr ON so.customer_id = sr.customer_id",
+                "SELECT * FROM cashier_journals cj WHERE cj.reference_id IN (SELECT so.id FROM sales_orders so)",
+                "SELECT * FROM boms child JOIN boms parent ON child.child_product_id = parent.parent_product_id",
+                "SELECT * FROM contracts c LEFT JOIN customers cu ON c.party_id = cu.id "
+                        + "LEFT JOIN suppliers s ON c.party_id = s.id",
+                "SELECT * FROM employee_salary_log esl JOIN employees e ON esl.approved_by = e.id",
+                "SELECT * FROM promotion_products pp JOIN promotion_usages pu ON pp.promotion_id = pu.promotion_id",
+                "SELECT poi.id, (SELECT pr.return_no FROM purchase_returns pr "
+                        + "WHERE pr.purchase_order_id = poi.order_id) FROM purchase_order_items poi");
+
+        List<RelationshipCandidate> relations = new ArrayList<>();
+        for (int index = 0; index < sqlStatements.size(); index++) {
+            SqlStatementRecord statement = new SqlStatementRecord(sqlStatements.get(index),
+                    StatementSourceType.PLAIN_SQL, "mysql-confirmed-gap-" + index + ".sql", 1, 1, Map.of());
+            var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+            relations.addAll(new TokenEventRelationExtractor().extract(statement, structured));
+        }
+        List<String> fingerprints = relations.stream().map(this::fingerprint).sorted().toList();
+
+        for (List<String> pair : List.of(
+                List.of("inventory.warehouse_id", "sales_orders.warehouse_id"),
+                List.of("sales_orders.customer_id", "sales_returns.customer_id"),
+                List.of("cashier_journals.reference_id", "sales_orders.id"),
+                List.of("boms.child_product_id", "boms.parent_product_id"),
+                List.of("contracts.party_id", "customers.id"),
+                List.of("contracts.party_id", "suppliers.id"),
+                List.of("employee_salary_log.approved_by", "employees.id"),
+                List.of("promotion_products.promotion_id", "promotion_usages.promotion_id"),
+                List.of("purchase_order_items.order_id", "purchase_returns.purchase_order_id"))) {
+            assertTrue(hasRelationshipPair(relations, pair.get(0), pair.get(1)),
+                    () -> "Missing typed equality pair " + pair + "; actual=" + fingerprints);
+        }
+    }
+
+    @Test
+    void recursiveCteProjectionResolvesBackToPhysicalBomColumnsForRelations() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                WITH RECURSIVE bom_explosion AS (
+                    SELECT
+                        b.parent_product_id,
+                        b.child_product_id
+                    FROM boms b
+                    WHERE b.status = 'active'
+
+                    UNION ALL
+
+                    SELECT
+                        be.parent_product_id,
+                        b2.child_product_id
+                    FROM bom_explosion be
+                    JOIN boms b2 ON be.child_product_id = b2.parent_product_id
+                    WHERE b2.status = 'active'
+                )
+                SELECT be.parent_product_id, be.child_product_id
+                FROM bom_explosion be;
+                """, StatementSourceType.PLAIN_SQL, "mysql-recursive-bom.sql", 1, 1, Map.of());
+
+        var structured = new MySqlTokenEventStructuredSqlParser().parseSql(statement, null);
+        List<RelationshipCandidate> relations = new TokenEventRelationExtractor().extract(statement, structured);
+
+        assertTrue(hasRelationshipPair(relations, "boms.child_product_id", "boms.parent_product_id"),
+                () -> "Recursive CTE predicates should resolve projected CTE columns back to physical BOM columns; "
+                        + "relations=" + relations.stream().map(this::fingerprint).sorted().toList()
+                        + "; events=" + structured.events());
+    }
+
+    private boolean hasRelationshipPair(List<RelationshipCandidate> relations, String left, String right) {
+        return relations.stream().anyMatch(relation ->
+                (left.equals(relation.source().displayName()) && right.equals(relation.target().displayName()))
+                        || (right.equals(relation.source().displayName()) && left.equals(relation.target().displayName())));
     }
 
     private void assertDirectionalNaming(

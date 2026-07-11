@@ -20,6 +20,35 @@ import com.relationdetector.core.relation.TokenEventRelationExtractor;
 
 class PostgresFullGrammerExpressionAnalyzerTest {
     @Test
+    void fullGrammerSeparatesScalarAggregateValueAndControls() {
+        SqlStatementRecord statement = statement("""
+                UPDATE supplier_products sp
+                SET total_order_qty = (
+                    SELECT SUM(poi.quantity)
+                    FROM purchase_order_items poi
+                    JOIN purchase_orders po ON poi.order_id = po.id
+                    WHERE poi.product_id = sp.product_id
+                      AND po.supplier_id = sp.supplier_id
+                );
+                """);
+        var structured = new PostgresFullGrammerDialectModule().sqlParser().parseSql(statement, null);
+        List<String> fingerprints = new StructuredDataLineageExtractor().extract(statement, structured).stream()
+                .map(PostgresFullGrammerExpressionAnalyzerTest::lineageFingerprint)
+                .sorted()
+                .toList();
+
+        assertTrue(fingerprints.contains(
+                        "VALUE:AGGREGATE:purchase_order_items.quantity->supplier_products.total_order_qty"),
+                () -> fingerprints + " events=" + structured.events());
+        assertTrue(fingerprints.stream().anyMatch(value -> value.startsWith("CONTROL:CASE_WHEN:")
+                        && value.contains("purchase_order_items.order_id")
+                        && value.contains("purchase_orders.id")
+                        && value.contains("supplier_products.product_id")
+                        && value.endsWith("->supplier_products.total_order_qty")),
+                () -> fingerprints + " events=" + structured.events());
+    }
+
+    @Test
     void analyzerReadsCaseExpressionThroughFullGrammerEvents() {
         var result = new PostgresFullGrammerDialectModule()
                 .sqlParser()
@@ -29,17 +58,21 @@ class PostgresFullGrammerExpressionAnalyzerTest {
                 ;
                 """), null);
 
-        Map<String, Object> assignment = result.events().stream()
-                .filter(event -> event.type() == StructuredParseEventType.UPDATE_ASSIGNMENT)
-                .findFirst()
-                .orElseThrow()
-                .attributes();
+        List<String> fingerprints = new StructuredDataLineageExtractor()
+                .extract(statement("""
+                        UPDATE users u
+                        SET risk_band = CASE WHEN u.risk_score > 80 THEN 'HIGH' ELSE u.risk_band END
+                        ;
+                        """), result)
+                .stream()
+                .map(PostgresFullGrammerExpressionAnalyzerTest::lineageFingerprint)
+                .sorted()
+                .toList();
 
-        assertEquals("CASE_WHEN", assignment.get("transformType"));
-        assertEquals("CONTROL", assignment.get("flowKind"));
-        assertTrue(((List<?>) assignment.get("sourceAliases")).contains("u"));
-        assertTrue(((List<?>) assignment.get("sourceColumns")).contains("risk_score"));
-        assertTrue(((List<?>) assignment.get("sourceColumns")).contains("risk_band"));
+        assertTrue(fingerprints.contains("CONTROL:CASE_WHEN:users.risk_score->users.risk_band"),
+                () -> fingerprints.toString());
+        assertTrue(fingerprints.contains("VALUE:CASE_WHEN:users.risk_band->users.risk_band"),
+                () -> fingerprints.toString());
     }
 
     @Test

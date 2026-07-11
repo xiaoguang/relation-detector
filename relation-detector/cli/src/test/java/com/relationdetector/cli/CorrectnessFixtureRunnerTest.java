@@ -25,7 +25,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,27 +44,44 @@ class CorrectnessFixtureRunnerTest {
     @Test
     void allCorrectnessFixturesPassGoldenExpectations() throws Exception {
         Path root = workspaceRoot().resolve("test-fixtures/correctness");
+        String fixtureFilter = System.getProperty("correctnessFixtureFilter", "");
+        String fixtureProfile = System.getProperty(
+                "correctnessFixtureProfile",
+                fixtureFilter.isBlank() ? "smoke" : "full");
+        List<Path> discovered;
         List<Path> manifests;
         try (Stream<Path> paths = Files.walk(root)) {
-            String fixtureFilter = System.getProperty("correctnessFixtureFilter", "");
-            String fixtureProfile = System.getProperty(
-                    "correctnessFixtureProfile",
-                    fixtureFilter.isBlank() ? "smoke" : "full");
-            manifests = paths
+            discovered = paths
                     .filter(path -> path.getFileName().toString().equals("manifest.yml"))
-                    .filter(path -> CorrectnessFixtureProfileSelector.matches(root, path, fixtureProfile))
-                    .filter(path -> fixtureFilter.isBlank() || path.toString().contains(fixtureFilter))
                     .sorted()
+                    .toList();
+            manifests = discovered.stream()
+                    .filter(path -> CorrectnessFixtureProfileSelector.matches(root, path, fixtureProfile))
+                    .filter(path -> matchesFixtureFilter(path, fixtureFilter))
                     .toList();
         }
 
         assertFalse(manifests.isEmpty(), "Expected at least one correctness manifest under " + root);
-        List<FixtureFailure> failures = runFixtures(manifests);
+        if (isUnfilteredFullProfile(fixtureProfile, fixtureFilter)) {
+            assertEquals(discovered.size(), manifests.size(),
+                    "full correctness profile must select every discovered fixture");
+        }
+        List<FixtureExecution> executions = runFixtures(manifests);
+        CorrectnessRunSummaryWriter.write(
+                workspaceRoot().resolve("target/correctness-run-summary.json"),
+                root,
+                fixtureProfile,
+                discovered.size(),
+                manifests.size(),
+                executions);
+        assertEquals(manifests.size(), executions.size(),
+                "every selected correctness fixture must execute exactly once");
         printFixtureTimingSummary();
+        List<FixtureExecution> failures = executions.stream().filter(execution -> !execution.passed()).toList();
         assertAll("correctness fixtures",
                 failures.stream()
-                        .map(failure -> (Executable) () -> {
-                            throw new AssertionError(failure.manifest() + " failed", failure.error());
+                        .map(execution -> (Executable) () -> {
+                            throw new AssertionError(execution.manifest() + " failed", execution.error());
                         })
                         .toList());
     }
@@ -92,6 +111,15 @@ class CorrectnessFixtureRunnerTest {
         assertFalse(CorrectnessFixtureProfileSelector.matches(root,
                 root.resolve("postgres/postgres-large-example/manifest.yml"),
                 "smoke"));
+    }
+
+    @Test
+    void correctnessFixtureFilterAcceptsMultipleCommaSeparatedFragments() {
+        Path manifest = Path.of("test-fixtures/correctness/mysql/v8_0/mysql80-example/manifest.yml");
+
+        assertTrue(matchesFixtureFilter(manifest, "postgres,v8_0"));
+        assertTrue(matchesFixtureFilter(manifest, "v5_7,mysql80-example"));
+        assertFalse(matchesFixtureFilter(manifest, "postgres,v5_7"));
     }
 
     @Test
@@ -226,40 +254,64 @@ class CorrectnessFixtureRunnerTest {
                 fingerprints);
     }
 
-    private List<FixtureFailure> runFixtures(List<Path> manifests) {
+    private List<FixtureExecution> runFixtures(List<Path> manifests) {
         int parallelism = correctnessFixtureParallelism();
+        List<Path> executionOrder = manifests.stream()
+                .sorted(Comparator.comparingLong(this::fixtureWeight).reversed()
+                        .thenComparing(Path::toString))
+                .toList();
         if (parallelism <= 1) {
-            return manifests.stream()
+            return executionOrder.stream()
                     .map(this::runFixtureSafely)
-                    .filter(Objects::nonNull)
-                    .sorted(Comparator.comparing(failure -> failure.manifest().toString()))
+                    .sorted(Comparator.comparing(execution -> execution.manifest().toString()))
                     .toList();
         }
-        ForkJoinPool pool = new ForkJoinPool(parallelism);
+        ExecutorService pool = Executors.newFixedThreadPool(parallelism);
         try {
-            return pool.submit(() -> manifests.parallelStream()
-                    .map(this::runFixtureSafely)
-                    .filter(Objects::nonNull)
-                    .sorted(Comparator.comparing(failure -> failure.manifest().toString()))
-                    .toList()).join();
+            List<Future<FixtureExecution>> futures = executionOrder.stream()
+                    .map(manifest -> pool.submit(() -> runFixtureSafely(manifest)))
+                    .toList();
+            return futures.stream()
+                    .map(this::getFixtureExecution)
+                    .sorted(Comparator.comparing(execution -> execution.manifest().toString()))
+                    .toList();
         } finally {
             pool.shutdown();
         }
     }
 
-    private FixtureFailure runFixtureSafely(Path manifest) {
+    private FixtureExecution getFixtureExecution(Future<FixtureExecution> future) {
+        try {
+            return future.get();
+        } catch (Exception error) {
+            throw new IllegalStateException("Correctness fixture worker failed unexpectedly", error);
+        }
+    }
+
+    private long fixtureWeight(Path manifest) {
+        try {
+            return Files.size(manifest.getParent().resolve("input.sql"));
+        } catch (Exception ignored) {
+            return 0L;
+        }
+    }
+
+    private FixtureExecution runFixtureSafely(Path manifest) {
         long startNanos = System.nanoTime();
+        Throwable failure = null;
         try {
             executor.runFixture(CorrectnessFixture.read(manifest));
-            return null;
         } catch (Throwable error) {
-            return new FixtureFailure(manifest, error);
+            failure = error;
         } finally {
+            long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
             if (Boolean.getBoolean("correctnessFixtureTiming")) {
-                long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
                 fixtureTimings.add(new FixtureTiming(manifest, elapsedMillis));
-                System.out.printf("correctness fixture %s %d ms%n", manifest, elapsedMillis);
+                if (Boolean.getBoolean("correctnessFixtureTimingVerbose")) {
+                    System.out.printf("correctness fixture %s %d ms%n", manifest, elapsedMillis);
+                }
             }
+            return new FixtureExecution(manifest, failure, elapsedMillis);
         }
     }
 
@@ -288,6 +340,22 @@ class CorrectnessFixtureRunnerTest {
         return Math.max(1, Math.min(8, Runtime.getRuntime().availableProcessors()));
     }
 
+    private static boolean isUnfilteredFullProfile(String profile, String fixtureFilter) {
+        return fixtureFilter.isBlank()
+                && ("full".equalsIgnoreCase(profile) || "all".equalsIgnoreCase(profile));
+    }
+
+    private static boolean matchesFixtureFilter(Path manifest, String fixtureFilter) {
+        if (fixtureFilter == null || fixtureFilter.isBlank()) {
+            return true;
+        }
+        String value = manifest.toString();
+        return Stream.of(fixtureFilter.split(","))
+                .map(String::trim)
+                .filter(filter -> !filter.isEmpty())
+                .anyMatch(value::contains);
+    }
+
     private String fingerprint(RelationshipCandidate relation) {
         String evidenceTypes = relation.evidence().stream()
                 .map(evidence -> evidence.type().name())
@@ -301,7 +369,10 @@ class CorrectnessFixtureRunnerTest {
         return TestWorkspacePaths.relationDetectorRoot();
     }
 
-    private record FixtureFailure(Path manifest, Throwable error) {
+    record FixtureExecution(Path manifest, Throwable error, long elapsedMillis) {
+        boolean passed() {
+            return error == null;
+        }
     }
 
     private record FixtureTiming(Path manifest, long elapsedMillis) {

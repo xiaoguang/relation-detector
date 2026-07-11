@@ -24,9 +24,194 @@ import com.relationdetector.contracts.parse.StructuredParseResult;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
 import com.relationdetector.core.lineage.StructuredDataLineageExtractor;
 import com.relationdetector.core.log.ObjectSqlFileExtractor;
+import com.relationdetector.core.relation.TokenEventRelationExtractor;
 import com.relationdetector.sqlserver.tokenevent.SqlServerTokenEventStructuredSqlParser;
 
 class SqlServerTokenEventParserTest {
+    @Test
+    void tokenEventParsesSimpleCaseAsTypedValueAndControl() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO [dbo].[case_results] ([result_value])
+                SELECT CASE o.[kind] WHEN 1 THEN o.[a] ELSE o.[b] END
+                FROM [dbo].[orders] AS o;
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-simple-case.sql", 1, 1, Map.of());
+
+        StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        assertTypedComplete(result);
+        var lineages = new StructuredDataLineageExtractor().extract(statement, result);
+        assertLineage(lineages, "orders", "a", "case_results", "result_value", LineageFlowKind.VALUE);
+        assertLineage(lineages, "orders", "b", "case_results", "result_value", LineageFlowKind.VALUE);
+        assertLineage(lineages, "orders", "kind", "case_results", "result_value", LineageFlowKind.CONTROL);
+        assertTrue(lineages.stream().noneMatch(lineage ->
+                        lineage.flowKind() == LineageFlowKind.VALUE
+                                && lineage.sources().stream().anyMatch(source ->
+                                        "orders".equals(source.table().tableName())
+                                                && "kind".equals(source.column().columnName()))),
+                () -> "Simple CASE selector must not be VALUE: " + lineages + " events=" + result.events());
+    }
+
+    @Test
+    void tokenEventApplyProjectionEmitsSeparateValueAndControlEvents() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO [dbo].[batch_prices] ([effective_price])
+                SELECT priced.[effective_price]
+                FROM [dbo].[products] AS p
+                OUTER APPLY (
+                    SELECT CASE WHEN sp.[active] = 1 THEN sp.[supplier_price] ELSE p.[purchase_price] END
+                           AS [effective_price]
+                    FROM [dbo].[supplier_products] AS sp
+                    WHERE sp.[product_id] = p.[id]
+                ) AS priced;
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-apply-case-projection.sql", 1, 1, Map.of());
+
+        StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        assertTypedComplete(result);
+        List<StructuredSqlEvent> projections = result.events().stream()
+                .filter(event -> event.type() == StructuredParseEventType.PROJECTION_ITEM)
+                .filter(event -> "priced".equals(event.attributes().get("outputAlias")))
+                .filter(event -> "effective_price".equals(event.attributes().get("outputColumn")))
+                .toList();
+        assertTrue(projections.stream().anyMatch(event ->
+                        "VALUE".equals(event.attributes().get("flowKind"))
+                                && ((List<?>) event.attributes().get("sourceColumns")).contains("supplier_price")
+                                && ((List<?>) event.attributes().get("sourceColumns")).contains("purchase_price")
+                                && !((List<?>) event.attributes().get("sourceColumns")).contains("active")),
+                () -> "APPLY CASE projection must emit branch-only VALUE event: " + projections);
+        assertTrue(projections.stream().anyMatch(event ->
+                        "CONTROL".equals(event.attributes().get("flowKind"))
+                                && "CASE_WHEN".equals(event.attributes().get("transformType"))
+                                && ((List<?>) event.attributes().get("sourceColumns")).contains("active")),
+                () -> "APPLY CASE projection must emit predicate CONTROL event: " + projections);
+    }
+    @Test
+    void tokenEventTraversesNaturalApplyPredicatesAndProjectionLineage() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO [dbo].[product_batches] ([product_id], [supplier_id], [purchase_price])
+                SELECT poi.[product_id], batch_supplier.[supplier_id],
+                       COALESCE(batch_supplier.[supplier_price], p.[purchase_price])
+                FROM [dbo].[purchase_returns] AS pr
+                JOIN [dbo].[purchase_order_items] AS poi ON poi.[order_id] = pr.[purchase_order_id]
+                JOIN [dbo].[products] AS p ON p.[id] = poi.[product_id]
+                OUTER APPLY (
+                    SELECT TOP (1) sp.[supplier_id], sp.[supplier_price]
+                    FROM [dbo].[supplier_products] AS sp
+                    WHERE sp.[product_id] = poi.[product_id]
+                      AND sp.[supplier_id] = pr.[supplier_id]
+                    ORDER BY sp.[is_preferred] DESC, sp.[supplier_price], sp.[id]
+                ) AS batch_supplier;
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-natural-apply.sql", 1, 1, Map.of());
+
+        StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        var lineages = new StructuredDataLineageExtractor().extract(statement, result);
+        var relations = new TokenEventRelationExtractor().extract(statement, result);
+
+        assertLineage(lineages, "supplier_products", "supplier_id", "product_batches", "supplier_id");
+        assertLineage(lineages, "supplier_products", "supplier_price", "product_batches", "purchase_price");
+        assertLineage(lineages, "products", "purchase_price", "product_batches", "purchase_price");
+        assertTrue(relations.stream().anyMatch(relation -> matchesPair(relation,
+                        "supplier_products", "product_id", "purchase_order_items", "product_id")),
+                () -> "APPLY product predicate must be retained: " + relations + " events=" + result.events());
+        assertTrue(relations.stream().anyMatch(relation -> matchesPair(relation,
+                        "supplier_products", "supplier_id", "purchase_returns", "supplier_id")),
+                () -> "APPLY supplier predicate must be retained: " + relations + " events=" + result.events());
+    }
+
+    @Test
+    void tokenEventTraversesProductBatchApplyPredicates() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                SELECT pri.[id], batch_match.[batch_id]
+                FROM [dbo].[purchase_return_items] AS pri
+                JOIN [dbo].[purchase_returns] AS pr ON pr.[id] = pri.[return_id]
+                JOIN [dbo].[purchase_order_items] AS poi ON poi.[id] = pri.[order_item_id]
+                OUTER APPLY (
+                    SELECT TOP (1) pb.[id] AS [batch_id]
+                    FROM [dbo].[product_batches] AS pb
+                    WHERE pb.[product_id] = poi.[product_id]
+                      AND (pb.[supplier_id] = pr.[supplier_id] OR pb.[supplier_id] IS NULL)
+                    ORDER BY pb.[production_date] DESC, pb.[id] DESC
+                ) AS batch_match;
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-product-batch-apply.sql", 1, 1, Map.of());
+
+        StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        var relations = new TokenEventRelationExtractor().extract(statement, result);
+        assertTrue(relations.stream().anyMatch(relation -> matchesPair(relation,
+                        "product_batches", "product_id", "purchase_order_items", "product_id")),
+                () -> "APPLY product-batch product predicate must be retained: " + relations
+                        + " events=" + result.events());
+        assertTrue(relations.stream().anyMatch(relation -> matchesPair(relation,
+                        "product_batches", "supplier_id", "purchase_returns", "supplier_id")),
+                () -> "APPLY product-batch supplier predicate must be retained: " + relations
+                        + " events=" + result.events());
+    }
+
+    @Test
+    void tokenEventSeparatesCommissionCaseValuesAndControls() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO [dbo].[sales_commissions] ([bonus], [total_commission])
+                SELECT
+                    CASE WHEN so.[paid_amount] >= so.[total_amount] THEN soi.[amount] ELSE 0 END,
+                    soi.[amount] * 0.02
+                      + CASE WHEN so.[paid_amount] >= so.[total_amount] THEN soi.[amount] * 0.01 ELSE 0 END
+                FROM [dbo].[sales_orders] AS so
+                JOIN [dbo].[sales_order_items] AS soi ON soi.[order_id] = so.[id];
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-commission-case.sql", 1, 1, Map.of());
+
+        StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        var lineages = new StructuredDataLineageExtractor().extract(statement, result);
+        for (String target : List.of("bonus", "total_commission")) {
+            assertLineage(lineages, "sales_order_items", "amount", "sales_commissions", target,
+                    LineageFlowKind.VALUE);
+            assertLineage(lineages, "sales_orders", "paid_amount", "sales_commissions", target,
+                    LineageFlowKind.CONTROL);
+            assertLineage(lineages, "sales_orders", "total_amount", "sales_commissions", target,
+                    LineageFlowKind.CONTROL);
+            assertTrue(lineages.stream().filter(lineage ->
+                            lineage.flowKind() == LineageFlowKind.CONTROL
+                                    && target.equals(lineage.target().column().columnName()))
+                            .allMatch(lineage -> lineage.transformType() == LineageTransformType.CASE_WHEN),
+                    () -> "CASE controls must use CASE_WHEN for " + target + ": " + lineages);
+            assertTrue(lineages.stream().noneMatch(lineage ->
+                            lineage.flowKind() == LineageFlowKind.VALUE
+                                    && target.equals(lineage.target().column().columnName())
+                                    && lineage.sources().stream().anyMatch(source ->
+                                            "sales_orders".equals(source.table().tableName())
+                                                    && ("paid_amount".equals(source.column().columnName())
+                                                    || "total_amount".equals(source.column().columnName())))),
+                    () -> "CASE predicates must not be VALUE for " + target + ": " + lineages);
+        }
+    }
+
+    private boolean matchesPair(
+            com.relationdetector.contracts.model.RelationshipCandidate relation,
+            String leftTable,
+            String leftColumn,
+            String rightTable,
+            String rightColumn
+    ) {
+        return matchesEndpoint(relation.source(), leftTable, leftColumn)
+                && matchesEndpoint(relation.target(), rightTable, rightColumn)
+                || matchesEndpoint(relation.source(), rightTable, rightColumn)
+                && matchesEndpoint(relation.target(), leftTable, leftColumn);
+    }
+
+    private void assertTypedComplete(StructuredParseResult result) {
+        assertEquals(0, ((Number) result.attributes().getOrDefault("syntaxErrors", -1)).intValue(),
+                () -> "Expected typed parse without syntax errors: " + result.attributes());
+        assertTrue(((Number) result.attributes().getOrDefault("typedEventCount", 0)).intValue() > 0,
+                () -> "Expected typed events: " + result.attributes());
+        assertTrue(result.warnings().isEmpty(),
+                () -> "Typed fixture must not be skipped/unsupported: " + result.warnings());
+    }
+
+    private boolean matchesEndpoint(
+            com.relationdetector.contracts.model.Endpoint endpoint,
+            String table,
+            String column
+    ) {
+        return endpoint.isColumnLevel()
+                && table.equals(endpoint.table().tableName())
+                && column.equals(endpoint.column().columnName());
+    }
     @Test
     void tokenEventParserEmitsInSubqueryPredicateFromCompactGrammar() {
         SqlStatementRecord statement = new SqlStatementRecord("""
@@ -85,6 +270,36 @@ class SqlServerTokenEventParserTest {
     }
 
     @Test
+    void tokenEventParserTraversesApplyProjectionAndNotExistsPredicate() {
+        SqlStatementRecord statement = new SqlStatementRecord("""
+                INSERT INTO [dbo].[order_payment_summary] ([order_id], [last_payment_id])
+                SELECT o.[id], payment_probe.[last_payment_id]
+                FROM [dbo].[orders] AS o
+                OUTER APPLY (
+                    SELECT MAX(p.[id]) AS [last_payment_id]
+                    FROM [dbo].[payments] AS p
+                    WHERE p.[order_id] = o.[id]
+                ) AS payment_probe
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM [dbo].[refunds] AS r
+                    WHERE r.[order_id] = o.[id]
+                );
+                """, StatementSourceType.PLAIN_SQL, "sqlserver-apply-not-exists.sql", 1, 13, Map.of());
+
+        StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        var lineages = new StructuredDataLineageExtractor().extract(statement, result);
+
+        assertLineage(lineages, "orders", "id", "order_payment_summary", "order_id");
+        assertLineage(lineages, "payments", "id", "order_payment_summary", "last_payment_id");
+        assertTrue(result.events().stream().anyMatch(event ->
+                        event.type() == StructuredParseEventType.EXISTS_PREDICATE
+                                && "r".equals(event.attributes().get("leftAlias"))
+                                && "o".equals(event.attributes().get("rightAlias"))),
+                () -> "NOT EXISTS must retain its typed correlated predicate: " + result.events());
+    }
+
+    @Test
     void tokenEventParserClassifiesMergeIsnullAssignmentAsCoalesce() {
         SqlStatementRecord statement = new SqlStatementRecord("""
                 CREATE OR ALTER PROCEDURE [dbo].[sp_merge_lineage]
@@ -137,6 +352,7 @@ class SqlServerTokenEventParserTest {
         assertEquals("sqlserver.sp_post_finished_goods_receipt", statement.attributes().get("sourceBlockId"));
 
         StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        assertTypedComplete(result);
         var lineages = new StructuredDataLineageExtractor().extract(
                 statement,
                 result,
@@ -346,6 +562,7 @@ class SqlServerTokenEventParserTest {
                 .findFirst()
                 .orElseThrow();
         StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        assertTypedComplete(result);
         var lineages = new StructuredDataLineageExtractor().extract(
                 statement,
                 result,
@@ -403,6 +620,7 @@ class SqlServerTokenEventParserTest {
                 .findFirst()
                 .orElseThrow();
         StructuredParseResult result = new SqlServerTokenEventStructuredSqlParser().parseSql(statement, null);
+        assertTypedComplete(result);
         var lineages = new StructuredDataLineageExtractor().extract(
                 statement,
                 result,
@@ -437,6 +655,26 @@ class SqlServerTokenEventParserTest {
                                 && targetTable.equals(lineage.target().table().tableName())
                                 && targetColumn.equals(lineage.target().column().columnName())),
                 () -> "Expected " + sourceTable + "." + sourceColumn + " -> "
+                        + targetTable + "." + targetColumn + ", lineages="
+                        + lineages.stream().map(this::lineageFingerprint).sorted().toList());
+    }
+
+    private void assertLineage(
+            List<DataLineageCandidate> lineages,
+            String sourceTable,
+            String sourceColumn,
+            String targetTable,
+            String targetColumn,
+            LineageFlowKind flowKind
+    ) {
+        assertTrue(lineages.stream().anyMatch(lineage ->
+                        lineage.flowKind() == flowKind
+                                && lineage.sources().stream().anyMatch(source ->
+                                        sourceTable.equals(source.table().tableName())
+                                                && sourceColumn.equals(source.column().columnName()))
+                                && targetTable.equals(lineage.target().table().tableName())
+                                && targetColumn.equals(lineage.target().column().columnName())),
+                () -> "Expected " + flowKind + " " + sourceTable + "." + sourceColumn + " -> "
                         + targetTable + "." + targetColumn + ", lineages="
                         + lineages.stream().map(this::lineageFingerprint).sorted().toList());
     }

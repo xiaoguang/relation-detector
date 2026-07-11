@@ -72,6 +72,39 @@ final class ObjectSqlFileExtractorTest {
     }
 
     @Test
+    void postgresTriggerFunctionsKeepIndependentTriggerProvenance() {
+        List<SqlStatementRecord> statements = extractor.extract("""
+                CREATE OR REPLACE FUNCTION trg_first() RETURNS TRIGGER AS $$
+                BEGIN
+                  INSERT INTO audit_log(target_id) VALUES (NEW.id);
+                  RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql;
+                CREATE TRIGGER trg_first AFTER INSERT ON orders
+                FOR EACH ROW EXECUTE FUNCTION trg_first();
+
+                CREATE OR REPLACE FUNCTION trg_second() RETURNS TRIGGER AS $$
+                BEGIN
+                  INSERT INTO audit_log(target_id) VALUES (NEW.customer_id);
+                  RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql;
+                CREATE TRIGGER trg_second AFTER UPDATE ON orders
+                FOR EACH ROW EXECUTE FUNCTION trg_second();
+                """, StatementSourceType.PROCEDURE,
+                "sample-data/postgres/18/01-schema/03-triggers.sql", DatabaseType.POSTGRESQL);
+
+        assertEquals(4, statements.size());
+        assertEquals(StatementSourceType.TRIGGER, statements.get(0).sourceType());
+        assertEquals("TRIGGER", statements.get(0).attributes().get("sourceObjectType"));
+        assertEquals("trg_first", statements.get(0).attributes().get("sourceObjectName"));
+        assertEquals("TRIGGER:trg_first", statements.get(0).attributes().get("sourceStatementId"));
+        assertEquals(StatementSourceType.TRIGGER, statements.get(2).sourceType());
+        assertEquals("trg_second", statements.get(2).attributes().get("sourceObjectName"));
+        assertEquals("TRIGGER:trg_second", statements.get(2).attributes().get("sourceStatementId"));
+    }
+
+    @Test
     void markedSqlServerBlockUsesDeclaredRoutineNameForSourceObjectMetadata() {
         List<SqlStatementRecord> statements = extractor.extract("""
                 -- relation-detector-fixture-source:sqlserver.mechanical_block_name

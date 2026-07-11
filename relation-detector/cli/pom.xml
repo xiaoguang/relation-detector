@@ -62,6 +62,26 @@
           </archive>
         </configuration>
       </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+        <configuration>
+          <!-- Maven user properties are not guaranteed to be inherited by a forked JVM. -->
+          <systemPropertyVariables>
+            <correctnessFixtureProfile>${correctnessFixtureProfile}</correctnessFixtureProfile>
+            <correctnessFixtureFilter>${correctnessFixtureFilter}</correctnessFixtureFilter>
+            <correctnessFixtureParallelism>${correctnessFixtureParallelism}</correctnessFixtureParallelism>
+            <correctnessStatementParallelism>${correctnessStatementParallelism}</correctnessStatementParallelism>
+            <correctnessFixtureTiming>${correctnessFixtureTiming}</correctnessFixtureTiming>
+            <correctnessFixtureTimingVerbose>${correctnessFixtureTimingVerbose}</correctnessFixtureTimingVerbose>
+            <correctnessFixtureTimingTop>${correctnessFixtureTimingTop}</correctnessFixtureTimingTop>
+            <updateCorrectnessGold>${updateCorrectnessGold}</updateCorrectnessGold>
+            <runGeneratedReportTests>${runGeneratedReportTests}</runGeneratedReportTests>
+            <updateCorrectnessSummary>${updateCorrectnessSummary}</updateCorrectnessSummary>
+            <updateDataLineageAudit>${updateDataLineageAudit}</updateDataLineageAudit>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>

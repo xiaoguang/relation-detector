@@ -279,7 +279,7 @@ CREATE TABLE warehouses (
   name VARCHAR,
   code VARCHAR UNIQUE,
   address VARCHAR,
-   VARCHAR,
+  province VARCHAR,
   city VARCHAR,
   district VARCHAR,
   latitude DECIMAL,
@@ -1721,6 +1721,28 @@ CREATE TABLE payment_receipt_allocations (
   allocated_amount DECIMAL,
   CONSTRAINT fk_payment_allocation_receipt FOREIGN KEY (receipt_id) REFERENCES payment_receipts (id),
   INDEX idx_payment_allocation_reference (reference_type, reference_id)
+);
+
+CREATE TABLE payments (
+  id BIGINT PRIMARY KEY,
+  payment_no VARCHAR UNIQUE,
+  customer_id BIGINT,
+  order_id BIGINT,
+  receipt_id BIGINT,
+  journal_id BIGINT,
+  payment_date DATE,
+  amount DECIMAL,
+  currency VARCHAR,
+  payment_method VARCHAR,
+  payment_status VARCHAR,
+  reconciliation_status VARCHAR,
+  created_at TIMESTAMP,
+  CONSTRAINT fk_payment_customer FOREIGN KEY (customer_id) REFERENCES customers (id),
+  CONSTRAINT fk_payment_order FOREIGN KEY (order_id) REFERENCES sales_orders (id),
+  CONSTRAINT fk_payment_receipt FOREIGN KEY (receipt_id) REFERENCES payment_receipts (id),
+  CONSTRAINT fk_payment_journal FOREIGN KEY (journal_id) REFERENCES cashier_journals (id),
+  INDEX idx_payment_customer (customer_id),
+  INDEX idx_payment_order (order_id)
 );
 
 CREATE TABLE stocktakes (

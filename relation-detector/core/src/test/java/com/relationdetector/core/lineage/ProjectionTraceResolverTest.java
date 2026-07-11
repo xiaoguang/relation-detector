@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.model.TableId;
@@ -62,6 +63,37 @@ class ProjectionTraceResolverTest {
         assertTrue(trace.isPresent());
         assertEquals("payments.amount", trace.get().sources().get(0).displayName());
         assertEquals(LineageTransformType.AGGREGATE, trace.get().transform());
+    }
+
+    @Test
+    void mergesAllUnionBranchSourcesForTheSameProjection() {
+        List<StructuredSqlEvent> events = List.of(
+                cte("all_payments"),
+                rowset("cash_payments", "cash"),
+                rowset("bank_payments", "bank"),
+                projection("all_payments", "amount", "cash", "amount", "DIRECT"),
+                projection("all_payments", "amount", "bank", "amount", "DIRECT"),
+                rowset("all_payments", "ap"));
+
+        ProjectionTraceResolver resolver = ProjectionTraceResolver.fromEvents(
+                events,
+                aliases(events),
+                Set.of("all_payments"));
+
+        var trace = resolver.resolve("ap", "amount").orElseThrow();
+        assertEquals(Set.of("cash_payments.amount", "bank_payments.amount"),
+                trace.sources().stream().map(source -> source.displayName()).collect(java.util.stream.Collectors.toSet()),
+                "A UNION projection must preserve sources from every branch");
+    }
+
+    @Test
+    void fixesEveryControlTraceAtCaseWhenRegardlessOfNestedValueTransform() {
+        assertEquals(LineageTransformType.CASE_WHEN,
+                ProjectionTraceResolver.effectiveTransform(
+                        "AGGREGATE", List.of(LineageTransformType.AGGREGATE), LineageFlowKind.CONTROL));
+        assertEquals(LineageTransformType.CASE_WHEN,
+                ProjectionTraceResolver.effectiveTransform(
+                        "ARITHMETIC", List.of(LineageTransformType.ARITHMETIC), LineageFlowKind.CONTROL));
     }
 
     private static StructuredSqlEvent cte(String name) {

@@ -94,42 +94,43 @@ public final class StructuredDataLineageExtractor {
                     || !isKnownPhysical(target.table(), knownPhysicalTables)) {
                 continue;
             }
-            ProjectionTraceResolver.SourceResolution sourceResolution =
-                    projectionTraces.resolveSources(event, aliases, ignoredRowsets);
-            List<Endpoint> sources = sourceResolution.sources().stream()
-                    .filter(source -> source.column() != null)
-                    .filter(source -> !isLocalTemp(source.column().table(), localTempTables))
-                    .filter(source -> !isIgnoredRowsetTable(source.column().table(), ignoredRowsets))
-                    .filter(source -> isKnownPhysical(source.column().table(), knownPhysicalTables))
-                    .distinct()
-                    .toList();
-            if (sources.isEmpty()) {
-                continue;
+            for (ProjectionTraceResolver.SourceResolution sourceResolution
+                    : projectionTraces.resolveSources(event, aliases, ignoredRowsets)) {
+                List<Endpoint> sources = sourceResolution.sources().stream()
+                        .filter(source -> source.column() != null)
+                        .filter(source -> !isLocalTemp(source.column().table(), localTempTables))
+                        .filter(source -> !isIgnoredRowsetTable(source.column().table(), ignoredRowsets))
+                        .filter(source -> isKnownPhysical(source.column().table(), knownPhysicalTables))
+                        .distinct()
+                        .toList();
+                if (sources.isEmpty()) {
+                    continue;
+                }
+                LineageTransformType transform = ProjectionTraceResolver.effectiveTransform(
+                        text(event, "transformType"), sourceResolution.transforms(), sourceResolution.flowKind());
+                LineageFlowKind flowKind = sourceResolution.flowKind();
+                AssignmentMapping mapping = assignmentMapping(event, target, sources, transform);
+                DataLineageCandidate candidate = new DataLineageCandidate(
+                        mapping.expressionSources().sources(),
+                        mapping.target(),
+                        flowKind,
+                        transform);
+                BigDecimal score = score(transform, flowKind);
+                candidate.confidence(score);
+                Map<String, Object> attributes = new LinkedHashMap<>();
+                attributes.put("tokenEventNative", true);
+                attributes.put("mappingKind", text(event, "mappingKind"));
+                copySourceAttributes(statement, attributes);
+                candidate.attributes().putAll(attributes);
+                candidate.evidence().add(new DataLineageEvidence(
+                        transform,
+                        score,
+                        sourceType(statement.sourceType()),
+                        SourceNameNormalizer.normalize(statement.sourceName()),
+                        "ANTLR token-event write mapping",
+                        attributes));
+                candidates.add(candidate);
             }
-            LineageTransformType transform = ProjectionTraceResolver.effectiveTransform(
-                    text(event, "transformType"), sourceResolution.transforms());
-            LineageFlowKind flowKind = flowKind(text(event, "flowKind"));
-            AssignmentMapping mapping = assignmentMapping(event, target, sources, transform);
-            DataLineageCandidate candidate = new DataLineageCandidate(
-                    mapping.expressionSources().sources(),
-                    mapping.target(),
-                    flowKind,
-                    transform);
-            BigDecimal score = score(transform, flowKind);
-            candidate.confidence(score);
-            Map<String, Object> attributes = new LinkedHashMap<>();
-            attributes.put("tokenEventNative", true);
-            attributes.put("mappingKind", text(event, "mappingKind"));
-            copySourceAttributes(statement, attributes);
-            candidate.attributes().putAll(attributes);
-            candidate.evidence().add(new DataLineageEvidence(
-                    transform,
-                    score,
-                    sourceType(statement.sourceType()),
-                    SourceNameNormalizer.normalize(statement.sourceName()),
-                    "ANTLR token-event write mapping",
-                    attributes));
-            candidates.add(candidate);
         }
         return candidates;
     }

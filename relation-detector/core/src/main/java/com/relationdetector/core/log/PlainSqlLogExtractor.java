@@ -43,24 +43,27 @@ public final class PlainSqlLogExtractor {
     ) {
         try {
             String text = Files.readString(file);
+            LineIndex lineIndex = LineIndex.of(text);
             List<String> localTempTables = localTempTablesIn(text);
             List<SqlStatementRecord> statements = new ArrayList<>();
-            int line = 1;
-            for (String part : splitSqlStatements(text)) {
-                String sql = part.trim();
-                if (!sql.isBlank()) {
+            for (StatementSlice slice : splitSqlStatements(text)) {
+                int startOffset = trimStart(text, slice.startOffset(), slice.endOffset());
+                int endOffset = trimEnd(text, startOffset, slice.endOffset());
+                if (startOffset < endOffset) {
+                    String sql = text.substring(startOffset, endOffset);
+                    int startLine = lineIndex.lineAt(startOffset);
+                    int endLine = lineIndex.lineAt(endOffset - 1);
                     Map<String, Object> attributes = new LinkedHashMap<>();
                     if (!localTempTables.isEmpty()) {
                         attributes.put("localTempTables", localTempTables);
                     }
                     String normalizedFile = SourceNameNormalizer.normalize(file);
                     attributes.put("sourceFile", normalizedFile);
-                    attributes.put("sourceStatementId", normalizedFile + ":" + line + "-" + (line + countLines(part)));
+                    attributes.put("sourceStatementId", normalizedFile + ":" + startLine + "-" + endLine);
                     attributes.put("sourceObjectType", "SQL_WRITE");
-                    statements.add(new SqlStatementRecord(sql, sourceType, normalizedFile, line,
-                            line + countLines(part), attributes));
+                    statements.add(new SqlStatementRecord(sql, sourceType, normalizedFile, startLine,
+                            endLine, attributes));
                 }
-                line += countLines(part);
             }
             return statements.stream();
         } catch (IOException ex) {
@@ -69,8 +72,20 @@ public final class PlainSqlLogExtractor {
         }
     }
 
-    private int countLines(String text) {
-        return (int) text.chars().filter(ch -> ch == '\n').count() + 1;
+    private int trimStart(String text, int startOffset, int endOffset) {
+        int offset = startOffset;
+        while (offset < endOffset && Character.isWhitespace(text.charAt(offset))) {
+            offset++;
+        }
+        return offset;
+    }
+
+    private int trimEnd(String text, int startOffset, int endOffset) {
+        int offset = endOffset;
+        while (offset > startOffset && Character.isWhitespace(text.charAt(offset - 1))) {
+            offset--;
+        }
+        return offset;
     }
 
     /**
@@ -83,21 +98,18 @@ public final class PlainSqlLogExtractor {
      * SELECT STRING_AGG(category, '; ' ORDER BY category) FROM transactions;
      * }</pre>
      */
-    private List<String> splitSqlStatements(String text) {
-        List<String> statements = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
+    private List<StatementSlice> splitSqlStatements(String text) {
+        List<StatementSlice> statements = new ArrayList<>();
+        int statementStart = 0;
         char quote = 0;
         boolean lineComment = false;
         boolean blockComment = false;
         String dollarQuote = null;
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
-            current.append(c);
             if (dollarQuote != null) {
                 if (c == '$' && text.startsWith(dollarQuote, i)) {
-                    for (int end = 1; end < dollarQuote.length(); end++) {
-                        current.append(text.charAt(++i));
-                    }
+                    i += dollarQuote.length() - 1;
                     dollarQuote = null;
                 }
                 continue;
@@ -110,7 +122,7 @@ public final class PlainSqlLogExtractor {
             }
             if (blockComment) {
                 if (c == '*' && i + 1 < text.length() && text.charAt(i + 1) == '/') {
-                    current.append(text.charAt(++i));
+                    i++;
                     blockComment = false;
                 }
                 continue;
@@ -118,7 +130,7 @@ public final class PlainSqlLogExtractor {
             if (quote != 0) {
                 if (c == quote) {
                     if (quote == '\'' && i + 1 < text.length() && text.charAt(i + 1) == '\'') {
-                        current.append(text.charAt(++i));
+                        i++;
                         continue;
                     }
                     quote = 0;
@@ -132,32 +144,57 @@ public final class PlainSqlLogExtractor {
             if (c == '$') {
                 String delimiter = dollarQuoteDelimiterAt(text, i);
                 if (delimiter != null) {
-                    for (int end = 1; end < delimiter.length(); end++) {
-                        current.append(text.charAt(++i));
-                    }
+                    i += delimiter.length() - 1;
                     dollarQuote = delimiter;
                     continue;
                 }
             }
             if (c == '-' && i + 1 < text.length() && text.charAt(i + 1) == '-') {
-                current.append(text.charAt(++i));
+                i++;
                 lineComment = true;
                 continue;
             }
             if (c == '/' && i + 1 < text.length() && text.charAt(i + 1) == '*') {
-                current.append(text.charAt(++i));
+                i++;
                 blockComment = true;
                 continue;
             }
             if (c == ';') {
-                statements.add(current.toString());
-                current.setLength(0);
+                statements.add(new StatementSlice(statementStart, i + 1));
+                statementStart = i + 1;
             }
         }
-        if (!current.isEmpty()) {
-            statements.add(current.toString());
+        if (statementStart < text.length()) {
+            statements.add(new StatementSlice(statementStart, text.length()));
         }
         return statements;
+    }
+
+    private record StatementSlice(int startOffset, int endOffset) {
+    }
+
+    private record LineIndex(int[] lineStarts) {
+        static LineIndex of(String text) {
+            List<Integer> starts = new ArrayList<>();
+            starts.add(0);
+            for (int offset = 0; offset < text.length(); offset++) {
+                char current = text.charAt(offset);
+                if (current == '\r') {
+                    if (offset + 1 < text.length() && text.charAt(offset + 1) == '\n') {
+                        offset++;
+                    }
+                    starts.add(offset + 1);
+                } else if (current == '\n') {
+                    starts.add(offset + 1);
+                }
+            }
+            return new LineIndex(starts.stream().mapToInt(Integer::intValue).toArray());
+        }
+
+        int lineAt(int offset) {
+            int position = java.util.Arrays.binarySearch(lineStarts, offset);
+            return position >= 0 ? position + 1 : -position - 1;
+        }
     }
 
     private static String dollarQuoteDelimiterAt(String text, int index) {

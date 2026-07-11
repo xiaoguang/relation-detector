@@ -1,0 +1,9 @@
+{
+  "fingerprints": [
+    "naming:operation_reports.work_order_operation_id->work_order_operations.id:TABLE_ID:NAMING_MATCH",
+    "naming:payment_request_items.ap_invoice_id->ap_invoices.id:TABLE_ID:NAMING_MATCH",
+    "naming:picking_task_items.picking_task_id->picking_tasks.id:TABLE_ID:NAMING_MATCH",
+    "naming:repair_order_parts.repair_order_id->repair_orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:sales_fact.payment_id->payments.id:TABLE_ID:NAMING_MATCH"
+  ]
+}

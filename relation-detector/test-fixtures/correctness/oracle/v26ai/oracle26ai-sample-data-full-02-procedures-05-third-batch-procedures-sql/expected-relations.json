@@ -1,6 +1,9 @@
 {
   "fingerprints": [
     "CO_OCCURRENCE:consignment_consumptions.consignment_id->consignment_inventory.id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:contracts.party_id->customers.id:SQL_LOG_JOIN",
+    "CO_OCCURRENCE:contracts.party_id->suppliers.id:SQL_LOG_JOIN",
+    "FK_LIKE:contract_milestones.contract_id->contracts.id:SQL_LOG_JOIN,NAMING_MATCH",
     "FK_LIKE:sales_orders.customer_id->customers.id:SQL_LOG_JOIN,NAMING_MATCH"
   ],
   "forbiddenTables": []

@@ -13,12 +13,14 @@ import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.relationdetector.contracts.Enums.LineageFlowKind;
 import com.relationdetector.contracts.Enums.LineageTransformType;
 import com.relationdetector.contracts.Enums.StructuredParseEventType;
 import com.relationdetector.contracts.parse.SqlStatementRecord;
 import com.relationdetector.contracts.parse.StructuredSqlEvent;
+import com.relationdetector.core.lineage.LineageTransformClassifier;
 import com.relationdetector.oracle.routine.OracleRoutineScope;
 
 /**
@@ -63,7 +65,7 @@ public final class OracleFullGrammerParseTreeEventCollector {
             case "Subquery_factoring_clauseContext" -> visitSubqueryFactoringClause(ctx);
             case "Create_tableContext" -> visitCreateTable(ctx);
             case "Alter_tableContext" -> visitAlterTable(ctx);
-            case "Column_definitionContext" -> visitColumnDefinition(ctx);
+            case "Column_definitionContext", "Virtual_column_definitionContext" -> visitColumnDefinition(ctx);
             case "Out_of_line_constraintContext" -> visitOutOfLineConstraint(ctx);
             case "Foreign_key_clauseContext" -> emitForeignKey(ctx);
             case "Create_indexContext" -> visitCreateIndex(ctx);
@@ -74,6 +76,7 @@ public final class OracleFullGrammerParseTreeEventCollector {
             case "Join_clauseContext" -> visitJoinClause(ctx);
             case "Join_using_partContext" -> visitJoinUsingPart(ctx);
             case "Relational_expressionContext" -> visitRelationalExpression(ctx);
+            case "Compound_expressionContext" -> visitCompoundExpression(ctx);
             case "Quantified_expressionContext" -> visitQuantifiedExpression(ctx);
             case "Update_statementContext" -> visitUpdateStatement(ctx);
             case "Column_based_update_set_clauseContext" -> visitColumnBasedUpdateSetClause(ctx);
@@ -167,6 +170,7 @@ public final class OracleFullGrammerParseTreeEventCollector {
     private void visitQueryBlock(ParserRuleContext ctx) {
         queryScopes.push(new QueryScope());
         try {
+            ParserRuleContext selectedList = child(ctx, "selected_list");
             visit(child(ctx, "from_clause"));
             visit(child(ctx, "where_clause"));
             for (ParserRuleContext clause : children(ctx, "hierarchical_query_clause")) {
@@ -176,8 +180,12 @@ public final class OracleFullGrammerParseTreeEventCollector {
                 visit(clause);
             }
             visit(child(ctx, "model_clause"));
+            // Scalar subqueries in SELECT projections contain their own typed
+            // rowsets and predicates. Visit them even when this query is not
+            // currently materializing a CTE/derived projection.
+            visit(selectedList);
             if (!projectionOwners.isEmpty()) {
-                emitProjectionItems(child(ctx, "selected_list"), projectionOwners.peek());
+                emitProjectionItems(selectedList, projectionOwners.peek());
             }
         } finally {
             queryScopes.pop();
@@ -252,8 +260,8 @@ public final class OracleFullGrammerParseTreeEventCollector {
         if (op != null && "=".equals(op.getText())) {
             List<ParserRuleContext> parts = children(ctx, "relational_expression");
             if (parts.size() == 2) {
-                OracleColumnRead left = singleColumn(parts.get(0));
-                OracleColumnRead right = singleColumn(parts.get(1));
+                OracleColumnRead left = singleDirectColumn(parts.get(0));
+                OracleColumnRead right = singleDirectColumn(parts.get(1));
                 if (left != null && right != null) {
                     Map<String, Object> attrs = core.attrs();
                     attrs.put("leftAlias", left.alias());
@@ -283,6 +291,29 @@ public final class OracleFullGrammerParseTreeEventCollector {
                     attrs.put("verifiedColumnSubquery", true);
                     core.add(StructuredParseEventType.IN_SUBQUERY_PREDICATE, ctx, attrs);
                 }
+            }
+        }
+        visitChildren(ctx);
+    }
+
+    private void visitCompoundExpression(ParserRuleContext ctx) {
+        ParserRuleContext inElements = child(ctx, "in_elements");
+        List<ParserRuleContext> concatenations = children(ctx, "concatenation");
+        ParserRuleContext subquery = child(inElements, "subquery");
+        if (node(ctx, "IN") != null && node(ctx, "NOT") == null
+                && concatenations.size() == 1 && subquery != null) {
+            OracleColumnRead outer = singleColumn(concatenations.get(0));
+            OracleColumnRead inner = singleSelectColumn(subquery);
+            if (outer != null && inner != null) {
+                Map<String, Object> attrs = core.attrs();
+                attrs.put("outerAlias", outer.alias());
+                attrs.put("outerColumn", outer.column());
+                attrs.put("innerAlias", inner.alias());
+                attrs.put("innerColumn", inner.column());
+                attrs.put("innerTable", "");
+                attrs.put("innerTableAlias", inner.alias());
+                attrs.put("verifiedColumnSubquery", true);
+                core.add(StructuredParseEventType.IN_SUBQUERY_PREDICATE, ctx, attrs);
             }
         }
         visitChildren(ctx);
@@ -337,19 +368,10 @@ public final class OracleFullGrammerParseTreeEventCollector {
             if (expression == null) {
                 continue;
             }
-            OracleExpressionAnalysis source = analyze(expression);
-            if (source.sources().isEmpty()) {
-                continue;
+            for (OracleExpressionAnalysis source : writeAnalyses(expression)) {
+                emitWriteMapping(StructuredParseEventType.INSERT_SELECT_MAPPING, selectItems.get(index),
+                        "", targetTable, targetColumns.get(index), source, "INSERT_SELECT");
             }
-            Map<String, Object> attrs = core.attrs();
-            attrs.put("targetTable", targetTable);
-            attrs.put("targetColumn", targetColumns.get(index));
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            attrs.put("mappingKind", "INSERT_SELECT");
-            core.add(StructuredParseEventType.INSERT_SELECT_MAPPING, selectItems.get(index), attrs);
         }
     }
 
@@ -391,20 +413,10 @@ public final class OracleFullGrammerParseTreeEventCollector {
             StructuredParseEventType type,
             String mappingKind
     ) {
-        OracleExpressionAnalysis source = analyze(expression);
-        if (source.sources().isEmpty()) {
-            return;
+        for (OracleExpressionAnalysis source : writeAnalyses(expression)) {
+            emitWriteMapping(type, ctx, writeTargetAliases.peek(), writeTargetTables.peek(),
+                    lastPart(targetColumn), source, mappingKind);
         }
-        Map<String, Object> attrs = core.attrs();
-        attrs.put("targetAlias", writeTargetAliases.peek());
-        attrs.put("targetTable", writeTargetTables.peek());
-        attrs.put("targetColumn", lastPart(targetColumn));
-        attrs.put("sourceAliases", source.aliases());
-        attrs.put("sourceColumns", source.columns());
-        attrs.put("transformType", source.transform().name());
-        attrs.put("flowKind", source.flowKind().name());
-        attrs.put("mappingKind", mappingKind);
-        core.add(type, ctx, attrs);
     }
 
     private void emitProjectionItems(ParserRuleContext selectedList, ProjectionOwner owner) {
@@ -418,23 +430,50 @@ public final class OracleFullGrammerParseTreeEventCollector {
             if (expression == null) {
                 continue;
             }
-            OracleExpressionAnalysis source = analyze(expression);
-            if (source.sources().isEmpty()) {
-                continue;
-            }
             String outputColumn = index < owner.columns().size() ? owner.columns().get(index) : outputColumn(item);
             if (outputColumn.isBlank()) {
                 continue;
             }
-            Map<String, Object> attrs = core.attrs();
-            attrs.put("outputAlias", owner.alias());
-            attrs.put("outputColumn", outputColumn);
-            attrs.put("sourceAliases", source.aliases());
-            attrs.put("sourceColumns", source.columns());
-            attrs.put("transformType", source.transform().name());
-            attrs.put("flowKind", source.flowKind().name());
-            core.add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
+            for (OracleExpressionAnalysis source : writeAnalyses(expression)) {
+                if (source.sources().isEmpty()) {
+                    continue;
+                }
+                Map<String, Object> attrs = core.attrs();
+                attrs.put("outputAlias", owner.alias());
+                attrs.put("outputColumn", outputColumn);
+                attrs.put("sourceAliases", source.aliases());
+                attrs.put("sourceColumns", source.columns());
+                attrs.put("transformType", source.transform().name());
+                attrs.put("flowKind", source.flowKind().name());
+                core.add(StructuredParseEventType.PROJECTION_ITEM, item, attrs);
+            }
         }
+    }
+
+    private void emitWriteMapping(
+            StructuredParseEventType type,
+            ParserRuleContext context,
+            String targetAlias,
+            String targetTable,
+            String targetColumn,
+            OracleExpressionAnalysis source,
+            String mappingKind
+    ) {
+        if (source.sources().isEmpty()) {
+            return;
+        }
+        Map<String, Object> attrs = core.attrs();
+        if (targetAlias != null && !targetAlias.isBlank()) {
+            attrs.put("targetAlias", targetAlias);
+        }
+        attrs.put("targetTable", targetTable);
+        attrs.put("targetColumn", targetColumn);
+        attrs.put("sourceAliases", source.aliases());
+        attrs.put("sourceColumns", source.columns());
+        attrs.put("transformType", source.transform().name());
+        attrs.put("flowKind", source.flowKind().name());
+        attrs.put("mappingKind", mappingKind);
+        core.add(type, context, attrs);
     }
 
     private String outputColumn(ParserRuleContext item) {
@@ -586,7 +625,33 @@ public final class OracleFullGrammerParseTreeEventCollector {
         if (items.size() != 1 || child(items.get(0), "expression") == null) {
             return null;
         }
-        return singleColumn(child(items.get(0), "expression"));
+        ParserRuleContext expression = child(items.get(0), "expression");
+        ParserRuleContext general = first(expression, "General_elementContext");
+        if (general != null && name(general).equals(name(expression)) && !name(general).contains(".")) {
+            Set<String> aliases = new LinkedHashSet<>();
+            collectPhysicalRowsetAliases(subquery, aliases);
+            return aliases.size() == 1 ? new OracleColumnRead(aliases.iterator().next(), name(general)) : null;
+        }
+        return singleColumn(expression);
+    }
+
+    private void collectPhysicalRowsetAliases(ParseTree tree, Set<String> aliases) {
+        if (tree == null) {
+            return;
+        }
+        if ("Table_ref_auxContext".equals(contextName(tree)) && tree instanceof ParserRuleContext tableRef) {
+            ParserRuleContext internal = child(tableRef, "table_ref_aux_internal");
+            String table = tableFrom(internal);
+            if (!table.isBlank()) {
+                aliases.add(child(tableRef, "table_alias") == null
+                        ? core.baseName(table)
+                        : name(child(tableRef, "table_alias")));
+            }
+            return;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            collectPhysicalRowsetAliases(tree.getChild(index), aliases);
+        }
     }
 
     private List<ParserRuleContext> selectItems(ParseTree ctx) {
@@ -600,6 +665,33 @@ public final class OracleFullGrammerParseTreeEventCollector {
         return columns.size() == 1 ? columns.get(0) : null;
     }
 
+    private OracleColumnRead singleDirectColumn(ParseTree ctx) {
+        return containsFunctionCall(ctx) ? null : singleColumn(ctx);
+    }
+
+    private boolean containsFunctionCall(ParseTree tree) {
+        if (tree == null) {
+            return false;
+        }
+        String type = contextName(tree);
+        if (type.toLowerCase(Locale.ROOT).contains("function")) {
+            return true;
+        }
+        if ("General_elementContext".equals(type)) {
+            for (ParserRuleContext part : children(tree, "general_element_part")) {
+                if (!children(part, "function_argument").isEmpty()) {
+                    return true;
+                }
+            }
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            if (containsFunctionCall(tree.getChild(index))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private OracleExpressionAnalysis analyze(ParseTree ctx) {
         List<OracleColumnRead> columns = columnReads(ctx);
         if (columns.isEmpty()) {
@@ -610,25 +702,348 @@ public final class OracleFullGrammerParseTreeEventCollector {
         return new OracleExpressionAnalysis(columns, transform, flow);
     }
 
+    private List<OracleExpressionAnalysis> writeAnalyses(ParseTree expression) {
+        ParserRuleContext scalarSubquery = first(expression, "SubqueryContext");
+        if (scalarSubquery != null) {
+            List<OracleExpressionAnalysis> projections = scalarProjectionAnalyses(scalarSubquery);
+            OracleExpressionAnalysis control = scalarControlAnalysis(scalarSubquery);
+            List<OracleExpressionAnalysis> result = new ArrayList<>(2);
+            for (OracleExpressionAnalysis projection : projections) {
+                if (projection.flowKind() == LineageFlowKind.VALUE && !projection.sources().isEmpty()) {
+                    result.add(new OracleExpressionAnalysis(
+                            projection.sources(),
+                            dominantValueTransform(transformFor(expression), projection.transform()),
+                            LineageFlowKind.VALUE));
+                } else if (projection.flowKind() == LineageFlowKind.CONTROL) {
+                    control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                            LineageFlowKind.CONTROL, control, projection);
+                }
+            }
+            if (!control.sources().isEmpty()) {
+                result.add(new OracleExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL));
+            }
+            return List.copyOf(result);
+        }
+        return expressionAnalyses(expression, columnReads(expression));
+    }
+
+    private List<OracleExpressionAnalysis> expressionAnalyses(
+            ParseTree expression,
+            List<OracleColumnRead> projectionSources
+    ) {
+        ParserRuleContext caseExpression = first(expression, "Case_expressionContext");
+        if (caseExpression == null) {
+            OracleExpressionAnalysis analysis = new OracleExpressionAnalysis(
+                    projectionSources, transformFor(expression), LineageFlowKind.VALUE);
+            return analysis.sources().isEmpty() ? List.of() : List.of(analysis);
+        }
+        List<OracleExpressionAnalysis> caseRoles = caseRoleAnalyses(caseExpression);
+        Set<OracleColumnRead> caseValues = new LinkedHashSet<>();
+        Set<OracleColumnRead> caseControls = new LinkedHashSet<>();
+        for (OracleExpressionAnalysis role : caseRoles) {
+            if (role.flowKind() == LineageFlowKind.VALUE) {
+                caseValues.addAll(role.sources());
+            } else {
+                caseControls.addAll(role.sources());
+            }
+        }
+        List<OracleColumnRead> values = projectionSources.stream()
+                .filter(source -> !caseControls.contains(source) || caseValues.contains(source))
+                .distinct()
+                .toList();
+        List<OracleExpressionAnalysis> result = new ArrayList<>(2);
+        if (!values.isEmpty()) {
+            LineageTransformType outer = transformFor(expression);
+            LineageTransformType transform = outer == LineageTransformType.AGGREGATE
+                    || outer == LineageTransformType.CUMULATIVE
+                    ? outer
+                    : LineageTransformType.CASE_WHEN;
+            result.add(new OracleExpressionAnalysis(values, transform, LineageFlowKind.VALUE));
+        }
+        if (!caseControls.isEmpty()) {
+            result.add(new OracleExpressionAnalysis(List.copyOf(caseControls), LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL));
+        }
+        return List.copyOf(result);
+    }
+
+    private List<OracleExpressionAnalysis> caseRoleAnalyses(ParserRuleContext caseExpression) {
+        ParserRuleContext caseBody = child(caseExpression, "simple_case_expression");
+        boolean simple = caseBody != null;
+        if (caseBody == null) {
+            caseBody = child(caseExpression, "searched_case_expression");
+        }
+        if (caseBody == null) {
+            return List.of();
+        }
+
+        OracleExpressionAnalysis value = OracleExpressionAnalysis.empty();
+        OracleExpressionAnalysis control = OracleExpressionAnalysis.empty();
+        if (simple) {
+            ParserRuleContext selector = child(caseBody, "expression");
+            if (selector != null) {
+                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL, control, analyze(selector));
+            }
+        }
+        for (ParserRuleContext whenPart : children(caseBody, "case_when_part_expression")) {
+            List<ParserRuleContext> expressions = children(whenPart, "expression");
+            if (!expressions.isEmpty()) {
+                control = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.CONTROL, control, analyze(expressions.get(0)));
+            }
+            if (expressions.size() > 1) {
+                value = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                        LineageFlowKind.VALUE, value, analyze(expressions.get(1)));
+            }
+        }
+        ParserRuleContext elsePart = child(caseBody, "case_else_part_expression");
+        if (elsePart != null && child(elsePart, "expression") != null) {
+            value = OracleExpressionAnalysis.combine(LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.VALUE, value, analyze(child(elsePart, "expression")));
+        }
+        List<OracleExpressionAnalysis> result = new ArrayList<>(2);
+        if (!value.sources().isEmpty()) {
+            result.add(new OracleExpressionAnalysis(value.sources(), LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.VALUE));
+        }
+        if (!control.sources().isEmpty()) {
+            result.add(new OracleExpressionAnalysis(control.sources(), LineageTransformType.CASE_WHEN,
+                    LineageFlowKind.CONTROL));
+        }
+        return List.copyOf(result);
+    }
+
+    private List<OracleExpressionAnalysis> scalarProjectionAnalyses(ParserRuleContext subquery) {
+        List<ParserRuleContext> items = selectItems(subquery);
+        if (items.size() != 1 || child(items.get(0), "expression") == null) {
+            return List.of();
+        }
+        ParseTree expression = child(items.get(0), "expression");
+        Map<String, OracleColumnRead> reads = new LinkedHashMap<>();
+        collectProjectionColumnReads(expression, reads);
+        return expressionAnalyses(expression, new ArrayList<>(reads.values()));
+    }
+
+    private OracleExpressionAnalysis scalarControlAnalysis(ParserRuleContext subquery) {
+        ParserRuleContext query = first(subquery, "Query_blockContext");
+        if (query == null) {
+            return OracleExpressionAnalysis.empty();
+        }
+        Map<String, OracleColumnRead> reads = new LinkedHashMap<>();
+        collectDirectScopeColumns(query, "Join_on_partContext", reads);
+        collectDirectScopeColumns(query, "Where_clauseContext", reads);
+        collectDirectScopeColumns(query, "Group_by_elementsContext", reads);
+        collectDirectScopeColumns(query, "Having_clauseContext", reads);
+        for (ParserRuleContext item : selectItems(subquery)) {
+            ParserRuleContext expression = child(item, "expression");
+            if (expression == null) {
+                continue;
+            }
+            for (ParserRuleContext nested : directScalarSubqueries(expression)) {
+                for (OracleColumnRead source : scalarControlAnalysis(nested).sources()) {
+                    reads.putIfAbsent(source.alias() + "." + source.column(), source);
+                }
+            }
+        }
+        return new OracleExpressionAnalysis(new ArrayList<>(reads.values()), LineageTransformType.CASE_WHEN,
+                LineageFlowKind.CONTROL);
+    }
+
+    private void collectProjectionColumnReads(ParseTree tree, Map<String, OracleColumnRead> reads) {
+        if (tree == null) {
+            return;
+        }
+        if ("SubqueryContext".equals(contextName(tree)) && tree instanceof ParserRuleContext subquery) {
+            for (OracleExpressionAnalysis analysis : scalarProjectionAnalyses(subquery)) {
+                if (analysis.flowKind() != LineageFlowKind.VALUE) {
+                    continue;
+                }
+                for (OracleColumnRead source : analysis.sources()) {
+                    reads.putIfAbsent(source.alias() + "." + source.column(), source);
+                }
+            }
+            return;
+        }
+        String type = contextName(tree);
+        if (type.equals("Column_nameContext") || type.equals("Table_elementContext")) {
+            addColumnRead(name(tree), reads);
+            return;
+        }
+        if (type.equals("General_elementContext")) {
+            String text = name(tree);
+            if (!text.contains("(") && text.contains(".")) {
+                addColumnRead(text, reads);
+                return;
+            }
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            collectProjectionColumnReads(tree.getChild(index), reads);
+        }
+    }
+
+    private List<ParserRuleContext> directScalarSubqueries(ParseTree tree) {
+        List<ParserRuleContext> result = new ArrayList<>();
+        collectDirectScalarSubqueries(tree, result);
+        return result;
+    }
+
+    private void collectDirectScalarSubqueries(ParseTree tree, List<ParserRuleContext> result) {
+        if (tree == null) {
+            return;
+        }
+        if ("SubqueryContext".equals(contextName(tree)) && tree instanceof ParserRuleContext subquery) {
+            result.add(subquery);
+            return;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            collectDirectScalarSubqueries(tree.getChild(index), result);
+        }
+    }
+
+    private void collectDirectScopeColumns(
+            ParseTree tree,
+            String targetContext,
+            Map<String, OracleColumnRead> reads
+    ) {
+        if (tree == null) {
+            return;
+        }
+        if ("SubqueryContext".equals(contextName(tree))) {
+            return;
+        }
+        if (targetContext.equals(contextName(tree))) {
+            columnReads(tree).forEach(source -> reads.putIfAbsent(
+                    source.alias() + "." + source.column(), source));
+            return;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            collectDirectScopeColumns(tree.getChild(index), targetContext, reads);
+        }
+    }
+
     private LineageTransformType transformFor(ParseTree tree) {
         String type = tree == null ? "" : tree.getClass().getSimpleName();
         String text = tree == null ? "" : tree.getText().toLowerCase(Locale.ROOT);
+        LineageTransformType functionTransform = nestedFunctionTransform(tree);
+        if (functionTransform == LineageTransformType.CUMULATIVE
+                || functionTransform == LineageTransformType.AGGREGATE
+                || functionTransform == LineageTransformType.WINDOW_DERIVED) {
+            return functionTransform;
+        }
         if (type.contains("Case") || text.startsWith("case")) {
             return LineageTransformType.CASE_WHEN;
         }
-        if (text.contains("||") || text.startsWith("concat") || text.startsWith("listagg")) {
+        if (containsConcatenationOperator(tree) || functionTransform == LineageTransformType.CONCAT_FORMAT) {
             return LineageTransformType.CONCAT_FORMAT;
         }
-        if (text.startsWith("sum(") || text.startsWith("avg(") || text.startsWith("count(") || text.startsWith("min(") || text.startsWith("max(")) {
-            return LineageTransformType.AGGREGATE;
-        }
-        if (text.contains("+") || text.contains("-") || text.contains("*") || text.contains("/")) {
+        if (containsArithmeticOperator(tree)) {
             return LineageTransformType.ARITHMETIC;
         }
-        if (text.startsWith("coalesce(") || text.startsWith("nvl(")) {
-            return LineageTransformType.COALESCE;
+        if (functionTransform != LineageTransformType.DIRECT) {
+            return functionTransform;
         }
         return LineageTransformType.DIRECT;
+    }
+
+    private LineageTransformType nestedFunctionTransform(ParseTree tree) {
+        if (tree == null) {
+            return LineageTransformType.DIRECT;
+        }
+        LineageTransformType transform = LineageTransformType.DIRECT;
+        String functionName = typedFunctionName(tree);
+        if (!functionName.isBlank()) {
+            transform = LineageTransformClassifier.classifyFunction(functionName, false, Map.of(
+                    "nvl", LineageTransformType.COALESCE,
+                    "listagg", LineageTransformType.CONCAT_FORMAT));
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            transform = dominantValueTransform(transform, nestedFunctionTransform(tree.getChild(index)));
+        }
+        return transform;
+    }
+
+    private String typedFunctionName(ParseTree tree) {
+        String type = contextName(tree).toLowerCase(Locale.ROOT);
+        boolean functionContext = type.contains("function");
+        if (!functionContext && "generalelementcontext".equals(type.replace("_", ""))) {
+            for (ParserRuleContext part : children(tree, "general_element_part")) {
+                if (!children(part, "function_argument").isEmpty()) {
+                    functionContext = true;
+                    break;
+                }
+            }
+        }
+        if (!functionContext) {
+            return "";
+        }
+        String text = core.clean(tree.getText());
+        int paren = text.indexOf('(');
+        if (paren <= 0) {
+            return "";
+        }
+        String prefix = text.substring(0, paren);
+        int dot = prefix.lastIndexOf('.');
+        return core.clean(dot < 0 ? prefix : prefix.substring(dot + 1));
+    }
+
+    private boolean containsArithmeticOperator(ParseTree tree) {
+        return containsOperator(tree, "+")
+                || containsOperator(tree, "-")
+                || containsOperator(tree, "*")
+                || containsOperator(tree, "/");
+    }
+
+    private boolean containsConcatenationOperator(ParseTree tree) {
+        if (tree == null) {
+            return false;
+        }
+        if ("ConcatenationContext".equals(contextName(tree))) {
+            int directBars = 0;
+            for (int index = 0; index < tree.getChildCount(); index++) {
+                if (tree.getChild(index) instanceof TerminalNode terminal && "|".equals(terminal.getText())) {
+                    directBars++;
+                }
+            }
+            if (directBars >= 2) {
+                return true;
+            }
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            if (containsConcatenationOperator(tree.getChild(index))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsOperator(ParseTree tree, String operator) {
+        if (tree == null) {
+            return false;
+        }
+        if (tree instanceof TerminalNode terminal && operator.equals(terminal.getText())) {
+            return true;
+        }
+        for (int index = 0; index < tree.getChildCount(); index++) {
+            if (containsOperator(tree.getChild(index), operator)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private LineageTransformType dominantValueTransform(
+            LineageTransformType left,
+            LineageTransformType right
+    ) {
+        if (left == LineageTransformType.CUMULATIVE || right == LineageTransformType.CUMULATIVE) {
+            return LineageTransformType.CUMULATIVE;
+        }
+        if (left == LineageTransformType.AGGREGATE || right == LineageTransformType.AGGREGATE) {
+            return LineageTransformType.AGGREGATE;
+        }
+        return LineageTransformClassifier.dominant(left, right);
     }
 
     private List<OracleColumnRead> columnReads(ParseTree tree) {
@@ -667,9 +1082,6 @@ public final class OracleFullGrammerParseTreeEventCollector {
         String value = core.clean(raw);
         int dot = value.lastIndexOf('.');
         if (dot < 0) {
-            if (projectionOwners.isEmpty()) {
-                return;
-            }
             String defaultAlias = defaultColumnAlias();
             if (defaultAlias.isBlank()) {
                 return;

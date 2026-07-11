@@ -23,6 +23,7 @@
     "naming:sales_returns.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
     "naming:supplier_products.product_id->products.id:TABLE_ID:NAMING_MATCH",
     "naming:supplier_products.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
+    "naming:three_way_matching.invoice_id->invoices.id:TABLE_ID:NAMING_MATCH",
     "naming:three_way_matching.purchase_order_id->purchase_orders.id:TABLE_ID:NAMING_MATCH"
   ]
 }

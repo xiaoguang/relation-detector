@@ -1,6 +1,7 @@
 {
   "fingerprints": [
     "naming:ap_invoices.purchase_order_id->purchase_orders.id:TABLE_ID:NAMING_MATCH",
+    "naming:ap_invoices.supplier_id->suppliers.id:TABLE_ID:NAMING_MATCH",
     "naming:ar_invoices.customer_id->customers.id:TABLE_ID:NAMING_MATCH",
     "naming:budget_items.department_id->departments.id:TABLE_ID:NAMING_MATCH",
     "naming:budget_items.subject_id->account_subjects.id:ID_SUFFIX_TO_ID:NAMING_MATCH",

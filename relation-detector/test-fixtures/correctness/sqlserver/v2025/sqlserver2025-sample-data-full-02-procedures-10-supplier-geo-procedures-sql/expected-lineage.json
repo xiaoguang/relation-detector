@@ -1,6 +1,6 @@
 {
   "fingerprints": [
-    "CONTROL:AGGREGATE:dbo.supplier_products.quality_score->dbo.suppliers.credit_level",
+    "CONTROL:CASE_WHEN:dbo.supplier_products.quality_score->dbo.suppliers.credit_level",
     "CONTROL:CASE_WHEN:dbo.suppliers.province,dbo.warehouses.province->dbo.supplier_products.shipping_cost_per_km"
   ],
   "forbiddenSources": [],
